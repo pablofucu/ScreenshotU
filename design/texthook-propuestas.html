@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Texthook · Visor de capturas</title>
+<style>
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:400;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-400-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:500;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-500-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:700;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-700-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:800;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-800-latin.woff2') format('woff2')}
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+
+/* ============ Página de documentación ============ */
+html,body{margin:0;background:#dfe3e9;font-family:var(--round);color:#3a414e}
+.doc{max-width:1360px;margin:0 auto;padding:40px 24px 80px}
+.doc>header h1{font-size:34px;font-weight:800;margin:0 0 6px}
+.doc>header p{font-size:17px;line-height:1.55;margin:0 0 10px;max-width:880px;color:#545c6a}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+.toc a{font-size:15px;font-weight:700;color:#3a414e;text-decoration:none;background:#fff;border-radius:999px;padding:6px 14px;box-shadow:0 0 0 1px rgba(95,110,135,.2)}
+.toc a:hover{background:#00A0D8;color:#fff}
+section.p{margin-top:56px}
+section.p h2{font-size:26px;font-weight:800;margin:0 0 4px;display:flex;align-items:center;gap:12px}
+section.p h2 .n{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#3a414e;color:#fff;font-size:19px}
+section.p .why{font-size:16px;color:#5f6776;margin:0 0 16px 50px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:24px;align-items:start}
+@media (max-width:1100px){.row{grid-template-columns:1fr}}
+.frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:18px;overflow:hidden;box-shadow:0 0 0 1px rgba(60,70,90,.25),0 24px 50px -24px rgba(30,40,60,.55);background:#0f1218}
+.notes{background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 0 0 1px rgba(95,110,135,.18)}
+.notes h3{margin:0 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:#7a8291}
+.notes ol{margin:0;padding:0;list-style:none;counter-reset:k}
+.notes li{counter-increment:k;position:relative;padding-left:36px;margin-bottom:14px;font-size:15px;line-height:1.5}
+.notes li::before{content:counter(k);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:#ff4f7b;color:#fff;font-weight:800;font-size:14px;display:grid;place-items:center}
+.notes li b{display:block;font-size:16px}
+.notes .now{margin-top:14px;padding-top:12px;border-top:1px solid #e6e9ee;font-size:14px;color:#6a7282;line-height:1.5}
+.notes .now strong{color:#3a414e}
+
+/* ============ Mundo de la app (copia de src/app.css adaptada a .stage) ============ */
+.stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;
+  font-family:var(--round);color:#3a414e;background:#eceef2;--acc:#00A0D8;--acc-ink:#fff;user-select:none}
+.bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(34px);opacity:.9}
+.blob.w{background:radial-gradient(circle,#fff,rgba(255,255,255,0) 70%)}
+.blob.a{background:radial-gradient(circle,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%);opacity:.55}
+.ghost{position:absolute;width:118px;height:118px;border-radius:28px;padding:10px;background:rgba(255,255,255,.7);box-shadow:0 0 0 1px rgba(120,130,150,.25),0 10px 18px -10px rgba(40,50,70,.4);filter:blur(5px)}
+.ghost i{display:block;width:100%;height:100%;border-radius:18px;background:linear-gradient(160deg,color-mix(in srgb,var(--g) 30%,white),var(--g))}
+.glass{position:absolute;--r:28px;--bw:10px;border-radius:var(--r);padding:var(--bw);isolation:isolate;
+  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  -webkit-backdrop-filter:blur(14px) saturate(1.7);backdrop-filter:blur(14px) saturate(1.7);
+  box-shadow:inset 0 1.5px 0 #fff,inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.95),inset 0 -1.5px 0 rgba(110,125,150,.30),0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42)}
+.glass::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.62) 0%,rgba(255,255,255,.20) 55%,rgba(255,255,255,0) 100%);
+  -webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.85}
+.glass::after{content:'';position:absolute;z-index:3;left:12%;top:3px;width:34%;height:5px;border-radius:5px;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 40%,rgba(255,255,255,0));filter:blur(.6px);opacity:.9}
+.glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:#dfe3e9}
+.glass .face::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(20,30,50,.20),inset 0 3px 6px -2px rgba(0,0,0,.35),inset 0 -2px 4px -2px rgba(255,255,255,.5)}
+.glass.f{transform:scale(1.06);z-index:3;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)) 0%,color-mix(in srgb,var(--acc) 72%,transparent) 55%,color-mix(in srgb,var(--acc) 92%,black) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),inset 0 -10px 14px -8px color-mix(in srgb,var(--acc) 30%,white),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 0 26px 2px color-mix(in srgb,var(--acc) 50%,transparent),0 22px 34px -16px color-mix(in srgb,var(--acc) 70%,black)}
+.pill{-webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);background:linear-gradient(180deg,rgba(255,255,255,.80),rgba(255,255,255,.52));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+.avatar{left:22px;top:12px;width:60px;height:60px;--r:16px;--bw:5px}
+.avatar .face{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white),var(--acc));display:grid;place-items:center}
+.avatar svg{width:34px;height:34px}
+.crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:20px;font-weight:700;color:#4a5260;z-index:5}
+.crumb .sep{color:#a3abb8;font-weight:500}.crumb .cur{color:var(--acc)}
+.clock{position:absolute;right:24px;top:24px;display:flex;gap:14px;align-items:center;font-size:20px;font-weight:700;color:#4a5260;z-index:5}
+.clock small{font-size:15px;font-weight:500;color:#7a8291}
+.batt{display:flex;gap:2px}.batt b{width:6px;height:13px;border-radius:2px;background:var(--acc)}.batt b.off{background:#c3c9d3}
+.hints{position:absolute;right:22px;bottom:16px;display:flex;gap:10px;z-index:6}
+.hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:999px;font-size:16px;font-weight:700;color:#4a5260;white-space:nowrap}
+.btn{min-width:28px;height:28px;border-radius:14px;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;--b:#4a5260;padding:0 6px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--b) 70%,black),0 1px 2px rgba(0,0,0,.2);text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.btn.a{--b:#3BB54A}.btn.b{--b:#E8384F}.btn.x{--b:#3F63E0}.btn.y{--b:#F2B807;color:#3a2f00;text-shadow:none}.btn.sh{border-radius:8px;--b:#6b7383}
+.chip{font-size:15px;font-weight:700;color:var(--acc-ink);background:var(--acc);padding:3px 12px;border-radius:999px;white-space:nowrap}
+.sc{position:absolute;inset:0;background-size:cover;background-position:center;background-color:#c9cfd8}
+.mk{position:absolute;z-index:20;width:34px;height:34px;border-radius:50%;background:#ff4f7b;color:#fff;font-weight:800;font-size:18px;display:grid;place-items:center;
+  box-shadow:0 0 0 3px #fff,0 6px 14px rgba(255,79,123,.5)}
+.ico{display:grid;place-items:center}.ico svg{width:100%;height:100%}
+
+
+/* ============ Texthook: piezas comunes ============ */
+.jp{font-family:'Yu Gothic UI','Yu Gothic','Meiryo','Hiragino Sans',sans-serif}
+.mono{font-family:Consolas,'Cascadia Mono',monospace}
+.avatar .face b{font-size:30px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.proc{position:absolute;right:24px;top:22px;height:40px;border-radius:999px;display:flex;align-items:center;gap:10px;padding:0 16px;font-size:16px;font-weight:700;color:#4a5260;z-index:5}
+.proc small{color:#8a919c;font-weight:600}
+.dot{width:10px;height:10px;border-radius:50%;background:#3BB54A;box-shadow:0 0 0 3px rgba(59,181,74,.25);flex:none}
+.dot.off{background:#c3c9d3;box-shadow:none}
+.panel{position:absolute;border-radius:26px;padding:16px;background:linear-gradient(180deg,rgba(255,255,255,.93),rgba(250,251,253,.84));
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px rgba(95,110,135,.20),0 18px 30px -18px rgba(40,50,70,.45);overflow:hidden}
+.ptitle{font-size:19px;font-weight:800;color:#4a5260;display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.ptitle small{font-size:14px;font-weight:600;color:#8a92a0}
+.ptitle .sp{flex:1}
+.ub{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border-radius:999px;font-size:15px;font-weight:800;color:#4a5260;white-space:nowrap;
+  background:linear-gradient(180deg,#fff,#eef1f5);box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.28),0 4px 10px -6px rgba(40,50,70,.4)}
+.ub.acc{color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 55%,white),var(--acc) 55%,color-mix(in srgb,var(--acc) 85%,black));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 6px 14px -6px var(--acc);text-shadow:0 1px 1px rgba(0,0,0,.2)}
+.ub.sm{height:32px;padding:0 12px;font-size:14px}
+.ub.ghost-b{background:transparent;box-shadow:none;color:var(--acc)}
+.ub svg{width:18px;height:18px}
+.inp{height:38px;border-radius:12px;background:#fff;box-shadow:inset 0 1px 3px rgba(40,50,70,.16),0 0 0 1px rgba(95,110,135,.25);display:flex;align-items:center;gap:8px;padding:0 12px;font-size:15px;color:#3a414e;white-space:nowrap;overflow:hidden}
+.inp .ph{color:#9aa2ae}
+.inp.focus{box-shadow:inset 0 1px 3px rgba(40,50,70,.16),0 0 0 2px var(--acc),0 0 0 5px color-mix(in srgb,var(--acc) 22%,transparent)}
+.inp .caret{width:2px;height:20px;background:var(--acc);margin-left:-6px}
+.sel{justify-content:space-between}.sel::after{content:'▾';color:#8a919c;font-size:13px}
+.lbl{font-size:13px;font-weight:800;color:#8a919c;text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px}
+.tg{width:44px;height:26px;border-radius:13px;background:#c9cfd8;position:relative;flex:none;box-shadow:inset 0 1px 3px rgba(0,0,0,.2)}
+.tg::after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tg.on{background:var(--acc)}.tg.on::after{left:21px}
+.opt{display:flex;align-items:center;gap:12px;font-size:15px;font-weight:700;color:#4a5260}
+.opt small{display:block;font-size:13px;font-weight:500;color:#8a919c}
+.seg{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:rgba(95,110,135,.10)}
+.seg i{font-style:normal;height:34px;padding:0 16px;border-radius:999px;display:grid;place-items:center;font-size:15px;font-weight:800;color:#5f6776;white-space:nowrap}
+.seg i.on{background:#fff;color:var(--acc);box-shadow:0 0 0 1px rgba(95,110,135,.2),0 3px 8px -4px rgba(40,50,70,.4)}
+.badge{display:inline-grid;place-items:center;min-width:26px;height:22px;padding:0 8px;border-radius:999px;font-size:12px;font-weight:800;background:rgba(95,110,135,.14);color:#5f6776}
+.badge.g{background:rgba(59,181,74,.16);color:#2b8a37}
+.badge.r{background:rgba(232,56,79,.14);color:#c42a40}
+.badge.a{background:color-mix(in srgb,var(--acc) 16%,transparent);color:color-mix(in srgb,var(--acc) 80%,black)}
+/* filas de hilo */
+.thr{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:9px 12px;border-radius:16px;margin-bottom:5px}
+.thr .live{width:8px;height:8px;border-radius:50%;background:#c3c9d3}.thr .live.on{background:#3BB54A;box-shadow:0 0 0 3px rgba(59,181,74,.22)}
+.thr .nm{font-size:15px;font-weight:800;color:#3a414e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thr .nm .mono{font-size:12px;font-weight:400;color:#8a919c;margin-left:8px}
+.thr .pv{grid-column:2/4;font-size:15px;color:#5f6776;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thr.on{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 80%,white),var(--acc));box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 8px 16px -8px var(--acc)}
+.thr.on .nm,.thr.on .pv,.thr.on .nm .mono{color:#fff}.thr.on .badge{background:rgba(255,255,255,.25);color:#fff}
+.thr.hov{background:color-mix(in srgb,var(--acc) 9%,transparent)}
+.thr.dim{opacity:.55}
+.cursor{position:absolute;z-index:30;width:22px;height:30px;pointer-events:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+.hist{font-size:21px;line-height:1.6;color:#7a8291}
+.hist p{margin:0 0 4px}
+.hist p.last{color:#3a414e;font-weight:700}
+.hist p .who{color:var(--acc);font-weight:700}
+.statusbar{position:absolute;left:24px;right:24px;height:48px;border-radius:999px;display:flex;align-items:center;gap:14px;padding:0 8px 0 18px;font-size:15px;font-weight:700;color:#4a5260;z-index:4}
+.statusbar .sp{flex:1}
+.statusbar .out{display:flex;align-items:center;gap:8px}
+.statusbar small{color:#8a919c;font-weight:600}
+.spark{display:inline-flex;align-items:flex-end;gap:2px;height:18px}.spark i{width:4px;border-radius:2px;background:color-mix(in srgb,var(--acc) 60%,white)}
+
+/* ---- 1 · Lista + vista previa ---- */
+.d1 .tabs1{display:flex;gap:4px;margin:-4px 0 14px}
+.d1 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px 28px}
+.d1 .regex{grid-column:1/3;display:flex;gap:10px;align-items:center}
+
+/* ---- 2 · Mosaico ---- */
+.tile{width:397px;height:180px;--r:24px;--bw:8px}
+.tile .face{background:linear-gradient(180deg,#fff,#f3f5f8);padding:12px 16px;display:flex;flex-direction:column}
+.tile .th{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;color:#3a414e}
+.tile .th .mono{font-size:12px;font-weight:400;color:#8a919c;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .tx{flex:1;font-size:17px;line-height:1.5;color:#4a5260;margin-top:6px;overflow:hidden}
+.tile .ft{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#8a919c}
+.tile .ft .sp{flex:1}
+.tile.f .face{background:#fff}
+.tile.bad .tx{color:#a3abb8}
+.now2{display:flex;align-items:center;gap:18px}
+.now2 .big{flex:1;font-size:26px;font-weight:700;color:#3a414e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---- 3 · Ajustes de sistema ---- */
+.orb{width:104px;height:104px;--r:52px;--bw:8px}
+.orb .face{display:grid;place-items:center;background:linear-gradient(170deg,color-mix(in srgb,var(--o) 30%,white),var(--o))}
+.orb .face svg{width:46px;height:46px}
+.orb.f .face{background:linear-gradient(170deg,color-mix(in srgb,var(--o) 20%,white),var(--o))}
+.olbl{position:absolute;width:140px;text-align:center;font-size:16px;font-weight:800;color:#4a5260}
+.olbl.on{color:var(--acc)}
+.res{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:10px 14px;border-radius:16px;background:#fff;box-shadow:0 0 0 1px rgba(95,110,135,.16);margin-bottom:8px}
+.res .mono{font-size:13px;color:#6a7282}
+.res .pv{font-size:16px;color:#3a414e}
+.res .pv mark{background:color-mix(in srgb,var(--acc) 25%,transparent);color:inherit;border-radius:4px;padding:0 2px}
+.res .act{grid-row:1/3;grid-column:2;display:flex;gap:6px}
+.prog{height:10px;border-radius:5px;background:rgba(95,110,135,.15);overflow:hidden}.prog i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,color-mix(in srgb,var(--acc) 60%,white),var(--acc))}
+
+/* ---- 4 · Asistente ---- */
+.step{display:flex;gap:14px;align-items:flex-start;padding:14px 12px;border-radius:18px;margin-bottom:6px}
+.step .c{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:800;font-size:17px;background:rgba(95,110,135,.14);color:#6a7282}
+.step b{display:block;font-size:17px;color:#4a5260}
+.step small{display:block;font-size:14px;color:#8a919c;font-weight:500;margin-top:2px;line-height:1.35}
+.step.done .c{background:#3BB54A;color:#fff}
+.step.cur{background:color-mix(in srgb,var(--acc) 10%,transparent);box-shadow:inset 0 0 0 2px var(--acc)}
+.step.cur .c{background:var(--acc);color:#fff}
+.reco{border-radius:22px;padding:16px 20px;background:#fff;box-shadow:0 0 0 2px var(--acc),0 0 22px 2px color-mix(in srgb,var(--acc) 30%,transparent)}
+.reco .th{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800;color:#3a414e;margin-bottom:8px}
+.reco .th .mono{font-size:13px;font-weight:400;color:#8a919c}
+.cand{display:grid;grid-template-columns:200px minmax(0,1fr) 160px;gap:14px;align-items:center;padding:9px 14px;border-radius:14px;font-size:15px;color:#4a5260}
+.cand:nth-child(odd){background:rgba(95,110,135,.06)}
+.cand b{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cand .pv{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#7a8291}
+.score{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#8a919c}
+.score .bar{flex:1;height:8px;border-radius:4px;background:rgba(95,110,135,.15);overflow:hidden}.score .bar i{display:block;height:100%;border-radius:4px;background:var(--c,#a3abb8)}
+
+/* ---- 5 · Barra lateral + lectura ---- */
+.side{position:absolute;left:0;top:0;bottom:0;width:400px;padding:18px 18px;z-index:4;
+  background:linear-gradient(180deg,rgba(255,255,255,.80),rgba(245,247,250,.70));-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+  box-shadow:inset -1px 0 0 rgba(255,255,255,.9),1px 0 0 rgba(95,110,135,.22),12px 0 30px -18px rgba(40,50,70,.4)}
+.acc-h{display:flex;align-items:center;gap:10px;height:40px;padding:0 14px;border-radius:14px;font-size:16px;font-weight:800;color:#4a5260;background:#fff;box-shadow:0 0 0 1px rgba(95,110,135,.16);margin-bottom:8px}
+.acc-h .sp{flex:1}.acc-h .chev{color:#8a919c}
+.acc-h.open{border-radius:14px 14px 0 0;margin-bottom:0}
+.acc-b{background:#fff;border-radius:0 0 14px 14px;box-shadow:0 0 0 1px rgba(95,110,135,.16);padding:4px 14px 14px;margin-bottom:8px}
+.cur-thr{border-radius:18px;padding:12px 14px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 80%,white),var(--acc));color:#fff;box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 8px 18px -8px var(--acc)}
+.cur-thr .t{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800}
+.cur-thr .t .sp{flex:1}
+.cur-thr .mono{font-size:12px;opacity:.85}
+.cur-thr .pv{font-size:16px;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bwin{position:absolute;left:424px;top:24px;right:24px;bottom:24px;border-radius:14px;overflow:hidden;background:#fbfaf7;box-shadow:0 0 0 1px rgba(40,50,70,.25),0 24px 40px -20px rgba(30,40,60,.55)}
+.bwin .bar{height:34px;background:#e9ebef;display:flex;align-items:center;gap:10px;padding:0 14px;font-size:13px;font-weight:700;color:#6a7282;border-bottom:1px solid #d9dde3}
+.bwin .bar .sp{flex:1}.bwin .bar i{font-style:normal;color:#a3abb8;letter-spacing:10px}
+.read{padding:30px 46px;font-size:27px;line-height:1.85;color:#8a919c}
+.read p{margin:0 0 10px}.read p.last{color:#2f343d}
+.read .hl{background:rgba(255,196,0,.35);border-radius:4px}
+.dict{position:absolute;width:330px;border-radius:12px;background:#fff;box-shadow:0 0 0 1px rgba(40,50,70,.22),0 14px 30px -10px rgba(30,40,60,.5);padding:12px 16px;font-size:14px;color:#3a414e;z-index:8}
+.dict .w{font-size:26px;font-weight:700}.dict .w small{font-size:14px;color:#8a919c;margin-left:8px;font-weight:500}
+.dict .tags{display:flex;gap:6px;margin:6px 0}.dict .tags span{font-size:11px;font-weight:800;padding:2px 7px;border-radius:5px;background:#e7ecf3;color:#5f6776}
+.dict ol{margin:4px 0 0;padding-left:20px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="doc">
+<header>
+  <h1>Ventana de texthook: propuestas</h1>
+  <p>Cinco formas de organizar la ventana de configuración del hook. Es una ventana aparte, pensada para el <strong>segundo monitor</strong> y para <strong>ratón</strong>, sin nada del mando, pero con el mismo estilo cristal Wii U que el resto de la app. El proceso siempre es el juego que lanza la app.</p>
+  <p><strong>Funciones de LunaHook que tienen que caber:</strong> estado del proceso (conectado, 32/64 bits, reinyectar), lista de hilos con el texto en vivo, elegir el hilo que se usa, códigos H manuales, búsqueda de hooks por texto, filtros de limpieza (caracteres repetidos, regex, saltos de línea…), salida (página de lectura y/o portapapeles) y guardar el hook por juego. Cada propuesta lo reparte de una forma; se pueden mezclar.</p>
+  <nav class="toc">
+    <a href="#p1">1 · Lista + vista previa</a><a href="#p2">2 · Mosaico de hilos</a><a href="#p3">3 · Ajustes de sistema</a>
+    <a href="#p4">4 · Asistente por pasos</a><a href="#p5">5 · Barra lateral + lectura</a>
+  </nav>
+</header>
+
+<!-- ================================================================ 1 -->
+<section class="p" id="p1">
+  <h2><span class="n">1</span>Lista + vista previa</h2>
+  <p class="why">La distribución clásica de Textractor/LunaHook pasada a cristal: hilos a la izquierda, el hilo elegido en grande a la derecha y las herramientas en pestañas debajo. Todo a la vista sin cambiar de pantalla.</p>
+  <div class="row">
+    <div class="frame"><div class="stage d1">
+      <div class="bg"><div class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></div><div class="blob a" style="left:760px;top:380px;width:520px;height:400px"></div></div>
+      <div class="glass avatar"><div class="face"><b class="jp">あ</b></div></div>
+      <div class="crumb pill">Texthook <span class="sep">›</span> <span class="cur jp">白銀の約束</span></div>
+      <div class="proc pill"><span class="dot"></span>shirogane.exe <small>· 32 bits · PID 8124</small></div>
+
+      <div class="panel" style="left:24px;top:92px;width:440px;height:556px">
+        <div class="ptitle">Hilos de texto <span class="badge">7</span><span class="sp"></span><span class="ub sm">Limpiar</span></div>
+        <div class="inp" style="margin-bottom:12px"><span class="ph">Filtrar hilos por texto o motor…</span></div>
+        <div class="thr on"><i class="live on"></i><span class="nm">SiglusEngine<span class="mono">HQ-14*@44FA10</span></span><span class="badge">128</span><span class="pv jp">美雪「明日、駅まで一緒に行ってくれないかな」</span></div>
+        <div class="thr hov"><i class="live on"></i><span class="nm">GetGlyphOutlineW<span class="mono">HW-8*@0:gdi32</span></span><span class="badge">1.024</span><span class="pv jp">明明日日、、駅駅ままでで一一緒緒にに…</span></div>
+        <div class="thr"><i class="live on"></i><span class="nm">SiglusEngine<span class="mono">HQ-1C*@44FB80</span></span><span class="badge">41</span><span class="pv jp">美雪</span></div>
+        <div class="thr"><i class="live"></i><span class="nm">TextOutA<span class="mono">HS8@0:gdi32</span></span><span class="badge">6</span><span class="pv jp">セーブ　ロード　オート　スキップ</span></div>
+        <div class="thr"><i class="live"></i><span class="nm">GetTextExtentPoint32W<span class="mono">HW8@0:gdi32</span></span><span class="badge">380</span><span class="pv jp">明 日 、 駅 ま で</span></div>
+        <div class="thr dim"><i class="live"></i><span class="nm">Consola</span><span class="badge">3</span><span class="pv">Inyectado en shirogane.exe (32 bits)</span></div>
+        <div class="thr dim"><i class="live"></i><span class="nm">Portapapeles</span><span class="badge">0</span><span class="pv">—</span></div>
+      </div>
+
+      <div class="panel" style="left:484px;top:92px;width:772px;height:316px">
+        <div class="ptitle">SiglusEngine <small class="mono">HQ-14*@44FA10:shirogane.exe</small><span class="sp"></span>
+          <span class="ub sm">Copiar código</span><span class="ub sm acc">✓ En uso</span></div>
+        <div class="hist jp">
+          <p>窓の外では、雪が音もなく降り続いていた。</p>
+          <p>僕は布団の中で小さく息を吐いて、返事をするかどうか迷う。</p>
+          <p><span class="who">美雪</span>「……ねえ、まだ起きてる？」</p>
+          <p class="last"><span class="who">美雪</span>「明日、駅まで一緒に行ってくれないかな」</p>
+        </div>
+      </div>
+
+      <div class="panel" style="left:484px;top:422px;width:772px;height:226px">
+        <div class="tabs1"><div class="seg"><i class="on">Filtros</i><i>Código H</i><i>Buscar hook</i><i>Salida</i><i>Proceso</i></div></div>
+        <div class="fgrid">
+          <div class="opt"><span class="tg on"></span><div>Quitar caracteres repetidos<small>明明日日 → 明日 (detecta ×2 y ×3)</small></div></div>
+          <div class="opt"><span class="tg on"></span><div>Unir saltos de línea<small>Una frase por línea</small></div></div>
+          <div class="opt"><span class="tg"></span><div>Quitar frases repetidas<small>Si el juego redibuja la misma línea</small></div></div>
+          <div class="opt"><span class="tg on"></span><div>Separar nombre y diálogo<small>美雪「…」 → nombre en color</small></div></div>
+          <div class="regex"><span class="badge a">Regex</span><div class="inp mono" style="flex:1">\[[^\]]*\]  →  (vacío)</div><span class="ub sm">+ Añadir</span></div>
+        </div>
+      </div>
+
+      <div class="statusbar pill" style="top:662px">
+        <span class="out"><span class="tg on"></span>Página de lectura <small>localhost:6677</small></span>
+        <span class="out"><span class="tg on"></span>Portapapeles</span>
+        <span class="sp"></span>
+        <span class="ub sm">Abrir lectura</span><span class="ub sm acc">Guardar hook para este juego</span>
+      </div>
+
+      <svg class="cursor" style="left:300px;top:200px" viewBox="0 0 22 30"><path d="M2 2v22l6-6 4 9 4-2-4-9h8z" fill="#fff" stroke="#222" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <div class="mk" style="left:12px;top:150px">1</div>
+      <div class="mk" style="left:740px;top:80px">2</div>
+      <div class="mk" style="left:472px;top:410px">3</div>
+      <div class="mk" style="left:12px;top:648px">4</div>
+    </div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Hilos en vivo</b>El punto verde indica que el hilo está recibiendo texto ahora. Al pasar el ratón se resalta, y con un clic pasa a ser el hilo en uso.</li>
+      <li><b>Hilo elegido en grande</b>Muestra las últimas líneas ya filtradas, tal como llegarán a la página de lectura, así se ve al momento si el filtro funciona.</li>
+      <li><b>Herramientas en pestañas</b>Filtros, código H, búsqueda de hooks, salida y proceso (reinyectar, desconectar, página de códigos).</li>
+      <li><b>Salida siempre visible</b>Se activa la página de lectura o el portapapeles y se guarda el hook para que la próxima vez se aplique solo.</li>
+    </ol><p class="now"><strong>A favor:</strong> es la más completa y la que más se parece a LunaHook, así que es la más fácil de implementar. <strong>En contra:</strong> es densa y ocupa todo el monitor.</p></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 2 -->
+<section class="p" id="p2">
+  <h2><span class="n">2</span>Mosaico de hilos</h2>
+  <p class="why">Cada hilo es una tarjeta de cristal como los iconos del menú Wii U, con varias líneas de texto en vivo. Se elige mirando, no leyendo códigos: el hilo bueno se nota enseguida porque es el que tiene frases completas.</p>
+  <div class="row">
+    <div class="frame"><div class="stage" style="--acc:#e8384f">
+      <div class="bg"><div class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></div><div class="blob a" style="left:700px;top:300px;width:600px;height:460px"></div></div>
+      <div class="glass avatar"><div class="face"><b class="jp">あ</b></div></div>
+      <div class="crumb pill">Texthook <span class="sep">›</span> <span class="cur jp">白銀の約束</span></div>
+      <div class="proc pill"><span class="dot"></span>shirogane.exe <small>· 32 bits</small></div>
+
+      <div style="position:absolute;left:24px;top:92px;right:24px;display:flex;gap:10px;align-items:center">
+        <span class="ub">Código H</span><span class="ub">Buscar hook</span><span class="ub">Filtros <span class="badge a">3</span></span><span class="ub">Salida</span>
+        <span style="flex:1"></span>
+        <span class="opt"><span class="tg on"></span>Ocultar hilos sin japonés</span>
+      </div>
+
+      <div class="glass tile f" style="left:24px;top:150px"><div class="face">
+        <div class="th">SiglusEngine <span class="mono">HQ-14*@44FA10</span><span class="chip">En uso</span></div>
+        <div class="tx jp">僕は布団の中で小さく息を吐いた。<br>美雪「……ねえ、まだ起きてる？」<br><b>美雪「明日、駅まで一緒に行ってくれないかな」</b></div>
+        <div class="ft"><span class="dot"></span>128 líneas<span class="sp"></span><span class="spark"><i style="height:6px"></i><i style="height:12px"></i><i style="height:9px"></i><i style="height:16px"></i><i style="height:11px"></i><i style="height:18px"></i></span></div>
+      </div></div>
+      <div class="glass tile" style="left:441px;top:150px"><div class="face">
+        <div class="th">GetGlyphOutlineW <span class="mono">HW-8*@0:gdi32</span></div>
+        <div class="tx jp">美美雪雪「「明明日日、、駅駅ままでで一一緒緒にに行行っってて…</div>
+        <div class="ft"><span class="dot"></span>1.024 líneas<span class="sp"></span><span class="badge r">duplica caracteres</span></div>
+      </div></div>
+      <div class="glass tile" style="left:858px;top:150px"><div class="face">
+        <div class="th">SiglusEngine <span class="mono">HQ-1C*@44FB80</span></div>
+        <div class="tx jp">美雪<br>美雪<br>僕</div>
+        <div class="ft"><span class="dot"></span>41 líneas<span class="sp"></span><span class="badge">solo nombres</span></div>
+      </div></div>
+      <div class="glass tile bad" style="left:24px;top:350px"><div class="face">
+        <div class="th">GetTextExtentPoint32W <span class="mono">HW8@0:gdi32</span></div>
+        <div class="tx jp">明<br>日<br>、</div>
+        <div class="ft"><span class="dot off"></span>380 líneas<span class="sp"></span><span class="badge">letra a letra</span></div>
+      </div></div>
+      <div class="glass tile bad" style="left:441px;top:350px"><div class="face">
+        <div class="th">TextOutA <span class="mono">HS8@0:gdi32</span></div>
+        <div class="tx jp">セーブ　ロード　オート　スキップ</div>
+        <div class="ft"><span class="dot off"></span>6 líneas<span class="sp"></span><span class="badge">menú</span></div>
+      </div></div>
+      <div class="glass tile" style="left:858px;top:350px;opacity:.75"><div class="face" style="display:grid;place-items:center;text-align:center">
+        <div><div style="font-size:40px;font-weight:300;color:var(--acc);line-height:1">+</div><div style="font-size:16px;font-weight:800;color:#4a5260;margin-top:6px">Añadir hook</div><div style="font-size:13px;color:#8a919c;font-weight:600">Código H o búsqueda</div></div>
+      </div></div>
+
+      <div class="panel now2" style="left:24px;top:556px;width:1232px;height:96px">
+        <span class="lbl" style="margin:0;writing-mode:vertical-rl;transform:rotate(180deg)">Ahora</span>
+        <span class="big jp">美雪「明日、駅まで一緒に行ってくれないかな」</span>
+        <span class="badge g">Enviado a lectura</span><span class="badge g">Copiado</span>
+        <span class="ub sm acc">Guardar hook</span>
+      </div>
+      <svg class="cursor" style="left:610px;top:250px" viewBox="0 0 22 30"><path d="M2 2v22l6-6 4 9 4-2-4-9h8z" fill="#fff" stroke="#222" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <div class="mk" style="left:10px;top:140px">1</div>
+      <div class="mk" style="left:560px;top:322px">2</div>
+      <div class="mk" style="left:1236px;top:78px">3</div>
+      <div class="mk" style="left:10px;top:546px">4</div>
+    </div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Tarjeta en uso</b>Se resalta con el color de acento, igual que el juego seleccionado en el menú principal.</li>
+      <li><b>Etiquetas automáticas</b>La app reconoce los casos típicos de hilo malo («duplica caracteres», «letra a letra», «menú», «solo nombres») y los atenúa.</li>
+      <li><b>Ocultar ruido</b>Oculta los hilos sin kana ni kanji (consola, rutas, números). La consola de LunaHook queda en la pestaña Proceso.</li>
+      <li><b>Línea actual</b>Muestra la línea que sale ahora y si ha llegado a la página de lectura y al portapapeles.</li>
+    </ol><p class="now"><strong>A favor:</strong> es la más visual y la más «Wii U». <strong>En contra:</strong> con más de 8–9 hilos hay que hacer scroll, y los códigos H, la búsqueda y los filtros se abren como ventanas superpuestas.</p></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 3 -->
+<section class="p" id="p3">
+  <h2><span class="n">3</span>Ajustes de sistema</h2>
+  <p class="why">Inspirada en la Configuración de la consola de Wii U: una fila de iconos redondos arriba y el contenido de cada sección debajo. Aquí se ve la sección <em>Buscar hook</em>, la función de LunaHook para cuando el juego no da ningún hilo bueno.</p>
+  <div class="row">
+    <div class="frame"><div class="stage" style="--acc:#3BB54A">
+      <div class="bg"><div class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></div><div class="blob a" style="left:300px;top:420px;width:700px;height:380px"></div></div>
+      <div class="glass avatar"><div class="face"><b class="jp">あ</b></div></div>
+      <div class="crumb pill">Texthook <span class="sep">›</span> <span class="cur">Buscar hook</span></div>
+      <div class="proc pill"><span class="dot"></span>shirogane.exe <small>· 32 bits</small></div>
+
+      <div class="glass orb" style="left:115px;top:92px;--o:#00A0D8"><div class="face"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div></div>
+      <div class="glass orb" style="left:295px;top:92px;--o:#8a5cd6"><div class="face"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg></div></div>
+      <div class="glass orb f" style="left:475px;top:92px;--o:#3BB54A"><div class="face"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></div></div>
+      <div class="glass orb" style="left:655px;top:92px;--o:#F2B807"><div class="face"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v6l-4-2v-4z"/></svg></div></div>
+      <div class="glass orb" style="left:835px;top:92px;--o:#e8384f"><div class="face"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h12M13 6l6 6-6 6"/></svg></div></div>
+      <div class="glass orb" style="left:1015px;top:92px;--o:#6b7383"><div class="face"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 9h16"/></svg></div></div>
+      <div class="olbl" style="left:97px;top:208px">Hilos</div>
+      <div class="olbl" style="left:277px;top:208px">Código H</div>
+      <div class="olbl on" style="left:457px;top:208px">Buscar hook</div>
+      <div class="olbl" style="left:637px;top:208px">Filtros</div>
+      <div class="olbl" style="left:817px;top:208px">Salida</div>
+      <div class="olbl" style="left:997px;top:208px">Proceso</div>
+
+      <div class="panel" style="left:24px;top:248px;width:470px;height:404px">
+        <div class="ptitle">Buscar por texto</div>
+        <div class="lbl">Texto que se ve ahora en el juego</div>
+        <div class="inp focus jp" style="margin-bottom:14px;font-size:17px">まだ起きてる<span class="caret"></span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+          <div><div class="lbl">Codificación</div><div class="inp sel">Automática</div></div>
+          <div><div class="lbl">Dónde buscar</div><div class="inp sel">shirogane.exe</div></div>
+        </div>
+        <div class="opt" style="margin-bottom:16px"><span class="tg"></span><div>Búsqueda profunda<small>Más lenta; para motores raros o emuladores</small></div></div>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px"><span class="ub acc">Buscar</span><span class="ub">Buscar por patrón…</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#8a919c;margin-bottom:6px"><span>Buscando… avanza un diálogo en el juego</span><span>62 %</span></div>
+        <div class="prog"><i style="width:62%"></i></div>
+      </div>
+
+      <div class="panel" style="left:510px;top:248px;width:746px;height:404px">
+        <div class="ptitle">Resultados <span class="badge">3</span><span class="sp"></span><small>Pulsa «Probar» para verlo en vivo antes de añadirlo</small></div>
+        <div class="res"><span class="mono">HQ-14*@44FA10:shirogane.exe</span><span class="act"><span class="ub sm">Probar</span><span class="ub sm acc">Añadir</span></span><span class="pv jp">美雪「……ねえ、<mark>まだ起きてる</mark>？」</span></div>
+        <div class="res"><span class="mono">HW-8*@0:gdi32.dll</span><span class="act"><span class="ub sm">Probar</span><span class="ub sm">Añadir</span></span><span class="pv jp">……ねねええ、、<mark>ままだだ起起ききててるる</mark>？？</span></div>
+        <div class="res"><span class="mono">HQN-4@4A21C0:shirogane.exe</span><span class="act"><span class="ub sm">Probar</span><span class="ub sm">Añadir</span></span><span class="pv jp">「……ねえ、<mark>まだ起きてる</mark>？」</span></div>
+        <div style="margin-top:14px;padding:12px 14px;border-radius:14px;background:rgba(95,110,135,.08);font-size:14px;color:#6a7282;line-height:1.5">
+          ¿Ya tienes un código de otra web o de LunaHook? Ponlo en <b style="color:#8a5cd6">Código H</b>. Los hooks añadidos aparecen en <b style="color:#00A0D8">Hilos</b>.</div>
+      </div>
+      <div class="mk" style="left:462px;top:82px">1</div>
+      <div class="mk" style="left:12px;top:238px">2</div>
+      <div class="mk" style="left:498px;top:238px">3</div>
+    </div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Seis secciones</b>Hilos, Código H, Buscar hook, Filtros, Salida y Proceso. Cada una tiene su color, como los iconos de la consola.</li>
+      <li><b>Búsqueda por texto</b>Escribes un trozo de la frase que ves en pantalla y LunaHook busca qué función la maneja. También admite búsqueda por patrón y búsqueda profunda.</li>
+      <li><b>Probar antes de añadir</b>Cada resultado se puede probar en vivo, y lo que añades queda en la lista de hilos.</li>
+    </ol><p class="now"><strong>A favor:</strong> es la más ordenada y deja mucho espacio a las funciones avanzadas. <strong>En contra:</strong> el hilo en uso no se ve mientras estás en otra sección. Se podría añadir una tira fija abajo con la línea actual.</p></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 4 -->
+<section class="p" id="p4">
+  <h2><span class="n">4</span>Asistente por pasos</h2>
+  <p class="why">Para no tener que pensar en hooks: la app recomienda el hilo según cuánto japonés tiene y si duplica caracteres. Si el juego ya tiene un hook guardado, el asistente se salta directamente a la lectura.</p>
+  <div class="row">
+    <div class="frame"><div class="stage" style="--acc:#3F63E0">
+      <div class="bg"><div class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></div><div class="blob a" style="left:760px;top:380px;width:520px;height:400px"></div></div>
+      <div class="glass avatar"><div class="face"><b class="jp">あ</b></div></div>
+      <div class="crumb pill">Texthook <span class="sep">›</span> <span class="cur jp">白銀の約束</span></div>
+      <div class="proc pill"><span class="dot"></span>shirogane.exe <small>· 32 bits</small></div>
+
+      <div class="panel" style="left:24px;top:92px;width:300px;height:560px">
+        <div class="step done"><span class="c">✓</span><div><b>Lanzar juego</b><small>Inyectado al arrancar</small></div></div>
+        <div class="step cur"><span class="c">2</span><div><b>Elegir hilo</b><small>Avanza 2 o 3 diálogos en el juego</small></div></div>
+        <div class="step"><span class="c">3</span><div><b>Limpiar texto</b><small>Filtros con vista previa</small></div></div>
+        <div class="step"><span class="c">4</span><div><b>Leer</b><small>Abre la página de lectura y guarda el hook</small></div></div>
+        <div style="position:absolute;left:16px;right:16px;bottom:16px;padding:12px 14px;border-radius:14px;background:rgba(95,110,135,.08);font-size:14px;color:#6a7282;line-height:1.45">
+          ¿Ningún hilo sirve?<br><b style="color:var(--acc)">Buscar hook</b> · <b style="color:var(--acc)">Código H</b> · <b style="color:var(--acc)">Modo avanzado</b></div>
+      </div>
+
+      <div class="panel" style="left:340px;top:92px;width:916px;height:560px;padding:22px 26px">
+        <div style="font-size:24px;font-weight:800;color:#3a414e">Elige el hilo con el texto de la novela</div>
+        <div style="font-size:15px;color:#7a8291;margin:4px 0 16px">Hemos encontrado 7 hilos. Este es el que más se parece a texto de diálogo:</div>
+        <div class="reco">
+          <div class="th"><span class="chip">Recomendado</span>SiglusEngine <span class="mono">HQ-14*@44FA10</span><span style="flex:1"></span><span class="badge g">98 % japonés</span><span class="badge g">sin duplicados</span><span class="badge g">frases completas</span></div>
+          <div class="hist jp" style="font-size:19px">
+            <p><span class="who">美雪</span>「……ねえ、まだ起きてる？」</p>
+            <p class="last"><span class="who">美雪</span>「明日、駅まで一緒に行ってくれないかな」</p>
+          </div>
+        </div>
+        <div class="lbl" style="margin:18px 0 6px">Otros candidatos</div>
+        <div>
+          <div class="cand"><b>GetGlyphOutlineW</b><span class="pv jp">明明日日、、駅駅ままでで…</span><span class="score"><span class="bar"><i style="width:55%;--c:#F2B807"></i></span>55</span></div>
+          <div class="cand"><b>SiglusEngine (1C)</b><span class="pv jp">美雪</span><span class="score"><span class="bar"><i style="width:30%"></i></span>30</span></div>
+          <div class="cand"><b>GetTextExtentPoint32W</b><span class="pv jp">明 日 、</span><span class="score"><span class="bar"><i style="width:18%"></i></span>18</span></div>
+        </div>
+        <div style="position:absolute;left:26px;right:26px;bottom:22px;display:flex;gap:10px;align-items:center">
+          <span class="ub">‹ Atrás</span><span style="flex:1"></span><span class="ub ghost-b">Ver los 7 hilos</span><span class="ub acc">Usar este y continuar ›</span></div>
+      </div>
+      <div class="mk" style="left:12px;top:150px">1</div>
+      <div class="mk" style="left:356px;top:170px">2</div>
+      <div class="mk" style="left:318px;top:372px">3</div>
+    </div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Cuatro pasos</b>Lanzar, elegir hilo, limpiar y leer. Con un juego que ya tiene hook guardado se pasa directo al paso 4.</li>
+      <li><b>Recomendación automática</b>Cada hilo se puntúa por proporción de kana/kanji, caracteres duplicados, longitud de las líneas y frecuencia. Es sencillo de calcular en la app.</li>
+      <li><b>Alternativas a mano</b>Los demás hilos ordenados por puntuación y, si nada sirve, acceso a búsqueda, código H o al modo avanzado (la propuesta 1).</li>
+    </ol><p class="now"><strong>A favor:</strong> la más cómoda para el día a día: lanzas el juego y en dos clics estás leyendo. <strong>En contra:</strong> necesita otra vista «avanzada» para el resto de funciones; combina bien con la 1 o la 3.</p></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 5 -->
+<section class="p" id="p5">
+  <h2><span class="n">5</span>Barra lateral + lectura</h2>
+  <p class="why">Si la página de lectura va en el mismo segundo monitor, la configuración se queda en una columna estrecha a la izquierda y el navegador con el diccionario ocupa el resto. Las secciones se pliegan como acordeones.</p>
+  <div class="row">
+    <div class="frame"><div class="stage" style="--acc:#d14fb2">
+      <div class="bg"><div class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></div><div class="blob a" style="left:-100px;top:400px;width:500px;height:400px"></div></div>
+
+      <div class="side">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+          <div class="glass" style="position:relative;width:52px;height:52px;--r:14px;--bw:5px"><div class="face" style="background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white),var(--acc));display:grid;place-items:center"><b class="jp" style="font-size:24px;color:#fff;font-weight:800">あ</b></div></div>
+          <div><div class="jp" style="font-size:19px;font-weight:800;color:#3a414e">白銀の約束</div><div style="font-size:13px;font-weight:700;color:#8a919c;display:flex;align-items:center;gap:6px"><span class="dot"></span>shirogane.exe · 32 bits</div></div>
+        </div>
+        <div class="lbl">Hilo en uso</div>
+        <div class="cur-thr" style="margin-bottom:8px">
+          <div class="t">SiglusEngine<span class="sp"></span><span class="mono">HQ-14*@44FA10</span></div>
+          <div class="pv jp">美雪「明日、駅まで一緒に行ってくれないかな」</div>
+        </div>
+        <div class="acc-h open">Hilos <span class="badge">7</span><span class="sp"></span><span class="chev">▴</span></div>
+        <div class="acc-b">
+          <div class="thr hov" style="margin:6px -6px 2px"><i class="live on"></i><span class="nm">GetGlyphOutlineW</span><span class="badge">1.024</span><span class="pv jp">明明日日、、駅駅…</span></div>
+          <div class="thr" style="margin:0 -6px 2px"><i class="live on"></i><span class="nm">SiglusEngine (1C)</span><span class="badge">41</span><span class="pv jp">美雪</span></div>
+        </div>
+        <div class="acc-h">Filtros <span class="badge a">3 activos</span><span class="sp"></span><span class="chev">▾</span></div>
+        <div class="acc-h">Código H<span class="sp"></span><span class="chev">▾</span></div>
+        <div class="acc-h">Buscar hook<span class="sp"></span><span class="chev">▾</span></div>
+        <div class="acc-h">Proceso<span class="sp"></span><span class="chev">▾</span></div>
+        <div style="position:absolute;left:18px;right:18px;bottom:18px;display:flex;flex-direction:column;gap:10px">
+          <div class="opt"><span class="tg on"></span>Copiar al portapapeles</div>
+          <span class="ub acc" style="justify-content:center">Guardar hook para este juego</span>
+        </div>
+      </div>
+
+      <div class="bwin">
+        <div class="bar"><i>●●●</i>Lectura · <span class="jp">白銀の約束</span><span class="sp"></span>localhost:6677</div>
+        <div class="read jp">
+          <p>窓の外では、雪が音もなく<span class="hl">降り</span>続いていた。</p>
+          <p>僕は布団の中で小さく息を吐いて、返事をするかどうか迷う。</p>
+          <p>美雪「……ねえ、まだ起きてる？」</p>
+          <p class="last">美雪「明日、駅まで一緒に行ってくれないかな」</p>
+        </div>
+      </div>
+      <div class="dict" style="left:730px;top:150px">
+        <div class="w jp">降る<small>ふる</small></div>
+        <div class="tags"><span>verbo godan</span><span>intransitivo</span><span>común</span></div>
+        <ol><li>caer (lluvia, nieve…); llover, nevar</li><li>venir en abundancia</li></ol>
+        <div style="font-size:12px;color:#8a919c;margin-top:6px" class="jp">降り続く ← 降る (forma -masu)</div>
+      </div>
+      <svg class="cursor" style="left:762px;top:104px" viewBox="0 0 22 30"><path d="M2 2v22l6-6 4 9 4-2-4-9h8z" fill="#fff" stroke="#222" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      <div class="mk" style="left:370px;top:118px">1</div>
+      <div class="mk" style="left:370px;top:214px">2</div>
+      <div class="mk" style="left:410px;top:16px">3</div>
+    </div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Hilo en uso arriba</b>Siempre visible, con la última línea. Debajo, todo lo demás en acordeones.</li>
+      <li><b>Acordeones</b>Hilos, Filtros, Código H, Buscar hook y Proceso. Solo se abre uno a la vez para que quepa en 400 px de ancho.</li>
+      <li><b>Lectura al lado</b>El navegador en modo app (Edge/Chrome con Yomitan) se coloca solo a la derecha en el mismo monitor. El popup del diccionario es de Yomitan; aquí solo está imitado.</li>
+    </ol><p class="now"><strong>A favor:</strong> aprovecha un único segundo monitor para todo y se puede dejar abierta mientras lees. <strong>En contra:</strong> menos espacio para la búsqueda de hooks; esa sección podría abrirse en grande cuando se necesite.</p></aside>
+  </div>
+</section>
+
+</div>
+<script>
+function fit(){document.querySelectorAll('.frame').forEach(f=>{f.firstElementChild.style.transform=`scale(${f.clientWidth/1280})`})}
+addEventListener('resize',fit);fit();
+</script>
+</body>
+</html>

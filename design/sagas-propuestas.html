@@ -1,0 +1,1139 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sagas de juegos · 4 propuestas de diseño · Visor de capturas</title>
+<style>
+/* Fuente de la app (M PLUS Rounded 1c, SIL OFL). Se carga desde src/assets/fonts si el archivo se abre dentro del proyecto;
+   si no, cae a Nunito / Segoe UI como la propia app. */
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:400;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-400-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:500;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-500-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:700;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-700-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:800;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-800-latin.woff2') format('woff2')}
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+
+/* =====================================================================================
+   COPIA LITERAL de src/app.css (líneas 9-374), con #stage → .stage para poder tener
+   varios escenarios 1280×720 en la misma página. No editar aquí: es la referencia visual.
+   ===================================================================================== */
+/* ---------- Stage (fixed light world) ---------- */
+.stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;outline:none;
+  font-family:var(--round);color:#3a414e;background:#eceef2;--acc:#00A0D8;--acc-ink:#fff;user-select:none;-webkit-user-select:none}
+.stage:focus-visible{box-shadow:inset 0 0 0 4px var(--acc)}
+.bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(34px);opacity:.9;animation:drift 26s ease-in-out infinite alternate}
+.blob.w{background:radial-gradient(circle,rgba(255,255,255,1),rgba(255,255,255,0) 70%)}
+.blob.a{background:radial-gradient(circle,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%);opacity:.55;transition:background .6s}
+.ghost{position:absolute;width:118px;height:118px;border-radius:28px;padding:10px;box-sizing:border-box;background:rgba(255,255,255,.7);box-shadow:0 0 0 1px rgba(120,130,150,.25),0 10px 18px -10px rgba(40,50,70,.4);filter:blur(5px)}
+.ghost i{display:block;width:100%;height:100%;border-radius:18px;background:linear-gradient(160deg,color-mix(in srgb,var(--g) 30%,white),var(--g))}
+.bokeh{position:absolute;border-radius:50%;filter:blur(2px)}
+@keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(60px,-30px) scale(1.15)}}
+.screen{position:absolute;inset:0}
+
+/* glass frame: the core Wii U trait */
+/* Translucent acrylic case: blurred backdrop shows through the rim, bright top edge, caustic glow along the bottom,
+   one gloss arc that runs across rim AND content, and a sunken content well. */
+.glass{position:absolute;--r:28px;--bw:10px;border-radius:var(--r);padding:var(--bw);box-sizing:border-box;cursor:pointer;isolation:isolate;
+  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  -webkit-backdrop-filter:blur(14px) saturate(1.7);backdrop-filter:blur(14px) saturate(1.7);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,1),
+    inset 0 0 0 1px rgba(255,255,255,.55),
+    inset 0 -10px 14px -8px rgba(255,255,255,.95),
+    inset 0 -1.5px 0 rgba(110,125,150,.30),
+    0 0 0 1px rgba(95,110,135,.24),
+    0 2px 3px rgba(40,50,70,.10),
+    0 18px 30px -16px rgba(40,50,70,.42);
+  transition:transform .24s cubic-bezier(.34,1.32,.64,1),box-shadow .24s ease,background .24s ease}
+/* gloss arc over the whole case, content included */
+.glass::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;
+  border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.62) 0%,rgba(255,255,255,.20) 55%,rgba(255,255,255,0) 100%);
+  -webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.85}
+/* small specular glint on the upper-left rim */
+.glass::after{content:'';position:absolute;z-index:3;left:12%;top:3px;width:34%;height:5px;border-radius:5px;pointer-events:none;
+  background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,1) 40%,rgba(255,255,255,0));filter:blur(.6px);opacity:.9}
+.glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:#dfe3e9}
+.glass .face::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(20,30,50,.20),inset 0 3px 6px -2px rgba(0,0,0,.35),inset 0 -2px 4px -2px rgba(255,255,255,.5)}
+.glass .face img{width:100%;height:100%;object-fit:cover;display:block}
+.glass.f{transform:scale(1.06);z-index:3;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)) 0%,color-mix(in srgb,var(--acc) 72%,transparent) 55%,color-mix(in srgb,var(--acc) 92%,black) 100%);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,.95),
+    inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),
+    inset 0 -10px 14px -8px color-mix(in srgb,var(--acc) 30%,white),
+    0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),
+    0 0 26px 2px color-mix(in srgb,var(--acc) 50%,transparent),
+    0 22px 34px -16px color-mix(in srgb,var(--acc) 70%,black)}
+.glass.bump{animation:bump .18s ease-out}
+@keyframes bump{0%,100%{translate:0 0}40%{translate:var(--bx,0) var(--by,0)}}
+/* shared glass pill for crumbs, hints, info */
+.pill{-webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);
+  background:linear-gradient(180deg,rgba(255,255,255,.80),rgba(255,255,255,.52));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+@keyframes enterFwd{from{opacity:0;transform:scale(.965)}to{opacity:1;transform:none}}
+@keyframes enterBack{from{opacity:0;transform:scale(1.035)}to{opacity:1;transform:none}}
+.screen.fwd{animation:enterFwd .28s cubic-bezier(.2,.8,.3,1)}
+.screen.back{animation:enterBack .28s cubic-bezier(.2,.8,.3,1)}
+
+/* top bar */
+.top{position:absolute;left:0;right:0;top:0;height:76px;z-index:5}
+.avatar{left:22px;top:12px;width:60px;height:60px;--r:16px;--bw:5px;cursor:default}
+.avatar .face{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white),var(--acc));display:grid;place-items:center;transition:background .4s}
+.crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:20px;font-weight:700;color:#4a5260}
+.crumb .sep{color:#a3abb8;font-weight:500}
+.crumb .cur{color:var(--acc);transition:color .3s}
+.dots{position:absolute;left:50%;top:20px;transform:translateX(-50%);display:flex;gap:8px}
+.dots i{width:14px;height:14px;border-radius:4px;background:rgba(160,168,182,.55);box-shadow:inset 0 1px 0 rgba(255,255,255,.6);transition:all .25s}
+.dots i.on{width:22px;background:var(--acc)}
+.clock{position:absolute;right:24px;top:24px;display:flex;gap:14px;align-items:center;font-size:20px;font-weight:700;color:#4a5260}
+.clock small{font-size:15px;font-weight:500;color:#7a8291}
+.batt{display:flex;gap:2px;align-items:center}
+.batt b{width:6px;height:13px;border-radius:2px;background:var(--acc)}
+.batt b.off{background:#c3c9d3}
+
+/* hints */
+.hints{position:absolute;right:22px;bottom:16px;display:flex;gap:10px;z-index:5}
+.hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:999px;font-size:16px;font-weight:700;color:#4a5260;cursor:pointer}
+.btn{min-width:28px;height:28px;border-radius:14px;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;--b:#4a5260;padding:0 6px;box-sizing:border-box;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--b) 70%,black),0 1px 2px rgba(0,0,0,.2);text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.btn.a{--b:#3BB54A}.btn.b{--b:#E8384F}.btn.x{--b:#3F63E0}.btn.y{--b:#F2B807;color:#3a2f00;text-shadow:none}
+.btn.sh{border-radius:8px;--b:#6b7383}
+
+/* home */
+.plat{width:300px;height:300px;--r:46px;--bw:14px}
+.plat .face{background:radial-gradient(120% 100% at 30% 10%,color-mix(in srgb,var(--pc) 22%,white) 0%,var(--pc) 70%,color-mix(in srgb,var(--pc) 80%,black) 100%);display:grid;place-items:center}
+.plat svg{width:62%;height:62%;filter:drop-shadow(0 2px 0 rgba(0,0,0,.10)) drop-shadow(0 8px 12px rgba(0,0,0,.22))}
+.plabel{position:absolute;width:300px;text-align:center;font-size:28px;font-weight:800;color:#4a5260;transition:color .2s}
+.plabel small{display:block;font-size:17px;font-weight:500;color:#7c8492;margin-top:2px}
+.plabel.on{color:var(--pc)}
+.dock{width:72px;height:72px;--r:20px;--bw:6px}
+.dock .face{background:linear-gradient(180deg,color-mix(in srgb,var(--dc) 25%,white),var(--dc) 72%);display:grid;place-items:center}
+.dock svg{width:58%;height:58%}
+.dtip{position:absolute;padding:6px 14px;border-radius:999px;background:#3a414e;color:#fff;font-size:16px;font-weight:700;white-space:nowrap;transform:translateX(-50%);opacity:0;transition:opacity .15s;pointer-events:none}
+.dtip.on{opacity:1}
+.sect{position:absolute;font-size:18px;font-weight:800;color:#6a7282;letter-spacing:.02em}
+.recent{width:212px;height:131px;--r:18px;--bw:6px}
+.recent .face{border-radius:13px}
+.tag{position:absolute;left:8px;bottom:8px;font-size:12px;font-weight:700;color:#fff;background:rgba(20,25,35,.6);padding:2px 8px;border-radius:999px}
+
+/* titles grid */
+.ttrack{position:absolute;left:0;top:0;height:100%;transition:transform .35s cubic-bezier(.25,1,.4,1)}
+.cover{width:176px;height:236px;--r:24px;--bw:9px}
+.cover .face{border-radius:16px}
+.thead{position:absolute;left:96px;top:92px;right:96px;display:flex;align-items:baseline;gap:14px;font-size:26px;font-weight:800;color:#3a414e;white-space:nowrap;overflow:hidden}
+.thead span{font-size:18px;font-weight:600;color:#7c8492}
+.thead .chip{font-size:15px;font-weight:700;color:var(--acc-ink);background:var(--acc);padding:3px 12px;border-radius:999px;align-self:center}
+.side{position:absolute;top:300px;width:56px;height:110px;cursor:pointer;z-index:4;filter:drop-shadow(0 8px 10px rgba(40,50,70,.25));transition:opacity .2s}
+.side svg{width:100%;height:100%}
+.side.off{opacity:0;pointer-events:none}
+
+/* carousel */
+.cbg{position:absolute;inset:-60px;background-size:cover;background-position:center;filter:blur(40px) saturate(1.2);opacity:.45;transition:background-image .4s}
+.ctrack{position:absolute;left:0;top:200px;height:320px;transition:transform .32s cubic-bezier(.25,1,.4,1)}
+.ccover{width:200px;height:266px;--r:26px;--bw:10px;top:20px}
+.ccover:not(.f){opacity:.78}
+.ccover.f{transform:scale(1.32)}
+.cinfo{position:absolute;left:0;right:0;top:560px;text-align:center}
+.cinfo h3{margin:0;font-size:34px;font-weight:800;color:#3a414e}
+.cinfo p{margin:4px 0 0;font-size:18px;color:#6f7787;font-weight:500}
+
+/* shots grid */
+.ghead{position:absolute;left:68px;right:68px;top:90px;height:70px;display:flex;align-items:center;gap:18px}
+.mini{position:relative;width:52px;height:70px;--r:12px;--bw:4px;cursor:default;flex:none}
+.ghead h3{margin:0;font-size:28px;font-weight:800;color:#3a414e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ghead .chip{font-size:15px;font-weight:700;color:var(--acc-ink);background:var(--acc);padding:4px 12px;border-radius:999px;white-space:nowrap}
+.ghead .soft{font-size:15px;font-weight:700;color:#5a6270;background:rgba(255,255,255,.75);box-shadow:0 0 0 1px rgba(150,160,180,.35);padding:4px 12px;border-radius:999px;white-space:nowrap}
+.ghead .date{margin-left:auto;font-size:17px;color:#6f7787;font-weight:600;white-space:nowrap}
+.gview{position:absolute;left:0;right:0;top:172px;height:480px;overflow:hidden;-webkit-mask-image:linear-gradient(transparent 0,#000 18px,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(transparent 0,#000 18px,#000 calc(100% - 22px),transparent)}
+.gtrack{position:absolute;left:0;right:0;top:0;transition:transform .28s cubic-bezier(.25,1,.4,1)}
+.shot{width:266px;height:162px;--r:18px;--bw:6px}
+.shot .face{border-radius:13px}
+.star{position:absolute;right:8px;top:8px;width:26px;height:26px;display:none}
+.shot.fav .star,.vstar.on{display:block}
+.sbar{position:absolute;right:30px;top:190px;width:6px;height:440px;border-radius:3px;background:rgba(160,168,182,.35)}
+.sbar i{position:absolute;left:0;right:0;border-radius:3px;background:var(--acc);transition:top .28s}
+
+/* viewer */
+.vw{position:absolute;inset:0;background:#1a1d24;overflow:hidden}
+.vbg{position:absolute;inset:-80px;background-size:cover;background-position:center;filter:blur(60px) brightness(.62) saturate(1.3)}
+.vw::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(0,0,0,.45))}
+.vframe{position:absolute;left:148px;top:66px;width:984px;height:553px;--r:22px;--bw:7px;cursor:default;transform:none !important}
+.vframe .face{border-radius:16px;background:#000}
+.vframe::before,.vthumb::before{display:none}
+.vframe img{position:absolute;inset:0}
+.vframe img.in-r{animation:inr .26s cubic-bezier(.25,1,.4,1)}
+.vframe img.in-l{animation:inl .26s cubic-bezier(.25,1,.4,1)}
+@keyframes inr{from{transform:translateX(70px);opacity:0}to{transform:none;opacity:1}}
+@keyframes inl{from{transform:translateX(-70px);opacity:0}to{transform:none;opacity:1}}
+.varrow{position:absolute;top:304px;width:76px;height:76px;border-radius:50%;cursor:pointer;display:grid;place-items:center;z-index:4;
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.18));-webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 -8px 12px -8px rgba(255,255,255,.8),0 0 0 1px rgba(255,255,255,.35),0 12px 24px -10px rgba(0,0,0,.6);transition:opacity .3s,transform .15s}
+.varrow:active{transform:scale(.94)}
+.varrow svg{width:34px;height:34px}
+.varrow.dis{opacity:.25}
+.vinfo{position:absolute;left:50%;top:14px;transform:translateX(-50%);display:flex;gap:14px;align-items:center;height:38px;padding:0 18px;border-radius:999px;font-size:17px;font-weight:700;color:#3a414e;white-space:nowrap;z-index:4;transition:opacity .3s}
+.vinfo .n{color:var(--acc);font-size:19px}
+.vinfo .dim{color:#7c8492;font-weight:600}
+.vstar{width:22px;height:22px;display:none}
+.vstrip{position:absolute;left:0;right:0;bottom:0;height:82px;z-index:4;transition:opacity .3s;overflow:hidden;
+  background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.04));-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
+.vtrack{position:absolute;top:0;left:0;height:100%;transition:transform .26s cubic-bezier(.25,1,.4,1)}
+.vthumb{width:104px;height:62px;--r:11px;--bw:4px;top:10px}
+.vthumb:not(.f){opacity:.72}
+.vthumb .face{border-radius:8px}
+.vthumb.f{transform:scale(1.12)}
+.vw .hints{top:14px;bottom:auto;right:24px;transition:opacity .3s}
+.vw .hint{height:34px;font-size:15px}
+.vw.idle .vinfo,.vw.idle .vstrip,.vw.idle .varrow,.vw.idle .hints{opacity:0}
+#toast{position:absolute;left:50%;bottom:74px;transform:translate(-50%,10px);padding:10px 20px;border-radius:999px;background:rgba(40,46,58,.78);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 10px 24px -10px rgba(0,0,0,.5);color:#fff;font-size:17px;font-weight:700;opacity:0;transition:all .2s;z-index:9;pointer-events:none;white-space:nowrap}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion: reduce){.blob{animation:none}.glass,.ttrack,.ctrack,.gtrack,.vtrack{transition:none}.vframe img{animation:none!important}}
+
+/* ---------- Añadidos de la app (no estaban en el mockup) ---------- */
+.screen > *{will-change:auto}
+.note{position:absolute;transform:translateX(-50%);max-width:900px;padding:10px 22px;border-radius:999px;font-size:17px;font-weight:600;color:#4a5260;text-align:center;white-space:nowrap;z-index:6}
+.glass img{user-select:none;-webkit-user-drag:none}
+.mini .mstar{display:grid;place-items:center;width:100%;height:100%;background:linear-gradient(180deg,#9aa3b3,#7a8291)}
+.mini .mstar svg{width:70%;height:70%}
+.shot .face,.cover .face,.vthumb .face{background:linear-gradient(160deg,#e6e9ee,#d3d8e0)}
+
+/* paneles de mensaje (bienvenida, plataforma vacia) */
+.welcome{width:800px;height:390px;--r:40px;--bw:14px;cursor:pointer}
+.note-card{width:680px;height:260px;--r:40px;--bw:14px;cursor:default}
+.welcome .face,.note-card .face{background:rgba(247,249,252,.93);padding:26px 38px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#3a414e}
+.welcome h2,.note-card h2{margin:0;font-size:30px;font-weight:800;color:#3a414e}
+.welcome p,.note-card p{margin:0;font-size:18px;font-weight:500;color:#5a6270;line-height:1.35}
+.welcome pre{margin:6px 0;padding:10px 18px;border-radius:14px;background:rgba(40,50,70,.08);font:600 15px/1.5 var(--round);color:#3a414e;text-align:left}
+.wicon{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,white),var(--acc));margin-bottom:2px}
+.wicon svg{width:60%;height:60%}
+.wgo{display:flex;gap:8px;align-items:center;font-weight:800 !important;color:var(--acc) !important;margin-top:4px !important}
+
+/* ajustes */
+.scrim{position:absolute;inset:0;z-index:20;background:rgba(236,238,242,.55);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.setpanel{left:300px;top:50px;width:680px;height:610px;--r:40px;--bw:14px;cursor:default}
+.setpanel .face{background:rgba(247,249,252,.94);padding:20px 26px;display:flex;flex-direction:column;gap:6px;color:#3a414e}
+.setpanel h2{margin:0 0 6px;font-size:28px;font-weight:800}
+.srow{display:flex;align-items:center;gap:14px;height:54px;padding:0 20px;border-radius:18px;font-size:19px;font-weight:700;cursor:pointer;color:#4a5260;transition:background .15s,color .15s,transform .15s}
+.srow .sl{flex:1;white-space:nowrap}
+.srow .sv{max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:#7c8492}
+.srow.f{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)),var(--acc));color:var(--acc-ink);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 8px 16px -8px color-mix(in srgb,var(--acc) 70%,black);transform:scale(1.02)}
+.srow.f .sv{color:inherit;opacity:.92}
+.sw{display:flex;gap:6px}
+.sw i{width:18px;height:18px;border-radius:6px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.8),0 0 0 1px rgba(60,70,90,.25)}
+.sw i.rb{background:conic-gradient(#E8384F,#F27A1A,#F2B807,#3BB54A,#00A0D8,#3F63E0,#9A4BD8,#E8384F)}
+.sw i.sel{outline:3px solid #3a414e;outline-offset:1px}
+.srow.f .sw i.sel{outline-color:#fff}
+.scrim .hints{position:absolute;right:22px;bottom:16px}
+.vinfo{max-width:540px}
+.vinfo .vt{overflow:hidden;text-overflow:ellipsis;max-width:230px}
+.welcome::before,.note-card::before,.setpanel::before,.menupanel::before,.formpanel::before,.oskpanel::before{opacity:.3}
+.welcome::after,.note-card::after,.setpanel::after,.menupanel::after,.formpanel::after,.oskpanel::after{opacity:.5}
+
+/* ---------- Lanzador: ajustes con desplazamiento, menu de acciones, formulario ---------- */
+.setpanel .face{position:relative;padding-bottom:14px}
+.slist{position:relative;overflow:hidden;flex:none}
+.strack{padding:4px 3px;transition:transform .22s cubic-bezier(.25,1,.4,1)}
+.strack .srow{height:48px;margin-bottom:4px;font-size:18px}
+.sscroll{position:absolute;right:10px;top:70px;bottom:20px;width:5px;border-radius:3px;background:rgba(160,168,182,.3)}
+.sscroll i{position:absolute;left:0;right:0;border-radius:3px;background:var(--acc)}
+.menupanel{left:430px;width:420px;--r:36px;--bw:14px;cursor:default}
+.menupanel .face{background:rgba(247,249,252,.94);padding:18px 22px 14px;display:flex;flex-direction:column;gap:4px;color:#3a414e}
+.menupanel h2{margin:0;font-size:26px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msub{margin:0 0 8px;font-size:15px;font-weight:600;color:#7c8492;height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrow{height:54px}
+.mic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;flex:none;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,white),var(--acc));box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
+.mic svg{width:62%;height:62%}
+.srow.f .mic{background:rgba(255,255,255,.9);box-shadow:none}
+.srow.f .mic svg path,.srow.f .mic svg circle{fill:var(--acc);stroke:var(--acc)}
+.srow.f .mic svg[fill=none] path{fill:none}
+.mrow.danger .mic{background:linear-gradient(180deg,#f58a98,#E8384F)}
+.formpanel{left:250px;width:780px;--r:40px;--bw:14px;cursor:default}
+.formpanel .face{background:rgba(247,249,252,.96);padding:20px 26px;display:flex;flex-direction:column;gap:6px;color:#3a414e}
+.formpanel h2{margin:0 0 6px;font-size:28px;font-weight:800}
+.formpanel .srow{height:52px}
+.formpanel .fl{flex:none;width:190px}
+.formpanel .sv{flex:1;text-align:right;max-width:none}
+.formpanel input{flex:1;min-width:0;height:36px;border:0;border-radius:12px;padding:0 14px;font:600 17px var(--round);color:#3a414e;background:rgba(255,255,255,.85);box-shadow:inset 0 0 0 1px rgba(95,110,135,.3);outline:none}
+.formpanel input:focus{box-shadow:inset 0 0 0 2px #3a414e}
+.formpanel .srow.save{margin-top:6px;justify-content:center;font-weight:800}
+.formpanel .srow.save .sl{flex:none;width:auto}
+.fhint{margin:auto 4px 0;font-size:15px;font-weight:500;color:#7c8492}
+.noart{position:absolute;inset:0;display:grid;place-items:center;padding:12px;text-align:center;background:linear-gradient(160deg,color-mix(in srgb,var(--acc) 26%,white),color-mix(in srgb,var(--acc) 70%,#6b7383));color:#fff}
+.noart b{font-size:19px;font-weight:800;line-height:1.15;text-shadow:0 2px 6px rgba(0,0,0,.35);display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.ccover .noart b{font-size:22px}
+.pbadge{position:absolute;right:7px;top:7px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 2px rgba(255,255,255,.85),0 3px 8px rgba(0,0,0,.35)}
+.pbadge svg{width:58%;height:58%;margin-left:2px}
+
+/* ---------- ficha del juego (variante C · Wii U) ---------- */
+.static{cursor:default}
+.banner{left:64px;top:88px;width:922px;height:300px;--r:32px;--bw:10px;transform:none!important}
+.banner .face img.hero{width:100%;height:100%;object-fit:cover;object-position:center 28%;display:block}
+.banner .face .hfb{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(16px) brightness(.55) saturate(1.25);transform:scale(1.3)}
+.banner .face .hfb.plain{filter:none;transform:none;background:linear-gradient(150deg,color-mix(in srgb,var(--acc) 55%,#1b2030),color-mix(in srgb,var(--acc) 30%,#0e1220))}
+.banner .face .bshade{position:absolute;inset:0;background:linear-gradient(0deg,rgba(8,10,18,.38),rgba(8,10,18,0) 48%);pointer-events:none}
+.dlogo{position:absolute;left:100px;bottom:346px;max-width:440px;max-height:112px;object-fit:contain;object-position:left bottom;filter:drop-shadow(0 6px 14px rgba(0,0,0,.5));z-index:5;pointer-events:none}
+.dlogo.txt{font-size:54px;font-weight:800;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.6),0 1px 2px rgba(0,0,0,.5);max-width:600px;max-height:none;line-height:1.08;filter:none;overflow-wrap:anywhere}
+.dlogo.txt.sm{font-size:40px}
+.dcover{left:1016px;top:88px;width:200px;height:300px;--r:26px;--bw:9px;z-index:4}
+.play{--r:30px;--bw:8px;left:64px;top:408px;width:290px;height:112px}
+.play .face{display:flex;align-items:center;gap:18px;padding:0 24px;box-sizing:border-box;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white) 0%,var(--acc) 62%,color-mix(in srgb,var(--acc) 85%,black) 100%);color:var(--acc-ink)}
+.play .pi{flex:none;width:50px;height:50px;border-radius:50%;background:linear-gradient(180deg,#fff,#e8edf3);display:grid;place-items:center;box-shadow:inset 0 -2px 3px rgba(0,0,0,.12),0 3px 8px rgba(0,0,0,.25)}
+.play .pi svg{width:22px;height:22px;margin-left:3px}
+.play .pi svg path{fill:var(--acc)}
+.play b{font-size:34px;font-weight:800;display:block;line-height:1.05;text-shadow:0 1px 2px rgba(0,0,0,.2)}
+.play small{font-size:15px;font-weight:600;opacity:.92;white-space:nowrap;font-variant-numeric:tabular-nums}
+.play.on .pi{animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(.86)}}
+.nolaunch{position:absolute;left:64px;top:408px;width:290px;height:112px;border-radius:30px;box-sizing:border-box;padding:0 24px;display:flex;flex-direction:column;justify-content:center;gap:2px;color:#8a92a0;cursor:default;
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(214,220,230,.4));box-shadow:inset 0 1px 0 rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.2),0 0 0 1px rgba(120,132,152,.25),0 10px 18px -12px rgba(40,50,70,.3)}
+.nolaunch b{font-size:24px;font-weight:800;color:#7a8291;line-height:1.1}
+.nolaunch small{font-size:15px;font-weight:600;color:#8f97a5}
+.dpanel{position:absolute;top:408px;height:112px;border-radius:26px;box-sizing:border-box;padding:12px 22px 18px;display:flex;flex-direction:column;justify-content:center}
+.hsub{font-size:15px;line-height:18px;font-weight:600;color:#7c8492;white-space:nowrap;margin:0 0 8px}
+.dhours{left:378px;width:400px}
+.dweek{left:802px;width:414px;padding:12px 20px 18px}
+.odo{display:flex;align-items:center;gap:6px;--ch:52px}
+.odo .c{width:42px;height:var(--ch);border-radius:10px;overflow:hidden;position:relative;background:linear-gradient(180deg,#fff,#eef2f7);box-shadow:inset 0 2px 4px rgba(0,0,0,.18),inset 0 -2px 0 rgba(255,255,255,.8),0 0 0 1px rgba(110,125,150,.25)}
+.odo .c::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(0,0,0,.10)}
+.odo .c b{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center;font-size:38px;font-weight:800;line-height:var(--ch);color:var(--acc);animation:roll 1.2s cubic-bezier(.2,.8,.3,1) both}
+@keyframes roll{from{transform:translateY(calc(var(--n) * var(--ch)))}to{transform:translateY(0)}}
+.odo .u{font-size:22px;font-weight:800;color:#5a6270;margin:0 8px 0 2px;align-self:flex-end;padding-bottom:6px}
+.chart{display:flex;flex-direction:column;gap:6px;height:100%;justify-content:center}
+.weekbars{display:flex;gap:22px;align-items:flex-end;height:46px}
+.weekbars i{display:block;width:30px;border-radius:5px 5px 3px 3px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 40%,white),var(--acc));box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
+.weekbars i.z{background:rgba(160,168,182,.35);box-shadow:none}
+.dsect{position:absolute;left:64px;top:532px;font-size:18px;font-weight:800;color:#5a6270}
+.dsect span{font-weight:600;color:#8a92a0;margin-left:8px}
+.dshot{top:560px;width:176px;height:99px;--r:16px;--bw:5px}
+.dshot .face{border-radius:12px}
+.dall{top:560px;height:99px;--r:16px;--bw:5px}
+.dall .face{display:grid;place-items:center;text-align:center;font-size:17px;font-weight:800;color:var(--acc);background:linear-gradient(180deg,#fff,color-mix(in srgb,var(--acc) 12%,white))}
+.dall .face span{display:block;font-size:13px;font-weight:600;color:#7c8492}
+.dnone{position:absolute;left:64px;top:566px;font-size:17px;font-weight:600;color:#8a92a0}
+@media (prefers-reduced-motion: reduce){.odo .c b{animation:none!important}}
+
+/* ---------- Añadir juegos, ocultos, capturas, acento por juego ---------- */
+.sw i.art{background:linear-gradient(135deg,#ffd166 0 34%,#ef476f 34% 67%,#118ab2 67%)}
+.srow.f .mic svg rect{stroke:var(--acc)}
+.srow.f .mic svg[fill=none] circle{fill:none}
+.srow .sl small{display:block;font-size:13px;font-weight:600;opacity:.72;margin-top:-1px}
+.mrow.addrow{height:60px}
+.addpanel{left:380px;width:520px}
+.cover.dim{opacity:.42;filter:saturate(.45)}
+.hbadge{position:absolute;left:8px;top:8px;width:30px;height:30px;border-radius:50%;background:rgba(40,46,58,.72);display:grid;place-items:center}
+.hbadge svg{width:64%;height:64%}
+.addtile .face{background:rgba(255,255,255,.62);display:grid;place-items:center;box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--acc) 55%,transparent)}
+.addtile .face::after{content:"";position:absolute;inset:10px;border-radius:12px;border:3px dashed color-mix(in srgb,var(--acc) 55%,transparent);pointer-events:none}
+.addin{display:flex;flex-direction:column;align-items:center;gap:12px;color:var(--acc)}
+.addin span{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,white),var(--acc));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7)}
+.addin span svg{width:58%;height:58%}
+.addin b{font-size:19px;font-weight:800;text-align:center;line-height:1.1;padding:0 8px;color:#4a5260}
+.ccover.addtile .addin b{font-size:22px}
+/* selección de capturas */
+.shot .chk{position:absolute;left:9px;top:9px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.55);box-shadow:inset 0 0 0 3px rgba(255,255,255,.95),0 2px 6px rgba(0,0,0,.25);display:grid;place-items:center}
+.shot .chk svg{width:62%;height:62%}
+.shot.checked .chk{background:var(--acc)}
+.shot.checked .face{box-shadow:inset 0 0 0 5px var(--acc)}
+.ghead .selchip{background:#3a414e}
+/* lista con desplazamiento (disponibles, ocultos, mover) */
+.pickpanel{height:auto}
+.pickpanel .msub{margin:0 4px 6px}
+.pickempty{margin:40px 20px;font-size:19px;font-weight:600;color:#7c8492;line-height:1.4;text-align:center}
+.srow.danger.f{background:linear-gradient(180deg,#f58a98,#E8384F);color:#fff}
+/* formulario ampliado */
+.frow .sv.ph{opacity:.55}
+.srow.f .sv.ph{opacity:.8}
+.formpanel .fhint{font-size:14px;line-height:1.35;margin-top:auto}
+/* teclado en pantalla */
+.oskscrim{z-index:40;background:rgba(236,238,242,.62)}
+.oskpanel{left:120px;top:96px;width:1040px;height:552px;--r:44px;--bw:14px;cursor:default}
+.oskpanel .face{background:rgba(247,249,252,.96);padding:20px 30px 18px;display:flex;flex-direction:column;gap:6px;color:#3a414e}
+.oskhead{display:flex;align-items:baseline;gap:16px;flex:none}
+.oskl{font-size:21px;font-weight:800;white-space:nowrap;flex:none}
+.oskin{flex:none;height:52px;border-radius:16px;background:#fff;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--acc) 70%,white);padding:0 18px;display:flex;align-items:center;font-size:26px;font-weight:700;color:#3a414e;overflow:hidden;white-space:pre}
+.oskin span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.caret{display:inline-block;width:3px;height:32px;margin-left:2px;border-radius:2px;background:var(--acc);animation:blink 1s steps(1) infinite;flex:none}
+@keyframes blink{50%{opacity:0}}
+.oskhint{margin:0;font-size:14px;font-weight:500;color:#7c8492;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;text-align:right}
+.oskgrid{display:flex;flex-direction:column;gap:8px;margin-top:8px;flex:none}
+.oskrow{display:grid;grid-template-columns:repeat(10,1fr);gap:8px}
+.key{height:56px;border-radius:18px;display:grid;place-items:center;font-size:28px;font-weight:700;color:#4a5260;cursor:pointer;
+  background:linear-gradient(180deg,#fff,#e9edf3);box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px rgba(110,122,145,.35),0 5px 9px -6px rgba(40,50,70,.45);transition:transform .12s,background .12s}
+.key.shift,.key.space,.key.bksp,.key.ok,.key.cancel{font-size:19px;font-weight:800}
+.key.f{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)),var(--acc));color:var(--acc-ink);transform:scale(1.06);position:relative;z-index:2;
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 9px 16px -8px color-mix(in srgb,var(--acc) 70%,black)}
+.key.on{box-shadow:inset 0 0 0 4px var(--acc),0 0 0 1px rgba(110,122,145,.35)}
+.key.f.on{box-shadow:inset 0 0 0 4px #fff,0 0 0 1px color-mix(in srgb,var(--acc) 75%,black)}
+/* selector de color de acento */
+.accpanel{left:330px;width:620px}
+.accrow{height:64px}
+.accrow .sv{flex:1;text-align:right;max-width:none}
+.dot{width:22px;height:22px;border-radius:7px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.85),0 0 0 1px rgba(60,70,90,.3);flex:none}
+.swl{display:flex;gap:10px;margin-left:auto}
+i.big{width:34px;height:34px;border-radius:11px;box-shadow:inset 0 0 0 3px rgba(255,255,255,.85),0 0 0 1px rgba(60,70,90,.3);cursor:pointer;display:block;transition:transform .12s}
+i.big.sel{outline:4px solid #3a414e;outline-offset:2px;transform:scale(1.08)}
+.srow.f i.big.sel{outline-color:#fff}
+.hbar{position:relative;flex:1;max-width:330px;height:24px;border-radius:12px;box-shadow:inset 0 0 0 3px rgba(255,255,255,.85),0 0 0 1px rgba(60,70,90,.3);margin-left:auto;cursor:pointer}
+.hthumb{position:absolute;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;box-shadow:0 0 0 4px #fff,0 0 0 5px rgba(60,70,90,.4),0 3px 8px rgba(0,0,0,.3);transition:left .06s}
+.accprev{display:flex;align-items:center;gap:14px;margin-top:auto;padding:0 4px}
+.accprev .chip{font-size:16px;font-weight:800;padding:5px 16px;border-radius:999px;white-space:nowrap}
+.accprev .fhint{margin:0;font-size:14px}
+
+/* =====================================================================================
+   NUEVO: piezas de las sagas (propuesta; mismas variables y lenguaje visual que app.css)
+   ===================================================================================== */
+/* pila de portadas (A y recomendación) */
+.pback{cursor:default;pointer-events:none;transition:transform .28s cubic-bezier(.34,1.32,.64,1)}
+.pback .face img{filter:brightness(.82) saturate(.9)}
+.pback.b1{transform:rotate(-7deg) translate(-12px,-4px) scale(.95)}
+.pback.b2{transform:rotate(6deg) translate(12px,-8px) scale(.93)}
+.pile:has(.f) .pback.b1{transform:rotate(-11deg) translate(-26px,-8px) scale(.97)}
+.pile:has(.f) .pback.b2{transform:rotate(10deg) translate(26px,-12px) scale(.95)}
+.scount{position:absolute;right:7px;top:7px;min-width:32px;height:32px;padding:0 9px;border-radius:16px;display:grid;place-items:center;z-index:2;
+  background:var(--acc);color:#fff;font-size:16px;font-weight:800;box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 2px rgba(255,255,255,.85),0 3px 8px rgba(0,0,0,.35)}
+/* casillas de selección en portadas (modo selección de títulos) */
+.cover .chk,.pcov .chk{position:absolute;left:9px;top:9px;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.55);box-shadow:inset 0 0 0 3px rgba(255,255,255,.95),0 2px 6px rgba(0,0,0,.25);display:grid;place-items:center;z-index:2}
+.cover .chk svg,.pcov .chk svg{width:62%;height:62%}
+.cover.checked .chk,.pcov.checked .chk{background:var(--acc)}
+.cover.checked .face,.pcov.checked .face{box-shadow:inset 0 0 0 6px var(--acc)}
+.cover.checked .face img,.pcov.checked .face img{opacity:.9}
+.cover.unchk .face img{filter:saturate(.7) brightness(.95)}
+/* collage de portadas (B) */
+.collage{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:3px;background:rgba(255,255,255,.9)}
+.collage img{width:100%;height:100%;object-fit:cover;display:block;min-height:0}
+.collage.c3 img:first-child{grid-row:span 2}
+.collage.c4{grid-template-rows:1fr 1fr}
+/* lomos de saga (C) */
+.spines{position:absolute;left:0;top:0;bottom:0;display:flex;z-index:1;box-shadow:3px 0 8px rgba(0,0,0,.35)}
+.spines i{width:22px;height:100%;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--g) 70%,black),var(--g) 35%,color-mix(in srgb,var(--g) 75%,white) 55%,var(--g) 80%);box-shadow:inset -1px 0 0 rgba(0,0,0,.35)}
+.spines b{writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;font-weight:800;color:#fff;letter-spacing:.08em;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.glass .face img.spimg{position:absolute;top:0;height:100%;object-fit:cover}
+/* marca «Saga» en la portada de un miembro (B) */
+.smark{position:absolute;left:8px;top:8px;height:24px;padding:0 9px 0 6px;border-radius:999px;background:var(--g,rgba(20,25,35,.62));color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;gap:5px;z-index:2;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 2px rgba(255,255,255,.85),0 2px 6px rgba(0,0,0,.3)}
+.smark svg{width:14px;height:14px}
+/* insignia del juego de origen sobre cada captura */
+.gbadge{position:absolute;left:8px;bottom:8px;height:24px;min-width:24px;padding:0 9px;border-radius:999px;display:grid;place-items:center;z-index:2;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--g) 40%,white),var(--g) 60%);color:#fff;font-size:13px;font-weight:800;text-shadow:0 1px 1px rgba(0,0,0,.25);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 2px rgba(255,255,255,.9),0 2px 6px rgba(0,0,0,.3)}
+.gbadge.inl{position:static;display:inline-grid;height:26px}
+.shot .gline{position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--g);z-index:2}
+/* tira de filtros por juego (C, recomendación) */
+.fstrip{position:absolute;left:68px;top:166px;height:42px;display:flex;gap:8px;align-items:center;z-index:4}
+.fchip{height:36px;padding:0 14px 0 10px;border-radius:999px;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:800;color:#4a5260;white-space:nowrap;cursor:pointer;transition:transform .15s}
+.fchip i{width:13px;height:13px;border-radius:50%;background:var(--g);box-shadow:0 0 0 2px rgba(255,255,255,.9)}
+.fchip span{font-weight:600;color:#8a92a0}
+.fchip.on{background:linear-gradient(180deg,color-mix(in srgb,var(--g) 35%,white),var(--g) 70%);color:#fff;box-shadow:inset 0 1.5px 0 rgba(255,255,255,.75),0 0 0 1px color-mix(in srgb,var(--g) 70%,black),0 8px 14px -8px color-mix(in srgb,var(--g) 70%,black)}
+.fchip.on span{color:rgba(255,255,255,.88)}
+.fchip.on i{background:#fff}
+.fchip.f{transform:scale(1.08);outline:3px solid #fff;outline-offset:2px}
+.gview.withf{top:214px;height:440px}
+.gsec{position:absolute;left:68px;right:68px;height:40px;display:flex;align-items:center;gap:12px;font-size:19px;font-weight:800;color:#3a414e;white-space:nowrap}
+.gsec i{width:16px;height:16px;border-radius:50%;background:var(--g);box-shadow:0 0 0 3px rgba(255,255,255,.9)}
+.gsec span{font-size:15px;font-weight:600;color:#7c8492}
+.gsec::after{content:'';flex:1;height:3px;border-radius:2px;background:linear-gradient(90deg,var(--g),transparent)}
+.sbar.seg{overflow:hidden;background:none;display:flex;flex-direction:column}
+.sbar.seg b{display:block;width:100%;background:var(--g);opacity:.45}
+.sbar.seg i{background:none;box-shadow:0 0 0 2px #3a414e;border-radius:3px}
+/* minis de los miembros en la cabecera (recomendación) */
+.ghead .mini.fx{cursor:pointer}
+.ghead .mini.f{transform:scale(1.14)}
+/* pestañas de la ficha de saga (B) */
+.stabs{position:absolute;right:312px;top:104px;display:flex;gap:6px;align-items:center;z-index:6;padding:5px 6px;border-radius:999px}
+.stab{height:34px;padding:0 13px 0 9px;border-radius:999px;font-size:15px;font-weight:800;color:#4a5260;display:flex;align-items:center;gap:7px;white-space:nowrap;cursor:pointer}
+.stab i{width:11px;height:11px;border-radius:50%;background:var(--g);box-shadow:0 0 0 2px rgba(255,255,255,.9)}
+.stab.on{background:linear-gradient(180deg,color-mix(in srgb,var(--g) 35%,white),var(--g) 70%);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--g) 70%,black)}
+.stab.on i{background:#fff}
+.stabs .btn{flex:none}
+.tri{position:absolute;inset:0;background-size:cover;background-position:center 30%}
+.tri.t1{clip-path:polygon(0 0,37% 0,31% 100%,0 100%)}
+.tri.t2{clip-path:polygon(37.4% 0,69.6% 0,63.6% 100%,31.4% 100%)}
+.tri.t3{clip-path:polygon(70% 0,100% 0,100% 100%,64% 100%)}
+.dlogo .sg{display:block;font-size:17px;letter-spacing:.14em;font-weight:800;opacity:.92;margin-bottom:2px}
+.split{display:flex;height:22px;border-radius:11px;overflow:hidden;box-shadow:inset 0 2px 4px rgba(0,0,0,.18),0 0 0 1px rgba(110,125,150,.25);gap:2px;background:#fff}
+.split i{display:block;height:100%;background:linear-gradient(180deg,color-mix(in srgb,var(--g) 40%,white),var(--g))}
+.leg{display:flex;gap:14px;font-size:13px;font-weight:700;color:#5a6270;margin-top:9px;white-space:nowrap}
+.leg b{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--g);margin-right:5px}
+/* filas con casilla y portada pequeña (selectores) */
+.ckbox{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;flex:none;background:rgba(255,255,255,.85);box-shadow:inset 0 0 0 2px rgba(95,110,135,.4)}
+.ckbox svg{width:70%;height:70%}
+.ckbox.on{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,white),var(--acc));box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
+.srow.f .ckbox{background:#fff;box-shadow:none}
+.srow.f .ckbox.on svg path{stroke:var(--acc)}
+.rcov{width:30px;height:40px;border-radius:7px;overflow:hidden;flex:none;box-shadow:0 0 0 2px rgba(255,255,255,.85),0 2px 5px rgba(0,0,0,.25)}
+.rcov img{width:100%;height:100%;object-fit:cover;display:block}
+.rnum{width:28px;height:28px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:15px;font-weight:800;color:#fff;background:var(--g);box-shadow:0 0 0 2px rgba(255,255,255,.9)}
+.grip{font-size:22px;font-weight:800;color:#a3abb8;letter-spacing:-2px}
+.srow.f .grip{color:inherit;opacity:.8}
+.srow.lift{transform:scale(1.05) translateX(14px)!important;box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 18px 26px -10px rgba(20,30,50,.55)!important}
+.updown{display:flex;flex-direction:column;font-size:11px;line-height:12px;font-weight:800}
+em.sug,em.new{font-style:normal;font-size:12px;font-weight:800;padding:2px 9px;border-radius:999px;background:color-mix(in srgb,var(--acc) 18%,white);color:color-mix(in srgb,var(--acc) 80%,black);margin-left:8px;vertical-align:2px}
+.srow.f em.sug,.srow.f em.new{background:rgba(255,255,255,.9);color:var(--acc)}
+/* carpeta abierta (A) */
+.folder{left:130px;top:118px;width:1020px;height:470px;--r:44px;--bw:14px;cursor:default;transform:none!important}
+.folder>.face{background:rgba(247,249,252,.94);padding:22px 34px;color:#3a414e}
+.folder::before{opacity:.3}.folder::after{opacity:.5}
+.folder h2{margin:0;font-size:30px;font-weight:800;display:flex;align-items:center;gap:12px}
+.folder h2 .chip{font-size:15px;font-weight:700;color:#fff;background:var(--acc);padding:4px 12px;border-radius:999px}
+.alltile{width:300px;height:236px;--r:24px;--bw:9px}
+.alltile .lbl,.ftile .lbl{position:absolute;left:0;right:0;bottom:0;padding:30px 14px 12px;background:linear-gradient(180deg,transparent,rgba(10,14,24,.78));color:#fff;font-size:20px;font-weight:800;z-index:2}
+.alltile .lbl small,.ftile .lbl small{display:block;font-size:14px;font-weight:600;opacity:.85}
+.flab{position:absolute;width:176px;text-align:center;font-size:15px;font-weight:800;color:#4a5260;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flab small{display:block;font-size:13px;font-weight:600;color:#8a92a0}
+.fnote{position:absolute;left:34px;bottom:20px;font-size:15px;font-weight:600;color:#7c8492;display:flex;gap:8px;align-items:center}
+.fnote svg{width:18px;height:18px}
+/* asistente (C) */
+.wiz{left:70px;top:84px;width:1140px;height:560px;--r:44px;--bw:14px;cursor:default;transform:none!important}
+.wiz>.face{background:rgba(247,249,252,.95);padding:20px 30px;color:#3a414e}
+.wiz::before{opacity:.3}.wiz::after{opacity:.5}
+.wiz h2{margin:0;font-size:28px;font-weight:800;display:flex;align-items:baseline;gap:14px}
+.wiz h2 span{font-size:17px;font-weight:700;color:#8a92a0}
+.ptabs{position:absolute;right:30px;top:22px;display:flex;gap:6px;align-items:center}
+.pcov{width:122px;height:163px;--r:16px;--bw:5px}
+.pcov .face{border-radius:12px}
+.plab{position:absolute;width:122px;text-align:center;font-size:13px;font-weight:700;color:#5a6270;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wfoot{position:absolute;left:30px;right:30px;bottom:18px;display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700;color:#4a5260;flex-wrap:wrap}
+.wfoot .gbadge{position:static;display:inline-grid}
+.wsug{position:absolute;left:30px;right:30px;top:448px;padding:10px 16px;border-radius:18px;font-size:15px;font-weight:600;color:#4a5260;background:color-mix(in srgb,var(--acc) 10%,white);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--acc) 40%,white);display:flex;align-items:center;gap:10px}
+/* Inicio con «Sagas» (D) */
+.dnew{position:absolute;min-width:24px;height:24px;border-radius:12px;padding:0 7px;background:#E8384F;color:#fff;font-size:13px;font-weight:800;display:grid;place-items:center;z-index:6;box-shadow:0 0 0 3px #fff,0 3px 6px rgba(0,0,0,.3)}
+.snote{position:absolute;left:50%;top:86px;transform:translateX(-50%);height:42px;padding:0 18px 0 8px;border-radius:999px;display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700;color:#4a5260;white-space:nowrap;z-index:6}
+.case{width:262px;height:400px;--r:38px;--bw:12px}
+.case .face{background:linear-gradient(180deg,rgba(255,255,255,.95),color-mix(in srgb,var(--acc) 12%,#f3f5f8));color:#3a414e}
+.case .fan{position:absolute;left:0;right:0;top:20px;height:220px}
+.glass .face .fan img{position:absolute;left:50%;top:14px;width:118px;height:158px;margin-left:-59px;object-fit:cover;border-radius:12px;box-shadow:0 0 0 3px #fff,0 10px 18px -8px rgba(20,30,50,.6)}
+.case .cinf{position:absolute;left:18px;right:18px;top:232px;text-align:center}
+.case h4{margin:0;font-size:24px;font-weight:800;line-height:1.1}
+.case p{margin:6px 0 0;font-size:14px;font-weight:600;color:#7c8492;line-height:1.4}
+.case .plats{display:flex;justify-content:center;gap:6px;margin-top:10px}
+.case .plats span{font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px;background:rgba(60,70,90,.08);color:#5a6270}
+.case.sugg .face{background:rgba(255,255,255,.62);box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--acc) 55%,transparent)}
+.case.sugg .face::after{content:"";position:absolute;inset:10px;border-radius:22px;border:3px dashed color-mix(in srgb,var(--acc) 55%,transparent);pointer-events:none;box-shadow:none}
+.case.sugg .fan img{opacity:.85}
+.stag{display:inline-block;font-size:12px;font-weight:800;padding:3px 10px;border-radius:999px;background:var(--acc);color:#fff;letter-spacing:.06em}
+.sugrow{display:flex;gap:18px;justify-content:center;margin:4px 0 14px}
+.glass .face .sugrow img{width:104px;height:139px;object-fit:cover;border-radius:12px;box-shadow:0 0 0 3px #fff,0 10px 16px -8px rgba(20,30,50,.55)}
+/* cronología (D) */
+.tline{position:absolute;left:68px;right:68px;top:160px;height:12px;border-radius:6px;display:flex;gap:3px;z-index:4}
+.tline b{display:block;height:100%;border-radius:6px;background:linear-gradient(180deg,color-mix(in srgb,var(--g) 40%,white),var(--g));box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
+.tline .cur{position:absolute;top:-6px;width:24px;height:24px;margin-left:-12px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px var(--acc),0 3px 8px rgba(0,0,0,.35)}
+.tlab{position:absolute;top:178px;font-size:13px;font-weight:800;color:#5a6270;white-space:nowrap}
+.tview{position:absolute;left:0;right:0;top:204px;height:452px;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 30px,#000 calc(100% - 70px),transparent);mask-image:linear-gradient(90deg,transparent 0,#000 30px,#000 calc(100% - 70px),transparent)}
+.chap{width:232px;height:436px;--r:30px;--bw:10px}
+.chap .face{background:linear-gradient(180deg,#fff,color-mix(in srgb,var(--acc) 14%,#f1f3f6))}
+.chap .face img.cc{position:absolute;left:0;top:0;width:100%;height:250px;object-fit:cover}
+.chap .ci{position:absolute;left:14px;right:14px;top:262px;color:#3a414e}
+.chap .ci h4{margin:0;font-size:19px;font-weight:800;line-height:1.15}
+.chap .ci p{margin:6px 0 0;font-size:13px;font-weight:600;color:#7c8492;line-height:1.5}
+.chap .ci .pl{display:inline-block;font-size:12px;font-weight:800;padding:2px 9px;border-radius:999px;background:var(--acc);color:#fff;margin-top:8px}
+.chap .num{position:absolute;right:12px;top:12px;width:36px;height:36px;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:800;font-size:18px;box-shadow:0 0 0 3px #fff;z-index:2}
+.tshot{width:240px;height:136px;--r:16px;--bw:5px}
+.tshot .face{border-radius:12px}
+/* visor (C) */
+.vthumb .gl{position:absolute;left:8px;right:8px;bottom:-1px;height:4px;border-radius:2px;background:var(--g);z-index:4}
+.vdiv{position:absolute;top:8px;bottom:8px;width:3px;border-radius:2px;background:rgba(255,255,255,.7)}
+
+/* =====================================================================================
+   DOCUMENTO (fuera de los escenarios)
+   ===================================================================================== */
+html,body{margin:0;background:#e4e7ec;font-family:var(--round);color:#3a414e}
+body{min-height:100vh}
+.page{max-width:1400px;margin:0 auto;padding:28px 28px 80px}
+header.doc{display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap;margin-bottom:18px}
+header.doc h1{margin:0;font-size:34px;font-weight:800;letter-spacing:-.01em}
+header.doc h1 span{color:#00A0D8}
+header.doc p{margin:6px 0 0;font-size:16px;font-weight:500;color:#5a6270;max-width:880px;line-height:1.5}
+.ptabs-doc{position:sticky;top:0;z-index:50;display:flex;gap:10px;flex-wrap:wrap;padding:12px 0;background:linear-gradient(180deg,#e4e7ec 80%,rgba(228,231,236,0))}
+.ptab{border:0;font:800 16px var(--round);color:#4a5260;height:44px;padding:0 18px 0 8px;border-radius:999px;display:flex;align-items:center;gap:10px;cursor:pointer;
+  background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(255,255,255,.65));box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.22),0 8px 16px -10px rgba(40,50,70,.4);transition:transform .15s}
+.ptab .l{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:#fff;background:var(--c);font-size:15px;box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
+.ptab.on{background:linear-gradient(180deg,color-mix(in srgb,var(--c) 30%,white),var(--c));color:#fff;transform:scale(1.04)}
+.ptab.on .l{background:#fff;color:var(--c)}
+.panel{display:none}
+.panel.on{display:block}
+.card{background:rgba(255,255,255,.82);border-radius:28px;padding:22px 28px;margin:14px 0 22px;box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.18),0 18px 30px -22px rgba(40,50,70,.45)}
+.card h2{margin:0 0 6px;font-size:26px;font-weight:800}
+.card h2 small{font-size:16px;color:#7c8492;font-weight:600;margin-left:8px}
+.card h3{margin:18px 0 6px;font-size:18px;font-weight:800}
+.card p,.card li{font-size:15.5px;line-height:1.55;color:#4a5260}
+.card ul{margin:4px 0;padding-left:22px}
+.card code,.card pre{font-family:ui-monospace,Consolas,monospace;font-size:13.5px}
+.card code{background:rgba(60,70,90,.08);padding:1px 6px;border-radius:6px}
+.card pre{background:#2a2f3a;color:#e9edf3;border-radius:16px;padding:16px 18px;overflow:auto;line-height:1.5}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:6px 28px}
+.five{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:10px}
+.five div{background:rgba(236,238,242,.8);border-radius:18px;padding:12px 14px;font-size:14px;line-height:1.45;color:#4a5260}
+.five div>b:first-child{display:block;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--c,#00A0D8);margin-bottom:4px}
+.pros li::marker{content:'＋ ';color:#3BB54A;font-weight:800}
+.cons li::marker{content:'－ ';color:#E8384F;font-weight:800}
+table.t{border-collapse:collapse;width:100%;margin-top:8px;font-size:14.5px}
+table.t th,table.t td{text-align:left;padding:8px 10px;border-bottom:1px solid rgba(95,110,135,.18);vertical-align:top}
+table.t th{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:#7c8492}
+table.t td.n{font-weight:800;white-space:nowrap}
+.kb{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:11px;font-size:12px;font-weight:800;color:#fff;background:#4a5260;vertical-align:1px;margin:0 1px}
+.kb.a{background:#3BB54A}.kb.b{background:#E8384F}.kb.x{background:#3F63E0}.kb.y{background:#F2B807;color:#3a2f00}.kb.sh{border-radius:6px;background:#6b7383}
+.mock{display:flex;gap:22px;align-items:flex-start;margin:0 0 26px}
+.mwrap{--s:.62;flex:none;width:calc(1280px * var(--s));height:calc(720px * var(--s));position:relative;overflow:hidden;border-radius:18px;
+  box-shadow:0 0 0 1px rgba(95,110,135,.3),0 24px 40px -24px rgba(20,30,50,.6);background:#eceef2}
+.mwrap .stage{transform:scale(var(--s))}
+.mwrap.act{box-shadow:0 0 0 4px #00A0D8,0 24px 40px -24px rgba(20,30,50,.6)}
+.mwrap.flash{animation:flash .9s ease}
+@keyframes flash{30%{box-shadow:0 0 0 8px #F2B807,0 24px 40px -24px rgba(20,30,50,.6)}}
+figcaption{flex:1;min-width:260px;font-size:15px;line-height:1.55;color:#4a5260}
+figcaption h4{margin:4px 0 8px;font-size:19px;font-weight:800;color:#3a414e}
+figcaption h4 .id{display:inline-grid;place-items:center;min-width:40px;height:28px;padding:0 8px;border-radius:14px;background:var(--c,#00A0D8);color:#fff;font-size:14px;margin-right:8px;vertical-align:2px}
+figcaption ul{margin:6px 0 0;padding-left:20px}
+figcaption .go{font-size:13.5px;color:#7c8492;margin-top:10px}
+.howto{font-size:14px;color:#5a6270;background:rgba(255,255,255,.7);border-radius:18px;padding:8px 16px;display:inline-block;line-height:1.9;box-shadow:0 0 0 1px rgba(95,110,135,.18)}
+.tree{background:#f6f7f9!important;color:#3a414e!important;box-shadow:inset 0 0 0 1px rgba(95,110,135,.2)}
+.tree .ok{color:#2f9a3d;font-weight:700}.tree .new{color:#3F63E0;font-weight:700}.tree .dim{color:#9aa2af}
+.rec{border:3px solid #3BB54A}
+@media (max-width:1250px){.mock{flex-direction:column}.mwrap{--s:.56}.five{grid-template-columns:1fr 1fr}.cols{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="doc">
+    <div>
+      <h1>Sagas de juegos <span>· 4 propuestas</span></h1>
+      <p>Diseño (no implementado) para agrupar varios títulos —Mass Effect 1/2/3, Zelda, Souls…— y ver todas sus capturas juntas. Cada maqueta es un escenario real de 1280×720 con el CSS de <code>src/app.css</code> copiado tal cual. Datos ficticios; el arte se genera con canvas como en <code>mock.ts</code>.</p>
+      <p class="howto"><b>Navegar:</b> pulsa en una maqueta y usa <span class="kb sh">←↑→↓</span> para mover el foco espacial como en la app, <span class="kb a">A</span>/Intro para seguir el flujo (salta a la pantalla siguiente) y <span class="kb b">B</span>/Esc para volver a la anterior. El ratón también enfoca.</p>
+    </div>
+  </header>
+  <nav class="ptabs-doc" id="tabs"></nav>
+  <main id="main"></main>
+</div>
+
+<script>
+/* ============================== utilidades portadas de la app ============================== */
+function hash(s){let h=2166136261;for(const ch of s){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
+function rng(seed){let a=seed>>>0;return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const RAINBOW=['#E8384F','#F27A1A','#F2B807','#3BB54A','#00A0D8','#3F63E0','#9A4BD8'];
+/* src/lib/bg.ts */
+function buildBackground(){const r=rng(42);let h='';
+  for(let i=0;i<9;i++){const s=180+r()*260;h+=`<div class="blob ${i%3===0?'a':'w'}" style="left:${r()*1180-100}px;top:${r()*640-100}px;width:${s}px;height:${s}px;animation-delay:-${(r()*20).toFixed(1)}s"></div>`}
+  for(let i=0;i<9;i++){const sc=0.6+r()*0.8;h+=`<div class="ghost" style="left:${r()*1200-40}px;top:${r()*660-40}px;opacity:${(0.18+r()*0.22).toFixed(2)};transform:scale(${sc.toFixed(2)}) rotate(${(r()*16-8).toFixed(1)}deg);--g:${RAINBOW[i%7]}"><i></i></div>`}
+  for(let i=0;i<14;i++){const s=10+r()*34;h+=`<div class="bokeh" style="left:${r()*1280}px;top:${r()*720}px;width:${s}px;height:${s}px;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.95),rgba(255,255,255,.25) 60%,rgba(255,255,255,0) 72%);opacity:${(0.5+r()*0.5).toFixed(2)}"></div>`}
+  return h}
+const BG=buildBackground();
+/* src/lib/mock.ts: scene() */
+function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function scene(ctx,w,h,seed,hue,vn,hud){
+  const r=rng(seed),night=r()<.3;
+  const g=ctx.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,night?`hsl(${hue+220},45%,14%)`:`hsl(${hue},68%,${60+r()*14}%)`);
+  g.addColorStop(1,night?`hsl(${hue+260},50%,32%)`:`hsl(${hue+35},85%,87%)`);
+  ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+  if(night){ctx.fillStyle='rgba(255,255,255,.8)';for(let i=0;i<70;i++){const s=r()*1.6*w/600+.4;ctx.fillRect(r()*w,r()*h*.55,s,s)}}
+  const sx=w*(.15+.7*r()),sy=h*(.16+.22*r()),sr=Math.min(w,h)*(.07+.07*r());
+  ctx.save();ctx.shadowColor=night?'rgba(255,250,210,.7)':`hsla(${hue+40},100%,95%,.9)`;ctx.shadowBlur=sr*1.6;
+  ctx.fillStyle=night?'#f4f1d0':`hsla(${hue+40},100%,95%,.95)`;ctx.beginPath();ctx.arc(sx,sy,sr,0,7);ctx.fill();ctx.restore();
+  const city=r()<.3;
+  for(let L=0;L<4;L++){
+    const base=h*(.46+.14*L);
+    ctx.fillStyle=night?`hsl(${hue+230},28%,${24-L*5}%)`:`hsl(${hue+L*14},${30+L*9}%,${62-L*12}%)`;
+    ctx.beginPath();ctx.moveTo(0,h);
+    if(city&&L===2){let x=0;while(x<w){const bw=w*(.03+.05*r()),bh=h*(.08+.22*r());ctx.lineTo(x,base-bh);ctx.lineTo(x+bw,base-bh);x+=bw}ctx.lineTo(w,h);ctx.fill();
+      ctx.fillStyle=night?'rgba(255,220,140,.75)':'rgba(255,255,255,.35)';for(let i=0;i<120;i++){ctx.fillRect(r()*w,base-r()*h*.25,w/260+1,h/180+1)}continue}
+    const steps=5+Math.floor(r()*6);
+    for(let i=0;i<=steps;i++){const x=w*i/steps,y=base-r()*h*(.12+.08*(3-L));ctx.lineTo(x,y)}
+    ctx.lineTo(w,h);ctx.closePath();ctx.fill();
+    if(L<2){const fg=ctx.createLinearGradient(0,base-h*.1,0,base+h*.12);fg.addColorStop(0,'rgba(255,255,255,0)');fg.addColorStop(1,night?'rgba(120,130,190,.12)':'rgba(255,255,255,.28)');ctx.fillStyle=fg;ctx.fillRect(0,base-h*.1,w,h*.25)}
+  }
+  const u=w/640;
+  if(vn){ctx.fillStyle=`hsla(${hue+180},30%,${night?70:22}%,.82)`;const cx=w*(.35+.3*r());ctx.beginPath();ctx.arc(cx,h*.36,h*.12,0,7);ctx.fill();
+    ctx.beginPath();ctx.moveTo(cx-h*.26,h);ctx.quadraticCurveTo(cx-h*.24,h*.52,cx,h*.5);ctx.quadraticCurveTo(cx+h*.24,h*.52,cx+h*.26,h);ctx.fill();
+    ctx.fillStyle='rgba(18,20,38,.72)';rr(ctx,w*.04,h*.7,w*.92,h*.26,14*u);ctx.fill();}
+  else if(hud){
+    ctx.fillStyle='rgba(0,0,0,.35)';rr(ctx,18*u,16*u,170*u,16*u,8*u);ctx.fill();
+    ctx.fillStyle='#E8384F';rr(ctx,20*u,18*u,(80+r()*80)*u,12*u,6*u);ctx.fill();
+    ctx.fillStyle='rgba(0,0,0,.35)';rr(ctx,18*u,38*u,120*u,10*u,5*u);ctx.fill();
+    ctx.fillStyle='#3BB54A';rr(ctx,19*u,39*u,(40+r()*70)*u,8*u,4*u);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=3*u;ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.arc(w-58*u,h-58*u,38*u,0,7);ctx.fill();ctx.stroke();}
+}
+function cv(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c}
+const FONT='"M PLUS Rounded 1c", Nunito, "Segoe UI", sans-serif';
+function coverText(x,name,top,maxW=260){
+  let size=40;x.font=`800 ${size}px ${FONT}`;const words=name.split(' ');let lines=[],line='';
+  const wrap=()=>{lines=[];line='';for(const wd of words){const t=line?line+' '+wd:wd;if(x.measureText(t).width>maxW&&line){lines.push(line);line=wd}else line=t}lines.push(line)};
+  wrap();while((lines.length>3||lines.some(l=>x.measureText(l).width>maxW+4))&&size>20){size-=2;x.font=`800 ${size}px ${FONT}`;wrap()}
+  x.shadowColor='rgba(0,0,0,.5)';x.shadowBlur=8;x.fillStyle='#fff';
+  lines.forEach((l,i)=>x.fillText(l,20,380-(lines.length-1-i)*size*1.08));
+  if(top){x.font=`800 17px ${FONT}`;x.fillText(top,20,380-lines.length*size*1.08-4)}
+}
+const memo=new Map();const M=(k,f)=>{if(!memo.has(k))memo.set(k,f());return memo.get(k)};
+function coverURL(k){const g=G[k];return M('c'+k,()=>{const c=cv(300,400),x=c.getContext('2d');scene(x,300,400,hash(g.n)+7,g.hue,false,false);
+  const gr=x.createLinearGradient(0,220,0,400);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.72)');x.fillStyle=gr;x.fillRect(0,200,300,200);coverText(x,g.n);return c.toDataURL('image/jpeg',.85)})}
+/** Portada generada para una saga (pila): mismo estilo que las portadas simuladas, con la etiqueta «SAGA · n JUEGOS». */
+function sagaCoverURL(name,hue,n,w=300){return M('s'+name+w,()=>{const c=cv(w,400),x=c.getContext('2d');scene(x,300,400,hash(name)+99,hue,false,false);
+  const gr=x.createLinearGradient(0,180,0,400);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.78)');x.fillStyle=gr;x.fillRect(0,170,w,230);coverText(x,name,`SAGA · ${n} JUEGOS`,w-40);return c.toDataURL('image/jpeg',.85)})}
+function heroURL(k){const g=G[k];return M('h'+k,()=>{const c=cv(960,310);scene(c.getContext('2d'),960,310,hash(g.n)+11,g.hue,false,false);return c.toDataURL('image/jpeg',.85)})}
+function shotURL(k,i){const g=G[k];return M(`p${k}|${i}`,()=>{const c=cv(384,216);scene(c.getContext('2d'),384,216,hash(`${g.n}|${i}`),g.hue+((i*17)%50)-25,false,i%3!==1);return c.toDataURL('image/jpeg',.8)})}
+function bigShotURL(k,i){const g=G[k];return M(`P${k}|${i}`,()=>{const c=cv(1280,720);scene(c.getContext('2d'),1280,720,hash(`${g.n}|${i}`),g.hue+((i*17)%50)-25,false,i%3!==1);return c.toDataURL('image/jpeg',.88)})}
+
+/* ============================== iconos (src/lib/icons.ts + nuevos) ============================== */
+const ICON={
+  pc:`<svg viewBox="0 0 120 120"><defs><linearGradient id="gw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#e9eef5"/></linearGradient></defs><path fill="url(#gw)" fill-rule="evenodd" d="M20 18h66a8 8 0 0 1 8 8v42a8 8 0 0 1-8 8H20a8 8 0 0 1-8-8V26a8 8 0 0 1 8-8zm2 9v38h62V27z"/><path fill="url(#gw)" d="M46 76h14l3 12H43z"/><rect x="32" y="87" width="42" height="7" rx="3.5" fill="url(#gw)"/><path fill="url(#gw)" fill-rule="evenodd" d="M100 26h8a5 5 0 0 1 5 5v58a5 5 0 0 1-5 5h-8a5 5 0 0 1-5-5V31a5 5 0 0 1 5-5zm1 10v4h6v-4zm0 9v4h6v-4z"/><path d="M24 29h28l-28 22z" fill="#fff" opacity=".35"/></svg>`,
+  switch:`<svg viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round"><rect x="36" y="30" width="48" height="60" rx="5"/><path d="M36 30h-8a14 14 0 0 0-14 14v32a14 14 0 0 0 14 14h8z" fill="#fff"/><path d="M84 30h8a14 14 0 0 1 14 14v32a14 14 0 0 1-14 14h-8z"/><circle cx="25" cy="48" r="5" stroke="none" style="fill:var(--pc)"/><circle cx="95" cy="68" r="5" fill="#fff" stroke="none"/></svg>`,
+  vn:`<svg viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><circle cx="60" cy="30" r="14" fill="#fff" stroke="none"/><path d="M34 62c4-12 14-17 26-17s22 5 26 17" fill="#fff" stroke="none"/><rect x="12" y="64" width="96" height="42" rx="10"/><rect x="20" y="56" width="34" height="14" rx="5" fill="#fff" stroke="none"/><path d="M26 84h50M26 96h32"/><path d="M92 92l6 6 6-6" stroke-width="5"/></svg>`,
+  person:`<svg viewBox="0 0 40 40" width="34" height="34"><circle cx="20" cy="15" r="8" fill="#fff"/><path d="M5 37c2-9 8-13 15-13s13 4 15 13z" fill="#fff"/></svg>`,
+  search:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"><circle cx="21" cy="21" r="12"/><path d="M30 30l10 10"/></svg>`,
+  star:`<svg viewBox="0 0 48 48"><path d="M24 5l5.8 12.2 13.2 1.6-9.8 9.1 2.6 13.1L24 34.5 12.2 41l2.6-13.1L5 18.8l13.2-1.6z" fill="#fff"/></svg>`,
+  gear:`<svg viewBox="0 0 48 48"><path fill="#fff" fill-rule="evenodd" d="M20 4h8l1.2 5.6a15 15 0 0 1 4 2.3l5.4-1.8 4 6.9-4.2 3.8a15 15 0 0 1 0 4.6l4.2 3.8-4 6.9-5.4-1.8a15 15 0 0 1-4 2.3L28 44h-8l-1.2-5.6a15 15 0 0 1-4-2.3l-5.4 1.8-4-6.9 4.2-3.8a15 15 0 0 1 0-4.6L5.4 18.8l4-6.9 5.4 1.8a15 15 0 0 1 4-2.3zM24 17a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"/></svg>`,
+  power:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"><path d="M24 5v18"/><path d="M14 11a16 16 0 1 0 20 0"/></svg>`,
+  starY:`<svg viewBox="0 0 48 48"><path d="M24 5l5.8 12.2 13.2 1.6-9.8 9.1 2.6 13.1L24 34.5 12.2 41l2.6-13.1L5 18.8l13.2-1.6z" fill="#F2B807" stroke="#fff" stroke-width="3" stroke-linejoin="round"/></svg>`,
+  arrowR:`<svg viewBox="0 0 56 110"><path d="M8 6 L52 55 L8 104 Q2 108 2 100 V10 Q2 2 8 6z" fill="rgba(255,255,255,.96)" stroke="rgba(150,160,180,.6)" stroke-width="2"/></svg>`,
+  arrowL:`<svg viewBox="0 0 56 110"><path d="M48 6 L4 55 L48 104 Q54 108 54 100 V10 Q54 2 48 6z" fill="rgba(255,255,255,.96)" stroke="rgba(150,160,180,.6)" stroke-width="2"/></svg>`,
+  play:`<svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="#fff"/></svg>`,
+  reload:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M40 24a16 16 0 1 1-5-11.5"/><path d="M38 5v9h-9"/></svg>`,
+  folder:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="5" stroke-linejoin="round"><path d="M5 14a3 3 0 0 1 3-3h10l5 6h17a3 3 0 0 1 3 3v17a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z"/></svg>`,
+  plus:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"><path d="M24 9v30M9 24h30"/></svg>`,
+  link:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 28a8 8 0 0 0 11 0l7-7a8 8 0 0 0-11-11l-3 3M28 20a8 8 0 0 0-11 0l-7 7a8 8 0 0 0 11 11l3-3"/></svg>`,
+  image:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="9" width="36" height="30" rx="5"/><circle cx="17" cy="20" r="3"/><path d="M8 36l10-9 7 6 6-5 11 9"/></svg>`,
+  eye:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 24s8-13 20-13 20 13 20 13-8 13-20 13S4 24 4 24z"/><circle cx="24" cy="24" r="6"/></svg>`,
+  eyeOff:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 24s8-13 20-13 20 13 20 13-8 13-20 13S4 24 4 24z"/><path d="M9 8l30 32"/></svg>`,
+  palette:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M24 5a19 19 0 1 0 0 38c3 0 4-2 3-4s0-5 4-5h5c4 0 7-3 7-7C43 14 34 5 24 5z"/><circle cx="15" cy="22" r="2"/><circle cx="22" cy="14" r="2"/><circle cx="32" cy="15" r="2"/></svg>`,
+  move:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 24h30M26 13l11 11-11 11"/></svg>`,
+  check:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 25l9 9 19-20"/></svg>`,
+  checks:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 25l8 8 14-17M24 33l4 4 15-18"/></svg>`,
+  pad:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 12h20a9 9 0 0 1 9 9v7a7 7 0 0 1-12 5l-3-3H20l-3 3a7 7 0 0 1-12-5v-7a9 9 0 0 1 9-9z"/><path d="M15 20v6M12 23h6"/></svg>`,
+  camera:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15h8l3-5h14l3 5h8v24H6z"/><circle cx="24" cy="26" r="7"/></svg>`,
+  chevL:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4l-8 8 8 8"/></svg>`,
+  chevR:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4l8 8-8 8"/></svg>`,
+  /* nuevos para las sagas */
+  saga:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"><rect x="17" y="7" width="24" height="32" rx="5" fill="rgba(255,255,255,.25)"/><path d="M12 12v27a5 5 0 0 0 5 5h18"/><path d="M7 17v21"/></svg>`,
+  edit:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M31 8l9 9-22 22H9v-9z"/><path d="M26 13l9 9"/></svg>`,
+  unlink:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 28a8 8 0 0 0 11 0l7-7a8 8 0 0 0-11-11l-3 3M28 20a8 8 0 0 0-11 0l-7 7a8 8 0 0 0 11 11l3-3"/><path d="M7 7l34 34"/></svg>`,
+  sort:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 8v32M7 33l7 7 7-7M34 40V8M27 15l7-7 7 7"/></svg>`,
+  grid:`<svg viewBox="0 0 48 48" fill="#fff"><rect x="6" y="6" width="16" height="16" rx="4"/><rect x="26" y="6" width="16" height="16" rx="4"/><rect x="6" y="26" width="16" height="16" rx="4"/><rect x="26" y="26" width="16" height="16" rx="4"/></svg>`,
+  minus:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"><path d="M10 24h28"/></svg>`,
+  disk:`<svg viewBox="0 0 48 48" fill="none" stroke="#7c8492" stroke-width="4" stroke-linejoin="round"><path d="M5 14a3 3 0 0 1 3-3h10l5 6h17a3 3 0 0 1 3 3v17a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z"/></svg>`,
+};
+
+/* ============================== datos de ejemplo (ficticios) ============================== */
+const hsl=h=>`hsl(${h},64%,50%)`;
+const G={
+  me1:{n:'Mass Effect',hue:215,c:'#3F63E0',s:'ME',shots:96,h:[41,8],y:'2021–2022',l:'Steam'},
+  me2:{n:'Mass Effect 2',hue:22,c:'#F27A1A',s:'ME2',shots:168,h:[63,30],y:'2022',l:'Steam'},
+  me3:{n:'Mass Effect 3',hue:352,c:'#E8384F',s:'ME3',shots:148,h:[55,34],y:'2022–2023',l:'Steam'},
+  er:{n:'Elden Ring',hue:42,c:hsl(42),play:1},hd:{n:'Hades II',hue:330,c:hsl(330),play:1},hk:{n:'Hollow Knight',hue:200,c:hsl(200),play:1},
+  ce:{n:'Celeste',hue:290,c:hsl(290),play:1},bg3:{n:"Baldur's Gate 3",hue:270,c:hsl(270),play:1},ow:{n:'Outer Wilds',hue:160,c:hsl(160),play:1},
+  se:{n:'Sekiro',hue:5,c:hsl(5)},cy:{n:'Cyberpunk 2077',hue:55,c:hsl(55),play:1},w3:{n:'The Witcher 3',hue:120,c:hsl(120),play:1},
+  ds1:{n:'Dark Souls Remastered',hue:28,c:'#C9781E',s:'DS1',play:1},ds2:{n:'Dark Souls II',hue:200,c:'#2E8BC0',s:'DS2',play:1},ds3:{n:'Dark Souls III',hue:8,c:'#B8323F',s:'DS3',play:1},
+  zb:{n:'Zelda: Breath of the Wild',hue:95,c:'#3BB54A',s:'BotW',shots:212,y:'2017–2019',h:[140,5],pl:'Switch',play:1},
+  zl:{n:"Zelda: Link's Awakening",hue:60,c:'#E0A21A',s:'LA',shots:48,y:'2020',h:[18,40],pl:'Switch',play:1},
+  zt:{n:'Zelda: Tears of the Kingdom',hue:140,c:'#14A38B',s:'TotK',shots:186,y:'2023–2024',h:[122,12],pl:'Switch',play:1},
+  zw:{n:'Zelda: Wind Waker HD',hue:190,c:'#00A0D8',s:'WW',shots:57,y:'2025',h:[31,0],pl:'PC · Cemu',play:1},
+  hw:{n:'Hyrule Warriors',hue:30,c:hsl(30),pl:'Switch'},
+};
+const PC_ACC='#00A0D8';
+/* capturas «mezcladas» de la saga Mass Effect en orden reciente */
+const ME_MIX=[['me3',0],['me3',1],['me2',0,1],['me3',2],['me1',0],['me2',1],['me2',2,1],['me3',3],['me1',1],['me2',3],['me3',4],['me1',2]];
+
+/* ============================== piezas de interfaz (mismo marcado que los .svelte) ============================== */
+const img=(u,cls='')=>`<img${cls?` class="${cls}"`:''} src="${u}" alt="" draggable="false">`;
+const go=g=>g?` data-go="${g}"`:'';
+function topbar(crumbs,dots=0,dot=0){
+  return `<div class="top"><div class="glass avatar"><div class="face">${ICON.person}</div></div><div class="crumb pill">${crumbs.map((c,i)=>i===crumbs.length-1?`<span class="cur">${c}</span>`:`<span>${c}</span><span class="sep">›</span>`).join('')}</div>${dots>1?`<div class="dots">${Array.from({length:dots},(_,j)=>`<i class="${j===dot?'on':''}"></i>`).join('')}</div>`:''}<div class="clock"><span>16/10 <small>(vie)</small></span><span>21:42</span><span class="batt"><svg width="30" height="20" viewBox="0 0 30 20"><rect x="1" y="3" width="28" height="14" rx="7" fill="#4a5260"/><circle cx="8" cy="10" r="3" fill="#fff"/><circle cx="22" cy="10" r="2" fill="#fff"/></svg><b></b><b></b><b></b><b class="off"></b></span></div></div>`}
+function hints(list){return `<div class="hints">${list.map(([b,l])=>`<div class="hint pill"><span class="btn ${b.length>1?'sh':b.toLowerCase()}">${b}</span>${l}</div>`).join('')}</div>`}
+const cellXY=j=>[128+(j%5)*212,146+Math.floor(j/5)*264];
+function cover(k,x,y,o={}){const g=G[k];
+  return `<div class="glass cover fx${o.f?' f':''}${o.chk?' checked':''}${o.cls?' '+o.cls:''}"${go(o.go)} style="left:${x}px;top:${y}px;--acc:${g.c}"><div class="face">${img(coverURL(k))}${g.play&&!o.noplay?`<span class="pbadge">${ICON.play}</span>`:''}${o.chk!==undefined?`<span class="chk">${o.chk?ICON.check:''}</span>`:''}${o.inner||''}</div></div>`}
+function pile(members,name,x,y,o={}){const lead=G[members[0]];const back=members.slice(1).reverse();
+  return `<div class="pile">${back.slice(0,2).map((k,i)=>`<div class="glass cover pback b${i+1}" style="left:${x}px;top:${y}px;--acc:${G[k].c}"><div class="face">${img(coverURL(k))}</div></div>`).join('')}<div class="glass cover fx${o.f?' f':''}"${go(o.go)} style="left:${x}px;top:${y}px;--acc:${lead.c}"><div class="face">${img(sagaCoverURL(name,lead.hue,members.length))}<span class="scount">${members.length}</span></div></div></div>`}
+function collageTile(members,x,y,o={}){
+  return `<div class="glass cover fx${o.f?' f':''}"${go(o.go)} style="left:${x}px;top:${y}px;--acc:${G[members[0]].c}"><div class="face"><div class="collage c${members.length}">${members.map(k=>img(coverURL(k))).join('')}</div><span class="smark" style="--g:${G[members[0]].c}">${ICON.saga}Saga · ${members.length}</span></div></div>`}
+function spineTile(members,front,x,y,o={},cls='cover'){const sw=o.sw||16,w=members.length*sw;
+  return `<div class="glass ${cls} fx${o.f?' f':''}"${go(o.go)} style="left:${x}px;top:${y}px;--acc:${G[front].c}"><div class="face"><div class="spines">${members.map(k=>`<i style="--g:${G[k].c};width:${sw}px"><b>${o.small?'':G[k].s}</b></i>`).join('')}</div>${img(sagaCoverURL(o.name||'Mass Effect',G[front].hue,members.length,200),'spimg').replace('class="spimg"',`class="spimg" style="left:${w}px;width:calc(100% - ${w}px)"`)}</div></div>`}
+function thead(name,chip,chipBg,rest=''){return `<div class="thead">${name}<span class="chip" style="background:${chipBg};color:#fff">${chip}</span>${rest}</div>`}
+function sides(l,r){return `<div class="side${l?'':' off'}" style="left:12px">${ICON.arrowL}</div><div class="side${r?'':' off'}" style="right:12px">${ICON.arrowR}</div>`}
+/** cuadrícula de títulos: items = clave de juego o html ya hecho (función j=>html) */
+function grid(items,focus=-1,o={}){return `<div class="ttrack" style="width:1280px">${items.map((it,j)=>{const [x,y]=cellXY(j);return typeof it==='function'?it(x,y,j===focus):cover(it,x,y,{f:j===focus,chk:o.checked?o.checked.includes(it):undefined,go:o.go&&o.go[it]})}).join('')}</div>`}
+function shot(k,i,x,y,o={}){const g=G[k];
+  return `<div class="glass ${o.cls||'shot'} fx${o.f?' f':''}${o.fav?' fav':''}"${go(o.go)} style="left:${x}px;top:${y}px;${o.acc?`--acc:${o.acc}`:''}"><div class="face">${img(shotURL(k,i))}${o.badge?`<span class="gbadge" style="--g:${g.c}">${g.s}</span>`:''}<span class="star">${ICON.starY}</span></div>${o.line?`<span class="gline" style="--g:${g.c}"></span>`:''}</div>`}
+function menu({title,sub,rows,row=0,left=430,w=420,tall=false,hint=[['A','Seleccionar'],['B','Cerrar']]}){
+  const rh=tall?62:58,H=28+92+rows.length*rh+14;
+  return `<div class="scrim"><div class="glass menupanel" style="left:${left}px;width:${w}px;top:${(720-H)/2}px;height:${H}px"><div class="face"><h2>${title}</h2><p class="msub">${sub}</p>${rows.map((r,i)=>`<div class="srow mrow fx${tall?' addrow':''}${i===row?' f':''}${r.danger?' danger':''}"${go(r.go)}><span class="mic">${r.ic}</span><span class="sl">${r.l}${r.s?`<small>${r.s}</small>`:''}</span>${r.v?`<span class="sv">${r.v}</span>`:''}</div>`).join('')}</div></div>${hints(hint)}</div>`}
+function picker({title,sub,rows,row=0,left=300,w=680,hint,visible=8,scroll}){
+  const n=Math.min(rows.length,visible),H=28+100+n*52+24;
+  return `<div class="scrim"><div class="glass setpanel pickpanel" style="left:${left}px;width:${w}px;height:${H}px;top:${(720-H)/2}px"><div class="face"><h2>${title}</h2><p class="msub">${sub}</p><div class="slist" style="height:${n*52+8}px"><div class="strack">${rows.slice(0,visible).map((r,i)=>`<div class="srow fx${i===row?' f':''}${r.danger?' danger':''}"${go(r.go)}>${r.ck!==undefined?`<span class="ckbox${r.ck?' on':''}">${r.ck?ICON.check:''}</span>`:''}${r.ic?`<span class="mic">${r.ic}</span>`:''}${r.cov?`<span class="rcov">${img(coverURL(r.cov))}</span>`:''}<span class="sl">${r.l}</span><span class="sv">${r.v||''}</span></div>`).join('')}</div></div>${scroll?`<div class="sscroll" style="top:104px"><i style="height:${scroll[0]}%;top:${scroll[1]}%"></i></div>`:''}</div></div>${hints(hint)}</div>`}
+function form({title,rows,row,hint,hintKeys,left=250,w=780}){
+  const H=28+40+40+rows.length*58+14+30;
+  return `<div class="scrim"><div class="glass formpanel" style="left:${left}px;width:${w}px;height:${H}px;top:${(720-H)/2}px"><div class="face"><h2>${title}</h2>${rows.map((r,i)=>r.raw?r.raw(i===row):`<div class="srow frow fx${i===row?' f':''}${r.save?' save':''}"${go(r.go)} style="height:52px"><span class="sl fl">${r.l}</span>${r.save?'':`<span class="sv${r.ph?' ph':''}">${r.v}</span>`}</div>`).join('')}<p class="fhint">${hint}</p></div></div>${hints(hintKeys)}</div>`}
+function odo(h,m){const hs=String(h).padStart(3,'0'),ms=String(m).padStart(2,'0');const c=d=>`<span class="c"><b style="animation:none"><span>${d}</span></b></span>`;return `<div class="odo">${[...hs].map(c).join('')}<span class="u">h</span>${[...ms].map(c).join('')}<span class="u">min</span></div>`}
+function weekbars(w){const mx=Math.max(...w,1);return `<div class="weekbars">${w.map(v=>`<i class="${v?'':'z'}" style="height:${v?Math.max(6,v/mx*40):4}px"></i>`).join('')}</div>`}
+/** ficha (Detail.svelte) parametrizada */
+function ficha(o){
+  const sh=o.shots.map(([k,i],j)=>shot(k,i,64+j*192,560,{cls:'dshot',f:o.focus==='ds'+j,badge:o.badges})).join('');
+  return `${topbar(o.crumbs)}
+  <div class="glass banner static"><div class="face">${o.banner}<div class="bshade"></div></div></div>
+  <div class="dlogo txt${o.logo.length>22?' sm':''}">${o.logoSub?`<span class="sg">${o.logoSub}</span>`:''}${o.logo}</div>
+  <div class="glass dcover static"><div class="face">${o.cover}</div></div>
+  ${o.tabs||''}
+  <div class="glass play fx${o.focus==='play'?' f':''}"${go(o.playGo)}><div class="face"><span class="pi">${ICON.play}</span><span><b>${o.play[0]}</b><small>${o.play[1]}</small></span></div></div>
+  <div class="dpanel dhours pill"><div class="hsub">${o.hoursSub}</div>${odo(o.hours[0],o.hours[1])}</div>
+  <div class="dpanel dweek pill">${o.right}</div>
+  <div class="dsect">Capturas<span>${o.total}</span></div>${sh}
+  <div class="glass dall fx${o.focus==='dall'?' f':''}"${go(o.allGo)} style="left:${64+o.shots.length*192}px;width:109px"><div class="face"><div>Ver todas<span>${o.total} capturas</span></div></div></div>
+  ${hints(o.hints)}`}
+const weekPanel=w=>`<div class="chart"><div class="hsub" style="margin:0">Esta semana · ${Math.floor(w.reduce((a,b)=>a+b,0)/60)} h ${String(w.reduce((a,b)=>a+b,0)%60).padStart(2,'0')} min</div>${weekbars(w)}</div>`;
+function splitPanel(ms,title='Reparto de horas por juego'){const tot=ms.reduce((a,k)=>a+G[k].h[0],0);
+  return `<div class="chart"><div class="hsub" style="margin:0">${title}</div><div class="split">${ms.map(k=>`<i style="--g:${G[k].c};width:${G[k].h[0]/tot*100}%"></i>`).join('')}</div><div class="leg">${ms.map(k=>`<span><b style="--g:${G[k].c}"></b>${G[k].s} ${G[k].h[0]} h</span>`).join('')}</div></div>`}
+/** cuadrícula de capturas (Shots.svelte) */
+function shotsView(o){
+  const top0=o.chips?214:172;
+  const items=o.items.map((it,j)=>{if(it.sec)return `<div class="gsec" style="top:${it.y}px;--g:${G[it.sec].c}"><i></i>${it.t}<span>${it.sub}</span></div>`;
+    const [k,i,fav]=it;const col=it.col??(j%4),y=it.y??(18+Math.floor(j/4)*190);return shot(k,i,68+col*290,y,{f:o.focus===j,fav,badge:o.badges,line:o.lines,go:o.go&&o.focus===j?o.go:null})}).join('');
+  const sbar=o.seg?`<div class="sbar seg" style="top:${top0+18}px;height:${o.chips?420:440}px">${o.seg.map(([k,n])=>`<b style="--g:${G[k].c};height:${n}%"></b>`).join('')}<i style="height:${o.thumb[0]}%;top:${o.thumb[1]}%;position:absolute"></i></div>`
+    :`<div class="sbar" style="top:${top0+18}px;height:${o.chips?420:440}px"><i style="height:22%;top:${o.sbarTop||0}%"></i></div>`;
+  return `${topbar(o.crumbs)}<div class="ghead">${o.minis}<h3>${o.name}</h3><span class="chip">${o.chip}</span><span class="soft">${o.sort}</span><span class="date">${o.date||'12/03/2023 · 2560×1440'}</span></div>
+  ${o.chips||''}<div class="gview${o.chips?' withf':''}"><div class="gtrack" style="height:900px">${items}</div></div>${sbar}${hints(o.hints)}`}
+const miniCollage=ms=>`<div class="glass mini"><div class="face"><div class="collage c${ms.length}">${ms.map(k=>img(coverURL(k))).join('')}</div></div></div>`;
+const miniSpines=(ms,front)=>spineTile(ms,front,0,0,{small:1,sw:7},'mini').replace('style="left:0px;top:0px;','style="');
+function chips(list,on,focus=-1){return `<div class="fstrip"><span class="btn sh">LB</span>${list.map((c,i)=>`<div class="fchip pill fx${i===on?' on':''}${i===focus?' f':''}" style="--g:${c.g}"><i></i>${c.l}<span>${c.n}</span></div>`).join('')}<span class="btn sh">RB</span></div>`}
+const ME_CHIPS=[{l:'Todas',n:412,g:'#4a5260'},{l:'Mass Effect',n:96,g:G.me1.c},{l:'Mass Effect 2',n:168,g:G.me2.c},{l:'Mass Effect 3',n:148,g:G.me3.c}];
+const ME=['me1','me2','me3'];
+const PC_TITLES=['me3','er','me2','hd','me1','hk','ce','bg3','ow','se'];
+
+/* ============================== pantallas ============================== */
+/* Cada maqueta: id, acc (acento de la interfaz), back/next (flujo con B y A), título, notas, html() */
+const P={};
+
+/* ---------------- Propuesta A · Pila de portadas (carpeta Wii U) ---------------- */
+P.A={key:'A',c:'#3F63E0',name:'Pila de portadas',sub:'carpeta en la cuadrícula · selección múltiple',
+ intro:`<p>La saga es una <b>baldosa más de la cuadrícula</b> con forma de pila de portadas (la de la saga delante y las de los juegos asomando detrás, que se abren en abanico al enfocarla). Por defecto <b>sustituye</b> a sus juegos en la lista. <span class="kb a">A</span> la abre como una <b>carpeta</b> del menú Wii U: baldosa grande «Todas las capturas» y las portadas de cada juego (que abren su ficha de siempre). Se crea con un <b>modo de selección de títulos</b> (<span class="kb x">X</span> en la cuadrícula, hoy libre allí), igual que el modo de selección de capturas que ya existe.</p>`,
+ five:[['Crear','<span class="kb x">X</span> entra en «Selección» y marca; <span class="kb a">A</span> marca más; <span class="kb sh">Start</span> → «Crear saga con 3». Formulario con nombre sugerido (prefijo común), orden, portada y si se ocultan los sueltos.'],
+  ['En la lista','Pila de portadas con contador; ocupa el sitio del miembro jugado más recientemente. Los miembros desaparecen (opción «Mostrar juegos sueltos»).'],
+  ['Vista de saga','Carpeta → «Todas las capturas»: cuadrícula de capturas de siempre con insignia de color por juego (ME, ME2, ME3) y orden <span class="kb y">Y</span> + «Por juego».'],
+  ['Editar / disolver','<span class="kb y">Y</span> dentro de la carpeta: renombrar, juegos y orden, portada, mostrar sueltos, color, <b>Deshacer saga</b> (doble <span class="kb a">A</span>).'],
+  ['Disco','Nada se mueve. Deshacer la saga solo borra su entrada de <code>sagas.json</code> y los juegos vuelven a la cuadrícula.']],
+ pros:['Encaja con el lenguaje Wii U (carpetas del menú) y con el modo selección que ya existe en capturas.','Crear es rápido cuando los juegos están cerca: ~10 pulsos.','La cuadrícula queda más limpia (una baldosa por saga).'],
+ cons:['Un paso más para jugar a un miembro (A carpeta → juego → ficha).','Si la saga oculta los sueltos, «¿dónde está ME2?» puede despistar; la búsqueda (pendiente) debe encontrarlos.','Si los juegos están en páginas distintas, marcar exige LB/RB entre páginas.'],
+ cost:[['Crear (3 juegos en la misma página)','≈ 10','X, →→, A, →→, A, Start, A, A (Guardar con nombre sugerido)'],['Ver todas las capturas','2','A (pila) + A (Todas, enfocada por defecto)'],['Jugar a ME2','5','A, →→, A (ficha), A (Jugar)'],['Disolver','≈ 6','A, Y, ↓×5… A, A']],
+ mocks:[
+ {id:'A1',acc:PC_ACC,next:'A2',t:'Modo selección en la cuadrícula de títulos',
+  n:`<ul><li><span class="kb x">X</span> sobre un título entra en «Selección» y lo marca (en la cuadrícula de títulos <span class="kb x">X</span> no hace nada hoy).</li><li><span class="kb a">A</span> marca/desmarca; <span class="kb sh">LB</span>/<span class="kb sh">RB</span> cambian de página sin perder la selección.</li><li>La cabecera muestra «Selección · 3» con el chip oscuro de la selección de capturas.</li><li><span class="kb sh">Start</span> abre el menú de la selección.</li></ul>`,
+  h:()=>`${topbar(['Inicio','Juegos PC'],2,0)}${thead('Mass Effect','Selección · 3','#3a414e','<span>marca los juegos de la saga</span>')}${grid(PC_TITLES,4,{checked:['me3','me2','me1']})}${sides(0,1)}${hints([['A','Marcar'],['B','Salir de la selección'],['LB/RB','Página'],['Start','Crear saga…']])}`},
+ {id:'A2',acc:PC_ACC,back:'A1',next:'A3',t:'Menú de la selección (Start)',
+  n:`<ul><li>Mismo panel que «Grafismos y opciones» (<code>ActionMenu</code>).</li><li>«Añadir a una saga…» abre un selector con las sagas existentes (sirve para ampliar Mass Effect con un spin-off).</li></ul>`,
+  h:()=>`${topbar(['Inicio','Juegos PC'],2,0)}${thead('Mass Effect','Selección · 3','#3a414e')}${grid(PC_TITLES,-1,{checked:['me3','me2','me1']})}${menu({title:'Selección',sub:'3 juegos marcados',rows:[{ic:ICON.saga,l:'Crear saga con 3 juegos',go:'A3'},{ic:ICON.plus,l:'Añadir a una saga…'},{ic:ICON.checks,l:'Marcar toda la página'},{ic:ICON.check,l:'Salir de la selección',go:'A1'}]})}`},
+ {id:'A3',acc:G.me1.c,back:'A2',next:'A5',t:'Formulario «Nueva saga»',
+  n:`<ul><li>Nombre <b>sugerido</b> con el prefijo común de los marcados («Mass Effect 2» + «Mass Effect 3» → «Mass Effect»); <span class="kb a">A</span> abre el teclado en pantalla si se quiere cambiar.</li><li>Las filas ◀ ▶ cambian con la cruceta, como en Ajustes.</li><li>El foco empieza en <b>Guardar</b>: con lo sugerido basta un <span class="kb a">A</span>.</li></ul>`,
+  h:()=>`${topbar(['Inicio','Juegos PC'],2,0)}${grid(PC_TITLES,-1,{checked:['me3','me2','me1']})}${form({title:'Nueva saga',row:5,rows:[{l:'Nombre',v:'Mass Effect <em class="sug">sugerido</em>'},{l:'Juegos y orden',v:'Mass Effect · 2 · 3 ▸',go:'A4'},{l:'Portada',v:'◀ Pila de portadas ▶'},{l:'En la cuadrícula',v:'◀ Solo la saga ▶'},{l:'Color de acento',v:'◀ Del primer juego ▶'},{l:'Guardar',save:1,go:'A5'}],hint:'La saga es solo una <b>agrupación</b>: tus capturas siguen en la carpeta de cada juego y no se mueve ni se copia nada.<br>«Solo la saga» quita los 3 juegos de la cuadrícula; siguen en Favoritas, en la búsqueda y dentro de la saga.',hintKeys:[['A','Elegir / escribir'],['B','Atrás']]})}`},
+ {id:'A4',acc:G.me1.c,back:'A3',next:'A3',t:'Orden de los juegos',
+  n:`<ul><li><span class="kb a">A</span> «coge» un juego (se levanta), <span class="kb sh">↑↓</span> lo mueve, <span class="kb a">A</span> lo suelta.</li><li><span class="kb x">X</span> = orden automático (fecha de la primera captura; desempata por nombre natural: 1, 2, 3…).</li><li>El orden decide «Por juego» y el número de la insignia.</li></ul>`,
+  h:()=>{const rows=ME.map((k,i)=>`<div class="srow mrow fx${i===1?' f lift':''}"><span class="rnum" style="--g:${G[k].c}">${i+1}</span><span class="rcov">${img(coverURL(k))}</span><span class="sl">${G[k].n}<small>${G[k].shots} capturas · ${G[k].y}</small></span>${i===1?'<span class="updown">▲<br>▼</span>':'<span class="grip">⋮⋮</span>'}</div>`).join('');const H=28+92+3*62+14;
+   return `${topbar(['Inicio','Juegos PC'],2,0)}${grid(PC_TITLES,-1)}<div class="scrim"><div class="glass menupanel" style="left:370px;width:540px;top:${(720-H)/2}px;height:${H}px"><div class="face"><h2>Juegos y orden</h2><p class="msub">Mass Effect · moviendo «Mass Effect 2»</p>${rows.replace(/mrow fx/g,'mrow addrow fx')}</div></div>${hints([['A','Soltar'],['↕','Mover'],['X','Orden automático'],['B','Atrás']])}</div>`}},
+ {id:'A5',acc:PC_ACC,back:'A3',next:'A6',t:'La saga en la cuadrícula',
+  n:`<ul><li>Pila con la portada de la saga (generada o elegida) y las de los juegos detrás; al enfocarla se abren en abanico.</li><li>Contador «3» en la esquina (donde los juegos llevan el ▶).</li><li>Cabecera: capturas y horas sumadas de los 3 juegos.</li><li>Ocupa el puesto del miembro jugado más recientemente.</li></ul>`,
+  h:()=>`${topbar(['Inicio','Juegos PC'],2,0)}${thead('Mass Effect','Saga · 3 juegos',G.me1.c,'<span>412 capturas · jugado 159 h</span>')}${grid([(x,y,f)=>pile(['me1','me2','me3'],'Mass Effect',x,y,{f,go:'A6'}),'er','hd','hk','ce','bg3','ow','se','cy','w3'],0)}${sides(0,1)}${hints([['A','Abrir'],['B','Volver'],['X','Seleccionar'],['LB/RB','Página'],['Y','Carrusel']])}`},
+ {id:'A6',acc:G.me1.c,back:'A5',next:'A7',t:'Carpeta abierta',
+  n:`<ul><li>Panel de cristal grande sobre la cuadrícula difuminada (como Ajustes).</li><li>«Todas las capturas» enfocada por defecto → <span class="kb a">A</span> abre la vista unificada.</li><li><span class="kb a">A</span> en una portada abre la <b>ficha de ese juego</b> de siempre (Jugar, horas…).</li><li><span class="kb y">Y</span> = opciones de la saga.</li></ul>`,
+  h:()=>{const four=[['me3',0],['me2',0],['me1',0],['me2',2]];
+   return `${topbar(['Inicio','Juegos PC','Mass Effect'])}${grid([(x,y)=>pile(ME,'Mass Effect',x,y),'er','hd','hk','ce','bg3','ow','se','cy','w3'])}<div class="scrim"><div class="glass folder"><div class="face"><h2>${ICON.saga.replace('stroke="#fff"','stroke="#3F63E0" width="34" height="34"')}Mass Effect <span class="chip">Saga · 3 juegos</span></h2><p class="msub" style="margin:4px 0 0">412 capturas · jugado 159 h · último: Mass Effect 3, ayer</p>
+   <div class="glass alltile fx f" data-go="A7" style="left:34px;top:120px"><div class="face"><div class="collage c4">${four.map(([k,i])=>img(shotURL(k,i))).join('')}</div><div class="lbl">Todas las capturas<small>412 · de los 3 juegos</small></div></div></div>
+   ${ME.map((k,i)=>cover(k,374+i*200,120)+`<div class="flab" style="left:${374+i*200}px;top:368px">${G[k].n}<small>${G[k].shots} capturas · ${G[k].h[0]} h</small></div>`).join('')}
+   <div class="fnote">${ICON.disk} Agrupación virtual: cada captura sigue en Raíz/PC/&lt;juego&gt;/</div></div></div>${hints([['A','Abrir'],['B','Cerrar'],['Y','Opciones de saga']])}</div>`}},
+ {id:'A7',acc:G.me1.c,back:'A6',t:'Todas las capturas (vista unificada)',
+  n:`<ul><li>Es <code>Shots.svelte</code> tal cual, con la lista unida de los 3 juegos (como ya hace «Favoritas»).</li><li><b>Insignia de color</b> abajo a la izquierda con el juego de origen (color de acento de cada juego).</li><li><span class="kb y">Y</span> recorre: recientes, antiguas, favoritas, nombre y <b>por juego</b> (orden de la saga).</li><li><span class="kb x">X</span> favorita y <span class="kb sh">Start</span> (mover, Explorador, seleccionar) funcionan igual, porque trabajan con rutas.</li></ul>`,
+  h:()=>shotsView({crumbs:['Inicio','Juegos PC','Mass Effect'],minis:miniCollage(ME),name:'Mass Effect',chip:'412 capturas',sort:'Más recientes primero',items:ME_MIX,focus:5,badges:1,hints:[['A','Ver'],['B','Volver'],['X','Favorita'],['Y','Ordenar'],['Start','Menú']]})},
+ {id:'A8',acc:G.me1.c,back:'A6',t:'Opciones de la saga (Y en la carpeta) · deshacer',
+  n:`<ul><li>«Deshacer saga» pide confirmar con otra <span class="kb a">A</span>, como «Quitar de la lista».</li><li>Deshacer solo borra la entrada de <code>sagas.json</code>: los 3 juegos reaparecen en la cuadrícula con sus capturas, favoritas y horas intactas.</li><li>«Juegos y orden…» reabre A4 con casillas para añadir o quitar juegos.</li></ul>`,
+  h:()=>`${P.A.mocks[5].h().replace(' fx f" data-go="A7"',' fx" data-go="A7"')}${menu({title:'Opciones de saga',sub:'Mass Effect · 3 juegos',row:5,tall:true,left:390,w:500,rows:[{ic:ICON.edit,l:'Renombrar'},{ic:ICON.sort,l:'Juegos y orden…',go:'A4'},{ic:ICON.image,l:'Portada',s:'Pila de portadas'},{ic:ICON.eye,l:'Mostrar juegos sueltos',s:'No'},{ic:ICON.palette,l:'Color de acento'},{ic:ICON.unlink,l:'Pulsa A otra vez para deshacer',s:'Los 3 juegos vuelven a la lista · no se borra nada',danger:1}]})}`},
+ ]};
+
+/* ---------------- Propuesta B · Ficha de saga con pestañas ---------------- */
+const triBanner=ms=>ms.map((k,i)=>`<div class="tri t${i+1}" style="background-image:url(${heroURL(k)})"></div>`).join('');
+const sagaTabs=on=>`<div class="stabs pill"><span class="btn sh">LB</span>${[{l:'Todas',g:'#4a5260'},...ME.map(k=>({l:G[k].n,g:G[k].c}))].map((t,i)=>`<div class="stab${i===on?' on':''}" style="--g:${t.g}"><i></i>${t.l}</div>`).join('')}<span class="btn sh">RB</span></div>`;
+P.B={key:'B',c:'#F27A1A',name:'Ficha de saga con pestañas',sub:'menú Y de la ficha · LB/RB por juego',
+ intro:`<p>La saga se comporta como <b>un juego más con su propia ficha</b> (mismo diseño «C · Wii U» de <code>Detail.svelte</code>). En la ficha, <span class="kb sh">LB</span>/<span class="kb sh">RB</span> —libres hoy en la ficha— cambian entre las pestañas <b>Todas · ME · ME2 · ME3</b>: el banner, el botón Jugar, las horas y la fila de capturas cambian al juego elegido. Los juegos <b>siguen sueltos</b> en la cuadrícula con una marquita «Saga». Se crea juego a juego desde el menú <span class="kb y">Y</span> de la ficha: «Añadir a una saga…».</p>`,
+ five:[['Crear','Ficha de un juego → <span class="kb y">Y</span> → «Añadir a una saga…» → «Nueva saga…» (teclado con el nombre del juego). Luego, en cada otro juego, la saga aparece como <b>sugerida</b>.'],
+  ['En la lista','Baldosa propia con collage de portadas y marca «Saga · 3»; los miembros siguen sueltos con la marca de color.'],
+  ['Vista de saga','Ficha de saga. Pestaña «Todas»: banner tríptico, «Continuar» (último jugado), horas sumadas, reparto por juego y las 5 capturas más recientes con insignia → «Ver todas».'],
+  ['Editar / disolver','<span class="kb y">Y</span> en la ficha de saga: renombrar, juegos de la saga (lista con casillas), quitar el juego de la pestaña actual, deshacer.'],
+  ['Disco','Nada se mueve. «Ver todas» con la pestaña de un juego es exactamente su cuadrícula de siempre.']],
+ pros:['Muy descubrible: está en el menú Y que ya se usa, junto a «Color de acento».','No esconde nada: los juegos siguen en la cuadrícula; cero riesgo de «perder» un juego.','La ficha de saga tiene sentido como «lanzador» (Continuar = último jugado).'],
+ cons:['Crear una saga de 3 cuesta mucho más (un viaje por juego): ~30 pulsos.','La cuadrícula crece (la saga es una baldosa más, no sustituye).','Ver la cuadrícula completa de la saga pide bajar hasta «Ver todas» (~7 pulsos).','En la cuadrícula de capturas LB/RB ya son ±12; las pestañas solo existen en la ficha.'],
+ cost:[['Crear (3 juegos)','≈ 30','≈ 11 el primero (A, Y, ↓×4, A, A, teclado: B B Start) + ≈ 9 por cada otro (B, mover, A, Y, ↓×4, A, A)'],['Ver todas las capturas','≈ 7','A (saga) + ↓ + →×5 + A; las 5 recientes se ven con 1'],['Jugar a ME2','3','A (saga), RB RB (pestaña ME2)… A (Jugar)'],['Disolver','≈ 8','A, Y, ↓×5, A, A']],
+ mocks:[
+ {id:'B1',acc:G.me2.c,next:'B2',t:'Menú Y de la ficha de un juego',
+  n:`<ul><li>Nueva fila «Añadir a una saga…» en «Grafismos y opciones», entre Color de acento y Ocultar.</li><li>Si el juego ya está en una saga, la fila pasa a ser «Saga: Mass Effect…» (abre la ficha de saga o lo quita).</li></ul>`,
+  h:()=>ficha({crumbs:['Inicio','Juegos PC','Mass Effect 2'],banner:img(heroURL('me2'),'hero'),logo:'Mass Effect 2',cover:img(coverURL('me2')),play:['Jugar','Con Steam'],hoursSub:'Horas jugadas · 31 sesiones',hours:[63,30],right:weekPanel([40,0,95,120,0,60,30]),shots:[0,1,2,3,4].map(i=>['me2',i]),total:168,hints:[['A','Seleccionar'],['B','Volver'],['Y','Opciones']]})
+   +menu({title:'Grafismos y opciones',sub:'Mass Effect 2',row:4,rows:[{ic:ICON.folder,l:'Abrir carpeta'},{ic:ICON.reload,l:'Recargar grafismos'},{ic:ICON.image,l:'Añadir capturas'},{ic:ICON.palette,l:'Color de acento'},{ic:ICON.saga,l:'Añadir a una saga… <em class="new">nuevo</em>',go:'B2'},{ic:ICON.eyeOff,l:'Ocultar juego'}]})},
+ {id:'B2',acc:G.me2.c,back:'B1',next:'B3',t:'Elegir saga (o crear una)',
+  n:`<ul><li>Selector (<code>Picker</code>) con «Nueva saga…» arriba y las sagas existentes.</li><li>Una saga cuyo nombre coincide con el del juego sale <b>sugerida</b> y enfocada: un solo <span class="kb a">A</span>.</li><li>Tras añadir, aviso: «Añadido a Mass Effect · <span class="kb x">X</span> añadir también Mass Effect 3» (otro juego con el mismo prefijo).</li></ul>`,
+  h:()=>ficha({crumbs:['Inicio','Juegos PC','Mass Effect 2'],banner:img(heroURL('me2'),'hero'),logo:'Mass Effect 2',cover:img(coverURL('me2')),play:['Jugar','Con Steam'],hoursSub:'Horas jugadas',hours:[63,30],right:weekPanel([40,0,95,120,0,60,30]),shots:[0,1,2,3,4].map(i=>['me2',i]),total:168,hints:[]})
+   +picker({title:'Añadir a una saga',sub:'Mass Effect 2',row:1,rows:[{ic:ICON.plus,l:'Nueva saga…',v:'escribir nombre'},{cov:'me1',l:'Mass Effect <em class="sug">sugerida</em>',v:'1 juego · Mass Effect',go:'B3'},{cov:'ds1',l:'Souls',v:'3 juegos'}],hint:[['A','Añadir'],['B','Atrás']]})},
+ {id:'B3',acc:PC_ACC,back:'B2',next:'B4',t:'Cuadrícula: saga + juegos sueltos',
+  n:`<ul><li>La saga es una baldosa con <b>collage</b> de portadas y la marca «Saga · 3».</li><li>Los juegos siguen en su sitio con una pequeña marca del color de la saga (sin ocultar nada).</li><li>La baldosa va donde el miembro más reciente (aquí, primera).</li></ul>`,
+  h:()=>{const mk=k=>(x,y,f)=>cover(k,x,y,{f,inner:`<span class="smark" style="--g:${G.me1.c}">${ICON.saga}Saga</span>`});
+   return `${topbar(['Inicio','Juegos PC'],2,0)}${thead('Mass Effect','Saga · 3 juegos',G.me1.c,'<span>412 capturas · jugado 159 h</span>')}${grid([(x,y,f)=>collageTile(ME,x,y,{f,go:'B4'}),mk('me3'),'er',mk('me2'),'hd',mk('me1'),'hk','ce','bg3','ow'],0)}${sides(0,1)}${hints([['A','Abrir'],['B','Volver'],['LB/RB','Página'],['Y','Carrusel']])}`}},
+ {id:'B4',acc:G.me1.c,back:'B3',next:'B5',t:'Ficha de saga · pestaña «Todas»',
+  n:`<ul><li>Banner <b>tríptico</b> con los hero de los 3 juegos; título de la saga como logo.</li><li>Pestañas sobre el banner, con <span class="kb sh">LB</span>/<span class="kb sh">RB</span>.</li><li><b>Continuar</b> lanza el último jugado de la saga.</li><li>Horas sumadas y «Reparto de horas por juego» en lugar de la semana.</li><li>Las 5 capturas más recientes de la saga, con insignia; «Ver todas» abre la cuadrícula unida.</li></ul>`,
+  h:()=>ficha({crumbs:['Inicio','Juegos PC','Mass Effect'],banner:triBanner(ME),logo:'Mass Effect',logoSub:'SAGA · 3 JUEGOS',cover:`<div class="collage c3">${ME.map(k=>img(coverURL(k))).join('')}</div>`,tabs:sagaTabs(0),play:['Continuar','Mass Effect 3 · ayer'],focus:'play',hoursSub:'Horas jugadas · 3 juegos · 87 sesiones',hours:[159,12],right:splitPanel(ME),shots:ME_MIX.slice(0,5).map(([k,i])=>[k,i]),badges:1,total:412,hints:[['A','Seleccionar'],['B','Volver'],['LB/RB','Juego'],['Y','Opciones de saga']]})},
+ {id:'B5',acc:G.me2.c,back:'B4',next:'B6',t:'Ficha de saga · pestaña «Mass Effect 2»',
+  n:`<ul><li>Todo cambia al juego: acento, hero, logo, Jugar, horas y semana, capturas.</li><li>El logo indica la posición «2 de 3» en la saga.</li><li>Es la ficha del juego dentro de la saga: no hace falta salir para jugar.</li></ul>`,
+  h:()=>ficha({crumbs:['Inicio','Juegos PC','Mass Effect','Mass Effect 2'],banner:img(heroURL('me2'),'hero'),logo:'Mass Effect 2',logoSub:'MASS EFFECT · 2 DE 3',cover:img(coverURL('me2')),tabs:sagaTabs(2),play:['Jugar','Con Steam'],focus:'play',hoursSub:'Horas jugadas · 31 sesiones',hours:[63,30],right:weekPanel([40,0,95,120,0,60,30]),shots:[0,1,2,3,4].map(i=>['me2',i]),total:168,hints:[['A','Seleccionar'],['B','Volver'],['LB/RB','Juego'],['Y','Opciones de saga']]})},
+ {id:'B6',acc:G.me2.c,back:'B5',next:'B7',t:'Opciones de saga (Y en la ficha de saga)',
+  n:`<ul><li>Las opciones dependen de la pestaña: con «Mass Effect 2» aparece «Quitar Mass Effect 2 de la saga» y el acceso a sus grafismos.</li><li>Deshacer pide doble <span class="kb a">A</span>.</li></ul>`,
+  h:()=>ficha({crumbs:['Inicio','Juegos PC','Mass Effect','Mass Effect 2'],banner:img(heroURL('me2'),'hero'),logo:'Mass Effect 2',logoSub:'MASS EFFECT · 2 DE 3',cover:img(coverURL('me2')),tabs:sagaTabs(2),play:['Jugar','Con Steam'],hoursSub:'Horas jugadas',hours:[63,30],right:weekPanel([40,0,95,120,0,60,30]),shots:[0,1,2,3,4].map(i=>['me2',i]),total:168,hints:[]})
+   +menu({title:'Opciones de saga',sub:'Mass Effect · pestaña Mass Effect 2',row:1,w:460,left:410,tall:true,rows:[{ic:ICON.edit,l:'Renombrar saga'},{ic:ICON.checks,l:'Juegos de la saga…',s:'Añadir, quitar y ordenar',go:'B7'},{ic:ICON.minus,l:'Quitar Mass Effect 2',s:'Sigue en la lista de títulos'},{ic:ICON.image,l:'Grafismos de Mass Effect 2…'},{ic:ICON.unlink,l:'Deshacer saga',s:'No se borra ni se mueve nada',danger:1}]})},
+ {id:'B7',acc:G.me1.c,back:'B6',t:'Juegos de la saga (casillas)',
+  n:`<ul><li>Lista de todos los títulos de la plataforma con casilla; los de la saga arriba, numerados.</li><li><span class="kb a">A</span> marca, <span class="kb sh">LB</span>/<span class="kb sh">RB</span> sube/baja el juego en el orden, <span class="kb sh">Start</span> guarda.</li></ul>`,
+  h:()=>`${topbar(['Inicio','Juegos PC','Mass Effect'])}${picker({title:'Juegos de la saga',sub:'Mass Effect · 3 marcados',row:1,scroll:[40,0],rows:[{ck:1,cov:'me1',l:'Mass Effect',v:'1'},{ck:1,cov:'me2',l:'Mass Effect 2',v:'2'},{ck:1,cov:'me3',l:'Mass Effect 3',v:'3'},{ck:0,cov:'er',l:'Elden Ring'},{ck:0,cov:'hd',l:'Hades II'},{ck:0,cov:'hk',l:'Hollow Knight'},{ck:0,cov:'ce',l:'Celeste'},{ck:0,cov:'bg3',l:"Baldur's Gate 3"}],hint:[['A','Marcar'],['LB/RB','Orden'],['Start','Guardar'],['B','Cancelar']]})}`},
+ ]};
+
+/* ---------------- Propuesta C · Vista unificada con filtros ---------------- */
+const covLabel=(k,x,y,o={})=>`<div class="glass pcov fx${o.f?' f':''}${o.chk?' checked':''}" style="left:${x}px;top:${y}px;--acc:${G[k].c}"><div class="face">${img(coverURL(k))}<span class="chk">${o.chk?ICON.check:''}</span></div></div><div class="plab" style="left:${x}px;top:${y+170}px">${G[k].n}</div>`;
+P.C={key:'C',c:'#3BB54A',name:'Vista unificada con filtros',sub:'asistente «Crear saga» · tira de juegos LB/RB',
+ intro:`<p>Lo importante de una saga son <b>sus capturas</b>: <span class="kb a">A</span> sobre la saga va <b>directa</b> a la cuadrícula unificada (un solo pulso). Debajo de la cabecera, una <b>tira de filtros</b> «Todas · ME · ME2 · ME3» que se cambia con <span class="kb sh">LB</span>/<span class="kb sh">RB</span> (el salto de ±12 pasa a los gatillos <span class="kb sh">LT</span>/<span class="kb sh">RT</span>, hoy sin uso, y a RePág/AvPág). Nuevo orden «Por juego» con separadores. La saga se crea con un <b>asistente de dos pasos</b> desde «Añadir» (baldosa + o dock de Inicio), que permite mezclar plataformas.</p>`,
+ five:[['Crear','«Añadir» → «Crear saga». Paso 1: cuadrícula de portadas con casillas, pestañas de plataforma con LB/RB, <span class="kb x">X</span> marca los sugeridos. Paso 2: nombre sugerido y orden (LB/RB mueve).'],
+  ['En la lista','Portada con <b>lomos</b> de colores a la izquierda (uno por juego, como una estantería). Sustituye a los miembros.'],
+  ['Vista de saga','Cuadrícula unificada con tira de filtros, insignias, orden «Por juego» con secciones y barra de desplazamiento por colores. El visor dice de qué juego es cada captura.'],
+  ['Editar / disolver','<span class="kb sh">Start</span> en la vista de saga: «Ficha de &lt;juego&gt;» (de la captura enfocada), «Editar saga…» (reabre el asistente), «Deshacer saga».'],
+  ['Disco','Nada se mueve. «Añadir capturas» o soltar archivos en la saga pregunta a qué juego van (o usa el del filtro activo).']],
+ pros:['El camino más corto a lo que se pide: 1 pulso para ver todas las capturas y 1 para filtrar por juego.','El asistente sirve para sagas multiplataforma (Zelda en Switch + Wind Waker en PC con Cemu).','Las secciones «Por juego» y la barra de colores dan una idea visual de la saga.'],
+ cons:['Reasignar LB/RB en esta vista rompe la costumbre de ±12 (mitigable con LT/RT).','Para jugar a un miembro hay que pasar por el menú Start (o por la búsqueda).','Crear desde «Añadir» es menos directo si ya estás en el juego (~16 pulsos).'],
+ cost:[['Crear (3 juegos)','≈ 16','A (+), ↓×5, A, mover y A ×3 (≈ 7), Start, A (Crear)'],['Ver todas las capturas','1','A sobre la saga'],['Filtrar por un juego','1–3','LB/RB'],['Jugar a ME2','≈ 5','A, RB RB (filtro ME2), Start, ↓×3, A (Ficha) → A (Jugar)'],['Disolver','≈ 7','A, Start, ↓×5, A, A']],
+ mocks:[
+ {id:'C1',acc:PC_ACC,next:'C2',t:'«Añadir» con la opción «Crear saga»',
+  n:`<ul><li>El asistente de alta de juegos (<code>AddChooser</code>) gana una fila al final.</li><li>Se llega desde la baldosa + de la cuadrícula o desde el dock de Inicio («Añadir juego» pasa a llamarse «Añadir»).</li></ul>`,
+  h:()=>`${topbar(['Inicio','Juegos PC'],2,1)}${grid(['cy','w3','ds3','ds1','ds2',(x,y,f)=>`<div class="glass cover addtile fx${f?' f':''}" style="left:${x}px;top:${y}px;--acc:${PC_ACC}"><div class="face"><div class="addin"><span>${ICON.plus}</span><b>Añadir</b></div></div></div>`],5)}${menu({title:'Añadir',sub:'¿Qué quieres añadir?',row:5,left:380,w:520,tall:true,rows:[{ic:ICON.pad,l:'Ejecutable (.exe)',s:'Un juego de PC'},{ic:ICON.play,l:'Emulador + ROM',s:'Switch y otras consolas'},{ic:ICON.eye,l:'Instalado en Steam o Epic',s:'Ocultos o sin añadir'},{ic:ICON.link,l:'Steam por id o dirección',s:'No instalado o compartido'},{ic:ICON.camera,l:'Solo capturas',s:'Sin lanzador'},{ic:ICON.saga,l:'Crear saga <em class="new">nuevo</em>',s:'Agrupa varios juegos y sus capturas',go:'C2'}],hint:[['A','Elegir'],['B','Cerrar']]})}`},
+ {id:'C2',acc:G.me1.c,back:'C1',next:'C3',t:'Asistente · 1/2 · Elige los juegos',
+  n:`<ul><li>Portadas pequeñas con casilla; <span class="kb sh">LB</span>/<span class="kb sh">RB</span> cambian de plataforma (una saga puede mezclarlas).</li><li>Detecta grupos por nombre: <span class="kb x">X</span> marca de golpe los sugeridos.</li><li>Abajo, los elegidos en orden con su insignia.</li></ul>`,
+  h:()=>{const L=['me3','er','me2','hd','me1','hk','ce','bg3','ow','se','cy','w3','ds3','ds1'];
+   return `${topbar(['Inicio','Juegos PC'],2,1)}<div class="scrim"><div class="glass wiz"><div class="face"><h2>Nueva saga <span>1 / 2 · Elige los juegos</span></h2>
+   <div class="ptabs"><span class="btn sh">LB</span><div class="stab on" style="--g:${PC_ACC}"><i></i>Juegos PC</div><div class="stab" style="--g:#E8384F"><i></i>Juegos Switch</div><div class="stab" style="--g:#9A4BD8"><i></i>Novelas visuales</div><span class="btn sh">RB</span></div>
+   ${L.map((k,i)=>covLabel(k,56+(i%7)*148,66+Math.floor(i/7)*186,{f:i===4,chk:['me1','me2','me3'].includes(k)})).join('')}
+   <div class="wsug">${ICON.saga.replace('stroke="#fff"','stroke="#3F63E0" width="26" height="26"')} Sugerencia: <b>Mass Effect</b> (3 juegos con el mismo nombre) y <b>Dark Souls</b> (3) · <span class="kb x">X</span> marca los sugeridos</div>
+   <div class="wfoot">Elegidos (3): ${ME.map(k=>`<span class="gbadge" style="--g:${G[k].c}">${G[k].s}</span> ${G[k].n}`).join(' ')}</div></div></div>${hints([['A','Marcar'],['X','Sugeridos'],['LB/RB','Plataforma'],['Start','Siguiente'],['B','Cancelar']])}</div>`}},
+ {id:'C3',acc:G.me1.c,back:'C2',next:'C4',t:'Asistente · 2/2 · Nombre y orden',
+  n:`<ul><li>Nombre sugerido; <span class="kb a">A</span> abre el teclado en pantalla.</li><li>Cada juego es una fila: <span class="kb sh">LB</span>/<span class="kb sh">RB</span> lo sube o baja. Por defecto, orden de la primera captura.</li><li>«Crear saga» guarda en <code>sagas.json</code> y abre la saga.</li></ul>`,
+  h:()=>{const row=(k,i)=>f=>`<div class="srow frow fx${f?' f':''}" style="height:52px"><span class="rnum" style="--g:${G[k].c}">${i+1}</span><span class="rcov">${img(coverURL(k))}</span><span class="sl">${G[k].n}</span><span class="sv">${G[k].shots} capturas · ${G[k].y}</span>${f?'<span class="btn sh" style="margin-left:6px">LB/RB</span>':''}</div>`;
+   return `${topbar(['Inicio','Juegos PC'],2,1)}${form({title:'Nueva saga · 2 / 2',row:2,rows:[{l:'Nombre',v:'Mass Effect <em class="sug">sugerido</em>'},...ME.map((k,i)=>({raw:row(k,i)})),{l:'Crear saga',save:1,go:'C4'}],hint:'El orden decide el orden «Por juego» y la posición en la tira de filtros. <b>No se mueve ningún archivo</b>: la saga se guarda en sagas.json.',hintKeys:[['A','Elegir / escribir'],['LB/RB','Mover'],['Start','Crear'],['B','Atrás']]})}`}},
+ {id:'C4',acc:PC_ACC,back:'C3',next:'C5',t:'La saga en la cuadrícula (lomos)',
+  n:`<ul><li>Portada de la saga con un <b>lomo de color por juego</b> a la izquierda (como libros en una estantería).</li><li><span class="kb a">A</span> abre directamente todas las capturas.</li></ul>`,
+  h:()=>`${topbar(['Inicio','Juegos PC'],2,0)}${thead('Mass Effect','Saga · 3 juegos',G.me1.c,'<span>412 capturas · A abre todas</span>')}${grid([(x,y,f)=>spineTile(ME,'me1',x,y,{f,go:'C5',name:'Mass Effect'}),'er','hd','hk','ce','bg3','ow','se','cy','w3'],0)}${sides(0,1)}${hints([['A','Abrir'],['B','Volver'],['LB/RB','Página'],['Y','Carrusel']])}`},
+ {id:'C5',acc:G.me1.c,back:'C4',next:'C7',t:'Vista unificada · filtro «Todas»',
+  n:`<ul><li>Tira de filtros con número de capturas; <span class="kb sh">LB</span>/<span class="kb sh">RB</span> la recorren, y ↑ desde la primera fila también la enfoca.</li><li>Cada captura: insignia + <b>línea inferior</b> del color del juego.</li><li>Con un filtro activo, el acento de la pantalla pasa al del juego.</li></ul>`,
+  h:()=>shotsView({crumbs:['Inicio','Juegos PC','Mass Effect'],minis:miniSpines(ME,'me1'),name:'Mass Effect',chip:'412 capturas',sort:'Más recientes primero',chips:chips(ME_CHIPS,0),items:ME_MIX,focus:5,badges:1,lines:1,go:'C7',hints:[['A','Ver'],['B','Volver'],['LB/RB','Juego'],['X','Favorita'],['Y','Ordenar'],['Start','Menú']]})},
+ {id:'C6',acc:G.me2.c,back:'C5',t:'Orden «Por juego» con secciones',
+  n:`<ul><li><span class="kb y">Y</span> añade el orden «Por juego (orden de la saga)»: un separador por juego con su número de capturas y fechas.</li><li>La barra de desplazamiento muestra los tramos de cada juego.</li><li>Aquí, filtro «Todas» y desplazado hasta el paso de ME a ME2.</li></ul>`,
+  h:()=>shotsView({crumbs:['Inicio','Juegos PC','Mass Effect'],minis:miniSpines(ME,'me1'),name:'Mass Effect',chip:'412 capturas',sort:'Por juego (orden de la saga)',chips:chips(ME_CHIPS,0),focus:6,badges:1,lines:1,seg:[['me1',23],['me2',41],['me3',36]],thumb:[24,14],
+   items:[{sec:'me1',y:6,t:'1 · Mass Effect',sub:'96 capturas · 2021–2022'},...[93,94,95,96].map((i,c)=>['me1',i,0]).map((a,c)=>Object.assign(a,{col:c,y:52})),{sec:'me2',y:236,t:'2 · Mass Effect 2',sub:'168 capturas · 2022'},...[0,1,2,3,4,5,6,7].map(i=>Object.assign(['me2',i,i===2],{col:i%4,y:282+Math.floor(i/4)*190}))],hints:[['A','Ver'],['B','Volver'],['LB/RB','Juego'],['X','Favorita'],['Y','Ordenar'],['Start','Menú']]})},
+ {id:'C7',acc:G.me2.c,back:'C5',t:'Visor dentro de la saga',
+  n:`<ul><li>La píldora de información añade la insignia y el nombre del juego de origen y la posición en la saga (37 / 412).</li><li>En la tira de miniaturas, cada una lleva la línea del color de su juego.</li><li>El fondo y el acento siguen al juego de la captura.</li></ul>`,
+  h:()=>{const seq=[['me3',2],['me1',0],['me2',1],['me2',2],['me3',3],['me2',3],['me1',1],['me2',4],['me3',4],['me1',2],['me3',5]];const fi=5;
+   return `<div class="vw"><div class="vbg" style="background-image:url(${shotURL('me2',3)})"></div><div class="glass vframe"><div class="face"><img src="${bigShotURL('me2',3)}" alt=""></div></div>
+   <div class="varrow" style="left:40px">${ICON.chevL}</div><div class="varrow" style="right:40px">${ICON.chevR}</div>
+   <div class="vinfo pill"><span class="gbadge inl" style="--g:${G.me2.c}">ME2</span><span class="vt">Mass Effect 2</span><span class="n">37 / 412</span><span class="dim">12/03/2022 · 2560×1440</span></div>
+   <div class="vstrip"><div class="vtrack" style="transform:translateX(${640-52-fi*120}px)">${seq.map(([k,i],j)=>`<div class="glass vthumb${j===fi?' f':''}" style="left:${j*120}px;--acc:${G[k].c}"><div class="face">${img(shotURL(k,i))}</div><span class="gl" style="--g:${G[k].c}"></span></div>`).join('')}</div></div>
+   ${hints([['B','Volver'],['X','Favorita'],['Start','Menú']])}</div>`}},
+ {id:'C8',acc:G.me2.c,back:'C5',t:'Menú Start en la saga · editar / deshacer',
+  n:`<ul><li>El menú de capturas de siempre + 3 filas de saga.</li><li>«Ficha de Mass Effect 2» abre la ficha del juego de la captura enfocada (o del filtro activo): así se juega sin salir.</li><li>«Editar saga…» reabre el asistente con los juegos marcados.</li></ul>`,
+  h:()=>shotsView({crumbs:['Inicio','Juegos PC','Mass Effect'],minis:miniSpines(ME,'me1'),name:'Mass Effect',chip:'412 capturas',sort:'Más recientes primero',chips:chips(ME_CHIPS,0),items:ME_MIX,focus:5,badges:1,lines:1,hints:[]})
+   +menu({title:'Capturas',sub:'Mass Effect · captura de Mass Effect 2',row:4,rows:[{ic:ICON.check,l:'Seleccionar'},{ic:ICON.move,l:'Mover a otro juego…'},{ic:ICON.folder,l:'Mostrar en el Explorador'},{ic:ICON.play,l:'Ficha de Mass Effect 2'},{ic:ICON.edit,l:'Editar saga…',go:'C2'},{ic:ICON.unlink,l:'Deshacer saga',danger:1}]})},
+ ]};
+
+/* ---------------- Propuesta D · Sagas en Inicio + sugerencias + cronología ---------------- */
+const ZEL=['zb','zl','zt','zw'];
+const DS=['ds1','ds2','ds3'];
+function home(focusDock){const D=[{n:'Buscar',ic:ICON.search,c:1},{n:'Favoritas',ic:ICON.star,c:2},{n:'Sagas',ic:ICON.saga,c:5,isNew:1},{n:'Añadir juego',ic:ICON.plus,c:3},{n:'Ajustes',ic:ICON.gear,c:4},{n:'Salir',ic:ICON.power,c:6}];
+  const dx0=(1280-D.length*72-(D.length-1)*40)/2;const PL=[['Juegos PC','pc',4,'31 títulos · 3.214 capturas'],['Juegos Switch','switch',0,'9 títulos · 1.102 capturas'],['Novelas visuales','vn',6,'8 títulos · 640 capturas']];
+  return `${topbar(['Inicio'])}${PL.map(([n,ic,a,s],i)=>{const x=120+i*370;return `<div class="glass plat fx" style="left:${x}px;top:150px;--acc:${RAINBOW[a]};--pc:${RAINBOW[a]}"><div class="face">${ICON[ic]}</div></div><div class="plabel" style="left:${x}px;top:476px;--pc:${RAINBOW[a]}">${n}<small>${s}</small></div>`}).join('')}
+  ${D.map((d,i)=>{const x=dx0+i*112;return `<div class="glass dock fx${i===focusDock?' f':''}"${d.isNew?' data-go="D2"':''} style="left:${x}px;top:586px;--dc:${RAINBOW[d.c]};--acc:${RAINBOW[d.c]}"><div class="face">${d.ic}</div></div>${d.isNew?`<span class="dnew" style="left:${x+58}px;top:578px">1</span>`:''}<div class="dtip${i===focusDock?' on':''}" style="left:${x+36}px;top:542px">${d.n}${d.isNew?' · 1 sugerencia':''}</div>`}).join('')}
+  ${hints([['A','Abrir'],['Start','Ajustes']])}`}
+function sagaCase(ms,name,x,o={}){const rot=[-12,0,12];const n=ms.length;const show=ms.slice(0,3);
+  return `<div class="glass case fx${o.f?' f':''}${o.sugg?' sugg':''}"${go(o.go)} style="left:${x}px;top:150px;--acc:${G[ms[0]].c}"><div class="face"><div class="fan">${show.map((k,i)=>`<img src="${coverURL(k)}" alt="" style="transform:translateX(${(i-(show.length-1)/2)*44}px) rotate(${rot[i]*(show.length>1?1:0)}deg);z-index:${i===1?3:1}">`).join('')}</div><div class="cinf">${o.sugg?'<span class="stag">SUGERENCIA</span>':''}<h4>${name}</h4><p>${o.meta}</p><div class="plats">${o.plats.map(p=>`<span>${p}</span>`).join('')}</div></div></div></div>`}
+P.D={key:'D',c:'#9A4BD8',name:'Sagas en Inicio + sugerencias',sub:'estantería propia · cronología por capítulos',
+ intro:`<p>Las sagas viven <b>fuera de las plataformas</b>: un icono nuevo «Sagas» en el dock de Inicio abre una estantería de sagas (cajas con abanico de portadas). Así una saga puede mezclar <b>Switch y PC</b> sin preguntarse «¿en qué plataforma sale?». La app <b>sugiere</b> sagas sola (mismo prefijo de nombre, números/romanos al final, misma franquicia de Steam si se conoce) y crearlas cuesta <b>un pulso</b>. La vista de saga es una <b>cronología horizontal por capítulos</b>: una tarjeta por juego seguida de sus capturas, <span class="kb sh">LB</span>/<span class="kb sh">RB</span> saltan de capítulo. La cuadrícula de títulos no cambia.</p>`,
+ five:[['Crear','Sugerencia: <span class="kb a">A</span> «Crear». Manual: «+ Nueva saga» con el mismo asistente de la propuesta C (con todas las plataformas).'],
+  ['En la lista','No sale en la cuadrícula de títulos: icono «Sagas» en el dock de Inicio (con contador de sugerencias) y estantería propia. Opcional: marca «Saga» en la ficha de cada miembro.'],
+  ['Vista de saga','Cronología: tarjeta-capítulo por juego (portada, plataforma, años, capturas, horas) + sus capturas en 3 filas; barra superior de progreso por colores.'],
+  ['Editar / disolver','<span class="kb y">Y</span> en la saga: lista de juegos de todas las plataformas con casilla (LB/RB ordena) y «Deshacer saga». Las sugerencias descartadas se recuerdan.'],
+  ['Disco','Nada se mueve. Las sugerencias se calculan al escanear y solo se guarda su descarte en <code>sagas.json</code>.']],
+ pros:['Crear la saga sugerida: 1–2 pulsos dentro de Sagas; descubrible gracias al contador del dock.','Multiplataforma natural (Zelda: 3 de Switch + Wind Waker HD en PC con Cemu).','No toca la cuadrícula ni la navegación existentes: el cambio con menos riesgo.','La cronología cuenta la historia de la saga (de 2017 a 2025).'],
+ cons:['Las sagas quedan a 2–3 pulsos de Inicio y no se ven al navegar los títulos.','Una pantalla nueva y un tipo de vista nuevo (la cronología horizontal) que hay que mantener.','Las sugerencias por nombre fallan con nombres sin prefijo común («Demon\'s Souls» y «Dark Souls»): hace falta el asistente manual.','El dock pasa de 5 a 6 iconos.'],
+ cost:[['Crear la saga sugerida','≈ 4 desde Inicio','↓, →→, A (Sagas), A (sugerencia enfocada), A (Crear)'],['Crear manual (3 juegos)','≈ 16','como en C'],['Ver todas las capturas','≈ 4 desde Inicio','↓, →→, A, A'],['Jugar a un miembro','≈ 3 en la saga','LB/RB al capítulo, ↑ a la tarjeta, A (ficha) → A'],['Disolver','≈ 5','Y, ↓…, A, A']],
+ mocks:[
+ {id:'D1',acc:RAINBOW[5],next:'D2',t:'Inicio con el icono «Sagas»',
+  n:`<ul><li>Sexto icono del dock, con contador rojo de sugerencias nuevas.</li><li>Las tres plataformas no cambian.</li></ul>`,
+  h:()=>home(2)},
+ {id:'D2',acc:G.ds1.c,back:'D1',next:'D3',t:'Estantería de sagas',
+  n:`<ul><li>Cajas de cristal con abanico de portadas, nombre, capturas, horas y plataformas.</li><li>La sugerencia lleva borde punteado (como la baldosa +); <span class="kb a">A</span> la abre, <span class="kb x">X</span> la descarta.</li><li>Orden: jugadas más recientemente primero, sugerencias al final.</li></ul>`,
+  h:()=>`${topbar(['Inicio','Sagas'])}<div class="thead">Sagas<span class="chip" style="background:${RAINBOW[5]};color:#fff">2 sagas</span><span>· 1 sugerencia</span></div>
+   ${sagaCase(ME,'Mass Effect',51,{meta:'412 capturas · 159 h',plats:['PC']})}${sagaCase(ZEL,'Zelda',357,{meta:'503 capturas · 312 h',plats:['Switch','PC']})}${sagaCase(DS,'Dark Souls',663,{f:1,sugg:1,go:'D3',meta:'3 juegos con el mismo nombre',plats:['PC']})}
+   <div class="glass case addtile fx" style="left:969px;top:150px;--acc:${RAINBOW[5]}"><div class="face"><div class="addin" style="margin-top:120px"><span>${ICON.plus}</span><b>Nueva saga</b></div></div></div>
+   ${hints([['A','Abrir'],['B','Volver'],['X','Descartar sugerencia'],['Y','Opciones']])}`},
+ {id:'D3',acc:G.ds1.c,back:'D2',next:'D4',t:'Aceptar la sugerencia',
+  n:`<ul><li>Un panel con las 3 portadas y <b>Crear</b> enfocado: 1 pulso.</li><li>«Cambiar nombre o juegos…» abre el asistente de C ya rellenado.</li><li>«No volver a sugerir» guarda el descarte en <code>sagas.json</code>.</li></ul>`,
+  h:()=>{const H=28+92+186+4*58+14;
+   return `${topbar(['Inicio','Sagas'])}<div class="scrim"><div class="glass menupanel" style="left:330px;width:620px;top:${(720-H)/2}px;height:${H}px"><div class="face"><h2>¿Crear la saga «Dark Souls»?</h2><p class="msub">3 juegos de Juegos PC con un nombre en común</p><div class="sugrow">${DS.map(k=>img(coverURL(k))).join('')}</div>
+   ${[{ic:ICON.saga,l:'Crear saga',go:'D4'},{ic:ICON.edit,l:'Cambiar nombre o juegos…'},{ic:ICON.chevR,l:'Ahora no'},{ic:ICON.eyeOff,l:'No volver a sugerir esta'}].map((r,i)=>`<div class="srow mrow fx${i===0?' f':''}"${go(r.go)}><span class="mic">${r.ic}</span><span class="sl">${r.l}</span></div>`).join('')}</div></div>${hints([['A','Elegir'],['B','Cerrar']])}</div>`}},
+ {id:'D4',acc:G.zb.c,back:'D2',next:'D5',t:'Cronología de la saga «Zelda» (multiplataforma)',
+  n:`<ul><li>Un <b>capítulo</b> por juego en el orden de la saga: tarjeta (número, portada, plataforma, años, capturas, horas) y sus capturas en 3 filas.</li><li>Barra superior: tramos por juego proporcionales a sus capturas y el punto de la posición actual.</li><li><span class="kb sh">LB</span>/<span class="kb sh">RB</span> saltan al capítulo anterior/siguiente; <span class="kb a">A</span> en la tarjeta abre la ficha del juego.</li></ul>`,
+  h:()=>{const tot=ZEL.reduce((a,k)=>a+G[k].shots,0);let acc=0;const labs=ZEL.map(k=>{const x=68+acc/tot*1144;acc+=G[k].shots;return `<div class="tlab" style="left:${x}px;color:${G[k].c}">${G[k].s} · ${G[k].pl}</div>`}).join('');
+   const chap=(k,n,x)=>`<div class="glass chap fx" style="left:${x}px;top:8px;--acc:${G[k].c}"><div class="face"><span class="num">${n}</span>${img(coverURL(k),'cc')}<div class="ci"><h4>${G[k].n.replace('Zelda: ','')}</h4><p>${G[k].y} · ${G[k].shots} capturas<br>${G[k].h[0]} h jugadas</p><span class="pl">${G[k].pl}</span></div></div></div>`;
+   let s='';const cols=[322,578,834];cols.forEach((x,c)=>{for(let r=0;r<3;r++){const i=c*3+r;s+=shot('zb',200+i,x,8+r*150,{cls:'tshot',f:c===1&&r===1,badge:1})}});
+   return `${topbar(['Inicio','Sagas','Zelda'])}<div class="ghead" style="top:84px">${miniCollage(['zb','zl','zt','zw'])}<h3>Zelda</h3><span class="chip" style="background:${G.zb.c}">4 juegos · 503 capturas</span><span class="soft">Orden de la saga</span><span class="date">Switch y PC · 2017–2025</span></div>
+   <div class="tline">${ZEL.map(k=>`<b style="--g:${G[k].c};width:${G[k].shots/tot*100}%"></b>`).join('')}<span class="cur" style="left:${(200/tot)*100}%"></span></div>${labs}
+   <div class="tview">${chap('zb',1,68)}${s}${chap('zl',2,1098)}</div>${hints([['A','Ver'],['B','Volver'],['LB/RB','Juego'],['X','Favorita'],['Y','Opciones']])}`}},
+ {id:'D5',acc:G.zb.c,back:'D4',t:'Editar la saga (todas las plataformas)',
+  n:`<ul><li>Misma lista con casillas que B7, pero con <b>todas las plataformas</b> (columna derecha).</li><li>«Deshacer saga» al final, con doble <span class="kb a">A</span>.</li></ul>`,
+  h:()=>`${topbar(['Inicio','Sagas','Zelda'])}${picker({title:'Juegos de la saga',sub:'Zelda · 4 marcados · LB/RB cambia el orden',row:3,scroll:[55,0],rows:[{ck:1,cov:'zb',l:'Zelda: Breath of the Wild',v:'Switch'},{ck:1,cov:'zl',l:"Zelda: Link's Awakening",v:'Switch'},{ck:1,cov:'zt',l:'Zelda: Tears of the Kingdom',v:'Switch'},{ck:1,cov:'zw',l:'Zelda: Wind Waker HD',v:'PC · Cemu'},{ck:0,cov:'hw',l:'Hyrule Warriors',v:'Switch'},{ck:0,cov:'hk',l:'Hollow Knight',v:'PC'},{ck:0,cov:'ce',l:'Celeste',v:'PC'},{ic:ICON.unlink,l:'Deshacer saga',danger:1}],hint:[['A','Marcar'],['LB/RB','Orden'],['Start','Guardar'],['B','Cancelar']]})}`},
+ ]};
+
+/* ---------------- Recomendación (híbrido) ---------------- */
+P.R={key:'★',c:'#3BB54A',name:'Recomendación',sub:'A + C + sugerencias de D',rec:1,
+ intro:`<p><b>Híbrido:</b> la <b>pila de portadas</b> de A en la cuadrícula (sustituye a los miembros, con opción de mostrarlos), pero <span class="kb a">A</span> abre <b>directamente</b> la vista unificada de C (sin carpeta intermedia). En la cabecera de esa vista, las <b>minis de cada juego</b> son enfocables (↑ desde la tira de filtros): <span class="kb a">A</span> abre la ficha del juego, así jugar a ME2 no necesita menús. Se crea con la <b>selección múltiple</b> de A (<span class="kb x">X</span> en la cuadrícula, ~10 pulsos) y también con «Añadir a una saga…» en el menú <span class="kb y">Y</span> de la ficha (B), para ampliar una saga juego a juego. Las <b>sugerencias</b> de D se usan para prerrellenar nombre y casillas, y como aviso discreto, no como pantalla propia.</p>`,
+ five:[['Crear','<span class="kb x">X</span> selección + <span class="kb sh">Start</span> «Crear saga» (≈ 10) o <span class="kb y">Y</span> «Añadir a una saga…» en la ficha (sugerida y enfocada).'],
+  ['En la lista','Pila de portadas con contador, en el puesto del miembro más reciente; aparece en cada plataforma que tenga algún miembro.'],
+  ['Vista de saga','1 pulso: cuadrícula unificada, minis de los juegos, tira de filtros LB/RB, insignias, orden «Por juego».'],
+  ['Editar / disolver','<span class="kb sh">Start</span> en la vista de saga (o <span class="kb y">Y</span> sobre las minis): renombrar, juegos y orden, portada, mostrar sueltos, deshacer.'],
+  ['Disco','Solo <code>sagas.json</code>. Ni mover ni copiar. Importar o soltar archivos en la saga usa el juego del filtro activo o pregunta.']],
+ pros:['El menor número de pulsos en lo que más se hace (ver las capturas: 1; filtrar: 1; jugar a un miembro: 3).','Reutiliza piezas existentes: modo selección, ActionMenu, Picker, Shots, la idea de «Favoritas» como vista unida.','Multiplataforma sin pantalla nueva.'],
+ cons:['LB/RB cambian de significado en la vista de saga (±12 pasa a LT/RT y RePág/AvPág): hay que avisarlo en las pistas.','Más estado en el foco de la cuadrícula de títulos (baldosas que no son títulos).'],
+ cost:[['Crear (3 juegos en la misma página)','≈ 10','X, →→, A, →→, A, Start, A, A'],['Ver todas las capturas','1','A'],['Filtrar por juego','1','LB/RB'],['Jugar a ME2','3','A, ↑↑ (mini ME2 enfocada), A (ficha) + A (Jugar)'],['Disolver','≈ 7','A, Start, ↓×5, A, A']],
+ mocks:[
+ {id:'R1',acc:PC_ACC,next:'R2',t:'Cuadrícula con la pila (A abre la vista unificada)',
+  n:`<ul><li>Igual que A5; la diferencia está en lo que hace <span class="kb a">A</span>.</li><li>Pistas: <span class="kb x">X</span> «Seleccionar» para crear otra saga.</li></ul>`,
+  h:()=>`${topbar(['Inicio','Juegos PC'],2,0)}${thead('Mass Effect','Saga · 3 juegos',G.me1.c,'<span>412 capturas · jugado 159 h</span>')}${grid([(x,y,f)=>pile(ME,'Mass Effect',x,y,{f,go:'R2'}),'er','hd','hk','ce','bg3','ow','se','cy','w3'],0)}${sides(0,1)}${hints([['A','Abrir'],['B','Volver'],['X','Seleccionar'],['LB/RB','Página'],['Y','Carrusel']])}`},
+ {id:'R2',acc:G.me2.c,back:'R1',t:'Vista unificada con minis de los juegos y filtros',
+  n:`<ul><li>Cabecera: <b>una mini por juego</b> (enfocable; aquí ME2 con el foco) → <span class="kb a">A</span> abre su ficha.</li><li>Tira de filtros con <span class="kb sh">LB</span>/<span class="kb sh">RB</span>; ↑ desde la primera fila pasa a la tira y otra ↑ a las minis.</li><li>Insignias y línea de color por juego; <span class="kb y">Y</span> ordena (con «Por juego»); <span class="kb sh">Start</span> = capturas + opciones de saga.</li></ul>`,
+  h:()=>shotsView({crumbs:['Inicio','Juegos PC','Mass Effect'],minis:ME.map((k,i)=>`<div class="glass mini fx${i===1?' f':''}" style="--acc:${G[k].c}"><div class="face">${img(coverURL(k))}</div></div>`).join(''),name:'Mass Effect',chip:'412 capturas',sort:'Más recientes primero',chips:chips(ME_CHIPS,0),items:ME_MIX,focus:-1,badges:1,lines:1,hints:[['A','Ficha de Mass Effect 2'],['B','Volver'],['LB/RB','Juego'],['Y','Ordenar'],['Start','Menú']]})},
+ ]};
+
+/* ============================== comparativa y modelo de datos (HTML de documento) ============================== */
+const COMPARE=`<div class="card"><h2>Comparativa</h2>
+<table class="t"><tr><th></th><th>A · Pila</th><th>B · Ficha con pestañas</th><th>C · Vista con filtros</th><th>D · Inicio + sugerencias</th><th>★ Recomendada</th></tr>
+<tr><td>Crear (3 juegos)</td><td class="n">≈ 10</td><td class="n">≈ 30</td><td class="n">≈ 16</td><td class="n">≈ 4 (sugerida) / 16</td><td class="n">≈ 10</td></tr>
+<tr><td>Ver todas las capturas</td><td class="n">2</td><td class="n">1 (5 recientes) / ≈ 7</td><td class="n">1</td><td class="n">≈ 4 desde Inicio</td><td class="n">1</td></tr>
+<tr><td>Filtrar por un juego</td><td>Y «Por juego» o abrir el juego</td><td class="n">LB/RB (en la ficha)</td><td class="n">LB/RB</td><td class="n">LB/RB (capítulo)</td><td class="n">LB/RB</td></tr>
+<tr><td>Jugar a un miembro</td><td class="n">≈ 5</td><td class="n">≈ 3</td><td class="n">≈ 5</td><td class="n">≈ 3 en la saga</td><td class="n">≈ 3</td></tr>
+<tr><td>Cuadrícula de títulos</td><td>sustituye a los miembros</td><td>se añade (miembros siguen)</td><td>sustituye</td><td>sin cambios</td><td>sustituye (opción)</td></tr>
+<tr><td>Multiplataforma</td><td>aparece en cada plataforma con miembros</td><td>ídem</td><td>sí (asistente por plataformas)</td><td>natural</td><td>sí</td></tr>
+<tr><td>Botones que cambian de sentido</td><td>X en títulos (libre hoy)</td><td>LB/RB en la ficha (libres hoy)</td><td>LB/RB en capturas (±12 → LT/RT)</td><td>ninguno</td><td>X en títulos; LB/RB en la vista de saga</td></tr>
+<tr><td>Pantallas nuevas</td><td>carpeta, orden</td><td>ficha de saga</td><td>asistente</td><td>Sagas, cronología, sugerencia</td><td>formulario y orden</td></tr>
+<tr><td>Esfuerzo estimado</td><td>M</td><td>M–L</td><td>M</td><td>L</td><td>M</td></tr></table>
+<h3>Comunes a las cuatro</h3><ul>
+<li><b>La saga es solo una agrupación virtual</b>: una lista de ids de título en <code>sagas.json</code>. No se crea ninguna carpeta, no se mueve ni se copia ningún archivo, y deshacerla no borra nada.</li>
+<li>Las <b>favoritas</b>, el <b>orden por juego</b>, el <b>acento</b>, las <b>horas</b> y los <b>ocultos</b> siguen siendo por juego; la saga solo suma o une. Una captura marcada como favorita en la saga es la misma favorita en su juego (se guardan por ruta).</li>
+<li>«Mover a otro juego…» dentro de la saga mueve de verdad (con la confirmación de siempre) y la captura cambia de juego: si el destino no es de la saga, desaparece de ella.</li>
+<li>«Añadir capturas» o soltar archivos sobre la saga: se copian a la carpeta del juego del filtro activo; con «Todas», un selector pregunta a qué juego.</li>
+<li>Un juego que desaparece (desinstalado, carpeta renombrada) se queda en <code>sagas.json</code> como miembro ausente: no se muestra y se ofrece quitarlo al editar. Una saga con menos de 2 miembros presentes se enseña como el juego suelto.</li>
+<li>Un juego solo puede estar en <b>una</b> saga (más simple de explicar y de pintar; ampliable más adelante).</li>
+<li>Juego oculto dentro de una saga: no aparece en la vista de saga (salvo con «Mostrar ocultos»), igual que en la cuadrícula.</li></ul></div>`;
+const MODEL=`<div class="card"><h2>Qué pasa en disco</h2>
+<pre class="tree">D:\\Capturas\\                                  <span class="ok">← intacto: la saga no crea ni mueve nada</span>
+├── PC\\
+│   ├── Mass Effect\\        2021-11-02 21-05-44.png …   <span class="dim">(96)</span>
+│   ├── Mass Effect 2\\      …                          <span class="dim">(168)</span>
+│   └── Mass Effect 3\\      …                          <span class="dim">(148)</span>
+└── Switch\\Zelda - Breath of the Wild\\ …
+
+%APPDATA%\\app.visorcapturas.desktop\\
+├── config.json  favorites.json  games.json  stats.json  hidden.json  titleprefs.json
+└── sagas.json                                    <span class="new">← único archivo nuevo</span></pre></div>
+<div class="card"><h2>Modelo de datos <small>esbozo</small></h2>
+<div class="cols"><div><h3>sagas.json</h3><pre>{
+  "version": 1,
+  "sagas": [
+    {
+      "id": "saga-7f3a2c",             // estable, aleatorio
+      "name": "Mass Effect",
+      "members": [                      // ORDEN = orden de la saga
+        "steam:17460",                  // Title.id (lanzador o plataforma/carpeta)
+        "steam:24980",
+        "steam:1238020"
+      ],
+      "cover": { "kind": "stack" },     // stack | collage | member:&lt;id&gt; | file:&lt;ruta&gt;
+      "collapse": true,                 // ocultar los miembros sueltos
+      "accent": null,                   // #rrggbb manual o null = del primer miembro
+      "sortMode": "recent",             // recent | oldest | favs | name | game
+      "created": 1760600000000
+    }
+  ],
+  "dismissed": ["dark souls"]          // sugerencias descartadas (clave normalizada)
+}</pre></div>
+<div><h3>TypeScript (<code>src/lib/types.ts</code>)</h3><pre>export interface Saga {
+  id: string; name: string;
+  members: string[];          // Title.id en orden
+  cover: { kind: 'stack' | 'collage' }
+       | { kind: 'member'; id: string }
+       | { kind: 'file'; path: string };
+  collapse: boolean;
+  accent: string | null;
+  sortMode: SortMode | 'game' | null;
+}
+export interface SagaView extends Saga {
+  present: Array&lt;{ p: number; t: number }&gt;; // dónde está cada miembro
+  shots: Shot[]; playSeconds: number; lastPlayed: number | null;
+}
+export interface Library { …; sagas: Saga[]; suggestions: SagaSuggestion[] }
+export interface SagaSuggestion { key: string; name: string; members: string[] }
+// Backend
+getSagas / saveSaga(s: Saga) / deleteSaga(id) / dismissSuggestion(key)</pre></div></div>
+<h3>Rust (<code>src-tauri/visor-core</code>)</h3><ul>
+<li><b>Nuevo <code>sagas.rs</code></b>: <code>Saga</code>, <code>SagaFile</code> (serde, <code>#[serde(default)]</code> para versiones futuras), <code>load_sagas</code>/<code>save_sagas</code> con escritura atómica como <code>userdata.rs</code>; <code>upsert</code> (nombre recortado y no vacío, miembros sin duplicados, un juego en una sola saga: quitarlo de la anterior), <code>delete</code>, <code>prune(present_ids)</code> sin borrar ausentes. Sin tocar el sistema de archivos de la biblioteca.</li>
+<li><b><code>suggest_sagas(titles)</code></b>: normaliza nombres (minúsculas, sin ™®©, sin «remastered/edición…»), quita sufijos numéricos y romanos (2, II, III), agrupa por prefijo de ≥ 2 palabras o ≥ 6 letras, mínimo 2 juegos, excluye los ya agrupados y los descartados. Pruebas: «Mass Effect / 2 / 3», «Dark Souls Remastered / II / III», «Zelda: …» (prefijo antes de «:»), falsos positivos («Hades» vs «Hades II» sí; «Portal» vs «Portal Knights» no).</li>
+<li><b><code>lib.rs</code></b>: comandos <code>get_sagas</code>, <code>save_saga</code>, <code>delete_saga</code>, <code>dismiss_saga_suggestion</code>; <code>scan_library</code> devuelve además <code>sagas</code> y <code>suggestions</code>. Opcional: <code>set_saga_sort</code> (o dentro de <code>save_saga</code>).</li>
+<li>Sin cambios en <code>scan.rs</code>, <code>importer.rs</code> ni en la captura: la saga se resuelve en la interfaz uniendo listas que ya existen.</li></ul>
+<h3>Frontend</h3><ul>
+<li><b><code>store.svelte.ts</code></b>: <code>sagaView</code> (como <code>favView</code>), <code>saga</code> (id abierto), <code>sagaFilter</code> (−1 = Todas), <code>origin: Map&lt;path, memberIdx&gt;</code>; <code>cur</code> devuelve la unión ordenada (recientes, antiguas, favoritas, nombre o «por juego» = concatenar en el orden de <code>members</code>). <code>SORT_ORDER</code> gana <code>'game'</code> solo en sagas.</li>
+<li><b>Cuadrícula de títulos</b>: una lista derivada <code>gridItems</code> (<code>{kind:'title',t}</code> | <code>{kind:'saga',id}</code>) que oculta los miembros con <code>collapse</code>; las claves de foco pasan a <code>tit{i}</code>/<code>saga{id}</code>. <code>app.t</code> sigue apuntando a títulos reales.</li>
+<li><b><code>controller.svelte.ts</code></b>: <span class="kb x">X</span> en títulos = modo selección (<code>selTitles: SvelteSet</code>), <span class="kb sh">Start</span> con selección = menú «Selección»; en la vista de saga LB/RB = filtro, LT/RT (botones 6/7 del mando) y RePág/AvPág = ±12. Nuevos <code>MenuItem</code>: <code>saga-new</code>, <code>saga-add</code>, <code>saga-edit</code>, <code>saga-order</code>, <code>saga-rename</code>, <code>saga-collapse</code>, <code>saga-dissolve</code>, <code>saga-member</code>.</li>
+<li><b><code>ops.svelte.ts</code></b>: formulario de saga (reutiliza <code>formpanel</code> + teclado en pantalla), selector de orden, sugerencia de nombre por prefijo común, destino de importación/soltar en sagas.</li>
+<li><b>Pantallas</b>: <code>Titles.svelte</code> (pila), <code>Shots.svelte</code> (minis, tira de filtros, insignias, secciones), <code>Viewer.svelte</code> (insignia en <code>vinfo</code>), <code>ActionMenu.svelte</code> (nuevas filas), nuevo <code>SagaForm.svelte</code>; CSS: las clases nuevas de este archivo (<code>.pile</code>, <code>.scount</code>, <code>.gbadge</code>, <code>.fstrip</code>, <code>.fchip</code>, <code>.gsec</code>…).</li>
+<li><b><code>mock.ts</code></b>: sagas en <code>localStorage</code> y una sugerencia simulada; añadir títulos de ejemplo con prefijo común para probarlo en el navegador.</li></ul></div>`;
+
+/* ============================== montaje y navegación ============================== */
+const ORDER=['A','B','C','D','R'];
+function render(){
+  const tabs=document.getElementById('tabs'),main=document.getElementById('main');
+  tabs.innerHTML=ORDER.map(k=>`<button class="ptab" data-p="${k}" style="--c:${P[k].c}"><span class="l">${P[k].key}</span>${P[k].name}</button>`).join('')+`<button class="ptab" data-p="X" style="--c:#4a5260"><span class="l">≡</span>Comparativa y modelo de datos</button>`;
+  main.innerHTML=ORDER.map(k=>{const p=P[k];
+    return `<section class="panel" id="panel-${k}"><div class="card${p.rec?' rec':''}" style="--c:${p.c}"><h2>${p.key==='★'?'':'Propuesta '+p.key+' · '}${p.name}<small>${p.sub}</small></h2>${p.intro}
+    <div class="five" style="--c:${p.c}">${p.five.map(([t,d],i)=>`<div><b>${i+1} · ${t}</b>${d}</div>`).join('')}</div>
+    <div class="cols"><div><h3>Ventajas</h3><ul class="pros">${p.pros.map(x=>`<li>${x}</li>`).join('')}</ul></div><div><h3>Inconvenientes</h3><ul class="cons">${p.cons.map(x=>`<li>${x}</li>`).join('')}</ul></div></div>
+    <h3>Pulsos de mando</h3><table class="t"><tr><th>Tarea</th><th>Pulsos</th><th>Secuencia</th></tr>${p.cost.map(([a,b,c])=>`<tr><td>${a}</td><td class="n">${b}</td><td>${c}</td></tr>`).join('')}</table></div>
+    ${p.mocks.map(m=>`<figure class="mock" id="m-${m.id}" style="--c:${p.c}"><div class="mwrap"><div class="stage" tabindex="0" data-id="${m.id}"${m.next?` data-next="${m.next}"`:''}${m.back?` data-back="${m.back}"`:''} style="--acc:${m.acc};--acc-ink:#fff"><div class="bg">${BG}</div><div class="screen">${m.h()}</div></div></div>
+      <figcaption><h4><span class="id">${m.id}</span>${m.t}</h4>${m.n}<div class="go">${m.back?`<span class="kb b">B</span> ← ${m.back} `:''}${m.next?`&nbsp; <span class="kb a">A</span> → ${m.next}`:''}</div></figcaption></figure>`).join('')}</section>`}).join('')
+   +`<section class="panel" id="panel-X">${COMPARE}${MODEL}</section>`;
+  tabs.addEventListener('click',e=>{const b=e.target.closest('.ptab');if(b)show(b.dataset.p)});
+  show(location.hash.slice(1)||'A');
+}
+function show(k){if(!document.getElementById('panel-'+k))k='A';
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='panel-'+k));
+  document.querySelectorAll('.ptab').forEach(b=>b.classList.toggle('on',b.dataset.p===k));
+  history.replaceState(null,'','#'+k)}
+function jump(id){const fig=document.getElementById('m-'+id);if(!fig)return;const panel=fig.closest('.panel').id.slice(6);show(panel);
+  fig.scrollIntoView({behavior:'smooth',block:'center'});const st=fig.querySelector('.stage');st.focus({preventScroll:true});
+  const w=fig.querySelector('.mwrap');w.classList.remove('flash');void w.offsetWidth;w.classList.add('flash')}
+/* foco espacial: mismo algoritmo que pos()/move() de controller.svelte.ts */
+function pos(e,root){let x=0,y=0,n=e;while(n&&n!==root){x+=n.offsetLeft;y+=n.offsetTop;n=n.offsetParent}return{x:x+e.offsetWidth/2,y:y+e.offsetHeight/2}}
+function scopeOf(st){const sc=[...st.querySelectorAll('.scrim')].pop();return sc||st}
+function move(st,dx,dy){const sc=scopeOf(st);const all=[...sc.querySelectorAll('.fx')];const cur=sc.querySelector('.fx.f');
+  if(!cur){all[0]?.classList.add('f');return}
+  const c=pos(cur,st);let best=null,bs=1e9;
+  for(const e of all){if(e===cur)continue;const p=pos(e,st),vx=p.x-c.x,vy=p.y-c.y;const prim=dx?vx*dx:vy*dy;if(prim<=6)continue;const s=prim+Math.abs(dx?vy:vx)*2.4;if(s<bs){bs=s;best=e}}
+  if(best){cur.classList.remove('f');best.classList.add('f')}
+  else{try{cur.animate({translate:['0 0',`${dx*8}px ${dy*8}px`,'0 0'],offset:[0,.4,1]},{duration:180,easing:'ease-out'})}catch{}}}
+document.addEventListener('keydown',e=>{const st=document.activeElement&&document.activeElement.closest&&document.activeElement.closest('.stage');if(!st)return;
+  const m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
+  if(m){e.preventDefault();move(st,...m);return}
+  if(e.key==='Enter'||e.key===' '||e.key==='a'||e.key==='A'){e.preventDefault();const f=scopeOf(st).querySelector('.fx.f');const g=(f&&f.dataset.go)||st.dataset.next;if(g)jump(g)}
+  else if(e.key==='Escape'||e.key==='Backspace'||e.key==='b'||e.key==='B'){if(st.dataset.back){e.preventDefault();jump(st.dataset.back)}}});
+document.addEventListener('focusin',e=>{document.querySelectorAll('.mwrap.act').forEach(w=>w.classList.remove('act'));const w=e.target.closest&&e.target.closest('.mwrap');if(w)w.classList.add('act')});
+document.addEventListener('mousemove',e=>{const fx=e.target.closest&&e.target.closest('.stage .fx');if(!fx||fx.classList.contains('f'))return;const st=fx.closest('.stage');const sc=scopeOf(st);if(!sc.contains(fx))return;sc.querySelectorAll('.fx.f').forEach(x=>x.classList.remove('f'));fx.classList.add('f')});
+document.addEventListener('click',e=>{const st=e.target.closest&&e.target.closest('.stage');if(!st)return;st.focus({preventScroll:true});const fx=e.target.closest('.fx');if(fx&&fx.dataset.go)jump(fx.dataset.go)});
+
+(async()=>{try{await Promise.race([document.fonts.load(`800 40px "M PLUS Rounded 1c"`),new Promise(r=>setTimeout(r,1200))])}catch{}render()})();
+</script>
+</body>
+</html>

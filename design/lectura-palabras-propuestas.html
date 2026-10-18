@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Palabras de la frase · Propuestas</title>
+<style>
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:400;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-400-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:700;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-700-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:800;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-800-latin.woff2') format('woff2')}
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;--jp:'Yu Gothic UI','Yu Gothic','Meiryo',sans-serif;--acc:#00A0D8;color-scheme:light}
+*{box-sizing:border-box}
+html,body{margin:0;background:#dfe3e9;font-family:var(--round);color:#3a414e}
+.doc{max-width:1360px;margin:0 auto;padding:40px 24px 80px}
+.doc>header h1{font-size:34px;font-weight:800;margin:0 0 6px}
+.doc>header p{font-size:17px;line-height:1.55;margin:0 0 10px;max-width:900px;color:#545c6a}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+.toc a{font-size:15px;font-weight:700;color:#3a414e;text-decoration:none;background:#fff;border-radius:999px;padding:6px 14px;box-shadow:0 0 0 1px rgba(95,110,135,.2)}
+.toc a:hover{background:var(--acc);color:#fff}
+section.p{margin-top:56px}
+section.p h2{font-size:26px;font-weight:800;margin:0 0 4px;display:flex;align-items:center;gap:12px}
+section.p h2 .n{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#3a414e;color:#fff;font-size:19px}
+section.p .why{font-size:16px;color:#5f6776;margin:0 0 16px 50px;max-width:900px;line-height:1.5}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:24px;align-items:start}
+@media (max-width:1100px){.row{grid-template-columns:1fr}}
+.frame{position:relative;width:100%;aspect-ratio:16/10;border-radius:18px;overflow:hidden;box-shadow:0 0 0 1px rgba(60,70,90,.25),0 24px 50px -24px rgba(30,40,60,.55);background:#eceef2}
+.notes{background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 0 0 1px rgba(95,110,135,.18)}
+.notes h3{margin:0 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:#7a8291}
+.notes ul{margin:0;padding-left:18px;font-size:15px;line-height:1.5}
+.notes li{margin-bottom:8px}
+.notes .pro{color:#24782f}.notes .con{color:#b8323f}
+
+/* ===== mundo de la pagina de lectura (escenario 1280x800, se escala al marco) ===== */
+.stage{position:absolute;left:0;top:0;width:1280px;height:800px;transform-origin:0 0;overflow:hidden;font-family:var(--round);color:#3a414e;
+  background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(34px)}
+.blob.w{background:radial-gradient(circle,#fff,rgba(255,255,255,0) 70%)}
+.blob.a{background:radial-gradient(circle,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%);opacity:.55}
+.pill{background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(255,255,255,.55));box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+.crumb{position:absolute;left:24px;top:16px;height:44px;padding:0 18px;border-radius:999px;display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;color:#4a5260}
+.crumb .d{width:10px;height:10px;border-radius:50%;background:#3bb54a;box-shadow:0 0 0 3px rgba(59,181,74,.2)}
+.crumb .c{color:var(--acc)}
+.tools{position:absolute;right:24px;top:16px;display:flex;gap:6px;padding:5px;border-radius:999px}
+.tl{height:34px;padding:0 14px;border-radius:999px;display:flex;align-items:center;font-size:14px;font-weight:800;color:#5f6776}
+.tl.on{background:var(--acc);color:#fff}
+.jp{font-family:var(--jp)}
+/* frase */
+.line{display:flex;align-items:flex-end;gap:12px}
+.ico{flex:none;width:48px;height:48px;border-radius:34%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:24px;
+  background:linear-gradient(180deg,#ff9bb3,#ff4f7b 55%,#d93a63);box-shadow:0 0 0 1px #c0355a}
+.bubble{padding:12px 22px 14px;border-radius:24px 24px 24px 8px;background:linear-gradient(180deg,#fff4f7,#ffeef3);
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 2px rgba(255,79,123,.55),0 0 0 6px rgba(0,160,216,.18)}
+.bubble .nm{font-size:16px;font-weight:800;color:#c23a5f}
+.tx{font-family:var(--jp);font-size:30px;line-height:1.75;margin:0}
+.tx .w{border-radius:5px;padding:0 1px;margin:0 1px;border-bottom:2px solid rgba(95,110,135,.35)}
+.tx .p{color:#8a919c;border-color:transparent}
+.tx .v{color:#2d47a8;border-color:#3f63e0}
+.tx .aux{color:#8a5cd6;border-color:transparent}
+.tx .hl{background:rgba(0,160,216,.18)}
+.tx rt{font-family:var(--round);font-size:.45em;color:#8a919c}
+.old{opacity:.5;font-size:22px}
+.old .tx{font-size:22px}
+.panel{border-radius:26px;background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.36));
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px rgba(95,110,135,.2),0 18px 30px -18px rgba(40,50,70,.4)}
+.ptitle{font-size:15px;font-weight:800;color:#4a5260;display:flex;align-items:center;gap:8px}
+.chip{height:28px;padding:0 12px;border-radius:999px;font-size:12.5px;font-weight:800;display:inline-flex;align-items:center;background:rgba(255,255,255,.8);box-shadow:0 0 0 1px rgba(95,110,135,.22);color:#5f6776}
+.chip.acc{background:var(--acc);color:#fff;box-shadow:none}
+.pt{font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.pt.n{color:#5f6776;background:rgba(95,110,135,.12)}
+.pt.v{color:#2d47a8;background:rgba(63,99,224,.13)}
+.pt.g{color:#7a46c9;background:rgba(138,92,214,.14)}
+.tag{display:inline-block;margin-right:5px;padding:0 6px;border-radius:6px;font-size:11px;font-weight:800;color:#6a7383;background:rgba(95,110,135,.1);vertical-align:1px}
+.freq{font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;color:#24782f;background:rgba(59,181,74,.14)}
+.freq.r{color:#b8323f;background:rgba(232,56,79,.12)}
+.term{font-family:var(--jp);font-weight:700;color:#2f3642}
+.term rt{font-family:var(--round);font-size:.45em;color:#8a919c;font-weight:600}
+.gl{font-size:15px;line-height:1.45;color:#3a414e}
+.mut{color:#8a919c}
+.sp{flex:1}
+
+/* P1 lista */
+.p1 .rowi{display:grid;grid-template-columns:200px 1fr;gap:18px;padding:14px 18px;border-bottom:1px solid rgba(95,110,135,.13)}
+.p1 .rowi:last-child{border:0}
+.p1 .rowi.hl{background:rgba(0,160,216,.08);box-shadow:inset 4px 0 0 var(--acc)}
+.p1 .rowi ol{margin:0;padding-left:20px}
+.p1 .rowi li{margin:2px 0}
+/* P2 acordeon */
+.p2 .it{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:16px}
+.p2 .it .term{font-size:24px;min-width:90px}
+.p2 .it .one{font-size:15px;color:#4a5260;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p2 .it .ar{color:#a3abb8;font-weight:800}
+.p2 .open{background:#fff;box-shadow:0 0 0 2px var(--acc),0 12px 22px -14px rgba(40,50,70,.5);margin:6px 0;padding:14px 18px;border-radius:18px}
+.p2 .open ol{margin:8px 0 0;padding-left:22px}
+/* P3 maestro-detalle */
+.p3 .idx .it{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;margin-bottom:4px}
+.p3 .idx .it.on{background:var(--acc);color:#fff}
+.p3 .idx .it.on .term,.p3 .idx .it.on .mut{color:#fff}
+.p3 .kj{display:flex;gap:10px;margin-top:10px}
+.p3 .kj div{flex:1;background:rgba(95,110,135,.07);border-radius:14px;padding:10px 12px;font-size:13px;line-height:1.4}
+.p3 .kj b{font-family:var(--jp);font-size:30px;display:block;color:#2f3642}
+.p3 .ex{margin-top:12px;padding:10px 14px;border-left:3px solid var(--acc);background:rgba(0,160,216,.06);border-radius:0 12px 12px 0;font-size:14px}
+/* P4 columna lateral */
+.p4 .card{background:rgba(255,255,255,.88);border-radius:18px;padding:12px 16px;margin-bottom:10px;box-shadow:0 0 0 1px rgba(95,110,135,.16);border-left:5px solid #8a919c}
+.p4 .card.v{border-left-color:#3f63e0}
+.p4 .card.g{border-left-color:#8a5cd6}
+.p4 .card ol{margin:4px 0 0;padding-left:20px}
+/* P5 conjugacion */
+.p5 .chain{display:flex;align-items:stretch;gap:0;margin-top:10px}
+.p5 .chain>div{flex:1;text-align:center;padding:10px 6px;background:rgba(255,255,255,.9);box-shadow:0 0 0 1px rgba(95,110,135,.16);font-size:13px}
+.p5 .chain>div:first-child{border-radius:14px 0 0 14px}.p5 .chain>div:last-child{border-radius:0 14px 14px 0}
+.p5 .chain b{display:block;font-family:var(--jp);font-size:24px;color:#2f3642}
+.p5 .chain .v b{color:#2d47a8}.p5 .chain .g b{color:#7a46c9}
+.spoiler{margin-top:10px;padding:10px 16px;border-radius:14px;background:repeating-linear-gradient(135deg,rgba(95,110,135,.12) 0 8px,rgba(95,110,135,.06) 8px 16px);color:transparent;text-shadow:0 0 10px rgba(60,70,90,.55);font-size:17px}
+.known{opacity:.45}
+
+/* lista de anadidos */
+.ideas{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:16px}
+.idea{background:#fff;border-radius:18px;padding:16px 18px;box-shadow:0 0 0 1px rgba(95,110,135,.18)}
+.idea h4{margin:0 0 6px;font-size:17px;display:flex;gap:8px;align-items:center}
+.idea p{margin:0;font-size:14.5px;line-height:1.5;color:#545c6a}
+.idea .lvl{font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;background:rgba(59,181,74,.14);color:#24782f}
+.idea .lvl.m{background:rgba(242,184,7,.18);color:#8a6a00}
+.idea .lvl.h{background:rgba(232,56,79,.12);color:#b8323f}
+</style>
+</head>
+<body>
+<div class="doc">
+<header>
+  <h1>Palabras de la frase · propuestas verticales</h1>
+  <p>Cinco formas de colocar las palabras de arriba abajo bajo la frase (o al lado), y una lista de añadidos para leer mejor. Frase de ejemplo: 美雪「明日、駅まで一緒に行ってくれないかな」.</p>
+  <nav class="toc"><a href="#p1">1 · Glosario</a><a href="#p2">2 · Acordeón</a><a href="#p3">3 · Lista + detalle</a><a href="#p4">4 · Columna lateral</a><a href="#p5">5 · Desglose</a><a href="#extras">Añadidos</a></nav>
+</header>
+
+<!-- ============================ 1 ============================ -->
+<section class="p" id="p1">
+  <h2><span class="n">1</span>Glosario en filas</h2>
+  <p class="why">Una fila por palabra, en el orden de la frase: a la izquierda la palabra con su lectura, a la derecha las acepciones. Es la versión vertical directa del diseño actual y se lee como un diccionario de papel.</p>
+  <div class="row">
+    <div class="frame"><div class="stage p1">
+      <i class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></i><i class="blob a" style="left:820px;top:420px;width:520px;height:400px"></i>
+      <div class="crumb pill"><i class="d"></i>Lectura › <span class="c">白銀の約束</span></div>
+      <div class="tools pill"><span class="tl on jp">ふりがな</span><span class="tl on">Colores</span><span class="tl">A− 30 A+</span></div>
+      <div style="position:absolute;left:40px;right:40px;top:84px">
+        <div class="line"><div class="ico jp">美</div><div class="bubble"><div class="nm">美雪</div><p class="tx" data-s></p></div></div>
+      </div>
+      <div class="panel" style="position:absolute;left:40px;right:40px;top:250px;bottom:24px;padding:12px 6px">
+        <div class="ptitle" style="padding:0 16px 8px">Palabras de la frase <span class="sp"></span><span class="chip">JMdict-es</span></div>
+        <div class="rowi"><div><ruby class="term" style="font-size:30px">明日<rt>あした</rt></ruby><div style="margin-top:4px"><span class="pt n">Sustantivo</span> <span class="freq">común</span></div></div><ol class="gl"><li><span class="tag">n</span><span class="tag">adv</span>mañana</li></ol></div>
+        <div class="rowi"><div><ruby class="term" style="font-size:30px">駅<rt>えき</rt></ruby><div style="margin-top:4px"><span class="pt n">Sustantivo</span> <span class="freq">común</span></div></div><ol class="gl"><li><span class="tag">n</span>estación (de tren)</li><li>parada; apeadero</li></ol></div>
+        <div class="rowi hl"><div><ruby class="term" style="font-size:30px">一緒<rt>いっしょ</rt></ruby><div style="margin-top:4px"><span class="pt n">Sustantivo</span> <span class="freq">común</span></div></div><ol class="gl"><li><span class="tag">n</span><span class="tag">vs</span>juntos; en compañía</li><li>lo mismo; igual</li></ol></div>
+        <div class="rowi"><div><ruby class="term" style="font-size:30px">行く<rt>いく</rt></ruby><div style="margin-top:4px"><span class="pt v">Verbo</span> <span class="mut" style="font-size:13px">行って</span></div></div><ol class="gl"><li><span class="tag">v5k-s</span><span class="tag">vi</span>ir; marcharse</li><li>avanzar; progresar</li><li>salir (algo) bien</li></ol></div>
+      </div>
+    </div></div>
+    <aside class="notes"><h3>Notas</h3><ul>
+      <li class="pro">Orden natural: lees la frase y bajas palabra a palabra.</li>
+      <li class="pro">Aprovecha todo el ancho para las acepciones largas.</li>
+      <li class="con">Con frases de 12+ palabras hay que desplazarse.</li>
+      <li>La fila de la palabra bajo el ratón se marca con la barra azul.</li>
+    </ul></aside>
+  </div>
+</section>
+
+<!-- ============================ 2 ============================ -->
+<section class="p" id="p2">
+  <h2><span class="n">2</span>Acordeón compacto</h2>
+  <p class="why">Cada palabra ocupa una sola línea con su primera acepción. Al pasar por encima o hacer clic (en la lista o en la frase) se despliega con todo. Caben todas las palabras sin desplazarse; lo que ya sabes no estorba.</p>
+  <div class="row">
+    <div class="frame"><div class="stage p2">
+      <i class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></i><i class="blob a" style="left:820px;top:420px;width:520px;height:400px"></i>
+      <div class="crumb pill"><i class="d"></i>Lectura › <span class="c">白銀の約束</span></div>
+      <div class="tools pill"><span class="tl on jp">ふりがな</span><span class="tl on">Colores</span><span class="tl">A− 30 A+</span></div>
+      <div style="position:absolute;left:40px;right:40px;top:84px">
+        <div class="line"><div class="ico jp">美</div><div class="bubble"><div class="nm">美雪</div><p class="tx" data-s data-hl="行"></p></div></div>
+      </div>
+      <div class="panel" style="position:absolute;left:40px;right:40px;top:250px;bottom:24px;padding:12px">
+        <div class="ptitle" style="padding:0 6px 8px">Palabras <span class="mut" style="font-weight:700">· 4 + 2 de gramática</span><span class="sp"></span><span class="chip">Ocultar conocidas</span></div>
+        <div class="it known"><span class="term">明日</span><span class="pt n">Sust.</span><span class="one">mañana</span><span class="chip" style="height:22px">✓ conocida</span></div>
+        <div class="it"><span class="term">駅</span><span class="pt n">Sust.</span><span class="one">estación (de tren)</span><span class="ar">›</span></div>
+        <div class="it"><span class="term">一緒</span><span class="pt n">Sust.</span><span class="one">juntos; en compañía · lo mismo; igual</span><span class="ar">›</span></div>
+        <div class="open">
+          <div style="display:flex;align-items:baseline;gap:10px"><ruby class="term" style="font-size:34px">行く<rt>いく</rt></ruby><span class="pt v">Verbo</span><span class="mut">行って · forma て</span><span class="sp"></span><span class="freq">común · #312</span><span class="chip acc">+ Anki</span></div>
+          <ol class="gl"><li><span class="tag">v5k-s</span><span class="tag">vi</span>ir; marcharse; dirigirse</li><li>avanzar; progresar</li><li>salir bien; funcionar</li><li>(tras ～て) ir haciendo; seguir</li></ol>
+        </div>
+        <div class="it"><span class="term" style="color:#7a46c9">～てくれる</span><span class="pt g">Gramática</span><span class="one">hacer algo por mí (favor) · くれない＝¿no me harías…?</span><span class="ar">›</span></div>
+        <div class="it"><span class="term" style="color:#7a46c9">かな</span><span class="pt g">Gramática</span><span class="one">me pregunto si…; ¿será que…? (duda suave)</span><span class="ar">›</span></div>
+      </div>
+    </div></div>
+    <aside class="notes"><h3>Notas</h3><ul>
+      <li class="pro">Muy denso: una frase entera cabe sin desplazar.</li>
+      <li class="pro">Combina bien con «palabras conocidas» (salen atenuadas u ocultas).</li>
+      <li class="pro">Hueco natural para la gramática (tu diccionario de gramática ya sirve).</li>
+      <li class="con">Hay que interactuar para ver todas las acepciones.</li>
+    </ul></aside>
+  </div>
+</section>
+
+<!-- ============================ 3 ============================ -->
+<section class="p" id="p3">
+  <h2><span class="n">3</span>Lista + ficha detallada</h2>
+  <p class="why">A la izquierda un índice vertical de las palabras; a la derecha la ficha completa de la elegida, al estilo de la ventana de búsqueda de Yomitan: acepciones, kanji que la forman y una frase de ejemplo. Al llegar una frase nueva se elige sola la primera palabra que no conoces.</p>
+  <div class="row">
+    <div class="frame"><div class="stage p3">
+      <i class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></i><i class="blob a" style="left:820px;top:420px;width:520px;height:400px"></i>
+      <div class="crumb pill"><i class="d"></i>Lectura › <span class="c">白銀の約束</span></div>
+      <div class="tools pill"><span class="tl on jp">ふりがな</span><span class="tl on">Colores</span><span class="tl">A− 30 A+</span></div>
+      <div style="position:absolute;left:40px;right:40px;top:84px">
+        <div class="line"><div class="ico jp">美</div><div class="bubble"><div class="nm">美雪</div><p class="tx" data-s data-hl="一緒"></p></div></div>
+      </div>
+      <div class="panel idx" style="position:absolute;left:40px;width:300px;top:250px;bottom:24px;padding:12px">
+        <div class="ptitle" style="padding:0 6px 8px">Palabras</div>
+        <div class="it"><span class="term" style="font-size:22px">明日</span><span class="mut">あした</span></div>
+        <div class="it"><span class="term" style="font-size:22px">駅</span><span class="mut">えき</span></div>
+        <div class="it on"><span class="term" style="font-size:22px">一緒</span><span class="mut">いっしょ</span></div>
+        <div class="it"><span class="term" style="font-size:22px">行く</span><span class="mut">いく</span></div>
+        <div class="it"><span class="term" style="font-size:22px;color:#7a46c9">～てくれる</span></div>
+        <div class="it"><span class="term" style="font-size:22px;color:#7a46c9">かな</span></div>
+      </div>
+      <div class="panel" style="position:absolute;left:356px;right:40px;top:250px;bottom:24px;padding:18px 22px">
+        <div style="display:flex;align-items:baseline;gap:12px"><ruby class="term" style="font-size:46px">一緒<rt>いっしょ</rt></ruby><span class="pt n">Sustantivo</span><span class="tag">vs</span><span class="sp"></span><span class="freq">común · #1.204</span><span class="chip">🔊</span><span class="chip acc">+ Anki</span></div>
+        <ol class="gl" style="margin:8px 0 0;padding-left:22px;font-size:17px"><li>juntos; en compañía</li><li>lo mismo; igual; idéntico</li><li>al mismo tiempo; a la vez</li></ol>
+        <div class="kj"><div><b>一</b>uno · イチ、イツ · 1 trazo</div><div><b>緒</b>cordón; comienzo · ショ、チョ · 14 trazos</div></div>
+        <div class="ex jp">一緒に帰ろう。<span class="mut" style="font-family:var(--round)"> — Volvamos juntos.</span></div>
+      </div>
+    </div></div>
+    <aside class="notes"><h3>Notas</h3><ul>
+      <li class="pro">La ficha tiene espacio para todo: kanji, ejemplos, audio, frecuencia.</li>
+      <li class="pro">Muy cómodo con mando/teclado: ↑↓ recorre las palabras.</li>
+      <li class="con">Sólo ves una palabra en detalle a la vez.</li>
+    </ul></aside>
+  </div>
+</section>
+
+<!-- ============================ 4 ============================ -->
+<section class="p" id="p4">
+  <h2><span class="n">4</span>Columna lateral</h2>
+  <p class="why">Para ventanas anchas: la frase y el historial ocupan la izquierda como un chat normal (la última abajo), y a la derecha una columna fija con las tarjetas apiladas de arriba abajo. Elegir una frase antigua cambia la columna.</p>
+  <div class="row">
+    <div class="frame"><div class="stage p4">
+      <i class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></i><i class="blob a" style="left:820px;top:420px;width:520px;height:400px"></i>
+      <div class="crumb pill"><i class="d"></i>Lectura › <span class="c">白銀の約束</span></div>
+      <div class="tools pill"><span class="tl on jp">ふりがな</span><span class="tl on">Colores</span><span class="tl">A− 30 A+</span></div>
+      <div style="position:absolute;left:40px;width:760px;top:84px;bottom:24px;display:flex;flex-direction:column;justify-content:flex-end;gap:18px;-webkit-mask-image:linear-gradient(transparent,#000 30%);mask-image:linear-gradient(transparent,#000 30%)">
+        <p class="tx old">窓の外では、雪が音もなく降り続いていた。</p>
+        <p class="tx old">僕は布団の中で小さく息を吐いて、返事をするかどうか迷う。</p>
+        <div class="line old"><div class="ico jp" style="width:40px;height:40px;font-size:20px">美</div><div class="bubble" style="box-shadow:0 0 0 2px rgba(255,79,123,.4)"><p class="tx">……ねえ、まだ起きてる？</p></div></div>
+        <div class="line"><div class="ico jp">美</div><div class="bubble"><div class="nm">美雪</div><p class="tx" data-s></p></div></div>
+      </div>
+      <div class="panel" style="position:absolute;left:830px;right:24px;top:84px;bottom:24px;padding:14px">
+        <div class="ptitle" style="padding:0 4px 10px">Palabras</div>
+        <div class="card"><ruby class="term" style="font-size:24px">明日<rt>あした</rt></ruby> <span class="pt n">Sust.</span><ol class="gl"><li>mañana</li></ol></div>
+        <div class="card"><ruby class="term" style="font-size:24px">駅<rt>えき</rt></ruby> <span class="pt n">Sust.</span><ol class="gl"><li>estación (de tren)</li></ol></div>
+        <div class="card"><ruby class="term" style="font-size:24px">一緒<rt>いっしょ</rt></ruby> <span class="pt n">Sust.</span><ol class="gl"><li>juntos; en compañía</li><li>lo mismo; igual</li></ol></div>
+        <div class="card v"><ruby class="term" style="font-size:24px">行く<rt>いく</rt></ruby> <span class="pt v">Verbo</span> <span class="mut">行って</span><ol class="gl"><li>ir; marcharse</li><li>avanzar; progresar</li></ol></div>
+        <div class="card g"><span class="term" style="font-size:20px;color:#7a46c9">～てくれる</span> <span class="pt g">Gram.</span><ol class="gl"><li>hacer algo por mí</li></ol></div>
+      </div>
+    </div></div>
+    <aside class="notes"><h3>Notas</h3><ul>
+      <li class="pro">Las tarjetas van de arriba abajo y el historial se ve entero.</li>
+      <li class="pro">La frase actual queda a la altura de los ojos, como en el juego.</li>
+      <li class="con">En ventanas estrechas (monitor vertical) habría que volver a la disposición apilada.</li>
+    </ul></aside>
+  </div>
+</section>
+
+<!-- ============================ 5 ============================ -->
+<section class="p" id="p5">
+  <h2><span class="n">5</span>Desglose de la frase</h2>
+  <p class="why">Más que un diccionario, un profesor: bajo la frase, la traducción tapada (se descubre con clic) y la cadena de conjugación de los verbos explicada pieza a pieza. Debajo, el glosario de la propuesta 1 o 2.</p>
+  <div class="row">
+    <div class="frame"><div class="stage p5">
+      <i class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></i><i class="blob a" style="left:820px;top:420px;width:520px;height:400px"></i>
+      <div class="crumb pill"><i class="d"></i>Lectura › <span class="c">白銀の約束</span></div>
+      <div class="tools pill"><span class="tl on jp">ふりがな</span><span class="tl on">Colores</span><span class="tl">A− 30 A+</span></div>
+      <div style="position:absolute;left:40px;right:40px;top:84px">
+        <div class="line"><div class="ico jp">美</div><div class="bubble"><div class="nm">美雪</div><p class="tx" data-s data-hl="行"></p></div></div>
+        <div class="spoiler" style="margin-left:60px">¿Me acompañarías mañana hasta la estación?</div>
+      </div>
+      <div class="panel" style="position:absolute;left:40px;right:40px;top:316px;bottom:24px;padding:16px 20px">
+        <div class="ptitle">Cómo se forma <span class="jp" style="color:#2d47a8">行ってくれないかな</span></div>
+        <div class="chain">
+          <div class="v"><b>行く</b>ir<br><span class="mut">verbo</span></div>
+          <div class="v"><b>行って</b>forma て<br><span class="mut">une con lo siguiente</span></div>
+          <div class="g"><b>くれる</b>hacer por mí<br><span class="mut">favor hacia el hablante</span></div>
+          <div class="g"><b>ない</b>negación<br><span class="mut">«¿no me…?» = petición</span></div>
+          <div class="g"><b>かな</b>me pregunto<br><span class="mut">suaviza la petición</span></div>
+        </div>
+        <div class="gl" style="margin-top:14px;padding:10px 14px;background:rgba(255,255,255,.7);border-radius:14px">→ «¿No podrías ir conmigo…, me pregunto?» — una petición indirecta y tímida.</div>
+        <div class="ptitle" style="margin-top:18px">Palabras <span class="mut" style="font-weight:600">明日 mañana · 駅 estación · 一緒 juntos · 行く ir</span></div>
+      </div>
+    </div></div>
+    <aside class="notes"><h3>Notas</h3><ul>
+      <li class="pro">Enseña gramática sin salir de la novela.</li>
+      <li class="pro">La cadena sale del tokenizador (ya fusiona 行って+くれ+ない; sólo hay que guardar las piezas).</li>
+      <li class="con">La traducción y la frase explicada necesitan un traductor o un LLM (opcional).</li>
+    </ul></aside>
+  </div>
+</section>
+
+<!-- ============================ Anadidos ============================ -->
+<section class="p" id="extras">
+  <h2><span class="n">+</span>Añadidos para leer mejor</h2>
+  <p class="why">Se pueden combinar con cualquier disposición. La etiqueta indica el esfuerzo aproximado.</p>
+  <div class="ideas">
+    <div class="idea"><h4>Palabras conocidas <span class="lvl m">medio</span></h4><p>Marcar una palabra como «conocida» con un clic: desaparece de la lista (o sale atenuada) y pierde el furigana en el texto. Furigana sólo en lo que no sabes.</p></div>
+    <div class="idea"><h4>Gramática detectada <span class="lvl m">medio</span></h4><p>Buscar en tu diccionario de gramática (el «Dictionary of Japanese Grammar» que tienes en Descargas) los patrones de la frase: ～てくれる, かな, ～ながら… y mostrarlos como tarjetas moradas.</p></div>
+    <div class="idea"><h4>Desglose de conjugación <span class="lvl s">fácil</span></h4><p>行ってくれないかな → 行く + て + くれる + ない + かな, cada pieza con su función. El tokenizador ya tiene las piezas antes de fusionarlas.</p></div>
+    <div class="idea"><h4>Frecuencia <span class="lvl s">fácil</span></h4><p>Leer diccionarios de frecuencia de Yomitan (JPDB, Innocent Corpus) y mostrar «común/rara» o el puesto. Ordenar la lista dejando arriba las palabras raras.</p></div>
+    <div class="idea"><h4>Kanji de la palabra <span class="lvl s">fácil</span></h4><p>Con KANJIDIC (formato Yomitan de kanji): significado, lecturas on/kun y trazos de cada kanji en la ficha.</p></div>
+    <div class="idea"><h4>Enviar a Anki <span class="lvl m">medio</span></h4><p>Botón «+ Anki» vía AnkiConnect: palabra, lectura, acepciones, la frase con la palabra resaltada y una captura del juego (la app ya hace capturas).</p></div>
+    <div class="idea"><h4>Traducción tapada <span class="lvl m">medio</span></h4><p>Traducción de la frase bajo ella, borrosa hasta que haces clic o mantienes una tecla. Con DeepL, un LLM o un traductor local.</p></div>
+    <div class="idea"><h4>Voz <span class="lvl s">fácil</span></h4><p>Leer en voz alta la frase o la palabra con la voz japonesa de Windows (Haruka/Nanami) para practicar el oído.</p></div>
+    <div class="idea"><h4>Estadísticas de lectura <span class="lvl s">fácil</span></h4><p>Caracteres leídos, velocidad (caracteres/hora), tiempo de la sesión y palabras nuevas. Encaja con la pantalla de estadísticas que ya tiene la app.</p></div>
+    <div class="idea"><h4>Vocabulario de la sesión <span class="lvl s">fácil</span></h4><p>Pestaña con todas las palabras buscadas o desconocidas de la partida, con la frase donde salieron, para repasar o exportar.</p></div>
+    <div class="idea"><h4>Navegar con mando/teclado <span class="lvl s">fácil</span></h4><p>↑↓ frases del historial, ←→ palabras de la frase, A despliega. Útil si lees con el mando del juego en la mano.</p></div>
+    <div class="idea"><h4>Modo foco <span class="lvl s">fácil</span></h4><p>Sólo la frase actual en grande y las palabras; el historial aparece al deslizar. O al revés: modo «sólo texto» sin panel de palabras.</p></div>
+  </div>
+</section>
+</div>
+
+<script>
+// Frase de ejemplo con furigana y colores (data-s), resaltando la palabra de data-hl.
+const S = [['明日','あした','n'],['、',null,'x'],['駅','えき','n'],['まで',null,'p'],['一緒','いっしょ','n'],['に',null,'p'],['行','い','v','って'],['くれ',null,'aux'],['ない',null,'aux'],['かな',null,'p']];
+document.querySelectorAll('[data-s]').forEach(p => {
+  const hl = p.dataset.hl;
+  p.innerHTML = S.map(([b, r, c, ok]) => {
+    if (c === 'x') return b;
+    const inner = (r ? `<ruby>${b}<rt>${r}</rt></ruby>` : b) + (ok ?? '');
+    return `<span class="w ${c}${hl && b === hl ? ' hl' : ''}">${inner}</span>`;
+  }).join('');
+});
+// Escala los escenarios 1280x800 al ancho del marco.
+const fit = () => document.querySelectorAll('.frame').forEach(f => { f.querySelector('.stage').style.transform = `scale(${f.clientWidth / 1280})`; });
+addEventListener('resize', fit); fit();
+</script>
+</body>
+</html>

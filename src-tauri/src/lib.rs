@@ -1,0 +1,709 @@
+//! Capa Tauri: solo traduce comandos de la interfaz a llamadas a `visor-core`.
+mod ai;
+mod anki;
+mod audio;
+mod backup;
+mod display;
+mod glossary;
+mod launcher;
+mod magpie;
+mod mouse;
+mod novel;
+mod overlay;
+mod pad;
+mod peek;
+mod platform;
+mod reader;
+mod sgdb;
+mod shots;
+mod snap;
+mod state;
+mod texthook;
+mod voice;
+
+use state::AppState;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::Ordering;
+use std::sync::{Arc, Mutex};
+use tauri::{AppHandle, Emitter, Manager, State};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
+use visor_core::capture::{combo_mask, mouse_button_index};
+use visor_core::config::Config;
+use visor_core::db::{data as dbd, Db};
+use visor_core::art::ArtKind;
+use visor_core::games::{self, ManualGame};
+use visor_core::gamedirs;
+use visor_core::importer::{self, ArtCopy, ImportReport};
+use visor_core::palette::PaletteCache;
+use visor_core::scan::ScanOpts;
+use visor_core::userdata::{self, HiddenEntry};
+use visor_core::{scan, thumbs, Library};
+
+/// El protocolo `asset:` solo sirve rutas dentro de un ambito. La raiz la elige el usuario en
+/// tiempo de ejecucion, asi que se autoriza aqui (solo lectura de imagenes por la webview).
+fn allow_root(app: &AppHandle, root: &str) {
+    let _ = app.asset_protocol_scope().allow_directory(Path::new(root), true);
+}
+
+/// Registra (o quita) los atajos globales: captura de pantalla y grabacion del audio del juego.
+/// El error del atajo de captura se devuelve; el de grabacion tambien, pero la captura queda registrada.
+fn apply_hotkeys(app: &AppHandle, capture: &str, record: &str) -> Result<(), String> {
+    use tauri_plugin_global_shortcut::Shortcut;
+    let gs = app.global_shortcut();
+    let _ = gs.unregister_all();
+    let mut errs = Vec::new();
+    if !capture.trim().is_empty() {
+        if let Err(e) = gs.register(capture) {
+            errs.push(format!("No se pudo registrar el atajo {capture}: {e}"));
+        }
+    }
+    let same = matches!((capture.parse::<Shortcut>(), record.parse::<Shortcut>()), (Ok(a), Ok(b)) if a == b);
+    if !record.trim().is_empty() && !same {
+        if let Err(e) = gs.register(record) {
+            errs.push(format!("No se pudo registrar el atajo de grabación {record}: {e}"));
+        }
+    }
+    if errs.is_empty() {
+        Ok(())
+    } else {
+        Err(errs.join(" "))
+    }
+}
+
+#[tauri::command]
+fn get_config(state: State<'_, AppState>) -> Config {
+    state.config.lock().unwrap().clone()
+}
+
+#[tauri::command]
+fn save_config(app: AppHandle, state: State<'_, AppState>, config: Config) -> Result<(), String> {
+    if let Some(r) = &config.root {
+        allow_root(&app, r);
+    }
+    let mut config = config;
+    let (old_hotkey, old_record) = {
+        let c = state.config.lock().unwrap();
+        (c.capture_hotkey.clone(), c.record_hotkey.clone())
+    };
+    // Si el atajo nuevo no se puede registrar (otro programa lo usa), se mantiene el anterior y se avisa.
+    let mut hotkey_err = None;
+    if old_hotkey != config.capture_hotkey || old_record != config.record_hotkey {
+        use tauri_plugin_global_shortcut::Shortcut;
+        let clash = !config.capture_hotkey.trim().is_empty()
+            && matches!((config.capture_hotkey.parse::<Shortcut>(), config.record_hotkey.parse::<Shortcut>()), (Ok(a), Ok(b)) if a == b);
+        let r = if clash { Err("El atajo de grabación no puede ser el mismo que el de captura.".to_string()) } else { apply_hotkeys(&app, &config.capture_hotkey, &config.record_hotkey) };
+        if let Err(e) = r {
+            let _ = apply_hotkeys(&app, &old_hotkey, &old_record);
+            config.capture_hotkey = old_hotkey;
+            config.record_hotkey = old_record;
+            hotkey_err = Some(e);
+        }
+    }
+    config.save(&state.config_file()).map_err(|e| e.to_string())?;
+    state.combo_mask.store(combo_mask(&config.capture_combo), Ordering::Relaxed);
+    state.mouse_button.store(mouse_button_index(&config.capture_mouse), Ordering::Relaxed);
+    *state.config.lock().unwrap() = config;
+    hotkey_err.map_or(Ok(()), Err)
+}
+
+/// Detecta juegos y escanea la biblioteca en un hilo aparte para no bloquear la interfaz.
+#[tauri::command]
+async fn scan_library(app: AppHandle, state: State<'_, AppState>) -> Result<Library, String> {
+    let cfg = state.config.lock().unwrap().clone();
+    if let Some(r) = &cfg.root {
+        allow_root(&app, r);
+    }
+    let manual = state::log_db("juegos", state.db.with(dbd::manual_load));
+    let stats = state.stats.lock().unwrap().clone();
+    let hidden = state.hidden.lock().unwrap().clone();
+    let prefs = state.prefs.lock().unwrap().clone();
+    let palettes = state.palettes.clone();
+    let palettes_file = state.palettes_file();
+    let sgdb_dir = state.sgdb_dir();
+    let (lib, found) = tauri::async_runtime::spawn_blocking(move || {
+        let found = games::all_games(&manual);
+        let opts = ScanOpts {
+            hidden: &hidden,
+            show_hidden: cfg.show_hidden,
+            prefs: Some(&prefs),
+            palettes: Some(&palettes),
+            sgdb_dir: Some(&sgdb_dir),
+        };
+        let lib = scan::scan_library_ex(cfg.root.as_deref().map(Path::new), &cfg.platforms, &found, &stats, &opts);
+        palettes.save(&palettes_file);
+        (lib, found)
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    *state.games.lock().unwrap() = found;
+    Ok(lib)
+}
+
+/// Devuelve la ruta de la miniatura de una imagen (la genera si no existe).
+#[tauri::command]
+async fn get_thumb(state: State<'_, AppState>, path: String) -> Result<String, String> {
+    let dir = state.thumbs_dir();
+    tauri::async_runtime::spawn_blocking(move || {
+        thumbs::ensure_thumb_pooled(&dir, Path::new(&path))
+            .map(|p| p.to_string_lossy().into_owned())
+            .map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[derive(Clone, serde::Serialize)]
+struct ThumbReady {
+    src: String,
+    thumb: String,
+}
+
+/// Precalienta miniaturas en el pool de rayon; avisa con el evento `thumb-ready`.
+#[tauri::command]
+fn prefetch_thumbs(app: AppHandle, state: State<'_, AppState>, paths: Vec<String>) {
+    thumbs::prefetch(state.thumbs_dir(), paths, move |src, th| {
+        let _ = app.emit(
+            "thumb-ready",
+            ThumbReady { src: src.to_string(), thumb: th.to_string_lossy().into_owned() },
+        );
+    });
+}
+
+#[tauri::command]
+fn get_favorites(state: State<'_, AppState>) -> Vec<String> {
+    state.favorites.lock().unwrap().clone()
+}
+
+#[tauri::command]
+fn set_favorite(state: State<'_, AppState>, path: String, on: bool) -> Result<(), String> {
+    let mut f = state.favorites.lock().unwrap();
+    f.retain(|p| p != &path);
+    if on {
+        f.push(path.clone());
+    }
+    state.db.with(|c| dbd::favorite_set(c, &path, on)).map_err(|e| e.to_string())
+}
+
+/// Lanza un juego detectado por el ultimo escaneo.
+#[tauri::command]
+fn launch_game(app: AppHandle, state: State<'_, AppState>, id: String) -> Result<(), String> {
+    let game = state.games.lock().unwrap().iter().find(|g| g.id == id).cloned().ok_or("Juego no encontrado: vuelve a escanear")?;
+    launcher::start(&app, game)
+}
+
+/// Abre en el explorador la carpeta de capturas de un titulo (solo dentro de la raiz configurada).
+#[tauri::command]
+fn open_folder(state: State<'_, AppState>, path: String) -> Result<(), String> {
+    let root = state.config.lock().unwrap().root.clone().ok_or("Sin carpeta raiz")?;
+    let p = PathBuf::from(&path);
+    if !games::path_inside(&path, &root) {
+        return Err("Esa carpeta esta fuera de la biblioteca".into());
+    }
+    if !p.is_dir() {
+        return Err("La carpeta aun no existe: se creara con la primera captura".into());
+    }
+    launcher::open_folder(&p)
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NewGame {
+    /// "exe" | "emulator" | "captures"
+    kind: String,
+    #[serde(default)]
+    name: String,
+    #[serde(default)]
+    exe: String,
+    #[serde(default)]
+    args: String,
+    #[serde(default)]
+    rom: String,
+    #[serde(default)]
+    platform: String,
+    /// Grafismos opcionales que se COPIAN a la carpeta del juego.
+    #[serde(default)]
+    hero: String,
+    #[serde(default)]
+    logo: String,
+    #[serde(default)]
+    cover: String,
+}
+
+#[derive(serde::Serialize)]
+struct AddReport {
+    /// Avisos para el usuario (grafismos que ya existian, que no se pudieron copiar...).
+    notes: Vec<String>,
+}
+
+/// Anade una entrada a la tabla de juegos (juego .exe, emulador + ROM o solo capturas) y copia los grafismos elegidos a la carpeta del juego. Nunca mueve ni modifica los originales.
+#[tauri::command]
+fn add_game(state: State<'_, AppState>, game: NewGame) -> Result<AddReport, String> {
+    let cfg = state.config.lock().unwrap().clone();
+    let name = game.name.trim().to_string();
+    let mut notes = Vec::new();
+    let mut entry = ManualGame { name: name.clone(), kind: game.kind.clone(), platform: game.platform.clone(), ..Default::default() };
+    match game.kind.as_str() {
+        "exe" | "emulator" | "captures" => {}
+        _ => return Err("Tipo de juego desconocido".into()),
+    }
+    if name.is_empty() {
+        return Err("Falta el nombre".into());
+    }
+    let plat = cfg.platforms.iter().find(|p| p.id == game.platform).ok_or("Plataforma desconocida")?.clone();
+    match game.kind.as_str() {
+        "exe" | "emulator" => {
+            if !Path::new(&game.exe).is_file() {
+                return Err("El ejecutable no existe".into());
+            }
+            if game.kind == "emulator" && !Path::new(&game.rom).is_file() {
+                return Err("La ROM no existe".into());
+            }
+            entry.id = games::new_manual_id();
+            entry.exe = game.exe.clone();
+            entry.args = game.args.clone();
+            entry.rom = game.rom.clone();
+        }
+        _ => entry.id = games::new_manual_id(),
+    }
+    let arts = [(ArtKind::Hero, &game.hero, "hero"), (ArtKind::Logo, &game.logo, "logo"), (ArtKind::Cover, &game.cover, "portada")];
+    let want_dir = game.kind == "captures" || arts.iter().any(|(_, p, _)| !p.is_empty());
+    if want_dir {
+        let root = cfg.root.clone().ok_or("Elige primero la carpeta de capturas en Ajustes")?;
+        let root_p = Path::new(&root);
+        let dir = importer::title_dir(root_p, &plat.folder, &games::sanitize_folder_name(&name));
+        if !importer::is_within_root(root_p, &dir) {
+            return Err("La carpeta de capturas no existe o esta fuera de la biblioteca".into());
+        }
+        std::fs::create_dir_all(&dir).map_err(|e| format!("No se pudo crear la carpeta del juego: {e}"))?;
+        for (kind, src, label) in arts {
+            if src.is_empty() {
+                continue;
+            }
+            match importer::copy_art(&dir, kind, Path::new(src)) {
+                Ok(ArtCopy::Copied(_)) => {}
+                Ok(ArtCopy::Exists) => notes.push(format!("Ya habia un {label} en la carpeta: no se sobrescribe")),
+                Err(e) => notes.push(format!("{label}: {e}")),
+            }
+        }
+    }
+    state.db.with(|c| dbd::manual_add(c, &entry)).map_err(|e| e.to_string())?;
+    Ok(AddReport { notes })
+}
+
+/// Busca juegos en las subcarpetas de un directorio (una por juego) para el asistente de carpeta de juegos.
+#[tauri::command]
+async fn scan_games_dir(state: State<'_, AppState>, dir: String) -> Result<gamedirs::DirScan, String> {
+    let existing = state.db.with(dbd::manual_load).map_err(|e| e.to_string())?;
+    if !Path::new(&dir).is_dir() {
+        return Err("Esa carpeta no existe".into());
+    }
+    tauri::async_runtime::spawn_blocking(move || gamedirs::scan_game_dirs(Path::new(&dir), &existing))
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Oculta o muestra un titulo. Solo escribe en la base; los archivos del juego no se tocan.
+#[tauri::command]
+fn set_hidden(state: State<'_, AppState>, id: String, name: String, platform: String, hidden: bool) -> Result<(), String> {
+    let mut l = state.hidden.lock().unwrap();
+    let entry = HiddenEntry { id, name, platform };
+    userdata::set_hidden(&mut l, entry.clone(), hidden);
+    state.db.with(|c| dbd::hidden_set(c, &entry, hidden)).map_err(|e| e.to_string())
+}
+
+/// Fija (o quita con `None`) el color de acento manual de un titulo.
+#[tauri::command]
+fn set_accent_override(state: State<'_, AppState>, id: String, color: Option<String>) -> Result<(), String> {
+    let mut p = state.prefs.lock().unwrap();
+    userdata::set_accent(&mut p, &id, color.as_deref())?;
+    state.db.with(|c| dbd::pref_save(c, &id, p.get(&id))).map_err(|e| e.to_string())
+}
+
+/// Recuerda el orden de capturas de un titulo.
+#[tauri::command]
+fn set_sort_pref(state: State<'_, AppState>, id: String, mode: String) -> Result<(), String> {
+    let mut p = state.prefs.lock().unwrap();
+    userdata::set_sort(&mut p, &id, &mode)?;
+    state.db.with(|c| dbd::pref_save(c, &id, p.get(&id))).map_err(|e| e.to_string())
+}
+
+/// Estado de un titulo ("none" | "pending" | "playing" | "finished" | "dropped"). Terminado guarda la fecha.
+#[tauri::command]
+fn set_title_status(state: State<'_, AppState>, id: String, status: String) -> Result<(), String> {
+    let now = chrono_now_ms();
+    let mut p = state.prefs.lock().unwrap();
+    userdata::set_status(&mut p, &id, &status, now)?;
+    let cur = p.get(&id).and_then(|x| x.status.as_deref().map(|s| (s.to_string(), x.finished_ms)));
+    state.db.with(|c| dbd::status_save(c, &id, cur.as_ref().map(|(s, f)| (s.as_str(), *f)), now)).map_err(|e| e.to_string())
+}
+
+fn chrono_now_ms() -> i64 {
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis() as i64).unwrap_or(0)
+}
+
+/// Elige el escalado con Magpie de un juego ("off" | "auto" | "2x" | "4x"). Se aplica al lanzarlo.
+#[tauri::command]
+fn set_magpie_mode(state: State<'_, AppState>, id: String, mode: String) -> Result<(), String> {
+    let mut p = state.prefs.lock().unwrap();
+    userdata::set_magpie_mode(&mut p, &id, &mode)?;
+    state.db.with(|c| dbd::pref_save(c, &id, p.get(&id))).map_err(|e| e.to_string())
+}
+
+/// Donde esta Magpie, si esta abierto y si tiene los modelos CuNNy2.
+#[tauri::command]
+async fn magpie_status(state: State<'_, AppState>) -> Result<magpie::MagpieStatus, String> {
+    let configured = state.config.lock().unwrap().magpie_exe.clone();
+    tauri::async_runtime::spawn_blocking(move || magpie::status(&configured)).await.map_err(|e| e.to_string())
+}
+
+/// Sagas guardadas (agrupaciones virtuales de juegos).
+#[tauri::command]
+fn get_sagas(state: State<'_, AppState>) -> Vec<visor_core::sagas::Saga> {
+    state::log_db("sagas", state.db.with(dbd::sagas_load))
+}
+
+/// Guarda la lista completa de sagas y devuelve la lista saneada. No toca capturas.
+#[tauri::command]
+fn save_sagas(state: State<'_, AppState>, sagas: Vec<visor_core::sagas::Saga>) -> Result<Vec<visor_core::sagas::Saga>, String> {
+    let clean = visor_core::sagas::sanitize(&sagas);
+    state.db.with(|c| dbd::sagas_replace(c, &clean)).map_err(|e| e.to_string())?;
+    Ok(clean)
+}
+
+#[derive(Clone, serde::Serialize)]
+struct Progress {
+    done: usize,
+    total: usize,
+}
+
+/// Copia imagenes a la carpeta de un titulo (nombre `Carpeta_AAAA-MM-DD_HH-MM-SS.ext`). Emite `import-progress`.
+#[tauri::command]
+async fn import_shots(app: AppHandle, state: State<'_, AppState>, dir: String, paths: Vec<String>) -> Result<ImportReport, String> {
+    let root = state.config.lock().unwrap().root.clone().ok_or("Elige primero la carpeta de capturas en Ajustes")?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let sources: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
+        importer::import_shots(Path::new(&root), Path::new(&dir), &sources, |done, total| {
+            let _ = app.emit("import-progress", Progress { done, total });
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[derive(serde::Serialize)]
+struct MoveReport {
+    /// Pares (ruta anterior, ruta nueva).
+    moved: Vec<(String, String)>,
+    failed: Vec<String>,
+}
+
+/// Mueve capturas a la carpeta de otro titulo, siempre dentro de la raiz de la biblioteca.
+#[tauri::command]
+fn move_shots(state: State<'_, AppState>, paths: Vec<String>, target_dir: String) -> Result<MoveReport, String> {
+    let root = state.config.lock().unwrap().root.clone().ok_or("Sin carpeta raiz")?;
+    let root_p = Path::new(&root);
+    let mut rep = MoveReport { moved: Vec::new(), failed: Vec::new() };
+    for p in paths {
+        match importer::move_shot(root_p, Path::new(&p), Path::new(&target_dir)) {
+            Ok(n) => rep.moved.push((p, n.to_string_lossy().into_owned())),
+            Err(e) => rep.failed.push(format!("{}: {e}", Path::new(&p).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or(p.clone()))),
+        }
+    }
+    // Las favoritas siguen a la captura.
+    let mut f = state.favorites.lock().unwrap();
+    for (old, new) in &rep.moved {
+        if let Some(i) = f.iter().position(|x| x == old) {
+            f[i] = new.clone();
+            state.db.with(|c| dbd::favorite_rename(c, old, new)).map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(rep)
+}
+
+/// Muestra una captura en el Explorador (solo dentro de la raiz).
+#[tauri::command]
+fn reveal_in_explorer(state: State<'_, AppState>, path: String) -> Result<(), String> {
+    let root = state.config.lock().unwrap().root.clone().ok_or("Sin carpeta raiz")?;
+    let p = PathBuf::from(&path);
+    if !importer::is_within_root(Path::new(&root), &p) || !p.exists() {
+        return Err("Ese archivo no esta en la biblioteca".into());
+    }
+    launcher::reveal(&p)
+}
+
+/// Quita una entrada manual de la tabla de juegos (no toca ningun archivo del usuario).
+#[tauri::command]
+fn remove_game(state: State<'_, AppState>, id: String) -> Result<(), String> {
+    if !state.db.with(|c| dbd::manual_remove(c, &id)).map_err(|e| e.to_string())? {
+        return Err("Solo se pueden quitar los juegos anadidos a mano".into());
+    }
+    Ok(())
+}
+
+/// Hace una captura ahora (igual que el atajo o el mando).
+#[tauri::command]
+fn capture_now(app: AppHandle) {
+    snap::trigger(&app);
+}
+
+/// Ajustes espera una combinacion del mando (`on`) o deja de esperarla. El hilo del mando emite `learn-pad`.
+#[tauri::command]
+fn learn_pad(state: State<'_, AppState>, on: bool) {
+    state.learning_pad.store(on, Ordering::Relaxed);
+}
+
+/// Suelta el atajo global mientras Ajustes espera una tecla (si no, Windows se la come) y lo vuelve a
+/// registrar despues.
+#[tauri::command]
+fn hotkey_suspend(app: AppHandle, state: State<'_, AppState>, suspend: bool) -> Result<(), String> {
+    if suspend {
+        let _ = app.global_shortcut().unregister_all();
+        Ok(())
+    } else {
+        let (key, rec) = {
+            let c = state.config.lock().unwrap();
+            (c.capture_hotkey.clone(), c.record_hotkey.clone())
+        };
+        apply_hotkeys(&app, &key, &rec)
+    }
+}
+
+/// Lleva la ventana del visor (a pantalla completa si lo estaba) a un monitor.
+fn move_window_to(w: &tauri::WebviewWindow, m: &display::Monitor) {
+    let full = w.is_fullscreen().unwrap_or(false);
+    if full {
+        let _ = w.set_fullscreen(false);
+    }
+    let _ = w.set_position(tauri::PhysicalPosition::new(m.x + 40, m.y + 40));
+    if full {
+        let _ = w.set_fullscreen(true);
+    }
+}
+
+/// Texto del monitor donde esta el visor para Ajustes («1 de 2 · 2560×1440 · principal»).
+#[tauri::command]
+fn window_monitor(app: AppHandle) -> String {
+    let mons = display::monitors();
+    let cur = display::of_window(launcher::main_hwnd(&app));
+    match cur.and_then(|c| mons.iter().position(|m| m.device == c.device).map(|i| (i, c))) {
+        Some((i, c)) => c.label(i, mons.len()),
+        None => "Desconocido".into(),
+    }
+}
+
+/// Pasa el visor al monitor siguiente (`dir` = 1) o anterior (-1) y lo recuerda para la proxima vez.
+#[tauri::command]
+fn next_monitor(app: AppHandle, state: State<'_, AppState>, dir: i32) -> String {
+    let mons = display::monitors();
+    let Some(w) = app.get_webview_window("main") else { return String::new() };
+    if mons.len() > 1 {
+        let cur = display::of_window(launcher::main_hwnd(&app));
+        let i = cur.and_then(|c| mons.iter().position(|m| m.device == c.device)).unwrap_or(0) as i32;
+        let n = mons.len() as i32;
+        let m = &mons[((i + dir) % n + n) as usize % mons.len()];
+        move_window_to(&w, m);
+        display::save_window_monitor(&state.config_dir, &m.device);
+    }
+    window_monitor(app)
+}
+
+#[tauri::command]
+fn exit_app(app: AppHandle) {
+    app.exit(0);
+}
+
+/// Modo auxiliar (reiniciar Magpie elevado). Lo llama `main` antes de abrir la aplicacion.
+pub fn helper_main() -> Option<i32> {
+    magpie::helper_main()
+}
+
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
+pub fn run() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_handler(|app, shortcut, event| {
+                    if event.state() == ShortcutState::Pressed {
+                        // El atajo de grabacion empieza/para el audio del juego; cualquier otro captura la pantalla.
+                        let rec = app.state::<AppState>().config.lock().unwrap().record_hotkey.clone();
+                        if rec.parse::<tauri_plugin_global_shortcut::Shortcut>().map(|r| &r == shortcut).unwrap_or(false) {
+                            audio::toggle(app, None);
+                        } else {
+                            snap::trigger(app);
+                        }
+                    }
+                })
+                .build(),
+        )
+        .setup(|app| {
+            let config_dir = app.path().app_config_dir()?;
+            let cache_dir = app.path().app_cache_dir()?;
+            // Una restauracion preparada se aplica ANTES de leer la configuracion y abrir la base.
+            let mut notices: Vec<backup::Notice> = Vec::new();
+            if let Some(r) = visor_core::backup::apply_pending_restore(&config_dir) {
+                notices.push(backup::restore_notice(r.map_err(|e| format!("{e:#}"))));
+            }
+            let config = Config::load(&config_dir.join("config.json"));
+            // Base de datos (la primera vez importa los JSON antiguos, que se quedan como respaldo). Si no se
+            // puede abrir, se sigue con una base en memoria: la app funciona pero esta sesion no guarda nada.
+            let mut db_in_memory = false;
+            let db = match Db::open(&config_dir) {
+                Ok(d) => d,
+                Err(e) => {
+                    eprintln!("No se pudo abrir visor.db: {e:#}. Los datos de esta sesion no se guardaran.");
+                    db_in_memory = true;
+                    notices.push(backup::db_failed_notice(&format!("{e:#}")));
+                    Db::open_memory()?
+                }
+            };
+            let db = Arc::new(db);
+            let favorites = state::log_db("favoritas", db.with(dbd::favorites_load));
+            let stats = state::log_db("estadisticas", db.with(dbd::stats_load));
+            let hidden = state::log_db("ocultos", db.with(dbd::hidden_load));
+            let prefs = state::log_db("preferencias", db.with(dbd::prefs_load));
+            let sgdb_store = state::log_db("sgdb", db.with(dbd::sgdb_load));
+            let palettes = Arc::new(PaletteCache::load(&cache_dir.join("palettes.json")));
+            if let Some(r) = &config.root {
+                allow_root(app.handle(), r);
+            }
+            let _ = app.asset_protocol_scope().allow_directory(&cache_dir, true);
+            // Capturas y audio del glosario de frases (la pantalla de repaso las enseña con el protocolo asset).
+            let _ = app.asset_protocol_scope().allow_directory(&config_dir.join("phrases"), true);
+            let hotkey = config.capture_hotkey.clone();
+            let rec_hotkey = config.record_hotkey.clone();
+            let mask = combo_mask(&config.capture_combo);
+            let mouse = mouse_button_index(&config.capture_mouse);
+            let auto_backup = config.auto_backup && !db_in_memory;
+            let (db_for_backup, dir_for_backup) = (db.clone(), config_dir.clone());
+            app.manage(AppState {
+                config_dir,
+                notices: Mutex::new(notices),
+                cache_dir,
+                db,
+                config: Mutex::new(config),
+                favorites: Mutex::new(favorites),
+                games: Mutex::new(Vec::new()),
+                stats: Mutex::new(stats),
+                hidden: Mutex::new(hidden),
+                prefs: Mutex::new(prefs),
+                palettes,
+                active: Mutex::new(None),
+                combo_mask: std::sync::atomic::AtomicU32::new(mask),
+                mouse_button: std::sync::atomic::AtomicU8::new(mouse),
+                learning_pad: std::sync::atomic::AtomicBool::new(false),
+                sgdb: Arc::new(Mutex::new(sgdb_store)),
+                sgdb_busy: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+            });
+            if let Err(e) = apply_hotkeys(app.handle(), &hotkey, &rec_hotkey) {
+                eprintln!("{e}");
+            }
+            // Copia automatica de la base (cada 7 dias, se conservan 5), en segundo plano para no retrasar el arranque.
+            if auto_backup {
+                std::thread::spawn(move || {
+                    state::log_db_err("copia automatica", visor_core::backup::auto_backup_today(&db_for_backup, &dir_for_backup).map(|_| ()));
+                });
+            }
+            overlay::init(app.handle());
+            // Si el visor se cerro a mitad de partida, el monitor principal sigue cambiado: se restaura.
+            let st = app.state::<AppState>();
+            display::restore_primary(&st.config_dir);
+            // Se abre en el monitor donde estaba la ultima vez.
+            if let Some(w) = app.get_webview_window("main") {
+                let saved = display::saved_window_monitor(&st.config_dir);
+                if let Some(m) = saved.and_then(|d| display::monitors().into_iter().find(|m| m.device.eq_ignore_ascii_case(&d))) {
+                    let _ = w.set_position(tauri::PhysicalPosition::new(m.x + 40, m.y + 40));
+                }
+                let _ = w.set_fullscreen(true);
+                let _ = w.show();
+                let _ = w.set_focus();
+            }
+            novel::init(app.handle());
+            pad::spawn(app.handle().clone());
+            mouse::spawn(app.handle().clone());
+            Ok(())
+        })
+        .on_window_event(|w, e| {
+            // Recordar el monitor si el usuario mueve el visor (p. ej. Win+Mayus+flecha).
+            if let (tauri::WindowEvent::Moved(_), "main") = (e, w.label()) {
+                if let (Some(st), Some(m)) = (w.try_state::<AppState>(), display::of_window(launcher::main_hwnd(w.app_handle()))) {
+                    display::save_window_monitor(&st.config_dir, &m.device);
+                }
+            }
+        })
+        .invoke_handler(tauri::generate_handler![
+            window_monitor,
+            next_monitor,
+            get_config,
+            save_config,
+            scan_library,
+            get_thumb,
+            prefetch_thumbs,
+            get_favorites,
+            set_favorite,
+            launch_game,
+            open_folder,
+            add_game,
+            scan_games_dir,
+            set_hidden,
+            set_accent_override,
+            set_sort_pref,
+            set_magpie_mode,
+            set_title_status,
+            backup::backup_create,
+            backup::restore_prepare,
+            backup::restore_cancel,
+            backup::restore_apply,
+            backup::startup_notices,
+            magpie_status,
+            get_sagas,
+            save_sagas,
+            import_shots,
+            move_shots,
+            reveal_in_explorer,
+            remove_game,
+            capture_now,
+            sgdb::sgdb_auto,
+            sgdb::sgdb_search,
+            sgdb::sgdb_images,
+            sgdb::sgdb_info,
+            sgdb::sgdb_link,
+            sgdb::sgdb_apply,
+            sgdb::sgdb_local,
+            sgdb::sgdb_clear,
+            learn_pad,
+            hotkey_suspend,
+            exit_app,
+            texthook::commands::th_status,
+            texthook::commands::th_select_thread,
+            texthook::commands::th_select_name_thread,
+            texthook::commands::th_insert_code,
+            texthook::commands::th_remove_hook,
+            texthook::commands::th_search_text,
+            texthook::commands::th_search_cancel,
+            texthook::commands::th_reinject,
+            texthook::commands::th_detach,
+            glossary::phrases_list,
+            glossary::phrases_get,
+            glossary::phrases_update,
+            glossary::phrases_grade,
+            glossary::phrases_delete,
+            glossary::phrases_due_count,
+            glossary::phrases_media_dir,
+            anki::anki_test,
+            anki::anki_create_deck,
+            anki::anki_apply_style,
+            anki::anki_fields,
+            anki::anki_guess_map,
+            novel::novel_get_prefs,
+            novel::novel_save_prefs,
+            novel::novel_open_reader,
+            novel::novel_reader_url,
+            novel::novel_yomitan_css,
+            novel::readstats::readstats_get,
+            novel::readstats::readstats_live
+        ])
+        .run(tauri::generate_context!())
+        .expect("error al ejecutar la aplicacion");
+}

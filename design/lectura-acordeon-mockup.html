@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lectura · Acordeón</title>
+<style>
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:400;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-400-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:700;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-700-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:800;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-800-latin.woff2') format('woff2')}
+:root{
+  --round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;
+  --jp:'Yu Gothic UI','Yu Gothic','Meiryo','Hiragino Sans',sans-serif;
+  --acc:#00a0d8;--ink:#3a414e;--mut:#8a919c;--anki:#2f8ff0;--gram:#8a5cd6;--ok:#3bb54a;--warn:#f2b807;--bad:#e8384f;
+  --fs:30px;color-scheme:light}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:var(--round);color:var(--ink);overflow:hidden;background:#eceef2}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+.jp{font-family:var(--jp)}
+.mut{color:var(--mut)}
+.sp{flex:1}
+
+/* fondo */
+.bg{position:fixed;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(34px)}
+.blob.w{background:radial-gradient(circle,#fff,rgba(255,255,255,0) 70%)}
+.blob.a{background:radial-gradient(circle,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%);opacity:.55}
+
+.pill{-webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);
+  background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(255,255,255,.54));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+
+/* cabecera */
+.top{position:fixed;left:0;right:0;top:0;z-index:20;display:flex;align-items:flex-start;gap:10px;padding:16px 24px;pointer-events:none}
+.top>*{pointer-events:auto}
+.crumb{display:flex;align-items:center;gap:10px;height:44px;padding:0 18px;border-radius:999px;font-size:17px;font-weight:700;color:#4a5260;white-space:nowrap}
+.crumb .sep{color:#a3abb8;font-weight:500}.crumb .cur{color:var(--acc)}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(59,181,74,.2)}
+.tools{display:flex;align-items:center;gap:6px;padding:5px;border-radius:999px}
+.tools .sep{width:1px;height:22px;background:rgba(95,110,135,.25);margin:0 4px}
+.tl{height:34px;min-width:34px;padding:0 14px;border-radius:999px;display:flex;align-items:center;gap:6px;justify-content:center;font-size:14px;font-weight:800;color:#5f6776;white-space:nowrap}
+.tl:hover{background:rgba(255,255,255,.7)}
+.tl.on{background:var(--acc);color:#fff;box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 4px 10px -4px var(--acc)}
+.tools .fs{min-width:26px;text-align:center;font-size:13px;font-weight:700;color:#7a8291}
+.ankist{display:flex;align-items:center;gap:8px;height:44px;padding:0 16px;border-radius:999px;font-size:14px;font-weight:800;color:#4a5260}
+.ankist i{width:9px;height:9px;border-radius:50%;background:var(--ok)}
+.ankist b{color:var(--anki)}
+
+/* disposicion */
+.layout{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;gap:12px;padding:80px 24px 16px;max-width:1240px;margin:0 auto}
+.stage{flex:none;display:flex;flex-direction:column;gap:10px}
+.hist{max-height:120px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;
+  -webkit-mask-image:linear-gradient(transparent,#000 70%);mask-image:linear-gradient(transparent,#000 70%)}
+.hist .h{font-family:var(--jp);font-size:19px;color:#7a8291;padding-left:62px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hist .h:hover{color:var(--ink)}
+.hist .h b{font-family:var(--round);font-size:14px;margin-right:8px;color:#a3abb8}
+
+.line{display:flex;align-items:flex-end;gap:12px;--c:#ff4f7b}
+.ico{flex:none;width:50px;height:50px;border-radius:34%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:25px;font-family:var(--jp);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--c) 60%,white),var(--c) 55%,color-mix(in srgb,var(--c) 85%,black));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--c) 70%,black),0 6px 12px -6px color-mix(in srgb,var(--c) 80%,black)}
+.bubble{min-width:0;flex:1;max-width:max-content;padding:10px 22px 12px;border-radius:24px 24px 24px 8px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--c) 9%,rgba(255,255,255,.94)),color-mix(in srgb,var(--c) 14%,rgba(250,251,253,.86)));
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 2px color-mix(in srgb,var(--c) 60%,transparent),0 0 0 6px color-mix(in srgb,var(--acc) 18%,transparent),0 14px 24px -16px rgba(40,50,70,.5);
+  animation:pop .28s ease-out}
+.line.narr .ico{visibility:hidden}
+.line.narr .bubble{background:rgba(255,255,255,.85);box-shadow:inset 0 1px 0 #fff,0 0 0 2px var(--acc),0 0 22px -6px var(--acc)}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}}
+.name{font-size:16px;font-weight:800;color:color-mix(in srgb,var(--c) 82%,black)}
+.tx{margin:0;font-family:var(--jp);font-size:var(--fs);line-height:1.8;user-select:text}
+.tx .w{border-radius:5px;padding:0 1px;margin:0 1px;border-bottom:2px solid transparent;cursor:pointer;transition:background .12s}
+.tx .w.hl{background:color-mix(in srgb,var(--acc) 20%,transparent)}
+.tx rt{font-family:var(--round);font-size:.45em;color:var(--mut);font-weight:500;user-select:none}
+.colors .w.n{border-bottom-color:rgba(95,110,135,.35)}
+.colors .w.v{border-bottom-color:#3f63e0;color:#2d47a8}
+.colors .w.a{border-bottom-color:#3bb54a;color:#24782f}
+.colors .w.adv{border-bottom-color:#f2b807}
+.colors .w.p{color:#8a919c}
+.colors .w.aux{color:#8a5cd6}
+.colors .w.i{border-bottom-color:#e8384f}
+/* palabras conocidas: sin furigana ni subrayado, tinta normal */
+.tx .w.known{border-bottom-color:transparent!important;color:var(--ink)!important}
+.tx .w.known rt{display:none}
+/* gramatica: subrayado punteado morado */
+.tx .g{background-image:linear-gradient(90deg,var(--gram) 50%,transparent 50%);background-size:6px 2px;background-repeat:repeat-x;background-position:0 100%;padding-bottom:2px}
+
+/* barra de ayuda bajo la frase */
+.help{display:flex;align-items:center;gap:8px;padding-left:62px;flex-wrap:wrap}
+.btn{height:34px;padding:0 14px;border-radius:999px;display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:800;color:#5f6776;
+  background:rgba(255,255,255,.78);box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.22)}
+.btn:hover{background:#fff}
+.btn.anki{color:#fff;background:linear-gradient(180deg,#5aa8f5,var(--anki));box-shadow:0 0 0 1px #1f6fc4,0 6px 12px -6px var(--anki)}
+.btn.lost{color:#fff;background:linear-gradient(180deg,#a07ae2,var(--gram));box-shadow:0 0 0 1px #6a3fb5,0 6px 12px -6px var(--gram)}
+.btn.lost.on{background:#6a3fb5}
+.btn svg{width:16px;height:16px}
+.kbd{font-size:11px;font-weight:800;padding:1px 6px;border-radius:5px;background:rgba(95,110,135,.14);color:#7a8291}
+.btn.anki .kbd,.btn.lost .kbd{background:rgba(255,255,255,.25);color:#fff}
+/* traduccion tapada */
+.trans{flex:1;min-width:260px;height:34px;display:flex;align-items:center;gap:10px;padding:0 14px;border-radius:999px;font-size:15px;cursor:pointer;
+  background:rgba(255,255,255,.6);box-shadow:inset 0 0 0 1px rgba(95,110,135,.18);overflow:hidden;white-space:nowrap}
+.trans span{filter:blur(6px);transition:filter .2s;user-select:none;overflow:hidden;text-overflow:ellipsis}
+.trans em{font-style:normal;font-size:12px;font-weight:800;color:var(--mut);flex:none}
+.trans.show span{filter:none}
+.trans.show em{display:none}
+
+/* explicacion ("estoy perdido") */
+.explain{margin-left:62px;padding:14px 18px 16px;border-radius:20px;background:rgba(255,255,255,.88);
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 2px color-mix(in srgb,var(--gram) 55%,transparent),0 18px 30px -18px rgba(40,50,70,.45);animation:pop .25s ease-out}
+.explain[hidden]{display:none}
+.explain .eh{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:#6a3fb5}
+.explain .ai{font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;background:rgba(138,92,214,.12)}
+.explain .nat{font-size:19px;font-weight:700;margin:6px 0 2px;color:#2f3642}
+.explain .lit{font-size:14px;color:var(--mut);margin-bottom:10px}
+.chain{display:flex;flex-wrap:wrap;gap:0;margin:4px 0 10px}
+.chain>div{flex:1;min-width:110px;text-align:center;padding:8px 6px;background:rgba(246,247,250,.95);box-shadow:0 0 0 1px rgba(95,110,135,.14);font-size:12.5px;line-height:1.35}
+.chain>div:first-child{border-radius:14px 0 0 14px}.chain>div:last-child{border-radius:0 14px 14px 0}
+.chain b{display:block;font-family:var(--jp);font-size:21px;color:#2f3642}
+.chain .v b{color:#2d47a8}.chain .g b{color:var(--gram)}.chain .n b{color:#4a5260}
+.explain ul{margin:0;padding-left:20px;font-size:14.5px;line-height:1.55}
+.explain li b{color:#6a3fb5}
+
+/* panel de palabras */
+.words{flex:1;min-height:0;display:flex;flex-direction:column;border-radius:26px;padding:10px 12px 8px;
+  background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.36));-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px rgba(95,110,135,.2),0 18px 30px -18px rgba(40,50,70,.4)}
+.wbar{display:flex;align-items:center;gap:8px;padding:2px 6px 8px}
+.wtitle{font-size:15px;font-weight:800;color:#4a5260}
+.seg{display:flex;padding:3px;border-radius:999px;background:rgba(95,110,135,.1)}
+.seg button{height:26px;padding:0 12px;border-radius:999px;font-size:12.5px;font-weight:800;color:#6a7383}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(40,50,70,.2)}
+.list{flex:1;min-height:0;overflow-y:auto;padding:2px 4px;scrollbar-width:thin;scrollbar-color:rgba(95,110,135,.35) transparent}
+.grp{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#a3abb8;padding:10px 12px 4px;display:flex;align-items:center;gap:8px}
+.grp button{text-transform:none;letter-spacing:0;font-size:12px;color:var(--acc)}
+
+.it{border-radius:16px;margin:2px 0;transition:background .12s,box-shadow .15s}
+.it .row{display:flex;align-items:center;gap:12px;padding:8px 12px;cursor:pointer;min-height:52px}
+.it:hover,.it.hl{background:rgba(255,255,255,.75)}
+.it.hl{box-shadow:inset 4px 0 0 var(--acc)}
+.term{font-family:var(--jp);font-weight:700;color:#2f3642;font-size:24px;min-width:112px;line-height:1.1}
+.term rt{font-family:var(--round);font-size:.46em;color:var(--mut);font-weight:600}
+.it.gram .term{color:var(--gram);font-size:21px}
+.pt{flex:none;font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;color:#5f6776;background:rgba(95,110,135,.12)}
+.pt.v{color:#2d47a8;background:rgba(63,99,224,.13)}.pt.a{color:#24782f;background:rgba(59,181,74,.14)}
+.pt.adv{color:#8a6a00;background:rgba(242,184,7,.18)}.pt.i{color:#b8323f;background:rgba(232,56,79,.12)}
+.pt.g{color:#6a3fb5;background:rgba(138,92,214,.14)}
+.one{flex:1;min-width:0;font-size:15px;color:#4a5260;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.freq{flex:none;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;color:#24782f;background:rgba(59,181,74,.13)}
+.freq.r{color:#b8323f;background:rgba(232,56,79,.11)}
+.freq.m{color:#8a6a00;background:rgba(242,184,7,.16)}
+.acts{flex:none;display:flex;gap:4px;opacity:.35;transition:opacity .15s}
+.it:hover .acts,.it.open .acts{opacity:1}
+.ib{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;color:#6a7383}
+.ib:hover{background:rgba(95,110,135,.12)}
+.ib svg{width:18px;height:18px}
+.ib.k.on{color:#fff;background:var(--ok)}
+.ib.ak{color:var(--anki)}
+.ib.ak.done{color:#fff;background:var(--anki)}
+.chev{color:#a3abb8;font-weight:800;transition:transform .2s}
+.it.open .chev{transform:rotate(90deg)}
+.body{display:none;padding:0 16px 14px 136px}
+.it.open{background:#fff;box-shadow:0 0 0 2px var(--acc),0 12px 22px -14px rgba(40,50,70,.5);margin:8px 0}
+.it.open .body{display:block}
+.it.open .one{display:none}
+.body ol{margin:0;padding-left:20px;font-size:15.5px;line-height:1.5}
+.body li{margin:2px 0}
+.tag{display:inline-block;margin-right:5px;padding:0 6px;border-radius:6px;font-size:11px;font-weight:800;color:#6a7383;background:rgba(95,110,135,.1);vertical-align:1px}
+.kj{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.kj div{flex:1;min-width:150px;background:rgba(95,110,135,.07);border-radius:12px;padding:8px 12px;font-size:12.5px;line-height:1.4;display:flex;gap:10px;align-items:center}
+.kj b{font-family:var(--jp);font-size:28px;color:#2f3642}
+.ex{margin-top:10px;font-size:14px;padding:8px 12px;border-left:3px solid var(--gram);background:rgba(138,92,214,.06);border-radius:0 12px 12px 0}
+.bacts{display:flex;gap:8px;margin-top:12px}
+/* conocidas: atenuadas */
+.it.known{opacity:.5}
+.it.known:hover{opacity:.85}
+.it.known .term rt{visibility:hidden}
+
+.foot{display:flex;align-items:center;gap:14px;padding:8px 10px 2px;font-size:12.5px;font-weight:700;color:#8a919c;border-top:1px solid rgba(95,110,135,.12);margin-top:4px}
+.foot b{color:#4a5260}
+
+/* modal Anki */
+.veil{position:fixed;inset:0;z-index:50;background:rgba(40,48,62,.35);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:grid;place-items:center;padding:20px}
+.veil[hidden]{display:none}
+.modal{width:min(820px,100%);max-height:100%;overflow:auto;border-radius:26px;background:#f6f7fa;padding:18px 20px 18px;
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px rgba(95,110,135,.25),0 30px 60px -20px rgba(20,30,50,.6);animation:pop .22s ease-out}
+.mh{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;margin-bottom:12px}
+.mh .logo{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(180deg,#5aa8f5,var(--anki));color:#fff;font-size:15px}
+.mgrid{display:grid;grid-template-columns:1fr 300px;gap:16px}
+@media (max-width:760px){.mgrid{grid-template-columns:1fr}}
+.cardpv{border-radius:18px;background:#fff;box-shadow:0 0 0 1px rgba(95,110,135,.18);overflow:hidden}
+.cardpv .side{padding:14px 18px}
+.cardpv .side+.side{border-top:2px dashed rgba(95,110,135,.18)}
+.cardpv .lbl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#a3abb8;margin-bottom:6px}
+.cardpv .big{font-family:var(--jp);font-size:38px;font-weight:700;text-align:center;margin:4px 0}
+.cardpv .sent{font-family:var(--jp);font-size:18px;text-align:center;color:#4a5260}
+.cardpv .sent b{color:var(--anki)}
+.shot{position:relative;border-radius:14px;overflow:hidden;aspect-ratio:16/9;box-shadow:0 0 0 1px rgba(95,110,135,.2)}
+.shot svg{display:block;width:100%;height:100%}
+.shot .badge{position:absolute;left:8px;top:8px;font-size:11px;font-weight:800;color:#fff;background:rgba(20,30,50,.6);padding:3px 8px;border-radius:999px}
+.thumbs{display:flex;gap:6px;margin-top:8px}
+.thumbs div{flex:1;height:40px;border-radius:8px;box-shadow:0 0 0 1px rgba(95,110,135,.2);background:linear-gradient(160deg,#5b6f9a,#c7d3ea);opacity:.55;cursor:pointer}
+.thumbs div.on{opacity:1;box-shadow:0 0 0 2px var(--anki)}
+.field{display:flex;flex-direction:column;gap:4px;margin-top:10px;font-size:12.5px;font-weight:800;color:#7a8291}
+.field select,.field input{font:inherit;font-size:14px;font-weight:700;color:var(--ink);height:36px;border-radius:12px;border:0;padding:0 12px;background:#fff;box-shadow:0 0 0 1px rgba(95,110,135,.22)}
+.chk{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;font-weight:700}
+.chk input{width:18px;height:18px;accent-color:var(--anki)}
+.mf{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:10px;height:44px;padding:0 20px;border-radius:999px;
+  font-size:14.5px;font-weight:800;color:#fff;background:rgba(40,48,62,.92);box-shadow:0 14px 30px -12px rgba(20,30,50,.6);animation:pop .2s ease-out}
+.toast[hidden]{display:none}
+.toast i{width:22px;height:22px;border-radius:50%;background:var(--ok);display:grid;place-items:center;font-style:normal;font-size:13px}
+
+.demo-nav{position:fixed;left:50%;transform:translateX(-50%);top:16px;z-index:30;display:flex;gap:6px;padding:5px;border-radius:999px}
+@media (max-width:1100px){.demo-nav{top:auto;bottom:70px}}
+@media (max-width:760px){.layout{padding:120px 12px 12px}.top{flex-wrap:wrap;padding:10px 12px}.body{padding-left:16px}.help,.hist .h,.explain{padding-left:0;margin-left:0}}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+  <i class="blob w" style="left:-8%;top:-14%;width:46vmax;height:46vmax"></i>
+  <i class="blob a" style="right:-12%;top:8%;width:42vmax;height:42vmax"></i>
+  <i class="blob w" style="left:30%;bottom:-24%;width:52vmax;height:52vmax"></i>
+</div>
+
+<header class="top">
+  <div class="crumb pill"><span class="dot"></span><span>Lectura</span><span class="sep">›</span><span class="cur jp">白銀の約束</span></div>
+  <span class="sp"></span>
+  <div class="ankist pill" title="AnkiConnect en 127.0.0.1:8765"><i></i>Anki <b>· Japonés::Minado</b></div>
+  <div class="tools pill">
+    <button class="tl on jp" id="tFuri">ふりがな</button>
+    <button class="tl on" id="tCol">Colores</button>
+    <span class="sep"></span>
+    <button class="tl" id="tMinus">A−</button><span class="fs" id="fsv">30</span><button class="tl" id="tPlus">A+</button>
+  </div>
+</header>
+
+<div class="layout">
+  <section class="stage">
+    <div class="hist" id="hist"></div>
+    <div class="line" id="line"><div class="ico" id="ico"></div><div class="bubble"><div class="name" id="who"></div><p class="tx colors" id="tx"></p></div></div>
+    <div class="help">
+      <div class="trans" id="trans" title="Clic o mantén T para ver la traducción"><em>Traducción</em><span id="transTx"></span></div>
+      <button class="btn lost" id="bLost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.3M12 17h.01"/></svg>Estoy perdido <span class="kbd">E</span></button>
+      <button class="btn anki" id="bAnkiLine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="3" y="6" width="18" height="13" rx="3"/><circle cx="12" cy="12.5" r="3.2"/><path d="M8 6l1.5-2h5L16 6"/></svg>Frase a Anki <span class="kbd">A</span></button>
+    </div>
+    <div class="explain" id="explain" hidden></div>
+  </section>
+
+  <section class="words">
+    <div class="wbar">
+      <span class="wtitle">Palabras de la frase</span>
+      <span class="sp"></span>
+      <div class="seg" id="seg"><button class="on" data-f="all">Todas</button><button data-f="new">Sólo nuevas</button></div>
+    </div>
+    <div class="list" id="list"></div>
+    <div class="foot"><span><b id="sChars">1.240</b> caracteres</span><span><b>18 min</b></span><span><b id="sNew">0</b> palabras nuevas</span><span><b id="sAnki">0</b> a Anki</span><span class="sp"></span><span>JMdict-es · Gramática · JPDB · KANJIDIC</span></div>
+  </section>
+</div>
+
+<div class="demo-nav pill"><button class="tl" id="prev">← Frase anterior</button><button class="tl on" id="next">Siguiente →</button></div>
+
+<!-- modal Anki -->
+<div class="veil" id="veil" hidden>
+  <div class="modal" role="dialog" aria-label="Enviar a Anki">
+    <div class="mh"><span class="logo">★</span><span id="mTitle">Enviar a Anki</span><span class="sp"></span><button class="ib" id="mClose" aria-label="Cerrar">✕</button></div>
+    <div class="mgrid">
+      <div class="cardpv">
+        <div class="side"><div class="lbl">Anverso</div><div class="big" id="pvFront"></div><div class="sent" id="pvSent"></div></div>
+        <div class="side"><div class="lbl">Reverso</div>
+          <div style="font-size:15px;line-height:1.5" id="pvBack"></div>
+          <div class="shot" style="margin-top:10px" id="pvShot"></div>
+        </div>
+      </div>
+      <div>
+        <div class="lbl" style="font-size:12.5px;font-weight:800;color:#7a8291">Captura del juego</div>
+        <div class="shot" style="margin-top:4px" id="shotBig"></div>
+        <div class="thumbs"><div title="Hace 4 s" class="on"></div><div title="Hace 12 s"></div><div title="Hace 25 s"></div></div>
+        <label class="field">Mazo<select><option>Japonés::Minado</option><option>Japonés::Novelas</option></select></label>
+        <label class="field">Tipo de nota<select><option>Lapis</option><option>JP Mining Note</option><option>Básico</option></select></label>
+        <label class="chk"><input type="checkbox" checked> Audio de la frase (voz de Windows)</label>
+        <label class="chk"><input type="checkbox" checked> Marcar como «aprendiendo»</label>
+      </div>
+    </div>
+    <div class="mf"><button class="btn" id="mCancel">Cancelar</button><button class="btn anki" id="mSend">Enviar a Anki</button></div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden><i>✓</i><span id="toastTx"></span></div>
+
+<script>
+/* ---------------- datos de ejemplo ---------------- */
+// toks: [texto, furigana|null, pos, idPalabra|null, idGramatica|null]
+const LINES = [
+ { who:null, toks:[['窓','まど','n','窓'],['の',null,'p'],['外','そと','n','外'],['では',null,'p'],['、',null,'x'],['雪','ゆき','n','雪'],['が',null,'p'],['音','おと','n','音'],['も',null,'p'],['なく',null,'a','無い'],['降り続いて','ふりつづいて','v','降り続く','g-teiru'],['いた',null,'aux',null,'g-teiru'],['。',null,'x']],
+   tr:'Fuera de la ventana, la nieve seguía cayendo sin hacer ruido.',
+   ex:{ lit:'Lit.: «En el exterior de la ventana, nieve, sin sonido, seguía cayendo».',
+        chain:[['v','降る','caer (lluvia, nieve)'],['v','続く','continuar'],['g','〜ていた','estaba …-ando (pasado continuo)']],
+        notes:['<b>音もなく</b>: «sin siquiera un sonido»; も enfatiza la ausencia.','<b>降り続く</b> = 降る + 続く: verbo compuesto, «seguir cayendo».','Es narración (sin nombre): describe la escena.'] },
+   words:['窓','外','雪','音','無い','降り続く'], gram:['g-teiru'] },
+ { who:'美雪', c:'#ff4f7b', toks:[['明日','あした','n','明日'],['、',null,'x'],['駅','えき','n','駅'],['まで',null,'p',null,'g-made'],['一緒','いっしょ','n','一緒'],['に',null,'p'],['行って','いって','v','行く','g-tekureru'],['くれ',null,'aux',null,'g-tekureru'],['ない',null,'aux',null,'g-tekureru'],['かな',null,'p',null,'g-kana']],
+   tr:'¿Me acompañarías mañana hasta la estación?',
+   ex:{ lit:'Lit.: «Mañana, hasta la estación, juntos, ¿no irías por mí…, me pregunto?».',
+        chain:[['v','行く','ir'],['v','行って','forma て: enlaza'],['g','くれる','hacer algo por mí'],['g','ない','negación → petición'],['g','かな','«me pregunto…»: suaviza']],
+        notes:['<b>〜てくれない？</b> es una petición amable: «¿no me harías el favor de…?».','<b>かな</b> la vuelve tímida, casi pensando en voz alta: Miyuki no quiere presionar.','<b>まで</b> marca el destino final: «hasta la estación».'] },
+   words:['明日','駅','一緒','行く'], gram:['g-tekureru','g-kana','g-made'] },
+ { who:'僕', c:'#00a0d8', toks:[['うん','','i','うん'],['、',null,'x'],['起きてる','おきてる','v','起きる','g-teru'],['よ',null,'p'],['。',null,'x'],['寒い','さむい','a','寒い'],['から',null,'p',null,'g-kara'],['、',null,'x'],['早めに','はやめに','adv','早めに'],['出よう','でよう','v','出る','g-you'],['。',null,'x']],
+   tr:'Sí, estoy despierto. Como hace frío, salgamos con tiempo.',
+   ex:{ lit:'Lit.: «Sí, estoy despierto. Porque hace frío, salgamos temprano».',
+        chain:[['v','出る','salir'],['g','出よう','forma volitiva: «salgamos»']],
+        notes:['<b>起きてる</b> = 起きている, forma coloquial: «estar despierto» (estado), no «despertarse».','<b>から</b> tras una frase da la causa: «como hace frío…».','<b>〜よう</b> propone hacer algo juntos.'] },
+   words:['うん','起きる','寒い','早めに','出る'], gram:['g-teru','g-kara','g-you'] },
+];
+// diccionario: [lectura, pos, frecuencia (puesto JPDB), acepciones[[tags, glosa]], kanji[[k, signif, lecturas]], ejemplo]
+const D = {
+ 窓:['まど','n',2300,[[['n'],'ventana']],[['窓','ventana','ソウ · まど']],'窓を開けてください。— Abre la ventana, por favor.'],
+ 外:['そと','n',410,[[['n'],'exterior; fuera'],[['n'],'al aire libre']],[['外','fuera','ガイ · そと']]],
+ 雪:['ゆき','n',1800,[[['n'],'nieve'],[['n'],'nevada'],[['n'],'blancura (como la nieve)']],[['雪','nieve','セツ · ゆき']],'雪が積もった。— Ha cuajado la nieve.'],
+ 音:['おと','n',900,[[['n'],'sonido; ruido'],[['n'],'nota (musical)']],[['音','sonido','オン · おと']]],
+ 無い:['ない','a',60,[[['adj-i'],'no haber; inexistente'],[['adj-i'],'sin; carente de']],[]],
+ 降り続く:['ふりつづく','v',21000,[[['v5k','vi'],'seguir lloviendo/nevando; caer sin parar']],[['降','caer; bajar','コウ · ふ(る)'],['続','continuar','ゾク · つづ(く)']],'雨が三日も降り続いた。— Llovió tres días seguidos.'],
+ 明日:['あした','n',350,[[['n','adv'],'mañana']],[['明','claro; luz','メイ · あか(るい)'],['日','día; sol','ニチ · ひ']]],
+ 駅:['えき','n',1200,[[['n'],'estación (de tren)'],[['n'],'parada; apeadero']],[['駅','estación','エキ']],'駅で待ってるね。— Te espero en la estación.'],
+ 一緒:['いっしょ','n',700,[[['n','vs'],'juntos; en compañía'],[['n'],'lo mismo; igual'],[['n'],'al mismo tiempo']],[['一','uno','イチ · ひと(つ)'],['緒','cordón; comienzo','ショ · お']],'一緒に帰ろう。— Volvamos juntos.'],
+ 行く:['いく','v',40,[[['v5k-s','vi'],'ir; marcharse'],[['v5k-s','vi'],'avanzar; progresar'],[['v5k-s','vi'],'salir bien; funcionar'],[['aux'],'(tras ～て) ir haciendo; seguir']],[['行','ir; hacer','コウ · い(く)']]],
+ うん:['うん','i',200,[[['int'],'sí; vale']],[]],
+ 起きる:['おきる','v',800,[[['v1','vi'],'levantarse; despertarse'],[['v1','vi'],'estar despierto'],[['v1','vi'],'ocurrir; suceder']],[['起','levantarse','キ · お(きる)']]],
+ 寒い:['さむい','a',1500,[[['adj-i'],'frío (tiempo, temperatura)']],[['寒','frío','カン · さむ(い)']]],
+ 早めに:['はやめに','adv',9000,[[['adv'],'con antelación; con tiempo']],[['早','temprano; rápido','ソウ · はや(い)']]],
+ 出る:['でる','v',90,[[['v1','vi'],'salir; irse'],[['v1','vi'],'aparecer'],[['v1','vi'],'asistir; participar']],[['出','salir','シュツ · で(る)']]],
+};
+const G = {
+ 'g-teiru':['〜ていた','estaba haciendo (acción en curso en el pasado)','雪が降っていた。— Estaba nevando.'],
+ 'g-tekureru':['〜てくれる','alguien hace algo por mí / por nosotros (favor)','くれない？ en pregunta = «¿me harías el favor?»'],
+ 'g-kana':['かな','me pregunto si…; ¿será que…? (duda suave, petición tímida)','雨、降るかな。— ¿Lloverá, me pregunto?'],
+ 'g-made':['まで','hasta (límite de lugar o tiempo)','駅まで歩く。— Andar hasta la estación.'],
+ 'g-teru':['〜てる','forma coloquial de 〜ている (estado / acción en curso)','知ってる？— ¿Lo sabes?'],
+ 'g-kara':['から','porque; como (causa, tras una frase)','寒いから、帰る。— Como hace frío, me voy.'],
+ 'g-you':['〜よう','volitivo: «hagamos…», «voy a…»','行こう！— ¡Vamos!'],
+};
+const POS = {n:'Sustantivo',v:'Verbo',a:'Adjetivo',adv:'Adverbio',i:'Interjección'};
+
+/* ---------------- estado ---------------- */
+let cur = 1, furi = true, colors = true, fs = 30, filter = 'all', hover = null, openId = null, lost = false;
+const known = new Set(['明日','うん','外','出る']);
+const sent = new Set();
+const $ = id => document.getElementById(id);
+const freqLbl = r => r < 1500 ? ['común',''] : r < 10000 ? ['media','m'] : ['rara','r'];
+const svgI = {
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  anki:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3.5" width="16" height="17" rx="3"/><path d="M12 8v8M8 12h8"/></svg>',
+};
+
+/* captura de juego de ejemplo (SVG) */
+function shot(){ return `<svg viewBox="0 0 320 180" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3b4a72"/><stop offset="1" stop-color="#9fb3d9"/></linearGradient></defs>
+ <rect width="320" height="180" fill="url(#sky)"/><rect x="40" y="18" width="150" height="104" rx="4" fill="#cfdcf2" opacity=".35" stroke="#e9eef8" stroke-width="5"/>
+ <line x1="115" y1="18" x2="115" y2="122" stroke="#e9eef8" stroke-width="4"/><line x1="40" y1="70" x2="190" y2="70" stroke="#e9eef8" stroke-width="4"/>
+ ${Array.from({length:40},(_,i)=>`<circle cx="${(i*53)%320}" cy="${(i*37)%130}" r="${1+i%3}" fill="#fff" opacity=".85"/>`).join('')}
+ <ellipse cx="250" cy="150" rx="46" ry="60" fill="#2a2f45"/><circle cx="250" cy="78" r="26" fill="#f3d9c7"/><path d="M222 78c0-24 56-24 56 0c0-30-56-34-56 0z" fill="#3a2a2a"/>
+ <rect x="10" y="128" width="300" height="46" rx="8" fill="#121a2e" opacity=".82"/><text x="22" y="146" fill="#ff9bb3" font-size="10" font-family="sans-serif">美雪</text>
+ <text x="22" y="164" fill="#fff" font-size="12" font-family="sans-serif">明日、駅まで一緒に行ってくれないかな</text></svg>`; }
+
+/* ---------------- render ---------------- */
+function renderLine(){
+  const L = LINES[cur];
+  const line = $('line');
+  line.classList.toggle('narr', !L.who);
+  line.style.setProperty('--c', L.c || '#8a919c');
+  $('ico').textContent = L.who ? [...L.who][0] : '';
+  $('who').textContent = L.who || '';
+  $('who').hidden = !L.who;
+  const tx = $('tx');
+  tx.classList.toggle('colors', colors);
+  tx.innerHTML = L.toks.map(([t, r, p, w, g], i) => {
+    const k = w && known.has(w);
+    const cls = ['w', p, k ? 'known' : '', w && w === hover ? 'hl' : '', g && g === hover ? 'hl' : '', g ? 'g' : ''].join(' ');
+    const inner = furi && r && /[一-鿿]/.test(t) ? rubyOf(t, r) : t;
+    return `<span class="${cls}" data-w="${w || ''}" data-g="${g || ''}">${inner}</span>`;
+  }).join('');
+  // bubble se re-anima
+  const b = line.querySelector('.bubble'); b.style.animation = 'none'; void b.offsetWidth; b.style.animation = '';
+  $('transTx').textContent = L.tr;
+  $('trans').classList.remove('show');
+  $('hist').innerHTML = LINES.slice(0, cur).map((h, i) => `<div class="h" data-i="${i}">${h.who ? `<b>${h.who}</b>` : ''}${h.toks.map(t => t[0]).join('')}</div>`).join('');
+  renderExplain();
+}
+// furigana sencillo: okurigana final fuera del ruby
+function rubyOf(t, r){
+  const m = t.match(/^(.*?[一-鿿])([぀-ゟ]*)$/);
+  if (m && m[2] && r.endsWith(m[2])) return `<ruby>${m[1]}<rt>${r.slice(0, r.length - m[2].length)}</rt></ruby>${m[2]}`;
+  return `<ruby>${t}<rt>${r}</rt></ruby>`;
+}
+function renderExplain(){
+  const L = LINES[cur], e = L.ex, el = $('explain');
+  el.hidden = !lost;
+  $('bLost').classList.toggle('on', lost);
+  if (!lost) return;
+  el.innerHTML = `<div class="eh">Explicación de la frase <span class="ai">IA · sólo cuando la pides</span><span class="sp"></span><button class="ib" id="exClose" aria-label="Cerrar">✕</button></div>
+    <div class="nat">${L.tr}</div><div class="lit">${e.lit}</div>
+    <div class="chain">${e.chain.map(([c, a, b]) => `<div class="${c}"><b>${a}</b>${b}</div>`).join('')}</div>
+    <ul>${e.notes.map(n => `<li>${n}</li>`).join('')}</ul>`;
+  $('exClose').onclick = () => { lost = false; renderExplain(); };
+}
+function itemHtml(id, isG){
+  const isOpen = openId === id, k = !isG && known.has(id), done = sent.has(id);
+  if (isG){
+    const [t, d, ex] = G[id];
+    return `<div class="it gram ${isOpen ? 'open' : ''} ${hover === id ? 'hl' : ''}" data-id="${id}" data-g="1">
+      <div class="row"><span class="term">${t}</span><span class="pt g">Gramática</span><span class="one">${d}</span><span class="sp"></span><span class="chev">›</span></div>
+      <div class="body"><ol><li>${d}</li></ol><div class="ex jp">${ex}</div></div></div>`;
+  }
+  const [r, p, f, senses, kanji, ex] = D[id];
+  const [fl, fc] = freqLbl(f);
+  const showR = r && r !== id;
+  return `<div class="it ${isOpen ? 'open' : ''} ${k ? 'known' : ''} ${hover === id ? 'hl' : ''}" data-id="${id}">
+    <div class="row">
+      <span class="term">${showR ? `<ruby>${id}<rt>${r}</rt></ruby>` : id}</span>
+      <span class="pt ${p}">${POS[p]}</span>
+      <span class="one">${senses.map(s => s[1]).join(' · ')}</span><span class="sp"></span>
+      <span class="freq ${fc}" title="Puesto ${f.toLocaleString('es-ES')} en JPDB">${fl}</span>
+      <span class="acts">
+        <button class="ib k ${k ? 'on' : ''}" data-act="known" title="${k ? 'Quitar de conocidas' : 'Ya la conozco'}">${svgI.check}</button>
+        <button class="ib ak ${done ? 'done' : ''}" data-act="anki" title="${done ? 'Ya está en Anki' : 'Enviar a Anki con captura'}">${svgI.anki}</button>
+      </span>
+      <span class="chev">›</span>
+    </div>
+    <div class="body">
+      <ol>${senses.map(([t, g]) => `<li>${t.map(x => `<span class="tag">${x}</span>`).join('')}${g}</li>`).join('')}</ol>
+      ${kanji.length ? `<div class="kj">${kanji.map(([c, m, l]) => `<div><b>${c}</b><span>${m}<br><span class="mut">${l}</span></span></div>`).join('')}</div>` : ''}
+      ${ex ? `<div class="ex jp" style="border-color:var(--acc);background:rgba(0,160,216,.06)">${ex}</div>` : ''}
+      <div class="bacts"><button class="btn anki" data-act="anki">${svgI.anki} ${done ? 'Ya en Anki' : 'Enviar a Anki con captura'}</button>
+        <button class="btn" data-act="known">${k ? 'Quitar de conocidas' : '✓ Ya la conozco'}</button></div>
+    </div></div>`;
+}
+function renderList(){
+  const L = LINES[cur];
+  const nw = L.words.filter(w => !known.has(w)), kw = L.words.filter(w => known.has(w));
+  let h = nw.map(w => itemHtml(w)).join('');
+  if (L.gram.length) h += `<div class="grp">Gramática</div>` + L.gram.map(g => itemHtml(g, true)).join('');
+  if (kw.length && filter === 'all') h += `<div class="grp">Conocidas · ${kw.length}</div>` + kw.map(w => itemHtml(w)).join('');
+  else if (kw.length) h += `<div class="grp">${kw.length} conocida${kw.length > 1 ? 's' : ''} oculta${kw.length > 1 ? 's' : ''} <button data-f="all">Mostrar</button></div>`;
+  $('list').innerHTML = h;
+  $('sNew').textContent = LINES.slice(0, cur + 1).flatMap(l => l.words).filter(w => !known.has(w)).length;
+  $('sAnki').textContent = sent.size + (sent.has('__line') ? 0 : 0);
+}
+function render(){ renderLine(); renderList(); }
+
+/* ---------------- interaccion ---------------- */
+function setHover(id){ if (hover === id) return; hover = id; render(); }
+$('tx').addEventListener('mouseover', e => { const w = e.target.closest('.w'); setHover(w ? (w.dataset.w || w.dataset.g || null) : null); });
+$('tx').addEventListener('mouseleave', () => setHover(null));
+$('tx').addEventListener('click', e => {
+  const w = e.target.closest('.w'); if (!w) return;
+  const id = w.dataset.w || w.dataset.g; if (!id) return;
+  openId = id; render();
+  $('list').querySelector(`[data-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+});
+$('list').addEventListener('mouseover', e => { const it = e.target.closest('.it'); setHoverList(it ? it.dataset.id : null); });
+$('list').addEventListener('mouseleave', () => setHoverList(null));
+// desde la lista solo se resalta el texto (sin redibujar la lista, para no perder el hover)
+function setHoverList(id){ if (hover === id) return; hover = id; renderLine(); $('list').querySelectorAll('.it').forEach(x => x.classList.toggle('hl', x.dataset.id === id)); }
+$('list').addEventListener('click', e => {
+  const f = e.target.closest('[data-f]'); if (f) { setFilter(f.dataset.f); return; }
+  const it = e.target.closest('.it'); if (!it) return;
+  const id = it.dataset.id, act = e.target.closest('[data-act]')?.dataset.act;
+  if (act === 'known') { known.has(id) ? known.delete(id) : known.add(id); toast(known.has(id) ? `${id} marcada como conocida` : `${id} vuelve a la lista`); if (known.has(id) && openId === id) openId = null; render(); return; }
+  if (act === 'anki') { openAnki(id); return; }
+  openId = openId === id ? null : id; renderList();
+});
+function setFilter(f){ filter = f; document.querySelectorAll('#seg button').forEach(b => b.classList.toggle('on', b.dataset.f === f)); renderList(); }
+$('seg').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setFilter(b.dataset.f); });
+$('trans').addEventListener('click', () => $('trans').classList.toggle('show'));
+$('bLost').addEventListener('click', () => { lost = !lost; renderExplain(); });
+$('bAnkiLine').addEventListener('click', () => openAnki(null));
+$('hist').addEventListener('click', e => { const h = e.target.closest('.h'); if (h) go(+h.dataset.i); });
+$('prev').onclick = () => go(cur - 1);
+$('next').onclick = () => go(cur + 1);
+function go(i){ cur = (i + LINES.length) % LINES.length; openId = null; lost = false; hover = null; render(); $('list').scrollTop = 0; }
+$('tFuri').onclick = e => { furi = !furi; e.currentTarget.classList.toggle('on', furi); renderLine(); };
+$('tCol').onclick = e => { colors = !colors; e.currentTarget.classList.toggle('on', colors); renderLine(); };
+const setFs = d => { fs = Math.max(18, Math.min(56, fs + d)); document.documentElement.style.setProperty('--fs', fs + 'px'); $('fsv').textContent = fs; };
+$('tMinus').onclick = () => setFs(-2); $('tPlus').onclick = () => setFs(2);
+addEventListener('keydown', e => {
+  if (!$('veil').hidden) { if (e.key === 'Escape') closeAnki(); return; }
+  const k = e.key.toLowerCase();
+  if (k === 't') $('trans').classList.add('show');
+  else if (k === 'e') { lost = !lost; renderExplain(); }
+  else if (k === 'a') openAnki(openId && D[openId] ? openId : null);
+  else if (e.key === 'ArrowRight') go(cur + 1);
+  else if (e.key === 'ArrowLeft') go(cur - 1);
+});
+addEventListener('keyup', e => { if (e.key.toLowerCase() === 't') $('trans').classList.remove('show'); });
+
+/* ---------------- Anki ---------------- */
+let ankiId = null;
+function openAnki(id){
+  ankiId = id;
+  const L = LINES[cur];
+  const sentence = L.toks.map(([t, , , w]) => id && w === id ? `<b>${t}</b>` : t).join('');
+  if (id) {
+    const [r, , , senses] = D[id];
+    $('mTitle').textContent = `Enviar «${id}» a Anki`;
+    $('pvFront').innerHTML = id;
+    $('pvSent').innerHTML = sentence;
+    $('pvBack').innerHTML = `<div class="jp" style="font-size:20px;font-weight:700">${id}【${r}】</div><ol style="margin:4px 0 0;padding-left:20px">${senses.map(s => `<li>${s[1]}</li>`).join('')}</ol>`;
+  } else {
+    $('mTitle').textContent = 'Enviar la frase a Anki';
+    $('pvFront').innerHTML = '';
+    $('pvSent').innerHTML = `<span style="font-size:24px">${sentence}</span>`;
+    $('pvBack').innerHTML = `<div style="font-weight:700">${L.tr}</div><div class="mut" style="font-size:13px;margin-top:4px">${L.words.filter(w => !known.has(w)).map(w => `${w}【${D[w][0]}】 ${D[w][3][0][1]}`).join(' · ')}</div>`;
+  }
+  $('pvShot').innerHTML = shot() + '<span class="badge">Captura · hace 4 s</span>';
+  $('shotBig').innerHTML = shot();
+  $('veil').hidden = false;
+}
+function closeAnki(){ $('veil').hidden = true; }
+$('mClose').onclick = closeAnki; $('mCancel').onclick = closeAnki;
+$('veil').addEventListener('click', e => { if (e.target === $('veil')) closeAnki(); });
+document.querySelector('.thumbs').addEventListener('click', e => { const t = e.target.closest('div div'); if (!t) return; document.querySelectorAll('.thumbs div').forEach(x => x.classList.toggle('on', x === t)); });
+$('mSend').onclick = () => {
+  if (ankiId) sent.add(ankiId); else sent.add('frase-' + cur);
+  closeAnki(); toast(ankiId ? `«${ankiId}» enviada a Anki con captura` : 'Frase enviada a Anki con captura'); renderList();
+};
+let tt;
+function toast(m){ $('toastTx').textContent = m; $('toast').hidden = false; clearTimeout(tt); tt = setTimeout(() => $('toast').hidden = true, 2200); }
+
+render();
+</script>
+</body>
+</html>

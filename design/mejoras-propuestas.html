@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mejoras de diseño · Visor de capturas</title>
+<style>
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:400;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-400-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:500;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-500-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:700;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-700-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:800;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-800-latin.woff2') format('woff2')}
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+
+/* ============ Página de documentación ============ */
+html,body{margin:0;background:#dfe3e9;font-family:var(--round);color:#3a414e}
+.doc{max-width:1360px;margin:0 auto;padding:40px 24px 80px}
+.doc>header h1{font-size:34px;font-weight:800;margin:0 0 6px}
+.doc>header p{font-size:17px;line-height:1.55;margin:0 0 10px;max-width:880px;color:#545c6a}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+.toc a{font-size:15px;font-weight:700;color:#3a414e;text-decoration:none;background:#fff;border-radius:999px;padding:6px 14px;box-shadow:0 0 0 1px rgba(95,110,135,.2)}
+.toc a:hover{background:#00A0D8;color:#fff}
+section.p{margin-top:56px}
+section.p h2{font-size:26px;font-weight:800;margin:0 0 4px;display:flex;align-items:center;gap:12px}
+section.p h2 .n{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#3a414e;color:#fff;font-size:19px}
+section.p .why{font-size:16px;color:#5f6776;margin:0 0 16px 50px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:24px;align-items:start}
+@media (max-width:1100px){.row{grid-template-columns:1fr}}
+.frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:18px;overflow:hidden;box-shadow:0 0 0 1px rgba(60,70,90,.25),0 24px 50px -24px rgba(30,40,60,.55);background:#0f1218}
+.notes{background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 0 0 1px rgba(95,110,135,.18)}
+.notes h3{margin:0 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:#7a8291}
+.notes ol{margin:0;padding:0;list-style:none;counter-reset:k}
+.notes li{counter-increment:k;position:relative;padding-left:36px;margin-bottom:14px;font-size:15px;line-height:1.5}
+.notes li::before{content:counter(k);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:#ff4f7b;color:#fff;font-weight:800;font-size:14px;display:grid;place-items:center}
+.notes li b{display:block;font-size:16px}
+.notes .now{margin-top:14px;padding-top:12px;border-top:1px solid #e6e9ee;font-size:14px;color:#6a7282;line-height:1.5}
+.notes .now strong{color:#3a414e}
+
+/* ============ Mundo de la app (copia de src/app.css adaptada a .stage) ============ */
+.stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;
+  font-family:var(--round);color:#3a414e;background:#eceef2;--acc:#00A0D8;--acc-ink:#fff;user-select:none}
+.bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(34px);opacity:.9}
+.blob.w{background:radial-gradient(circle,#fff,rgba(255,255,255,0) 70%)}
+.blob.a{background:radial-gradient(circle,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%);opacity:.55}
+.ghost{position:absolute;width:118px;height:118px;border-radius:28px;padding:10px;background:rgba(255,255,255,.7);box-shadow:0 0 0 1px rgba(120,130,150,.25),0 10px 18px -10px rgba(40,50,70,.4);filter:blur(5px)}
+.ghost i{display:block;width:100%;height:100%;border-radius:18px;background:linear-gradient(160deg,color-mix(in srgb,var(--g) 30%,white),var(--g))}
+.glass{position:absolute;--r:28px;--bw:10px;border-radius:var(--r);padding:var(--bw);isolation:isolate;
+  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  -webkit-backdrop-filter:blur(14px) saturate(1.7);backdrop-filter:blur(14px) saturate(1.7);
+  box-shadow:inset 0 1.5px 0 #fff,inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.95),inset 0 -1.5px 0 rgba(110,125,150,.30),0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42)}
+.glass::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.62) 0%,rgba(255,255,255,.20) 55%,rgba(255,255,255,0) 100%);
+  -webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.85}
+.glass::after{content:'';position:absolute;z-index:3;left:12%;top:3px;width:34%;height:5px;border-radius:5px;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 40%,rgba(255,255,255,0));filter:blur(.6px);opacity:.9}
+.glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:#dfe3e9}
+.glass .face::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(20,30,50,.20),inset 0 3px 6px -2px rgba(0,0,0,.35),inset 0 -2px 4px -2px rgba(255,255,255,.5)}
+.glass.f{transform:scale(1.06);z-index:3;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)) 0%,color-mix(in srgb,var(--acc) 72%,transparent) 55%,color-mix(in srgb,var(--acc) 92%,black) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),inset 0 -10px 14px -8px color-mix(in srgb,var(--acc) 30%,white),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 0 26px 2px color-mix(in srgb,var(--acc) 50%,transparent),0 22px 34px -16px color-mix(in srgb,var(--acc) 70%,black)}
+.pill{-webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);background:linear-gradient(180deg,rgba(255,255,255,.80),rgba(255,255,255,.52));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+.avatar{left:22px;top:12px;width:60px;height:60px;--r:16px;--bw:5px}
+.avatar .face{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white),var(--acc));display:grid;place-items:center}
+.avatar svg{width:34px;height:34px}
+.crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:20px;font-weight:700;color:#4a5260;z-index:5}
+.crumb .sep{color:#a3abb8;font-weight:500}.crumb .cur{color:var(--acc)}
+.clock{position:absolute;right:24px;top:24px;display:flex;gap:14px;align-items:center;font-size:20px;font-weight:700;color:#4a5260;z-index:5}
+.clock small{font-size:15px;font-weight:500;color:#7a8291}
+.batt{display:flex;gap:2px}.batt b{width:6px;height:13px;border-radius:2px;background:var(--acc)}.batt b.off{background:#c3c9d3}
+.hints{position:absolute;right:22px;bottom:16px;display:flex;gap:10px;z-index:6}
+.hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:999px;font-size:16px;font-weight:700;color:#4a5260;white-space:nowrap}
+.btn{min-width:28px;height:28px;border-radius:14px;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;--b:#4a5260;padding:0 6px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--b) 70%,black),0 1px 2px rgba(0,0,0,.2);text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.btn.a{--b:#3BB54A}.btn.b{--b:#E8384F}.btn.x{--b:#3F63E0}.btn.y{--b:#F2B807;color:#3a2f00;text-shadow:none}.btn.sh{border-radius:8px;--b:#6b7383}
+.chip{font-size:15px;font-weight:700;color:var(--acc-ink);background:var(--acc);padding:3px 12px;border-radius:999px;white-space:nowrap}
+.sc{position:absolute;inset:0;background-size:cover;background-position:center;background-color:#c9cfd8}
+.mk{position:absolute;z-index:20;width:34px;height:34px;border-radius:50%;background:#ff4f7b;color:#fff;font-weight:800;font-size:18px;display:grid;place-items:center;
+  box-shadow:0 0 0 3px #fff,0 6px 14px rgba(255,79,123,.5)}
+.ico{display:grid;place-items:center}.ico svg{width:100%;height:100%}
+
+/* ---------- 1 · Inicio ---------- */
+.s1 .plat{width:190px;height:190px;--r:38px;--bw:12px;top:104px}
+.s1 .plat .face{background:radial-gradient(120% 100% at 30% 10%,color-mix(in srgb,var(--pc) 22%,white) 0%,var(--pc) 70%,color-mix(in srgb,var(--pc) 80%,black) 100%);display:grid;place-items:center}
+.s1 .plat svg{width:60%;height:60%;filter:drop-shadow(0 6px 10px rgba(0,0,0,.2))}
+.s1 .plat.f{--acc:var(--pc)}
+.s1 .plabel{position:absolute;top:312px;width:190px;text-align:center;font-size:22px;font-weight:800;color:#4a5260}
+.s1 .plabel small{display:block;font-size:14px;font-weight:500;color:#5f6776}
+.s1 .plabel.on{color:var(--pc)}
+.sect{position:absolute;font-size:18px;font-weight:800;color:#6a7282;letter-spacing:.02em}
+.sect em{font-style:normal;font-weight:600;color:#9aa1ad;margin-left:8px;font-size:15px}
+.cont{width:350px;height:150px;--r:24px;--bw:8px;top:412px}
+.cont .logo{position:absolute;left:16px;bottom:12px;z-index:2;font-size:26px;font-weight:800;font-style:italic;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.45)}
+.cont .bs{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(0,0,0,.45))}
+.cmeta{position:absolute;top:574px;width:350px;font-size:15px;font-weight:700;color:#5f6776;display:flex;gap:10px;align-items:center}
+.cmeta span{color:#8a919c;font-weight:500}
+.cplay{position:absolute;right:14px;top:12px;z-index:4;display:flex;gap:6px;align-items:center;height:32px;padding:0 12px 0 4px;border-radius:999px;font-size:15px;font-weight:800;color:#3a414e}
+.dockp{position:absolute;bottom:18px;left:96px;display:flex;gap:10px;z-index:5}
+.dockp .d{display:flex;align-items:center;gap:8px;height:42px;padding:0 16px 0 5px;border-radius:999px;font-size:16px;font-weight:700;color:#4a5260}
+.dockp .d i{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(180deg,color-mix(in srgb,var(--dc) 25%,white),var(--dc) 72%);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--dc) 70%,black)}
+.dockp .d i svg{width:60%;height:60%}
+.week{position:absolute;right:96px;top:372px;font-size:15px;font-weight:700;color:#6a7282;display:flex;gap:14px}
+.week b{color:#3a414e}
+
+/* ---------- 2 · Títulos ---------- */
+.amb{position:absolute;inset:-60px;background-size:cover;background-position:center;filter:blur(42px) saturate(1.4);opacity:.55}
+.ambfade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(236,238,242,.15) 0%,rgba(236,238,242,.6) 45%,rgba(236,238,242,.92) 100%)}
+.tinfo{position:absolute;left:96px;top:86px;display:flex;align-items:baseline;gap:14px;white-space:nowrap}
+.tinfo h3{margin:0;font-size:34px;font-weight:800}
+.tinfo .m{font-size:17px;font-weight:600;color:#4f5766;display:flex;gap:16px;align-items:center}
+.tinfo .m b{color:#3a414e}
+.filters{position:absolute;left:96px;top:142px;display:flex;gap:8px;align-items:center}
+.flt{height:34px;padding:0 16px;border-radius:999px;font-size:15px;font-weight:700;color:#4a5260;display:flex;align-items:center;gap:6px}
+.flt.on{background:var(--acc);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
+.flt .cnt{font-size:13px;opacity:.7}
+.page{position:absolute;left:50%;top:24px;transform:translateX(-50%);height:36px;padding:0 16px;border-radius:999px;display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:#4a5260}
+.page i{display:inline-block;width:46px;height:6px;border-radius:3px;background:#cfd4dc;overflow:hidden;position:relative}
+.page i::after{content:'';position:absolute;left:0;top:0;bottom:0;width:25%;background:var(--acc);border-radius:3px}
+.cov{width:160px;height:214px;--r:22px;--bw:8px}
+.cov .face{border-radius:15px}
+.cov .nm{position:absolute;left:10px;right:10px;bottom:10px;z-index:2;font-size:17px;font-weight:800;color:#fff;line-height:1.1;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.cov .shade{position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(0,0,0,.55))}
+.badge{position:absolute;z-index:4;top:-6px;right:-6px;font-size:12px;font-weight:800;color:#fff;background:#ff4f7b;padding:3px 9px;border-radius:999px;box-shadow:0 0 0 2px #fff}
+.lmark{position:absolute;z-index:4;left:6px;top:6px;width:24px;height:24px;border-radius:50%;background:rgba(20,25,35,.55);display:grid;place-items:center}
+.lmark svg{width:13px;height:13px}
+
+/* ---------- 3 · Ficha ---------- */
+.hfull{position:absolute;left:0;right:0;top:0;height:470px;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,#000 62%,transparent);mask-image:linear-gradient(180deg,#000 62%,transparent)}
+.hfull .tint{position:absolute;inset:0;background:linear-gradient(90deg,rgba(25,10,30,.55) 0%,rgba(25,10,30,.15) 55%,transparent)}
+.blogo{position:absolute;left:76px;top:150px;font-size:64px;font-weight:800;font-style:italic;color:#fff;text-shadow:0 0 18px color-mix(in srgb,var(--acc) 70%,transparent),0 3px 10px rgba(0,0,0,.5);letter-spacing:-.01em}
+.bmeta{position:absolute;left:80px;top:236px;display:flex;gap:10px}
+.bmeta span{font-size:15px;font-weight:700;color:#fff;background:rgba(20,15,30,.42);padding:4px 12px;border-radius:999px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.play{left:68px;top:290px;width:250px;height:80px;--r:26px;--bw:7px}
+.play .face{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 45%,white),var(--acc) 60%,color-mix(in srgb,var(--acc) 80%,black));display:flex;align-items:center;gap:14px;padding:0 18px;color:#fff}
+.play .pi{width:46px;height:46px;border-radius:50%;background:#fff;display:grid;place-items:center}
+.play .pi svg{width:24px;height:24px}.play .pi svg path{fill:var(--acc)}
+.play b{display:block;font-size:30px;font-weight:800;line-height:1}
+.play small{font-size:14px;font-weight:700;opacity:.9}
+.sec{position:absolute;top:304px;height:52px;padding:0 18px 0 8px;border-radius:999px;display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800;color:#4a5260}
+.sec i{width:36px;height:36px;border-radius:50%;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 40%,white),var(--acc));display:grid;place-items:center}
+.sec i svg{width:60%;height:60%}
+.stat{position:absolute;top:404px;height:118px;border-radius:24px;padding:14px 18px}
+.stat .k{font-size:14px;font-weight:700;color:#6a7282}
+.stat .v{font-size:32px;font-weight:800;color:#3a414e;margin-top:4px;white-space:nowrap}
+.stat .v small{font-size:17px;color:#6a7282;font-weight:700;margin-left:2px}
+.stat .s{font-size:14px;font-weight:600;color:#7a8291;margin-top:2px}
+.wk{display:flex;gap:12px;align-items:flex-end;height:56px;margin-top:6px}
+.wk div{display:flex;flex-direction:column;align-items:center;gap:4px;width:30px}
+.wk i{display:block;width:22px;border-radius:6px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 50%,white),var(--acc))}
+.wk i.z{background:#d5dae1;height:4px}
+.wk span{font-size:12px;font-weight:800;color:#7a8291}
+.wk div.t span{color:var(--acc)}
+.dsh{width:176px;height:99px;--r:18px;--bw:6px;top:574px}
+.dsh .dt{position:absolute;left:8px;bottom:6px;z-index:2;font-size:12px;font-weight:800;color:#fff;background:rgba(20,25,35,.55);padding:1px 8px;border-radius:999px}
+
+/* ---------- 4 · Capturas ---------- */
+.ghead{position:absolute;left:68px;top:90px;right:110px;display:flex;align-items:center;gap:14px}
+.ghead h3{margin:0;font-size:26px;font-weight:800}
+.ghead .opt{height:34px;padding:0 6px 0 14px;border-radius:999px;display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:#4a5260}
+.ghead .sp{flex:1}
+.day{position:absolute;left:68px;font-size:18px;font-weight:800;color:#3a414e;display:flex;gap:12px;align-items:baseline}
+.day span{font-size:15px;font-weight:600;color:#7a8291}
+.day .tagp{font-size:13px;font-weight:800;color:var(--acc-ink);background:var(--acc);padding:2px 10px;border-radius:999px;align-self:center}
+.gs{width:206px;height:116px;--r:18px;--bw:6px}
+.gs .st{position:absolute;right:8px;top:8px;z-index:2;width:22px;height:22px}
+.gfade{position:absolute;left:0;right:0;bottom:0;height:120px;background:linear-gradient(180deg,rgba(236,238,242,0),#eceef2 75%);z-index:4}
+.scrub{position:absolute;right:30px;top:150px;bottom:80px;width:70px;z-index:5}
+.scrub .ln{position:absolute;right:14px;top:0;bottom:0;width:4px;border-radius:2px;background:#cfd4dc}
+.scrub .mo{position:absolute;right:26px;font-size:13px;font-weight:800;color:#7a8291;transform:translateY(-50%)}
+.scrub .tk{position:absolute;right:12px;width:8px;height:2px;background:#aab1bc}
+.scrub .kn{position:absolute;right:6px;width:20px;height:20px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 4px #fff,0 4px 10px rgba(0,0,0,.25);transform:translateY(-50%)}
+.scrub .kl{position:absolute;right:36px;transform:translateY(-50%);font-size:14px;font-weight:800;color:#fff;background:var(--acc);padding:3px 10px;border-radius:999px;white-space:nowrap}
+
+/* ---------- 5 · Visor ---------- */
+.vbg{position:absolute;inset:0;background:radial-gradient(90% 80% at 40% 40%,#3b1d3c,#170d1b)}
+.vimg{position:absolute;left:36px;top:30px;width:864px;height:486px;border-radius:20px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.18),0 30px 60px -20px rgba(0,0,0,.7)}
+.vcount{position:absolute;left:52px;top:46px;z-index:3;height:32px;padding:0 14px;border-radius:999px;background:rgba(10,8,14,.5);color:#fff;font-size:15px;font-weight:800;display:flex;align-items:center;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.vpanel{position:absolute;left:924px;top:30px;width:322px;height:486px;border-radius:24px;padding:20px 20px}
+.vpanel h4{margin:0;font-size:24px;font-weight:800;font-style:italic;color:var(--acc)}
+.vpanel .dl{margin-top:14px;display:grid;grid-template-columns:auto 1fr;gap:9px 12px;font-size:14px}
+.vpanel .dl dt{color:#7a8291;font-weight:700}
+.vpanel .dl dd{margin:0;font-weight:700;color:#3a414e}
+.vpanel .fn{font-family:Consolas,monospace;font-size:12px;color:#5f6776;word-break:break-all}
+.vact{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.vact div{height:38px;border-radius:12px;display:flex;align-items:center;gap:10px;padding:0 10px;font-size:15px;font-weight:700;color:#4a5260;background:rgba(255,255,255,.55);box-shadow:0 0 0 1px rgba(95,110,135,.15)}
+.vact div.f{background:var(--acc);color:#fff;box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 6px 16px -6px var(--acc)}
+.vact i{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:color-mix(in srgb,var(--acc) 80%,white)}
+.vact div.f i{background:rgba(255,255,255,.25)}
+.vact i svg{width:70%;height:70%}
+.strip{position:absolute;left:0;right:0;top:540px;height:110px}
+.strip .t{position:absolute;top:22px;width:118px;height:66px;border-radius:10px;overflow:hidden;opacity:.6;box-shadow:0 0 0 1px rgba(255,255,255,.2)}
+.strip .t.c{top:8px;width:168px;height:94px;opacity:1;box-shadow:0 0 0 3px #fff,0 0 24px 4px color-mix(in srgb,var(--acc) 70%,transparent);border-radius:12px}
+.strip .sep{position:absolute;top:14px;width:2px;height:82px;background:rgba(255,255,255,.25)}
+.strip .sl{position:absolute;top:-6px;font-size:12px;font-weight:800;color:rgba(255,255,255,.65);transform:translateX(-50%);white-space:nowrap}
+.dark .hint{background:rgba(255,255,255,.12);color:#fff;box-shadow:0 0 0 1px rgba(255,255,255,.18);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+
+/* ---------- 6 · Ajustes ---------- */
+.scrim{position:absolute;inset:0;background:rgba(236,238,242,.55);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.spanel{left:110px;top:56px;width:1060px;height:580px;--r:34px;--bw:12px}
+.spanel .face{background:linear-gradient(180deg,#fbfcfd,#f1f3f6);display:flex}
+.scats{width:250px;padding:22px 12px;background:rgba(220,226,234,.55);display:flex;flex-direction:column;gap:6px}
+.scats h3{margin:0 10px 12px;font-size:24px;font-weight:800}
+.scat{height:46px;border-radius:14px;display:flex;align-items:center;gap:12px;padding:0 12px;font-size:17px;font-weight:700;color:#4a5260}
+.scat i{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:var(--c)}
+.scat i svg{width:66%;height:66%}
+.scat.on{background:#fff;color:var(--acc);box-shadow:0 0 0 1px rgba(95,110,135,.18),0 6px 14px -8px rgba(40,50,70,.4)}
+.sbody{flex:1;padding:24px 26px;position:relative}
+.sbody h4{margin:0 0 14px;font-size:20px;font-weight:800;color:#6a7282}
+.srow{height:50px;border-radius:14px;display:flex;align-items:center;padding:0 16px;font-size:17px;font-weight:700;color:#3a414e;gap:12px}
+.srow .v{margin-left:auto;font-weight:700;color:#5f6776;display:flex;align-items:center;gap:8px}
+.srow.f{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 55%,white),var(--acc));color:#fff;box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 8px 18px -8px var(--acc)}
+.srow.f .v{color:#fff}
+.sw{width:22px;height:22px;border-radius:7px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.sw.on{box-shadow:0 0 0 3px #fff,0 0 0 5px #3a414e}
+.arr{font-size:15px;opacity:.75}
+.sdesc{position:absolute;left:26px;right:26px;bottom:20px;border-radius:16px;padding:14px 16px;background:rgba(220,226,234,.5);font-size:15px;line-height:1.45;color:#4f5766;display:flex;gap:16px;align-items:center}
+.prev{flex:none;width:250px;height:92px;border-radius:14px;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb,#e2e5ea);position:relative;overflow:hidden;box-shadow:0 0 0 1px rgba(95,110,135,.2)}
+.prev .pc{position:absolute;top:12px;width:48px;height:66px;border-radius:9px;background:#c7ccd5;box-shadow:0 0 0 3px #fff}
+.prev .pc.f{box-shadow:0 0 0 3px var(--acc),0 0 14px 2px color-mix(in srgb,var(--acc) 60%,transparent)}
+
+/* ---------- 7 · Resumen de partida ---------- */
+.rcard{left:190px;top:70px;width:900px;height:560px;--r:36px;--bw:12px}
+.rcard .face{background:linear-gradient(180deg,#fbfcfd,#eef1f5)}
+.rhero{position:absolute;left:0;right:0;top:0;height:170px;overflow:hidden}
+.rhero .tint{position:absolute;inset:0;background:linear-gradient(180deg,rgba(30,10,35,.1),rgba(30,10,35,.55))}
+.rhero h3{position:absolute;left:30px;bottom:18px;margin:0;color:#fff;font-size:40px;font-weight:800;font-style:italic;text-shadow:0 2px 10px rgba(0,0,0,.4)}
+.rhero p{position:absolute;left:32px;top:20px;margin:0;color:#fff;font-size:16px;font-weight:800;background:rgba(20,15,30,.4);padding:4px 12px;border-radius:999px}
+.rnum{position:absolute;left:30px;top:196px;display:flex;gap:16px}
+.rbox{border-radius:20px;padding:14px 18px;background:#fff;box-shadow:0 0 0 1px rgba(95,110,135,.16);min-width:190px}
+.rbox .k{font-size:14px;font-weight:700;color:#7a8291}
+.rbox .v{font-size:34px;font-weight:800;color:#3a414e;white-space:nowrap}
+.rbox .v small{font-size:17px;color:#6a7282;margin-left:2px}
+.rbox .v.acc{color:var(--acc)}
+.rbox .s{font-size:14px;font-weight:700;color:#3BB54A}
+.rshots{position:absolute;left:30px;top:336px;font-size:17px;font-weight:800;color:#6a7282}
+.rs{width:190px;height:107px;--r:18px;--bw:6px;top:366px}
+.rbtn{position:absolute;top:470px;height:48px;padding:0 20px 0 8px;border-radius:999px;display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800;color:#4a5260}
+.rbtn.f{background:var(--acc);color:#fff;box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 8px 18px -8px var(--acc)}
+</style>
+</head>
+<body>
+<div class="doc">
+<header>
+  <h1>Mejoras de diseño propuestas</h1>
+  <p>Siete pantallas que cambiaría o ampliaría, dibujadas con el mismo lenguaje visual de la app (cristal Wii U, fondo claro, acento por juego, pistas de botones). Todo pensado para manejarse solo con mando. Cada mockup lleva marcas numeradas que se explican a la derecha.</p>
+  <p><strong>Líneas generales:</strong> no repetir información (el nombre del juego sale hasta tres veces en la ficha), aprovechar más el arte del juego, dar contexto útil (cuándo jugaste, qué capturaste en cada partida) y hacer visibles las acciones que hoy solo se descubren con botones.</p>
+  <nav class="toc">
+    <a href="#p1">1 · Inicio con «Seguir jugando»</a><a href="#p2">2 · Títulos con fondo ambiental</a><a href="#p3">3 · Ficha inmersiva</a>
+    <a href="#p4">4 · Capturas por días</a><a href="#p5">5 · Visor con panel de datos</a><a href="#p6">6 · Ajustes por secciones</a><a href="#p7">7 · Resumen de partida</a>
+  </nav>
+</header>
+
+<!-- ================================================================ 1 -->
+<section class="p" id="p1">
+  <h2><span class="n">1</span>Inicio con «Seguir jugando»</h2>
+  <p class="why">El README dice que la fila de recientes no cabía. Con plataformas algo más pequeñas, sí cabe, y es lo que más se usa al encender.</p>
+  <div class="row">
+    <div class="frame"><div class="stage s1" style="--acc:#00A0D8">
+      <div class="bg"><div class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></div><div class="blob a" style="left:760px;top:380px;width:520px;height:400px"></div>
+        <div class="ghost" style="left:1120px;top:150px;--g:#f59a4a"></div><div class="ghost" style="left:-40px;top:520px;--g:#5aa0e8"></div></div>
+      <div class="glass avatar"><div class="face"><span data-i="person"></span></div></div>
+      <div class="crumb pill"><span class="cur">Inicio</span></div>
+      <div class="clock">16/10 <small>(vie)</small> 17:10 <span class="batt"><b></b><b></b><b></b><b class="off"></b></span></div>
+
+      <div class="glass plat f" style="left:186px;--pc:#1593d6"><div class="face"><span class="ico" data-i="pc" style="width:60%;height:60%"></span></div></div>
+      <div class="glass plat" style="left:418px;--pc:#e0384a"><div class="face"><span class="ico" data-i="switch" style="width:60%;height:60%"></span></div></div>
+      <div class="glass plat" style="left:650px;--pc:#9b4fd6"><div class="face"><span class="ico" data-i="vn" style="width:60%;height:60%"></span></div></div>
+      <div class="glass plat" style="left:882px;--pc:#3aa64a"><div class="face"><span class="ico" data-i="saga" style="width:60%;height:60%"></span></div></div>
+      <div class="plabel on" style="left:186px;--pc:#1593d6">Juegos PC<small>17 títulos · 552 capturas</small></div>
+      <div class="plabel" style="left:418px">Juegos Switch<small>8 títulos · 218 capturas</small></div>
+      <div class="plabel" style="left:650px">Novelas visuales<small>8 títulos · 207 capturas</small></div>
+      <div class="plabel" style="left:882px">Sagas<small>Agrupa juegos</small></div>
+
+      <div class="sect" style="left:96px;top:376px">Seguir jugando</div>
+      <div class="week">Esta semana: <b>10 h 29 min</b> · <b>23 capturas</b></div>
+      <div class="glass cont" style="left:96px;--acc:#d14fb2"><div class="face"><i class="sc" data-s="11 300 0"></i><div class="bs"></div><div class="logo">Elden Ring</div></div></div>
+      <div class="glass cont" style="left:466px"><div class="face"><i class="sc" data-s="23 190 1"></i><div class="bs"></div><div class="logo">Hades II</div></div></div>
+      <div class="glass cont" style="left:836px"><div class="face"><i class="sc" data-s="7 20 0"></i><div class="bs"></div><div class="logo">Zelda: TotK</div></div></div>
+      <div class="cmeta" style="left:100px">Hace 2 h <span>· 9 h 12 min · 50 capturas</span></div>
+      <div class="cmeta" style="left:470px">Ayer <span>· 31 h 05 min · 128 capturas</span></div>
+      <div class="cmeta" style="left:840px">Martes <span>· Switch · 64 capturas</span></div>
+
+      <div class="dockp">
+        <div class="d pill"><i style="--dc:#F07C2B"><span class="ico" data-i="search"></span></i>Buscar</div>
+        <div class="d pill"><i style="--dc:#F2B807"><span class="ico" data-i="star"></span></i>Favoritas</div>
+        <div class="d pill"><i style="--dc:#3BB54A"><span class="ico" data-i="plus"></span></i>Añadir</div>
+        <div class="d pill"><i style="--dc:#1593d6"><span class="ico" data-i="gear"></span></i>Ajustes</div>
+        <div class="d pill"><i style="--dc:#9b4fd6"><span class="ico" data-i="power"></span></i>Salir</div>
+      </div>
+      <div class="hints"><div class="hint pill"><span class="btn a">A</span>Abrir</div><div class="hint pill"><span class="btn sh">Start</span>Ajustes</div></div>
+
+      <span class="mk" style="left:160px;top:96px">1</span>
+      <span class="mk" style="left:70px;top:400px">2</span>
+      <span class="mk" style="left:1196px;top:364px">3</span>
+      <span class="mk" style="left:70px;top:650px">4</span>
+    </div></div>
+    <aside class="notes"><h3>Qué cambia</h3><ol>
+      <li><b>Plataformas a 190 px</b>Siguen siendo el foco visual, pero dejan media pantalla libre.</li>
+      <li><b>Fila «Seguir jugando»</b>Los 3 últimos juegos con su hero y su acento. A abre la ficha; mantener A lanza el juego directamente.</li>
+      <li><b>Resumen de la semana</b>Horas y capturas de los últimos 7 días, datos que ya existen en <code>stats.json</code>.</li>
+      <li><b>Dock con texto</b>Los iconos sueltos sin etiqueta obligan a adivinar; píldoras con icono y nombre.</li>
+    </ol><p class="now"><strong>Hoy:</strong> 4 iconos de 300 px, mucho hueco entre ellos y el dock, y los recientes solo se intuyen por el orden de la lista.</p></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 2 -->
+<section class="p" id="p2">
+  <h2><span class="n">2</span>Títulos con fondo ambiental y filtros</h2>
+  <p class="why">La cuadrícula es correcta pero plana: el juego enfocado apenas cambia la pantalla y no hay forma de filtrar 33 títulos.</p>
+  <div class="row">
+    <div class="frame"><div class="stage" style="--acc:#d14fb2">
+      <div class="bg"><i class="amb sc" data-s="11 300 0" data-w="480" data-h="270"></i><div class="ambfade"></div></div>
+      <div class="glass avatar"><div class="face"><span data-i="person"></span></div></div>
+      <div class="crumb pill">Inicio<span class="sep">›</span><span class="cur">Juegos PC</span></div>
+      <div class="page pill">Página 1 de 4 <i></i></div>
+      <div class="clock">16/10 <small>(vie)</small> 17:10 <span class="batt"><b></b><b></b><b></b><b class="off"></b></span></div>
+
+      <div class="tinfo"><h3>Elden Ring</h3><div class="m"><span class="chip">50 capturas</span><span>Jugado <b>9 h 12 min</b></span><span>Última partida <b>hace 2 h</b></span><span>★ <b>6</b></span></div></div>
+      <div class="filters">
+        <span class="btn sh">LT</span>
+        <span class="flt on">Todos <span class="cnt">33</span></span>
+        <span class="flt pill">Recientes</span>
+        <span class="flt pill">Con lanzador <span class="cnt">21</span></span>
+        <span class="flt pill">Con favoritas <span class="cnt">9</span></span>
+        <span class="flt pill">A–Z</span>
+        <span class="btn sh">RT</span>
+      </div>
+
+      <div class="glass cov f" style="left:152px;top:202px"><div class="face"><i class="sc" data-s="11 300 0"></i></div><span class="lmark" style="z-index:5"><span class="ico" data-i="play" style="width:13px;height:13px"></span></span></div>
+      <div class="glass cov" style="left:356px;top:202px"><div class="face"><i class="sc" data-s="23 190 1"></i></div><span class="badge">4 nuevas</span></div>
+      <div class="glass cov" style="left:560px;top:202px"><div class="face"><i class="sc" data-s="31 250 0"></i></div></div>
+      <div class="glass cov" style="left:764px;top:202px"><div class="face"><i class="sc" data-s="44 160 0"></i></div></div>
+      <div class="glass cov" style="left:968px;top:202px"><div class="face"><i class="sc" data-s="51 15 1"></i></div></div>
+      <div class="glass cov" style="left:152px;top:434px"><div class="face"><i class="sc" data-s="62 260 0"></i></div></div>
+      <div class="glass cov" style="left:356px;top:434px"><div class="face"><i class="sc" data-s="73 330 1"></i></div></div>
+      <div class="glass cov" style="left:560px;top:434px"><div class="face"><i class="sc" data-s="84 280 0"></i></div></div>
+      <div class="glass cov" style="left:764px;top:434px"><div class="face" style="background:linear-gradient(160deg,#8fd0a0,#3a8a5c)"><div class="nm">Stardew Valley</div></div></div>
+      <div class="glass cov" style="left:968px;top:434px"><div class="face"><i class="sc" data-s="95 175 0"></i></div></div>
+
+      <div class="hints"><div class="hint pill"><span class="btn a">A</span>Abrir</div><div class="hint pill"><span class="btn b">B</span>Volver</div><div class="hint pill"><span class="btn sh">LT/RT</span>Filtro</div><div class="hint pill"><span class="btn y">Y</span>Carrusel</div></div>
+
+      <span class="mk" style="left:1190px;top:110px">1</span>
+      <span class="mk" style="left:60px;top:92px">2</span>
+      <span class="mk" style="left:60px;top:142px">3</span>
+      <span class="mk" style="left:126px;top:184px">4</span>
+      <span class="mk" style="left:745px;top:25px">5</span>
+    </div></div>
+    <aside class="notes"><h3>Qué cambia</h3><ol>
+      <li><b>Fondo ambiental</b>El hero del juego enfocado, muy desenfocado y aclarado, tiñe el fondo. Cambia con un fundido al moverse.</li>
+      <li><b>Cabecera más rica</b>Nombre grande, capturas, horas, última partida y nº de favoritas.</li>
+      <li><b>Filtros con LT/RT</b>Todos, Recientes, Con lanzador, Con favoritas, A–Z. Los gatillos están libres hoy.</li>
+      <li><b>Portadas sin texto encima</b>Si hay portada, el nombre ya va en la cabecera; solo se rotula en las que no tienen arte. Marcas pequeñas: ▶ jugable, «4 nuevas» capturas desde la última visita.</li>
+      <li><b>«Página 1 de 4»</b>en vez de puntos de 14 px, poco legibles a distancia de sofá.</li>
+    </ol></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 3 -->
+<section class="p" id="p3">
+  <h2><span class="n">3</span>Ficha de juego inmersiva</h2>
+  <p class="why">Hoy el banner, la portada y el logo repiten lo mismo, y las estadísticas quedan pequeñas. Propongo un hero a sangre completa y datos más útiles.</p>
+  <div class="row">
+    <div class="frame"><div class="stage" style="--acc:#d14fb2">
+      <div class="bg"><div class="blob a" style="left:700px;top:420px;width:600px;height:400px"></div></div>
+      <div class="hfull"><i class="sc" data-s="11 300 0"></i><div class="tint"></div></div>
+      <div class="glass avatar"><div class="face"><span data-i="person"></span></div></div>
+      <div class="crumb pill">Inicio<span class="sep">›</span>Juegos PC<span class="sep">›</span><span class="cur">Elden Ring</span></div>
+      <div class="clock" style="color:#fff">16/10 <small style="color:#eee">(vie)</small> 17:10</div>
+
+      <div class="blogo">Elden Ring</div>
+      <div class="bmeta"><span>Juegos PC</span><span>50 capturas</span><span>Última partida: hoy, 15:02</span></div>
+
+      <div class="glass play f"><div class="face"><span class="pi"><span class="ico" data-i="play" style="width:24px;height:24px"></span></span><span><b>Jugar</b><small>Ejecutable propio</small></span></div></div>
+      <div class="sec pill" style="left:346px"><i><span class="ico" data-i="image"></span></i>Capturas <span style="color:#8a919c">50</span></div>
+      <div class="sec pill" style="left:540px"><i style="background:linear-gradient(180deg,#ffe28a,#F2B807)"><span class="ico" data-i="star"></span></i>Favoritas <span style="color:#8a919c">6</span></div>
+      <div class="sec pill" style="left:726px"><i style="background:linear-gradient(180deg,#b8c0cc,#6b7383)"><span class="ico" data-i="palette"></span></i>Opciones</div>
+
+      <div class="stat pill" style="left:68px;width:220px"><div class="k">Tiempo total</div><div class="v">9<small>h</small> 12<small>min</small></div><div class="s">Desde el 12 de marzo</div></div>
+      <div class="stat pill" style="left:304px;width:220px"><div class="k">Partidas</div><div class="v">6</div><div class="s">Media de 1 h 32 min</div></div>
+      <div class="stat pill" style="left:540px;width:220px"><div class="k">Capturas por hora</div><div class="v">5,4</div><div class="s">La más reciente: hoy</div></div>
+      <div class="stat pill" style="left:776px;width:436px"><div class="k">Esta semana · 10 h 29 min</div>
+        <div class="wk"><div><i style="height:34px"></i><span>V</span></div><div><i style="height:10px"></i><span>S</span></div><div><i class="z"></i><span>D</span></div><div><i style="height:30px"></i><span>L</span></div><div><i class="z"></i><span>M</span></div><div><i style="height:42px"></i><span>X</span></div><div class="t"><i style="height:22px"></i><span>Hoy</span></div></div></div>
+
+      <div class="sect" style="left:68px;top:544px">Capturas recientes</div>
+      <div class="glass dsh" style="left:68px"><div class="face"><i class="sc" data-s="12 300 0"></i><span class="dt">Hoy</span></div></div>
+      <div class="glass dsh" style="left:258px"><div class="face"><i class="sc" data-s="13 140 1"></i><span class="dt">Hoy</span></div></div>
+      <div class="glass dsh" style="left:448px"><div class="face"><i class="sc" data-s="14 330 0"></i><span class="dt">Mié 14</span></div></div>
+      <div class="glass dsh" style="left:638px"><div class="face"><i class="sc" data-s="15 120 1"></i><span class="dt">Mié 14</span></div></div>
+
+      <div class="hints" style="bottom:10px"><div class="hint pill"><span class="btn a">A</span>Jugar</div><div class="hint pill"><span class="btn b">B</span>Volver</div><div class="hint pill"><span class="btn y">Y</span>Opciones</div></div>
+
+      <span class="mk" style="left:1180px;top:200px">1</span>
+      <span class="mk" style="left:40px;top:150px">2</span>
+      <span class="mk" style="left:330px;top:262px">3</span>
+      <span class="mk" style="left:40px;top:400px">4</span>
+      <span class="mk" style="left:1190px;top:400px">5</span>
+    </div></div>
+    <aside class="notes"><h3>Qué cambia</h3><ol>
+      <li><b>Hero a sangre completa</b>Ocupa todo el ancho y se funde con el fondo claro; adiós al marco del banner.</li>
+      <li><b>Un solo nombre</b>Se quita la baldosa de portada (repetía el nombre y la imagen). El logo va sobre el hero, con píldoras de contexto.</li>
+      <li><b>Acciones a la vista</b>Capturas, Favoritas y Opciones como botones al lado de Jugar, en vez de esconderlas tras Y.</li>
+      <li><b>Estadísticas legibles</b>Tiempo total con fecha de inicio, nº de partidas y media, ritmo de capturas. El odómetro puede seguir animando los números.</li>
+      <li><b>Semana con días</b>Barras con L-M-X… y «Hoy» resaltado; hoy no se sabe qué barra es cada día.</li>
+    </ol></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 4 -->
+<section class="p" id="p4">
+  <h2><span class="n">4</span>Cuadrícula de capturas agrupada por días</h2>
+  <p class="why">Con 50 o 500 capturas la cuadrícula es un muro uniforme. Agrupar por partida/día y añadir una línea de tiempo da contexto y saltos rápidos.</p>
+  <div class="row">
+    <div class="frame"><div class="stage" style="--acc:#d14fb2">
+      <div class="bg"><div class="blob w" style="left:-60px;top:-60px;width:520px;height:400px"></div><div class="blob a" style="left:800px;top:-80px;width:500px;height:400px"></div></div>
+      <div class="glass avatar"><div class="face"><span data-i="person"></span></div></div>
+      <div class="crumb pill">Inicio<span class="sep">›</span>Juegos PC<span class="sep">›</span><span class="cur">Elden Ring</span></div>
+      <div class="clock">16/10 <small>(vie)</small> 17:10</div>
+      <div class="ghead"><h3>Capturas</h3><span class="chip">50</span><span class="sp"></span>
+        <span class="opt pill">Recientes <span class="btn y">Y</span></span><span class="opt pill">Tamaño M <span class="btn sh">RS</span></span></div>
+
+      <div class="day" style="top:146px">Hoy, viernes 16 de octubre <span>· partida de 2 h 14 min · 7 capturas</span><span class="tagp">Nuevas</span></div>
+      <div class="glass gs f" style="left:68px;top:180px"><div class="face"><i class="sc" data-s="12 300 0"></i></div></div>
+      <div class="glass gs" style="left:292px;top:180px"><div class="face"><i class="sc" data-s="13 140 1"></i><span class="st ico" data-i="starY"></span></div></div>
+      <div class="glass gs" style="left:516px;top:180px"><div class="face"><i class="sc" data-s="16 320 0"></i></div></div>
+      <div class="glass gs" style="left:740px;top:180px"><div class="face"><i class="sc" data-s="17 100 0"></i></div></div>
+      <div class="glass gs" style="left:964px;top:180px"><div class="face"><i class="sc" data-s="18 290 1"></i></div></div>
+      <div class="glass gs" style="left:68px;top:314px"><div class="face"><i class="sc" data-s="19 310 0"></i></div></div>
+      <div class="glass gs" style="left:292px;top:314px"><div class="face"><i class="sc" data-s="20 130 0"></i></div></div>
+
+      <div class="day" style="top:462px">Miércoles 14 de octubre <span>· partida de 1 h 05 min · 3 capturas</span></div>
+      <div class="glass gs" style="left:68px;top:496px"><div class="face"><i class="sc" data-s="14 330 0"></i></div></div>
+      <div class="glass gs" style="left:292px;top:496px"><div class="face"><i class="sc" data-s="15 120 1"></i><span class="st ico" data-i="starY"></span></div></div>
+      <div class="glass gs" style="left:516px;top:496px"><div class="face"><i class="sc" data-s="21 300 0"></i></div></div>
+      <div class="day" style="top:640px;z-index:5;opacity:.5">Sábado 6 de septiembre <span>· 12 capturas</span></div>
+      <div class="gfade"></div>
+
+      <div class="scrub"><div class="ln"></div>
+        <span class="mo" style="top:4%">oct</span><span class="tk" style="top:4%"></span>
+        <span class="mo" style="top:24%">sep</span><span class="tk" style="top:24%"></span>
+        <span class="mo" style="top:46%">ago</span><span class="tk" style="top:46%"></span>
+        <span class="mo" style="top:66%">jun</span><span class="tk" style="top:66%"></span>
+        <span class="mo" style="top:90%">mar</span><span class="tk" style="top:90%"></span>
+        <span class="kn" style="top:6%"></span></div>
+
+      <div class="hints"><div class="hint pill"><span class="btn a">A</span>Ver</div><div class="hint pill"><span class="btn b">B</span>Volver</div><div class="hint pill"><span class="btn sh">LT/RT</span>Día</div><div class="hint pill"><span class="btn x">X</span>Favorita</div><div class="hint pill"><span class="btn sh">Start</span>Menú</div></div>
+
+      <span class="mk" style="left:30px;top:140px">1</span>
+      <span class="mk" style="left:1236px;top:110px">2</span>
+      <span class="mk" style="left:870px;top:84px">3</span>
+      <span class="mk" style="left:668px;top:138px">4</span>
+    </div></div>
+    <aside class="notes"><h3>Qué cambia</h3><ol>
+      <li><b>Cabeceras por día</b>Con la duración de la partida de ese día (sale de las sesiones de <code>stats.json</code>) y el nº de capturas.</li>
+      <li><b>Línea de tiempo lateral</b>Meses a la derecha con el punto de posición: sustituye a la barra de scroll anónima. LT/RT saltan de día en día.</li>
+      <li><b>Orden y tamaño visibles</b>El orden actual se ve en una píldora; el stick derecho cambia la densidad (S: 6 columnas, M: 5, L: 3).</li>
+      <li><b>«Nuevas»</b>Marca las capturas aparecidas desde la última visita (p. ej. las hechas con F12 mientras jugabas).</li>
+    </ol><p class="now"><strong>Con orden «por nombre»</strong> las cabeceras desaparecen y se vuelve a la cuadrícula continua.</p></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 5 -->
+<section class="p" id="p5">
+  <h2><span class="n">5</span>Visor con panel de información</h2>
+  <p class="why">La tira de miniaturas actual queda pegada a la derecha y deja medio ancho vacío; los datos de la captura caben en una píldora diminuta.</p>
+  <div class="row">
+    <div class="frame"><div class="stage dark" style="--acc:#d14fb2">
+      <div class="vbg"></div>
+      <div class="vimg"><i class="sc" data-s="13 140 1"></i></div>
+      <div class="vcount">17 / 50</div>
+      <div class="vpanel pill">
+        <h4>Elden Ring</h4>
+        <dl class="dl">
+          <dt>Fecha</dt><dd>Vie 16 oct 2026 · 15:47</dd>
+          <dt>Partida</dt><dd>Minuto 45 de 2 h 14 min</dd>
+          <dt>Tamaño</dt><dd>3840 × 2160 · PNG · 8,4 MB</dd>
+          <dt>Origen</dt><dd>Captura propia (F12)</dd>
+          <dt>Archivo</dt><dd class="fn">Elden Ring_2026-10-16_15-47-12.png</dd>
+        </dl>
+        <div class="vact">
+          <div class="f"><i><span class="ico" data-i="starY"></span></i>Quitar de favoritas</div>
+          <div><i><span class="ico" data-i="move"></span></i>Mover a otro juego…</div>
+          <div><i><span class="ico" data-i="folder"></span></i>Mostrar en el Explorador</div>
+          <div><i><span class="ico" data-i="image"></span></i>Usar como portada</div>
+        </div>
+      </div>
+      <div class="strip">
+        <span class="sl" style="left:250px">Hoy</span><span class="sl" style="left:1020px">Miércoles 14</span>
+        <div class="t" style="left:20px"><i class="sc" data-s="16 320 0"></i></div>
+        <div class="t" style="left:150px"><i class="sc" data-s="17 100 0"></i></div>
+        <div class="t" style="left:280px"><i class="sc" data-s="18 290 1"></i></div>
+        <div class="t" style="left:410px"><i class="sc" data-s="12 300 0"></i></div>
+        <div class="t c" style="left:556px"><i class="sc" data-s="13 140 1"></i></div>
+        <div class="t" style="left:740px"><i class="sc" data-s="19 310 0"></i></div>
+        <div class="sep" style="left:870px"></div>
+        <div class="t" style="left:884px"><i class="sc" data-s="14 330 0"></i></div>
+        <div class="t" style="left:1014px"><i class="sc" data-s="15 120 1"></i></div>
+        <div class="t" style="left:1144px"><i class="sc" data-s="21 300 0"></i></div>
+      </div>
+      <div class="hints"><div class="hint"><span class="btn sh">LB/RB</span>±10</div><div class="hint"><span class="btn x">X</span>Favorita</div><div class="hint"><span class="btn y">Y</span>Ocultar datos</div><div class="hint"><span class="btn sh">RS</span>Zoom</div><div class="hint"><span class="btn b">B</span>Volver</div></div>
+
+      <span class="mk" style="left:1222px;top:14px">1</span>
+      <span class="mk" style="left:626px;top:520px">2</span>
+      <span class="mk" style="left:900px;top:330px">3</span>
+      <span class="mk" style="left:20px;top:40px">4</span>
+    </div></div>
+    <aside class="notes"><h3>Qué cambia</h3><ol>
+      <li><b>Panel de datos con Y</b>Fecha completa, en qué minuto de la partida se hizo, tamaño, origen y archivo. Y lo oculta y la imagen ocupa toda la pantalla.</li>
+      <li><b>Tira centrada en la actual</b>La captura actual siempre en el centro, más grande, con separadores y etiquetas de día.</li>
+      <li><b>Acciones directas</b>Las del menú Start a la vista, más «Usar como portada» (crea <code>cover.jpg</code> recortando a 2:3).</li>
+      <li><b>Contador sobre la imagen</b>y zoom con el stick derecho para mirar detalles en 4K.</li>
+    </ol></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 6 -->
+<section class="p" id="p6">
+  <h2><span class="n">6</span>Ajustes por secciones</h2>
+  <p class="why">Una sola lista larga mezcla biblioteca, apariencia, captura y sistema. Con secciones y una explicación de cada opción se encuentra todo antes.</p>
+  <div class="row">
+    <div class="frame"><div class="stage" style="--acc:#00A0D8">
+      <div class="bg"><div class="ghost" style="left:120px;top:110px;--g:#1593d6;width:240px;height:240px"></div><div class="ghost" style="left:900px;top:110px;--g:#3aa64a;width:240px;height:240px"></div></div>
+      <div class="scrim"></div>
+      <div class="glass spanel"><div class="face">
+        <div class="scats"><h3>Ajustes</h3>
+          <div class="scat"><i style="--c:#1593d6"><span class="ico" data-i="folder"></span></i>Biblioteca</div>
+          <div class="scat on"><i style="--c:#9b4fd6"><span class="ico" data-i="palette"></span></i>Apariencia</div>
+          <div class="scat"><i style="--c:#3BB54A"><span class="ico" data-i="play"></span></i>Lanzador</div>
+          <div class="scat"><i style="--c:#F07C2B"><span class="ico" data-i="camera"></span></i>Capturas propias</div>
+          <div class="scat"><i style="--c:#E8384F"><span class="ico" data-i="pad"></span></i>Mando y sonido</div>
+          <div class="scat"><i style="--c:#6b7383"><span class="ico" data-i="gear"></span></i>Sistema</div>
+        </div>
+        <div class="sbody"><h4>Apariencia</h4>
+          <div class="srow f">Color de acento<span class="v"><span class="arr">‹</span><span class="sw" style="background:conic-gradient(#e0384a,#F2B807,#3BB54A,#1593d6,#9b4fd6,#e0384a)"></span>Del juego (automático)<span class="arr">›</span></span></div>
+          <div class="srow">Vista de títulos<span class="v">Cuadrícula</span></div>
+          <div class="srow">Fondo ambiental del juego<span class="v">Sí</span></div>
+          <div class="srow">Animaciones del fondo<span class="v">Suaves</span></div>
+          <div class="srow">Mostrar ocultos (atenuados)<span class="v">No</span></div>
+          <div class="srow">Tamaño de miniaturas<span class="v">Mediano</span></div>
+          <div class="sdesc">
+            <div><b>Color de acento.</b> «Del juego» saca el color del hero y la portada de cada juego. También puedes usar el arcoíris o un color fijo. Cambia con ‹ ›; la vista previa es en vivo.</div>
+            <div class="prev" style="--acc:#d14fb2"><span class="pc" style="left:14px;background:#7a3a6e"></span><span class="pc f" style="left:72px;background:#d14fb2"></span><span class="pc" style="left:130px;background:#4a6a8a"></span><span class="pc" style="left:188px;background:#c46030"></span></div>
+          </div>
+        </div>
+      </div></div>
+      <div class="hints"><div class="hint pill"><span class="btn sh">LB/RB</span>Sección</div><div class="hint pill"><span class="btn a">A</span>Cambiar</div><div class="hint pill"><span class="btn b">B</span>Cerrar</div></div>
+      <span class="mk" style="left:90px;top:120px">1</span>
+      <span class="mk" style="left:1150px;top:130px">2</span>
+      <span class="mk" style="left:1150px;top:560px">3</span>
+    </div></div>
+    <aside class="notes"><h3>Qué cambia</h3><ol>
+      <li><b>Secciones a la izquierda</b>Biblioteca, Apariencia, Lanzador, Capturas propias, Mando y sonido, Sistema. LB/RB cambian de sección sin bajar por toda la lista.</li>
+      <li><b>‹ › en la fila enfocada</b>Deja claro que izquierda/derecha cambian el valor (hoy no se indica).</li>
+      <li><b>Explicación y vista previa</b>Cada opción explica qué hace; las visuales (acento, tamaño de miniaturas) muestran una vista previa.</li>
+    </ol></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 7 -->
+<section class="p" id="p7">
+  <h2><span class="n">7</span>Resumen al terminar la partida</h2>
+  <p class="why">Hoy, al cerrar el juego, solo aparece un aviso («Has jugado 1 h 20 min a…»). Es el mejor momento para enseñar lo que acabas de capturar.</p>
+  <div class="row">
+    <div class="frame"><div class="stage" style="--acc:#d14fb2">
+      <div class="bg"><div class="blob a" style="left:-100px;top:200px;width:600px;height:500px"></div><div class="blob a" style="left:800px;top:-100px;width:600px;height:500px"></div></div>
+      <div class="scrim" style="background:rgba(236,238,242,.35)"></div>
+      <div class="glass rcard"><div class="face">
+        <div class="rhero"><i class="sc" data-s="11 300 0"></i><div class="tint"></div><p>Partida terminada · 15:02 – 17:16</p><h3>Elden Ring</h3></div>
+        <div class="rnum">
+          <div class="rbox"><div class="k">Esta partida</div><div class="v acc">2<small>h</small> 14<small>min</small></div></div>
+          <div class="rbox"><div class="k">Total</div><div class="v">11<small>h</small> 26<small>min</small></div><div class="s">+2 h 14 min</div></div>
+          <div class="rbox"><div class="k">Racha</div><div class="v">3<small>días seguidos</small></div></div>
+        </div>
+        <div class="rshots">Capturas de esta partida · 7</div>
+        <div class="glass rs" style="left:30px"><div class="face"><i class="sc" data-s="12 300 0"></i></div></div>
+        <div class="glass rs" style="left:236px"><div class="face"><i class="sc" data-s="13 140 1"></i></div></div>
+        <div class="glass rs" style="left:442px"><div class="face"><i class="sc" data-s="16 320 0"></i></div></div>
+        <div class="glass rs" style="left:648px;"><div class="face" style="display:grid;place-items:center;background:linear-gradient(180deg,#f4f5f8,#e3e7ed);font-size:22px;font-weight:800;color:#6a7282">+4</div></div>
+        <div class="rbtn f" style="left:30px"><span class="btn a">A</span>Ver las 7 capturas</div>
+        <div class="rbtn pill" style="left:290px"><span class="btn x">X</span>Elegir favoritas</div>
+        <div class="rbtn pill" style="left:510px"><span class="btn b">B</span>Cerrar</div>
+      </div></div>
+      <span class="mk" style="left:160px;top:240px">1</span>
+      <span class="mk" style="left:160px;top:420px">2</span>
+      <span class="mk" style="left:160px;top:560px">3</span>
+    </div></div>
+    <aside class="notes"><h3>Qué cambia</h3><ol>
+      <li><b>Números de la partida</b>Duración, total acumulado con el incremento y racha de días (todo sale de las partidas <code>{start,end}</code>).</li>
+      <li><b>Capturas de la partida</b>Las hechas entre el inicio y el fin de la sesión, con F12 o con el mando.</li>
+      <li><b>Siguiente paso claro</b>Ir a verlas, marcar favoritas en lote o cerrar. Aparece al restaurarse la ventana; sin capturas se queda en un aviso pequeño.</li>
+    </ol></aside>
+  </div>
+</section>
+</div>
+
+<script>
+const ICON={
+  person:`<svg viewBox="0 0 40 40" width="34" height="34"><circle cx="20" cy="15" r="8" fill="#fff"/><path d="M5 37c2-9 8-13 15-13s13 4 15 13z" fill="#fff"/></svg>`,
+  pc:`<svg viewBox="0 0 120 120"><path fill="#fff" fill-rule="evenodd" d="M20 18h66a8 8 0 0 1 8 8v42a8 8 0 0 1-8 8H20a8 8 0 0 1-8-8V26a8 8 0 0 1 8-8zm2 9v38h62V27z"/><path fill="#fff" d="M46 76h14l3 12H43z"/><rect x="32" y="87" width="42" height="7" rx="3.5" fill="#fff"/><path fill="#fff" fill-rule="evenodd" d="M100 26h8a5 5 0 0 1 5 5v58a5 5 0 0 1-5 5h-8a5 5 0 0 1-5-5V31a5 5 0 0 1 5-5zm1 10v4h6v-4zm0 9v4h6v-4z"/></svg>`,
+  switch:`<svg viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round"><rect x="36" y="30" width="48" height="60" rx="5"/><path d="M36 30h-8a14 14 0 0 0-14 14v32a14 14 0 0 0 14 14h8z" fill="#fff"/><path d="M84 30h8a14 14 0 0 1 14 14v32a14 14 0 0 1-14 14h-8z"/><circle cx="25" cy="48" r="5" stroke="none" style="fill:var(--pc)"/><circle cx="95" cy="68" r="5" fill="#fff" stroke="none"/></svg>`,
+  saga:`<svg viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="30" width="42" height="64" rx="8" transform="rotate(-12 35 62)"/><rect x="64" y="30" width="42" height="64" rx="8" transform="rotate(12 85 62)"/><rect x="39" y="22" width="42" height="68" rx="8" fill="#fff" fill-opacity=".25"/></svg>`,
+  vn:`<svg viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><circle cx="60" cy="30" r="14" fill="#fff" stroke="none"/><path d="M34 62c4-12 14-17 26-17s22 5 26 17" fill="#fff" stroke="none"/><rect x="12" y="64" width="96" height="42" rx="10"/><rect x="20" y="56" width="34" height="14" rx="5" fill="#fff" stroke="none"/><path d="M26 84h50M26 96h32"/><path d="M92 92l6 6 6-6" stroke-width="5"/></svg>`,
+  search:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"><circle cx="21" cy="21" r="12"/><path d="M30 30l10 10"/></svg>`,
+  star:`<svg viewBox="0 0 48 48"><path d="M24 5l5.8 12.2 13.2 1.6-9.8 9.1 2.6 13.1L24 34.5 12.2 41l2.6-13.1L5 18.8l13.2-1.6z" fill="#fff"/></svg>`,
+  starY:`<svg viewBox="0 0 48 48"><path d="M24 5l5.8 12.2 13.2 1.6-9.8 9.1 2.6 13.1L24 34.5 12.2 41l2.6-13.1L5 18.8l13.2-1.6z" fill="#F2B807" stroke="#fff" stroke-width="3" stroke-linejoin="round"/></svg>`,
+  plus:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"><path d="M24 9v30M9 24h30"/></svg>`,
+  gear:`<svg viewBox="0 0 48 48"><path fill="#fff" fill-rule="evenodd" d="M20 4h8l1.2 5.6a15 15 0 0 1 4 2.3l5.4-1.8 4 6.9-4.2 3.8a15 15 0 0 1 0 4.6l4.2 3.8-4 6.9-5.4-1.8a15 15 0 0 1-4 2.3L28 44h-8l-1.2-5.6a15 15 0 0 1-4-2.3l-5.4 1.8-4-6.9 4.2-3.8a15 15 0 0 1 0-4.6L5.4 18.8l4-6.9 5.4 1.8a15 15 0 0 1 4-2.3zM24 17a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"/></svg>`,
+  power:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"><path d="M24 5v18"/><path d="M14 11a16 16 0 1 0 20 0"/></svg>`,
+  play:`<svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="#fff"/></svg>`,
+  folder:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="5" stroke-linejoin="round"><path d="M5 14a3 3 0 0 1 3-3h10l5 6h17a3 3 0 0 1 3 3v17a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z"/></svg>`,
+  image:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="9" width="36" height="30" rx="5"/><circle cx="17" cy="20" r="3"/><path d="M8 36l10-9 7 6 6-5 11 9"/></svg>`,
+  palette:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M24 5a19 19 0 1 0 0 38c3 0 4-2 3-4s0-5 4-5h5c4 0 7-3 7-7C43 14 34 5 24 5z"/><circle cx="15" cy="22" r="2"/><circle cx="22" cy="14" r="2"/><circle cx="32" cy="15" r="2"/></svg>`,
+  move:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 24h30M26 13l11 11-11 11"/></svg>`,
+  pad:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 12h20a9 9 0 0 1 9 9v7a7 7 0 0 1-12 5l-3-3H20l-3 3a7 7 0 0 1-12-5v-7a9 9 0 0 1 9-9z"/><path d="M15 20v6M12 23h6"/></svg>`,
+  camera:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15h8l3-5h14l3 5h8v24H6z"/><circle cx="24" cy="26" r="7"/></svg>`,
+};
+document.querySelectorAll('[data-i]').forEach(e=>e.innerHTML=ICON[e.dataset.i]||'');
+
+// Escenas de prueba (paisajes por capas, como las de src/lib/mock.ts)
+function scene(w,h,seed,hue,night){
+  const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');
+  let s=seed*9301+49297;const r=()=>{s=(s*16807)%2147483647;return s/2147483647};
+  const g=x.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,night?`hsl(${hue+220},45%,14%)`:`hsl(${hue},60%,${62+r()*12}%)`);
+  g.addColorStop(1,night?`hsl(${hue+260},50%,32%)`:`hsl(${hue+30},80%,88%)`);
+  x.fillStyle=g;x.fillRect(0,0,w,h);
+  if(night){x.fillStyle='rgba(255,255,255,.8)';for(let i=0;i<60;i++){const z=r()*1.5+.4;x.fillRect(r()*w,r()*h*.55,z,z)}}
+  const sx=w*(.15+.7*r()),sy=h*(.16+.2*r()),sr=Math.min(w,h)*(.07+.06*r());
+  x.save();x.shadowColor=night?'rgba(255,250,210,.7)':`hsla(${hue+40},100%,95%,.9)`;x.shadowBlur=sr*1.6;
+  x.fillStyle=night?'#f4f1d0':`hsla(${hue+40},100%,96%,.95)`;x.beginPath();x.arc(sx,sy,sr,0,7);x.fill();x.restore();
+  for(let L=0;L<4;L++){
+    const base=h*(.46+.14*L);
+    x.fillStyle=night?`hsl(${hue+230},28%,${26-L*5}%)`:`hsl(${hue+L*10},${32+L*9}%,${60-L*11}%)`;
+    x.beginPath();x.moveTo(0,h);const st=5+Math.floor(r()*6);
+    for(let i=0;i<=st;i++)x.lineTo(w*i/st,base-r()*h*(.12+.08*(3-L)));
+    x.lineTo(w,h);x.closePath();x.fill();
+  }
+  return c.toDataURL('image/jpeg',.85);
+}
+document.querySelectorAll('.sc[data-s]').forEach(e=>{
+  const [seed,hue,night]=e.dataset.s.split(' ').map(Number);
+  const w=+e.dataset.w||Math.min(900,Math.max(80,e.offsetWidth)), h=+e.dataset.h||Math.min(600,Math.max(80,e.offsetHeight));
+  e.style.backgroundImage=`url(${scene(w,h,seed,hue,!!night)})`;
+});
+
+// Escalado de cada escenario 1280×720 a su marco
+function fit(){document.querySelectorAll('.frame').forEach(f=>{f.firstElementChild.style.transform=`scale(${f.clientWidth/1280})`})}
+addEventListener('resize',fit);fit();
+</script>
+</body>
+</html>

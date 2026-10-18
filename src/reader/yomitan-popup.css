@@ -1,0 +1,104 @@
+/* Popup cristal estilo Wii U para Yomitan.
+   Pegar en Yomitan > Ajustes > Apariencia > «Popup CSS» (y, si se quiere, tambien en «Popup Outer CSS» solo el bloque :root del final).
+   Basado en los selectores/variables de ext/css/display.css de yomidevs/yomitan. */
+/* M PLUS Rounded 1c solo se usa si esta instalada en el sistema; si no, cae a Yu Gothic UI / Meiryo. */
+
+:root {
+  --accent-color: #00a0d8;
+  --accent-color-light: #4cc3ea;
+  --accent-color-lighter: #bfe9f7;
+  --accent-color-transparent25: rgba(0, 160, 216, 0.25);
+  --background-color: #f6f8fb;
+  --text-color: #3a414e;
+  --link-color: #00a0d8;
+  --headword-text-color: #3a414e;
+  --headword-reading-text-color: #00a0d8;
+  --headword-furigana-text-color: #00a0d8;
+  --tag-text-color: #5f6776;
+  --tag-border-radius: 999px;
+  --tag-font-weight: 800;
+  --tag-default-background-color: rgba(95, 110, 135, 0.14);
+  --tag-part-of-speech-background-color: rgba(95, 110, 135, 0.14);
+  --tag-popular-background-color: rgba(0, 160, 216, 0.18);
+  --tag-frequent-background-color: rgba(0, 160, 216, 0.18);
+  --tag-expression-background-color: rgba(63, 99, 224, 0.15);
+  --tag-name-background-color: rgba(138, 92, 214, 0.18);
+  --light-border-color: rgba(95, 110, 135, 0.15);
+  --medium-border-color: rgba(95, 110, 135, 0.25);
+  --entry-current-indicator-color: #00a0d8;
+  --action-button-hover-color: rgba(0, 160, 216, 0.18);
+  --action-button-active-color: rgba(0, 160, 216, 0.32);
+}
+
+html, body {
+  font-family: 'M PLUS Rounded 1c', 'Yu Gothic UI', 'Meiryo', system-ui, sans-serif;
+  background: transparent;
+}
+body {
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(246, 248, 251, 0.94));
+  box-shadow: inset 0 1.5px 0 #fff, inset 0 0 0 1px rgba(95, 110, 135, 0.26);
+  overflow: hidden;
+}
+
+/* Entradas */
+.entry { padding-top: 12px; padding-bottom: 12px; }
+.entry + .entry { border-top: 2px dashed rgba(95, 110, 135, 0.18); }
+.entry-body { position: relative; }
+
+/* Palabra y lectura */
+.headword-term { font-weight: 700; }
+.headword-term > ruby > rt,
+.headword-reading { color: var(--accent-color); font-weight: 700; }
+
+/* Etiquetas en pastilla */
+.tag {
+  border-radius: 999px;
+  overflow: hidden;
+  font-weight: 800;
+  box-shadow: none;
+}
+.tag-label { border-radius: 999px; background: var(--tag-default-background-color); color: var(--tag-text-color); }
+.tag[data-category='frequent'] .tag-label,
+.tag[data-category='popular'] .tag-label {
+  background: var(--accent-color-transparent25);
+  color: #006a93;
+}
+.tag[data-category='name'] .tag-label { background: var(--tag-name-background-color); color: #5b3aa0; }
+.tag[data-category='expression'] .tag-label { background: var(--tag-expression-background-color); color: #2d47a8; }
+.tag-label-content, .tag-body-content { font-size: 11px; }
+.frequency-group-tag, .frequency-tag { border-radius: 999px; }
+
+/* Definiciones */
+.gloss-list { line-height: 1.55; }
+.gloss-list > li::marker { color: var(--accent-color); font-weight: 800; }
+.definition-item { border-radius: 8px; }
+.definition-item-inner { border-left-color: var(--accent-color-lighter); }
+.gloss-item { color: var(--text-color); }
+
+/* Botones de accion (anadir a Anki, audio...) */
+button.action-button {
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fff, #eef1f5);
+  box-shadow: 0 0 0 1px rgba(95, 110, 135, 0.25), 0 3px 6px -3px rgba(40, 50, 70, 0.4);
+}
+button.action-button:hover { background: var(--action-button-hover-color); }
+button.action-button:active { background: var(--action-button-active-color); }
+button.action-button[data-action='add-note'] ,
+.action-button-container button.action-button:not([disabled]):focus {
+  box-shadow: 0 0 0 1px var(--accent-color);
+}
+
+/* Tema oscuro del navegador: se mantiene el cristal pero con tinta clara */
+:root[data-theme='dark'] {
+  --background-color: #232a35;
+  --text-color: #e4e8ef;
+  --tag-text-color: #aab2c0;
+  --tag-default-background-color: rgba(255, 255, 255, 0.1);
+  --light-border-color: rgba(255, 255, 255, 0.08);
+}
+:root[data-theme='dark'] body {
+  background: linear-gradient(180deg, rgba(44, 51, 64, 0.97), rgba(30, 35, 45, 0.95));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+:root[data-theme='dark'] button.action-button { background: linear-gradient(180deg, #3a4252, #2b313d); }

@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "texthook",
+  "description": "Permisos de la ventana de texthook (novelas japonesas)",
+  "windows": ["texthook"],
+  "permissions": ["core:default"]
+}

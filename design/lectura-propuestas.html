@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lectura · Visor de capturas</title>
+<style>
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:400;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-400-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:500;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-500-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:700;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-700-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:800;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-800-latin.woff2') format('woff2')}
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+
+/* ============ Página de documentación ============ */
+html,body{margin:0;background:#dfe3e9;font-family:var(--round);color:#3a414e}
+.doc{max-width:1360px;margin:0 auto;padding:40px 24px 80px}
+.doc>header h1{font-size:34px;font-weight:800;margin:0 0 6px}
+.doc>header p{font-size:17px;line-height:1.55;margin:0 0 10px;max-width:880px;color:#545c6a}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+.toc a{font-size:15px;font-weight:700;color:#3a414e;text-decoration:none;background:#fff;border-radius:999px;padding:6px 14px;box-shadow:0 0 0 1px rgba(95,110,135,.2)}
+.toc a:hover{background:#00A0D8;color:#fff}
+section.p{margin-top:56px}
+section.p h2{font-size:26px;font-weight:800;margin:0 0 4px;display:flex;align-items:center;gap:12px}
+section.p h2 .n{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#3a414e;color:#fff;font-size:19px}
+section.p .why{font-size:16px;color:#5f6776;margin:0 0 16px 50px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:24px;align-items:start}
+@media (max-width:1100px){.row{grid-template-columns:1fr}}
+.frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:18px;overflow:hidden;box-shadow:0 0 0 1px rgba(60,70,90,.25),0 24px 50px -24px rgba(30,40,60,.55);background:#0f1218}
+.notes{background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 0 0 1px rgba(95,110,135,.18)}
+.notes h3{margin:0 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:#7a8291}
+.notes ol{margin:0;padding:0;list-style:none;counter-reset:k}
+.notes li{counter-increment:k;position:relative;padding-left:36px;margin-bottom:14px;font-size:15px;line-height:1.5}
+.notes li::before{content:counter(k);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:#ff4f7b;color:#fff;font-weight:800;font-size:14px;display:grid;place-items:center}
+.notes li b{display:block;font-size:16px}
+.notes .now{margin-top:14px;padding-top:12px;border-top:1px solid #e6e9ee;font-size:14px;color:#6a7282;line-height:1.5}
+.notes .now strong{color:#3a414e}
+
+/* ============ Mundo de la app (copia de src/app.css adaptada a .stage) ============ */
+.stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;
+  font-family:var(--round);color:#3a414e;background:#eceef2;--acc:#00A0D8;--acc-ink:#fff;user-select:none}
+.bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(34px);opacity:.9}
+.blob.w{background:radial-gradient(circle,#fff,rgba(255,255,255,0) 70%)}
+.blob.a{background:radial-gradient(circle,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%);opacity:.55}
+.ghost{position:absolute;width:118px;height:118px;border-radius:28px;padding:10px;background:rgba(255,255,255,.7);box-shadow:0 0 0 1px rgba(120,130,150,.25),0 10px 18px -10px rgba(40,50,70,.4);filter:blur(5px)}
+.ghost i{display:block;width:100%;height:100%;border-radius:18px;background:linear-gradient(160deg,color-mix(in srgb,var(--g) 30%,white),var(--g))}
+.glass{position:absolute;--r:28px;--bw:10px;border-radius:var(--r);padding:var(--bw);isolation:isolate;
+  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  -webkit-backdrop-filter:blur(14px) saturate(1.7);backdrop-filter:blur(14px) saturate(1.7);
+  box-shadow:inset 0 1.5px 0 #fff,inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.95),inset 0 -1.5px 0 rgba(110,125,150,.30),0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42)}
+.glass::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.62) 0%,rgba(255,255,255,.20) 55%,rgba(255,255,255,0) 100%);
+  -webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.85}
+.glass::after{content:'';position:absolute;z-index:3;left:12%;top:3px;width:34%;height:5px;border-radius:5px;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 40%,rgba(255,255,255,0));filter:blur(.6px);opacity:.9}
+.glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:#dfe3e9}
+.glass .face::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(20,30,50,.20),inset 0 3px 6px -2px rgba(0,0,0,.35),inset 0 -2px 4px -2px rgba(255,255,255,.5)}
+.glass.f{transform:scale(1.06);z-index:3;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)) 0%,color-mix(in srgb,var(--acc) 72%,transparent) 55%,color-mix(in srgb,var(--acc) 92%,black) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),inset 0 -10px 14px -8px color-mix(in srgb,var(--acc) 30%,white),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 0 26px 2px color-mix(in srgb,var(--acc) 50%,transparent),0 22px 34px -16px color-mix(in srgb,var(--acc) 70%,black)}
+.pill{-webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);background:linear-gradient(180deg,rgba(255,255,255,.80),rgba(255,255,255,.52));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+.avatar{left:22px;top:12px;width:60px;height:60px;--r:16px;--bw:5px}
+.avatar .face{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white),var(--acc));display:grid;place-items:center}
+.avatar svg{width:34px;height:34px}
+.crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:20px;font-weight:700;color:#4a5260;z-index:5}
+.crumb .sep{color:#a3abb8;font-weight:500}.crumb .cur{color:var(--acc)}
+.clock{position:absolute;right:24px;top:24px;display:flex;gap:14px;align-items:center;font-size:20px;font-weight:700;color:#4a5260;z-index:5}
+.clock small{font-size:15px;font-weight:500;color:#7a8291}
+.batt{display:flex;gap:2px}.batt b{width:6px;height:13px;border-radius:2px;background:var(--acc)}.batt b.off{background:#c3c9d3}
+.hints{position:absolute;right:22px;bottom:16px;display:flex;gap:10px;z-index:6}
+.hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:999px;font-size:16px;font-weight:700;color:#4a5260;white-space:nowrap}
+.btn{min-width:28px;height:28px;border-radius:14px;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;--b:#4a5260;padding:0 6px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--b) 70%,black),0 1px 2px rgba(0,0,0,.2);text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.btn.a{--b:#3BB54A}.btn.b{--b:#E8384F}.btn.x{--b:#3F63E0}.btn.y{--b:#F2B807;color:#3a2f00;text-shadow:none}.btn.sh{border-radius:8px;--b:#6b7383}
+.chip{font-size:15px;font-weight:700;color:var(--acc-ink);background:var(--acc);padding:3px 12px;border-radius:999px;white-space:nowrap}
+.sc{position:absolute;inset:0;background-size:cover;background-position:center;background-color:#c9cfd8}
+.mk{position:absolute;z-index:20;width:34px;height:34px;border-radius:50%;background:#ff4f7b;color:#fff;font-weight:800;font-size:18px;display:grid;place-items:center;
+  box-shadow:0 0 0 3px #fff,0 6px 14px rgba(255,79,123,.5)}
+.ico{display:grid;place-items:center}.ico svg{width:100%;height:100%}
+
+
+/* ============ Lectura: piezas comunes ============ */
+.jp{font-family:'Yu Gothic UI','Yu Gothic','Meiryo','Hiragino Sans',sans-serif}
+.mincho{font-family:'Yu Mincho','YuMincho','Hiragino Mincho ProN','MS Mincho',serif}
+.appbar{position:absolute;left:0;right:0;top:0;height:32px;display:flex;align-items:center;gap:10px;padding:0 14px;font-size:13px;font-weight:700;color:#6a7282;background:rgba(233,235,239,.92);border-bottom:1px solid #d6dae1;z-index:9}
+.appbar .sp{flex:1}.appbar i{font-style:normal;color:#9aa2ae;letter-spacing:14px;font-size:12px}
+.appbar.dark{background:#1b2029;color:#8d96a6;border-color:#2a303b}
+.tools{position:absolute;display:flex;gap:6px;padding:5px;border-radius:999px;z-index:6}
+.tl{height:34px;min-width:34px;padding:0 12px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;font-weight:800;color:#5f6776;white-space:nowrap}
+.tl.on{background:var(--acc);color:#fff;box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 4px 10px -4px var(--acc)}
+.tl svg{width:16px;height:16px}
+.tbox{position:absolute;border-radius:28px;background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(250,251,253,.86));
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px rgba(95,110,135,.20),0 18px 30px -18px rgba(40,50,70,.45)}
+/* texto tokenizado */
+.tx{margin:0;color:#3a414e}
+.tx .w{border-radius:5px;padding:0 1px;margin:0 1px;border-bottom:2px solid rgba(95,110,135,.20)}
+.tx .w.p,.tx .w.x,.tx .w.aux{border-bottom-color:transparent}
+.tx .w.p{color:#8a919c}
+.tx.pos .w.n{border-bottom-color:rgba(95,110,135,.35)}
+.tx.pos .w.v{border-bottom-color:#3F63E0;color:#2d47a8}
+.tx.pos .w.a{border-bottom-color:#3BB54A;color:#24782f}
+.tx.pos .w.adv{border-bottom-color:#F2B807}
+.tx.pos .w.aux{color:#8a5cd6}
+.tx.pos .w.i{border-bottom-color:#e8384f}
+.tx .w.h{background:color-mix(in srgb,var(--acc) 20%,transparent);border-bottom-color:var(--acc);color:inherit}
+.tx ruby rt{font-size:.45em;color:#8a919c;font-weight:500}
+.tx .who{color:var(--acc);font-weight:800}
+.tx.old{color:#9aa2ae}.tx.old .w{border-bottom-color:transparent}.tx.old .w.p{color:inherit}
+/* leyenda */
+.legend{display:flex;gap:14px;font-size:14px;font-weight:700;color:#5f6776}
+.legend span{display:flex;align-items:center;gap:6px}.legend i{width:16px;height:4px;border-radius:2px;background:var(--c)}
+
+/* ---- popup (simulación de Yomitan con CSS propio) ---- */
+.pop{position:absolute;z-index:12;width:340px;border-radius:20px;padding:14px 16px 12px;font-size:14px;color:#3a414e;
+  background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(246,248,251,.94));
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px rgba(95,110,135,.26),0 22px 40px -16px rgba(30,40,60,.55)}
+.pop::before{content:'';position:absolute;left:3px;right:3px;top:3px;height:40%;border-radius:17px 17px 40% 40%/17px 17px 20px 20px;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,0))}
+.pop .hw{position:relative;display:flex;align-items:flex-end;gap:10px}
+.pop .hw ruby{font-size:32px;font-weight:700;line-height:1}
+.pop .hw rt{font-size:13px;color:var(--acc);font-weight:700}
+.pop .hw .sp{flex:1}
+.pop .ib{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(180deg,#fff,#eef1f5);box-shadow:0 0 0 1px rgba(95,110,135,.25),0 3px 6px -3px rgba(40,50,70,.4)}
+.pop .ib svg{width:16px;height:16px}
+.pop .ib.add{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 55%,white),var(--acc));box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
+.pop .tags{position:relative;display:flex;flex-wrap:wrap;gap:5px;margin:10px 0 8px}
+.pop .tags span{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;background:rgba(95,110,135,.12);color:#5f6776}
+.pop .tags span.fq{background:color-mix(in srgb,var(--acc) 16%,transparent);color:color-mix(in srgb,var(--acc) 75%,black)}
+.pop ol{position:relative;margin:0;padding-left:22px;line-height:1.55}
+.pop ol li::marker{color:var(--acc);font-weight:800}
+.pop .src{margin-top:8px;padding-top:7px;border-top:1px solid rgba(95,110,135,.15);font-size:11px;font-weight:700;color:#9aa2ae;display:flex;justify-content:space-between}
+.pop.dark{color:#e4e8ef;background:linear-gradient(180deg,rgba(44,51,64,.97),rgba(30,35,45,.95));box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 0 1px rgba(0,0,0,.5),0 22px 40px -16px rgba(0,0,0,.7)}
+.pop.dark::before{background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,0))}
+.pop.dark .tags span{background:rgba(255,255,255,.08);color:#aab2c0}
+.pop.dark .ib{background:linear-gradient(180deg,#3a4252,#2b313d);box-shadow:0 0 0 1px rgba(0,0,0,.5)}
+.pop.dark .src{border-color:rgba(255,255,255,.08);color:#6f7889}
+.pop.paper{border-radius:6px;background:#fffdf8;box-shadow:0 0 0 1px rgba(120,100,70,.25),0 14px 30px -14px rgba(60,45,20,.45)}
+.pop.paper::before{display:none}
+.pop.paper .hw ruby{font-family:'Yu Mincho','MS Mincho',serif}
+.pop.paper .tags span{border-radius:4px;background:#f1ebdf;color:#7a6a50}
+.pop.bubble{border-radius:24px;padding-top:16px}
+.pop.bubble .hw{padding-bottom:10px;border-bottom:2px dashed rgba(95,110,135,.18)}
+
+/* ---- 1 · Caja de diálogo ---- */
+.namepill{position:absolute;height:40px;padding:0 22px;border-radius:999px;display:flex;align-items:center;font-size:20px;font-weight:800;color:#fff;z-index:3;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 55%,white),var(--acc) 55%,color-mix(in srgb,var(--acc) 85%,black));box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 8px 16px -8px var(--acc)}
+.nextarrow{position:absolute;width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:12px solid var(--acc)}
+
+/* ---- 3 · Noche ---- */
+.night{background:#11151c !important;color:#e4e8ef}
+.night .bgn{position:absolute;inset:0;background:radial-gradient(90% 70% at 50% 110%,color-mix(in srgb,var(--acc) 22%,transparent),transparent 70%),radial-gradient(60% 50% at 10% 0%,rgba(255,255,255,.05),transparent 70%)}
+.night .tx{color:#e9edf3}
+.night .tx .w{border-bottom-color:rgba(255,255,255,.14)}
+.night .tx .w.p{color:#8d96a6}
+.night .tx.old{color:#5d6676}
+.night .tx ruby rt{color:#8d96a6}
+.night .tools{background:rgba(255,255,255,.06);box-shadow:0 0 0 1px rgba(255,255,255,.08)}
+.night .tl{color:#aab2c0}
+.night .meta{position:absolute;left:24px;bottom:18px;font-size:13px;font-weight:700;color:#6f7889;display:flex;gap:10px;align-items:center}
+
+/* ---- 4 · Vertical ---- */
+.paperbg{position:absolute;inset:32px 0 0 0;background:#f6f1e6}
+.vpage{position:absolute;top:70px;right:60px;height:600px;writing-mode:vertical-rl;font-size:28px;line-height:2.1}
+.vpage .tx{margin:0 0 0 18px;color:#3b3328}
+.vpage .tx.old{color:#a59a86}.vpage .tx.old .w{border-left-color:transparent}
+.vpage .tx .w{border-bottom:none;border-left:2px solid rgba(120,100,70,.10);margin:1px 0;padding:1px 0}
+.vpage .tx .w.p,.vpage .tx .w.x,.vpage .tx .w.aux{border-left-color:transparent}
+.vpage .tx .w.h{border-left-color:var(--acc);background:color-mix(in srgb,var(--acc) 18%,transparent)}
+.vpage .tx ruby rt{color:#a08c6a}
+
+/* ---- 5 · Burbujas (Miiverse) ---- */
+.post{position:absolute;left:150px;width:980px;border-radius:24px;padding:16px 22px 16px 92px;background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(250,251,253,.88));
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px rgba(95,110,135,.18),0 14px 24px -16px rgba(40,50,70,.4)}
+.post.nar{padding-left:22px;background:rgba(255,255,255,.55);box-shadow:0 0 0 1px rgba(95,110,135,.12)}
+.post .av{position:absolute;left:18px;top:14px;width:58px;height:58px;border-radius:18px;display:grid;place-items:center;font-size:24px;font-weight:800;color:#fff;
+  background:linear-gradient(170deg,color-mix(in srgb,var(--c) 40%,white),var(--c));box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 1px color-mix(in srgb,var(--c) 70%,black)}
+.post .nm{font-size:14px;font-weight:800;color:var(--c);margin-bottom:2px}
+.post .acts{position:absolute;right:14px;top:12px;display:flex;gap:6px}
+.post .acts span{height:30px;padding:0 12px;border-radius:999px;display:flex;align-items:center;font-size:13px;font-weight:800;color:#5f6776;background:#fff;box-shadow:0 0 0 1px rgba(95,110,135,.22)}
+.post.cur{box-shadow:inset 0 1.5px 0 #fff,0 0 0 2px var(--acc),0 0 24px 2px color-mix(in srgb,var(--acc) 28%,transparent),0 14px 24px -16px rgba(40,50,70,.4)}
+.post .tm{position:absolute;right:20px;bottom:12px;font-size:12px;font-weight:700;color:#a3abb8}
+</style>
+</head>
+<body>
+<div class="doc">
+<header>
+  <h1>Página de lectura: propuestas</h1>
+  <p>Cinco estilos para la ventana donde se lee el texto del juego con el diccionario. Es la página que sirve la app y que se abre en Edge/Chrome en modo app con Yomitan. Todas tienen el texto ya <strong>separado en palabras</strong> por el parser de la app (tokenizador japonés en Rust con UniDic), así que se puede subrayar cada palabra, poner furigana o colorear según el tipo de palabra.</p>
+  <p><strong>Ojo con el popup:</strong> el del diccionario es el de Yomitan con un <strong>CSS propio</strong> que le daríamos (cristal claro, oscuro, papel…). Aquí está imitado. En la práctica se pueden cambiar colores, bordes, tipografía, etiquetas y botones, pero no rehacer su distribución por completo. El resto de cada maqueta es 100 % nuestro.</p>
+  <nav class="toc">
+    <a href="#p1">1 · Caja de diálogo</a><a href="#p2">2 · Furigana y colores</a><a href="#p3">3 · Noche</a>
+    <a href="#p4">4 · Novela vertical</a><a href="#p5">5 · Burbujas (Miiverse)</a>
+  </nav>
+</header>
+
+<!-- ================================================================ 1 -->
+<section class="p" id="p1">
+  <h2><span class="n">1</span>Caja de diálogo</h2>
+  <p class="why">Como el cuadro de texto de una novela visual: la línea actual en grande abajo, con el nombre del personaje en una pastilla, y el historial arriba desvaneciéndose. El fondo es el de la app.</p>
+  <div class="row">
+    <div class="frame"><div class="stage">
+      <div class="bg"><div class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></div><div class="blob a" style="left:760px;top:380px;width:520px;height:400px"></div></div>
+      <div class="appbar"><i>●●●</i><span class="jp">白銀の約束</span> · Lectura<span class="sp"></span>localhost:6677</div>
+      <div class="tools pill" style="right:24px;top:48px">
+        <span class="tl jp">ふりがな</span><span class="tl">Colores</span><span class="tl">A−</span><span class="tl">A+</span><span class="tl on">Auto‑scroll</span>
+      </div>
+      <div style="position:absolute;left:90px;right:90px;top:110px;font-size:22px;line-height:1.75;-webkit-mask-image:linear-gradient(180deg,transparent,#000 45%);mask-image:linear-gradient(180deg,transparent,#000 45%)">
+        <p class="tx old jp" data-l="0"></p>
+        <p class="tx old jp" data-l="1"></p>
+        <p class="tx old jp" data-l="2"></p>
+      </div>
+      <div class="namepill jp" style="left:90px;top:432px">美雪</div>
+      <div class="tbox" style="left:64px;right:64px;top:452px;height:220px;padding:46px 40px 30px">
+        <p class="tx jp" data-l="3" data-o="noname" data-h="一緒" style="font-size:34px;line-height:1.6"></p>
+        <div class="nextarrow" style="right:36px;bottom:26px"></div>
+      </div>
+      <div class="pop" data-at="above"><div class="mk" style="left:-16px;top:-16px">2</div></div>
+      <div class="mk" style="left:40px;top:150px">1</div>
+      <div class="mk" style="left:54px;top:440px">3</div>
+      <div class="mk" style="left:1236px;top:92px">4</div>
+    </div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Historial</b>Las líneas anteriores suben y se desvanecen. Se puede hacer scroll para releer y Yomitan también funciona sobre ellas.</li>
+      <li><b>Popup cristal</b>Yomitan con CSS propio: bordes redondeados, brillo de cristal, tu color de acento y etiquetas en pastilla. Los botones de audio y de añadir a Anki son los suyos.</li>
+      <li><b>Nombre separado</b>El parser detecta <span class="jp">美雪「…」</span> y saca el nombre a la pastilla, como en el juego.</li>
+      <li><b>Controles</b>Furigana, colores por tipo de palabra, tamaño de letra y auto‑scroll. Se recuerdan por juego.</li>
+    </ol><p class="now"><strong>A favor:</strong> la más reconocible como «novela visual» y la que más se parece a la app. <strong>En contra:</strong> el historial queda en segundo plano.</p></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 2 -->
+<section class="p" id="p2">
+  <h2><span class="n">2</span>Furigana y colores</h2>
+  <p class="why">La versión de estudio: furigana en todos los kanji y cada palabra subrayada según su tipo (verbo, sustantivo, adjetivo…), para ver la estructura de la frase de un vistazo.</p>
+  <div class="row">
+    <div class="frame"><div class="stage" style="--acc:#3F63E0">
+      <div class="bg"><div class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></div><div class="blob a" style="left:700px;top:420px;width:600px;height:360px"></div></div>
+      <div class="appbar"><i>●●●</i><span class="jp">白銀の約束</span> · Lectura<span class="sp"></span>localhost:6677</div>
+      <div class="tools pill" style="right:24px;top:48px">
+        <span class="tl jp on">ふりがな</span><span class="tl on">Colores</span><span class="tl">A−</span><span class="tl">A+</span>
+      </div>
+      <div class="tbox" style="left:40px;right:40px;top:110px;height:570px;padding:34px 48px;font-size:32px;line-height:2.2">
+        <p class="tx jp pos" data-l="0" data-o="ruby"></p>
+        <p class="tx jp pos" data-l="1" data-o="ruby"></p>
+        <p class="tx jp pos" data-l="2" data-o="ruby"></p>
+        <p class="tx jp pos" data-l="3" data-o="ruby" data-h="一緒"></p>
+      </div>
+      <div class="legend pill" style="position:absolute;left:40px;top:48px;height:44px;padding:0 18px;border-radius:999px">
+        <span><i style="--c:rgba(95,110,135,.5)"></i>Sustantivo</span><span><i style="--c:#3F63E0"></i>Verbo</span><span><i style="--c:#3BB54A"></i>Adjetivo</span><span><i style="--c:#F2B807"></i>Adverbio</span><span><i style="--c:#8a5cd6"></i>Auxiliar</span><span><i style="--c:#c3c9d3"></i>Partícula</span>
+      </div>
+      <div class="pop bubble" data-at="below"><div class="mk" style="left:-16px;top:-16px">3</div></div>
+      <div class="mk" style="left:26px;top:120px">1</div>
+      <div class="mk" style="left:26px;top:40px">2</div>
+    </div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Furigana del parser</b>La lectura sale del tokenizador (UniDic), así que va sobre cada palabra y no sobre cada kanji suelto. Se puede apagar o dejar solo en los kanji poco frecuentes.</li>
+      <li><b>Colores por tipo</b>Subrayado suave por categoría gramatical. Las partículas van en gris para que destaquen las palabras con contenido.</li>
+      <li><b>Popup con separador</b>Otra variante del CSS de Yomitan: más aire, palabra arriba separada de las definiciones.</li>
+    </ol><p class="now"><strong>A favor:</strong> la que más ayuda a aprender. <strong>En contra:</strong> más cargada visualmente; mejor como modo activable sobre otra propuesta que como diseño único.</p></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 3 -->
+<section class="p" id="p3">
+  <h2><span class="n">3</span>Noche</h2>
+  <p class="why">Inmersiva y oscura, para leer de noche sin que el segundo monitor deslumbre. Solo la línea actual en grande y en el centro; las anteriores, pequeñas y apagadas encima.</p>
+  <div class="row">
+    <div class="frame"><div class="stage night" style="--acc:#00A0D8">
+      <div class="bgn"></div>
+      <div class="appbar dark"><i>●●●</i><span class="jp">白銀の約束</span> · Lectura<span class="sp"></span>localhost:6677</div>
+      <div class="tools" style="right:24px;top:48px">
+        <span class="tl jp">ふりがな</span><span class="tl">Colores</span><span class="tl">A−</span><span class="tl">A+</span><span class="tl on">Noche</span>
+      </div>
+      <div style="position:absolute;left:0;right:0;top:120px;text-align:center;font-size:20px;line-height:1.9">
+        <p class="tx old jp" data-l="1"></p>
+        <p class="tx old jp" data-l="2"></p>
+      </div>
+      <div style="position:absolute;left:60px;right:60px;top:330px;text-align:center">
+        <div class="jp" style="font-size:20px;font-weight:800;color:var(--acc);margin-bottom:10px">美雪</div>
+        <p class="tx jp" data-l="3" data-o="noname ruby" data-h="一緒" style="font-size:42px;line-height:2"></p>
+      </div>
+      <div class="meta"><span class="dot" style="width:8px;height:8px;border-radius:50%;background:#3BB54A"></span>SiglusEngine · 128 líneas · 23 min leyendo</div>
+      <div class="pop dark" data-at="below"><div class="mk" style="left:-16px;top:-16px">2</div></div>
+      <div class="mk" style="left:150px;top:126px">1</div>
+      <div class="mk" style="left:1236px;top:92px">3</div>
+    </div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Foco en la línea actual</b>Centrada y grande; las dos anteriores encima, pequeñas, para no perder el hilo.</li>
+      <li><b>Popup oscuro</b>El mismo tema de Yomitan en versión oscura, con el acento en la lectura y los números de las definiciones.</li>
+      <li><b>Claro/oscuro</b>Se puede cambiar a mano o seguir el tema de Windows. Abajo, el estado del hook y el tiempo de lectura (que puede alimentar las estadísticas de la app).</li>
+    </ol><p class="now"><strong>A favor:</strong> la más limpia y la mejor para sesiones largas. <strong>En contra:</strong> menos contexto a la vista.</p></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 4 -->
+<section class="p" id="p4">
+  <h2><span class="n">4</span>Novela vertical</h2>
+  <p class="why">Texto en vertical (tategaki), de derecha a izquierda, como una novela japonesa impresa: papel, letra mincho y furigana a la derecha de cada palabra.</p>
+  <div class="row">
+    <div class="frame"><div class="stage" style="--acc:#d14fb2">
+      <div class="paperbg"></div>
+      <div class="appbar"><i>●●●</i><span class="jp">白銀の約束</span> · Lectura<span class="sp"></span>localhost:6677</div>
+      <div class="tools pill" style="left:24px;top:48px">
+        <span class="tl jp on">縦書き</span><span class="tl jp on">ふりがな</span><span class="tl">A−</span><span class="tl">A+</span>
+      </div>
+      <div class="vpage mincho">
+        <p class="tx old" data-l="0" data-o="ruby"></p>
+        <p class="tx old" data-l="1" data-o="ruby"></p>
+        <p class="tx old" data-l="2" data-o="ruby"></p>
+        <p class="tx" data-l="3" data-o="ruby" data-h="一緒"></p>
+      </div>
+      <div class="pop paper" data-at="left"><div class="mk" style="left:-16px;top:-16px">2</div></div>
+      <div class="mk" style="left:1220px;top:56px">1</div>
+      <div class="mk" style="left:226px;top:52px">3</div>
+    </div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Tategaki</b>Con CSS normal (<code>writing-mode: vertical-rl</code>): la línea nueva entra por la izquierda y las antiguas se apagan a la derecha. Yomitan funciona igual en vertical.</li>
+      <li><b>Popup «papel»</b>El tema del diccionario a juego: esquinas casi rectas, crema y mincho.</li>
+      <li><b>Horizontal/vertical</b>Se cambia con un botón; el resto de opciones se mantienen.</li>
+    </ol><p class="now"><strong>A favor:</strong> la más bonita para novelas y la más «japonesa». <strong>En contra:</strong> se aleja del estilo Wii U, y los números y el texto en latín quedan girados.</p></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 5 -->
+<section class="p" id="p5">
+  <h2><span class="n">5</span>Burbujas (Miiverse)</h2>
+  <p class="why">Cada línea es una publicación, como en Miiverse: los diálogos con un icono de color por personaje y la narración en tarjetas más discretas. La línea actual se resalta.</p>
+  <div class="row">
+    <div class="frame"><div class="stage" style="--acc:#3BB54A">
+      <div class="bg"><div class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></div><div class="blob a" style="left:760px;top:380px;width:520px;height:400px"></div></div>
+      <div class="appbar"><i>●●●</i><span class="jp">白銀の約束</span> · Lectura<span class="sp"></span>localhost:6677</div>
+      <div class="tools pill" style="right:24px;top:48px">
+        <span class="tl jp">ふりがな</span><span class="tl">Colores</span><span class="tl">A−</span><span class="tl">A+</span>
+      </div>
+      <div class="post nar" style="top:104px"><p class="tx jp old" data-l="0" style="font-size:20px;line-height:1.7"></p></div>
+      <div class="post nar" style="top:174px"><p class="tx jp old" data-l="1" style="font-size:20px;line-height:1.7"></p></div>
+      <div class="post" style="top:262px;--c:#e8749a"><span class="av jp">美</span><div class="nm jp">美雪</div><p class="tx jp" data-l="2" data-o="noname bare" style="font-size:24px;line-height:1.6"></p><span class="tm">hace 40 s</span></div>
+      <div class="post cur" style="top:384px;--c:#e8749a"><span class="av jp">美</span><div class="nm jp">美雪</div><p class="tx jp" data-l="3" data-o="noname bare" data-h="一緒" style="font-size:30px;line-height:1.6"></p>
+        <div class="acts"><span>Copiar</span><span>★ Guardar frase</span></div></div>
+      <div class="pop" data-at="below"><div class="mk" style="left:-16px;top:-16px">3</div></div>
+      <div class="mk" style="left:140px;top:94px">1</div>
+      <div class="mk" style="left:140px;top:252px">2</div>
+      <div class="mk" style="left:1116px;top:372px">4</div>
+    </div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Narración</b>Tarjetas translúcidas sin icono.</li>
+      <li><b>Personajes</b>Cada nombre detectado recibe un color fijo y su inicial en el icono, así se sigue quién habla.</li>
+      <li><b>Popup cristal</b>El mismo tema que en la propuesta 1.</li>
+      <li><b>Acciones por línea</b>Copiar la frase o guardarla en una lista de frases favoritas del juego.</li>
+    </ol><p class="now"><strong>A favor:</strong> muy Wii U y muy clara en escenas con mucho diálogo. <strong>En contra:</strong> ocupa más espacio por línea; en narraciones largas hay más scroll.</p></aside>
+  </div>
+</section>
+
+</div>
+<script>
+// Datos de ejemplo ya tokenizados: «superficie[lectura]|tipo»
+const L=[
+ {t:['窓[まど]|n','の|p','外[そと]|n','で|p','は|p','、|x','雪[ゆき]|n','が|p','音[おと]|n','も|p','なく|a','降[ふ]り続[つづ]いて|v','いた|aux','。|x']},
+ {t:['僕[ぼく]|n','は|p','布団[ふとん]|n','の|p','中[なか]|n','で|p','小[ちい]さく|a','息[いき]|n','を|p','吐[は]いて|v','、|x','返事[へんじ]|n','を|p','する|v','かどうか|p','迷[まよ]う|v','。|x']},
+ {who:'美雪[みゆき]',t:['……|x','ねえ|i','、|x','まだ|adv','起[お]きてる|v','？|x']},
+ {who:'美雪[みゆき]',t:['明日[あした]|n','、|x','駅[えき]|n','まで|p','一緒[いっしょ]|n','に|p','行[い]って|v','くれ|aux','ない|aux','かな|p']}
+];
+const KJ=/([一-鿿々]+)\[([^\]]+)\]/g;
+const fur=(s,r)=>r?s.replace(KJ,'<ruby>$1<rt>$2</rt></ruby>'):s.replace(KJ,'$1');
+const plain=s=>s.replace(KJ,'$1');
+document.querySelectorAll('[data-l]').forEach(el=>{
+  const l=L[+el.dataset.l],o=(el.dataset.o||'').split(' '),ruby=o.includes('ruby'),h=el.dataset.h;
+  let s=l.t.map(tk=>{const [w,p]=tk.split('|');return `<span class="w ${p}${h&&plain(w)===h?' h':''}">${fur(w,ruby)}</span>`}).join('');
+  if(l.who&&!o.includes('bare'))s='「'+s+'」';
+  if(l.who&&!o.includes('noname'))s=`<span class="who">${fur(l.who,ruby)}</span>`+s;
+  el.innerHTML=s;
+});
+const IC={au:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>',
+  add:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'};
+document.querySelectorAll('.pop').forEach(p=>{
+  p.insertAdjacentHTML('beforeend',`<div class="hw jp"><ruby>一緒<rt>いっしょ</rt></ruby><span class="sp"></span><span class="ib" style="color:currentColor">${IC.au}</span><span class="ib add">${IC.add}</span></div>
+  <div class="tags"><span>sustantivo</span><span>adverbio</span><span>verbo suru</span><span class="fq">frecuencia 312</span></div>
+  <ol><li>juntos; en compañía de</li><li>lo mismo; igual</li><li><span class="jp">（〜になる）</span>casarse</li></ol>
+  <div class="src"><span>JMdict (es)</span><span>1 / 3</span></div>`);
+});
+function place(){
+  document.querySelectorAll('.stage').forEach(st=>{
+    const p=st.querySelector('.pop'),w=st.querySelector('.w.h');if(!p||!w)return;
+    const sr=st.getBoundingClientRect(),wr=w.getBoundingClientRect(),k=sr.width/1280;
+    const x=(wr.left-sr.left)/k,y=(wr.top-sr.top)/k,b=(wr.bottom-sr.top)/k,ph=p.offsetHeight,pw=p.offsetWidth,at=p.dataset.at;
+    let l=x-20,t=at==='above'?y-ph-10:b+10;
+    if(at==='left'){l=x-pw-14;t=y-20}
+    p.style.left=Math.max(16,Math.min(1264-pw,l))+'px';p.style.top=Math.max(40,t)+'px';
+  });
+}
+function fit(){document.querySelectorAll('.frame').forEach(f=>{f.firstElementChild.style.transform=`scale(${f.clientWidth/1280})`});place()}
+addEventListener('resize',fit);fit();
+document.fonts&&document.fonts.ready.then(fit);
+</script>
+</body>
+</html>
