@@ -37,7 +37,7 @@ use visor_core::importer::{self, ArtCopy, ImportReport};
 use visor_core::palette::PaletteCache;
 use visor_core::scan::ScanOpts;
 use visor_core::userdata::{self, HiddenEntry};
-use visor_core::{scan, thumbs, Library};
+use visor_core::{catalog, relpath, scan, thumbs, Library};
 
 /// El protocolo `asset:` solo sirve rutas dentro de un ambito. La raiz la elige el usuario en
 /// tiempo de ejecucion, asi que se autoriza aqui (solo lectura de imagenes por la webview).
@@ -102,7 +102,12 @@ fn save_config(app: AppHandle, state: State<'_, AppState>, config: Config) -> Re
     config.save(&state.config_file()).map_err(|e| e.to_string())?;
     state.combo_mask.store(combo_mask(&config.capture_combo), Ordering::Relaxed);
     state.mouse_button.store(mouse_button_index(&config.capture_mouse), Ordering::Relaxed);
+    let root_changed = state.config.lock().unwrap().root != config.root;
+    let new_root = config.root.clone();
     *state.config.lock().unwrap() = config;
+    if root_changed {
+        *state.favorites.lock().unwrap() = load_favorites(&state.db, new_root.as_deref().map(Path::new));
+    }
     hotkey_err.map_or(Ok(()), Err)
 }
 
@@ -120,23 +125,69 @@ async fn scan_library(app: AppHandle, state: State<'_, AppState>) -> Result<Libr
     let palettes = state.palettes.clone();
     let palettes_file = state.palettes_file();
     let sgdb_dir = state.sgdb_dir();
+    let db = state.db.clone();
+    let root_dir = cfg.root.clone();
     let (lib, found) = tauri::async_runtime::spawn_blocking(move || {
         let found = games::all_games(&manual);
         let opts = ScanOpts {
             hidden: &hidden,
-            show_hidden: cfg.show_hidden,
+            // Se escanea todo (tambien lo oculto) para que el catalogo este completo; se filtra despues.
+            show_hidden: true,
             prefs: Some(&prefs),
             palettes: Some(&palettes),
             sgdb_dir: Some(&sgdb_dir),
         };
-        let lib = scan::scan_library_ex(cfg.root.as_deref().map(Path::new), &cfg.platforms, &found, &stats, &opts);
+        let root = cfg.root.as_deref().map(Path::new);
+        let mut lib = scan::scan_library_ex(root, &cfg.platforms, &found, &stats, &opts);
         palettes.save(&palettes_file);
+        if let Some(r) = root {
+            let now = chrono::Local::now().timestamp_millis();
+            state::log_db_err("catalogo", db.with(|c| catalog::sync(c, r, &lib, now)).map(|_| ()));
+        }
+        if !cfg.show_hidden {
+            for p in lib.platforms.iter_mut() {
+                p.titles.retain(|t| !t.hidden);
+            }
+        }
         (lib, found)
     })
     .await
     .map_err(|e| e.to_string())?;
     *state.games.lock().unwrap() = found;
+    if let Some(r) = root_dir {
+        start_hasher(state.db.clone(), PathBuf::from(r), state.hashing.clone());
+    }
     Ok(lib)
+}
+
+/// Calcula en segundo plano las huellas que falten en el catalogo (una sola tanda a la vez).
+fn start_hasher(db: Arc<Db>, root: PathBuf, busy: Arc<std::sync::atomic::AtomicBool>) {
+    if busy.swap(true, Ordering::SeqCst) {
+        return;
+    }
+    std::thread::spawn(move || {
+        let r = catalog::hash_pending(&db, &root, || false);
+        busy.store(false, Ordering::SeqCst);
+        match r {
+            Ok(0) => {}
+            Ok(n) => eprintln!("catalogo: {n} huellas nuevas"),
+            Err(e) => eprintln!("catalogo: {e:#}"),
+        }
+    });
+}
+
+/// Favoritas en memoria (rutas absolutas). En la base se guardan portables (relativas a la raiz):
+/// al cargar se pasan a portables las absolutas que caigan dentro de la raiz y se resuelven todas.
+fn load_favorites(db: &Db, root: Option<&Path>) -> Vec<String> {
+    if let Some(r) = root {
+        state::log_db_err("favoritas", db.with(|c| dbd::favorites_relativize(c, r)).map(|_| ()));
+    }
+    state::log_db("favoritas", db.with(dbd::favorites_load)).iter().map(|p| relpath::resolved(root, p)).collect()
+}
+
+/// Raiz configurada, si la hay.
+fn root_of(state: &AppState) -> Option<PathBuf> {
+    state.config.lock().unwrap().root.as_ref().map(PathBuf::from)
 }
 
 /// Devuelve la ruta de la miniatura de una imagen (la genera si no existe).
@@ -181,7 +232,8 @@ fn set_favorite(state: State<'_, AppState>, path: String, on: bool) -> Result<()
     if on {
         f.push(path.clone());
     }
-    state.db.with(|c| dbd::favorite_set(c, &path, on)).map_err(|e| e.to_string())
+    let key = relpath::stored(root_of(&state).as_deref(), &path);
+    state.db.with(|c| dbd::favorite_set(c, &key, on)).map_err(|e| e.to_string())
 }
 
 /// Lanza un juego detectado por el ultimo escaneo.
@@ -409,13 +461,15 @@ fn move_shots(state: State<'_, AppState>, paths: Vec<String>, target_dir: String
             Err(e) => rep.failed.push(format!("{}: {e}", Path::new(&p).file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or(p.clone()))),
         }
     }
-    // Las favoritas siguen a la captura.
+    // Las favoritas y la fila del catalogo (con su huella) siguen a la captura.
     let mut f = state.favorites.lock().unwrap();
     for (old, new) in &rep.moved {
+        let (old_k, new_k) = (relpath::stored(Some(root_p), old), relpath::stored(Some(root_p), new));
         if let Some(i) = f.iter().position(|x| x == old) {
             f[i] = new.clone();
-            state.db.with(|c| dbd::favorite_rename(c, old, new)).map_err(|e| e.to_string())?;
+            state.db.with(|c| dbd::favorite_rename(c, &old_k, &new_k)).map_err(|e| e.to_string())?;
         }
+        state::log_db_err("catalogo", state.db.with(|c| catalog::rename(c, &old_k, &new_k)));
     }
     Ok(rep)
 }
@@ -559,7 +613,7 @@ pub fn run() {
                 }
             };
             let db = Arc::new(db);
-            let favorites = state::log_db("favoritas", db.with(dbd::favorites_load));
+            let favorites = load_favorites(&db, config.root.as_deref().map(Path::new));
             let stats = state::log_db("estadisticas", db.with(dbd::stats_load));
             let hidden = state::log_db("ocultos", db.with(dbd::hidden_load));
             let prefs = state::log_db("preferencias", db.with(dbd::prefs_load));
@@ -595,6 +649,7 @@ pub fn run() {
                 learning_pad: std::sync::atomic::AtomicBool::new(false),
                 sgdb: Arc::new(Mutex::new(sgdb_store)),
                 sgdb_busy: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+                hashing: Arc::new(std::sync::atomic::AtomicBool::new(false)),
             });
             if let Err(e) = apply_hotkeys(app.handle(), &hotkey, &rec_hotkey) {
                 eprintln!("{e}");

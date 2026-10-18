@@ -177,6 +177,8 @@ pub const MIGRATIONS: &[&str] = &[
     "#,
     // 3: estadisticas de lectura de las novelas (sesiones, totales por dia, fecha de palabras conocidas).
     crate::jp::readstats::SCHEMA,
+    // 4: catalogo de capturas con su huella (base de la sincronizacion con la nube).
+    crate::catalog::SCHEMA,
 ];
 
 /// Version del esquema que entiende esta compilacion.
@@ -453,6 +455,23 @@ mod tests {
         assert_eq!((prefs["steam:2"].status.as_deref(), prefs["steam:2"].sort.as_deref()), (Some("playing"), Some("name")));
         db.with(|c| status_save(c, "steam:1", None, 7000)).unwrap();
         assert!(!db.with(prefs_load).unwrap().contains_key("steam:1"));
+    }
+
+    #[test]
+    fn favorites_become_portable_keeping_order() {
+        let d = tempfile::tempdir().unwrap();
+        let root = d.path().join("Capturas");
+        let abs = |rel: &str| crate::relpath::to_abs(&root, rel);
+        let outside = d.path().join("fuera.png").to_string_lossy().into_owned();
+        let db = Db::open_memory().unwrap();
+        db.with(|c| {
+            favorite_set(c, &abs("PC/A/1.png"), true).unwrap();
+            favorite_set(c, &outside, true).unwrap();
+            favorite_set(c, "Switch/B/2.png", true).unwrap();
+        });
+        assert_eq!(db.with(|c| favorites_relativize(c, &root)).unwrap(), 1);
+        assert_eq!(db.with(favorites_load).unwrap(), vec!["PC/A/1.png".to_string(), outside.clone(), "Switch/B/2.png".into()]);
+        assert_eq!(db.with(|c| favorites_relativize(c, &root)).unwrap(), 0, "idempotente");
     }
 
     #[test]

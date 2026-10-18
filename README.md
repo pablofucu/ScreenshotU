@@ -65,6 +65,8 @@ Se guarda en la carpeta de configuración de la aplicación (en Windows, `%APPDA
 
 > **Base de datos (`visor.db`).** Los datos de usuario (favoritas, juegos añadidos a mano, estadísticas y partidas, ocultos, preferencias por juego, sagas, SteamGridDB, novelas japonesas, palabras conocidas y glosario de frases) viven en un único `%APPDATA%pp.visorcapturas.desktopisor.db` (SQLite). La primera vez que arranca, importa los JSON antiguos que se citan abajo (`favorites.json`, `games.json`, `stats.json`, `hidden.json`, `titleprefs.json`, `sagas.json`, `sgdb.json`, `novels.json`, `known-words.json` y `phrases/*.json`) sin borrarlos ni modificarlos: quedan como respaldo y la app ya no los lee. `config.json` sigue en JSON, igual que la media de `phrases/media/`.
 
+> **Rutas portables y catálogo de capturas.** Las favoritas se guardan con la ruta *relativa a la carpeta raíz* (`PC/Elden Ring/captura.png`), así que siguen valiendo si la raíz cambia de sitio; las que estaban guardadas con ruta absoluta se convierten solas al arrancar (las de fuera de la raíz se quedan como estaban). Cada escaneo pone al día la tabla `shots` de `visor.db` (ruta relativa, título, tamaño, fechas, dimensiones) y un hilo en segundo plano calcula la huella SHA-256 de las capturas nuevas o modificadas. Es la base para sincronizar la biblioteca con la nube. Las capturas solo se leen.
+
 
 ```json
 {

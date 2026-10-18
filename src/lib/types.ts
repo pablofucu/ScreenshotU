@@ -62,6 +62,8 @@ export interface Shot {
   date: number;
   width: number;
   height: number;
+  /** Tamaño en bytes. */
+  size?: number;
   /** Solo en sagas: juego de origen (nombre e id). */
   game?: string;
   gid?: string;

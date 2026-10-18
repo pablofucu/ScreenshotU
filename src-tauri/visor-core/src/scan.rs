@@ -24,6 +24,9 @@ pub struct Shot {
     pub date: i64,
     pub width: u32,
     pub height: u32,
+    /// Tamano en bytes.
+    #[serde(default)]
+    pub size: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -179,7 +182,7 @@ pub fn is_image(p: &Path) -> bool {
         .unwrap_or(false)
 }
 
-fn mtime_ms(md: &fs::Metadata) -> i64 {
+pub(crate) fn mtime_ms(md: &fs::Metadata) -> i64 {
     md.modified()
         .ok()
         .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
@@ -216,7 +219,7 @@ fn scan_title(dir: &Path) -> Option<Title> {
         let (width, height) = imagesize::size(entry.path())
             .map(|s| (s.width as u32, s.height as u32))
             .unwrap_or((0, 0));
-        shots.push(Shot { path: entry.path().to_string_lossy().into_owned(), mtime, date, width, height });
+        shots.push(Shot { path: entry.path().to_string_lossy().into_owned(), mtime, date, width, height, size: md.len() });
     }
     if shots.is_empty() {
         return None;
@@ -577,7 +580,7 @@ mod tests {
     }
 
     fn shot(path: &str, date: i64) -> Shot {
-        Shot { path: path.into(), mtime: date, date, width: 1, height: 1 }
+        Shot { path: path.into(), mtime: date, date, width: 1, height: 1, size: 1 }
     }
 
     #[test]

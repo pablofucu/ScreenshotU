@@ -62,6 +62,8 @@ pub struct AppState {
     pub sgdb: Arc<Mutex<SgdbStore>>,
     /// Hay una descarga automatica de SteamGridDB en marcha.
     pub sgdb_busy: Arc<AtomicBool>,
+    /// Hay un hilo calculando huellas del catalogo de capturas.
+    pub hashing: Arc<AtomicBool>,
 }
 
 impl AppState {

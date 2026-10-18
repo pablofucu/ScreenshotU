@@ -68,6 +68,21 @@ pub fn favorite_rename(c: &Connection, old: &str, new: &str) -> Result<()> {
     Ok(())
 }
 
+/// Pasa a ruta portable (relativa a `root`, ver [`crate::relpath`]) las favoritas guardadas con ruta
+/// absoluta dentro de la raiz. Las de fuera se quedan como estan. Se puede repetir sin efecto.
+pub fn favorites_relativize(c: &Connection, root: &std::path::Path) -> Result<usize> {
+    atomic(c, || {
+        let mut n = 0;
+        for p in favorites_load(c)? {
+            if let Some(rel) = crate::relpath::to_rel(root, &p) {
+                favorite_rename(c, &p, &rel)?;
+                n += 1;
+            }
+        }
+        Ok(n)
+    })
+}
+
 /* ------------------------------------------------------------------ */
 /* Juegos anadidos a mano                                               */
 /* ------------------------------------------------------------------ */
