@@ -108,7 +108,7 @@ pub struct RestoreInfo {
 }
 
 /// Ruta relativa segura dentro del .zip (sin `..`, ni rutas absolutas, ni unidades) o `None`.
-fn safe_rel(name: &str) -> Option<PathBuf> {
+pub(crate) fn safe_rel(name: &str) -> Option<PathBuf> {
     let name = name.replace('\\', "/");
     let mut out = PathBuf::new();
     for part in name.split('/') {

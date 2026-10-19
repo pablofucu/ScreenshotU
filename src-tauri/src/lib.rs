@@ -14,6 +14,7 @@ mod pad;
 mod peek;
 mod platform;
 mod reader;
+mod saves;
 mod sgdb;
 mod shots;
 mod snap;
@@ -650,6 +651,8 @@ pub fn run() {
                 sgdb: Arc::new(Mutex::new(sgdb_store)),
                 sgdb_busy: Arc::new(std::sync::atomic::AtomicBool::new(false)),
                 hashing: Arc::new(std::sync::atomic::AtomicBool::new(false)),
+                saves_manifest: Mutex::new(None),
+                saves_busy: std::sync::atomic::AtomicBool::new(false),
             });
             if let Err(e) = apply_hotkeys(app.handle(), &hotkey, &rec_hotkey) {
                 eprintln!("{e}");
@@ -711,6 +714,15 @@ pub fn run() {
             backup::restore_cancel,
             backup::restore_apply,
             backup::startup_notices,
+            saves::saves_info,
+            saves::saves_set_enabled,
+            saves::saves_add,
+            saves::saves_remove,
+            saves::saves_backup,
+            saves::saves_restore,
+            saves::saves_open_dir,
+            saves::saves_status,
+            saves::saves_update_manifest,
             magpie_status,
             get_sagas,
             save_sagas,

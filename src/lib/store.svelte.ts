@@ -43,12 +43,14 @@ export const DEFAULT_CONFIG: Config = {
   ankiMap: { word: 'Word', reading: 'WordReading', meaning: 'PrimaryDefinition', sentence: 'Sentence', translation: 'SentenceTranslation', shot: 'Picture', audio: 'SentenceAudio' },
   recordHotkey: 'F9',
   autoBackup: true,
+  savesAuto: true,
+  savesDir: '',
 };
 
 export type MenuItem =
   | 'folder' | 'reload' | 'remove' | 'hide' | 'unhide' | 'addshots' | 'accent'
-  | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'editsaga' | 'delsaga' | 'sgdb' | 'magpie' | 'phrases' | 'status';
-export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'saga' | 'sgdb' | 'sgdbtitles' | 'phrases';
+  | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'editsaga' | 'delsaga' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'saves';
+export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'saga' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves';
 export interface SagaFormState {
   /** null = saga nueva. */
   id: string | null;

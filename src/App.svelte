@@ -23,6 +23,7 @@
   import SgdbTitles from './screens/SgdbTitles.svelte';
   import SgdbPicker from './screens/SgdbPicker.svelte';
   import Phrases from './screens/Phrases.svelte';
+  import Saves from './screens/Saves.svelte';
   import Osk from './components/Osk.svelte';
 
   let w = $state(1280);
@@ -100,6 +101,7 @@
     {#if app.overlay === 'sgdbtitles'}<SgdbTitles />{/if}
     {#if app.overlay === 'sgdb'}<SgdbPicker />{/if}
     {#if app.overlay === 'phrases'}<Phrases />{/if}
+    {#if app.overlay === 'saves'}<Saves />{/if}
     {#if app.osk.open}<Osk />{/if}
   {/if}
   {#if error}<div class="note pill" style="left:50%;top:330px">No se pudo iniciar: {error}</div>{/if}

@@ -54,6 +54,10 @@ export interface Config {
   recordHotkey: string;
   /** Copia automática de la base de datos al arrancar (cada 7 días, se conservan 5). */
   autoBackup: boolean;
+  /** Copiar las partidas guardadas de un juego al cerrarlo (si cambiaron). */
+  savesAuto: boolean;
+  /** Carpeta de las copias de partidas ("" = la de la configuración). */
+  savesDir: string;
 }
 export interface AnkiMap { word: string; reading: string; meaning: string; sentence: string; translation: string; shot: string; audio: string }
 export interface Shot {

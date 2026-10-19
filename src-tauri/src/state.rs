@@ -64,6 +64,10 @@ pub struct AppState {
     pub sgdb_busy: Arc<AtomicBool>,
     /// Hay un hilo calculando huellas del catalogo de capturas.
     pub hashing: Arc<AtomicBool>,
+    /// Base de partidas de Ludusavi (se carga de la cache la primera vez que hace falta).
+    pub saves_manifest: Mutex<Option<Arc<visor_core::saves::Manifest>>>,
+    /// Hay una descarga de la base de Ludusavi en marcha.
+    pub saves_busy: AtomicBool,
 }
 
 impl AppState {

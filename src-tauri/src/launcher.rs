@@ -213,5 +213,8 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
     if game.platform == visor_core::config::NOVELS_PLATFORM {
         crate::novel::on_exit(&app, &game.id);
     }
+    if seconds > 0 {
+        crate::saves::after_session(&app, &game);
+    }
     let _ = app.emit("game-exited", GameEvent { id: game.id, name: game.name, seconds });
 }

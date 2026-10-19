@@ -15,6 +15,7 @@ pub mod magpie;
 pub mod palette;
 pub mod relpath;
 pub mod sagas;
+pub mod saves;
 pub mod scan;
 pub mod sgdb;
 pub mod thumbs;

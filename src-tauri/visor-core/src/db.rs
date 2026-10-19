@@ -179,6 +179,8 @@ pub const MIGRATIONS: &[&str] = &[
     crate::jp::readstats::SCHEMA,
     // 4: catalogo de capturas con su huella (base de la sincronizacion con la nube).
     crate::catalog::SCHEMA,
+    // 5: rutas de partidas guardadas (manuales y detectadas desactivadas).
+    crate::saves::SCHEMA,
 ];
 
 /// Version del esquema que entiende esta compilacion.
@@ -344,7 +346,7 @@ mod tests {
         let d = tempfile::tempdir().unwrap();
         let c = open_connection(&d.path().join("sub/visor.db")).unwrap();
         let t = tables(&c);
-        for want in ["favorites", "games", "play_stats", "sessions", "hidden", "title_prefs", "title_magpie", "sagas", "saga_members", "sgdb", "novel_prefs", "known_words", "phrases", "phrase_tags", "title_status", "meta"] {
+        for want in ["favorites", "games", "play_stats", "sessions", "hidden", "title_prefs", "title_magpie", "sagas", "saga_members", "sgdb", "novel_prefs", "known_words", "phrases", "phrase_tags", "title_status", "save_paths", "meta"] {
             assert!(t.iter().any(|x| x == want), "falta la tabla {want}: {t:?}");
         }
         let v: i64 = c.query_row("PRAGMA user_version", [], |r| r.get(0)).unwrap();

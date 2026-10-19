@@ -17,6 +17,7 @@ import { editSgdbKey, openSgdbPicker, openSgdbTitles, sgdbAuto, sgdbCmd, sgdbTit
 import { COMBO_PRESETS, HOTKEY_PRESETS, MOUSE_PRESETS, learnKeydown, learnMouse, onLearnPad, startLearn } from './learn.svelte';
 import { READING_ROWS, isReadingId, readingAct, type ReadingId } from './reading.svelte';
 import { openPhrases, phrasesCmd } from './phrases.svelte';
+import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
 
 export const GRID_VIEW_H = 480;
 export const PAGE_SIZE = 10;
@@ -287,6 +288,7 @@ export function menuItemsFor(t: Title): MenuItem[] {
   if (app.config.root && t.dir) items.push('addshots');
   items.push('accent');
   if (!t.members && t.id) items.push('status');
+  if (t.gameId && !t.members) items.push('saves');
   // Escalado con Magpie: solo juegos .exe (no emuladores).
   if (t.launchable && t.source === 'manual' && t.gameId) items.push('magpie');
   items.push(t.hidden ? 'unhide' : 'hide');
@@ -356,6 +358,7 @@ export async function menuAct(item: MenuItem) {
   if (item === 'status') { void cycleStatus(t, 1); return; }
   if (item === 'sgdb') { void openSgdbPicker(app.p, app.menu.title); return; }
   if (item === 'phrases') { closeOverlay(); void openPhrases(t.gameId, t.name); return; }
+  if (item === 'saves' && t.gameId) { void openSaves(t.gameId, t.name); return; }
   if (item === 'addshots') { closeOverlay(); await addShotsTo(t); return; }
   if (item === 'remove') {
     if (!app.menu.confirm) { app.menu.confirm = true; blip(520); return; }
@@ -780,6 +783,7 @@ export type SettingId =
   | 'hotkey' | 'combo' | 'mouse' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caprumble' | 'quit'
   | 'sgdbkey' | 'sgdbauto' | 'sgdbnow' | 'sgdbgame'
   | 'backup' | 'backupmedia' | 'restore' | 'autobackup'
+  | 'savesauto' | 'savesdir' | 'ludusavi'
   | ReadingId;
 /** Secciones de Ajustes (LB/RB las recorren). `color` es el índice del arcoíris. */
 export const SETTING_SECTIONS: Array<{ name: string; icon: string; color: number; rows: SettingId[] }> = [
@@ -790,6 +794,7 @@ export const SETTING_SECTIONS: Array<{ name: string; icon: string; color: number
   { name: 'Lectura', icon: 'jvn', color: 0, rows: READING_ROWS },
   { name: 'Magpie', icon: 'image', color: 3, rows: ['magpieexe', 'magpie'] },
   { name: 'Copias', icon: 'import', color: 2, rows: ['backup', 'backupmedia', 'restore', 'autobackup'] },
+  { name: 'Partidas', icon: 'pad', color: 1, rows: ['savesauto', 'savesdir', 'ludusavi'] },
   { name: 'Sistema', icon: 'gear', color: 5, rows: ['sound', 'fullscreen', 'monitor', 'quit'] },
 ];
 const secRows = () => SETTING_SECTIONS[app.setSec]?.rows ?? [];
@@ -870,8 +875,16 @@ async function refreshMonitor(dir = 0) {
   try { app.monitorLabel = dir ? await backend.nextMonitor(dir) : await backend.windowMonitor(); } catch { app.monitorLabel = ''; }
 }
 
+/** Carpeta de las copias de partidas: A elige otra, ‹ › vuelve a la de serie. */
+async function chooseSavesDir(dir: number) {
+  if (dir !== 0) { if (app.config.savesDir) { void patchConfig({ savesDir: '' }); blip(1320); } return; }
+  const r = await backend.pickFolder('Carpeta para las copias de partidas');
+  if (r) void patchConfig({ savesDir: r });
+}
+
 export function openSettings() {
   void refreshMagpieStatus();
+  void refreshSavesStatus();
   void refreshMonitor();
   app.overlayStack = [];
   app.overlay = 'settings';
@@ -950,6 +963,9 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'backupmedia') { app.backupMedia = !app.backupMedia; blip(1320); }
   else if (id === 'restore' && dir === 0) void restoreBackup();
   else if (id === 'autobackup') { void patchConfig({ autoBackup: !app.config.autoBackup }); blip(1320); }
+  else if (id === 'savesauto') { void patchConfig({ savesAuto: !app.config.savesAuto }); blip(1320); }
+  else if (id === 'savesdir') void chooseSavesDir(dir);
+  else if (id === 'ludusavi' && dir === 0) void updateManifestFromSettings();
   else if (id === 'sgdbkey' && dir === 0) editSgdbKey();
   else if (id === 'sgdbauto') toggleSgdbAuto();
   else if (id === 'sgdbnow' && dir === 0) void sgdbAuto(true);
@@ -970,6 +986,7 @@ function overlayCmd(c: string) {
     case 'sgdb': sgdbCmd(c); return;
     case 'phrases': phrasesCmd(c); return;
     case 'sgdbtitles': sgdbTitlesCmd(c); return;
+    case 'saves': savesCmd(c); return;
   }
   // Arriba/abajo pasan de una sección a la siguiente al llegar al borde; LB/RB (o LT/RT) saltan de sección.
   const rows = secRows();
@@ -1098,6 +1115,7 @@ export async function boot() {
   await initBackend();
   backend.onEvent(onBackendEvent);
   backend.onFilesDropped(onFilesDropped);
+  void listenSaves();
   const cfg = await backend.loadConfig();
   Object.assign(app.config, cfg);
   try {

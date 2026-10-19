@@ -98,6 +98,10 @@ pub struct Config {
     pub record_hotkey: String,
     /// Copia automatica de `visor.db` al arrancar si la ultima tiene 7 dias o mas (se conservan 5).
     pub auto_backup: bool,
+    /// Copia las partidas guardadas de un juego al cerrarlo (si cambiaron desde la ultima copia).
+    pub saves_auto: bool,
+    /// Carpeta de las copias de partidas ("" = `<config>/partidas`).
+    pub saves_dir: String,
 }
 
 pub fn default_platforms() -> Vec<PlatformCfg> {
@@ -162,6 +166,8 @@ impl Default for Config {
             anki_exe: String::new(),
             record_hotkey: "F9".into(),
             auto_backup: true,
+            saves_auto: true,
+            saves_dir: String::new(),
         }
     }
 }

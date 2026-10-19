@@ -29,6 +29,7 @@
       case 'delsaga': return app.menu.confirm ? 'Pulsa A otra vez para disolver' : 'Disolver saga';
       case 'sgdb': return 'Grafismos (SteamGridDB o del PC)…';
       case 'phrases': return 'Frases y repaso…';
+      case 'saves': return 'Partidas guardadas…';
       case 'magpie': return magpie.label;
       case 'status': return `Estado: ${STATUS_LABEL[t?.status ?? 'none']}`;
     }
@@ -41,7 +42,7 @@
   });
   const icon = (it: MenuItem) => ({
     folder: ICON.folder, reload: ICON.reload, remove: ICON.power, addshots: ICON.image, accent: ICON.palette, hide: ICON.eyeOff,
-    unhide: ICON.eye, magpie: ICON.image, select: ICON.check, unselect: ICON.check, selall: ICON.checks, move: ICON.move, reveal: ICON.folder, editsaga: ICON.palette, delsaga: ICON.power, sgdb: ICON.search, phrases: ICON.jvn, status: ICON.checks,
+    unhide: ICON.eye, magpie: ICON.image, select: ICON.check, unselect: ICON.check, selall: ICON.checks, move: ICON.move, reveal: ICON.folder, editsaga: ICON.palette, delsaga: ICON.power, sgdb: ICON.search, phrases: ICON.jvn, status: ICON.checks, saves: ICON.import,
   })[it];
   const sub = $derived(
     shots ? (app.selMode ? `${sel} ${sel === 1 ? 'seleccionada' : 'seleccionadas'}` : (app.cur.name || '')) : (t?.name ?? ''),
