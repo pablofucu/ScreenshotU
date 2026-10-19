@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pruebas de animación · lectura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--b:#00A0D8;--p:#E5487A;--ink:#3a414e;--mut:#6b7381}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:'M PLUS Rounded 1c','Segoe UI',system-ui,sans-serif;color:var(--ink);
+  background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+main{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+h1{font-size:26px;font-weight:800;margin:0 0 4px}
+.lead{color:var(--mut);margin:0 0 18px;font-size:15px}
+h2{font-size:19px;font-weight:800;margin:30px 0 12px;color:#5a6270}
+.all{font:inherit;font-weight:700;font-size:14px;border:0;border-radius:999px;padding:8px 18px;cursor:pointer;color:#fff;
+  background:linear-gradient(180deg,#4cc3ec,var(--b));box-shadow:0 0 0 1px #0081ae,0 6px 14px -8px #0081ae}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));gap:18px}
+@media (max-width:600px){.g{grid-template-columns:1fr}}
+.c{position:relative;overflow:hidden;border-radius:24px;padding:16px;
+  background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.3) 46%,rgba(225,234,246,.22));
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px rgba(95,110,135,.24),0 18px 30px -16px rgba(40,50,70,.42)}
+.hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px}
+.t{font-size:16px;font-weight:800;margin:0}
+.rep{font:inherit;font-size:13px;font-weight:700;border:0;border-radius:999px;padding:6px 14px;cursor:pointer;color:var(--ink);
+  background:#fff;box-shadow:0 0 0 1px rgba(95,110,135,.3)}
+.rep:hover{box-shadow:0 0 0 2px var(--b)}
+.s{font-size:14px;color:var(--mut);margin:12px 2px 0;line-height:1.5}
+.st{position:relative;height:170px;background:rgba(255,255,255,.85);border-radius:20px;box-shadow:0 0 0 1px rgba(95,110,135,.22);
+  display:flex;align-items:center;justify-content:center;gap:20px}
+.md{position:relative;text-align:center;border-radius:18px;padding:8px 16px;min-width:64px}
+.mb{background:linear-gradient(180deg,#e3f5fc,#c4e8f6);box-shadow:inset 0 1px 0 #fff,0 0 0 1px #9fd5ea}
+.mp{background:linear-gradient(180deg,#fdebf1,#f8cada);box-shadow:inset 0 1px 0 #fff,0 0 0 1px #f0a8c0}
+.fl{display:inline-block;width:22px;height:22px}
+.nw{height:32px;overflow:hidden}
+.n{font-size:32px;font-weight:800;line-height:1;display:inline-block}
+.ml{font-size:12px;font-weight:700}
+.ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:18px;font-weight:800;line-height:1.25}
+.map{display:flex;gap:3px}.map>div{display:flex;flex-direction:column;gap:3px}
+.map span{width:11px;height:11px;border-radius:3px;background:#dde1e7}
+</style>
+</head>
+<body>
+<main>
+<h1>Pruebas de animación · anillos de lectura</h1>
+<p class="lead">Cada tarjeta tiene su botón «Repetir». Azul = novelas visuales, rosa = novelas en japonés.</p>
+<button class="all" id="all">Repetir todas</button>
+
+<h2>Al completar la meta del día</h2>
+<div class="g">
+  <div class="c" id="c1"><div class="hd"><p class="t">1 · Cierre con chispas</p><button class="rep" data-p="c1">Repetir</button></div><div class="st"></div>
+    <p class="s">El anillo se cierra, salen chispas del color del anillo y la medalla sube +1 con rebote.</p></div>
+  <div class="c" id="c2"><div class="hd"><p class="t">2 · Ondas</p><button class="rep" data-p="c2">Repetir</button></div><div class="st"></div>
+    <p class="s">Al cerrarse, ondas concéntricas salen del anillo (muy Wii U) y aparece un check en el centro.</p></div>
+  <div class="c" id="c3"><div class="hd"><p class="t">3 · La racha se enciende</p><button class="rep" data-p="c3">Repetir</button></div><div class="st"></div>
+    <p class="s">La casilla de hoy se rellena y un brillo recorre toda la racha en el mapa; el número gira como un cuentakilómetros.</p></div>
+  <div class="c" id="c4"><div class="hd"><p class="t">4 · Confeti azul y rosa</p><button class="rep" data-p="c4">Repetir</button></div><div class="st"></div>
+    <p class="s">Celebración grande, pensada para cuando cierras los dos anillos el mismo día.</p></div>
+</div>
+
+<h2>Al entrar en Inicio y en reposo</h2>
+<div class="g">
+  <div class="c" id="e1"><div class="hd"><p class="t">A · Dibujado en cascada</p><button class="rep" data-p="e1">Repetir</button></div><div class="st"></div>
+    <p class="s">Los anillos se dibujan desde cero, las medallas caen con rebote y el mapa aparece en diagonal.</p></div>
+  <div class="c" id="e2"><div class="hd"><p class="t">B · Respiración</p><button class="rep" data-p="e2">Repetir</button></div><div class="st"></div>
+    <p class="s">El extremo del anillo que falta por cerrar late suave y la llama de cada medalla parpadea. Siempre activo.</p></div>
+  <div class="c" id="e3"><div class="hd"><p class="t">C · Burbujas flotantes</p><button class="rep" data-p="e3">Repetir</button></div><div class="st"></div>
+    <p class="s">Las medallas flotan un poco desfasadas y cada pocos segundos pasa un reflejo por el cristal.</p></div>
+  <div class="c" id="e4"><div class="hd"><p class="t">D · Al enfocar con el mando</p><button class="rep" data-p="e4">Repetir</button></div><div class="st"></div>
+    <p class="s">En reposo está quieto; al enfocarlo crece como las demás piezas y los anillos dan un giro rápido.</p></div>
+</div>
+</main>
+
+<script>
+const B = '#00A0D8', P = '#E5487A', NS = 'http://www.w3.org/2000/svg', S = 130;
+const FLAME = (col) => `<svg class="fl" viewBox="0 0 24 24" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"/></svg>`;
+const CHECK = `<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="${P}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5l10 -10"/></svg>`;
+
+function ringSVG(s) {
+  const sw = s * .1, c = s / 2, r1 = c - sw / 2 - 1, r2 = r1 - sw * 1.15, C1 = 2 * Math.PI * r1, C2 = 2 * Math.PI * r2;
+  const base = (r, col) => `<circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${col}" stroke-width="${sw}"/>`;
+  const arc = (r, C, col, k) => `<circle class="${k}" cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C}" transform="rotate(-90 ${c} ${c})"/>`;
+  return { html: `<svg class="rg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" style="display:block;overflow:visible">${base(r1, '#cfe6f1')}${arc(r1, C1, B, 'a1')}${base(r2, '#f6d3df')}${arc(r2, C2, P, 'a2')}<g class="fx"></g></svg>`, C1, C2, c, r1, r2 };
+}
+function build(id, opt = {}) {
+  const st = document.querySelector('#' + id + ' .st');
+  st.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+  st.style.transform = ''; st.style.boxShadow = '';
+  const R = ringSVG(S);
+  st.innerHTML = `<div style="position:relative;width:${S}px;height:${S}px">${R.html}<div class="ctr"><span style="color:#0089b9" class="m1">43m</span><span style="color:#c9356a" class="m2">12m</span></div></div>
+  <div class="md mb">${FLAME(B)}<div class="nw"><span class="n n1" style="color:#00739c">9</span></div><div class="ml">días novelas</div></div>
+  <div class="md mp">${FLAME(P)}<div class="nw"><span class="n n2" style="color:#a82b58">4</span></div><div class="ml">días 日本語</div></div>
+  ${opt.map ? '<div class="map"></div>' : ''}`;
+  st.R = R;
+  if (opt.map) mkMap(st.querySelector('.map'));
+  return st;
+}
+function mkMap(m) {
+  let h = '';
+  for (let w = 0; w < 8; w++) {
+    h += '<div>';
+    for (let d = 0; d < 7; d++) {
+      const i = w * 7 + d, fe = 55 - i, s = fe < 9 && fe > 0;
+      const v = s ? 1 : fe === 0 ? 0 : ((i * 37) % 11) / 11 > .5 ? .6 : 0;
+      h += `<span data-fe="${fe}" style="background:${v >= 1 ? B : v > 0 ? B + '77' : '#dde1e7'};${s ? 'box-shadow:0 0 0 1.5px #0073a0' : ''}"></span>`;
+    }
+    h += '</div>';
+  }
+  m.innerHTML = h;
+}
+function set(st, a, b, dur = 0) {
+  const x = st.querySelector('.a1'), y = st.querySelector('.a2');
+  [x, y].forEach((e) => e.style.transition = dur ? `stroke-dashoffset ${dur}ms cubic-bezier(.3,.8,.3,1)` : 'none');
+  x.style.strokeDashoffset = st.R.C1 * (1 - a);
+  y.style.strokeDashoffset = st.R.C2 * (1 - b);
+}
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+function bumpNum(st, k, v) {
+  const n = st.querySelector('.n' + k);
+  n.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-34px)' }], { duration: 180, easing: 'ease-in' }).onfinish = () => {
+    n.textContent = v;
+    n.animate([{ transform: 'translateY(34px)' }, { transform: 'translateY(-5px)' }, { transform: 'translateY(0)' }], { duration: 400, easing: 'ease-out' });
+  };
+  n.closest('.md').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.25)' }, { transform: 'scale(.95)' }, { transform: 'scale(1)' }], { duration: 600, easing: 'ease-out' });
+}
+function sparks(st, col, r) {
+  const g = st.querySelector('.fx'), c = st.R.c;
+  for (let i = 0; i < 16; i++) {
+    const a = i / 16 * Math.PI * 2, e = document.createElementNS(NS, 'circle');
+    e.setAttribute('cx', c); e.setAttribute('cy', c - r); e.setAttribute('r', 4); e.setAttribute('fill', i % 3 ? col : '#fff');
+    g.appendChild(e);
+    const d = 30 + Math.random() * 24;
+    e.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translate(${Math.cos(a) * d}px,${Math.sin(a) * d}px)`, opacity: 0 }], { duration: 700, easing: 'cubic-bezier(.2,.8,.3,1)' }).onfinish = () => e.remove();
+  }
+}
+function ripple(st, col) {
+  const g = st.querySelector('.fx'), c = st.R.c;
+  for (let i = 0; i < 3; i++) {
+    const e = document.createElementNS(NS, 'circle');
+    e.setAttribute('cx', c); e.setAttribute('cy', c); e.setAttribute('r', st.R.r1);
+    e.setAttribute('fill', 'none'); e.setAttribute('stroke', col); e.setAttribute('stroke-width', 4);
+    e.style.transformOrigin = `${c}px ${c}px`;
+    g.appendChild(e);
+    e.animate([{ transform: 'scale(1)', opacity: .8 }, { transform: 'scale(1.7)', opacity: 0 }], { duration: 900, delay: i * 180, fill: 'both', easing: 'ease-out' }).onfinish = () => e.remove();
+  }
+}
+
+const DEMOS = {
+  async c1() {
+    const st = build('c1'); set(st, .72, 1); await wait(400);
+    set(st, 1, 1, 900); await wait(900);
+    sparks(st, B, st.R.r1); st.querySelector('.m1').textContent = '60m'; bumpNum(st, 1, 10);
+  },
+  async c2() {
+    const st = build('c2'); set(st, 1, .75); await wait(400);
+    set(st, 1, 1, 800); await wait(800);
+    ripple(st, P);
+    const ctr = st.querySelector('.ctr'); ctr.innerHTML = CHECK;
+    ctr.animate([{ transform: 'scale(0)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 500, easing: 'ease-out' });
+    await wait(250); bumpNum(st, 2, 5);
+  },
+  async c3() {
+    const st = build('c3', { map: 1 }); set(st, .95, .4); await wait(400);
+    set(st, 1, .4, 500); await wait(500);
+    const cells = [...st.querySelectorAll('.map span')];
+    const t = cells.find((e) => e.dataset.fe === '0');
+    t.style.background = B; t.style.boxShadow = '0 0 0 1.5px #0073a0';
+    t.animate([{ transform: 'scale(2.4)' }, { transform: 'scale(1)' }], { duration: 450, easing: 'ease-out' });
+    cells.filter((e) => +e.dataset.fe > 0 && +e.dataset.fe < 9).sort((a, b) => a.dataset.fe - b.dataset.fe)
+      .forEach((e, i) => e.animate([{ filter: 'brightness(1)', transform: 'scale(1)' }, { filter: 'brightness(1.8)', transform: 'scale(1.5)' }, { filter: 'brightness(1)', transform: 'scale(1)' }], { duration: 400, delay: 120 + i * 60 }));
+    await wait(200); bumpNum(st, 1, 10);
+    st.querySelector('.fl').animate([{ transform: 'scale(1)' }, { transform: 'scale(1.8) rotate(-10deg)' }, { transform: 'scale(1)' }], { duration: 600 });
+  },
+  async c4() {
+    const st = build('c4'); set(st, 1, .8); await wait(400);
+    set(st, 1, 1, 700); await wait(700);
+    const card = document.getElementById('c4'), cols = [B, P, '#7fd3f0', '#f39bb8', '#ffffff'];
+    for (let i = 0; i < 70; i++) {
+      const e = document.createElement('span'), w = 6 + Math.random() * 6;
+      e.style.cssText = `position:absolute;left:${50 + (Math.random() - .5) * 20}%;top:45%;width:${w}px;height:${w * 1.6}px;background:${cols[i % 5]};border-radius:2px;pointer-events:none;box-shadow:0 0 0 .5px rgba(0,0,0,.08)`;
+      card.appendChild(e);
+      const dx = (Math.random() - .5) * 520, dy = -80 - Math.random() * 110;
+      e.animate([
+        { transform: 'translate(0,0) rotate(0)', opacity: 1 },
+        { transform: `translate(${dx * .6}px,${dy}px) rotate(${Math.random() * 360}deg)`, opacity: 1, offset: .35 },
+        { transform: `translate(${dx}px,${dy + 300}px) rotate(${Math.random() * 900}deg)`, opacity: 0 },
+      ], { duration: 1600 + Math.random() * 800, easing: 'cubic-bezier(.2,.6,.4,1)' }).onfinish = () => e.remove();
+    }
+    bumpNum(st, 1, 10); setTimeout(() => bumpNum(st, 2, 5), 200);
+  },
+  async e1() {
+    const st = build('e1', { map: 1 }); set(st, 0, 0);
+    st.querySelectorAll('.md').forEach((m) => m.style.opacity = 0);
+    st.querySelectorAll('.map span').forEach((s) => s.style.opacity = 0);
+    await wait(200); set(st, .72, 0, 900); await wait(200); set(st, .72, .4, 900);
+    st.querySelectorAll('.md').forEach((m, i) => m.animate([{ opacity: 0, transform: 'translateY(-36px)' }, { opacity: 1, transform: 'translateY(6px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 550, delay: 300 + i * 140, fill: 'forwards', easing: 'ease-out' }));
+    st.querySelectorAll('.map>div').forEach((col, w) => [...col.children].forEach((s, d) => s.animate([{ opacity: 0, transform: 'scale(.2)' }, { opacity: 1, transform: 'scale(1)' }], { duration: 300, delay: 500 + (w + d) * 35, fill: 'forwards' })));
+  },
+  e2() {
+    const st = build('e2'); set(st, .72, .4);
+    const g = st.querySelector('.fx'), c = st.R.c;
+    [[st.R.r1, .72, B], [st.R.r2, .4, P]].forEach(([r, v, col], i) => {
+      const a = -Math.PI / 2 + v * 2 * Math.PI, e = document.createElementNS(NS, 'circle');
+      e.setAttribute('cx', c + r * Math.cos(a)); e.setAttribute('cy', c + r * Math.sin(a)); e.setAttribute('r', 6.5); e.setAttribute('fill', col);
+      e.style.transformOrigin = `${c + r * Math.cos(a)}px ${c + r * Math.sin(a)}px`;
+      g.appendChild(e);
+      e.animate([{ opacity: .9, transform: 'scale(1)' }, { opacity: .15, transform: 'scale(2.3)' }, { opacity: .9, transform: 'scale(1)' }], { duration: 1800, delay: i * 500, iterations: Infinity });
+    });
+    st.querySelectorAll('.fl').forEach((f, i) => f.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1.15) rotate(4deg)', opacity: .75 }, { transform: 'scale(.95) rotate(-3deg)', opacity: 1 }, { transform: 'scale(1)', opacity: 1 }], { duration: 1400, delay: i * 350, iterations: Infinity }));
+  },
+  e3() {
+    const st = build('e3'); set(st, .72, .4);
+    st.querySelectorAll('.md').forEach((m, i) => {
+      m.style.overflow = 'hidden';
+      m.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-7px)' }, { transform: 'translateY(0)' }], { duration: 2600, delay: i * 700, iterations: Infinity, easing: 'ease-in-out' });
+      const sh = document.createElement('i');
+      sh.style.cssText = 'position:absolute;top:-10px;bottom:-10px;width:20px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),transparent);transform:skewX(-20deg);left:-30px;pointer-events:none';
+      m.appendChild(sh);
+      sh.animate([{ left: '-30px' }, { left: '120%', offset: .25 }, { left: '120%' }], { duration: 3600, delay: 600 + i * 300, iterations: Infinity });
+    });
+  },
+  async e4() {
+    const st = build('e4'); set(st, .72, .4); await wait(500);
+    st.style.transition = 'transform .24s cubic-bezier(.34,1.32,.64,1),box-shadow .24s';
+    st.style.transform = 'scale(1.06)'; st.style.boxShadow = `0 0 0 3px ${B},0 0 22px 3px ${B}66`;
+    st.querySelector('.rg').animate([{ transform: 'rotate(0)' }, { transform: 'rotate(360deg)' }], { duration: 650, easing: 'cubic-bezier(.3,.9,.3,1)' });
+    await wait(1600); st.style.transform = ''; st.style.boxShadow = '';
+  },
+};
+document.querySelectorAll('[data-p]').forEach((b) => b.onclick = () => DEMOS[b.dataset.p]());
+const runAll = () => Object.keys(DEMOS).forEach((k, i) => setTimeout(() => DEMOS[k](), i * 250));
+document.getElementById('all').onclick = runAll;
+runAll();
+</script>
+</body>
+</html>

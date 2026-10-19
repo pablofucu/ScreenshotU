@@ -10,7 +10,7 @@ import {
   openAccentPicker, openAdd, openHidden, openSaga, openSagaForm, openSagaMenu, openShotMenu, patchTitle, sagaCmd,
   sagaMenuAct, shotMenuAct, toggleHideTitle, toggleSel,
 } from './ops.svelte';
-import { isSagaPlatform, realPlatforms, withSagas } from './sagas';
+import { SAGA_PLATFORM, isSagaPlatform, realPlatforms, withSagas } from './sagas';
 import { shotLayout, type ShotLayout } from './shotlayout';
 import { EVO_KINDS, PERIOD_KINDS } from './stats';
 import { editSgdbKey, openSgdbPicker, openSgdbTitles, sgdbAuto, sgdbCmd, sgdbTitlesCmd, toggleSgdbAuto } from './sgdb.svelte';
@@ -27,8 +27,8 @@ export const DETAIL_SHOTS = 5;
 export const RANK_VIEW_H = 384;
 export const rankH = (i: number) => (i < 3 ? 76 : 64);
 export const rankY = (i: number) => (i < 3 ? i * 84 : 252 + (i - 3) * 72);
-/** Entradas del dock de Inicio (Buscar, Favoritas, Estadísticas, Añadir, Ajustes, Salir). */
-export const DOCK_N = 6;
+/** Entradas del dock de Inicio (Buscar, Favoritas, Sagas, Estadísticas, Añadir, Ajustes, Salir). */
+export const DOCK_N = 7;
 
 const screenEl = () => document.getElementById('screen');
 
@@ -79,7 +79,8 @@ function validKey(view: View, key: string | undefined): string | undefined {
   const n = parseInt(key.replace(/^\D+/, ''), 10);
   if (view === 'home') {
     if (key === 'welcome') return app.config.root ? undefined : key;
-    if (/^plat\d+$/.test(key)) return app.config.root && n < app.lib.platforms.length ? key : undefined;
+    // Con la tarjeta de lectura, Sagas sale del Inicio y se abre desde el dock.
+    if (/^plat\d+$/.test(key)) return app.config.root && n < app.lib.platforms.length && !(app.readCard && app.lib.platforms[n].id === SAGA_PLATFORM) ? key : undefined;
     if (/^dock\d+$/.test(key)) return n < DOCK_N ? key : undefined;
     if (/^rec\d+$/.test(key)) return app.config.root && n < app.recent.length ? key : undefined;
   } else if (view === 'titles') {
@@ -103,7 +104,7 @@ function validKey(view: View, key: string | undefined): string | undefined {
   return undefined;
 }
 function defaultKey(view: View): string {
-  if (view === 'home') return app.config.root ? 'plat' + Math.min(app.hp, Math.max(0, app.lib.platforms.length - 1)) : 'welcome';
+  if (view === 'home') return app.config.root ? validKey('home', 'plat' + Math.min(app.hp, Math.max(0, app.lib.platforms.length - 1))) ?? 'plat0' : 'welcome';
   if (view === 'titles') return 'tit' + atPos(0);
   if (view === 'detail') {
     const t = app.platform?.titles[app.t];
@@ -517,10 +518,18 @@ function openRecent(i: number) {
 function dock(i: number) {
   if (i === 0) toast('Buscar: próximamente');
   else if (i === 1) openFavs();
-  else if (i === 2) openStats();
-  else if (i === 3) openAdd();
-  else if (i === 4) openSettings();
-  else if (i === 5) void quit();
+  else if (i === 2) openSagas();
+  else if (i === 3) openStats();
+  else if (i === 4) openAdd();
+  else if (i === 5) openSettings();
+  else if (i === 6) void quit();
+}
+
+function openSagas() {
+  const i = app.lib.platforms.findIndex((p) => p.id === SAGA_PLATFORM);
+  if (i < 0) { toast('No hay sagas'); return; }
+  app.p = i; app.hp = i; app.t = 0; app.fk.titles = 'tit0';
+  go('titles', 'fwd');
 }
 
 export function openStats() {
@@ -651,10 +660,10 @@ export function back() {
     app.fk.detail = 'dhrs';
     go('detail', 'back');
   } else if (app.view === 'stats') {
-    app.fk.home = 'dock2';
+    app.fk.home = 'dock3';
     go('home', 'back');
   } else if (app.view === 'titles') {
-    app.fk.home = 'plat' + app.p;
+    app.fk.home = app.readCard && isSagaPlatform(app.platform) ? 'dock2' : 'plat' + app.p;
     go('home', 'back');
   } else {
     bump(screenEl()?.querySelector('.fx.f'), 0, 0);

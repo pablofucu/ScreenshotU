@@ -45,6 +45,8 @@ export const DEFAULT_CONFIG: Config = {
   autoBackup: true,
   savesAuto: true,
   savesDir: '',
+  goalVn: 60,
+  goalJvn: 30,
 };
 
 export type MenuItem =
@@ -302,6 +304,9 @@ class Store {
     }
   });
 
+  /** Tarjeta «Lectura de hoy» en Inicio (si existe alguna categoría de novelas); ocupa el sitio de Sagas, que pasa al dock. */
+  readCard = $derived(!!this.config.root && this.lib.platforms.some((p) => p.id === 'vn' || p.id === 'jvn'));
+
   /** «Seguir jugando»: los juegos jugados (o con capturas) más recientemente, de todas las plataformas. */
   recent = $derived.by((): RecentRef[] => {
     const out: Array<RecentRef & { k: number }> = [];
@@ -313,7 +318,7 @@ class Store {
         if (k > 0) out.push({ pi, ti, k });
       });
     });
-    return out.sort((a, b) => b.k - a.k).slice(0, RECENT_N).map(({ pi, ti }) => ({ pi, ti }));
+    return out.sort((a, b) => b.k - a.k).slice(0, this.readCard ? RECENT_N - 1 : RECENT_N).map(({ pi, ti }) => ({ pi, ti }));
   });
 
   cur = $derived.by((): CurTitle => {

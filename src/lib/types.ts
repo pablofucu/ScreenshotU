@@ -58,6 +58,9 @@ export interface Config {
   savesAuto: boolean;
   /** Carpeta de las copias de partidas ("" = la de la configuración). */
   savesDir: string;
+  /** Meta diaria de lectura en minutos: novelas visuales y novelas japonesas (anillos de Inicio). */
+  goalVn: number;
+  goalJvn: number;
 }
 export interface AnkiMap { word: string; reading: string; meaning: string; sentence: string; translation: string; shot: string; audio: string }
 export interface Shot {

@@ -102,6 +102,9 @@ pub struct Config {
     pub saves_auto: bool,
     /// Carpeta de las copias de partidas ("" = `<config>/partidas`).
     pub saves_dir: String,
+    /// Meta diaria de lectura (minutos) de las novelas visuales y de las japonesas (anillos de Inicio).
+    pub goal_vn: u32,
+    pub goal_jvn: u32,
 }
 
 pub fn default_platforms() -> Vec<PlatformCfg> {
@@ -168,6 +171,8 @@ impl Default for Config {
             auto_backup: true,
             saves_auto: true,
             saves_dir: String::new(),
+            goal_vn: 60,
+            goal_jvn: 30,
         }
     }
 }
@@ -187,6 +192,8 @@ impl Config {
             c.platforms.push(novels_platform());
         }
         c.accent_fixed = c.accent_fixed.min(6);
+        c.goal_vn = c.goal_vn.clamp(5, 600);
+        c.goal_jvn = c.goal_jvn.clamp(5, 600);
         if !["art", "rainbow", "fixed"].contains(&c.accent_mode.as_str()) {
             c.accent_mode = "art".into();
         }

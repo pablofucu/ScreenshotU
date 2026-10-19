@@ -5,31 +5,39 @@
   import { dayKey, fmtAgo, fmtDur, fmtShort, naiveNow, nCapturas, nTitulos } from '../lib/format';
   import Hints from '../components/Hints.svelte';
   import RecentCard from '../components/RecentCard.svelte';
+  import ReadRings from '../components/ReadRings.svelte';
 
   const DOCK = [
     { n: 'Buscar', ic: ICON.search, c: 1 },
     { n: 'Favoritas', ic: ICON.star, c: 2 },
-    { n: 'Estadísticas', ic: ICON.chart, c: 3 },
-    { n: 'Añadir juego', ic: ICON.plus, c: 4 },
-    { n: 'Ajustes', ic: ICON.gear, c: 5 },
-    { n: 'Salir', ic: ICON.power, c: 6 },
+    { n: 'Sagas', ic: ICON.saga, c: 3 },
+    { n: 'Estadísticas', ic: ICON.chart, c: 4 },
+    { n: 'Añadir juego', ic: ICON.plus, c: 5 },
+    { n: 'Ajustes', ic: ICON.gear, c: 6 },
+    { n: 'Salir', ic: ICON.power, c: 0 },
   ];
 
   const plats = $derived(app.lib.platforms);
-  // Las plataformas se quedan en la mitad superior para dejar sitio a «Seguir jugando».
+  // Con la tarjeta «Lectura de hoy» arriba, Sagas sale de la fila (se abre desde el dock).
+  const shown = $derived(plats.map((p, i) => ({ p, i })).filter(({ p }) => !(app.readCard && p.id === 'sagas')));
   const size = 190;
   // Con muchas plataformas el paso se encoge para que todas quepan en pantalla.
-  const step = $derived(plats.length > 1 ? Math.min(plats.length > 3 ? 232 : 270, (1280 - 80 - size) / (plats.length - 1)) : 270);
-  const x0 = $derived((1280 - (plats.length - 1) * step - size) / 2);
+  const step = $derived(shown.length > 1 ? Math.min(shown.length > 3 ? 232 : 270, (1280 - 80 - size) / (shown.length - 1)) : 270);
+  const x0 = $derived((1280 - (shown.length - 1) * step - size) / 2);
   const lw = $derived(Math.min(size + 40, step - 4));
+  const metaGoal = (m: number) => (m % 60 === 0 ? `${m / 60} h` : m > 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`);
   const totalTitles = $derived(plats.filter((p) => p.id !== 'sagas').reduce((n, p) => n + p.titles.length, 0));
   const count = (p: (typeof plats)[number]) => p.titles.reduce((s, t) => s + t.shots.length, 0);
   const wacc = $derived(app.acc(4));
 
   // «Seguir jugando»
-  const CW = 350, CGAP = 34;
+  const CW = 350, CGAP = 34, RW = 440;
   const recent = $derived(app.recent.map((r) => ({ ...r, t: app.lib.platforms[r.pi].titles[r.ti] })));
-  const cx0 = $derived((1280 - recent.length * CW - (recent.length - 1) * CGAP) / 2);
+  // La fila se centra entera: recientes + (si hay) la tarjeta «Lectura de hoy».
+  const rowW = $derived(recent.length * (CW + CGAP) - CGAP + (app.readCard ? CGAP + RW : 0));
+  const cx0 = $derived((1280 - rowW) / 2);
+  const rx = $derived(cx0 + recent.length * (CW + CGAP));
+  const lastR = $derived(cx0 + recent.length * CW + (recent.length - 1) * CGAP);
   const focusRec = $derived(app.focus.startsWith('rec') ? recent[+app.focus.slice(3)] : undefined);
   function meta(t: (typeof recent)[number]['t'], pname: string) {
     const when = t.lastPlayed ? fmtAgo(t.lastPlayed) : t.shots[0] ? `Captura del ${fmtShort(t.shots[0].date)}` : '';
@@ -69,9 +77,9 @@
     </div>
   </div>
 {:else}
-  {#each plats as p, i}
+  {#each shown as { p, i }, k (p.id)}
     {@const a = app.platAcc(i)}
-    {@const x = x0 + i * step}
+    {@const x = x0 + k * step}
     <div class="glass plat fx" class:f={app.focus === 'plat' + i} data-k="plat{i}" data-act="plat:{i}" style="left:{x}px;top:100px;width:{size}px;height:{size}px;--acc:{a.c};--pc:{a.c}">
       <div class="face">{@html ICON[p.icon] ?? ICON.pc}</div>
     </div>
@@ -86,7 +94,7 @@
   {#if recent.length}
     <div class="hsect" style="left:{cx0}px">Seguir jugando</div>
     {#if week.min > 0 || week.shots > 0}
-      <div class="hweek" style="right:{cx0}px">Últimos 7 días: <b>{week.min > 0 ? fmtDur(week.min * 60) : 'sin partidas'}</b> · <b>{nCapturas(week.shots)}</b></div>
+      <div class="hweek" style="right:{1280 - lastR}px">Últimos 7 días: <b>{week.min > 0 ? fmtDur(week.min * 60) : 'sin partidas'}</b> · <b>{nCapturas(week.shots)}</b></div>
     {/if}
     {#each recent as r, i (r.t.id)}
       {@const x = cx0 + i * (CW + CGAP)}
@@ -96,9 +104,19 @@
       </div>
       <div class="rmeta" style="left:{x + 4}px">{m.when}{#if m.rest}<span>{m.when ? ' · ' : ''}{m.rest}</span>{/if}</div>
     {/each}
+    {#if app.readCard}
+      <div class="hsect" style="left:{rx}px">Lectura de hoy</div>
+      <div class="glass rcard rread" style="left:{rx}px;width:{RW}px;--acc:#00A0D8"><div class="face"><ReadRings /></div></div>
+      <div class="rmeta" style="left:{rx + 4}px;width:{RW - 4}px">Meta diaria<span> · {metaGoal(app.config.goalVn)} novelas · {metaGoal(app.config.goalJvn)} japonés</span></div>
+    {/if}
   {:else if totalTitles > 0}
     <div class="hsect" style="left:96px">Seguir jugando</div>
-    <div class="rnone">Aquí aparecerán los juegos a los que juegues desde el visor y los que tengan capturas nuevas.</div>
+    {#if app.readCard}
+      <div class="hsect" style="left:{1280 - 96 - RW}px">Lectura de hoy</div>
+      <div class="glass rcard rread" style="left:{1280 - 96 - RW}px;width:{RW}px;--acc:#00A0D8"><div class="face"><ReadRings /></div></div>
+      <div class="rmeta" style="left:{1280 - 96 - RW + 4}px;width:{RW - 4}px">Meta diaria<span> · {metaGoal(app.config.goalVn)} novelas · {metaGoal(app.config.goalJvn)} japonés</span></div>
+    {/if}
+    <div class="rnone" style={app.readCard ? `max-width:${1280 - 96 - RW - 96 - 34}px;white-space:normal` : ''}>Aquí aparecerán los juegos a los que juegues desde el visor y los que tengan capturas nuevas.</div>
   {/if}
 {/if}
 

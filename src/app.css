@@ -419,6 +419,8 @@ img.tin{animation:thumbIn .35s cubic-bezier(.2,.8,.3,1) both}
 .hweek b{color:#3a414e;font-weight:800}
 .rcard{top:410px;width:350px;height:150px;--r:24px;--bw:8px}
 .rcard .face{background:#2a2f3a}
+.rcard.rread{cursor:default}
+.rcard.rread .face{background:#f4f6f9}
 .rcard .face img.rhero{position:absolute;inset:0;object-position:center 30%}
 .rcard .rfb{position:absolute;inset:0;background-size:cover;background-position:center}
 .rcard .rfb.blur{filter:blur(12px) brightness(.7) saturate(1.2);transform:scale(1.25)}

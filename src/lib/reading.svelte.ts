@@ -12,17 +12,26 @@ export type MapSlot = keyof AnkiMap;
 export type ReadingId =
   | 'dskey' | 'dsmodel'
   | 'ankiurl' | 'ankitest' | 'ankiauto' | 'ankiexe' | 'ankideck' | 'ankicreate' | 'ankimodel' | 'ankistyle'
-  | 'rechotkey' | 'phrasesreview'
+  | 'rechotkey' | 'phrasesreview' | 'goalvn' | 'goaljvn'
   | 'map_word' | 'map_reading' | 'map_meaning' | 'map_sentence' | 'map_translation' | 'map_shot' | 'map_audio';
 
 export const READING_ROWS: ReadingId[] = [
+  'goalvn', 'goaljvn',
   'dskey', 'dsmodel',
   'ankiurl', 'ankitest', 'ankiauto', 'ankiexe', 'ankideck', 'ankicreate', 'ankimodel', 'ankistyle',
   'map_word', 'map_reading', 'map_meaning', 'map_sentence', 'map_translation', 'map_shot', 'map_audio',
   'rechotkey', 'phrasesreview',
 ];
 export const isReadingId = (id: string): id is ReadingId => (READING_ROWS as string[]).includes(id);
-export const READING_CYCLE = new Set<ReadingId>(['dsmodel', 'ankideck', 'ankimodel', 'ankistyle', 'map_word', 'map_reading', 'map_meaning', 'map_sentence', 'map_translation', 'map_shot', 'map_audio', 'rechotkey']);
+export const READING_CYCLE = new Set<ReadingId>(['dsmodel', 'ankideck', 'ankimodel', 'ankistyle', 'map_word', 'map_reading', 'map_meaning', 'map_sentence', 'map_translation', 'map_shot', 'map_audio', 'rechotkey', 'goalvn', 'goaljvn']);
+
+/** Metas diarias que se pueden elegir con ‹ › (minutos). */
+const GOALS = [10, 15, 20, 30, 45, 60, 90, 120, 180];
+const goalLabel = (m: number) => (m % 60 === 0 ? `${m / 60} h` : m > 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`) + ' al día';
+/** Meta siguiente (dir > 0 o A) o anterior (dir < 0); da la vuelta en los extremos. */
+const nextGoal = (cur: number, dir: number) => (dir < 0
+  ? [...GOALS].reverse().find((g) => g < cur) ?? GOALS[GOALS.length - 1]
+  : GOALS.find((g) => g > cur) ?? GOALS[0]);
 
 const REC_PRESETS = ['F9', 'F8', 'F7', 'Ctrl+F9', 'Alt+F9', ''];
 
@@ -58,6 +67,10 @@ const secret = (k: string | undefined) => {
 
 export function readingRow(id: ReadingId): { l: string; v: string; d: string } {
   switch (id) {
+    case 'goalvn':
+      return { l: 'Meta diaria · novelas visuales', v: goalLabel(app.config.goalVn), d: 'Minutos al día de novelas visuales para cerrar el anillo azul de Inicio. Cada día que lo cierras suma a la racha. ‹ › la cambia.' };
+    case 'goaljvn':
+      return { l: 'Meta diaria · novelas japonesas', v: goalLabel(app.config.goalJvn), d: 'Minutos al día de novelas en japonés para cerrar el anillo rosa de Inicio. Cada día que lo cierras suma a la racha. ‹ › la cambia.' };
     case 'dskey':
       return { l: 'Clave de DeepSeek', v: secret(app.config.deepseekKey), d: 'Clave de API de platform.deepseek.com. Sirve para traducir y explicar frases en la página de lectura, SOLO cuando tú lo pides (traducción tapada, «Estoy perdido»). La clave se queda en la aplicación: la página de lectura nunca la recibe. Pulsa A para escribirla o pegarla con Ctrl+V.' };
     case 'dsmodel':
@@ -149,6 +162,12 @@ function cycle(list: string[], cur: string, dir: number, withNone = false): stri
 }
 
 export function readingAct(id: ReadingId, dir: number) {
+  if (id === 'goalvn' || id === 'goaljvn') {
+    const k = id === 'goalvn' ? 'goalVn' : 'goalJvn';
+    void patchConfig({ [k]: nextGoal(app.config[k], dir) });
+    blip(880);
+    return;
+  }
   if (id === 'dskey' && dir === 0) {
     openOsk({
       label: 'Clave de API de DeepSeek',

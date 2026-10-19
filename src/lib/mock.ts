@@ -247,7 +247,7 @@ export async function mockBackend(): Promise<Backend> {
     platforms: MOCK_PLATS.map((p) => ({ id: p.id, name: p.name, folder: p.folder, accent: p.accent, icon: p.icon })),
     captureHotkey: 'F12', captureCombo: 'back+rb', captureMouse: '', captureMagpie: 'scaled', captureSound: true, capturePeek: true, captureRumble: true, magpieExe: '', showHidden: false,
     sgdbKey: q.has('sgdb') ? 'mock' : '', sgdbAuto: true, deepseekKey: '', deepseekModel: 'deepseek-chat',
-    ankiUrl: 'http://127.0.0.1:8765', ankiDeck: 'Japonés::Novelas', ankiModel: '', ankiStyle: 'limpio', ankiAutostart: true, ankiExe: '', recordHotkey: 'F9', autoBackup: true, savesAuto: true, savesDir: '', ankiMap: { word: 'Word', reading: 'WordReading', meaning: 'PrimaryDefinition', sentence: 'Sentence', translation: 'SentenceTranslation', shot: 'Picture', audio: 'SentenceAudio' } };
+    ankiUrl: 'http://127.0.0.1:8765', ankiDeck: 'Japonés::Novelas', ankiModel: '', ankiStyle: 'limpio', ankiAutostart: true, ankiExe: '', recordHotkey: 'F9', autoBackup: true, savesAuto: true, savesDir: '', goalVn: 60, goalJvn: 30, ankiMap: { word: 'Word', reading: 'WordReading', meaning: 'PrimaryDefinition', sentence: 'Sentence', translation: 'SentenceTranslation', shot: 'Picture', audio: 'SentenceAudio' } };
   let cfg: Config = base;
   try { const s = store()?.getItem(LS); if (s) cfg = { ...base, ...JSON.parse(s) }; } catch {}
   if (q.has('empty')) cfg = { ...cfg, root: null };
