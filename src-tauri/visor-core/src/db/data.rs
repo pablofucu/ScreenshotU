@@ -111,6 +111,29 @@ pub fn manual_remove(c: &Connection, id: &str) -> Result<bool> {
     Ok(c.execute("DELETE FROM games WHERE id = ?1", [id])? > 0)
 }
 
+/// Cambia de categoria un juego anadido a mano (y su entrada de «oculto», si la tiene). `false` si no existe.
+pub fn manual_set_platform(c: &Connection, id: &str, platform: &str) -> Result<bool> {
+    atomic(c, || {
+        let n = c.execute("UPDATE games SET platform = ?2 WHERE id = ?1", [id, platform])?;
+        c.execute("UPDATE hidden SET platform = ?2 WHERE id = ?1", [id, platform])?;
+        Ok(n > 0)
+    })
+}
+
+/// Una carpeta de titulo cambia de ruta: las favoritas y las filas del catalogo de su interior la siguen.
+/// Las rutas son las portables (`PC/Juego`), sin barra final.
+pub fn dir_moved(c: &Connection, old: &str, new: &str) -> Result<()> {
+    atomic(c, || {
+        for sql in [
+            "UPDATE OR REPLACE favorites SET path = ?2 || substr(path, length(?1) + 1) WHERE substr(path, 1, length(?1) + 1) = ?1 || '/'",
+            "UPDATE OR REPLACE shots SET path = ?2 || substr(path, length(?1) + 1) WHERE substr(path, 1, length(?1) + 1) = ?1 || '/'",
+        ] {
+            c.execute(sql, [old, new])?;
+        }
+        Ok(())
+    })
+}
+
 /* ------------------------------------------------------------------ */
 /* Estadisticas y partidas                                              */
 /* ------------------------------------------------------------------ */

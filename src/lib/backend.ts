@@ -114,6 +114,7 @@ async function tauriBackend(): Promise<Backend> {
       void getCurrentWebview().onDragDropEvent((e) => { if (e.payload.type === 'drop') cb(e.payload.paths); });
     },
     removeGame: (id) => invoke('remove_game', { id }),
+    moveGamePlatform: (id, platform) => invoke('move_game_platform', { id, platform }),
     async pickFile(kind) {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const r = await open({

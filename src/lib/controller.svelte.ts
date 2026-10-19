@@ -291,6 +291,7 @@ export function menuItemsFor(t: Title): MenuItem[] {
   if (t.gameId && !t.members) items.push('saves');
   // Escalado con Magpie: solo juegos .exe (no emuladores).
   if (t.launchable && t.source === 'manual' && t.gameId) items.push('magpie');
+  if (t.gameId && t.removable && !t.members && app.config.platforms.length > 1) items.push('category');
   items.push(t.hidden ? 'unhide' : 'hide');
   if (t.removable) items.push('remove');
   return items;
@@ -360,6 +361,27 @@ export async function menuAct(item: MenuItem) {
   if (item === 'phrases') { closeOverlay(); void openPhrases(t.gameId, t.name); return; }
   if (item === 'saves' && t.gameId) { void openSaves(t.gameId, t.name); return; }
   if (item === 'addshots') { closeOverlay(); await addShotsTo(t); return; }
+  if (item === 'category') {
+    // El menú pasa a listar las demás categorías: pulsar A en una mueve el juego (y su carpeta de capturas).
+    app.menu.items = app.config.platforms.filter((p) => p.id !== app.platform?.id).map((p): MenuItem => `cat:${p.id}`);
+    app.menu.row = 0; app.menu.confirm = false;
+    blip(1320);
+    return;
+  }
+  if (item.startsWith('cat:')) {
+    const to = item.slice(4);
+    const name = app.config.platforms.find((p) => p.id === to)?.name ?? to;
+    closeOverlay();
+    try {
+      await backend.moveGamePlatform(t.gameId!, to);
+      toast(`«${t.name}» movido a ${name}`);
+      app.fk.titles = 'tit' + Math.max(0, app.t - 1);
+      app.t = Math.max(0, app.t - 1);
+      go('titles', 'back');
+      await softRefresh();
+    } catch (e) { toast(String(e), 3600); }
+    return;
+  }
   if (item === 'remove') {
     if (!app.menu.confirm) { app.menu.confirm = true; blip(520); return; }
     app.overlay = ''; app.overlayStack = [];

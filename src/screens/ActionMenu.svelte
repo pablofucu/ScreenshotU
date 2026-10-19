@@ -32,6 +32,8 @@
       case 'saves': return 'Partidas guardadas…';
       case 'magpie': return magpie.label;
       case 'status': return `Estado: ${STATUS_LABEL[t?.status ?? 'none']}`;
+      case 'category': return 'Cambiar de categoría…';
+      default: return `Mover a ${app.config.platforms.find((p) => p.id === it.slice(4))?.name ?? it.slice(4)}`;
     }
   };
   /** Fila de Magpie: modo elegido y, debajo, lo ultimo aplicado. */
@@ -40,7 +42,7 @@
     const m = t?.magpieMode ?? 'off';
     return { label: `Magpie: ${MAGPIE_LABEL[m]}`, detail: m !== 'off' ? (t?.magpieSummary ?? 'Se configura al lanzarlo') : '' };
   });
-  const icon = (it: MenuItem) => ({
+  const icon = (it: MenuItem) => it === 'category' || it.startsWith('cat:') ? ICON.move : ({
     folder: ICON.folder, reload: ICON.reload, remove: ICON.power, addshots: ICON.image, accent: ICON.palette, hide: ICON.eyeOff,
     unhide: ICON.eye, magpie: ICON.image, select: ICON.check, unselect: ICON.check, selall: ICON.checks, move: ICON.move, reveal: ICON.folder, editsaga: ICON.palette, delsaga: ICON.power, sgdb: ICON.search, phrases: ICON.jvn, status: ICON.checks, saves: ICON.import,
   })[it];

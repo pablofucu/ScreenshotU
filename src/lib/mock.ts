@@ -455,6 +455,13 @@ export async function mockBackend(): Promise<Backend> {
     async removeGame(id) {
       for (const p of lib.platforms) p.titles = p.titles.filter((t) => t.gameId !== id);
     },
+    async moveGamePlatform(id, platform) {
+      const to = lib.platforms.find((p) => p.id === platform);
+      for (const p of lib.platforms) {
+        const t = p.titles.find((x) => x.gameId === id);
+        if (t && to && p !== to) { p.titles = p.titles.filter((x) => x !== t); to.titles.push(t); }
+      }
+    },
     async pickFile(kind) {
       if (kind === 'image') return 'C:\\Users\\Mock\\Pictures\\arte.png';
       return kind === 'exe' ? 'C:\\Juegos\\Mi_Juego\\mi_juego.exe' : 'D:\\ROMs\\Super Mario Odyssey.nsp';

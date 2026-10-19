@@ -223,6 +223,8 @@ export interface Backend {
   /** Archivos soltados sobre la ventana. */
   onFilesDropped(cb: (paths: string[]) => void): void;
   removeGame(gameId: string): Promise<void>;
+  /** Pasa un juego añadido a mano a otra categoría (mueve su carpeta de capturas). */
+  moveGamePlatform(gameId: string, platform: string): Promise<void>;
   pickFile(kind: 'exe' | 'rom' | 'image'): Promise<string | null>;
   /** Diálogo de guardar: devuelve la ruta elegida o null. */
   pickSaveZip(defaultName: string): Promise<string | null>;

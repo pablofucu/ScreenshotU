@@ -495,6 +495,61 @@ fn remove_game(state: State<'_, AppState>, id: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Pasa un juego anadido a mano a otra categoria: mueve su carpeta de capturas (si existe) y cambia su
+/// plataforma. El id no cambia, asi que horas, estado, sagas y frases lo siguen solos.
+#[tauri::command]
+fn move_game_platform(state: State<'_, AppState>, id: String, platform: String) -> Result<(), String> {
+    let cfg = state.config.lock().unwrap().clone();
+    let new_plat = cfg.platforms.iter().find(|p| p.id == platform).ok_or("Categoria desconocida")?.clone();
+    let list = state.db.with(dbd::manual_load).map_err(|e| e.to_string())?;
+    let g = list.iter().find(|g| g.id == id).ok_or("Solo se pueden mover los juegos anadidos a mano")?;
+    if g.platform == platform {
+        return Err("Ya esta en esa categoria".into());
+    }
+    let old_plat = cfg.platforms.iter().find(|p| p.id == g.platform).ok_or("Categoria de origen desconocida")?;
+    let folder = g.folder.clone().filter(|f| !f.trim().is_empty()).unwrap_or_else(|| games::sanitize_folder_name(&g.name));
+
+    let mut moved: Option<(PathBuf, PathBuf)> = None;
+    if let Some(root) = cfg.root.as_deref() {
+        let root_p = Path::new(root);
+        let src = importer::title_dir(root_p, &old_plat.folder, &folder);
+        if src.is_dir() {
+            let dst = importer::title_dir(root_p, &new_plat.folder, &folder);
+            if dst.exists() {
+                return Err(format!("Ya hay una carpeta «{folder}» en {}", new_plat.name));
+            }
+            if !importer::is_within_root(root_p, &src) || !importer::is_within_root(root_p, &dst) {
+                return Err("La carpeta esta fuera de la biblioteca".into());
+            }
+            if let Some(parent) = dst.parent() {
+                std::fs::create_dir_all(parent).map_err(|e| format!("No se pudo crear la carpeta de la categoria: {e}"))?;
+            }
+            std::fs::rename(&src, &dst).map_err(|e| format!("No se pudo mover la carpeta (¿esta abierta en otro programa?): {e}"))?;
+            moved = Some((src, dst));
+        }
+    }
+    if let Err(e) = state.db.with(|c| dbd::manual_set_platform(c, &id, &platform)) {
+        if let Some((src, dst)) = &moved {
+            let _ = std::fs::rename(dst, src);
+        }
+        return Err(e.to_string());
+    }
+    for h in state.hidden.lock().unwrap().iter_mut().filter(|h| h.id == id) {
+        h.platform = platform.clone();
+    }
+    if let (Some((src, dst)), Some(root)) = (&moved, cfg.root.as_deref()) {
+        let root_p = Path::new(root);
+        let (old_k, new_k) = (relpath::stored(Some(root_p), &src.to_string_lossy()), relpath::stored(Some(root_p), &dst.to_string_lossy()));
+        state::log_db_err("catalogo", state.db.with(|c| dbd::dir_moved(c, &old_k, &new_k)));
+        for f in state.favorites.lock().unwrap().iter_mut() {
+            if let Some(rest) = relpath::to_rel(root_p, f).and_then(|r| r.strip_prefix(&format!("{old_k}/")).map(str::to_string)) {
+                *f = relpath::to_abs(root_p, &format!("{new_k}/{rest}"));
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Hace una captura ahora (igual que el atajo o el mando).
 #[tauri::command]
 fn capture_now(app: AppHandle) {
@@ -730,6 +785,7 @@ pub fn run() {
             move_shots,
             reveal_in_explorer,
             remove_game,
+            move_game_platform,
             capture_now,
             sgdb::sgdb_auto,
             sgdb::sgdb_search,
