@@ -29,9 +29,12 @@
   let w = $state(1280);
   let h = $state(720);
   // El escenario es siempre 1280x720 y se escala para caber (letterbox): igual en cualquier pantalla.
-  const sc = $derived(Math.min(w / 1280, h / 720));
-  const ox = $derived((w - 1280 * sc) / 2);
-  const oy = $derived((h - 720 * sc) / 2);
+  // Escala en múltiplos de 1/16 de píxel de dispositivo: 1280·k/16 y 720·k/16 son enteros, así el
+  // escenario cae exacto en píxeles físicos (evita bordes redondeados cortados y texto desplazado en 4K).
+  const dpr = $derived((w, h, window.devicePixelRatio || 1));
+  const sc = $derived(Math.max(1, Math.floor(Math.min(w / 1280, h / 720) * dpr * 16)) / 16 / dpr);
+  const ox = $derived(Math.round(((w - 1280 * sc) / 2) * dpr) / dpr);
+  const oy = $derived(Math.round(((h - 720 * sc) / 2) * dpr) / dpr);
   const bg = buildBackground();
   let error = $state('');
 

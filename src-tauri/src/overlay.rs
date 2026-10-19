@@ -38,8 +38,7 @@ pub fn show(state: &'static str, secs: u64) {
             },
         };
         place(&app, &win);
-        let _ = win.show();
-        to_top(&win);
+        show_quiet(&win);
         let _ = win.eval(format!("window.__rec&&window.__rec('{state}',{secs})"));
     });
     VISIBLE.store(true, Ordering::SeqCst);
@@ -83,7 +82,7 @@ pub fn hide(app: &AppHandle) {
     let app2 = app.clone();
     let _ = app.run_on_main_thread(move || {
         if let Some(w) = app2.get_webview_window(LABEL) {
-            let _ = w.hide();
+            hide_quiet(&w);
         }
     });
 }
@@ -142,6 +141,42 @@ pub(crate) fn to_top(w: &tauri::WebviewWindow) {
 
 #[cfg(not(windows))]
 pub(crate) fn to_top(_w: &tauri::WebviewWindow) {}
+
+/// Muestra la ventana encima de todo sin activarla. `WebviewWindow::show` usa `SW_SHOW`, que la activa: como el
+/// atajo de captura da permiso de primer plano, le quitaba el foco al juego y uno a pantalla completa (emuladores)
+/// salia y volvia a entrar en ella, con un segundo de pantalla en negro.
+/// Se oculta con [`hide_quiet`]: Tauri no se entera de este `show` y su `hide` no haria nada.
+#[cfg(windows)]
+pub(crate) fn show_quiet(w: &tauri::WebviewWindow) {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{SetWindowPos, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOOWNERZORDER, SWP_NOSIZE, SWP_SHOWWINDOW};
+    if let Ok(h) = w.hwnd() {
+        unsafe {
+            let _ = SetWindowPos(HWND(h.0), Some(HWND_TOPMOST), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
+        }
+    }
+}
+
+#[cfg(not(windows))]
+pub(crate) fn show_quiet(w: &tauri::WebviewWindow) {
+    let _ = w.show();
+}
+
+#[cfg(windows)]
+pub(crate) fn hide_quiet(w: &tauri::WebviewWindow) {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_HIDE};
+    if let Ok(h) = w.hwnd() {
+        unsafe {
+            let _ = ShowWindow(HWND(h.0), SW_HIDE);
+        }
+    }
+}
+
+#[cfg(not(windows))]
+pub(crate) fn hide_quiet(w: &tauri::WebviewWindow) {
+    let _ = w.hide();
+}
 
 /// Esquina superior derecha del monitor donde esta la ventana del juego.
 fn place(app: &AppHandle, win: &tauri::WebviewWindow) {

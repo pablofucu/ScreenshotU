@@ -45,8 +45,7 @@ pub fn show(app: &AppHandle, jpeg: &[u8], width: u32, height: u32, pid: Option<u
             },
         };
         place(&win, h, pid);
-        let _ = win.show();
-        overlay::to_top(&win);
+        overlay::show_quiet(&win);
     });
 
     // Se mantiene encima (al hacer clic en el juego Windows lo bajaria) y se oculta al acabar.
@@ -64,7 +63,7 @@ pub fn show(app: &AppHandle, jpeg: &[u8], width: u32, height: u32, pid: Option<u
             let _ = app.run_on_main_thread(move || {
                 if let Some(w) = a.get_webview_window(LABEL) {
                     if left == 0 {
-                        let _ = w.hide();
+                        overlay::hide_quiet(&w);
                     } else {
                         overlay::to_top(&w);
                     }
