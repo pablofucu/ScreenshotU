@@ -316,6 +316,7 @@ fn handle(ev: Event) {
             if let Some(info) = emit_now {
                 emit(&app, "th-thread", info);
             }
+            raw_log(&app, &key, &text);
             // Fuera del bloqueo: `on_text` puede consultar el estado (p. ej. el hilo elegido).
             crate::novel::on_text(&app, &key, &text);
         }
@@ -343,6 +344,23 @@ fn handle(ev: Event) {
             }
         }
     }
+}
+
+/// Registro en bruto de lo que sacan TODOS los hilos (`<config>/texthook-raw.log`), para diagnosticar texto que no
+/// llega al hilo elegido. Una linea por salida: `hora UTC \t clave \t texto` (saltos como `\n`). Se vacia al pasar de
+/// `RAW_LOG_MAX`.
+fn raw_log(app: &AppHandle, key: &str, text: &str) {
+    use std::io::Write;
+    const RAW_LOG_MAX: u64 = 4 * 1024 * 1024;
+    let Ok(dir) = app.path().app_config_dir() else { return };
+    let path = dir.join("texthook-raw.log");
+    let big = std::fs::metadata(&path).map(|m| m.len() > RAW_LOG_MAX).unwrap_or(false);
+    let file = std::fs::OpenOptions::new().create(true).write(true).append(!big).truncate(big).open(&path);
+    let Ok(mut f) = file else { return };
+    let ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
+    let day = ms % 86_400_000;
+    let at = format!("{:02}:{:02}:{:02}.{:03}", day / 3_600_000, day / 60_000 % 60, day / 1000 % 60, day % 1000);
+    let _ = writeln!(f, "{at}\t{key}\t{}", text.replace('\r', "\\r").replace('\n', "\\n"));
 }
 
 /// Busca el hilo por `tp` y, si no, por clave (misma instancia tras reconectar); si no existe lo crea.

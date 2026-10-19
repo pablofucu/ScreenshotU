@@ -280,6 +280,7 @@ const LIMPIO_FRONT: &str = r#"
   <div class="s jp">{{Frase}}</div>
   {{/EsFrase}}
   {{#EsFrase}}<div class="s big jp">{{Frase}}</div>{{/EsFrase}}
+  <div class="v-audio">{{Audio}}</div>
 </div>
 "#;
 
@@ -342,6 +343,7 @@ const ESCENA_FRONT: &str = r#"
   </div>
   {{^EsFrase}}<div class="ask">¿Qué significa <span class="jp">{{Expresion}}</span>?</div>{{/EsFrase}}
   {{#EsFrase}}<div class="ask">¿Qué dice?</div>{{/EsFrase}}
+  <div class="aud">{{Audio}}</div>
   <div class="lb"></div>
 </div>
 "#;
@@ -584,6 +586,7 @@ const CUADERNO_FRONT: &str = r#"
     </div>
     {{/EsFrase}}
     {{#EsFrase}}<div class="s big jp">{{Frase}}</div>{{/EsFrase}}
+    <div class="v-audio">{{Audio}}</div>
   </div>
 </div>
 "#;
@@ -644,6 +647,7 @@ const CONTEXTO_FRONT: &str = r#"
   <div class="s jp">{{Frase}}</div>
   {{^EsFrase}}<div class="target jp">{{Expresion}}</div>{{/EsFrase}}
   <div class="hints">{{#Captura}}{{hint:Captura}}{{/Captura}}</div>
+  <div class="v-audio">{{Audio}}</div>
 </div>
 "#;
 

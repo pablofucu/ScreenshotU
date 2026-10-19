@@ -40,7 +40,8 @@
     if (ready) return;
     ready = true;
     shotSel = shots.find((s) => s.lineId === line.id)?.lineId ?? shots[0]?.lineId ?? null;
-    audio = hasAudio ? 'rec' : 'none';
+    audio = hasAudio ? 'rec' : 'synth';
+    if (!hasAudio && !hasSynth) onsynth();
     deck = anki?.deck ?? '';
     model = anki?.model ?? '';
   });

@@ -180,7 +180,18 @@ fn send_inner(app: &AppHandle, req: &Value, line_id: u64) -> Result<i64, String>
     let shot_file = shot.clone().or(phrase.shot.clone().filter(|_| shot_line.is_some()));
     let audio_file = match req.get("audio").and_then(Value::as_str).unwrap_or("none") {
         "rec" => Some(phrase.audio.clone().ok_or("Esta frase no tiene audio grabado.")?),
-        "synth" => Some(phrase.synth.clone().ok_or("La voz sintética aún no está lista.")?),
+        "synth" => Some(match phrase.synth.clone().filter(|f| media.join(f).is_file()) {
+            Some(f) => f,
+            None => {
+                let wav = crate::voice::synthesize(&phrase.text)?;
+                let _ = std::fs::create_dir_all(&media);
+                let name = format!("synth-{}.wav", phrase.id);
+                std::fs::write(media.join(&name), wav).map_err(|e| format!("No se pudo guardar la voz sintética: {e}"))?;
+                phrase.synth = Some(name.clone());
+                let _ = glossary::update_line(app, line_id, |p| p.synth = Some(name.clone()));
+                name
+            }
+        }),
         _ => None,
     };
     let abs = |f: &str| media.join(f).to_string_lossy().into_owned();
@@ -368,7 +379,46 @@ pub fn ensure_running(app: &AppHandle) {
         let s = state(&app);
         crate::reader::server::set_extra("anki", s.clone());
         crate::reader::server::send(json!({ "type": "anki", "state": s }));
+        if s["ok"] == true {
+            if let Err(e) = repair_audio(&app, &c) {
+                let _ = app.emit("th-log", format!("Anki: no se pudo reparar el audio: {e}"));
+            }
+        }
     });
+}
+
+/// Repara lo que dejo sin sonido a tarjetas ya enviadas: pone `{{Audio}}` en el anverso del tipo de nota propio si falta
+/// y adjunta el audio guardado a las notas del glosario que se enviaron con el campo Audio vacio.
+fn repair_audio(app: &AppHandle, c: &visor_core::Config) -> Result<(), String> {
+    let url = &c.anki_url;
+    if !strings(&call(url, "modelNames", json!({}))?).iter().any(|m| m == OWN_MODEL) {
+        return Ok(());
+    }
+    let tpl = call(url, "modelTemplates", json!({ "modelName": OWN_MODEL }))?;
+    let front = tpl["Tarjeta"]["Front"].as_str().unwrap_or("");
+    if !front.is_empty() && !front.contains("{{Audio}}") {
+        apply_style(url, &c.anki_style)?;
+    }
+    let media = glossary::media_dir(app);
+    let phrases: Vec<_> = glossary::list(app, None, &Default::default()).into_iter().filter(|p| p.anki_note_id.is_some()).collect();
+    if phrases.is_empty() {
+        return Ok(());
+    }
+    let ids: Vec<i64> = phrases.iter().filter_map(|p| p.anki_note_id).collect();
+    let infos = call(url, "notesInfo", json!({ "notes": ids }))?;
+    for info in infos.as_array().cloned().unwrap_or_default() {
+        let (Some(nid), Some(audio)) = (info["noteId"].as_i64(), info["fields"]["Audio"]["value"].as_str()) else { continue };
+        if !audio.trim().is_empty() || info["modelName"] != OWN_MODEL {
+            continue;
+        }
+        let Some(p) = phrases.iter().find(|p| p.anki_note_id == Some(nid)) else { continue };
+        let Some(file) = [&p.audio, &p.synth].into_iter().flatten().find(|f| media.join(f).is_file()) else { continue };
+        let name = format!("visor_{}.wav", p.id);
+        let path = media.join(file).to_string_lossy().into_owned();
+        call(url, "storeMediaFile", json!({ "filename": name, "path": path }))?;
+        call(url, "updateNoteFields", json!({ "note": { "id": nid, "fields": { "Audio": format!("[sound:{name}]") } } }))?;
+    }
+    Ok(())
 }
 
 /// Campos de un tipo de nota.
