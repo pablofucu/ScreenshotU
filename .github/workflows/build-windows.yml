@@ -3,9 +3,17 @@ name: Compilar para Windows
 # Genera el instalador (NSIS .exe y MSI) en un runner de Windows y lo deja como artefacto,
 # para poder compilar desde GitHub sin tener Rust ni Node instalados en local.
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Etiqueta de la release a crear (p. ej. v1.0.0); vacío = solo compilar'
+        required: false
+        default: ''
   push:
     tags: ['v*']
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -43,7 +51,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           # Con una etiqueta vX.Y.Z crea la release en GitHub con los instaladores y latest.json (lo que lee el actualizador).
-          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          tagName: ${{ inputs.tag || (startsWith(github.ref, 'refs/tags/') && github.ref_name || '') }}
           releaseName: 'Visor de capturas __VERSION__'
           releaseBody: 'Novedades en CHANGELOG.md.'
           releaseDraft: false
