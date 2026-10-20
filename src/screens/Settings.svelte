@@ -8,16 +8,19 @@
   import { sg, sgdbKeyLabel } from '../lib/sgdb.svelte';
   import { ludusaviLabel, sv } from '../lib/saves.svelte';
   import { READING_CYCLE, isReadingId, readingRow } from '../lib/reading.svelte';
+  import { updateRow } from '../lib/updater.svelte';
+  import { REMOTE_CYCLE, isRemoteId, remoteRow } from '../lib/remote.svelte';
   import Learn from '../components/Learn.svelte';
   import Hints from '../components/Hints.svelte';
 
   const yn = (b: boolean) => (b ? 'Sí' : 'No');
 
   // Filas que cambian de valor con izquierda/derecha (se marcan con ‹ › al enfocarlas).
-  const CYCLE = new Set<SettingId>(['showhidden', 'view', 'shotsview', 'accent', 'sound', 'fullscreen', 'monitor', 'hotkey', 'combo', 'mouse', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'savesdir']);
+  const CYCLE = new Set<SettingId>(['showhidden', 'view', 'shotsview', 'accent', 'sound', 'fullscreen', 'monitor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'savesdir']);
 
   function row(id: SettingId): { l: string; v: string; d: string } {
     if (isReadingId(id)) return readingRow(id);
+    if (isRemoteId(id)) return remoteRow(id);
     switch (id) {
       case 'root': return { l: 'Carpeta de la biblioteca', v: app.config.root ?? 'Sin elegir', d: 'Carpeta raíz con una subcarpeta por plataforma (PC, Switch, Novelas visuales) y dentro una por juego. Pulsa A para elegir otra.' };
       case 'rescan': return { l: 'Volver a escanear la biblioteca', v: '', d: 'Vuelve a leer todas las carpetas: capturas nuevas, juegos añadidos a mano y grafismos cambiados.' };
@@ -30,6 +33,12 @@
       case 'sound': return { l: 'Sonido de navegación', v: yn(app.config.sound), d: 'Pequeños sonidos al moverte por los menús y al confirmar.' };
       case 'fullscreen': return { l: 'Pantalla completa (F11)', v: yn(app.fullscreen), d: 'La interfaz se diseña a 1280×720 y se escala para llenar la pantalla.' };
       case 'monitor': return { l: 'Monitor del visor', v: app.monitorLabel || '…', d: 'Pulsa A o ‹ › para llevar el visor a otro monitor; se abre ahí la próxima vez. Los juegos se lanzan en el monitor donde esté el visor: si no es el principal de Windows, pasa a serlo mientras dura la partida (también para el escalado de Magpie) y al salir se restaura.' };
+      case 'audioout': {
+        const cur = app.audioOutputs.find((o) => o.default);
+        return { l: 'Salida de audio', v: cur ? cur.name : app.audioOutputs.length ? 'Sin salida' : 'No disponible', d: 'Dispositivo de reproducción de Windows (altavoces, auriculares, monitor…). Pulsa A o ‹ › para pasar al siguiente: es el mismo cambio que en Configuración › Sonido, así que también afecta a los demás programas. En la barra superior hay un icono para elegir uno concreto.' };
+      }
+      case 'audiocombo': return { l: 'Cambiar audio con el mando', v: comboLabel(app.config.audioCombo), d: 'Pulsa A y luego el botón o la combinación (Xbox/XInput). Pasa a la siguiente salida de audio aunque estés en el juego; el mando vibra tantos pulsos como la posición de la salida elegida (1 la primera, 2 la segunda…) y sale un cartel con su nombre. ‹ › recorre combinaciones de serie o lo desactiva. Con el visor delante no actúa.' };
+      case 'audiohotkey': return { l: 'Cambiar audio con el teclado', v: hotkeyLabel(app.config.audioHotkey), d: 'Atajo global (funciona con el juego delante) que pasa a la siguiente salida de audio. Pulsa A y luego la tecla o combinación (p. ej. Ctrl+Alt+A). ‹ › recorre algunas de serie. Si otro programa ya la usa, te avisa y se queda la anterior.' };
       case 'combo': return { l: 'Capturar con el mando', v: comboLabel(app.config.captureCombo), d: 'Pulsa A y luego el botón o la combinación que quieras en el mando (Xbox/XInput, incluido el botón Xbox y los gatillos). ‹ › recorre combinaciones de serie o lo desactiva. Con el visor delante no captura.' };
       case 'mouse': return { l: 'Capturar con el ratón', v: mouseLabel(app.config.captureMouse), d: 'Pulsa A (o haz clic) y luego el botón central o uno lateral del ratón. El juego sigue recibiendo el clic. ‹ › lo cambia o lo desactiva.' };
       case 'hotkey': return { l: 'Capturar con el teclado', v: hotkeyLabel(app.config.captureHotkey), d: 'Pulsa A y luego la tecla o combinación (p. ej. Ctrl+F12). Funciona aunque el visor esté minimizado; si otro programa ya la usa, te avisa y se queda la anterior.' };
@@ -50,6 +59,7 @@
       case 'savesauto': return { l: 'Copiar partidas al cerrar el juego', v: yn(app.config.savesAuto), d: 'Al cerrar un juego lanzado desde el visor, guarda en un .zip sus partidas si cambiaron desde la última copia. Se conservan las 10 últimas automáticas de cada juego; las manuales no se borran. Las ubicaciones de cada juego se revisan en su ficha (Y › Partidas guardadas).' };
       case 'savesdir': return { l: 'Carpeta de las copias', v: app.config.savesDir || 'Predeterminada', d: `Pulsa A para elegir otra carpeta (mejor en otro disco); ‹ › vuelve a la predeterminada${sv.status ? ` (${sv.status.defaultDir})` : ''}. Dentro hay una subcarpeta por juego.` };
       case 'ludusavi': return { l: 'Base de partidas de Ludusavi', v: ludusaviLabel(), d: 'Base libre de PCGamingWiki y Ludusavi con dónde guarda sus partidas cada juego. Pulsa A para descargarla o actualizarla (unos 18 MB). Para novelas visuales y juegos que no aparecen se usan además reglas por motor (Ren’Py, RPG Maker, KiriKiri, Unity, Unreal…).' };
+      case 'update': return updateRow();
       case 'quit': return { l: 'Salir de la aplicación', v: '', d: 'Cierra el visor. Las capturas con el atajo dejan de funcionar hasta que lo vuelvas a abrir.' };
       case 'sgdbkey': return { l: 'Clave de API', v: sgdbKeyLabel(), d: 'Clave gratuita de steamgriddb.com (inicia sesión → Preferencias → API). Pulsa A para escribirla o pegarla con Ctrl+V.' };
       case 'sgdbauto': return { l: 'Descargar grafismos que falten', v: yn(app.config.sgdbAuto), d: 'Al escanear, busca cada juego por su nombre y descarga la portada, el hero y el logo que falten. Se guardan en la caché de la aplicación: la carpeta del juego no se toca y sus grafismos propios siempre ganan.' };
@@ -72,7 +82,7 @@
     else if (i >= o + VIS) o = i - VIS + 1;
     if (o !== off) off = o;
   });
-  const showArrows = (id: SettingId) => CYCLE.has(id) || READING_CYCLE.has(id as never);
+  const showArrows = (id: SettingId) => CYCLE.has(id) || READING_CYCLE.has(id as never) || REMOTE_CYCLE.has(id as never);
   function wheel(e: WheelEvent) {
     if (rows.length <= VIS) return;
     e.preventDefault();

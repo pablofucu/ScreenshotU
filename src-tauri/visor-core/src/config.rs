@@ -96,6 +96,10 @@ pub struct Config {
     pub anki_exe: String,
     /// Atajo global que empieza/para la grabacion del audio del juego ("" = desactivado).
     pub record_hotkey: String,
+    /// Combinacion de mando que cambia la salida de audio de Windows (como `capture_combo`), "off" = desactivada.
+    pub audio_combo: String,
+    /// Atajo global que cambia a la siguiente salida de audio ("" = desactivado).
+    pub audio_hotkey: String,
     /// Copia automatica de `visor.db` al arrancar si la ultima tiene 7 dias o mas (se conservan 5).
     pub auto_backup: bool,
     /// Copia las partidas guardadas de un juego al cerrarlo (si cambiaron desde la ultima copia).
@@ -105,6 +109,11 @@ pub struct Config {
     /// Meta diaria de lectura (minutos) de las novelas visuales y de las japonesas (anillos de Inicio).
     pub goal_vn: u32,
     pub goal_jvn: u32,
+    /// Servidor para la app movil (ver `remote` y `docs/api-movil.md`): activado, puerto y codigo de emparejamiento
+    /// (se genera la primera vez que se activa).
+    pub remote_enabled: bool,
+    pub remote_port: u16,
+    pub remote_token: String,
 }
 
 pub fn default_platforms() -> Vec<PlatformCfg> {
@@ -168,11 +177,16 @@ impl Default for Config {
             anki_autostart: true,
             anki_exe: String::new(),
             record_hotkey: "F9".into(),
+            audio_combo: "start+rb".into(),
+            audio_hotkey: String::new(),
             auto_backup: true,
             saves_auto: true,
             saves_dir: String::new(),
             goal_vn: 60,
             goal_jvn: 30,
+            remote_enabled: false,
+            remote_port: crate::remote::DEFAULT_PORT,
+            remote_token: String::new(),
         }
     }
 }
@@ -180,10 +194,15 @@ impl Default for Config {
 impl Config {
     /// Carga la configuracion; si no existe o esta rota devuelve la de por defecto.
     pub fn load(path: &Path) -> Config {
-        let mut c: Config = fs::read_to_string(path)
-            .ok()
-            .and_then(|s| serde_json::from_str(&s).ok())
-            .unwrap_or_default();
+        let mut c: Config = match fs::read_to_string(path) {
+            Ok(s) => serde_json::from_str(&s).unwrap_or_else(|e| {
+                // Ilegible: se aparta (en vez de pisarla con la de por defecto al guardar) y se sigue con los valores por defecto.
+                eprintln!("config.json ilegible ({e}); se guarda como config.json.corrupta");
+                let _ = fs::rename(path, path.with_extension("json.corrupta"));
+                Config::default()
+            }),
+            Err(_) => Config::default(),
+        };
         if c.platforms.is_empty() {
             c.platforms = default_platforms();
         }
@@ -194,11 +213,16 @@ impl Config {
         c.accent_fixed = c.accent_fixed.min(6);
         c.goal_vn = c.goal_vn.clamp(5, 600);
         c.goal_jvn = c.goal_jvn.clamp(5, 600);
+        c.remote_port = c.remote_port.max(1024);
+        c.remote_token = c.remote_token.trim().to_string();
         if !["art", "rainbow", "fixed"].contains(&c.accent_mode.as_str()) {
             c.accent_mode = "art".into();
         }
         if c.capture_combo != "off" && crate::capture::combo_mask(&c.capture_combo) == 0 {
             c.capture_combo = "back+rb".into();
+        }
+        if c.audio_combo != "off" && crate::capture::combo_mask(&c.audio_combo) == 0 {
+            c.audio_combo = "start+rb".into();
         }
         if !c.capture_mouse.is_empty() && crate::capture::mouse_button_index(&c.capture_mouse) == 0 {
             c.capture_mouse.clear();
@@ -262,6 +286,17 @@ mod tests {
         assert_eq!(c.platforms.len(), 4);
         assert_eq!(c.titles_view, "grid");
         assert!(c.root.is_none());
+    }
+
+    #[test]
+    fn broken_file_is_set_aside_not_overwritten() {
+        let d = tempfile::tempdir().unwrap();
+        let p = d.path().join("config.json");
+        fs::write(&p, r#"{"root":"D:\Caps","sound":tr"#).unwrap();
+        let c = Config::load(&p);
+        assert!(c.root.is_none());
+        assert!(!p.exists());
+        assert!(d.path().join("config.json.corrupta").exists());
     }
 
     #[test]
@@ -346,6 +381,17 @@ mod tests {
         assert_eq!(Config::load(&p).record_hotkey, "F9");
         fs::write(&p, r#"{"recordHotkey":""}"#).unwrap();
         assert_eq!(Config::load(&p).record_hotkey, "");
+    }
+
+    #[test]
+    fn remote_defaults_and_port_clamp() {
+        let d = tempfile::tempdir().unwrap();
+        let p = d.path().join("c.json");
+        let c = Config::load(&p);
+        assert_eq!((c.remote_enabled, c.remote_port, c.remote_token.as_str()), (false, 47811, ""));
+        fs::write(&p, r#"{"remoteEnabled":true,"remotePort":80,"remoteToken":" ABCD-EFGH "}"#).unwrap();
+        let c = Config::load(&p);
+        assert_eq!((c.remote_enabled, c.remote_port, c.remote_token.as_str()), (true, 1024, "ABCD-EFGH"));
     }
 
     #[test]

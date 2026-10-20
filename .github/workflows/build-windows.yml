@@ -38,6 +38,16 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Clave que firma las actualizaciones (secretos del repo; ver docs/publicar.md).
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          # Con una etiqueta vX.Y.Z crea la release en GitHub con los instaladores y latest.json (lo que lee el actualizador).
+          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          releaseName: 'Visor de capturas __VERSION__'
+          releaseBody: 'Novedades en CHANGELOG.md.'
+          releaseDraft: false
+          includeUpdaterJson: true
 
       - name: Subir instaladores
         uses: actions/upload-artifact@v4

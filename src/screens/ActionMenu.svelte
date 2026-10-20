@@ -45,7 +45,7 @@
   const icon = (it: MenuItem) => it === 'category' || it.startsWith('cat:') ? ICON.move : ({
     folder: ICON.folder, reload: ICON.reload, remove: ICON.power, addshots: ICON.image, accent: ICON.palette, hide: ICON.eyeOff,
     unhide: ICON.eye, magpie: ICON.image, select: ICON.check, unselect: ICON.check, selall: ICON.checks, move: ICON.move, reveal: ICON.folder, editsaga: ICON.palette, delsaga: ICON.power, sgdb: ICON.search, phrases: ICON.jvn, status: ICON.checks, saves: ICON.import,
-  })[it];
+  } as Record<string, string>)[it];
   const sub = $derived(
     shots ? (app.selMode ? `${sel} ${sel === 1 ? 'seleccionada' : 'seleccionadas'}` : (app.cur.name || '')) : (t?.name ?? ''),
   );

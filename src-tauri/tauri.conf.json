@@ -35,6 +35,7 @@
   "bundle": {
     "active": true,
     "targets": ["nsis", "msi"],
+    "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -44,6 +45,13 @@
     ],
     "windows": {
       "nsis": { "languages": ["Spanish", "English"] }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERBNDlEMUEzNkY3ODEwOTIKUldTU0VIaHZvOUZKMnNLZ2hBSUQwNktEMTZzVlhHeTRmdnRpVzErbWVqMGpsZk84NzZZVVBzL04K",
+      "endpoints": ["https://github.com/pablofucu/ScreenshotU/releases/latest/download/latest.json"],
+      "windows": { "installMode": "passive" }
     }
   }
 }

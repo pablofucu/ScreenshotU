@@ -14,6 +14,7 @@ pub mod jp;
 pub mod magpie;
 pub mod palette;
 pub mod relpath;
+pub mod remote;
 pub mod sagas;
 pub mod saves;
 pub mod scan;

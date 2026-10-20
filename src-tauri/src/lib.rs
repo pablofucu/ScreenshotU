@@ -9,11 +9,13 @@ mod launcher;
 mod magpie;
 mod mouse;
 mod novel;
+mod outputs;
 mod overlay;
 mod pad;
 mod peek;
 mod platform;
 mod reader;
+mod remote;
 mod saves;
 mod sgdb;
 mod shots;
@@ -46,22 +48,26 @@ fn allow_root(app: &AppHandle, root: &str) {
     let _ = app.asset_protocol_scope().allow_directory(Path::new(root), true);
 }
 
-/// Registra (o quita) los atajos globales: captura de pantalla y grabacion del audio del juego.
-/// El error del atajo de captura se devuelve; el de grabacion tambien, pero la captura queda registrada.
-fn apply_hotkeys(app: &AppHandle, capture: &str, record: &str) -> Result<(), String> {
+/// Registra (o quita) los atajos globales: captura de pantalla, grabacion del audio del juego y cambio de salida de
+/// audio. Si uno falla se sigue con los demas y se devuelven todos los errores. Un atajo repetido solo se registra una vez.
+fn apply_hotkeys(app: &AppHandle, capture: &str, record: &str, audio: &str) -> Result<(), String> {
     use tauri_plugin_global_shortcut::Shortcut;
     let gs = app.global_shortcut();
     let _ = gs.unregister_all();
     let mut errs = Vec::new();
-    if !capture.trim().is_empty() {
-        if let Err(e) = gs.register(capture) {
-            errs.push(format!("No se pudo registrar el atajo {capture}: {e}"));
+    let mut done: Vec<Shortcut> = Vec::new();
+    for (key, what) in [(capture, "captura"), (record, "grabación"), (audio, "cambio de audio")] {
+        if key.trim().is_empty() {
+            continue;
         }
-    }
-    let same = matches!((capture.parse::<Shortcut>(), record.parse::<Shortcut>()), (Ok(a), Ok(b)) if a == b);
-    if !record.trim().is_empty() && !same {
-        if let Err(e) = gs.register(record) {
-            errs.push(format!("No se pudo registrar el atajo de grabación {record}: {e}"));
+        if let Ok(sc) = key.parse::<Shortcut>() {
+            if done.contains(&sc) {
+                continue;
+            }
+            done.push(sc);
+        }
+        if let Err(e) = gs.register(key) {
+            errs.push(format!("No se pudo registrar el atajo de {what} {key}: {e}"));
         }
     }
     if errs.is_empty() {
@@ -69,6 +75,12 @@ fn apply_hotkeys(app: &AppHandle, capture: &str, record: &str) -> Result<(), Str
     } else {
         Err(errs.join(" "))
     }
+}
+
+/// Dos atajos distintos no pueden ser el mismo (el segundo no se registraria).
+fn hotkey_clash(a: &str, b: &str) -> bool {
+    use tauri_plugin_global_shortcut::Shortcut;
+    !a.trim().is_empty() && matches!((a.parse::<Shortcut>(), b.parse::<Shortcut>()), (Ok(x), Ok(y)) if x == y)
 }
 
 #[tauri::command]
@@ -82,26 +94,40 @@ fn save_config(app: AppHandle, state: State<'_, AppState>, config: Config) -> Re
         allow_root(&app, r);
     }
     let mut config = config;
-    let (old_hotkey, old_record) = {
+    let (old_hotkey, old_record, old_audio) = {
         let c = state.config.lock().unwrap();
-        (c.capture_hotkey.clone(), c.record_hotkey.clone())
+        (c.capture_hotkey.clone(), c.record_hotkey.clone(), c.audio_hotkey.clone())
     };
     // Si el atajo nuevo no se puede registrar (otro programa lo usa), se mantiene el anterior y se avisa.
     let mut hotkey_err = None;
-    if old_hotkey != config.capture_hotkey || old_record != config.record_hotkey {
-        use tauri_plugin_global_shortcut::Shortcut;
-        let clash = !config.capture_hotkey.trim().is_empty()
-            && matches!((config.capture_hotkey.parse::<Shortcut>(), config.record_hotkey.parse::<Shortcut>()), (Ok(a), Ok(b)) if a == b);
-        let r = if clash { Err("El atajo de grabación no puede ser el mismo que el de captura.".to_string()) } else { apply_hotkeys(&app, &config.capture_hotkey, &config.record_hotkey) };
+    if old_hotkey != config.capture_hotkey || old_record != config.record_hotkey || old_audio != config.audio_hotkey {
+        let clash = if hotkey_clash(&config.capture_hotkey, &config.record_hotkey) {
+            Some("El atajo de grabación no puede ser el mismo que el de captura.")
+        } else if hotkey_clash(&config.capture_hotkey, &config.audio_hotkey) || hotkey_clash(&config.record_hotkey, &config.audio_hotkey) {
+            Some("El atajo de audio no puede repetir el de captura ni el de grabación.")
+        } else {
+            None
+        };
+        let r = match clash {
+            Some(m) => Err(m.to_string()),
+            None => apply_hotkeys(&app, &config.capture_hotkey, &config.record_hotkey, &config.audio_hotkey),
+        };
         if let Err(e) = r {
-            let _ = apply_hotkeys(&app, &old_hotkey, &old_record);
+            let _ = apply_hotkeys(&app, &old_hotkey, &old_record, &old_audio);
             config.capture_hotkey = old_hotkey;
             config.record_hotkey = old_record;
+            config.audio_hotkey = old_audio;
             hotkey_err = Some(e);
         }
     }
+    // El codigo del movil lo gestiona el nucleo (`remote_new_code`): se ignora el que mande la interfaz.
+    config.remote_token = state.config.lock().unwrap().remote_token.clone();
+    if config.remote_enabled && config.remote_token.is_empty() {
+        config.remote_token = visor_core::remote::new_code();
+    }
     config.save(&state.config_file()).map_err(|e| e.to_string())?;
     state.combo_mask.store(combo_mask(&config.capture_combo), Ordering::Relaxed);
+    state.audio_mask.store(combo_mask(&config.audio_combo), Ordering::Relaxed);
     state.mouse_button.store(mouse_button_index(&config.capture_mouse), Ordering::Relaxed);
     let root_changed = state.config.lock().unwrap().root != config.root;
     let new_root = config.root.clone();
@@ -109,53 +135,56 @@ fn save_config(app: AppHandle, state: State<'_, AppState>, config: Config) -> Re
     if root_changed {
         *state.favorites.lock().unwrap() = load_favorites(&state.db, new_root.as_deref().map(Path::new));
     }
+    remote::apply(&app);
     hotkey_err.map_or(Ok(()), Err)
+}
+
+/// Detecta juegos y escanea toda la biblioteca (tambien lo oculto, marcado `hidden`), sincroniza el catalogo y
+/// guarda la cache de acentos. Bloquea: llamarla fuera del hilo de la interfaz. La usan `scan_library` y el
+/// servidor del movil, para que los dos vean lo mismo. Devuelve la biblioteca, los juegos detectados y la raiz.
+pub(crate) fn scan_full(state: &AppState) -> (Library, Vec<games::Game>, Config) {
+    let cfg = state.config.lock().unwrap().clone();
+    let manual = state::log_db("juegos", state.db.with(dbd::manual_load));
+    let stats = state.stats.lock().unwrap().clone();
+    let hidden = state.hidden.lock().unwrap().clone();
+    let prefs = state.prefs.lock().unwrap().clone();
+    let sgdb_dir = state.sgdb_dir();
+    let found = games::all_games(&manual);
+    let opts = ScanOpts {
+        hidden: &hidden,
+        // Se escanea todo (tambien lo oculto) para que el catalogo este completo; se filtra despues.
+        show_hidden: true,
+        prefs: Some(&prefs),
+        palettes: Some(&state.palettes),
+        sgdb_dir: Some(&sgdb_dir),
+    };
+    let root = cfg.root.as_deref().map(Path::new);
+    let lib = scan::scan_library_ex(root, &cfg.platforms, &found, &stats, &opts);
+    state.palettes.save(&state.palettes_file());
+    if let Some(r) = root {
+        let now = chrono::Local::now().timestamp_millis();
+        state::log_db_err("catalogo", state.db.with(|c| catalog::sync(c, r, &lib, now)).map(|_| ()));
+    }
+    (lib, found, cfg)
 }
 
 /// Detecta juegos y escanea la biblioteca en un hilo aparte para no bloquear la interfaz.
 #[tauri::command]
 async fn scan_library(app: AppHandle, state: State<'_, AppState>) -> Result<Library, String> {
-    let cfg = state.config.lock().unwrap().clone();
-    if let Some(r) = &cfg.root {
+    if let Some(r) = &state.config.lock().unwrap().root {
         allow_root(&app, r);
     }
-    let manual = state::log_db("juegos", state.db.with(dbd::manual_load));
-    let stats = state.stats.lock().unwrap().clone();
-    let hidden = state.hidden.lock().unwrap().clone();
-    let prefs = state.prefs.lock().unwrap().clone();
-    let palettes = state.palettes.clone();
-    let palettes_file = state.palettes_file();
-    let sgdb_dir = state.sgdb_dir();
-    let db = state.db.clone();
-    let root_dir = cfg.root.clone();
-    let (lib, found) = tauri::async_runtime::spawn_blocking(move || {
-        let found = games::all_games(&manual);
-        let opts = ScanOpts {
-            hidden: &hidden,
-            // Se escanea todo (tambien lo oculto) para que el catalogo este completo; se filtra despues.
-            show_hidden: true,
-            prefs: Some(&prefs),
-            palettes: Some(&palettes),
-            sgdb_dir: Some(&sgdb_dir),
-        };
-        let root = cfg.root.as_deref().map(Path::new);
-        let mut lib = scan::scan_library_ex(root, &cfg.platforms, &found, &stats, &opts);
-        palettes.save(&palettes_file);
-        if let Some(r) = root {
-            let now = chrono::Local::now().timestamp_millis();
-            state::log_db_err("catalogo", db.with(|c| catalog::sync(c, r, &lib, now)).map(|_| ()));
+    let app2 = app.clone();
+    let (mut lib, found, cfg) = tauri::async_runtime::spawn_blocking(move || scan_full(&app2.state::<AppState>()))
+        .await
+        .map_err(|e| e.to_string())?;
+    if !cfg.show_hidden {
+        for p in lib.platforms.iter_mut() {
+            p.titles.retain(|t| !t.hidden);
         }
-        if !cfg.show_hidden {
-            for p in lib.platforms.iter_mut() {
-                p.titles.retain(|t| !t.hidden);
-            }
-        }
-        (lib, found)
-    })
-    .await
-    .map_err(|e| e.to_string())?;
+    }
     *state.games.lock().unwrap() = found;
-    if let Some(r) = root_dir {
+    if let Some(r) = cfg.root {
         start_hasher(state.db.clone(), PathBuf::from(r), state.hashing.clone());
     }
     Ok(lib)
@@ -556,6 +585,18 @@ fn capture_now(app: AppHandle) {
     snap::trigger(&app);
 }
 
+/// Salidas de audio de Windows (reproduccion) activas, con la predeterminada marcada.
+#[tauri::command]
+async fn audio_outputs() -> Result<Vec<outputs::AudioOutput>, String> {
+    tauri::async_runtime::spawn_blocking(outputs::list).await.map_err(|e| e.to_string())?
+}
+
+/// Pone una salida como predeterminada de Windows. Devuelve la lista actualizada.
+#[tauri::command]
+async fn set_audio_output(app: AppHandle, id: String) -> Result<Vec<outputs::AudioOutput>, String> {
+    tauri::async_runtime::spawn_blocking(move || outputs::select(&app, &id)).await.map_err(|e| e.to_string())?
+}
+
 /// Ajustes espera una combinacion del mando (`on`) o deja de esperarla. El hilo del mando emite `learn-pad`.
 #[tauri::command]
 fn learn_pad(state: State<'_, AppState>, on: bool) {
@@ -570,11 +611,11 @@ fn hotkey_suspend(app: AppHandle, state: State<'_, AppState>, suspend: bool) -> 
         let _ = app.global_shortcut().unregister_all();
         Ok(())
     } else {
-        let (key, rec) = {
+        let (key, rec, audio) = {
             let c = state.config.lock().unwrap();
-            (c.capture_hotkey.clone(), c.record_hotkey.clone())
+            (c.capture_hotkey.clone(), c.record_hotkey.clone(), c.audio_hotkey.clone())
         };
-        apply_hotkeys(&app, &key, &rec)
+        apply_hotkeys(&app, &key, &rec, &audio)
     }
 }
 
@@ -631,15 +672,24 @@ pub fn helper_main() -> Option<i32> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_notification::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, shortcut, event| {
                     if event.state() == ShortcutState::Pressed {
-                        // El atajo de grabacion empieza/para el audio del juego; cualquier otro captura la pantalla.
-                        let rec = app.state::<AppState>().config.lock().unwrap().record_hotkey.clone();
-                        if rec.parse::<tauri_plugin_global_shortcut::Shortcut>().map(|r| &r == shortcut).unwrap_or(false) {
+                        // El atajo de grabacion empieza/para el audio del juego, el de audio cambia de salida;
+                        // cualquier otro captura la pantalla.
+                        let (rec, out) = {
+                            let st = app.state::<AppState>();
+                            let c = st.config.lock().unwrap();
+                            (c.record_hotkey.clone(), c.audio_hotkey.clone())
+                        };
+                        let is = |k: &str| k.parse::<tauri_plugin_global_shortcut::Shortcut>().map(|r| &r == shortcut).unwrap_or(false);
+                        if is(&rec) {
                             audio::toggle(app, None);
+                        } else if is(&out) {
+                            outputs::cycle_with_feedback(app, 0);
                         } else {
                             snap::trigger(app);
                         }
@@ -683,7 +733,9 @@ pub fn run() {
             let _ = app.asset_protocol_scope().allow_directory(&config_dir.join("phrases"), true);
             let hotkey = config.capture_hotkey.clone();
             let rec_hotkey = config.record_hotkey.clone();
+            let audio_hotkey = config.audio_hotkey.clone();
             let mask = combo_mask(&config.capture_combo);
+            let audio_mask = combo_mask(&config.audio_combo);
             let mouse = mouse_button_index(&config.capture_mouse);
             let auto_backup = config.auto_backup && !db_in_memory;
             let (db_for_backup, dir_for_backup) = (db.clone(), config_dir.clone());
@@ -701,6 +753,7 @@ pub fn run() {
                 palettes,
                 active: Mutex::new(None),
                 combo_mask: std::sync::atomic::AtomicU32::new(mask),
+                audio_mask: std::sync::atomic::AtomicU32::new(audio_mask),
                 mouse_button: std::sync::atomic::AtomicU8::new(mouse),
                 learning_pad: std::sync::atomic::AtomicBool::new(false),
                 sgdb: Arc::new(Mutex::new(sgdb_store)),
@@ -708,8 +761,12 @@ pub fn run() {
                 hashing: Arc::new(std::sync::atomic::AtomicBool::new(false)),
                 saves_manifest: Mutex::new(None),
                 saves_busy: std::sync::atomic::AtomicBool::new(false),
+                remote: Mutex::new(None),
+                remote_error: Mutex::new(None),
             });
-            if let Err(e) = apply_hotkeys(app.handle(), &hotkey, &rec_hotkey) {
+            // Servidor para la app movil, si esta activado.
+            remote::apply(app.handle());
+            if let Err(e) = apply_hotkeys(app.handle(), &hotkey, &rec_hotkey, &audio_hotkey) {
                 eprintln!("{e}");
             }
             // Copia automatica de la base (cada 7 dias, se conservan 5), en segundo plano para no retrasar el arranque.
@@ -778,6 +835,8 @@ pub fn run() {
             saves::saves_open_dir,
             saves::saves_status,
             saves::saves_update_manifest,
+            remote::remote_info,
+            remote::remote_new_code,
             magpie_status,
             get_sagas,
             save_sagas,
@@ -796,6 +855,8 @@ pub fn run() {
             sgdb::sgdb_local,
             sgdb::sgdb_clear,
             learn_pad,
+            audio_outputs,
+            set_audio_output,
             hotkey_suspend,
             exit_app,
             texthook::commands::th_status,

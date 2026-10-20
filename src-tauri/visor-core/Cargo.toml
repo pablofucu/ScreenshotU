@@ -20,6 +20,10 @@ image = { version = "0.25", default-features = false, features = ["jpeg", "png",
 rusqlite = { version = "0.32", features = ["bundled"] }
 sha2 = "0.10"
 serde_yaml = "0.9"
+# Servidor para la app movil (ver docs/api-movil.md).
+tiny_http = "0.12"
+flate2 = "1"
+getrandom = "0.2"
 
 [dev-dependencies]
 tempfile = "3"

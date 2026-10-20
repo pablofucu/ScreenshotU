@@ -1,7 +1,7 @@
 import { SvelteSet } from 'svelte/reactivity';
 import { untrack } from 'svelte';
 import { RAINBOW, type Accent } from './icons';
-import type { Config, GameStatus, Library, MagpieStatus, Saga, Shot, SortMode as SortModeT, Swatch, Title } from './types';
+import type { AudioOutput, Config, GameStatus, Library, MagpieStatus, Saga, Shot, SortMode as SortModeT, Swatch, Title } from './types';
 import { inkDark } from './oklch';
 import { calendar, evoBuckets, playYears, rankPeriod, yearReview, type EvoKind, type PeriodKind } from './stats';
 
@@ -42,11 +42,16 @@ export const DEFAULT_CONFIG: Config = {
   ankiExe: '',
   ankiMap: { word: 'Word', reading: 'WordReading', meaning: 'PrimaryDefinition', sentence: 'Sentence', translation: 'SentenceTranslation', shot: 'Picture', audio: 'SentenceAudio' },
   recordHotkey: 'F9',
+  audioCombo: 'start+rb',
+  audioHotkey: '',
   autoBackup: true,
   savesAuto: true,
   savesDir: '',
   goalVn: 60,
   goalJvn: 30,
+  remoteEnabled: false,
+  remotePort: 47811,
+  remoteToken: '',
 };
 
 export type MenuItem =
@@ -75,7 +80,7 @@ export type LearnKind = 'pad' | 'mouse' | 'key';
 export interface LearnState {
   kind: LearnKind;
   /** Que atajo se asigna con la tecla: la captura de pantalla o la grabacion de audio. */
-  target: 'capture' | 'record';
+  target: 'capture' | 'record' | 'audio';
   /** Combinación del mando pulsada hasta ahora. */
   combo: string;
   /** Hay un mando XInput conectado. */
@@ -251,6 +256,9 @@ class Store {
   fullscreen = $state(false);
   /** Monitor donde está el visor (Ajustes → Sistema). */
   monitorLabel = $state('');
+  /** Salidas de audio de Windows (icono de la barra superior y Ajustes). */
+  audioOutputs = $state<AudioOutput[]>([]);
+  audioMenu = $state(false);
   /** Copia de seguridad: incluir los medios del glosario (phrases/) y, si hay una restauración preparada, su descripción (A otra vez para confirmar). */
   backupMedia = $state(false);
   backupBusy = $state(false);

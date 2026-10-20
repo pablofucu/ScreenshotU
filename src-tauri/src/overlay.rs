@@ -5,12 +5,14 @@
 //! Mientras se ve, un hilo lo vuelve a poner encima cada 250 ms: al hacer clic en el juego (sobre todo si va sin bordes a
 //! pantalla completa o se pone el mismo «siempre encima») Windows lo sube por encima del indicador y este desaparecia.
 use crate::state::AppState;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::Duration;
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
 
 const LABEL: &str = "recindicator";
 const W: f64 = 190.0;
+/// Ancho del cartel con un texto (nombre de la salida de audio).
+const W_TEXT: f64 = 330.0;
 const H: f64 = 44.0;
 const MARGIN: i32 = 18;
 
@@ -18,6 +20,10 @@ static APP: std::sync::Mutex<Option<AppHandle>> = std::sync::Mutex::new(None);
 /// El indicador esta visible (el hilo que lo mantiene encima sigue mientras sea `true`).
 static VISIBLE: AtomicBool = AtomicBool::new(false);
 static KEEPER: AtomicBool = AtomicBool::new(false);
+/// Numero del ultimo cartel de texto: el que lo oculta solo lo hace si no salio otro mientras tanto.
+static FLASH_GEN: AtomicU64 = AtomicU64::new(0);
+/// Ancho (logico) con el que se coloca ahora la ventana.
+static WIDTH: AtomicU64 = AtomicU64::new(0);
 
 /// Guarda el `AppHandle` para poder mostrar el indicador desde cualquier hilo.
 pub fn init(app: &AppHandle) {
@@ -26,23 +32,56 @@ pub fn init(app: &AppHandle) {
 
 /// Muestra el indicador con un estado: "recording" (REC y segundos), "done" (✓ y segundos) o "error".
 pub fn show(state: &'static str, secs: u64) {
+    show_with(state, secs, "");
+}
+
+/// Cartel breve con un texto («🔊 Auriculares») sobre el juego. No toca el indicador si se esta grabando.
+pub fn flash(text: &str) {
+    if crate::audio::is_recording() {
+        return;
+    }
+    let Some(app) = APP.lock().unwrap().clone() else { return };
+    let gen = FLASH_GEN.fetch_add(1, Ordering::SeqCst) + 1;
+    show_with("audio", 0, text);
+    let _ = std::thread::Builder::new().name("flash-hide".into()).spawn(move || {
+        std::thread::sleep(Duration::from_millis(2200));
+        if FLASH_GEN.load(Ordering::SeqCst) == gen && !crate::audio::is_recording() {
+            hide(&app);
+        }
+    });
+}
+
+fn show_with(state: &'static str, secs: u64, text: &str) {
     let Some(app) = APP.lock().unwrap().clone() else { return };
     let app2 = app.clone();
+    let text = text.to_string();
+    let w = if state == "audio" { W_TEXT } else { W };
+    WIDTH.store(w as u64, Ordering::SeqCst);
+    if state != "audio" {
+        // Un cartel de texto pendiente no debe ocultar el indicador que sale ahora.
+        FLASH_GEN.fetch_add(1, Ordering::SeqCst);
+    }
     let _ = app.run_on_main_thread(move || {
         let app = app2;
         let win = match app.get_webview_window(LABEL) {
             Some(w) => w,
-            None => match build(&app, state, secs) {
+            None => match build(&app, state, secs, &text) {
                 Some(w) => w,
                 None => return,
             },
         };
         place(&app, &win);
         show_quiet(&win);
-        let _ = win.eval(format!("window.__rec&&window.__rec('{state}',{secs})"));
+        let t = serde_json::to_string(&text).unwrap_or_else(|_| "\"\"".into());
+        let _ = win.eval(format!("window.__rec&&window.__rec('{state}',{secs},{t})"));
     });
     VISIBLE.store(true, Ordering::SeqCst);
     keep_on_top(app);
+}
+
+/// Codifica un texto para ponerlo en la URL de la pagina del indicador.
+fn pct(s: &str) -> String {
+    s.bytes().map(|b| if b.is_ascii_alphanumeric() { (b as char).to_string() } else { format!("%{b:02X}") }).collect()
 }
 
 /// Hilo que, mientras el indicador se ve, lo devuelve encima de todo (sin activarlo).
@@ -87,8 +126,8 @@ pub fn hide(app: &AppHandle) {
     });
 }
 
-fn build(app: &AppHandle, state: &str, secs: u64) -> Option<tauri::WebviewWindow> {
-    let url = format!("rec.html?s={state}&t={secs}");
+fn build(app: &AppHandle, state: &str, secs: u64, text: &str) -> Option<tauri::WebviewWindow> {
+    let url = format!("rec.html?s={state}&t={secs}&x={}", pct(text));
     let w = WebviewWindowBuilder::new(app, LABEL, WebviewUrl::App(url.into()))
         .title("REC")
         .inner_size(W, H)
@@ -189,7 +228,11 @@ fn place(app: &AppHandle, win: &tauri::WebviewWindow) {
     // Primero en el monitor, para que el factor de escala sea el suyo; luego en la esquina.
     let _ = win.set_position(tauri::PhysicalPosition::new(m.x + 10, m.y + 10));
     let scale = win.scale_factor().unwrap_or(1.0);
-    let _ = win.set_size(tauri::LogicalSize::new(W, H));
-    let wpx = (W * scale) as i32;
+    let w = match WIDTH.load(Ordering::SeqCst) {
+        0 => W,
+        n => n as f64,
+    };
+    let _ = win.set_size(tauri::LogicalSize::new(w, H));
+    let wpx = (w * scale) as i32;
     let _ = win.set_position(tauri::PhysicalPosition::new(m.x + m.w as i32 - wpx - MARGIN, m.y + MARGIN));
 }

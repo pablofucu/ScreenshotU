@@ -16,6 +16,8 @@ pub struct Active {
     pub name: String,
     pub platform: String,
     pub folder: String,
+    /// Inicio de la partida (ms desde epoch).
+    pub since: i64,
     /// PIDs de los procesos del juego (se actualizan mientras se vigila).
     pub pids: Arc<Mutex<Vec<u32>>>,
 }
@@ -54,6 +56,8 @@ pub struct AppState {
     pub active: Mutex<Option<Active>>,
     /// Mascara de la combinacion de captura (`capture::combo_mask`, 0 = desactivada); la lee el hilo del mando.
     pub combo_mask: AtomicU32,
+    /// Lo mismo para la combinacion que cambia la salida de audio.
+    pub audio_mask: AtomicU32,
     /// Boton del raton que captura (`capture::mouse_button_index`, 0 = ninguno).
     pub mouse_button: AtomicU8,
     /// Ajustes esta esperando una combinacion del mando: el hilo del mando informa en vez de capturar.
@@ -68,6 +72,9 @@ pub struct AppState {
     pub saves_manifest: Mutex<Option<Arc<visor_core::saves::Manifest>>>,
     /// Hay una descarga de la base de Ludusavi en marcha.
     pub saves_busy: AtomicBool,
+    /// Servidor para la app movil (si esta activado y se pudo abrir el puerto) y el ultimo error al abrirlo.
+    pub remote: Mutex<Option<visor_core::remote::RemoteServer>>,
+    pub remote_error: Mutex<Option<String>>,
 }
 
 impl AppState {
@@ -83,5 +90,9 @@ impl AppState {
     }
     pub fn thumbs_dir(&self) -> PathBuf {
         self.cache_dir.join("thumbs")
+    }
+    /// Vistas previas de 1920 px que se sirven al movil.
+    pub fn previews_dir(&self) -> PathBuf {
+        self.cache_dir.join("previews")
     }
 }

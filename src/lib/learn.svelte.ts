@@ -11,6 +11,8 @@ const PAD_LABEL: Record<string, string> = {
 };
 /** Combinaciones de mando que se recorren con izquierda/derecha. */
 export const COMBO_PRESETS = ['back+rb', 'back+lb', 'lb+rb', 'back+start', 'l3+r3', 'off'];
+/** Combinaciones de serie para cambiar la salida de audio. */
+export const AUDIO_COMBO_PRESETS = ['start+rb', 'start+lb', 'back+start', 'l3+r3', 'off'];
 export const comboLabel = (id: string) =>
   !id || id === 'off' ? 'Desactivado' : id.split('+').map((b) => PAD_LABEL[b] ?? b).join(' + ');
 
@@ -21,12 +23,13 @@ export const mouseLabel = (id: string) => MOUSE_LABEL[id] ?? id;
 
 /** Atajos de teclado que se recorren con izquierda/derecha ("" = desactivado). */
 export const HOTKEY_PRESETS = ['F12', 'F10', 'F9', 'Ctrl+F12', 'Alt+F12', 'Ctrl+Shift+S', ''];
+export const AUDIO_HOTKEY_PRESETS = ['', 'F8', 'Ctrl+F8', 'Ctrl+Alt+A', 'Ctrl+Shift+A'];
 export const hotkeyLabel = (k: string) => k || 'Desactivado';
 
 const SECONDS = 12;
 let timer: ReturnType<typeof setInterval> | undefined;
 
-export function startLearn(kind: LearnKind, target: 'capture' | 'record' = 'capture') {
+export function startLearn(kind: LearnKind, target: 'capture' | 'record' | 'audio' = 'capture') {
   if (kind === 'pad' && !backend.isTauri) { toast('El mando solo se puede asignar en la aplicación de escritorio', 2600); return; }
   app.learn = { kind, target, combo: 'off', connected: true, left: SECONDS };
   if (kind === 'pad') void backend.learnPad(true);
@@ -69,7 +72,10 @@ export function onLearnPad(combo: string, connected: boolean, done: boolean) {
   if (app.learn?.kind !== 'pad') return;
   app.learn.connected = connected;
   app.learn.combo = combo;
-  if (done && combo !== 'off') void finish({ captureCombo: combo }, comboLabel(combo));
+  if (done && combo !== 'off') {
+    if (app.learn.target === 'audio') void finish({ audioCombo: combo }, comboLabel(combo), 'Cambiar el audio con');
+    else void finish({ captureCombo: combo }, comboLabel(combo));
+  }
 }
 
 /* ---------- teclado ---------- */
@@ -113,6 +119,7 @@ export function learnKeydown(e: KeyboardEvent): boolean {
   }
   const combo = [...mods, k].join('+');
   if (app.learn.target === 'record') void finish({ recordHotkey: combo }, combo, 'Grabar audio con');
+  else if (app.learn.target === 'audio') void finish({ audioHotkey: combo }, combo, 'Cambiar el audio con');
   else void finish({ captureHotkey: combo }, combo);
   return true;
 }

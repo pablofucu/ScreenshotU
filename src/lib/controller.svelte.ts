@@ -14,8 +14,10 @@ import { SAGA_PLATFORM, isSagaPlatform, realPlatforms, withSagas } from './sagas
 import { shotLayout, type ShotLayout } from './shotlayout';
 import { EVO_KINDS, PERIOD_KINDS } from './stats';
 import { editSgdbKey, openSgdbPicker, openSgdbTitles, sgdbAuto, sgdbCmd, sgdbTitlesCmd, toggleSgdbAuto } from './sgdb.svelte';
-import { COMBO_PRESETS, HOTKEY_PRESETS, MOUSE_PRESETS, learnKeydown, learnMouse, onLearnPad, startLearn } from './learn.svelte';
+import { AUDIO_COMBO_PRESETS, AUDIO_HOTKEY_PRESETS, COMBO_PRESETS, HOTKEY_PRESETS, MOUSE_PRESETS, learnKeydown, learnMouse, onLearnPad, startLearn } from './learn.svelte';
 import { READING_ROWS, isReadingId, readingAct, type ReadingId } from './reading.svelte';
+import { checkUpdate, updateAct } from './updater.svelte';
+import { isRemoteId, remoteAct, type RemoteId } from './remote.svelte';
 import { openPhrases, phrasesCmd } from './phrases.svelte';
 import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
 
@@ -811,22 +813,24 @@ export function wake() {
 /* ---------- ajustes ---------- */
 export type SettingId =
   | 'root' | 'rescan' | 'addgame' | 'hidden' | 'showhidden' | 'view' | 'shotsview' | 'accent' | 'sound' | 'fullscreen' | 'monitor'
-  | 'hotkey' | 'combo' | 'mouse' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caprumble' | 'quit'
+  | 'audioout' | 'audiocombo' | 'audiohotkey' | 'hotkey' | 'combo' | 'mouse' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caprumble' | 'quit'
   | 'sgdbkey' | 'sgdbauto' | 'sgdbnow' | 'sgdbgame'
   | 'backup' | 'backupmedia' | 'restore' | 'autobackup'
-  | 'savesauto' | 'savesdir' | 'ludusavi'
-  | ReadingId;
+  | 'savesauto' | 'savesdir' | 'ludusavi' | 'update'
+  | ReadingId | RemoteId;
 /** Secciones de Ajustes (LB/RB las recorren). `color` es el índice del arcoíris. */
 export const SETTING_SECTIONS: Array<{ name: string; icon: string; color: number; rows: SettingId[] }> = [
   { name: 'Biblioteca', icon: 'folder', color: 4, rows: ['root', 'rescan', 'addgame', 'hidden', 'showhidden'] },
   { name: 'Apariencia', icon: 'palette', color: 6, rows: ['accent', 'view', 'shotsview'] },
   { name: 'SteamGridDB', icon: 'image', color: 2, rows: ['sgdbkey', 'sgdbauto', 'sgdbnow', 'sgdbgame'] },
   { name: 'Capturas propias', icon: 'camera', color: 1, rows: ['combo', 'mouse', 'hotkey', 'capsound', 'cappeek', 'caprumble'] },
+  { name: 'Audio', icon: 'speaker', color: 4, rows: ['audioout', 'audiocombo', 'audiohotkey'] },
   { name: 'Lectura', icon: 'jvn', color: 0, rows: READING_ROWS },
   { name: 'Magpie', icon: 'image', color: 3, rows: ['magpieexe', 'magpie'] },
   { name: 'Copias', icon: 'import', color: 2, rows: ['backup', 'backupmedia', 'restore', 'autobackup'] },
   { name: 'Partidas', icon: 'pad', color: 1, rows: ['savesauto', 'savesdir', 'ludusavi'] },
-  { name: 'Sistema', icon: 'gear', color: 5, rows: ['sound', 'fullscreen', 'monitor', 'quit'] },
+  // Móvil: fuera de la 1.0 (código en remote.svelte.ts; ver REMOTE_AVAILABLE en src-tauri/src/remote.rs).
+  { name: 'Sistema', icon: 'gear', color: 5, rows: ['sound', 'fullscreen', 'monitor', 'update', 'quit'] },
 ];
 const secRows = () => SETTING_SECTIONS[app.setSec]?.rows ?? [];
 
@@ -906,6 +910,30 @@ async function refreshMonitor(dir = 0) {
   try { app.monitorLabel = dir ? await backend.nextMonitor(dir) : await backend.windowMonitor(); } catch { app.monitorLabel = ''; }
 }
 
+/* ---------- salida de audio ---------- */
+export async function refreshAudio() {
+  try { app.audioOutputs = await backend.audioOutputs(); } catch { app.audioOutputs = []; }
+}
+
+/** Pasa a la salida `dir` posiciones más allá (dando la vuelta) o, con `id`, a esa. */
+export async function switchAudio(dir: number, id?: string) {
+  if (!id) {
+    await refreshAudio();
+    const outs = app.audioOutputs;
+    if (outs.length < 2) { toast(outs.length ? 'Solo hay una salida de audio' : 'No se encontraron salidas de audio', 2200); return; }
+    const cur = Math.max(0, outs.findIndex((o) => o.default));
+    id = outs[(cur + dir + outs.length) % outs.length].id;
+  }
+  try {
+    app.audioOutputs = await backend.setAudioOutput(id);
+    const now = app.audioOutputs.find((o) => o.default);
+    if (now) toast(`Audio: ${now.short}`, 1800);
+    blip(1320);
+  } catch (e) {
+    toast(String(e), 3600);
+  }
+}
+
 /** Carpeta de las copias de partidas: A elige otra, ‹ › vuelve a la de serie. */
 async function chooseSavesDir(dir: number) {
   if (dir !== 0) { if (app.config.savesDir) { void patchConfig({ savesDir: '' }); blip(1320); } return; }
@@ -917,6 +945,7 @@ export function openSettings() {
   void refreshMagpieStatus();
   void refreshSavesStatus();
   void refreshMonitor();
+  void refreshAudio();
   app.overlayStack = [];
   app.overlay = 'settings';
   app.setRow = 0;
@@ -981,6 +1010,9 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'fullscreen') void toggleFullscreen();
   else if (id === 'monitor') { void refreshMonitor(dir || 1); blip(880); }
   // Botones de captura: A / clic espera el input; izquierda/derecha recorren unos cuantos de serie.
+  else if (id === 'audioout') void switchAudio(dir || 1);
+  else if (id === 'audiocombo') { if (dir === 0) startLearn('pad', 'audio'); else void patchConfig({ audioCombo: cycleIn(AUDIO_COMBO_PRESETS, app.config.audioCombo, dir) }); }
+  else if (id === 'audiohotkey') { if (dir === 0) startLearn('key', 'audio'); else void patchConfig({ audioHotkey: cycleIn(AUDIO_HOTKEY_PRESETS, app.config.audioHotkey, dir) }); }
   else if (id === 'hotkey') { if (dir === 0) startLearn('key'); else void patchConfig({ captureHotkey: cycleIn(HOTKEY_PRESETS, app.config.captureHotkey, dir) }); }
   else if (id === 'combo') { if (dir === 0) startLearn('pad'); else void patchConfig({ captureCombo: cycleIn(COMBO_PRESETS, app.config.captureCombo, dir) }); }
   else if (id === 'mouse') { if (dir === 0) startLearn('mouse'); else void patchConfig({ captureMouse: cycleIn(MOUSE_PRESETS, app.config.captureMouse, dir) }); }
@@ -989,6 +1021,7 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'capsound') { void patchConfig({ captureSound: !app.config.captureSound }); blip(1320); }
   else if (id === 'cappeek') { void patchConfig({ capturePeek: !app.config.capturePeek }); blip(1320); }
   else if (id === 'caprumble') { void patchConfig({ captureRumble: !app.config.captureRumble }); blip(1320); }
+  else if (id === 'update') updateAct(dir);
   else if (id === 'quit' && dir === 0) void quit();
   else if (id === 'backup' && dir === 0) void createBackup();
   else if (id === 'backupmedia') { app.backupMedia = !app.backupMedia; blip(1320); }
@@ -1002,6 +1035,7 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'sgdbnow' && dir === 0) void sgdbAuto(true);
   else if (id === 'sgdbgame' && dir === 0) openSgdbTitles();
   else if (id && isReadingId(id)) readingAct(id, dir);
+  else if (id && isRemoteId(id)) remoteAct(id, dir);
 }
 
 function overlayCmd(c: string) {
@@ -1122,6 +1156,8 @@ function onBackendEvent(e: BackendEvent) {
     void softRefresh();
   } else if (e.type === 'capture-error') {
     toast(e.message, 3600);
+  } else if (e.type === 'audio-outputs') {
+    app.audioOutputs = e.outputs;
   } else if (e.type === 'learn-pad') {
     onLearnPad(e.combo, e.connected, e.done);
   } else if (e.type === 'game-started') {
@@ -1145,6 +1181,7 @@ function onBackendEvent(e: BackendEvent) {
 export async function boot() {
   await initBackend();
   backend.onEvent(onBackendEvent);
+  void refreshAudio();
   backend.onFilesDropped(onFilesDropped);
   void listenSaves();
   const cfg = await backend.loadConfig();
@@ -1156,6 +1193,8 @@ export async function boot() {
   await rescan();
   app.ready = true;
   void announceStartup().then((shown) => { if (!shown) void announceDue(); });
+  // Comprobación silenciosa de actualizaciones unos segundos después de arrancar (solo en la app, no en el navegador).
+  if (backend.isTauri) setTimeout(() => void checkUpdate(true), 8000);
   setInterval(() => (app.now = new Date()), 20000);
 }
 

@@ -117,6 +117,7 @@ pub fn start(app: &AppHandle, game: Game) -> Result<(), String> {
         name: game.name.clone(),
         platform: game.platform.clone(),
         folder: game.folder.clone(),
+        since: now_ms(),
         pids: pids.clone(),
     });
     let _ = app.emit("game-started", GameEvent { id: game.id.clone(), name: game.name.clone(), seconds: 0 });

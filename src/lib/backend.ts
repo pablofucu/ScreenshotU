@@ -1,4 +1,4 @@
-import type { AddReport, Backend, BackupResult, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, MoveReport, NewGame, Saga, SortMode } from './types';
+import type { AddReport, AudioOutput, Backend, BackupResult, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, MoveReport, RemoteInfo, NewGame, Saga, SortMode } from './types';
 
 export const IS_TAURI = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
@@ -72,6 +72,8 @@ async function tauriBackend(): Promise<Backend> {
     nextMonitor: (dir: number) => invoke<string>('next_monitor', { dir }),
     exit: () => invoke('exit_app'),
     learnPad: (on: boolean) => invoke('learn_pad', { on }),
+    audioOutputs: () => invoke<AudioOutput[]>('audio_outputs'),
+    setAudioOutput: (id: string) => invoke<AudioOutput[]>('set_audio_output', { id }),
     hotkeySuspend: (suspend: boolean) => invoke('hotkey_suspend', { suspend }),
     launch: (id) => invoke('launch_game', { id }),
     openFolder: (path) => invoke('open_folder', { path }),
@@ -83,6 +85,8 @@ async function tauriBackend(): Promise<Backend> {
     setMagpieMode: (id: string, mode: MagpieMode) => invoke('set_magpie_mode', { id, mode }),
     setTitleStatus: (id: string, status: GameStatus) => invoke('set_title_status', { id, status }),
     magpieStatus: () => invoke<MagpieStatus>('magpie_status'),
+    remoteInfo: () => invoke<RemoteInfo>('remote_info'),
+    remoteNewCode: () => invoke<RemoteInfo>('remote_new_code'),
     async pickSaveZip(defaultName: string) {
       const { save } = await import('@tauri-apps/plugin-dialog');
       return (await save({ title: 'Guardar copia de seguridad', defaultPath: defaultName, filters: [{ name: 'Copia de seguridad (.zip)', extensions: ['zip'] }] })) ?? null;
@@ -128,6 +132,7 @@ async function tauriBackend(): Promise<Backend> {
     onEvent(cb) {
       void listen<{ path: string; name: string }>('capture-saved', (e) => cb({ type: 'capture-saved', name: e.payload.name }));
       void listen<string>('capture-error', (e) => cb({ type: 'capture-error', message: String(e.payload) }));
+      void listen<AudioOutput[]>('audio-outputs', (e) => cb({ type: 'audio-outputs', outputs: e.payload }));
       void listen<{ combo: string; connected: boolean; done: boolean }>('learn-pad', (e) => cb({ type: 'learn-pad', ...e.payload }));
       void listen<{ id: string; name: string }>('game-started', (e) => cb({ type: 'game-started', id: e.payload.id, name: e.payload.name }));
       void listen<{ id: string; name: string; seconds: number }>('game-exited', (e) =>

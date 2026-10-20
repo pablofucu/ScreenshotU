@@ -52,6 +52,10 @@ export interface Config {
   ankiExe: string;
   /** Atajo global que empieza/para la grabacion del audio del juego ("" = desactivado). */
   recordHotkey: string;
+  /** Combinación de mando que cambia la salida de audio de Windows ("off" = desactivada). */
+  audioCombo: string;
+  /** Atajo global que cambia a la siguiente salida de audio ("" = desactivado). */
+  audioHotkey: string;
   /** Copia automática de la base de datos al arrancar (cada 7 días, se conservan 5). */
   autoBackup: boolean;
   /** Copiar las partidas guardadas de un juego al cerrarlo (si cambiaron). */
@@ -61,6 +65,10 @@ export interface Config {
   /** Meta diaria de lectura en minutos: novelas visuales y novelas japonesas (anillos de Inicio). */
   goalVn: number;
   goalJvn: number;
+  /** Servidor para la app del móvil (misma red): activado, puerto y código de emparejamiento (lo gestiona el núcleo). */
+  remoteEnabled: boolean;
+  remotePort: number;
+  remoteToken: string;
 }
 export interface AnkiMap { word: string; reading: string; meaning: string; sentence: string; translation: string; shot: string; audio: string }
 export interface Shot {
@@ -87,6 +95,8 @@ export type GameSource = 'manual' | 'emulator';
 export type GameStatus = 'none' | 'pending' | 'playing' | 'finished' | 'dropped';
 export type MagpieMode = 'off' | 'auto' | '2x' | '4x';
 export interface MagpieStatus { exe: string; running: boolean; cunny: boolean }
+/** Estado del acceso desde el móvil. `error`: último fallo al abrir el puerto (p. ej. en uso). */
+export interface RemoteInfo { enabled: boolean; running: boolean; port: number; addresses: string[]; code: string; error: string | null }
 export interface Title {
   name: string;
   cover: string | null;
@@ -156,7 +166,10 @@ export interface RestorePreview { dbVersion: number; size: number; hasConfig: bo
 export interface StartupNotice { kind: 'error' | 'info'; message: string }
 export interface ImportReport { copied: string[]; skipped: string[] }
 export interface MoveReport { moved: Array<[string, string]>; failed: string[] }
+/** Dispositivo de reproducción de Windows. */
+export interface AudioOutput { id: string; name: string; short: string; default: boolean }
 export type BackendEvent =
+  | { type: 'audio-outputs'; outputs: AudioOutput[] }
   | { type: 'capture-saved'; name: string }
   | { type: 'capture-error'; message: string }
   | { type: 'learn-pad'; combo: string; connected: boolean; done: boolean }
@@ -196,6 +209,10 @@ export interface Backend {
   /** Pasa el visor al monitor siguiente (1) o anterior (-1); devuelve el nuevo. */
   nextMonitor(dir: number): Promise<string>;
   exit(): Promise<void>;
+  /** Salidas de audio de Windows (la predeterminada marcada). */
+  audioOutputs(): Promise<AudioOutput[]>;
+  /** Pone una salida como predeterminada; devuelve la lista actualizada. */
+  setAudioOutput(id: string): Promise<AudioOutput[]>;
   /** Empieza (o deja) de esperar una combinación del mando; llegan eventos `learn-pad`. */
   learnPad(on: boolean): Promise<void>;
   /** Suelta el atajo global de captura mientras se elige otro (y lo vuelve a registrar). */
@@ -214,6 +231,10 @@ export interface Backend {
   /** Estado del juego (`none` lo quita); terminado guarda la fecha. */
   setTitleStatus(id: string, status: GameStatus): Promise<void>;
   magpieStatus(): Promise<MagpieStatus>;
+  /** Acceso desde el móvil: dirección, código y si el servidor está en marcha. */
+  remoteInfo(): Promise<RemoteInfo>;
+  /** Genera otro código de emparejamiento (el móvil tendrá que escribirlo de nuevo). */
+  remoteNewCode(): Promise<RemoteInfo>;
   getSagas(): Promise<Saga[]>;
   saveSagas(list: Saga[]): Promise<Saga[]>;
   /** Elige imágenes (png, jpg, jpeg, webp). */

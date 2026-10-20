@@ -42,6 +42,22 @@ export const ICON: Record<string, string> = {
   key:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="12" width="38" height="24" rx="5"/><path d="M12 20h2M20 20h2M28 20h2M36 20h0M15 28h18"/></svg>`,
   camera:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15h8l3-5h14l3 5h8v24H6z"/><circle cx="24" cy="26" r="7"/></svg>`,
   chevL:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4l-8 8 8 8"/></svg>`,
+  phone:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><rect x="13" y="4" width="22" height="40" rx="5"/><path d="M21 37h6"/></svg>`,
   chart:`<svg viewBox="0 0 48 48" fill="#fff"><rect x="7" y="26" width="8" height="15" rx="2.5"/><rect x="20" y="16" width="8" height="25" rx="2.5"/><rect x="33" y="7" width="8" height="34" rx="2.5"/></svg>`,
   chevR:`<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4l8 8-8 8"/></svg>`,
 };
+
+/* Iconos de salida de audio (altavoz, auriculares, monitor) para la barra superior y Ajustes. */
+export type AudioKind = 'speaker' | 'headphones' | 'monitor';
+const AUDIO_PATHS: Record<AudioKind, string> = {
+  speaker: '<path d="M8 19h7l9-7v24l-9-7H8z"/><path d="M31 17a9 9 0 0 1 0 14M36 12a16 16 0 0 1 0 24"/>',
+  headphones: '<path d="M8 30v-6a16 16 0 0 1 32 0v6"/><rect x="6" y="28" width="9" height="13" rx="3"/><rect x="33" y="28" width="9" height="13" rx="3"/>',
+  monitor: '<rect x="5" y="9" width="38" height="25" rx="4"/><path d="M17 41h14M24 34v7"/>',
+};
+export const audioSvg = (kind: AudioKind, stroke = '#fff', width = 4.5) =>
+  `<svg viewBox="0 0 48 48" fill="none" stroke="${stroke}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round">${AUDIO_PATHS[kind]}</svg>`;
+/** Adivina el tipo de dispositivo por su nombre de Windows. */
+export const audioKind = (name: string): AudioKind =>
+  /auricular|headphone|headset|cascos|airpods|buds/i.test(name) ? 'headphones'
+    : /hdmi|displayport|nvidia|amd high|monitor|ultragear|tv|display/i.test(name) ? 'monitor' : 'speaker';
+ICON.speaker = audioSvg('speaker');

@@ -1,4 +1,5 @@
 // Miniatura de la captura recien hecha (ver src-tauri/src/peek.rs). La app la cambia con `window.__peek(dataUrl)`.
+export {};
 const f = document.getElementById('f')!;
 const img = document.getElementById('img') as HTMLImageElement;
 

@@ -219,8 +219,23 @@ pub fn open_connection(path: &Path) -> Result<Connection> {
     }
     let mut conn = Connection::open(path).with_context(|| format!("abriendo {}", path.display()))?;
     prepare(&conn)?;
+    pre_migration_copy(&conn, path);
     migrate(&mut conn, MIGRATIONS)?;
     Ok(conn)
+}
+
+/// Antes de subir una base ya existente a un esquema nuevo (p. ej. al actualizar el programa) guarda una
+/// copia `visor.db.antes-vN.bak` (N = version previa). Si falla no se impide migrar: solo se avisa.
+fn pre_migration_copy(conn: &Connection, path: &Path) {
+    let Ok(current) = conn.query_row::<i64, _, _>("PRAGMA user_version", [], |r| r.get(0)) else { return };
+    if current < 1 || current >= latest_version() {
+        return;
+    }
+    let mut name = path.file_name().map(|n| n.to_os_string()).unwrap_or_default();
+    name.push(format!(".antes-v{current}.bak"));
+    if let Err(e) = backup_to(conn, &path.with_file_name(name)) {
+        eprintln!("copia previa a la migracion: {e:#}");
+    }
 }
 
 /// Conexion compartida: un `Mutex<Connection>` (SQLite serializa las escrituras de todos modos).
@@ -432,6 +447,31 @@ mod tests {
             db.with(|c| c.execute_batch(&format!("PRAGMA user_version = {}", latest_version() + 1))).unwrap();
         }
         assert!(validate_file(&fut).unwrap_err().to_string().contains("mas nueva"));
+    }
+
+    #[test]
+    fn upgrading_an_existing_base_leaves_a_copy_of_the_old_version() {
+        let d = tempfile::tempdir().unwrap();
+        let p = d.path().join("visor.db");
+        {
+            let mut c = Connection::open(&p).unwrap();
+            migrate(&mut c, &MIGRATIONS[..1]).unwrap();
+            c.execute("INSERT INTO favorites(path) VALUES ('a.png')", []).unwrap();
+        }
+        let db = Db::open_path(&p).unwrap();
+        let bak = d.path().join("visor.db.antes-v1.bak");
+        assert!(bak.exists());
+        // La copia es la base antigua (version 1) y conserva los datos.
+        let old = Connection::open(&bak).unwrap();
+        assert_eq!(old.query_row::<i64, _, _>("PRAGMA user_version", [], |r| r.get(0)).unwrap(), 1);
+        assert_eq!(old.query_row::<i64, _, _>("SELECT count(*) FROM favorites", [], |r| r.get(0)).unwrap(), 1);
+        drop(db);
+        // Una base nueva o ya al dia no deja copias.
+        let q = d.path().join("nueva.db");
+        drop(Db::open_path(&q).unwrap());
+        drop(Db::open_path(&q).unwrap());
+        assert!(!d.path().join("nueva.db.antes-v0.bak").exists());
+        assert!(!d.path().join(format!("nueva.db.antes-v{}.bak", latest_version())).exists());
     }
 
     #[test]

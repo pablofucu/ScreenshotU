@@ -1,7 +1,7 @@
 // Biblioteca simulada para desarrollo en navegador (sin Tauri). El arte procede del mockup aprobado.
 import { hash, rng } from './rng';
 import type {
-  AccentInfo, Backend, BackendEvent, Config, GameSource, HiddenEntry, Library, Platform, Saga, Shot, SortMode, Swatch, Title,
+  AccentInfo, AudioOutput, Backend, BackendEvent, Config, GameSource, HiddenEntry, Library, Platform, Saga, Shot, SortMode, Swatch, Title,
 } from './types';
 import { normalizeHex } from './oklch';
 
@@ -247,12 +247,13 @@ export async function mockBackend(): Promise<Backend> {
     platforms: MOCK_PLATS.map((p) => ({ id: p.id, name: p.name, folder: p.folder, accent: p.accent, icon: p.icon })),
     captureHotkey: 'F12', captureCombo: 'back+rb', captureMouse: '', captureMagpie: 'scaled', captureSound: true, capturePeek: true, captureRumble: true, magpieExe: '', showHidden: false,
     sgdbKey: q.has('sgdb') ? 'mock' : '', sgdbAuto: true, deepseekKey: '', deepseekModel: 'deepseek-chat',
-    ankiUrl: 'http://127.0.0.1:8765', ankiDeck: 'Japonés::Novelas', ankiModel: '', ankiStyle: 'limpio', ankiAutostart: true, ankiExe: '', recordHotkey: 'F9', autoBackup: true, savesAuto: true, savesDir: '', goalVn: 60, goalJvn: 30, ankiMap: { word: 'Word', reading: 'WordReading', meaning: 'PrimaryDefinition', sentence: 'Sentence', translation: 'SentenceTranslation', shot: 'Picture', audio: 'SentenceAudio' } };
+    ankiUrl: 'http://127.0.0.1:8765', ankiDeck: 'Japonés::Novelas', ankiModel: '', ankiStyle: 'limpio', ankiAutostart: true, ankiExe: '', recordHotkey: 'F9', audioCombo: 'start+rb', audioHotkey: '', autoBackup: true, savesAuto: true, savesDir: '', goalVn: 60, goalJvn: 30, remoteEnabled: false, remotePort: 47811, remoteToken: '', ankiMap: { word: 'Word', reading: 'WordReading', meaning: 'PrimaryDefinition', sentence: 'Sentence', translation: 'SentenceTranslation', shot: 'Picture', audio: 'SentenceAudio' } };
   let cfg: Config = base;
   try { const s = store()?.getItem(LS); if (s) cfg = { ...base, ...JSON.parse(s) }; } catch {}
   if (q.has('empty')) cfg = { ...cfg, root: null };
   if (q.get('view') === 'carousel') cfg = { ...cfg, titlesView: 'carousel' };
   const lib = buildLibrary();
+  let mockOuts: AudioOutput[] = [{ id: "a", name: "Altavoces (Realtek Audio)", short: "Altavoces", default: true }, { id: "b", name: "Auriculares (USB Headset)", short: "Auriculares", default: false }, { id: "c", name: "LG ULTRAGEAR (NVIDIA)", short: "LG ULTRAGEAR", default: false }];
   let emit: ((e: BackendEvent) => void) | undefined;
   const cache = new Map<string, string>();
   let favs: string[] = [];
@@ -281,6 +282,12 @@ export async function mockBackend(): Promise<Backend> {
     async loadConfig() { return cfg; },
     async saveConfig(c) { cfg = c; try { store()?.setItem(LS, JSON.stringify(c)); } catch {} },
     async learnPad() {},
+    async audioOutputs() { return mockOuts; },
+    async setAudioOutput(id) {
+      mockOuts = mockOuts.map((o) => ({ ...o, default: o.id === id }));
+      emit?.({ type: 'audio-outputs', outputs: mockOuts });
+      return mockOuts;
+    },
     async hotkeySuspend() {},
     async pickFolder(title) { return title ? 'D:\Juegos' : 'mock://biblioteca'; },
     async scan() {
@@ -392,6 +399,18 @@ export async function mockBackend(): Promise<Backend> {
     async setMagpieMode(id, mode) {
       const t = lib.platforms.flatMap((p) => p.titles).find((x) => x.id === id);
       if (t) t.magpieMode = mode;
+    },
+    async remoteInfo() {
+      const on = cfg.remoteEnabled;
+      if (on && !cfg.remoteToken) cfg = { ...cfg, remoteToken: 'K7QM-4XTR' };
+      return { enabled: on, running: on, port: cfg.remotePort, addresses: on ? ['192.168.1.20'] : [], code: cfg.remoteToken, error: null };
+    },
+    async remoteNewCode() {
+      const abc = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+      const code = Array.from({ length: 8 }, (_, i) => (i === 4 ? '-' : '') + abc[Math.floor(Math.random() * abc.length)]).join('');
+      cfg = { ...cfg, remoteToken: code };
+      try { store()?.setItem(LS, JSON.stringify(cfg)); } catch {}
+      return { enabled: cfg.remoteEnabled, running: cfg.remoteEnabled, port: cfg.remotePort, addresses: cfg.remoteEnabled ? ['192.168.1.20'] : [], code, error: null };
     },
     async magpieStatus() { return { exe: 'C:\\Magpie\\Magpie.exe (simulado)', running: true, cunny: true }; },
     async getSagas() { return load<Saga[]>('visor.mock.sagas', []); },

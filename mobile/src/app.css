@@ -1,0 +1,132 @@
+@import '@assets/fonts.css';
+
+/* Mismo mundo claro que el visor de escritorio (estética del menú de Wii U), en vertical. */
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;color-scheme:light;
+  --sat:max(var(--safe-area-inset-top,0px),env(safe-area-inset-top,0px));
+  --sab:max(var(--safe-area-inset-bottom,0px),env(safe-area-inset-bottom,0px));
+  --top-h:calc(var(--sat) + 62px);--tab-h:calc(var(--sab) + 74px);
+  --ink:#3a414e;--ink2:#4a5260;--dim:#5f6776;--dim2:#6f7787}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#eceef2;overflow:hidden;font-family:var(--round);color:var(--ink);overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
+input{font:inherit}
+img{user-select:none;-webkit-user-drag:none;-webkit-touch-callout:none}
+#app{position:fixed;inset:0;overflow:hidden;user-select:none;-webkit-user-select:none;--acc:#00A0D8;--acc-ink:#fff}
+
+/* ---------- fondo: manchas, iconos fantasma y bokeh ---------- */
+.bg{position:fixed;inset:0;overflow:hidden;pointer-events:none;background:radial-gradient(120% 70% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(30px);opacity:.9;animation:drift 26s ease-in-out infinite alternate}
+.blob.w{background:radial-gradient(circle,rgba(255,255,255,1),rgba(255,255,255,0) 70%)}
+.blob.a{background:radial-gradient(circle,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%);opacity:.55;transition:background .6s}
+.ghost{position:absolute;width:84px;height:84px;border-radius:22px;padding:8px;background:rgba(255,255,255,.7);box-shadow:0 0 0 1px rgba(120,130,150,.25),0 10px 18px -10px rgba(40,50,70,.4);filter:blur(4px)}
+.ghost i{display:block;width:100%;height:100%;border-radius:14px;background:linear-gradient(160deg,color-mix(in srgb,var(--g) 30%,white),var(--g))}
+.bokeh{position:absolute;border-radius:50%;filter:blur(2px)}
+@keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(40px,-24px) scale(1.15)}}
+
+/* ---------- cristal (el rasgo de la Wii U) ---------- */
+.glass{position:relative;--r:24px;--bw:7px;display:block;border-radius:var(--r);padding:var(--bw);isolation:isolate;
+  background:linear-gradient(180deg,rgba(255,255,255,.78) 0%,rgba(255,255,255,.40) 46%,rgba(225,234,246,.32) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,1),inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.95),
+    inset 0 -1.5px 0 rgba(110,125,150,.30),0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 14px 24px -14px rgba(40,50,70,.42);
+  transition:transform .22s cubic-bezier(.34,1.32,.64,1),box-shadow .22s ease,background .22s ease}
+.glass.blur{-webkit-backdrop-filter:blur(14px) saturate(1.7);backdrop-filter:blur(14px) saturate(1.7)}
+.glass::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,.16) 55%,rgba(255,255,255,0) 100%);
+  -webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.8}
+.glass::after{content:'';position:absolute;z-index:3;left:12%;top:3px;width:34%;height:4px;border-radius:4px;pointer-events:none;
+  background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,1) 40%,rgba(255,255,255,0));filter:blur(.6px);opacity:.9}
+.glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:linear-gradient(160deg,#e6e9ee,#d3d8e0)}
+.glass .face::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:4;
+  box-shadow:inset 0 0 0 1px rgba(20,30,50,.20),inset 0 3px 6px -2px rgba(0,0,0,.35),inset 0 -2px 4px -2px rgba(255,255,255,.5)}
+.glass .face img{width:100%;height:100%;object-fit:cover;display:block}
+/* Al pulsar: el «foco» de la Wii U (borde del color del juego). */
+.glass.tap:active,.glass.on{transform:scale(.97);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)) 0%,color-mix(in srgb,var(--acc) 72%,transparent) 55%,color-mix(in srgb,var(--acc) 92%,black) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),inset 0 -10px 14px -8px color-mix(in srgb,var(--acc) 30%,white),
+    0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 0 20px 1px color-mix(in srgb,var(--acc) 45%,transparent),0 16px 26px -14px color-mix(in srgb,var(--acc) 70%,black)}
+.glass.on{transform:none}
+/* Panel de contenido claro (ajustes, estadísticas). */
+.panel{--r:28px;--bw:9px}
+.panel>.face{background:rgba(247,249,252,.93);height:auto}
+
+.pill{-webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);
+  background:linear-gradient(180deg,rgba(255,255,255,.84),rgba(255,255,255,.58));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 8px 18px -12px rgba(40,50,70,.4)}
+
+/* ---------- barra superior ---------- */
+.top{position:fixed;left:0;right:0;top:0;height:var(--top-h);padding:calc(var(--sat) + 8px) 12px 0;display:flex;align-items:center;gap:10px;z-index:20;pointer-events:none}
+.top>*{pointer-events:auto}
+.avatar{width:46px;height:46px;--r:14px;--bw:4px;flex:none}
+.avatar .face{display:grid;place-items:center;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white),var(--acc));transition:background .4s}
+.avatar .face svg{width:30px;height:30px}
+.crumb{height:38px;display:flex;align-items:center;gap:8px;padding:0 14px 0 6px;border-radius:999px;font-size:16px;font-weight:800;color:var(--ink2);min-width:0;flex:0 1 auto;overflow:hidden}
+.crumb .back{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:none;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 40%,white),var(--acc));box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
+.crumb .back svg{width:16px;height:16px}
+.crumb .cur{color:var(--acc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .3s}
+.crumb .home{width:6px}
+.clock{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;font-size:17px;font-weight:800;color:var(--ink2);line-height:1.05;flex:none}
+.clock small{font-size:11px;font-weight:700;color:var(--dim)}
+.sync{display:inline-block;width:8px;height:8px;border-radius:50%;background:#3BB54A;margin-right:4px;vertical-align:1px}
+.sync.off{background:#E8384F}
+.sync.busy{background:var(--acc);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.3}}
+
+/* ---------- zona de contenido ---------- */
+#scroller{position:fixed;left:0;right:0;top:0;bottom:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:calc(var(--top-h) + 6px) 0 calc(var(--tab-h) + 18px);z-index:1;scrollbar-width:none}
+#scroller::-webkit-scrollbar{display:none}
+.screen{min-height:100%}
+.screen.fwd{animation:enterFwd .26s cubic-bezier(.2,.8,.3,1)}
+.screen.back{animation:enterBack .26s cubic-bezier(.2,.8,.3,1)}
+@keyframes enterFwd{from{opacity:0;transform:translateX(18px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes enterBack{from{opacity:0;transform:translateX(-18px) scale(.985)}to{opacity:1;transform:none}}
+.pad{padding:0 14px}
+.sect{display:flex;align-items:baseline;gap:8px;margin:18px 18px 8px;font-size:19px;font-weight:800;color:var(--ink2)}
+.sect small{font-size:13px;font-weight:700;color:var(--dim)}
+.sect .more{margin-left:auto;font-size:13px;font-weight:800;color:var(--acc)}
+.muted{color:var(--dim);font-weight:600}
+
+/* ---------- dock inferior ---------- */
+.tabs{position:fixed;left:10px;right:10px;bottom:calc(var(--sab) + 10px);height:62px;border-radius:24px;display:flex;align-items:stretch;padding:5px;gap:2px;z-index:20}
+.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:19px;font-size:10.5px;font-weight:800;color:var(--dim);transition:background .2s,color .2s}
+.tabs button i{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--dc) 45%,white),var(--dc));box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--dc) 70%,black),0 2px 4px rgba(0,0,0,.18);transition:transform .2s}
+.tabs button i svg{width:17px;height:17px}
+.tabs button.on{color:var(--ink);background:linear-gradient(180deg,color-mix(in srgb,var(--dc) 18%,white),color-mix(in srgb,var(--dc) 30%,white));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--dc) 45%,white)}
+.tabs button.on i{transform:scale(1.08)}
+.tabs button:active i{transform:scale(.9)}
+
+/* ---------- controles ---------- */
+.seg{display:flex;gap:4px;padding:4px;border-radius:999px;overflow-x:auto;scrollbar-width:none}
+.seg::-webkit-scrollbar{display:none}
+.seg button{flex:1 0 auto;height:32px;padding:0 13px;border-radius:999px;font-size:13.5px;font-weight:800;color:var(--dim);white-space:nowrap;transition:background .2s,color .2s}
+.seg button.on{color:var(--acc-ink);background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 14px 6px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;height:32px;padding:0 14px;border-radius:999px;font-size:13.5px;font-weight:800;color:var(--ink2);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.chip.on{color:var(--acc-ink);background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 6px 14px -8px var(--acc)}
+.tag{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:800;color:var(--acc-ink);background:var(--acc);white-space:nowrap}
+.tag.soft{color:#5a6270;background:rgba(255,255,255,.8);box-shadow:0 0 0 1px rgba(150,160,180,.35)}
+.bigbtn{display:flex;align-items:center;justify-content:center;gap:10px;height:52px;border-radius:999px;font-size:17px;font-weight:800;color:var(--acc-ink);width:100%;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 55%,white) 0%,var(--acc) 55%,color-mix(in srgb,var(--acc) 85%,black) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 10px 20px -10px color-mix(in srgb,var(--acc) 80%,black);text-shadow:0 1px 1px rgba(0,0,0,.2);transition:transform .15s}
+.bigbtn:active{transform:scale(.97)}
+.bigbtn:disabled{opacity:.55}
+.bigbtn.ghosty{color:var(--ink2);text-shadow:none;background:linear-gradient(180deg,#fff,#e9edf2);box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.3),0 8px 16px -10px rgba(40,50,70,.4)}
+.round{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:none}
+.round svg{width:20px;height:20px}
+.ic{display:inline-grid;place-items:center}
+.ic svg{width:100%;height:100%}
+
+#toast{position:fixed;left:50%;bottom:calc(var(--tab-h) + 18px);transform:translate(-50%,10px);padding:10px 18px;border-radius:999px;background:rgba(40,46,58,.84);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  color:#fff;font-size:14px;font-weight:700;opacity:0;transition:all .2s;z-index:60;pointer-events:none;max-width:calc(100vw - 40px);text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* hoja inferior */
+.scrim{position:fixed;inset:0;z-index:40;background:rgba(40,46,58,.25);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);animation:fade .2s}
+.sheet{position:fixed;left:8px;right:8px;bottom:calc(var(--sab) + 8px);max-height:78vh;z-index:41;--r:30px;--bw:8px;animation:sheetIn .3s cubic-bezier(.2,.9,.3,1.1)}
+.sheet>.face{background:rgba(247,249,252,.97);max-height:calc(78vh - 16px);overflow-y:auto;padding:16px 16px 18px}
+@keyframes sheetIn{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+@keyframes fade{from{opacity:0}}
+
+@media (prefers-reduced-motion: reduce){.blob{animation:none}.screen.fwd,.screen.back{animation:none}}

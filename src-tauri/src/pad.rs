@@ -1,5 +1,5 @@
 //! Lectura del mando con XInput desde un hilo propio (la webview no recibe mando sin foco). Dispara la
-//! combinacion de captura y, mientras Ajustes la esta aprendiendo, informa de lo que se pulsa.
+//! combinacion de captura, la que cambia la salida de audio y, mientras Ajustes la esta aprendiendo, informa de lo que se pulsa.
 //! XInput no es exclusivo: el juego sigue recibiendo el mando igual; aqui solo se lee (y se vibra un instante).
 use tauri::AppHandle;
 
@@ -82,19 +82,33 @@ mod xinput {
 /// despues los deja parados (si el juego estaba vibrando, lo vuelve a pedir en su siguiente efecto).
 #[cfg(windows)]
 pub fn rumble(pads: u8) {
-    if pads == 0 {
+    rumble_n(pads, 1);
+}
+
+/// Como [`rumble`], pero `n` pulsos seguidos (para distinguir sin mirar, p. ej. la salida de audio elegida).
+#[cfg(windows)]
+pub fn rumble_n(pads: u8, n: u8) {
+    if pads == 0 || n == 0 {
         return;
     }
     let _ = std::thread::Builder::new().name("pad-rumble".into()).spawn(move || {
         let each = |l: u16, r: u16| (0..4u32).filter(|i| pads & (1 << i) != 0).for_each(|i| xinput::vibrate(i, l, r));
-        each(0, 40000);
-        std::thread::sleep(std::time::Duration::from_millis(110));
-        each(0, 0);
+        for k in 0..n {
+            if k > 0 {
+                std::thread::sleep(std::time::Duration::from_millis(110));
+            }
+            each(0, 40000);
+            std::thread::sleep(std::time::Duration::from_millis(110));
+            each(0, 0);
+        }
     });
 }
 
 #[cfg(not(windows))]
 pub fn rumble(_pads: u8) {}
+
+#[cfg(not(windows))]
+pub fn rumble_n(_pads: u8, _n: u8) {}
 
 #[cfg(windows)]
 pub fn spawn(app: AppHandle) {
@@ -107,6 +121,7 @@ pub fn spawn(app: AppHandle) {
         let reader = xinput::Reader::new();
         let t0 = Instant::now();
         let mut det = ComboDetector::new(0, 1200);
+        let mut audio_det = ComboDetector::new(0, 800);
         let mut learner = ComboLearner::default();
         let mut was_learning = false;
         let mut last_sent: Option<(u32, bool)> = None;
@@ -117,14 +132,16 @@ pub fn spawn(app: AppHandle) {
             let st = app.state::<crate::state::AppState>();
             let learning = st.learning_pad.load(Ordering::Relaxed);
             let mask = st.combo_mask.load(Ordering::Relaxed);
+            let audio_mask = st.audio_mask.load(Ordering::Relaxed);
             if learning != was_learning {
                 was_learning = learning;
                 learner.reset();
                 last_sent = None;
             }
-            if mask == 0 && !learning {
+            if mask == 0 && audio_mask == 0 && !learning {
                 // Sin combinacion no hace falta consultar el mando.
                 det.mask = 0;
+                audio_det.mask = 0;
                 std::thread::sleep(Duration::from_millis(250));
                 continue;
             }
@@ -147,7 +164,7 @@ pub fn spawn(app: AppHandle) {
                         *c = true;
                         let m = pad_mask(b, lt, rt);
                         buttons |= m;
-                        if m & mask != 0 {
+                        if m & (mask | audio_mask) != 0 {
                             pressing |= 1 << i;
                         }
                     }
@@ -158,6 +175,7 @@ pub fn spawn(app: AppHandle) {
 
             if learning {
                 det.mask = 0;
+                audio_det.mask = 0;
                 let got = learner.update(buttons);
                 let cur = got.unwrap_or(learner.current());
                 if got.is_some() {
@@ -171,9 +189,19 @@ pub fn spawn(app: AppHandle) {
             }
 
             det.mask = mask;
-            // Con el visor delante el mando navega por los menus: no captura.
-            if det.update(buttons, t0.elapsed().as_millis() as u64) && !crate::platform::own_window_focused() {
-                crate::snap::trigger_from_pad(&app, pressing);
+            audio_det.mask = audio_mask;
+            let now = t0.elapsed().as_millis() as u64;
+            // Con el visor delante el mando navega por los menus: ni captura ni cambia el audio.
+            let fired = det.update(buttons, now);
+            let audio_fired = audio_det.update(buttons, now);
+            if (fired || audio_fired) && !crate::platform::own_window_focused() {
+                // Si las dos combinaciones comparten botones, gana la mas especifica (la que tiene mas botones).
+                let audio_wins = audio_fired && (!fired || audio_mask.count_ones() > mask.count_ones());
+                if audio_wins {
+                    crate::outputs::cycle_with_feedback(&app, pressing);
+                } else {
+                    crate::snap::trigger_from_pad(&app, pressing);
+                }
             }
         }
     });
