@@ -19,6 +19,7 @@ import { READING_ROWS, isReadingId, readingAct, type ReadingId } from './reading
 import { checkUpdate, updateAct } from './updater.svelte';
 import { isRemoteId, remoteAct, type RemoteId } from './remote.svelte';
 import { openPhrases, phrasesCmd } from './phrases.svelte';
+import { goalLit, goalTrack, localDay, type GoalKey } from './readgoals';
 import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
 
 export const GRID_VIEW_H = 480;
@@ -85,6 +86,7 @@ function validKey(view: View, key: string | undefined): string | undefined {
     if (/^plat\d+$/.test(key)) return app.config.root && n < app.lib.platforms.length && !(app.readCard && app.lib.platforms[n].id === SAGA_PLATFORM) ? key : undefined;
     if (/^dock\d+$/.test(key)) return n < DOCK_N ? key : undefined;
     if (/^rec\d+$/.test(key)) return app.config.root && n < app.recent.length ? key : undefined;
+    if (key === 'read') return app.readCard ? key : undefined;
   } else if (view === 'titles') {
     // La baldosa «Añadir juego» es la posición `titles.length`.
     if (/^tit\d+$/.test(key)) return n === (app.platform?.titles.length ?? 0) || app.tview.includes(n) ? key : undefined;
@@ -495,6 +497,8 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
     dock(+b);
   } else if (a === 'rec') {
     openRecent(+b);
+  } else if (a === 'read') {
+    openStreak();
   } else if (a === 'sr') {
     // Juego de la clasificación: su ficha (B vuelve a las estadísticas).
     app.p = +b; app.titleFilter = 'all';
@@ -532,6 +536,61 @@ function openSagas() {
   if (i < 0) { toast('No hay sagas'); return; }
   app.p = i; app.hp = i; app.t = 0; app.fk.titles = 'tit0';
   go('titles', 'fwd');
+}
+
+/* ---------- racha de lectura ---------- */
+const GOAL_KEYS: GoalKey[] = ['vn', 'jvn'];
+const goalOf = (k: GoalKey) => (k === 'vn' ? app.config.goalVn : app.config.goalJvn);
+const goalKeys = () => GOAL_KEYS.filter((k) => app.lib.platforms.some((p) => p.id === k));
+/** Anillo (categoría de novelas) de un juego, si es de una. */
+function goalKeyOf(gameId: string): GoalKey | undefined {
+  return GOAL_KEYS.find((k) => app.lib.platforms.some((p) => p.id === k && p.titles.some((t) => t.gameId === gameId)));
+}
+
+/** Pantalla «Racha de lectura» (B vuelve a la pantalla desde la que se abrió). */
+export function openStreak(k?: GoalKey) {
+  const keys = goalKeys();
+  if (!keys.length) return;
+  app.streakKey = k && keys.includes(k) ? k : keys.includes(app.streakKey) ? app.streakKey : keys[0];
+  app.streakFrom = app.view === 'streak' || app.view === 'viewer' ? 'home' : app.view;
+  go('streak', 'fwd');
+}
+/** LB/RB en la racha: el otro anillo. */
+function streakSwitch(d: number) {
+  const keys = goalKeys();
+  const i = keys.indexOf(app.streakKey) + d;
+  if (i < 0 || i >= keys.length) { bump(screenEl()?.querySelector('.smap'), d, 0); return; }
+  app.streakKey = keys[i];
+  blip(700);
+}
+
+/** Al empezar una novela: pide al núcleo un aviso sobre el juego para cuando se llegue a la meta de hoy. */
+function scheduleGoalNotice(gameId: string) {
+  const k = goalKeyOf(gameId);
+  if (!k) return;
+  const now = Date.now(), goal = goalOf(k);
+  const t = goalTrack(k, goal, app.lib.platforms, null, now);
+  if (t.done) return;
+  // Unos segundos de margen: el núcleo empieza a contar cuando ve el proceso del juego.
+  const at = now + (goal - t.today) * 60000 + 15000;
+  if (localDay(at) !== localDay(now)) return;
+  const n = t.streak + 1;
+  const text = n > 1 ? `¡Meta cumplida! Racha de ${n} días` : '¡Meta de lectura cumplida!';
+  backend.goalNotice(gameId, at, text).catch((e) => console.error(e));
+}
+
+/** Al cerrar una novela con la meta de hoy cumplida y sin celebrar: se abre la racha para encenderla. */
+function celebrateGoal(gameId: string) {
+  const k = goalKeyOf(gameId);
+  if (!k) return;
+  const now = Date.now();
+  if (!goalTrack(k, goalOf(k), app.lib.platforms, null, now).done || goalLit(k, localDay(now))) return;
+  const ok = () => !app.overlay && !app.osk.open && !app.playing && !goalLit(k, localDay(Date.now()));
+  // En la ficha se deja ver antes cómo sube el tiempo jugado; en el resto se abre ya (en Inicio, antes de que la
+  // tarjeta pequeña encienda la racha por su cuenta).
+  const v = app.view, f = app.focus;
+  if (v !== 'detail') { if (ok()) openStreak(k); return; }
+  setTimeout(() => { if (app.view === v && app.focus === f && ok()) openStreak(k); }, 2300);
 }
 
 export function openStats() {
@@ -664,6 +723,9 @@ export function back() {
   } else if (app.view === 'stats') {
     app.fk.home = 'dock3';
     go('home', 'back');
+  } else if (app.view === 'streak') {
+    if (app.streakFrom === 'home') app.fk.home = 'read';
+    go(app.streakFrom, 'back');
   } else if (app.view === 'titles') {
     app.fk.home = app.readCard && isSagaPlatform(app.platform) ? 'dock2' : 'plat' + app.p;
     go('home', 'back');
@@ -676,6 +738,7 @@ export function back() {
 
 export function page(d: number) {
   if (app.view === 'viewer') { stepViewer(d * 10); return; }
+  if (app.view === 'streak') { streakSwitch(d); return; }
   if (app.view === 'stats' || app.view === 'evo') { statsKind(d); return; }
   if (app.view === 'titles') {
     const n = app.tview.length;
@@ -1162,6 +1225,7 @@ function onBackendEvent(e: BackendEvent) {
     onLearnPad(e.combo, e.connected, e.done);
   } else if (e.type === 'game-started') {
     if (app.playing?.id !== e.id) app.playing = { id: e.id, since: Date.now() };
+    scheduleGoalNotice(e.id);
   } else if (e.type === 'magpie-status') {
     toast(e.message, e.error ? 4200 : 3200);
     if (!e.error) {
@@ -1174,7 +1238,7 @@ function onBackendEvent(e: BackendEvent) {
     const t = e.seconds >= 60 ? realPlatforms(app.lib).flatMap((p) => p.titles).find((t) => t.gameId === e.id) : undefined;
     app.gain = t ? { id: e.id, seconds: e.seconds, secs: t.playSeconds, week: [...t.week], day: new Date().toDateString(), at: Date.now() } : null;
     toast(e.seconds >= 60 ? `Has jugado ${fmtDur(e.seconds)} a ${e.name}` : `${e.name} se ha cerrado`, 3200);
-    void softRefresh();
+    void softRefresh().then(() => { if (e.seconds >= 60) celebrateGoal(e.id); });
   }
 }
 

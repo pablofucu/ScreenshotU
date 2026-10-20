@@ -3,9 +3,10 @@ import { untrack } from 'svelte';
 import { RAINBOW, type Accent } from './icons';
 import type { AudioOutput, Config, GameStatus, Library, MagpieStatus, Saga, Shot, SortMode as SortModeT, Swatch, Title } from './types';
 import { inkDark } from './oklch';
+import { GOAL_COL, type GoalKey } from './readgoals';
 import { calendar, evoBuckets, playYears, rankPeriod, yearReview, type EvoKind, type PeriodKind } from './stats';
 
-export type View = 'home' | 'titles' | 'detail' | 'shots' | 'viewer' | 'stats' | 'evo';
+export type View = 'home' | 'titles' | 'detail' | 'shots' | 'viewer' | 'stats' | 'evo' | 'streak';
 export type SortMode = SortModeT;
 
 export const DEFAULT_CONFIG: Config = {
@@ -281,6 +282,9 @@ class Store {
   /** Ventana del calendario: 0 = los últimos 6 meses, -1 = los 6 anteriores… */
   calOff = $state(0);
   evoKind = $state<EvoKind>('week');
+  /** Pantalla de racha: anillo elegido (mapa y cifras) y pantalla a la que vuelve B. */
+  streakKey = $state<GoalKey>('vn');
+  streakFrom = $state<View>('home');
   /** Desde dónde se abrió la ficha (B vuelve allí). */
   detailFrom = $state<'titles' | 'stats'>('titles');
   rank = $derived(rankPeriod(this.lib, this.statsKind, this.statsOff, this.now.getTime()));
@@ -372,6 +376,7 @@ class Store {
     if (this.view === 'home') return this.platAcc(this.hp);
     if (this.view === 'titles') return this.platAcc(this.p);
     if (this.view === 'stats') return this.acc(5);
+    if (this.view === 'streak') return accentOf(GOAL_COL[this.streakKey].c, false, 'Racha');
     if (this.favView) return this.acc(2);
     return this.titleAcc(this.p, this.t);
   });

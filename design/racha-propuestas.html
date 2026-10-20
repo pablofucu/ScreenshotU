@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Racha de lectura · Visor de capturas</title>
+<style>
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:400;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-400-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:500;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-500-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:700;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-700-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:800;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-800-latin.woff2') format('woff2')}
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+
+/* ============ Página de documentación ============ */
+html,body{margin:0;background:#dfe3e9;font-family:var(--round);color:#3a414e}
+.doc{max-width:1360px;margin:0 auto;padding:40px 24px 80px}
+.doc>header h1{font-size:34px;font-weight:800;margin:0 0 6px}
+.doc>header p{font-size:17px;line-height:1.55;margin:0 0 10px;max-width:880px;color:#545c6a}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+.toc a{font-size:15px;font-weight:700;color:#3a414e;text-decoration:none;background:#fff;border-radius:999px;padding:6px 14px;box-shadow:0 0 0 1px rgba(95,110,135,.2)}
+.toc a:hover{background:#00A0D8;color:#fff}
+section.p{margin-top:56px}
+section.p h2{font-size:26px;font-weight:800;margin:0 0 4px;display:flex;align-items:center;gap:12px}
+section.p h2 .n{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#3a414e;color:#fff;font-size:19px}
+section.p .why{font-size:16px;color:#5f6776;margin:0 0 16px 50px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:24px;align-items:start}
+@media (max-width:1100px){.row{grid-template-columns:1fr}}
+.frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:18px;overflow:hidden;box-shadow:0 0 0 1px rgba(60,70,90,.25),0 24px 50px -24px rgba(30,40,60,.55);background:#0f1218}
+.notes{background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 0 0 1px rgba(95,110,135,.18)}
+.notes h3{margin:0 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:#7a8291}
+.notes ol{margin:0;padding:0;list-style:none;counter-reset:k}
+.notes li{counter-increment:k;position:relative;padding-left:36px;margin-bottom:14px;font-size:15px;line-height:1.5}
+.notes li::before{content:counter(k);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:#ff4f7b;color:#fff;font-weight:800;font-size:14px;display:grid;place-items:center}
+.notes li b{display:block;font-size:16px}
+.notes .now{margin-top:14px;padding-top:12px;border-top:1px solid #e6e9ee;font-size:14px;color:#6a7282;line-height:1.5}
+.notes .now strong{color:#3a414e}
+
+/* ============ Mundo de la app (copia de src/app.css adaptada a .stage) ============ */
+.stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;
+  font-family:var(--round);color:#3a414e;background:#eceef2;--acc:#00A0D8;--acc-ink:#fff;user-select:none}
+.bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(34px);opacity:.9}
+.blob.w{background:radial-gradient(circle,#fff,rgba(255,255,255,0) 70%)}
+.blob.a{background:radial-gradient(circle,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%);opacity:.55}
+.ghost{position:absolute;width:118px;height:118px;border-radius:28px;padding:10px;background:rgba(255,255,255,.7);box-shadow:0 0 0 1px rgba(120,130,150,.25),0 10px 18px -10px rgba(40,50,70,.4);filter:blur(5px)}
+.ghost i{display:block;width:100%;height:100%;border-radius:18px;background:linear-gradient(160deg,color-mix(in srgb,var(--g) 30%,white),var(--g))}
+.glass{position:absolute;--r:28px;--bw:10px;border-radius:var(--r);padding:var(--bw);isolation:isolate;
+  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  -webkit-backdrop-filter:blur(14px) saturate(1.7);backdrop-filter:blur(14px) saturate(1.7);
+  box-shadow:inset 0 1.5px 0 #fff,inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.95),inset 0 -1.5px 0 rgba(110,125,150,.30),0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42)}
+.glass::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.62) 0%,rgba(255,255,255,.20) 55%,rgba(255,255,255,0) 100%);
+  -webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.85}
+.glass::after{content:'';position:absolute;z-index:3;left:12%;top:3px;width:34%;height:5px;border-radius:5px;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 40%,rgba(255,255,255,0));filter:blur(.6px);opacity:.9}
+.glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:#dfe3e9}
+.glass .face::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(20,30,50,.20),inset 0 3px 6px -2px rgba(0,0,0,.35),inset 0 -2px 4px -2px rgba(255,255,255,.5)}
+.glass.f{transform:scale(1.06);z-index:3;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)) 0%,color-mix(in srgb,var(--acc) 72%,transparent) 55%,color-mix(in srgb,var(--acc) 92%,black) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),inset 0 -10px 14px -8px color-mix(in srgb,var(--acc) 30%,white),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 0 26px 2px color-mix(in srgb,var(--acc) 50%,transparent),0 22px 34px -16px color-mix(in srgb,var(--acc) 70%,black)}
+.pill{-webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);background:linear-gradient(180deg,rgba(255,255,255,.80),rgba(255,255,255,.52));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+.avatar{left:22px;top:12px;width:60px;height:60px;--r:16px;--bw:5px}
+.avatar .face{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white),var(--acc));display:grid;place-items:center}
+.avatar svg{width:34px;height:34px}
+.crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:20px;font-weight:700;color:#4a5260;z-index:5}
+.crumb .sep{color:#a3abb8;font-weight:500}.crumb .cur{color:var(--acc)}
+.clock{position:absolute;right:24px;top:24px;display:flex;gap:14px;align-items:center;font-size:20px;font-weight:700;color:#4a5260;z-index:5}
+.clock small{font-size:15px;font-weight:500;color:#7a8291}
+.batt{display:flex;gap:2px}.batt b{width:6px;height:13px;border-radius:2px;background:var(--acc)}.batt b.off{background:#c3c9d3}
+.hints{position:absolute;right:22px;bottom:16px;display:flex;gap:10px;z-index:6}
+.hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:999px;font-size:16px;font-weight:700;color:#4a5260;white-space:nowrap}
+.btn{min-width:28px;height:28px;border-radius:14px;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;--b:#4a5260;padding:0 6px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--b) 70%,black),0 1px 2px rgba(0,0,0,.2);text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.btn.a{--b:#3BB54A}.btn.b{--b:#E8384F}.btn.x{--b:#3F63E0}.btn.y{--b:#F2B807;color:#3a2f00;text-shadow:none}.btn.sh{border-radius:8px;--b:#6b7383}
+.chip{font-size:15px;font-weight:700;color:var(--acc-ink);background:var(--acc);padding:3px 12px;border-radius:999px;white-space:nowrap}
+.sc{position:absolute;inset:0;background-size:cover;background-position:center;background-color:#c9cfd8}
+.mk{position:absolute;z-index:20;width:34px;height:34px;border-radius:50%;background:#ff4f7b;color:#fff;font-weight:800;font-size:18px;display:grid;place-items:center;
+  box-shadow:0 0 0 3px #fff,0 6px 14px rgba(255,79,123,.5)}
+.ico{display:grid;place-items:center}.ico svg{width:100%;height:100%}
+
+
+/* ============ Racha: piezas comunes ============ */
+.panel{position:absolute;border-radius:26px;background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(250,251,253,.82));
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px rgba(95,110,135,.20),0 18px 30px -18px rgba(40,50,70,.45)}
+.ptitle{font-size:20px;font-weight:800;color:#4a5260;display:flex;align-items:center;gap:10px}
+.ptitle small{font-size:15px;font-weight:600;color:#8a92a0}
+.tabs{position:absolute;display:flex;gap:6px;padding:6px;border-radius:999px;align-items:center;z-index:5}
+.tabs .t{height:40px;padding:0 20px;border-radius:999px;display:flex;align-items:center;gap:8px;font-size:17px;font-weight:800;color:#5f6776}
+.tabs .t i{width:12px;height:12px;border-radius:50%;background:var(--c)}
+.tabs .t.on{background:var(--c,var(--acc));color:#fff;box-shadow:0 0 0 1px color-mix(in srgb,var(--c,var(--acc)) 70%,black),0 6px 14px -6px var(--c,var(--acc))}
+.tabs .t.on i{background:#fff}
+.tabs .btn{margin:0 4px}
+.tip{position:absolute;z-index:8;padding:8px 14px;border-radius:14px;background:#3a414e;color:#fff;font-size:15px;font-weight:700;white-space:nowrap;box-shadow:0 10px 20px -8px rgba(0,0,0,.5)}
+.tip small{display:block;font-size:13px;font-weight:600;color:#c3c9d3}
+.tip::after{content:'';position:absolute;left:50%;bottom:-6px;margin-left:-6px;border:6px solid transparent;border-bottom:0;border-top-color:#3a414e}
+.k{font-size:14px;font-weight:700;color:#7a8291}
+.fl{display:inline-block;flex:none}
+.fl svg{width:100%;height:100%;display:block}
+.cell{display:block;border-radius:3px;background:#dde1e7}
+.cell.st{box-shadow:0 0 0 1.5px var(--edge)}
+.cell.td{box-shadow:0 0 0 2px #fff,0 0 0 3.5px var(--c)}
+.cell.fu{background:transparent;box-shadow:inset 0 0 0 1px #e3e6eb}
+.vn{--c:#00A0D8;--soft:#cfe6f1;--ink:#00739c;--edge:#0073a0}
+.jvn{--c:#E5487A;--soft:#f6d3df;--ink:#a82b58;--edge:#b02c5c}
+.play .in{animation:rup .6s cubic-bezier(.2,.8,.3,1) both;animation-delay:var(--d,0s)}
+@keyframes rup{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes rpop{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
+.play .cell{animation:rpop .3s calc(.4s + var(--k,0) * 12ms) both}
+.replay{position:absolute;z-index:30;right:14px;top:14px;height:34px;padding:0 14px;border:0;border-radius:999px;font:800 14px var(--round);color:#fff;background:rgba(30,36,48,.7);cursor:pointer}
+.replay:hover{background:#00A0D8}
+code{font-size:.92em;background:#eef1f5;border-radius:6px;padding:1px 6px}
+
+/* ============ 0 · Cuándo salta ============ */
+.flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:4px 0 18px}
+@media (max-width:900px){.flow{grid-template-columns:1fr 1fr}}
+.flow div{background:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 0 0 1px rgba(95,110,135,.18);font-size:14.5px;line-height:1.5;color:#545c6a}
+.flow b{display:block;font-size:16px;color:#3a414e;margin-bottom:4px}
+.flow em{font-style:normal;font-weight:800;color:#ff4f7b}
+.demo{display:flex;flex-wrap:wrap;gap:24px;align-items:center;background:#fff;border-radius:18px;padding:22px;box-shadow:0 0 0 1px rgba(95,110,135,.18)}
+.demo .card{position:relative;width:440px;height:150px;border-radius:24px;padding:8px;background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(225,234,246,.5));box-shadow:0 0 0 1px rgba(95,110,135,.24),0 18px 30px -16px rgba(40,50,70,.42)}
+.demo .face{position:relative;width:100%;height:100%;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,#fbfcfd,#eef1f5);display:flex;align-items:center;gap:14px;padding:0 12px;box-shadow:inset 0 0 0 1px rgba(20,30,50,.2),inset 0 3px 6px -2px rgba(0,0,0,.3)}
+.demo .ctrl{display:flex;flex-direction:column;gap:10px;max-width:420px;font-size:14.5px;color:#545c6a;line-height:1.5}
+.demo button{align-self:flex-start;height:40px;padding:0 18px;border:0;border-radius:999px;font:800 15px var(--round);color:#fff;background:#3BB54A;cursor:pointer;box-shadow:0 6px 14px -6px #3BB54A}
+.rrc{display:flex;flex-direction:column;gap:8px;flex:1;min-width:0}
+.rmed{display:grid;grid-template-columns:18px max-content minmax(0,1fr);align-items:center;column-gap:4px;height:48px;padding:0 8px;border-radius:14px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--soft) 45%,white),var(--soft));box-shadow:inset 0 1px 0 #fff,0 0 0 1px color-mix(in srgb,var(--c) 40%,white)}
+.rmed .fl{width:18px;height:18px}
+.rnw{height:26px;overflow:hidden}
+.rnum{display:inline-block;font-size:24px;font-weight:800;line-height:26px;color:var(--ink)}
+.rlab{font-size:12px;font-weight:800;line-height:1.15;color:#4a5260;white-space:nowrap}
+.rlab small{display:block;font-size:10px;color:var(--ink);text-transform:uppercase;letter-spacing:.04em}
+.rmap{display:flex;gap:2px}.rmap>div{display:flex;flex-direction:column;gap:2px}
+.rmap .cell{width:8px;height:8px;border-radius:2px}
+.rmap .cell.td{box-shadow:0 0 0 1px var(--c)}
+
+/* ============ Apertura (transición) ============ */
+.hcard{position:absolute;left:770px;top:412px;width:440px;height:150px;--r:24px;--bw:8px;transform-origin:0 0}
+.hcard .face{background:linear-gradient(180deg,#fbfcfd,#eef1f5);display:flex;align-items:center;gap:12px;padding:0 12px}
+.hsect{position:absolute;top:374px;font-size:19px;font-weight:800;color:#4a5260}
+.rmeta{position:absolute;top:574px;font-size:15px;font-weight:700;color:#5f6776}.rmeta span{color:#8a919c;font-weight:500}
+.plat{position:absolute;top:100px;width:190px;height:190px}
+.plat .face{background:linear-gradient(160deg,color-mix(in srgb,var(--pc) 35%,white),var(--pc));display:grid;place-items:center;font-size:44px;font-weight:800;color:#fff}
+.plabel{position:absolute;top:302px;width:190px;text-align:center;font-size:18px;font-weight:800;color:#4a5260}
+.plabel small{display:block;font-size:14px;font-weight:600;color:#8a919c}
+.zoomer{position:absolute;z-index:10;border-radius:24px;background:linear-gradient(180deg,#fbfcfd,#eef1f5);box-shadow:0 0 0 1px rgba(95,110,135,.3),0 30px 60px -20px rgba(30,40,60,.6);opacity:0;pointer-events:none}
+.home,.full{position:absolute;inset:0;transition:opacity .25s}
+.full{opacity:0;pointer-events:none}
+.s0.open .home{opacity:0}
+.s0.open .full{opacity:1}
+.s0.open>.mk{display:none}
+
+/* ============ 1 · Panel de racha ============ */
+.s1 .big{left:48px;top:96px;width:400px;height:520px;padding:26px}
+.s1 .rings{position:relative;width:250px;height:250px;margin:6px auto 0}
+.s1 .rings svg{position:absolute;inset:0;overflow:visible}
+.s1 .rings .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:30px;font-weight:800;line-height:1.15}
+.s1 .rings .mid small{font-size:13px;color:#8a92a0;font-weight:700}
+.arcd{transition:stroke-dashoffset 1.2s cubic-bezier(.3,.8,.3,1)}
+.s1 .leg{display:flex;flex-direction:column;gap:10px;margin-top:22px}
+.s1 .leg div{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:800;color:#4a5260}
+.s1 .leg i{width:14px;height:14px;border-radius:50%;background:var(--c)}
+.s1 .leg span{margin-left:auto;color:var(--ink)}
+.s1 .leg small{font-size:14px;color:#8a92a0;font-weight:700}
+.s1 .bar{height:10px;border-radius:5px;background:var(--soft);overflow:hidden;margin:-4px 0 4px 24px}
+.s1 .bar b{display:block;height:100%;background:var(--c);border-radius:5px}
+.s1 .medals{position:absolute;left:472px;top:96px;width:760px;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.bmed{height:150px;border-radius:24px;padding:18px 22px;display:grid;grid-template-columns:76px 1fr;column-gap:16px;align-items:center;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--soft) 40%,white),var(--soft));box-shadow:inset 0 1.5px 0 #fff,0 0 0 1.5px color-mix(in srgb,var(--c) 45%,white),0 18px 30px -18px color-mix(in srgb,var(--c) 70%,black)}
+.bmed .fl{width:76px;height:76px;grid-row:span 2}
+.bmed b{font-size:56px;font-weight:800;line-height:1;color:var(--ink)}
+.bmed b small{font-size:20px;margin-left:6px}
+.bmed p{margin:4px 0 0;font-size:15px;font-weight:700;color:#5f6776}
+.bmed .rec{display:inline-block;margin-left:6px;font-size:12px;font-weight:800;color:#fff;background:var(--c);border-radius:999px;padding:2px 9px;text-transform:uppercase;letter-spacing:.05em;vertical-align:4px}
+.s1 .cal{left:472px;top:264px;width:760px;height:352px;padding:18px 26px}
+.s1 .heat{display:flex;gap:5px;margin-top:12px}
+.s1 .heat>div{display:flex;flex-direction:column;gap:5px}
+.s1 .heat .cell{width:22px;height:22px}
+.s1 .mon{display:flex;gap:4px;font-size:12px;font-weight:700;color:#8a92a0;height:16px;margin-top:6px}
+.s1 .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}
+.s1 .tiles div{background:#f3f5f8;border-radius:16px;padding:6px 14px}
+.s1 .tiles b{display:block;font-size:24px;font-weight:800;color:#3a414e}
+.s1 .tiles b small{font-size:14px;color:#6a7282}
+
+/* ============ 2 · Camino de hitos ============ */
+.s2 .hero{left:48px;top:92px;width:1184px;height:200px;padding:22px 30px;display:flex;align-items:center;gap:28px}
+.s2 .hero .fl{width:120px;height:120px}
+.s2 .hero .n{font-size:96px;font-weight:800;line-height:.9;color:var(--ink)}
+.s2 .hero .n small{display:block;font-size:20px;color:#5f6776;margin-top:8px}
+.s2 .hero .nx{margin-left:auto;width:380px}
+.s2 .hero .nx .k{display:flex;justify-content:space-between}
+.s2 .hero .nx .bar{height:16px;border-radius:8px;background:var(--soft);margin:8px 0;overflow:hidden}
+.s2 .hero .nx .bar b{display:block;height:100%;border-radius:8px;background:linear-gradient(90deg,color-mix(in srgb,var(--c) 60%,white),var(--c));animation:grow 1.4s .4s cubic-bezier(.3,.8,.3,1) both}
+@keyframes grow{from{width:0}}
+.s2 .hero .nx p{margin:0;font-size:15px;font-weight:700;color:#5f6776}
+.s2 .road{left:48px;top:312px;width:1184px;height:300px;padding:20px 30px;overflow:hidden}
+.s2 .road svg{position:absolute;left:0;top:0}
+.s2 .day{position:absolute;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:800;color:#fff;
+  background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--c) 45%,white),var(--c) 65%,color-mix(in srgb,var(--c) 75%,black));box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 3px #fff,0 6px 12px -4px rgba(0,0,0,.3)}
+.s2 .day.no{background:#e3e6eb;color:#9aa1ad;box-shadow:0 0 0 3px #fff}
+.s2 .day.td{width:56px;height:56px;margin:-28px 0 0 -28px;font-size:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 4px #fff,0 0 0 7px var(--c),0 0 26px 4px color-mix(in srgb,var(--c) 60%,transparent)}
+.s2 .goal{position:absolute;margin:-30px 0 0 -30px;width:60px;height:60px;border-radius:18px;display:grid;place-items:center;font-size:20px;font-weight:800;color:#fff;
+  background:linear-gradient(160deg,#ffd76a,#e3a01a);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 3px #fff,0 10px 18px -8px #b47c00}
+.s2 .goal.lock{background:linear-gradient(160deg,#eef0f3,#cfd4dc);color:#8a92a0;box-shadow:inset 0 1.5px 0 #fff,0 0 0 3px #fff}
+.s2 .glab{position:absolute;transform:translateX(-50%);font-size:13px;font-weight:800;color:#6a7282;text-align:center;white-space:nowrap}
+.s2 .wd{position:absolute;transform:translateX(-50%);font-size:12px;font-weight:700;color:#9aa1ad}
+
+/* ============ 3 · Calendario de anillos ============ */
+.s3 .month{left:48px;top:92px;width:700px;height:524px;padding:20px 26px}
+.s3 .mhd{display:flex;align-items:center;justify-content:space-between}
+.s3 .wdh{display:grid;grid-template-columns:repeat(7,1fr);margin-top:14px;font-size:13px;font-weight:800;color:#9aa1ad;text-align:center}
+.s3 .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:6px}
+.s3 .dc{position:relative;height:70px;border-radius:14px;display:grid;place-items:center}
+.s3 .dc svg{width:58px;height:58px;overflow:visible}
+.s3 .dc span{position:absolute;left:8px;top:5px;font-size:12px;font-weight:800;color:#8a92a0}
+.s3 .dc.f{background:#fff;box-shadow:0 0 0 3px var(--acc),0 0 18px 2px color-mix(in srgb,var(--acc) 40%,transparent);z-index:2}
+.s3 .dc.fu{opacity:.35}
+.s3 .dc.td{background:color-mix(in srgb,var(--acc) 12%,white)}.s3 .dc.td span{color:var(--acc)}.s3 .dc.td span::after{content:' · hoy'}
+.s3 .dc .both{position:absolute;right:6px;top:4px;width:16px;height:16px}
+.s3 .side{left:770px;top:92px;width:462px;height:524px;padding:22px 26px}
+.s3 .side h3{margin:0;font-size:26px;font-weight:800}
+.s3 .side .sub{font-size:15px;font-weight:700;color:#8a92a0;margin-top:2px}
+.s3 .trk{margin-top:18px;padding:14px 16px;border-radius:18px;background:color-mix(in srgb,var(--soft) 45%,white);box-shadow:0 0 0 1px color-mix(in srgb,var(--c) 30%,white)}
+.s3 .trk .top{display:flex;align-items:baseline;gap:8px;font-size:17px;font-weight:800;color:#4a5260}
+.s3 .trk .top b{margin-left:auto;font-size:24px;color:var(--ink)}
+.s3 .trk .top small{font-size:14px;color:#8a92a0}
+.s3 .seg{display:flex;gap:3px;height:12px;margin:10px 0 8px}
+.s3 .seg i{border-radius:4px;background:var(--c)}
+.s3 .seg i:nth-child(2){opacity:.65}.s3 .seg i:nth-child(3){opacity:.4}
+.s3 .gl{display:flex;flex-direction:column;gap:3px;font-size:14px;font-weight:700;color:#5f6776}
+.s3 .gl div{display:flex;justify-content:space-between}
+.s3 .ok{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:800;color:#fff;background:#3BB54A;border-radius:999px;padding:2px 9px;margin-left:8px}
+.s3 .mrow{display:flex;gap:10px;margin-top:16px}
+.s3 .mrow div{flex:1;background:#f3f5f8;border-radius:14px;padding:8px 12px;font-size:13px;font-weight:700;color:#7a8291}
+.s3 .mrow b{display:block;font-size:20px;color:#3a414e}
+
+/* ============ 4 · Minutos frente a la meta ============ */
+.s4 .chart{left:48px;top:150px;width:1184px;height:290px;padding:18px 26px}
+.s4 .plot{position:absolute;left:70px;right:26px;top:58px;bottom:40px}
+.s4 .bars{position:absolute;inset:0;display:flex;align-items:flex-end;gap:6px}
+.s4 .bars i{flex:1;border-radius:6px 6px 2px 2px;background:color-mix(in srgb,var(--c) 40%,white);transform-origin:bottom;animation:bar .7s calc(var(--k) * 22ms) cubic-bezier(.3,.8,.3,1) both}
+.s4 .bars i.ok{background:linear-gradient(180deg,color-mix(in srgb,var(--c) 70%,white),var(--c))}
+.s4 .bars i.td{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--c)}
+.s4 .bars i.zero{background:#e3e6eb;height:4px !important}
+@keyframes bar{from{transform:scaleY(0)}}
+.s4 .gline{position:absolute;left:-4px;right:0;border-top:2.5px dashed #3a414e;opacity:.55}
+.s4 .gline span{position:absolute;left:-62px;top:-11px;font-size:13px;font-weight:800;color:#3a414e;width:56px;text-align:right}
+.s4 .axis{position:absolute;left:70px;right:26px;bottom:14px;display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#9aa1ad}
+.s4 .strk{position:absolute;bottom:-6px;height:6px;border-radius:3px;background:var(--edge)}
+.s4 .low{position:absolute;top:458px;height:158px;padding:18px 22px}
+.s4 .low h4{margin:0 0 10px;font-size:16px;font-weight:800;color:#4a5260}
+.s4 .gr{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;color:#5f6776;margin-bottom:8px}
+.s4 .gr .gico{width:30px;height:30px;border-radius:9px;flex:none;background:linear-gradient(160deg,color-mix(in srgb,var(--g) 35%,white),var(--g));color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center}
+.s4 .gr .b{flex:1;height:10px;border-radius:5px;background:#eef1f5;overflow:hidden}.s4 .gr .b b{display:block;height:100%;background:var(--c)}
+.s4 .gr span{width:64px;text-align:right}
+.s4 .hours{display:flex;align-items:flex-end;gap:3px;height:80px}
+.s4 .hours i{flex:1;border-radius:3px;background:var(--c);opacity:.85}
+.s4 .hl{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:#9aa1ad;margin-top:4px}
+.s4 .big3{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.s4 .big3 div{background:#f3f5f8;border-radius:12px;padding:6px 10px;font-size:12px;font-weight:700;color:#7a8291}
+.s4 .big3 b{display:block;font-size:20px;color:#3a414e}
+</style>
+</head>
+<body>
+<div class="doc">
+<header>
+  <h1>Racha y meta diaria: pantalla completa</h1>
+  <p>Primero, cómo funciona hoy la animación «se enciende la racha» de la tarjeta <b>Lectura de hoy</b> y por qué casi nunca la ves. Después, cómo abrir la tarjeta desde Inicio y cuatro diseños para la pantalla completa con la racha y las estadísticas.</p>
+  <nav class="toc">
+    <a href="#p0">0 · Cuándo salta la animación</a><a href="#pa">A · Cómo se abre</a><a href="#p1">1 · Panel de racha</a><a href="#p2">2 · Camino de hitos</a>
+    <a href="#p3">3 · Calendario de anillos</a><a href="#p4">4 · Minutos frente a la meta</a>
+  </nav>
+</header>
+
+<!-- ================================================================ 0 -->
+<section class="p" id="p0">
+  <h2><span class="n">0</span>Cuándo salta la animación hoy</h2>
+  <p class="why">Está en <code>src/components/ReadRings.svelte</code> (función <code>light()</code>). No hay botón para verla: salta sola, como mucho una vez al día por anillo.</p>
+  <div class="flow">
+    <div><b>1 · Cumples la meta</b>Los minutos de hoy de las partidas de <em>Novelas visuales</em> (anillo azul, 60 min) o <em>Novelas japonesas</em> (rosa, 30 min) llegan a la meta. Cuenta también la partida en curso.</div>
+    <div><b>2 · Queda pendiente</b>Mientras no se haya «encendido», la medalla sigue enseñando la racha de ayer y la casilla de hoy se pinta a medias.</div>
+    <div><b>3 · Estás en Inicio</b>Solo se reproduce con la tarjeta en pantalla: al volver a Inicio (tras la cascada de entrada, ~1,5 s) o al momento si ya estabas ahí cuando llegaste a la meta.</div>
+    <div><b>4 · Se guarda</b>Se apunta en <code>localStorage</code> (<code>visor.goalLit.vn</code> / <code>.jvn</code>) y ya no se repite hasta el día siguiente. El día empieza a las <em>7:00</em>.</div>
+  </div>
+  <p class="why" style="margin-left:0"><b>Por qué no la ves:</b> sueles cumplir la meta jugando, con la novela abierta, y cuando vuelves a Inicio la animación dura menos de un segundo, sin aviso. Si alguna vez entraste en Inicio sin mirar, ya está gastada para ese día. Para probarla: borrar <code>visor.goalLit.vn</code> en las herramientas de desarrollo y volver a Inicio con la meta cumplida.</p>
+  <div class="demo">
+    <div class="card"><div class="face" id="demoCard"></div></div>
+    <div class="ctrl">
+      <b style="color:#3a414e;font-size:16px">Réplica de la animación</b>
+      El número sale por arriba y vuelve a entrar con +1, la medalla da un bote, la llama gira, la casilla de hoy cae desde grande y un brillo recorre los días de la racha. Dos «blips» de sonido.
+      <button id="demoBtn">▶ Encender racha</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ A -->
+<section class="p" id="pa">
+  <h2><span class="n">A</span>Cómo se abre desde Inicio</h2>
+  <p class="why">Hoy la tarjeta no se puede elegir (no tiene foco). Propuesta: que sea un elemento más de la fila «Seguir jugando», con A la tarjeta crece hasta ocupar la pantalla, y B la devuelve a su sitio.</p>
+  <div class="row">
+    <div class="frame"><div class="stage s0" id="s0" style="--acc:#00A0D8">
+      <div class="bg"><div class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></div><div class="blob a" style="left:760px;top:380px;width:520px;height:400px"></div></div>
+      <div class="home">
+        <div class="glass avatar"><div class="face"><span data-i="person"></span></div></div>
+        <div class="crumb pill"><span class="cur">Inicio</span></div>
+        <div class="clock">20/10 <small>(mar)</small> 22:40 <span class="batt"><b></b><b></b><b></b><b class="off"></b></span></div>
+        <div class="glass plat" style="left:183px;--pc:#3F63E0"><div class="face">PC</div></div><div class="plabel" style="left:183px">Juegos PC<small>48 títulos</small></div>
+        <div class="glass plat" style="left:453px;--pc:#E8384F"><div class="face">SW</div></div><div class="plabel" style="left:453px">Switch<small>31 títulos</small></div>
+        <div class="glass plat" style="left:723px;--pc:#00A0D8"><div class="face">VN</div></div><div class="plabel" style="left:723px">Novelas visuales<small>22 títulos</small></div>
+        <div class="glass plat" style="left:993px;--pc:#E5487A"><div class="face">JP</div></div><div class="plabel" style="left:993px">Novelas japonesas<small>9 títulos</small></div>
+        <div class="hsect" style="left:70px">Seguir jugando</div>
+        <div class="glass" style="left:70px;top:412px;width:300px;height:150px;--r:24px;--bw:8px"><div class="face"><i class="sc" data-s="4 200" data-w="300" data-h="150"></i></div></div>
+        <div class="glass" style="left:404px;top:412px;width:330px;height:150px;--r:24px;--bw:8px"><div class="face"><i class="sc" data-s="9 30 1" data-w="300" data-h="150"></i></div></div>
+        <div class="hsect" style="left:770px">Lectura de hoy</div>
+        <div class="glass hcard f" id="hcard" style="--acc:#00A0D8"><div class="face" id="hcardFace"></div></div>
+        <div class="rmeta" style="left:774px">Meta diaria<span> · 1 h novelas · 30 min japonés</span></div>
+        <div class="hints"><div class="hint pill"><span class="btn a">A</span>Ver racha</div><div class="hint pill"><span class="btn sh">Start</span>Ajustes</div></div>
+      </div>
+      <div class="zoomer" id="zoomer"></div>
+      <div class="full" id="fullA"></div>
+      <button class="replay" id="openBtn">▶ Pulsar A</button>
+      <span class="mk" style="left:1190px;top:392px">1</span>
+      <span class="mk" style="left:1010px;top:650px">2</span>
+    </div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>La tarjeta coge foco</b>Pasa a ser <code>rec{n}</code> + 1 en el controlador: ← → la recorren como una tarjeta más de la fila, con el mismo marco de cristal azul.</li>
+      <li><b>A = «Ver racha»</b>La pista inferior cambia al enfocarla. La tarjeta se amplía desde su sitio hasta la pantalla entera y el contenido aparece encima (las propuestas 1–4).</li>
+      <li><b>Animación al abrir</b>Si había racha pendiente de encender, se enciende <i>aquí</i>, en grande, en vez de en la tarjeta pequeña. Así nunca se pierde.</li>
+    </ol><p class="now"><strong>Alternativa:</strong> además, una entrada «Racha» en el dock o en Estadísticas (L/R para cambiar de pestaña) para llegar sin pasar por la tarjeta.</p></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 1 -->
+<section class="p" id="p1">
+  <h2><span class="n">1</span>Panel de racha</h2>
+  <p class="why">La tarjeta de Inicio, en grande y con más datos: anillos de hoy a la izquierda, las dos medallas de racha arriba y el mapa de 26 semanas con las cifras clave debajo.</p>
+  <div class="row">
+    <div class="frame"><div class="stage s1" id="st1" style="--acc:#00A0D8"></div></div>
+    <aside class="notes"><h3>Qué muestra</h3><ol>
+      <li><b>Hoy</b>Anillos de 250 px con los minutos y una barra por meta: «faltan 18 min» o «cumplida a las 21:05».</li>
+      <li><b>Medallas grandes</b>Racha actual con la etiqueta RÉCORD si iguala la mejor; debajo, la mejor racha y sus fechas. Aquí es donde se «enciende» la racha al abrir.</li>
+      <li><b>Mapa de 6 meses</b>El mismo mapa que la tarjeta pero con casillas de 16 px. L/R cambian entre novelas visuales y japonesas.</li>
+      <li><b>Cifras</b>Días cumplidos este mes, media diaria, total del año y % de días cumplidos.</li>
+    </ol><p class="now"><strong>Ventaja:</strong> la más continuista; reutiliza <code>goalTrack()</code> casi tal cual (solo pedir 26 semanas en lugar de 10).</p></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 2 -->
+<section class="p" id="p2">
+  <h2><span class="n">2</span>Camino de hitos</h2>
+  <p class="why">Más de juego que de estadística: la racha como un camino de días que avanza hacia el siguiente trofeo (7, 14, 30, 50, 100 días). Da un motivo para volver mañana.</p>
+  <div class="row">
+    <div class="frame"><div class="stage s2" id="st2" style="--acc:#00A0D8"></div></div>
+    <aside class="notes"><h3>Qué muestra</h3><ol>
+      <li><b>Número enorme</b>La racha actual en 96 px con la llama; al abrirla con la racha pendiente, el número rueda de 11 a 12.</li>
+      <li><b>Siguiente hito</b>Barra hacia el próximo trofeo: «faltan 2 días para 14». Al cruzarlo, el trofeo se desbloquea con un destello dorado.</li>
+      <li><b>El camino</b>Los últimos 14 días como fichas en una curva; los días fallados quedan grises y cortan la racha. Hoy, la ficha grande con brillo.</li>
+      <li><b>Trofeos</b>Dorados los conseguidos alguna vez (por la mejor racha), grises los que faltan.</li>
+    </ol><p class="now"><strong>Datos:</strong> los hitos salen de <code>best</code>; no hace falta guardar nada nuevo.</p></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 3 -->
+<section class="p" id="p3">
+  <h2><span class="n">3</span>Calendario de anillos</h2>
+  <p class="why">Un mes como calendario normal donde cada día es un mini-anillo doble (como el Fitness del reloj). Al mover el foco por los días, el panel de la derecha cuenta qué leíste ese día.</p>
+  <div class="row">
+    <div class="frame"><div class="stage s3" id="st3" style="--acc:#00A0D8"></div></div>
+    <aside class="notes"><h3>Qué muestra</h3><ol>
+      <li><b>Un mes</b>L/R cambian de mes. Cada día tiene sus dos anillos; una estrellita si cerró los dos.</li>
+      <li><b>Día enfocado</b>Con la cruceta se mueve el foco por el calendario, igual que en las capturas.</li>
+      <li><b>Detalle del día</b>Minutos de cada meta, qué novelas sumaron y si contó para la racha. A abre la ficha de esa novela.</li>
+      <li><b>Resumen del mes</b>Días cumplidos, mejor racha del mes y total.</li>
+    </ol><p class="now"><strong>Ventaja:</strong> responde a «¿qué leí el martes pasado?». Necesita repartir los minutos por juego, que <code>goalTrack()</code> hoy no guarda (es un cambio pequeño).</p></aside>
+  </div>
+</section>
+
+<!-- ================================================================ 4 -->
+<section class="p" id="p4">
+  <h2><span class="n">4</span>Minutos frente a la meta</h2>
+  <p class="why">La más analítica: barras de los últimos 30 días con la meta como línea discontinua, la racha subrayada bajo las barras, y debajo qué novelas leíste y a qué horas.</p>
+  <div class="row">
+    <div class="frame"><div class="stage s4" id="st4" style="--acc:#E5487A"></div></div>
+    <aside class="notes"><h3>Qué muestra</h3><ol>
+      <li><b>Pestañas</b>L/R entre novelas visuales y japonesas; el color de toda la pantalla cambia con ellas.</li>
+      <li><b>30 días</b>Cada barra que pasa la línea de la meta se pinta entera; la racha actual se subraya por debajo.</li>
+      <li><b>Qué novelas</b>Reparto de los minutos del mes entre juegos.</li>
+      <li><b>Cuándo lees</b>Minutos por hora del día (con el día empezando a las 7:00, como las metas).</li>
+    </ol><p class="now"><strong>Ventaja:</strong> enseña si la meta es realista: si casi todas las barras se quedan cortas, es hora de bajarla en Ajustes.</p></aside>
+  </div>
+</section>
+</div>
+
+<script>
+const FL=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235" /></svg>`;
+const FLF=`<svg viewBox="0 0 24 24"><path fill="currentColor" fill-opacity=".25" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235" /></svg>`;
+const COL={vn:{c:'#00A0D8',soft:'#cfe6f1',ink:'#00739c',edge:'#0073a0',name:'novelas',full:'Novelas visuales',goal:60},jvn:{c:'#E5487A',soft:'#f6d3df',ink:'#a82b58',edge:'#b02c5c',name:'japonés',full:'Novelas japonesas',goal:30}};
+const PERSON=`<svg viewBox="0 0 40 40" width="34" height="34"><circle cx="20" cy="15" r="8" fill="#fff"/><path d="M5 37c2-9 8-13 15-13s13 4 15 13z" fill="#fff"/></svg>`;
+document.querySelectorAll('[data-i="person"]').forEach(e=>e.innerHTML=PERSON);
+
+function scene(w,h,seed,hue,night){
+  const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');
+  let s=seed*9301+49297;const r=()=>{s=(s*16807)%2147483647;return s/2147483647};
+  const g=x.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,night?`hsl(${hue+220},45%,14%)`:`hsl(${hue},60%,${62+r()*12}%)`);g.addColorStop(1,night?`hsl(${hue+260},50%,32%)`:`hsl(${hue+30},80%,88%)`);
+  x.fillStyle=g;x.fillRect(0,0,w,h);
+  for(let L=0;L<4;L++){const base=h*(.46+.14*L);x.fillStyle=night?`hsl(${hue+230},28%,${26-L*5}%)`:`hsl(${hue+L*10},${32+L*9}%,${60-L*11}%)`;
+    x.beginPath();x.moveTo(0,h);const st=5+Math.floor(r()*6);for(let i=0;i<=st;i++)x.lineTo(w*i/st,base-r()*h*(.12+.08*(3-L)));x.lineTo(w,h);x.closePath();x.fill();}
+  return c.toDataURL('image/jpeg',.85);
+}
+document.querySelectorAll('.sc[data-s]').forEach(e=>{const [a,b,n]=e.dataset.s.split(' ').map(Number);e.style.backgroundImage=`url(${scene(+e.dataset.w,+e.dataset.h,a,b,!!n)})`});
+
+// ---------- datos de ejemplo: minutos por día (último = hoy) ----------
+let sd=11;const rnd=()=>{sd=(sd*16807)%2147483647;return sd/2147483647};
+function series(n,goal,streak,miss){
+  const a=[];for(let i=0;i<n;i++){const off=n-1-i;let v;
+    if(off<streak)v=goal*(1+rnd()*.9);else if(miss.includes(off))v=goal*rnd()*.6;else v=rnd()<.62?goal*(1+rnd()*.7):goal*rnd()*.9;
+    if(rnd()<.08&&off>=streak)v=0;a.push(Math.round(v));}
+  return a;
+}
+const DAYS=26*7;
+// hoy martes: el mapa termina en domingo de esta semana -> 5 días futuros
+const TODAY_WD=1, FUT=6-TODAY_WD;
+const D={vn:series(DAYS-FUT,60,12,[12,13]),jvn:series(DAYS-FUT,30,5,[5])};
+D.vn[D.vn.length-1]=72;D.jvn[D.jvn.length-1]=21;
+const best={vn:21,jvn:9},streak={vn:12,jvn:5};
+
+function cellBg(k,v){const c=COL[k].c;return v>=1?c:v>=.5?c+'aa':v>0?c+'55':'#dde1e7'}
+function heat(k,weeks,cls=''){
+  const arr=D[k],goal=COL[k].goal,n=arr.length,tot=weeks*7,start=n+FUT-tot;let h='';
+  for(let w=0;w<weeks;w++){h+='<div>';for(let d=0;d<7;d++){const i=start+w*7+d;
+    if(i>=n){h+=`<span class="cell fu ${cls}"></span>`;continue}
+    const v=Math.min(1,arr[i]/goal),off=n-1-i;
+    h+=`<span class="cell ${cls}${off<streak[k]?' st':''}${off===0?' td':''}" style="--k:${w+d};background:${cellBg(k,v)}"></span>`}h+='</div>'}
+  return h;
+}
+const fmtMin=m=>m<60?`${m}m`:`${Math.floor(m/60)}h ${String(m%60).padStart(2,'0')}m`;
+const hm=m=>m>=60?`${Math.floor(m/60)} h ${String(m%60).padStart(2,'0')}`:`${m} min`;
+let actx;function blip(f){try{actx=actx||new AudioContext();const o=actx.createOscillator(),g=actx.createGain();o.frequency.value=f;g.gain.setValueAtTime(.0001,actx.currentTime);g.gain.exponentialRampToValueAtTime(.08,actx.currentTime+.005);g.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+.07);o.connect(g).connect(actx.destination);o.start();o.stop(actx.currentTime+.08)}catch(e){}}
+
+// ---------- mini tarjeta (demo + Inicio) ----------
+function miniCard(el,pending){
+  const S=112,SW=11;let svg=`<svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}" style="display:block;overflow:visible">`;
+  [['vn',72],['jvn',21]].forEach(([k,m],i)=>{const r=S/2-SW/2-1-i*SW*1.15,C=2*Math.PI*r,p=Math.min(1,m/COL[k].goal);
+    svg+=`<circle cx="56" cy="56" r="${r}" fill="none" stroke="${COL[k].soft}" stroke-width="${SW}"/><circle cx="56" cy="56" r="${r}" fill="none" stroke="${COL[k].c}" stroke-width="${SW}" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-p)}" transform="rotate(-90 56 56)"/>`});
+  svg+='</svg>';
+  let h=`<div style="position:relative;flex:none">${svg}<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:16px;font-weight:800;line-height:1.2"><span style="color:#00739c">1h 12m</span><span style="color:#a82b58">21m</span></div></div><div style="flex:1;display:flex;gap:10px;min-width:0">`;
+  ['vn','jvn'].forEach(k=>{const p=pending&&k==='vn',n=p?streak[k]-1:streak[k];
+    h+=`<div class="rrc ${k}" data-g="${k}"><div class="rmed"><span class="fl" style="color:${COL[k].c}">${FL}</span><span class="rnw"><span class="rnum">${n}</span></span><span class="rlab">${COL[k].name}<small>mejor ${best[k]}</small></span></div><div class="rmap">${miniMap(k,p)}</div></div>`});
+  el.innerHTML=h+'</div>';
+}
+function miniMap(k,pend){const arr=D[k],n=arr.length,goal=COL[k].goal,start=n+FUT-70;let h='';
+  for(let w=0;w<10;w++){h+='<div>';for(let d=0;d<7;d++){const i=start+w*7+d;if(i>=n){h+='<span class="cell" style="background:transparent"></span>';continue}
+    const off=n-1-i;let v=Math.min(1,arr[i]/goal);if(off===0&&pend)v=Math.min(v,.6);
+    const st=off<streak[k]&&!(off===0&&pend);h+=`<span class="cell${st?' st':''}${off===0?' td':''}" style="background:${cellBg(k,v)}"></span>`}h+='</div>'}return h}
+function light(box,k){
+  const num=box.querySelector('.rnum');
+  num.animate([{transform:'translateY(0)'},{transform:'translateY(-30px)'}],{duration:180,easing:'ease-in',fill:'forwards'}).onfinish=()=>{
+    num.textContent=streak[k];box.querySelector('.rmap').innerHTML=miniMap(k,false);
+    num.getAnimations().forEach(a=>a.cancel());
+    num.animate([{transform:'translateY(30px)'},{transform:'translateY(-5px)'},{transform:'translateY(0)'}],{duration:420,easing:'ease-out'});
+    box.querySelector('.rmed').animate([{transform:'scale(1)'},{transform:'scale(1.2)'},{transform:'scale(.96)'},{transform:'scale(1)'}],{duration:600,easing:'ease-out'});
+    box.querySelector('.fl').animate([{transform:'scale(1)'},{transform:'scale(1.8) rotate(-10deg)'},{transform:'scale(1)'}],{duration:600});
+    box.querySelector('.cell.td').animate([{transform:'scale(2.4)'},{transform:'scale(1)'}],{duration:450,easing:'ease-out'});
+    box.querySelectorAll('.cell.st').forEach((e,i)=>e.animate([{filter:'brightness(1)',transform:'scale(1)'},{filter:'brightness(1.8)',transform:'scale(1.5)'},{filter:'brightness(1)',transform:'scale(1)'}],{duration:400,delay:120+i*55}));
+    blip(1320);setTimeout(()=>blip(1760),110);
+  };
+}
+const demo=document.getElementById('demoCard');miniCard(demo,true);
+document.getElementById('demoBtn').onclick=()=>{miniCard(demo,true);setTimeout(()=>light(demo.querySelector('[data-g="vn"]'),'vn'),350)};
+miniCard(document.getElementById('hcardFace'),true);
+
+// ---------- chrome común ----------
+const chrome=(crumb,hints)=>`<div class="bg"><div class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></div><div class="blob a" style="left:760px;top:380px;width:520px;height:400px"></div></div>
+<div class="glass avatar"><div class="face">${PERSON}</div></div>
+<div class="crumb pill">Inicio <span class="sep">›</span> <span class="cur">${crumb}</span></div>
+<div class="clock">20/10 <small>(mar)</small> 22:40 <span class="batt"><b></b><b></b><b></b><b class="off"></b></span></div>
+<div class="hints">${hints.map(([b,t,c])=>`<div class="hint pill"><span class="btn ${c}">${b}</span>${t}</div>`).join('')}</div>`;
+const replayBtn='<button class="replay" data-replay>↻ Repetir entrada</button>';
+
+// ---------- 1 · Panel ----------
+function build1(){
+  const S=250,SW=24;let svg=`<svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">`;
+  [['vn',72],['jvn',21]].forEach(([k,m],i)=>{const r=S/2-SW/2-2-i*SW*1.15,C=2*Math.PI*r,p=Math.min(1,m/COL[k].goal);
+    svg+=`<circle cx="125" cy="125" r="${r}" fill="none" stroke="${COL[k].soft}" stroke-width="${SW}"/><circle class="arcd" cx="125" cy="125" r="${r}" fill="none" stroke="${COL[k].c}" stroke-width="${SW}" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C}" data-off="${C*(1-p)}" style="transition-delay:${.3+i*.25}s" transform="rotate(-90 125 125)"/>`});
+  svg+='</svg>';
+  const med=k=>{const c=COL[k],rec=streak[k]>=best[k];return `<div class="bmed ${k} in" style="--d:${k==='vn'?.15:.28}s"><span class="fl" style="color:${c.c}">${FLF}</span>
+    <b><span class="rn">${k==='vn'?streak[k]-1:streak[k]}</span><small>días</small>${rec?'<span class="rec">récord</span>':''}</b>
+    <p>Racha de ${c.full.toLowerCase()} · mejor ${best[k]} días <span style="color:#9aa1ad">(${k==='vn'?'2–22 ago':'8–16 sep'})</span></p></div>`};
+  const mon=['May','Jun','Jul','Ago','Sep','Oct'];
+  return chrome('Racha de lectura',[['L','R','sh'],['B','Volver','b']]).replace('<span class="btn sh">L</span>R','<span class="btn sh">L</span><span class="btn sh">R</span>Novelas / japonés')+`
+  <div class="panel big in" style="--d:0s">
+    <div class="ptitle">Hoy <small>· martes 20 de octubre</small></div>
+    <div class="rings">${svg}<div class="mid"><span style="color:#00739c">1h 12m</span><span style="color:#a82b58">21m</span><small>leídos hoy</small></div></div>
+    <div class="leg">
+      <div class="vn"><i></i>Novelas visuales<span>72 / 60 min</span></div><div class="bar vn"><b style="width:100%"></b></div><small style="margin:-6px 0 0 24px">✓ Cumplida a las 21:05</small>
+      <div class="jvn"><i></i>Novelas japonesas<span>21 / 30 min</span></div><div class="bar jvn"><b style="width:70%"></b></div><small style="margin:-6px 0 0 24px">Faltan 9 min para seguir la racha</small>
+    </div>
+  </div>
+  <div class="medals">${med('vn')}${med('jvn')}</div>
+  <div class="panel cal vn in" style="--d:.35s">
+    <div class="ptitle"><span style="width:14px;height:14px;border-radius:50%;background:var(--c)"></span>Novelas visuales <small>· últimos 6 meses · meta 1 h</small></div>
+    <div class="heat">${heat('vn',26)}</div>
+    <div class="mon">${mon.map(m=>`<span style="width:${4.33*27}px">${m}</span>`).join('')}</div>
+    <div class="tiles"><div><span class="k">Este mes</span><b>15 <small>/ 20 días</small></b></div><div><span class="k">Media diaria</span><b>58 <small>min</small></b></div><div><span class="k">Este año</span><b>214 <small>h</small></b></div><div><span class="k">Días cumplidos</span><b>68 <small>%</small></b></div></div>
+  </div>
+  <span class="mk" style="left:420px;top:150px">1</span><span class="mk" style="left:1200px;top:84px">2</span><span class="mk" style="left:1200px;top:262px">3</span><span class="mk" style="left:1200px;top:540px">4</span>${replayBtn}`;
+}
+function after1(st){
+  requestAnimationFrame(()=>requestAnimationFrame(()=>st.querySelectorAll('.arcd').forEach(c=>c.style.strokeDashoffset=c.dataset.off)));
+  setTimeout(()=>{const box=st.querySelector('.bmed.vn'),n=box.querySelector('.rn');
+    n.animate([{transform:'translateY(0)',opacity:1},{transform:'translateY(-40px)',opacity:0}],{duration:200,easing:'ease-in'}).onfinish=()=>{
+      n.textContent=streak.vn;n.animate([{transform:'translateY(40px)',opacity:0},{transform:'translateY(-6px)',opacity:1},{transform:'none'}],{duration:450,easing:'ease-out'});
+      box.animate([{transform:'scale(1)'},{transform:'scale(1.06)'},{transform:'scale(1)'}],{duration:600,easing:'ease-out'});
+      box.querySelector('.fl').animate([{transform:'scale(1)'},{transform:'scale(1.5) rotate(-12deg)'},{transform:'scale(1)'}],{duration:650});
+      st.querySelectorAll('.cal .cell.st').forEach((e,i)=>e.animate([{filter:'brightness(1)',transform:'scale(1)'},{filter:'brightness(1.8)',transform:'scale(1.5)'},{filter:'brightness(1)',transform:'scale(1)'}],{duration:400,delay:80+i*50}));
+      blip(1320);setTimeout(()=>blip(1760),110);
+    };
+  },1600);
+}
+
+// ---------- 2 · Camino ----------
+function build2(){
+  const days=[1,0,1,1,1,1,1,1,1,1,1,1,1,1]; // último = hoy (martes): 12 días seguidos
+  const wd=['X','J','V','S','D','L','M','X','J','V','S','D','L','M'];
+  const W=1184,H=300;let pts=[];
+  for(let i=0;i<14;i++){const x=50+i*(W-300)/13,y=140+Math.sin(i*.6)*50;pts.push([x,y])}
+  let path=`M${pts[0][0]} ${pts[0][1]}`;for(let i=1;i<pts.length;i++){const [x0,y0]=pts[i-1],[x1,y1]=pts[i],mx=(x0+x1)/2;path+=` C${mx} ${y0} ${mx} ${y1} ${x1} ${y1}`}
+  const gx=W-110,gy=140;const [lx,ly]=pts[13];
+  let h=`<svg width="${W}" height="${H}"><path d="${path}" fill="none" stroke="#e3e6eb" stroke-width="10" stroke-linecap="round"/>
+    <path d="${path}" fill="none" stroke="#00A0D8" stroke-width="10" stroke-linecap="round" stroke-dasharray="2000" stroke-dashoffset="2000" class="prog" style="opacity:.45"/>
+    <path d="M${lx} ${ly} C${(lx+gx)/2} ${ly} ${(lx+gx)/2} ${gy} ${gx} ${gy}" fill="none" stroke="#e3e6eb" stroke-width="10" stroke-dasharray="2 16" stroke-linecap="round"/></svg>`;
+  let n=0;days.forEach((ok,i)=>{if(ok)n++;else n=0;const [x,y]=pts[i];const td=i===13;
+    h+=`<span class="day ${ok?'':'no'} ${td?'td':''} in" style="left:${x}px;top:${y}px;--d:${.2+i*.06}s">${ok?(i>=2?i-1:'✓'):'✕'}</span><span class="wd" style="left:${x}px;top:${y+(td?36:28)}px">${td?'hoy':wd[i]}</span>`});
+  h+=`<span class="goal lock in" style="left:${gx}px;top:${gy}px;--d:1.1s">14</span><span class="glab" style="left:${gx}px;top:${gy+38}px">2 semanas<br><span style="color:#9aa1ad">faltan 2 días</span></span>`;
+  const tro=[[7,1],[14,1],[30,0],[50,0],[100,0]];
+  return chrome('Racha de lectura',[['L','R','sh'],['B','Volver','b']]).replace('<span class="btn sh">L</span>R','<span class="btn sh">L</span><span class="btn sh">R</span>Novelas / japonés')+`
+  <div class="tabs pill" style="left:50%;transform:translateX(-50%);top:18px"><span class="btn sh">L</span><span class="t on" style="--c:#00A0D8"><i></i>Novelas visuales</span><span class="t" style="--c:#E5487A"><i></i>Japonés</span><span class="btn sh">R</span></div>
+  <div class="panel hero vn in">
+    <span class="fl" style="color:#00A0D8">${FLF}</span>
+    <div class="n"><span class="rn">11</span><small>días seguidos leyendo novelas visuales</small></div>
+    <div class="nx"><div class="k"><span>Siguiente trofeo: 2 semanas</span><span>12 / 14</span></div><div class="bar"><b style="width:${12/14*100}%"></b></div>
+      <p>Mejor racha: <b style="color:#00739c">21 días</b></p><p style="margin-top:6px">Trofeos ganados: ${tro.map(([d,ok])=>`<span style="display:inline-grid;place-items:center;width:30px;height:24px;border-radius:8px;font-size:12px;margin-left:3px;color:${ok?'#fff':'#8a92a0'};background:${ok?'linear-gradient(160deg,#ffd76a,#e3a01a)':'#e6e9ee'}">${d}</span>`).join('')}</p></div>
+  </div>
+  <div class="panel road vn in" style="--d:.15s">${h}</div>
+  <span class="mk" style="left:200px;top:88px">1</span><span class="mk" style="left:1000px;top:96px">2</span><span class="mk" style="left:470px;top:330px">3</span><span class="mk" style="left:1110px;top:205px">4</span>${replayBtn}`;
+}
+function after2(st){
+  const p=st.querySelector('.prog');p.animate([{strokeDashoffset:2000},{strokeDashoffset:2000-p.getTotalLength()}],{duration:1400,delay:300,fill:'forwards',easing:'cubic-bezier(.3,.8,.3,1)'});
+  setTimeout(()=>{const n=st.querySelector('.rn');n.animate([{transform:'translateY(0)',opacity:1},{transform:'translateY(-60px)',opacity:0}],{duration:200}).onfinish=()=>{
+    n.textContent='12';n.animate([{transform:'translateY(60px)',opacity:0},{transform:'translateY(-8px)',opacity:1},{transform:'none'}],{duration:480,easing:'ease-out'});
+    st.querySelector('.hero .fl').animate([{transform:'scale(1)'},{transform:'scale(1.35) rotate(-10deg)'},{transform:'scale(1)'}],{duration:650});
+    st.querySelector('.day.td').animate([{transform:'scale(2)'},{transform:'scale(1)'}],{duration:500,easing:'ease-out'});
+    blip(1320);setTimeout(()=>blip(1760),110)}},1800);
+}
+
+// ---------- 3 · Calendario ----------
+function build3(){
+  const ring=(vn,jv)=>{let s='';[[vn,'vn',25],[jv,'jvn',16]].forEach(([v,k,r])=>{const C=2*Math.PI*r;
+    s+=`<circle cx="29" cy="29" r="${r}" fill="none" stroke="${COL[k].soft}" stroke-width="7"/>${v>0?`<circle cx="29" cy="29" r="${r}" fill="none" stroke="${COL[k].c}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-Math.min(1,v))}" transform="rotate(-90 29 29)"/>`:''}`});return `<svg viewBox="0 0 58 58">${s}</svg>`};
+  // octubre 2026: el 1 es jueves
+  let g='';for(let i=0;i<3;i++)g+='<div></div>';
+  const n=D.vn.length,m=D.jvn.length;
+  for(let d=1;d<=31;d++){const off=20-d;const fu=off<0;
+    let v=fu?0:Math.min(1,D.vn[n-1-off]/60),j=fu?0:Math.min(1,D.jvn[m-1-off]/30);if(d===14){v=1;j=1}
+    g+=`<div class="dc${d===14?' f':''}${d===20?' td':''}${fu?' fu':''} in" style="--d:${.1+d*.015}s"><span>${d}</span>${fu?'':ring(v,j)}${!fu&&v>=1&&j>=1?'<svg class="both" viewBox="0 0 24 24"><path d="M12 2l3 7 7 .6-5.3 4.7 1.6 7.2L12 17.8 5.7 21.5l1.6-7.2L2 9.6 9 9z" fill="#F2B807" stroke="#fff" stroke-width="1.5"/></svg>':''}</div>`}
+  return chrome('Racha de lectura',[['L','R','sh'],['A','Abrir novela','a'],['B','Volver','b']]).replace('<span class="btn sh">L</span>R','<span class="btn sh">L</span><span class="btn sh">R</span>Mes')+`
+  <div class="panel month in">
+    <div class="mhd"><div class="ptitle">Octubre 2026 <small>· ‹ septiembre</small></div><div style="display:flex;gap:14px;font-size:14px;font-weight:800;color:#5f6776"><span style="color:#00739c">● novelas 1 h</span><span style="color:#a82b58">● japonés 30 min</span></div></div>
+    <div class="wdh"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+    <div class="grid">${g}</div>
+  </div>
+  <div class="panel side in" style="--d:.2s">
+    <h3>Miércoles 14</h3><div class="sub">Las dos metas cumplidas · día 6 de la racha</div>
+    <div class="trk vn"><div class="top">Novelas visuales<span class="ok">✓ meta</span><b>1 h 34</b><small>/ 1 h</small></div>
+      <div class="seg"><i style="flex:58"></i><i style="flex:36"></i></div>
+      <div class="gl"><div><span>Steins;Gate 0</span><span>58 min</span></div><div><span>Ever17</span><span>36 min</span></div></div></div>
+    <div class="trk jvn"><div class="top">Novelas japonesas<span class="ok">✓ meta</span><b>42 min</b><small>/ 30</small></div>
+      <div class="seg"><i style="flex:42"></i></div>
+      <div class="gl"><div><span>サクラノ詩</span><span>42 min · 3 400 caracteres</span></div></div></div>
+    <div class="mrow"><div>Días cumplidos<b>15 · 11</b></div><div>Ambas metas<b>9 días</b></div><div>Total mes<b>24 h</b></div></div>
+  </div>
+  <span class="mk" style="left:720px;top:84px">1</span><span class="mk" style="left:320px;top:370px">2</span><span class="mk" style="left:1200px;top:240px">3</span><span class="mk" style="left:1200px;top:540px">4</span>${replayBtn}`;
+}
+
+// ---------- 4 · Barras ----------
+function build4(){
+  const k='jvn',arr=D[k].slice(-30),goal=30,max=60;
+  const bars=arr.map((v,i)=>`<i class="${v>=goal?'ok':''}${i===29?' td':''}${v===0?' zero':''}" style="--k:${i};height:${Math.min(1,v/max)*100}%"></i>`).join('');
+  const sw=(1184-96)/30;
+  const hours=[0,0,1,2,1,0,0,0,1,2,3,2,4,6,9,12,15,18,14,8,3,1,0,0].map((v,i)=>`<i style="height:${v/18*100}%"></i>`).join('');
+  return chrome('Racha de lectura',[['L','R','sh'],['B','Volver','b']]).replace('<span class="btn sh">L</span>R','<span class="btn sh">L</span><span class="btn sh">R</span>Novelas / japonés')+`
+  <div class="tabs pill" style="left:50%;transform:translateX(-50%);top:18px"><span class="btn sh">L</span><span class="t" style="--c:#00A0D8"><i></i>Novelas visuales</span><span class="t on" style="--c:#E5487A"><i></i>Japonés</span><span class="btn sh">R</span></div>
+  <div class="in" style="position:absolute;left:52px;top:96px;display:flex;gap:26px;align-items:center;font-size:16px;font-weight:700;color:#5f6776">
+    <span class="jvn" style="display:flex;align-items:center;gap:10px"><span class="fl" style="width:40px;height:40px;color:#E5487A">${FLF}</span><b style="font-size:36px;color:#a82b58">5</b>días de racha</span>
+    <span>Mejor <b style="color:#3a414e">9</b></span><span>Media <b style="color:#3a414e">34 min/día</b></span><span>Cumplidos <b style="color:#3a414e">21 de 30</b></span><span>Hoy <b style="color:#a82b58">21 / 30 min</b> · faltan 9</span>
+  </div>
+  <div class="panel chart jvn in" style="--d:.05s">
+    <div class="ptitle">Últimos 30 días <small>· minutos de novelas japonesas</small></div>
+    <div class="plot"><div class="bars">${bars}</div><div class="gline" style="bottom:${goal/max*100}%"><span>meta 30</span></div>
+      <span class="strk" style="left:${(25)/30*100}%;width:${5/30*100}%"></span></div>
+    <div class="axis"><span>21 sep</span><span>28 sep</span><span>5 oct</span><span>12 oct</span><span>hoy</span></div>
+  </div>
+  <div class="panel low jvn in" style="left:48px;width:580px;--d:.2s"><h4>Qué has leído este mes</h4>
+    <div class="gr"><span class="gico" style="--g:#E5487A">サ</span>サクラノ詩<div class="b"><b style="width:62%"></b></div><span>7 h 40</span></div>
+    <div class="gr"><span class="gico" style="--g:#9b4fd6">ひ</span>ひぐらしのなく頃に<div class="b"><b style="width:28%"></b></div><span>3 h 25</span></div>
+    <div class="gr"><span class="gico" style="--g:#3f63e0">ノ</span>ノラと皇女と野良猫ハート<div class="b"><b style="width:10%"></b></div><span>1 h 10</span></div></div>
+  <div class="panel low jvn in" style="left:648px;width:340px;--d:.28s"><h4>A qué hora lees</h4><div class="hours">${hours}</div><div class="hl"><span>7:00</span><span>13:00</span><span>19:00</span><span>1:00</span></div></div>
+  <div class="panel low in" style="left:1008px;width:224px;--d:.36s"><h4>Este año</h4><div class="big3"><div>Horas<b>96</b></div><div>Días<b>187</b></div><div>Caracteres<b>1,2 M</b></div><div>Novelas<b>6</b></div></div></div>
+  <span class="mk" style="left:880px;top:12px">1</span><span class="mk" style="left:1196px;top:200px">2</span><span class="mk" style="left:600px;top:446px">3</span><span class="mk" style="left:960px;top:446px">4</span>${replayBtn}`;
+}
+
+// ---------- montaje ----------
+const builds={st1:[build1,after1],st2:[build2,after2],st3:[build3],st4:[build4]};
+function mount(id){const st=document.getElementById(id),[b,a]=builds[id];st.classList.remove('play');st.innerHTML=b();
+  st.querySelector('[data-replay]').onclick=()=>mount(id);void st.offsetWidth;st.classList.add('play');a&&a(st)}
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting&&!e.target.dataset.done){e.target.dataset.done=1;mount(e.target.id)}}),{threshold:.35});
+Object.keys(builds).forEach(id=>{const st=document.getElementById(id);st.innerHTML=builds[id][0]();io.observe(st)});
+
+// ---------- A · apertura ----------
+const s0=document.getElementById('s0'),fullA=document.getElementById('fullA'),zoomer=document.getElementById('zoomer'),openBtn=document.getElementById('openBtn');
+fullA.className='full s1';
+openBtn.onclick=()=>{
+  if(s0.classList.contains('open')){s0.classList.remove('open');openBtn.textContent='▶ Pulsar A';return}
+  fullA.innerHTML=build1().replace(/<span class="mk"[^>]*>\d<\/span>/g,'').replace(/<button class="replay"[^>]*>.*?<\/button>/,'');
+  zoomer.animate([{left:'770px',top:'412px',width:'440px',height:'150px',opacity:1,borderRadius:'24px'},{left:'0px',top:'0px',width:'1280px',height:'720px',opacity:1,borderRadius:'0px'}],{duration:380,easing:'cubic-bezier(.3,.8,.3,1)'}).onfinish=()=>{
+    s0.classList.add('open');fullA.classList.remove('play');void fullA.offsetWidth;fullA.classList.add('play');after1(fullA);
+    zoomer.animate([{opacity:1,left:0,top:0,width:'1280px',height:'720px'},{opacity:0,left:0,top:0,width:'1280px',height:'720px'}],{duration:250});
+    openBtn.textContent='◀ Pulsar B';
+  };
+};
+
+function fit(){document.querySelectorAll('.frame').forEach(f=>{f.firstElementChild.style.transform=`scale(${f.clientWidth/1280})`})}
+addEventListener('resize',fit);fit();
+</script>
+</body>
+</html>

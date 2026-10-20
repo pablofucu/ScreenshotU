@@ -273,6 +273,31 @@ fn launch_game(app: AppHandle, state: State<'_, AppState>, id: String) -> Result
     launcher::start(&app, game)
 }
 
+/// Generacion del aviso de meta pendiente: uno nuevo (otra partida) anula el anterior.
+static GOAL_GEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// Aviso sobre el juego cuando la partida en curso llegue a la meta diaria de lectura. La app calcula la hora (`at`,
+/// ms reales) con las partidas de hoy; aqui se espera y, si la partida de `id` sigue en marcha, sale el cartel.
+#[tauri::command]
+fn goal_notice(app: AppHandle, id: String, at: i64, text: String) {
+    let gen = GOAL_GEN.fetch_add(1, Ordering::SeqCst) + 1;
+    let _ = std::thread::Builder::new().name("goal-notice".into()).spawn(move || loop {
+        if GOAL_GEN.load(Ordering::SeqCst) != gen {
+            return;
+        }
+        let same = app.state::<AppState>().active.lock().unwrap().as_ref().map(|a| a.id == id).unwrap_or(false);
+        if !same {
+            return;
+        }
+        let now = chrono_now_ms();
+        if now >= at {
+            overlay::goal(&text);
+            return;
+        }
+        std::thread::sleep(std::time::Duration::from_millis((at - now).clamp(50, 5000) as u64));
+    });
+}
+
 /// Abre en el explorador la carpeta de capturas de un titulo (solo dentro de la raiz configurada).
 #[tauri::command]
 fn open_folder(state: State<'_, AppState>, path: String) -> Result<(), String> {
@@ -813,6 +838,7 @@ pub fn run() {
             get_favorites,
             set_favorite,
             launch_game,
+            goal_notice,
             open_folder,
             add_game,
             scan_games_dir,

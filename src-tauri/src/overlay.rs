@@ -13,6 +13,8 @@ const LABEL: &str = "recindicator";
 const W: f64 = 190.0;
 /// Ancho del cartel con un texto (nombre de la salida de audio).
 const W_TEXT: f64 = 330.0;
+/// Ancho del aviso de meta de lectura cumplida.
+const W_GOAL: f64 = 400.0;
 const H: f64 = 44.0;
 const MARGIN: i32 = 18;
 
@@ -37,14 +39,23 @@ pub fn show(state: &'static str, secs: u64) {
 
 /// Cartel breve con un texto («🔊 Auriculares») sobre el juego. No toca el indicador si se esta grabando.
 pub fn flash(text: &str) {
+    flash_as("audio", text, 2200);
+}
+
+/// Aviso «meta de lectura cumplida» sobre el juego (un poco más largo que el de audio).
+pub fn goal(text: &str) {
+    flash_as("goal", text, 4500);
+}
+
+fn flash_as(state: &'static str, text: &str, ms: u64) {
     if crate::audio::is_recording() {
         return;
     }
     let Some(app) = APP.lock().unwrap().clone() else { return };
     let gen = FLASH_GEN.fetch_add(1, Ordering::SeqCst) + 1;
-    show_with("audio", 0, text);
+    show_with(state, 0, text);
     let _ = std::thread::Builder::new().name("flash-hide".into()).spawn(move || {
-        std::thread::sleep(Duration::from_millis(2200));
+        std::thread::sleep(Duration::from_millis(ms));
         if FLASH_GEN.load(Ordering::SeqCst) == gen && !crate::audio::is_recording() {
             hide(&app);
         }
@@ -55,9 +66,13 @@ fn show_with(state: &'static str, secs: u64, text: &str) {
     let Some(app) = APP.lock().unwrap().clone() else { return };
     let app2 = app.clone();
     let text = text.to_string();
-    let w = if state == "audio" { W_TEXT } else { W };
+    let w = match state {
+        "audio" => W_TEXT,
+        "goal" => W_GOAL,
+        _ => W,
+    };
     WIDTH.store(w as u64, Ordering::SeqCst);
-    if state != "audio" {
+    if state != "audio" && state != "goal" {
         // Un cartel de texto pendiente no debe ocultar el indicador que sale ahora.
         FLASH_GEN.fetch_add(1, Ordering::SeqCst);
     }

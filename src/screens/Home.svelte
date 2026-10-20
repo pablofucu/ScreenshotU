@@ -106,14 +106,14 @@
     {/each}
     {#if app.readCard}
       <div class="hsect" style="left:{rx}px">Lectura de hoy</div>
-      <div class="glass rcard rread" style="left:{rx}px;width:{RW}px;--acc:#00A0D8"><div class="face"><ReadRings /></div></div>
+      <div class="glass rcard rread fx" class:f={app.focus === 'read'} data-k="read" data-act="read" style="left:{rx}px;width:{RW}px;--acc:#00A0D8"><div class="face"><ReadRings /></div></div>
       <div class="rmeta" style="left:{rx + 4}px;width:{RW - 4}px">Meta diaria<span> · {metaGoal(app.config.goalVn)} novelas · {metaGoal(app.config.goalJvn)} japonés</span></div>
     {/if}
   {:else if totalTitles > 0}
     <div class="hsect" style="left:96px">Seguir jugando</div>
     {#if app.readCard}
       <div class="hsect" style="left:{1280 - 96 - RW}px">Lectura de hoy</div>
-      <div class="glass rcard rread" style="left:{1280 - 96 - RW}px;width:{RW}px;--acc:#00A0D8"><div class="face"><ReadRings /></div></div>
+      <div class="glass rcard rread fx" class:f={app.focus === 'read'} data-k="read" data-act="read" style="left:{1280 - 96 - RW}px;width:{RW}px;--acc:#00A0D8"><div class="face"><ReadRings /></div></div>
       <div class="rmeta" style="left:{1280 - 96 - RW + 4}px;width:{RW - 4}px">Meta diaria<span> · {metaGoal(app.config.goalVn)} novelas · {metaGoal(app.config.goalJvn)} japonés</span></div>
     {/if}
     <div class="rnone" style={app.readCard ? `max-width:${1280 - 96 - RW - 96 - 34}px;white-space:normal` : ''}>Aquí aparecerán los juegos a los que juegues desde el visor y los que tengan capturas nuevas.</div>
@@ -128,4 +128,4 @@
   {/each}
 </div>
 
-<Hints list={[['A', 'Abrir', 'a'], ...(focusRec?.t.launchable ? [['X', 'Jugar', 'x'] as [string, string, string]] : []), ['Start', 'Ajustes', 'menu']]} />
+<Hints list={[['A', app.focus === 'read' ? 'Ver racha' : 'Abrir', 'a'], ...(focusRec?.t.launchable ? [['X', 'Jugar', 'x'] as [string, string, string]] : []), ['Start', 'Ajustes', 'menu']]} />

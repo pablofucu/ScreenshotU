@@ -4,13 +4,10 @@
   // Al entrar se dibuja en cascada; al cumplir una meta «se enciende la racha» (una vez por día y anillo).
   import { onDestroy, onMount, tick } from 'svelte';
   import { app } from '../lib/store.svelte';
-  import { goalTrack, localDay, type GoalKey, type GoalTrack } from '../lib/readgoals';
+  import { GOAL_COL, goalLit, goalTrack, localDay, markGoalLit, type GoalKey, type GoalTrack } from '../lib/readgoals';
   import { blip } from '../lib/sound';
 
-  const COL: Record<GoalKey, { c: string; soft: string; ink: string; edge: string; name: string }> = {
-    vn: { c: '#00A0D8', soft: '#cfe6f1', ink: '#00739c', edge: '#0073a0', name: 'novelas' },
-    jvn: { c: '#E5487A', soft: '#f6d3df', ink: '#a82b58', edge: '#b02c5c', name: 'japonés' },
-  };
+  const COL = GOAL_COL;
   const S = 112, SW = 11;
 
   const now = $derived(app.now.getTime());
@@ -26,11 +23,9 @@
   }));
 
   // Racha ya celebrada (día local) por anillo: se guarda para no repetirla al volver a Inicio.
-  const KEY = (k: GoalKey) => `visor.goalLit.${k}`;
-  const stored = (k: GoalKey) => { try { return Number(localStorage.getItem(KEY(k)) ?? 0); } catch { return 0; } };
   let lit = $state<Partial<Record<GoalKey, number>>>({});
   /** Meta cumplida hoy cuya racha aún no se ha «encendido»: se enseña el día anterior hasta la animación. */
-  const pending = (t: GoalTrack) => t.done && lit[t.key] !== today && stored(t.key) !== today;
+  const pending = (t: GoalTrack) => t.done && lit[t.key] !== today && !goalLit(t.key, today);
 
   let drawn = $state(false);
   let mountedAt = 0;
@@ -60,7 +55,7 @@
     const day = today;
     const done = () => {
       lit[k] = day;
-      try { localStorage.setItem(KEY(k), String(day)); } catch { /* sin almacenamiento */ }
+      markGoalLit(k, day);
     };
     const box = root.querySelector<HTMLElement>(`[data-g="${k}"]`);
     const num = box?.querySelector<HTMLElement>('.rnum');

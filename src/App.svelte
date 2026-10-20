@@ -11,6 +11,7 @@
   import Viewer from './screens/Viewer.svelte';
   import Stats from './screens/Stats.svelte';
   import Evo from './screens/Evo.svelte';
+  import Streak from './screens/Streak.svelte';
   import Settings from './screens/Settings.svelte';
   import ActionMenu from './screens/ActionMenu.svelte';
   import GameForm from './screens/GameForm.svelte';
@@ -89,6 +90,7 @@
         {:else if app.view === 'shots'}<Shots />
         {:else if app.view === 'stats'}<Stats />
         {:else if app.view === 'evo'}<Evo />
+        {:else if app.view === 'streak'}<Streak />
         {:else}<Viewer />{/if}
       </div>
     {/key}

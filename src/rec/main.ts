@@ -6,7 +6,7 @@ const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, 
 
 function set(state: string, secs: number, text = '') {
   p.className = `pill ${state}`;
-  t.textContent = state === 'recording' ? `REC ${mmss(secs)}` : state === 'done' ? `✓ ${secs} s` : state === 'audio' ? `Audio: ${text}` : 'Sin audio';
+  t.textContent = state === 'recording' ? `REC ${mmss(secs)}` : state === 'done' ? `✓ ${secs} s` : state === 'audio' ? `Audio: ${text}` : state === 'goal' ? text : 'Sin audio';
 }
 
 (window as unknown as { __rec: typeof set }).__rec = set;

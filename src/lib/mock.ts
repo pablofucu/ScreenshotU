@@ -326,6 +326,10 @@ export async function mockBackend(): Promise<Backend> {
       const t = lib.platforms.flatMap((p) => p.titles).find((x) => x.gameId === id);
       if (t) emit?.({ type: 'game-started', id, name: t.name });
     },
+    async goalNotice(_id, at, text) {
+      // En el navegador no hay ventana sobre el juego: se deja en la consola.
+      setTimeout(() => console.info('[aviso sobre el juego]', text), Math.max(0, at - Date.now()));
+    },
     async openFolder() {},
     async addGame(g) {
       await new Promise((r) => setTimeout(r, 60));

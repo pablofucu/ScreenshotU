@@ -219,6 +219,8 @@ export interface Backend {
   hotkeySuspend(suspend: boolean): Promise<void>;
   /** Lanza un juego añadido (ejecutable o emulador). */
   launch(gameId: string): Promise<void>;
+  /** Aviso sobre el juego a la hora `at` (ms) si la partida de `gameId` sigue en marcha (meta de lectura cumplida). */
+  goalNotice(gameId: string, at: number, text: string): Promise<void>;
   openFolder(path: string): Promise<void>;
   addGame(g: NewGame): Promise<AddReport>;
   /** Busca juegos (ejecutables) en las subcarpetas de un directorio. */
