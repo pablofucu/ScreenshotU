@@ -16,7 +16,7 @@
   const yn = (b: boolean) => (b ? 'Sí' : 'No');
 
   // Filas que cambian de valor con izquierda/derecha (se marcan con ‹ › al enfocarlas).
-  const CYCLE = new Set<SettingId>(['showhidden', 'view', 'shotsview', 'accent', 'sound', 'fullscreen', 'monitor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'savesdir']);
+  const CYCLE = new Set<SettingId>(['showhidden', 'view', 'shotsview', 'accent', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'savesdir']);
 
   function row(id: SettingId): { l: string; v: string; d: string } {
     if (isReadingId(id)) return readingRow(id);
@@ -55,6 +55,7 @@
       case 'backup': return { l: 'Crear copia de seguridad…', v: app.backupBusy ? 'Creando…' : '', d: 'Guarda en un .zip (nombre visor-copia-AAAA-MM-DD.zip) tu base de datos (favoritas, juegos, horas y partidas, estados, preferencias, sagas, novelas y glosario) y la configuración. Te pide dónde guardarlo.' };
       case 'backupmedia': return { l: 'Incluir medios del glosario', v: yn(app.backupMedia), d: 'Añade a la copia la carpeta phrases (capturas y audio de las frases guardadas). Puede hacerla bastante más grande. Las capturas de tus juegos no se incluyen: están en tu carpeta de biblioteca.' };
       case 'restore': return { l: app.restoreReady ? 'Pulsa A otra vez para restaurar' : 'Restaurar copia de seguridad…', v: app.restoreReady, d: 'Elige un .zip creado aquí. Se comprueba que es válido y que no es de una versión más nueva; después, con A otra vez, el visor se reinicia y la sustituye. Tu base actual se guarda antes como visor.db.antes-de-restaurar (y config.json.antes-de-restaurar). Los medios del glosario se mezclan con los que ya tengas.' };
+      case 'oncursor': return { l: 'Abrir en el monitor del cursor', v: yn(app.config.openOnCursor), d: 'Al arrancar, el visor se abre en el monitor donde está el cursor (normalmente el del icono que pulsaste). Si está en No, se abre en el último monitor usado.' };
       case 'autobackup': return { l: 'Copia automática', v: yn(app.config.autoBackup), d: 'Al arrancar, si la última copia automática tiene 7 días o más, guarda la base de datos en la carpeta backups de la configuración (visor-AAAA-MM-DD.db) y conserva las 5 últimas.' };
       case 'savesauto': return { l: 'Copiar partidas al cerrar el juego', v: yn(app.config.savesAuto), d: 'Al cerrar un juego lanzado desde el visor, guarda en un .zip sus partidas si cambiaron desde la última copia. Se conservan las 10 últimas automáticas de cada juego; las manuales no se borran. Las ubicaciones de cada juego se revisan en su ficha (Y › Partidas guardadas).' };
       case 'savesdir': return { l: 'Carpeta de las copias', v: app.config.savesDir || 'Predeterminada', d: `Pulsa A para elegir otra carpeta (mejor en otro disco); ‹ › vuelve a la predeterminada${sv.status ? ` (${sv.status.defaultDir})` : ''}. Dentro hay una subcarpeta por juego.` };

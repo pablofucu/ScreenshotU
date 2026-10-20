@@ -109,6 +109,8 @@ pub struct Config {
     /// Meta diaria de lectura (minutos) de las novelas visuales y de las japonesas (anillos de Inicio).
     pub goal_vn: u32,
     pub goal_jvn: u32,
+    /// Al arrancar, abrir el visor en el monitor donde esta el cursor (el del icono pulsado) en vez de en el ultimo usado.
+    pub open_on_cursor: bool,
     /// Servidor para la app movil (ver `remote` y `docs/api-movil.md`): activado, puerto y codigo de emparejamiento
     /// (se genera la primera vez que se activa).
     pub remote_enabled: bool,
@@ -184,6 +186,7 @@ impl Default for Config {
             saves_dir: String::new(),
             goal_vn: 60,
             goal_jvn: 30,
+            open_on_cursor: false,
             remote_enabled: false,
             remote_port: crate::remote::DEFAULT_PORT,
             remote_token: String::new(),

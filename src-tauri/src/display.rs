@@ -74,6 +74,11 @@ pub fn of_window(hwnd: isize) -> Option<Monitor> {
     imp::of_window(hwnd)
 }
 
+/// Monitor donde esta el cursor ahora (al arrancar, el del icono que se pulso).
+pub fn of_cursor() -> Option<Monitor> {
+    imp::of_cursor()
+}
+
 /// Vigila la ventana principal del juego mientras aparece: la lleva al monitor `target` si salio en otro (y
 /// cabe), la pone delante y deja el visor (`ours`) justo detras. Se repite con cada ventana principal nueva
 /// (pantallas de carga, lanzadores) durante los primeros minutos.
@@ -100,14 +105,14 @@ mod imp {
     use super::Monitor;
     use std::os::windows::ffi::OsStrExt;
     use windows::core::{BOOL, PCWSTR};
-    use windows::Win32::Foundation::{HWND, LPARAM, RECT};
+    use windows::Win32::Foundation::{HWND, LPARAM, POINT, RECT};
     use windows::Win32::Graphics::Gdi::{
-        ChangeDisplaySettingsExW, EnumDisplayDevicesW, EnumDisplayMonitors, EnumDisplaySettingsW, GetMonitorInfoW, MonitorFromWindow, CDS_NORESET,
+        ChangeDisplaySettingsExW, EnumDisplayDevicesW, EnumDisplayMonitors, EnumDisplaySettingsW, GetMonitorInfoW, MonitorFromPoint, MonitorFromWindow, CDS_NORESET,
         CDS_SET_PRIMARY, CDS_UPDATEREGISTRY, DEVMODEW, DISPLAY_DEVICEW, DISPLAY_DEVICE_ATTACHED_TO_DESKTOP, DISP_CHANGE_SUCCESSFUL, DM_POSITION,
         ENUM_CURRENT_SETTINGS, HDC, HMONITOR, MONITORINFO, MONITORINFOEXW, MONITOR_DEFAULTTONEAREST,
     };
     use windows::Win32::UI::WindowsAndMessaging::{
-        EnumWindows, GetForegroundWindow, GetWindow, GetWindowLongPtrW, GetWindowRect, GetWindowThreadProcessId, IsIconic, IsWindowVisible,
+        EnumWindows, GetCursorPos, GetForegroundWindow, GetWindow, GetWindowLongPtrW, GetWindowRect, GetWindowThreadProcessId, IsIconic, IsWindowVisible,
         SetForegroundWindow, SetWindowPos, GWL_EXSTYLE, GW_OWNER, MONITORINFOF_PRIMARY, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_NOZORDER,
         WS_EX_TOPMOST,
     };
@@ -152,6 +157,12 @@ mod imp {
 
     pub fn of_window(hwnd: isize) -> Option<Monitor> {
         info(unsafe { MonitorFromWindow(HWND(hwnd as _), MONITOR_DEFAULTTONEAREST) })
+    }
+
+    pub fn of_cursor() -> Option<Monitor> {
+        let mut p = POINT::default();
+        unsafe { GetCursorPos(&mut p) }.ok()?;
+        info(unsafe { MonitorFromPoint(p, MONITOR_DEFAULTTONEAREST) })
     }
 
     /// Cambia el monitor principal: el nuevo pasa a (0,0) y los demas se desplazan lo mismo para conservar la
@@ -290,6 +301,9 @@ mod imp {
         Vec::new()
     }
     pub fn of_window(_: isize) -> Option<Monitor> {
+        None
+    }
+    pub fn of_cursor() -> Option<Monitor> {
         None
     }
     pub fn set_primary(_: &str) -> Result<(), String> {

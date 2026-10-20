@@ -804,10 +804,14 @@ pub fn run() {
             // Si el visor se cerro a mitad de partida, el monitor principal sigue cambiado: se restaura.
             let st = app.state::<AppState>();
             display::restore_primary(&st.config_dir);
-            // Se abre en el monitor donde estaba la ultima vez.
+            // Se abre en el monitor del cursor (si esta activado en Ajustes) o en el de la ultima vez.
             if let Some(w) = app.get_webview_window("main") {
-                let saved = display::saved_window_monitor(&st.config_dir);
-                if let Some(m) = saved.and_then(|d| display::monitors().into_iter().find(|m| m.device.eq_ignore_ascii_case(&d))) {
+                let on_cursor = st.config.lock().unwrap().open_on_cursor;
+                let target = on_cursor.then(display::of_cursor).flatten().or_else(|| {
+                    let saved = display::saved_window_monitor(&st.config_dir)?;
+                    display::monitors().into_iter().find(|m| m.device.eq_ignore_ascii_case(&saved))
+                });
+                if let Some(m) = target {
                     let _ = w.set_position(tauri::PhysicalPosition::new(m.x + 40, m.y + 40));
                 }
                 let _ = w.set_fullscreen(true);

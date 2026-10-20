@@ -46,6 +46,7 @@ export const DEFAULT_CONFIG: Config = {
   audioCombo: 'start+rb',
   audioHotkey: '',
   autoBackup: true,
+  openOnCursor: false,
   savesAuto: true,
   savesDir: '',
   goalVn: 60,

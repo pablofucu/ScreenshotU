@@ -875,7 +875,7 @@ export function wake() {
 
 /* ---------- ajustes ---------- */
 export type SettingId =
-  | 'root' | 'rescan' | 'addgame' | 'hidden' | 'showhidden' | 'view' | 'shotsview' | 'accent' | 'sound' | 'fullscreen' | 'monitor'
+  | 'root' | 'rescan' | 'addgame' | 'hidden' | 'showhidden' | 'view' | 'shotsview' | 'accent' | 'sound' | 'fullscreen' | 'monitor' | 'oncursor'
   | 'audioout' | 'audiocombo' | 'audiohotkey' | 'hotkey' | 'combo' | 'mouse' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caprumble' | 'quit'
   | 'sgdbkey' | 'sgdbauto' | 'sgdbnow' | 'sgdbgame'
   | 'backup' | 'backupmedia' | 'restore' | 'autobackup'
@@ -893,7 +893,7 @@ export const SETTING_SECTIONS: Array<{ name: string; icon: string; color: number
   { name: 'Copias', icon: 'import', color: 2, rows: ['backup', 'backupmedia', 'restore', 'autobackup'] },
   { name: 'Partidas', icon: 'pad', color: 1, rows: ['savesauto', 'savesdir', 'ludusavi'] },
   // Móvil: fuera de la 1.0 (código en remote.svelte.ts; ver REMOTE_AVAILABLE en src-tauri/src/remote.rs).
-  { name: 'Sistema', icon: 'gear', color: 5, rows: ['sound', 'fullscreen', 'monitor', 'update', 'quit'] },
+  { name: 'Sistema', icon: 'gear', color: 5, rows: ['sound', 'fullscreen', 'monitor', 'oncursor', 'update', 'quit'] },
 ];
 const secRows = () => SETTING_SECTIONS[app.setSec]?.rows ?? [];
 
@@ -1072,6 +1072,7 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'sound') { void patchConfig({ sound: !app.config.sound }); blip(1320); }
   else if (id === 'fullscreen') void toggleFullscreen();
   else if (id === 'monitor') { void refreshMonitor(dir || 1); blip(880); }
+  else if (id === 'oncursor') { void patchConfig({ openOnCursor: !app.config.openOnCursor }); blip(1320); }
   // Botones de captura: A / clic espera el input; izquierda/derecha recorren unos cuantos de serie.
   else if (id === 'audioout') void switchAudio(dir || 1);
   else if (id === 'audiocombo') { if (dir === 0) startLearn('pad', 'audio'); else void patchConfig({ audioCombo: cycleIn(AUDIO_COMBO_PRESETS, app.config.audioCombo, dir) }); }

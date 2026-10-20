@@ -58,6 +58,8 @@ export interface Config {
   audioHotkey: string;
   /** Copia automática de la base de datos al arrancar (cada 7 días, se conservan 5). */
   autoBackup: boolean;
+  /** Abrir el visor en el monitor donde está el cursor al arrancar (en vez de en el último usado). */
+  openOnCursor: boolean;
   /** Copiar las partidas guardadas de un juego al cerrarlo (si cambiaron). */
   savesAuto: boolean;
   /** Carpeta de las copias de partidas ("" = la de la configuración). */
