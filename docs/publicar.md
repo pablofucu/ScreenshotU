@@ -3,7 +3,7 @@
 Las actualizaciones automáticas leen `latest.json` de la última release de GitHub y comprueban la firma.
 
 ## Una sola vez
-1. En `src-tauri/tauri.conf.json`, cambia `pablofucu/ScreenshotU` en `plugins.updater.endpoints` por tu repositorio.
+1. El actualizador apunta a `pablofucu/ScreenshotU` (`plugins.updater.endpoints` en `src-tauri/tauri.conf.json`).
 2. La clave de firma está en `%USERPROFILE%\.tauri\visor-capturas.key` (sin contraseña). **Haz una copia en un sitio seguro**: si se pierde, las versiones ya instaladas no podrán actualizarse. La pública ya está en `tauri.conf.json`.
 3. En GitHub › Settings › Secrets › Actions crea `TAURI_SIGNING_PRIVATE_KEY` (el contenido del archivo `.key`) y `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` (vacío).
 
