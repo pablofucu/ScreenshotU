@@ -68,11 +68,11 @@
     <div class="face">
       <div class="wicon">{@html ICON.import}</div>
       <h2>Elige la carpeta de tu biblioteca</h2>
-      <p>Indica la carpeta donde guardas tus capturas. Dentro, una carpeta por plataforma y otra por juego:</p>
+      <p>Todo lo del visor vive en una sola carpeta, en el disco que quieras:</p>
       <pre>Biblioteca/
-  PC/Elden Ring/captura1.png
-  Switch/Zelda/captura1.jpg
-  Novelas visuales/Steins;Gate/captura1.webp</pre>
+  Capturas/PC/Elden Ring/captura1.png
+  Partidas/  Grafismos/  Glosario/
+  visor.db  config.json</pre>
       <p class="wgo"><span class="btn a">A</span> Elegir carpeta</p>
     </div>
   </div>

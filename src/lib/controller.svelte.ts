@@ -21,6 +21,7 @@ import { isRemoteId, remoteAct, type RemoteId } from './remote.svelte';
 import { openPhrases, phrasesCmd } from './phrases.svelte';
 import { goalLit, goalTrack, localDay, type GoalKey } from './readgoals';
 import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
+import { libraryCmd, loadLibraryInfo, openLibrary } from './library.svelte';
 
 export const GRID_VIEW_H = 480;
 export const PAGE_SIZE = 10;
@@ -492,7 +493,7 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
     app.viewerFrom = 'shots';
     morph(el, () => go('viewer', ''), () => screenEl()?.querySelector('.vframe'));
   } else if (a === 'welcome') {
-    void chooseRoot();
+    void openLibrary();
   } else if (a === 'dock') {
     dock(+b);
   } else if (a === 'rec') {
@@ -879,7 +880,7 @@ export type SettingId =
   | 'audioout' | 'audiocombo' | 'audiohotkey' | 'hotkey' | 'combo' | 'mouse' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caprumble' | 'quit'
   | 'sgdbkey' | 'sgdbauto' | 'sgdbnow' | 'sgdbgame'
   | 'backup' | 'backupmedia' | 'restore' | 'autobackup'
-  | 'savesauto' | 'savesdir' | 'ludusavi' | 'update'
+  | 'savesauto' | 'ludusavi' | 'update'
   | ReadingId | RemoteId;
 /** Secciones de Ajustes (LB/RB las recorren). `color` es el índice del arcoíris. */
 export const SETTING_SECTIONS: Array<{ name: string; icon: string; color: number; rows: SettingId[] }> = [
@@ -891,7 +892,7 @@ export const SETTING_SECTIONS: Array<{ name: string; icon: string; color: number
   { name: 'Lectura', icon: 'jvn', color: 5, rows: READING_ROWS },
   { name: 'Magpie', icon: 'image', color: 6, rows: ['magpieexe', 'magpie'] },
   { name: 'Copias', icon: 'import', color: 0, rows: ['backup', 'backupmedia', 'restore', 'autobackup'] },
-  { name: 'Partidas', icon: 'pad', color: 1, rows: ['savesauto', 'savesdir', 'ludusavi'] },
+  { name: 'Partidas', icon: 'pad', color: 1, rows: ['savesauto', 'ludusavi'] },
   // Móvil: fuera de la 1.0 (código en remote.svelte.ts; ver REMOTE_AVAILABLE en src-tauri/src/remote.rs).
   { name: 'Sistema', icon: 'gear', color: 2, rows: ['sound', 'fullscreen', 'monitor', 'oncursor', 'update', 'quit'] },
 ];
@@ -997,14 +998,8 @@ export async function switchAudio(dir: number, id?: string) {
   }
 }
 
-/** Carpeta de las copias de partidas: A elige otra, ‹ › vuelve a la de serie. */
-async function chooseSavesDir(dir: number) {
-  if (dir !== 0) { if (app.config.savesDir) { void patchConfig({ savesDir: '' }); blip(1320); } return; }
-  const r = await backend.pickFolder('Carpeta para las copias de partidas');
-  if (r) void patchConfig({ savesDir: r });
-}
-
 export function openSettings() {
+  void loadLibraryInfo();
   void refreshMagpieStatus();
   void refreshSavesStatus();
   void refreshMonitor();
@@ -1058,7 +1053,7 @@ export function setSection(i: number) {
 export function settingsAct(id: SettingId | undefined, dir: number) {
   // dir: 0 = A / clic, -1 / +1 = izquierda / derecha
   if (id !== 'restore') dropRestore();
-  if (id === 'root' && dir === 0) void chooseRoot();
+  if (id === 'root' && dir === 0) void openLibrary();
   else if (id === 'rescan' && dir === 0) void rescan();
   else if (id === 'addgame' && dir === 0) openAdd();
   else if (id === 'hidden' && dir === 0) openHidden();
@@ -1092,7 +1087,6 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'restore' && dir === 0) void restoreBackup();
   else if (id === 'autobackup') { void patchConfig({ autoBackup: !app.config.autoBackup }); blip(1320); }
   else if (id === 'savesauto') { void patchConfig({ savesAuto: !app.config.savesAuto }); blip(1320); }
-  else if (id === 'savesdir') void chooseSavesDir(dir);
   else if (id === 'ludusavi' && dir === 0) void updateManifestFromSettings();
   else if (id === 'sgdbkey' && dir === 0) editSgdbKey();
   else if (id === 'sgdbauto') toggleSgdbAuto();
@@ -1116,6 +1110,7 @@ function overlayCmd(c: string) {
     case 'phrases': phrasesCmd(c); return;
     case 'sgdbtitles': sgdbTitlesCmd(c); return;
     case 'saves': savesCmd(c); return;
+    case 'library': libraryCmd(c); return;
   }
   // Arriba/abajo pasan de una sección a la siguiente al llegar al borde; LB/RB (o LT/RT) saltan de sección.
   const rows = secRows();
@@ -1144,11 +1139,10 @@ async function scanLib() {
   return withSagas(lib, app.sagas);
 }
 
-export async function chooseRoot() {
-  const r = await backend.pickFolder();
-  if (!r) return;
-  await patchConfig({ root: r });
-  await rescan();
+/** Antes de la biblioteca (o sin encontrarla): el asistente sale solo al arrancar y no se puede cerrar. */
+async function libraryGate() {
+  const info = await loadLibraryInfo();
+  if (info && info.mode !== 'library') await openLibrary();
 }
 
 export async function rescan() {
@@ -1257,6 +1251,7 @@ export async function boot() {
   try { app.fullscreen = await backend.isFullscreen(); } catch { /* */ }
   await rescan();
   app.ready = true;
+  void libraryGate();
   void announceStartup().then((shown) => { if (!shown) void announceDue(); });
   // Comprobación silenciosa de actualizaciones unos segundos después de arrancar (solo en la app, no en el navegador).
   if (backend.isTauri) setTimeout(() => void checkUpdate(true), 8000);

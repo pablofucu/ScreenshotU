@@ -36,13 +36,13 @@ pub struct BackupResult {
     pub media_files: usize,
 }
 
-/// Crea el .zip de copia de seguridad en `dest` (visor.db + config.json + opcionalmente phrases/).
+/// Crea el .zip de copia de seguridad en `dest` (visor.db + config.json + opcionalmente el glosario).
 #[tauri::command]
 pub async fn backup_create(state: State<'_, AppState>, dest: String, include_media: bool) -> Result<BackupResult, String> {
-    let (db, dir) = (state.db.clone(), state.config_dir.clone());
+    let (db, dir, media) = (state.db.clone(), state.paths.data.clone(), state.paths.glossary.clone());
     let path = PathBuf::from(&dest);
     tauri::async_runtime::spawn_blocking(move || {
-        core::create_backup(&db, &dir, &path, include_media).map(|i| BackupResult { path: dest, size: i.size, media_files: i.media_files })
+        core::create_backup(&db, &dir, &media, &path, include_media).map(|i| BackupResult { path: dest, size: i.size, media_files: i.media_files })
     })
     .await
     .map_err(|e| e.to_string())?
@@ -61,7 +61,7 @@ pub struct RestorePreview {
 /// Extrae y valida un .zip de copia; no cambia nada hasta `restore_apply`.
 #[tauri::command]
 pub async fn restore_prepare(state: State<'_, AppState>, zip: String) -> Result<RestorePreview, String> {
-    let dir = state.config_dir.clone();
+    let dir = state.paths.data.clone();
     tauri::async_runtime::spawn_blocking(move || core::stage_restore(&PathBuf::from(zip), &dir))
         .await
         .map_err(|e| e.to_string())?
@@ -72,13 +72,13 @@ pub async fn restore_prepare(state: State<'_, AppState>, zip: String) -> Result<
 /// El usuario no confirmo: se descarta lo extraido.
 #[tauri::command]
 pub fn restore_cancel(state: State<'_, AppState>) {
-    core::cancel_restore(&state.config_dir);
+    core::cancel_restore(&state.paths.data);
 }
 
 /// Confirmada: reinicia el visor; al arrancar se sustituye la base (ver `visor_core::backup`).
 #[tauri::command]
 pub fn restore_apply(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
-    if !state.config_dir.join(core::PENDING_DIR).join(core::READY_FILE).is_file() {
+    if !state.paths.data.join(core::PENDING_DIR).join(core::READY_FILE).is_file() {
         return Err("No hay ninguna copia preparada para restaurar".into());
     }
     app.restart()

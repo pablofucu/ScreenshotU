@@ -53,14 +53,9 @@ fn steam_path() -> Option<PathBuf> {
     p.is_dir().then_some(p)
 }
 
-/// Carpeta raiz de las copias: la elegida en Ajustes o `<config>/partidas`.
+/// Carpeta raiz de las copias: `<biblioteca>/Partidas`.
 pub fn saves_root(state: &AppState) -> PathBuf {
-    let d = state.config.lock().unwrap().saves_dir.clone();
-    if d.trim().is_empty() {
-        state.config_dir.join("partidas")
-    } else {
-        PathBuf::from(d)
-    }
+    state.paths.saves.clone()
 }
 
 /// Base de Ludusavi en memoria (se lee del indice en cache la primera vez). `None` si aun no se descargo.
@@ -315,7 +310,7 @@ fn status_of(state: &AppState) -> SavesStatus {
     SavesStatus {
         games: meta.games,
         fetched_ms: meta.fetched_ms,
-        default_dir: state.config_dir.join("partidas").to_string_lossy().into_owned(),
+        default_dir: state.paths.saves.to_string_lossy().into_owned(),
         busy: state.saves_busy.load(Ordering::SeqCst),
     }
 }

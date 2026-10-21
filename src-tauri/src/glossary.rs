@@ -19,7 +19,7 @@ pub fn now_ms() -> i64 {
 }
 
 pub fn dir(app: &AppHandle) -> PathBuf {
-    app.state::<AppState>().config_dir.join("phrases")
+    app.state::<AppState>().paths.glossary.clone()
 }
 
 /// Capturas y audio de las frases.

@@ -124,7 +124,7 @@ async function saveForm() {
   if ((f.kind === 'exe' || f.kind === 'emu') && !f.exe) { toast(f.kind === 'emu' ? 'Elige primero el emulador' : 'Elige primero el ejecutable'); return; }
   if (f.kind === 'emu' && !f.rom) { toast('Elige la ROM o el juego'); return; }
   if (!f.name.trim()) { toast('Escribe un nombre'); return; }
-  if ((f.hero || f.logo || f.cover || f.kind === 'captures') && !app.config.root) { toast('Elige primero la carpeta de capturas en Ajustes', 3200); return; }
+  if ((f.hero || f.logo || f.cover || f.kind === 'captures') && !app.config.root) { toast('Elige primero la carpeta de la biblioteca', 3200); return; }
   const kind: NewGame['kind'] = f.kind === 'emu' ? 'emulator' : f.kind;
   try {
     const rep = await backend.addGame({
@@ -342,7 +342,7 @@ let importing = false;
 
 export async function importInto(t: Title, paths: string[]) {
   if (importing) { toast('Ya se está importando…'); return; }
-  if (!t.dir || !app.config.root) { toast('Elige primero la carpeta de capturas en Ajustes', 3200); return; }
+  if (!t.dir || !app.config.root) { toast('Elige primero la carpeta de la biblioteca', 3200); return; }
   importing = true;
   toast(`Importando 0/${paths.length}…`, 0);
   try {

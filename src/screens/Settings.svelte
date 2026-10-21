@@ -6,7 +6,8 @@
   } from '../lib/controller.svelte';
   import { comboLabel, hotkeyLabel, mouseLabel } from '../lib/learn.svelte';
   import { sg, sgdbKeyLabel } from '../lib/sgdb.svelte';
-  import { ludusaviLabel, sv } from '../lib/saves.svelte';
+  import { ludusaviLabel } from '../lib/saves.svelte';
+  import { lb } from '../lib/library.svelte';
   import { READING_CYCLE, isReadingId, readingRow } from '../lib/reading.svelte';
   import { updateRow } from '../lib/updater.svelte';
   import { REMOTE_CYCLE, isRemoteId, remoteRow } from '../lib/remote.svelte';
@@ -16,13 +17,13 @@
   const yn = (b: boolean) => (b ? 'Sí' : 'No');
 
   // Filas que cambian de valor con izquierda/derecha (se marcan con ‹ › al enfocarlas).
-  const CYCLE = new Set<SettingId>(['showhidden', 'view', 'shotsview', 'accent', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'savesdir']);
+  const CYCLE = new Set<SettingId>(['showhidden', 'view', 'shotsview', 'accent', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto']);
 
   function row(id: SettingId): { l: string; v: string; d: string } {
     if (isReadingId(id)) return readingRow(id);
     if (isRemoteId(id)) return remoteRow(id);
     switch (id) {
-      case 'root': return { l: 'Carpeta de la biblioteca', v: app.config.root ?? 'Sin elegir', d: 'Carpeta raíz con una subcarpeta por plataforma (PC, Switch, Novelas visuales) y dentro una por juego. Pulsa A para elegir otra.' };
+      case 'root': return { l: 'Carpeta de la biblioteca', v: lb.info?.dir || 'Sin elegir', d: 'Todo lo del visor está en esta carpeta: Capturas (una subcarpeta por plataforma y otra por juego), Partidas, Grafismos, Glosario, Diccionarios, la base de datos y los ajustes. Copiarla es una copia completa. Pulsa A para moverla a otra carpeta u otro disco: se copia entera y la anterior se queda donde está.' };
       case 'rescan': return { l: 'Volver a escanear la biblioteca', v: '', d: 'Vuelve a leer todas las carpetas: capturas nuevas, juegos añadidos a mano y grafismos cambiados.' };
       case 'addgame': return { l: 'Añadir juego…', v: '', d: 'Añade un ejecutable, un emulador con su ROM, una carpeta de juegos o solo una carpeta de capturas.' };
       case 'hidden': return { l: 'Juegos ocultos', v: app.lib.hidden.length ? `${app.lib.hidden.length}` : 'Ninguno', d: 'Lista de juegos ocultos desde su ficha (Y → Ocultar juego) para volver a mostrarlos. Sus archivos no se tocan.' };
@@ -53,17 +54,16 @@
       case 'cappeek': return { l: 'Miniatura al capturar', v: yn(app.config.capturePeek), d: 'Enseña la captura en pequeño, un segundo y medio, en la esquina superior derecha del juego. No sale en las capturas ni recibe clics. No se ve sobre juegos en pantalla completa exclusiva (sí en ventana o sin bordes).' };
       case 'caprumble': return { l: 'Vibración al capturar', v: yn(app.config.captureRumble), d: 'Al capturar con el mando, vibra un instante el mando que hizo la combinación. El mando no se bloquea: el juego lo sigue recibiendo igual.' };
       case 'backup': return { l: 'Crear copia de seguridad…', v: app.backupBusy ? 'Creando…' : '', d: 'Guarda en un .zip (nombre visor-copia-AAAA-MM-DD.zip) tu base de datos (favoritas, juegos, horas y partidas, estados, preferencias, sagas, novelas y glosario) y la configuración. Te pide dónde guardarlo.' };
-      case 'backupmedia': return { l: 'Incluir medios del glosario', v: yn(app.backupMedia), d: 'Añade a la copia la carpeta phrases (capturas y audio de las frases guardadas). Puede hacerla bastante más grande. Las capturas de tus juegos no se incluyen: están en tu carpeta de biblioteca.' };
+      case 'backupmedia': return { l: 'Incluir medios del glosario', v: yn(app.backupMedia), d: 'Añade a la copia la carpeta Glosario (capturas y audio de las frases guardadas). Puede hacerla bastante más grande. Las capturas de tus juegos y las partidas no se incluyen: para una copia completa, copia la carpeta de la biblioteca.' };
       case 'restore': return { l: app.restoreReady ? 'Pulsa A otra vez para restaurar' : 'Restaurar copia de seguridad…', v: app.restoreReady, d: 'Elige un .zip creado aquí. Se comprueba que es válido y que no es de una versión más nueva; después, con A otra vez, el visor se reinicia y la sustituye. Tu base actual se guarda antes como visor.db.antes-de-restaurar (y config.json.antes-de-restaurar). Los medios del glosario se mezclan con los que ya tengas.' };
       case 'oncursor': return { l: 'Abrir en el monitor del cursor', v: yn(app.config.openOnCursor), d: 'Al arrancar, el visor se abre en el monitor donde está el cursor (normalmente el del icono que pulsaste). Si está en No, se abre en el último monitor usado.' };
-      case 'autobackup': return { l: 'Copia automática', v: yn(app.config.autoBackup), d: 'Al arrancar, si la última copia automática tiene 7 días o más, guarda la base de datos en la carpeta backups de la configuración (visor-AAAA-MM-DD.db) y conserva las 5 últimas.' };
+      case 'autobackup': return { l: 'Copia automática', v: yn(app.config.autoBackup), d: 'Al arrancar, si la última copia automática tiene 7 días o más, guarda la base de datos en la carpeta «Copias de la base» de la biblioteca (visor-AAAA-MM-DD.db) y conserva las 5 últimas.' };
       case 'savesauto': return { l: 'Copiar partidas al cerrar el juego', v: yn(app.config.savesAuto), d: 'Al cerrar un juego lanzado desde el visor, guarda en un .zip sus partidas si cambiaron desde la última copia. Se conservan las 10 últimas automáticas de cada juego; las manuales no se borran. Las ubicaciones de cada juego se revisan en su ficha (Y › Partidas guardadas).' };
-      case 'savesdir': return { l: 'Carpeta de las copias', v: app.config.savesDir || 'Predeterminada', d: `Pulsa A para elegir otra carpeta (mejor en otro disco); ‹ › vuelve a la predeterminada${sv.status ? ` (${sv.status.defaultDir})` : ''}. Dentro hay una subcarpeta por juego.` };
       case 'ludusavi': return { l: 'Base de partidas de Ludusavi', v: ludusaviLabel(), d: 'Base libre de PCGamingWiki y Ludusavi con dónde guarda sus partidas cada juego. Pulsa A para descargarla o actualizarla (unos 18 MB). Para novelas visuales y juegos que no aparecen se usan además reglas por motor (Ren’Py, RPG Maker, KiriKiri, Unity, Unreal…).' };
       case 'update': return updateRow();
       case 'quit': return { l: 'Salir de la aplicación', v: '', d: 'Cierra el visor. Las capturas con el atajo dejan de funcionar hasta que lo vuelvas a abrir.' };
       case 'sgdbkey': return { l: 'Clave de API', v: sgdbKeyLabel(), d: 'Clave gratuita de steamgriddb.com (inicia sesión → Preferencias → API). Pulsa A para escribirla o pegarla con Ctrl+V.' };
-      case 'sgdbauto': return { l: 'Descargar grafismos que falten', v: yn(app.config.sgdbAuto), d: 'Al escanear, busca cada juego por su nombre y descarga la portada, el hero y el logo que falten. Se guardan en la caché de la aplicación: la carpeta del juego no se toca y sus grafismos propios siempre ganan.' };
+      case 'sgdbauto': return { l: 'Descargar grafismos que falten', v: yn(app.config.sgdbAuto), d: 'Al escanear, busca cada juego por su nombre y descarga la portada, el hero y el logo que falten. Se guardan en la carpeta Grafismos de la biblioteca: la carpeta de capturas del juego no se toca y sus grafismos propios siempre ganan.' };
       case 'sgdbnow': return { l: 'Buscar ahora los que faltan', v: sg.status, d: 'Vuelve a buscar los grafismos que faltan en todos los juegos, también en los que ya se revisaron antes.' };
       case 'sgdbgame': return { l: 'Cambiar grafismos de un juego…', v: '', d: 'Elige otra portada, hero o logo de SteamGridDB o una imagen del PC (View) para un juego, o corrige el juego que se encontró si no era el bueno.' };
     }

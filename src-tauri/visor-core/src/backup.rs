@@ -2,7 +2,7 @@
 //! la restauracion (preparar, validar y aplicar al siguiente arranque) y las copias automaticas de la base.
 //!
 //! La restauracion **no** sustituye la base con la app en marcha: la conexion esta abierta y hay copias en
-//! memoria de casi todo. Se extrae el .zip a `<config>/restore-pending/`, se valida, se deja un archivo
+//! memoria de casi todo. Se extrae el .zip a `<datos>/restore-pending/` (`<datos>` = carpeta de `visor.db`), se valida, se deja un archivo
 //! `LISTO` y se reinicia; al arrancar, antes de abrir la base, `apply_pending_restore` hace el cambio.
 use crate::db::{self, validate_file, Db, DbInfo, DB_FILE};
 use anyhow::{bail, Context, Result};
@@ -15,7 +15,8 @@ use std::path::{Path, PathBuf};
 pub const ZIP_DB: &str = "visor.db";
 /// Configuracion dentro del .zip.
 pub const ZIP_CONFIG: &str = "config.json";
-/// Carpeta de medios del glosario (capturas y audio de frases), dentro del .zip y de la carpeta de configuracion.
+/// Carpeta de medios del glosario (capturas y audio de frases) dentro del .zip. En disco es la que se pasa
+/// (`Glosario` en la biblioteca).
 pub const MEDIA_DIR: &str = "phrases";
 /// Carpeta donde se deja lo extraido hasta el proximo arranque.
 pub const PENDING_DIR: &str = "restore-pending";
@@ -23,8 +24,6 @@ pub const PENDING_DIR: &str = "restore-pending";
 pub const READY_FILE: &str = "LISTO";
 /// Copia de la base previa a una restauracion.
 pub const BEFORE_RESTORE: &str = "visor.db.antes-de-restaurar";
-/// Carpeta de las copias automaticas.
-pub const AUTO_DIR: &str = "backups";
 /// Cada cuantos dias se hace una copia automatica y cuantas se conservan.
 pub const AUTO_EVERY_DAYS: i64 = 7;
 pub const AUTO_KEEP: usize = 5;
@@ -46,8 +45,8 @@ fn add_file(zip: &mut zip::ZipWriter<File>, name: &str, path: &Path) -> Result<(
 }
 
 /// Crea el .zip en `dest`: `visor.db` (instantanea consistente), `config.json` si existe y, con
-/// `include_media`, todo `phrases/`. Escribe en un temporal y renombra, asi que no deja un zip a medias.
-pub fn create_backup(db: &Db, config_dir: &Path, dest: &Path, include_media: bool) -> Result<BackupInfo> {
+/// `include_media`, todo `media_dir` (como `phrases/`). Escribe en un temporal y renombra, asi que no deja un zip a medias.
+pub fn create_backup(db: &Db, config_dir: &Path, media_dir: &Path, dest: &Path, include_media: bool) -> Result<BackupInfo> {
     if let Some(dir) = dest.parent().filter(|d| !d.as_os_str().is_empty()) {
         fs::create_dir_all(dir).with_context(|| format!("creando {}", dir.display()))?;
     }
@@ -67,13 +66,13 @@ pub fn create_backup(db: &Db, config_dir: &Path, dest: &Path, include_media: boo
                 add_file(&mut zip, ZIP_CONFIG, &cfg)?;
             }
             if include_media {
-                let root = config_dir.join(MEDIA_DIR);
+                let root = media_dir;
                 if root.is_dir() {
-                    for e in walkdir::WalkDir::new(&root).follow_links(false).into_iter().filter_map(|e| e.ok()) {
+                    for e in walkdir::WalkDir::new(root).follow_links(false).into_iter().filter_map(|e| e.ok()) {
                         if !e.file_type().is_file() {
                             continue;
                         }
-                        let rel = e.path().strip_prefix(&root).unwrap_or(e.path());
+                        let rel = e.path().strip_prefix(root).unwrap_or(e.path());
                         let name = format!("{}/{}", MEDIA_DIR, rel.components().map(|c| c.as_os_str().to_string_lossy().into_owned()).collect::<Vec<_>>().join("/"));
                         add_file(&mut zip, &name, e.path())?;
                         media_files += 1;
@@ -221,9 +220,9 @@ fn copy_dir(from: &Path, to: &Path) -> Result<()> {
 /// Si hay una restauracion lista en `<config>/restore-pending/`, la aplica. **Debe llamarse antes de abrir la base.**
 /// Pasos: (1) guarda la base actual como `visor.db.antes-de-restaurar` (abriendola para que se recupere el `-wal`);
 /// (2) copia la restaurada junto a `visor.db` y la renombra encima (atomico), quitando `-wal`/`-shm`; (3) igual con
-/// `config.json` (el anterior queda como `config.json.antes-de-restaurar`); (4) mezcla `phrases/`. Al final borra lo
+/// `config.json` (el anterior queda como `config.json.antes-de-restaurar`); (4) mezcla `phrases/` en `media_dir`. Al final borra lo
 /// pendiente, salga bien o mal, para no repetirlo en cada arranque. `None` = no habia nada pendiente.
-pub fn apply_pending_restore(config_dir: &Path) -> Option<Result<Restored>> {
+pub fn apply_pending_restore(config_dir: &Path, media_dir: &Path) -> Option<Result<Restored>> {
     let pend = pending_dir(config_dir);
     if !pend.is_dir() {
         return None;
@@ -233,12 +232,12 @@ pub fn apply_pending_restore(config_dir: &Path) -> Option<Result<Restored>> {
         let _ = fs::remove_dir_all(&pend);
         return None;
     }
-    let r = apply_inner(config_dir, &pend);
+    let r = apply_inner(config_dir, media_dir, &pend);
     let _ = fs::remove_dir_all(&pend);
     Some(r)
 }
 
-fn apply_inner(config_dir: &Path, pend: &Path) -> Result<Restored> {
+fn apply_inner(config_dir: &Path, media_dir: &Path, pend: &Path) -> Result<Restored> {
     // Se vuelve a validar: entre preparar y arrancar el archivo podria haberse tocado.
     validate_file(&pend.join(ZIP_DB))?;
     let live = config_dir.join(DB_FILE);
@@ -277,7 +276,7 @@ fn apply_inner(config_dir: &Path, pend: &Path) -> Result<Restored> {
     }
     let media = pend.join(MEDIA_DIR);
     if media.is_dir() {
-        copy_dir(&media, &config_dir.join(MEDIA_DIR))?;
+        copy_dir(&media, media_dir)?;
     }
     Ok(Restored { previous_db })
 }
@@ -312,24 +311,23 @@ pub fn rotate_auto(dir: &Path, keep: usize) -> usize {
     list_auto(dir).into_iter().skip(keep).filter(|(_, p)| fs::remove_file(p).is_ok()).count()
 }
 
-/// Si la ultima copia automatica de `<config>/backups/` tiene `AUTO_EVERY_DAYS` dias o mas (o no hay ninguna),
+/// Si la ultima copia automatica de `dir` tiene `AUTO_EVERY_DAYS` dias o mas (o no hay ninguna),
 /// guarda `visor-AAAA-MM-DD.db` y rota a `AUTO_KEEP`. Devuelve la ruta creada.
-pub fn auto_backup_if_due(db: &Db, config_dir: &Path, today: NaiveDate) -> Result<Option<PathBuf>> {
-    let dir = config_dir.join(AUTO_DIR);
-    if let Some((last, _)) = list_auto(&dir).first() {
+pub fn auto_backup_if_due(db: &Db, dir: &Path, today: NaiveDate) -> Result<Option<PathBuf>> {
+    if let Some((last, _)) = list_auto(dir).first() {
         if (today - *last).num_days() < AUTO_EVERY_DAYS {
             return Ok(None);
         }
     }
     let dest = dir.join(auto_name(today));
     db.backup_to(&dest)?;
-    rotate_auto(&dir, AUTO_KEEP);
+    rotate_auto(dir, AUTO_KEEP);
     Ok(Some(dest))
 }
 
 /// `auto_backup_if_due` con la fecha local de hoy.
-pub fn auto_backup_today(db: &Db, config_dir: &Path) -> Result<Option<PathBuf>> {
-    auto_backup_if_due(db, config_dir, chrono::Local::now().date_naive())
+pub fn auto_backup_today(db: &Db, dir: &Path) -> Result<Option<PathBuf>> {
+    auto_backup_if_due(db, dir, chrono::Local::now().date_naive())
 }
 
 #[cfg(test)]
@@ -359,11 +357,11 @@ mod tests {
         let (d, db) = setup();
         let out = tempfile::tempdir().unwrap();
         let a = out.path().join("sin.zip");
-        let i = create_backup(&db, d.path(), &a, false).unwrap();
+        let i = create_backup(&db, d.path(), &d.path().join("phrases"), &a, false).unwrap();
         assert_eq!(names(&a), vec!["config.json", "visor.db"]);
         assert_eq!((i.media_files, i.size > 0), (0, true));
         let b = out.path().join("con.zip");
-        let i = create_backup(&db, d.path(), &b, true).unwrap();
+        let i = create_backup(&db, d.path(), &d.path().join("phrases"), &b, true).unwrap();
         assert_eq!(names(&b), vec!["config.json", "phrases/juego/a.png", "visor.db"]);
         assert_eq!(i.media_files, 1);
         // No quedan temporales junto al destino.
@@ -376,7 +374,7 @@ mod tests {
         let (d, db) = setup();
         let out = tempfile::tempdir().unwrap();
         let z = out.path().join("c.zip");
-        create_backup(&db, d.path(), &z, true).unwrap();
+        create_backup(&db, d.path(), &d.path().join("phrases"), &z, true).unwrap();
         // Estado posterior a la copia que debe perderse al restaurar.
         db.with(|c| favorite_set(c, "dos.png", true)).unwrap();
         fs::write(d.path().join("config.json"), r#"{"sound":false}"#).unwrap();
@@ -386,7 +384,7 @@ mod tests {
         assert_eq!((info.has_config, info.media_files, info.db.version), (true, 1, db::latest_version()));
         // Como al reiniciar: la conexion vieja ya no existe cuando se aplica.
         drop(db);
-        apply_pending_restore(d.path()).expect("habia una pendiente").unwrap();
+        apply_pending_restore(d.path(), &d.path().join("phrases")).expect("habia una pendiente").unwrap();
         let r = Db::open_path(&d.path().join(DB_FILE)).unwrap();
         assert_eq!(r.with(favorites_load).unwrap(), vec!["uno.png"]);
         assert_eq!(fs::read_to_string(d.path().join("config.json")).unwrap(), r#"{"sound":true}"#);
@@ -396,7 +394,7 @@ mod tests {
         assert_eq!(prev.with(favorites_load).unwrap(), vec!["uno.png", "dos.png"]);
         assert!(d.path().join("config.json.antes-de-restaurar").is_file());
         assert!(!d.path().join(PENDING_DIR).exists());
-        assert!(apply_pending_restore(d.path()).is_none());
+        assert!(apply_pending_restore(d.path(), &d.path().join("phrases")).is_none());
     }
 
     #[test]
@@ -464,7 +462,7 @@ mod tests {
         let d = tempfile::tempdir().unwrap();
         fs::create_dir_all(d.path().join(PENDING_DIR)).unwrap();
         fs::write(d.path().join(PENDING_DIR).join("visor.db"), b"x").unwrap();
-        assert!(apply_pending_restore(d.path()).is_none());
+        assert!(apply_pending_restore(d.path(), &d.path().join("phrases")).is_none());
         assert!(!d.path().join(PENDING_DIR).exists());
     }
 
@@ -472,12 +470,12 @@ mod tests {
     fn auto_backup_every_seven_days_keeps_five() {
         let (d, db) = setup();
         let day = |m, dd| NaiveDate::from_ymd_opt(2026, m, dd).unwrap();
-        let dir = d.path().join(AUTO_DIR);
-        assert!(auto_backup_if_due(&db, d.path(), day(1, 1)).unwrap().is_some(), "la primera siempre");
-        assert!(auto_backup_if_due(&db, d.path(), day(1, 7)).unwrap().is_none(), "6 dias: aun no");
-        assert!(auto_backup_if_due(&db, d.path(), day(1, 8)).unwrap().is_some(), "7 dias: toca");
+        let dir = d.path().join("backups");
+        assert!(auto_backup_if_due(&db, &dir, day(1, 1)).unwrap().is_some(), "la primera siempre");
+        assert!(auto_backup_if_due(&db, &dir, day(1, 7)).unwrap().is_none(), "6 dias: aun no");
+        assert!(auto_backup_if_due(&db, &dir, day(1, 8)).unwrap().is_some(), "7 dias: toca");
         for (m, dd) in [(1, 15), (1, 22), (1, 29), (2, 5), (2, 12)] {
-            assert!(auto_backup_if_due(&db, d.path(), day(m, dd)).unwrap().is_some());
+            assert!(auto_backup_if_due(&db, &dir, day(m, dd)).unwrap().is_some());
         }
         let l = list_auto(&dir);
         assert_eq!(l.len(), AUTO_KEEP);

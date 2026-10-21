@@ -59,7 +59,7 @@ export const DEFAULT_CONFIG: Config = {
 export type MenuItem =
   | 'folder' | 'reload' | 'remove' | 'hide' | 'unhide' | 'addshots' | 'accent'
   | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'editsaga' | 'delsaga' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'saves' | 'category' | `cat:${string}`;
-export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'saga' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves';
+export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'saga' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library';
 export interface SagaFormState {
   /** null = saga nueva. */
   id: string | null;
