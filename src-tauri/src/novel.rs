@@ -78,7 +78,7 @@ struct Session {
 
 static SESSION: Mutex<Option<Session>> = Mutex::new(None);
 static TOKENIZER: OnceLock<Option<Tokenizer>> = OnceLock::new();
-/// Diccionarios Yomitan de `<config>/dicts` (acepciones de la pagina de lectura). Se recargan bajo demanda.
+/// Diccionarios Yomitan de `<biblioteca>/Diccionarios` (acepciones de la pagina de lectura). Se recargan bajo demanda.
 static DICT: RwLock<Option<Arc<Dict>>> = RwLock::new(None);
 static DICT_LOADING: AtomicBool = AtomicBool::new(false);
 /// Palabras conocidas (globales): copia en memoria de la tabla `known_words`.
@@ -100,7 +100,7 @@ fn tokenizer() -> Option<&'static Tokenizer> {
 }
 
 fn dicts_dir(app: &AppHandle) -> std::path::PathBuf {
-    app.state::<AppState>().config_dir.join("dicts")
+    app.state::<AppState>().paths.dicts.clone()
 }
 
 fn dict() -> Option<Arc<Dict>> {

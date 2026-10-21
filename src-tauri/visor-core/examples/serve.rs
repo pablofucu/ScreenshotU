@@ -12,6 +12,7 @@ use std::path::{Path, PathBuf};
 use visor_core::config::Config;
 use visor_core::db::{data as dbd, Db};
 use visor_core::games;
+use visor_core::library::{self, DataPaths};
 use visor_core::palette::PaletteCache;
 use visor_core::relpath;
 use visor_core::remote::{self, Provider, RemoteConfig, RemoteServer, Snapshot};
@@ -20,7 +21,7 @@ use visor_core::scan::{self, ScanOpts};
 const APP_ID: &str = "app.visorcapturas.desktop";
 
 struct Real {
-    config_dir: PathBuf,
+    paths: DataPaths,
     cache_dir: PathBuf,
     db: Db,
 }
@@ -39,7 +40,10 @@ impl Provider for Real {
 
     fn snapshot(&self) -> Result<Snapshot> {
         let t0 = std::time::Instant::now();
-        let cfg = Config::load(&self.config_dir.join("config.json"));
+        let mut cfg = Config::load(&self.paths.config_file());
+        if let Some(c) = &self.paths.captures {
+            cfg.root = Some(c.to_string_lossy().into_owned());
+        }
         let root = cfg.root.as_deref().map(Path::new);
         let manual = log("juegos", self.db.with(dbd::manual_load));
         let stats = log("estadisticas", self.db.with(dbd::stats_load));
@@ -48,7 +52,7 @@ impl Provider for Real {
         let sagas = log("sagas", self.db.with(dbd::sagas_load));
         let favorites: Vec<String> = log("favoritas", self.db.with(dbd::favorites_load)).iter().map(|p| relpath::resolved(root, p)).collect();
         let palettes = PaletteCache::load(&self.cache_dir.join("palettes.json"));
-        let sgdb_dir = self.cache_dir.join("sgdb");
+        let sgdb_dir = self.paths.art.clone();
         let found = games::all_games(&manual);
         let opts = ScanOpts { hidden: &hidden, show_hidden: false, prefs: Some(&prefs), palettes: Some(&palettes), sgdb_dir: Some(&sgdb_dir) };
         let mut library = scan::scan_library_ex(root, &cfg.platforms, &found, &stats, &opts);
@@ -75,9 +79,14 @@ fn main() -> Result<()> {
     let port: u16 = args.get(1).and_then(|p| p.parse().ok()).unwrap_or(remote::DEFAULT_PORT);
     let code = args.get(2).cloned().unwrap_or_else(|| "TEST-CODE".into());
     let cache_dir = env_dir("LOCALAPPDATA");
-    let db = Db::open(&config_dir)?;
-    let srv = RemoteServer::start(SocketAddr::from((Ipv4Addr::UNSPECIFIED, port)), code.clone(), Real { config_dir: config_dir.clone(), cache_dir, db })?;
-    println!("Datos: {}", config_dir.display());
+    // La biblioteca, si la hay; si no, los datos de antes.
+    let paths = match library::read_pointer(&config_dir) {
+        Some(p) => DataPaths::library(Path::new(&p.dir)),
+        None => DataPaths::legacy(&config_dir, &cache_dir, &Config::load(&config_dir.join("config.json"))),
+    };
+    let db = Db::open(&paths.data)?;
+    println!("Datos: {}", paths.data.display());
+    let srv = RemoteServer::start(SocketAddr::from((Ipv4Addr::UNSPECIFIED, port)), code.clone(), Real { paths, cache_dir, db })?;
     println!("Codigo: {code}");
     for ip in remote::local_ipv4s() {
         println!("http://{ip}:{port}/api/v1/hello");

@@ -11,6 +11,7 @@ pub mod gamedirs;
 pub mod games;
 pub mod importer;
 pub mod jp;
+pub mod library;
 pub mod magpie;
 pub mod palette;
 pub mod relpath;

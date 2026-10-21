@@ -6,6 +6,7 @@ mod backup;
 mod display;
 mod glossary;
 mod launcher;
+mod library;
 mod magpie;
 mod mouse;
 mod novel;
@@ -125,7 +126,12 @@ fn save_config(app: AppHandle, state: State<'_, AppState>, config: Config) -> Re
     if config.remote_enabled && config.remote_token.is_empty() {
         config.remote_token = visor_core::remote::new_code();
     }
-    config.save(&state.config_file()).map_err(|e| e.to_string())?;
+    // Las capturas van siempre en la biblioteca: la interfaz no elige la raiz.
+    config.root = state.config.lock().unwrap().root.clone();
+    // Sin biblioteca encontrada no se escribe nada (crearia la carpeta en un disco que no esta).
+    if state.lib_mode != state::LibMode::Missing {
+        config.save(&state.config_file()).map_err(|e| e.to_string())?;
+    }
     state.combo_mask.store(combo_mask(&config.capture_combo), Ordering::Relaxed);
     state.audio_mask.store(combo_mask(&config.audio_combo), Ordering::Relaxed);
     state.mouse_button.store(mouse_button_index(&config.capture_mouse), Ordering::Relaxed);
@@ -375,7 +381,7 @@ fn add_game(state: State<'_, AppState>, game: NewGame) -> Result<AddReport, Stri
     let arts = [(ArtKind::Hero, &game.hero, "hero"), (ArtKind::Logo, &game.logo, "logo"), (ArtKind::Cover, &game.cover, "portada")];
     let want_dir = game.kind == "captures" || arts.iter().any(|(_, p, _)| !p.is_empty());
     if want_dir {
-        let root = cfg.root.clone().ok_or("Elige primero la carpeta de capturas en Ajustes")?;
+        let root = cfg.root.clone().ok_or("Elige primero la carpeta de la biblioteca")?;
         let root_p = Path::new(&root);
         let dir = importer::title_dir(root_p, &plat.folder, &games::sanitize_folder_name(&name));
         if !importer::is_within_root(root_p, &dir) {
@@ -486,7 +492,7 @@ struct Progress {
 /// Copia imagenes a la carpeta de un titulo (nombre `Carpeta_AAAA-MM-DD_HH-MM-SS.ext`). Emite `import-progress`.
 #[tauri::command]
 async fn import_shots(app: AppHandle, state: State<'_, AppState>, dir: String, paths: Vec<String>) -> Result<ImportReport, String> {
-    let root = state.config.lock().unwrap().root.clone().ok_or("Elige primero la carpeta de capturas en Ajustes")?;
+    let root = state.config.lock().unwrap().root.clone().ok_or("Elige primero la carpeta de la biblioteca")?;
     tauri::async_runtime::spawn_blocking(move || {
         let sources: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
         importer::import_shots(Path::new(&root), Path::new(&dir), &sources, |done, total| {
@@ -725,22 +731,45 @@ pub fn run() {
         .setup(|app| {
             let config_dir = app.path().app_config_dir()?;
             let cache_dir = app.path().app_cache_dir()?;
-            // Una restauracion preparada se aplica ANTES de leer la configuracion y abrir la base.
+            // Donde estan los datos: la biblioteca, lo de antes (asistente pendiente) o una biblioteca que no se encuentra.
+            let (lib_mode, lib_dir) = library::resolve(&config_dir);
+            let early = library::early_paths(&lib_mode, &lib_dir, &config_dir, &cache_dir);
             let mut notices: Vec<backup::Notice> = Vec::new();
-            if let Some(r) = visor_core::backup::apply_pending_restore(&config_dir) {
-                notices.push(backup::restore_notice(r.map_err(|e| format!("{e:#}"))));
+            // Una restauracion preparada se aplica ANTES de leer la configuracion y abrir la base.
+            if lib_mode != state::LibMode::Missing {
+                if let Some(r) = visor_core::backup::apply_pending_restore(&early.data, &early.glossary) {
+                    notices.push(backup::restore_notice(r.map_err(|e| format!("{e:#}"))));
+                }
             }
-            let config = Config::load(&config_dir.join("config.json"));
+            let mut config = Config::load(&early.config_file());
+            let paths = match lib_mode {
+                state::LibMode::Legacy => visor_core::library::DataPaths::legacy(&config_dir, &cache_dir, &config),
+                _ => early,
+            };
+            config.root = match lib_mode {
+                state::LibMode::Library => paths.captures.as_ref().map(|p| p.to_string_lossy().into_owned()),
+                state::LibMode::Missing => None,
+                state::LibMode::Legacy => config.root,
+            };
+            if let Some(n) = library::copied_notice(&config_dir) {
+                notices.push(n);
+            }
             // Base de datos (la primera vez importa los JSON antiguos, que se quedan como respaldo). Si no se
             // puede abrir, se sigue con una base en memoria: la app funciona pero esta sesion no guarda nada.
             let mut db_in_memory = false;
-            let db = match Db::open(&config_dir) {
-                Ok(d) => d,
-                Err(e) => {
-                    eprintln!("No se pudo abrir visor.db: {e:#}. Los datos de esta sesion no se guardaran.");
-                    db_in_memory = true;
-                    notices.push(backup::db_failed_notice(&format!("{e:#}")));
-                    Db::open_memory()?
+            let db = if lib_mode == state::LibMode::Missing {
+                db_in_memory = true;
+                notices.push(library::missing_notice(&lib_dir));
+                Db::open_memory()?
+            } else {
+                match Db::open(&paths.data) {
+                    Ok(d) => d,
+                    Err(e) => {
+                        eprintln!("No se pudo abrir visor.db: {e:#}. Los datos de esta sesion no se guardaran.");
+                        db_in_memory = true;
+                        notices.push(backup::db_failed_notice(&format!("{e:#}")));
+                        Db::open_memory()?
+                    }
                 }
             };
             let db = Arc::new(db);
@@ -754,8 +783,9 @@ pub fn run() {
                 allow_root(app.handle(), r);
             }
             let _ = app.asset_protocol_scope().allow_directory(&cache_dir, true);
-            // Capturas y audio del glosario de frases (la pantalla de repaso las enseña con el protocolo asset).
-            let _ = app.asset_protocol_scope().allow_directory(&config_dir.join("phrases"), true);
+            // Grafismos de SteamGridDB y capturas y audio del glosario (la pantalla de repaso los enseña con el protocolo asset).
+            let _ = app.asset_protocol_scope().allow_directory(&paths.art, true);
+            let _ = app.asset_protocol_scope().allow_directory(&paths.glossary, true);
             let hotkey = config.capture_hotkey.clone();
             let rec_hotkey = config.record_hotkey.clone();
             let audio_hotkey = config.audio_hotkey.clone();
@@ -763,9 +793,13 @@ pub fn run() {
             let audio_mask = combo_mask(&config.audio_combo);
             let mouse = mouse_button_index(&config.capture_mouse);
             let auto_backup = config.auto_backup && !db_in_memory;
-            let (db_for_backup, dir_for_backup) = (db.clone(), config_dir.clone());
+            let (db_for_backup, dir_for_backup) = (db.clone(), paths.db_backups.clone());
             app.manage(AppState {
                 config_dir,
+                paths,
+                lib_mode,
+                lib_dir,
+                lib_busy: std::sync::atomic::AtomicBool::new(false),
                 notices: Mutex::new(notices),
                 cache_dir,
                 db,
@@ -856,6 +890,11 @@ pub fn run() {
             backup::restore_cancel,
             backup::restore_apply,
             backup::startup_notices,
+            library::library_info,
+            library::library_plan,
+            library::library_copy,
+            library::library_use,
+            library::library_restart,
             saves::saves_info,
             saves::saves_set_enabled,
             saves::saves_add,

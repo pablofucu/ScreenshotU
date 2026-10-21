@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 use visor_core::config::Config;
 use visor_core::db::Db;
 use visor_core::games::{Game, Stats};
+use visor_core::library::DataPaths;
 use visor_core::palette::PaletteCache;
 use visor_core::sgdb::SgdbStore;
 use visor_core::userdata::{HiddenEntry, TitlePrefs};
@@ -37,12 +38,32 @@ pub fn log_db_err<E: std::fmt::Display>(what: &str, r: Result<(), E>) {
     }
 }
 
+/// Estado de la biblioteca al arrancar (ver `crate::library`).
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum LibMode {
+    /// Todo en la carpeta de la biblioteca.
+    Library,
+    /// Aun sin biblioteca: los datos siguen repartidos como antes y se pide elegirla (asistente).
+    Legacy,
+    /// Hay biblioteca configurada pero no se encuentra (disco desconectado...): base en memoria, no se guarda nada.
+    Missing,
+}
+
 pub struct AppState {
+    /// Carpeta de configuracion de Windows: `biblioteca.json` y lo propio del equipo (monitor, perfil del lector...).
     pub config_dir: PathBuf,
+    /// Donde vive cada dato (la biblioteca o, antes de ella, lo de siempre).
+    pub paths: DataPaths,
+    pub lib_mode: LibMode,
+    /// Carpeta de la biblioteca configurada (tambien en `Missing`); vacia en `Legacy`.
+    pub lib_dir: PathBuf,
+    /// Hay una copia de la biblioteca en marcha.
+    pub lib_busy: AtomicBool,
     /// Avisos para la interfaz que nacen al arrancar (base en memoria, restauracion aplicada...). Se entregan una vez.
     pub notices: Mutex<Vec<crate::backup::Notice>>,
     pub cache_dir: PathBuf,
-    /// Base SQLite compartida (`<config>/visor.db`): favoritas, juegos, estadisticas, ocultos, preferencias,
+    /// Base SQLite compartida (`<biblioteca>/visor.db`): favoritas, juegos, estadisticas, ocultos, preferencias,
     /// sagas, SteamGridDB, novelas y glosario. Los `Mutex` de abajo son copias en memoria de lo que se lee a menudo;
     /// cada cambio se escribe tambien en la base (fila a fila). Orden de bloqueo: primero el `Mutex`, luego `db.with`.
     pub db: Arc<Db>,
@@ -79,14 +100,14 @@ pub struct AppState {
 
 impl AppState {
     pub fn config_file(&self) -> PathBuf {
-        self.config_dir.join("config.json")
+        self.paths.config_file()
     }
     pub fn palettes_file(&self) -> PathBuf {
         self.cache_dir.join("palettes.json")
     }
     /// Grafismos descargados de SteamGridDB (una carpeta por titulo).
     pub fn sgdb_dir(&self) -> PathBuf {
-        self.cache_dir.join("sgdb")
+        self.paths.art.clone()
     }
     pub fn thumbs_dir(&self) -> PathBuf {
         self.cache_dir.join("thumbs")
