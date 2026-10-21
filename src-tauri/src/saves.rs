@@ -115,6 +115,8 @@ pub struct SavesInfo {
     pub manifest_games: usize,
     /// Tiene ejecutable con el que reconocerlo (si no, solo valen las rutas manuales).
     pub has_exe: bool,
+    /// Copias automaticas que se conservan (ademas de las fijadas).
+    pub keep: usize,
 }
 
 #[tauri::command]
@@ -134,6 +136,7 @@ pub async fn saves_info(state: State<'_, AppState>, id: String) -> Result<SavesI
             dir: dir.to_string_lossy().into_owned(),
             manifest_games: m.map(|m| m.len()).unwrap_or(0),
             has_exe: exe_of(&g).is_some(),
+            keep: archive::KEEP_AUTO,
         }
     })
     .await
@@ -191,6 +194,102 @@ pub async fn saves_restore(state: State<'_, AppState>, id: String, file: String)
     tauri::async_runtime::spawn_blocking(move || archive::restore(Path::new(&file), &dir, now_ms(), &stamp()).map_err(|e| format!("{e:#}")))
         .await
         .map_err(|e| e.to_string())?
+}
+
+/// Carpeta de copias del juego y ruta de una de ellas (que debe estar dentro).
+fn copy_of(state: &AppState, id: &str, file: &str) -> Result<(PathBuf, PathBuf), String> {
+    let g = game_of(state, id)?;
+    let dir = archive::game_dir(&saves_root(state), &g.id, &g.name);
+    if !Path::new(file).starts_with(&dir) {
+        return Err("Esa copia no es de este juego".into());
+    }
+    Ok((dir, PathBuf::from(file)))
+}
+
+/// Restaura un solo archivo de una copia (antes guarda lo que hay, como la restauracion completa).
+#[tauri::command]
+pub async fn saves_restore_file(state: State<'_, AppState>, id: String, file: String, entry: String) -> Result<RestoreReport, String> {
+    if state.active.lock().unwrap().as_ref().map(|a| a.id == id).unwrap_or(false) {
+        return Err("Cierra el juego antes de restaurar sus partidas".into());
+    }
+    let (dir, zip) = copy_of(&state, &id, &file)?;
+    tauri::async_runtime::spawn_blocking(move || archive::restore_one(&zip, &dir, now_ms(), &stamp(), &entry).map_err(|e| format!("{e:#}")))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub fn saves_set_note(state: State<'_, AppState>, id: String, file: String, note: String) -> Result<(), String> {
+    let (dir, zip) = copy_of(&state, &id, &file)?;
+    archive::set_meta(&dir, &zip, Some(&note), None).map_err(|e| format!("{e:#}"))
+}
+
+#[tauri::command]
+pub fn saves_set_pinned(state: State<'_, AppState>, id: String, file: String, pinned: bool) -> Result<(), String> {
+    let (dir, zip) = copy_of(&state, &id, &file)?;
+    archive::set_meta(&dir, &zip, None, Some(pinned)).map_err(|e| format!("{e:#}"))
+}
+
+#[tauri::command]
+pub fn saves_delete_copy(state: State<'_, AppState>, id: String, file: String) -> Result<(), String> {
+    let (dir, zip) = copy_of(&state, &id, &file)?;
+    archive::delete_copy(&dir, &zip).map_err(|e| format!("{e:#}"))
+}
+
+/// Copia el .zip de la copia a `dest` (elegido con el dialogo de guardar de la interfaz).
+#[tauri::command]
+pub async fn saves_export_copy(state: State<'_, AppState>, id: String, file: String, dest: String) -> Result<(), String> {
+    let (_, zip) = copy_of(&state, &id, &file)?;
+    tauri::async_runtime::spawn_blocking(move || std::fs::copy(&zip, &dest).map(|_| ()).map_err(|e| format!("No se pudo exportar la copia: {e}")))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CopyLocInfo {
+    pub path: String,
+    pub kind: LocKind,
+    /// Nombre corto legible («AppData › RenPy › Juego»).
+    pub place: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CopyFilesInfo {
+    pub locs: Vec<CopyLocInfo>,
+    pub files: Vec<archive::CopyFile>,
+}
+
+/// Archivos de una copia comparados con los de ahora.
+#[tauri::command]
+pub async fn saves_copy_files(state: State<'_, AppState>, id: String, file: String) -> Result<CopyFilesInfo, String> {
+    let (_, zip) = copy_of(&state, &id, &file)?;
+    let g = game_of(&state, &id)?;
+    let (db, m) = (state.db.clone(), manifest(&state));
+    tauri::async_runtime::spawn_blocking(move || {
+        let r = archive::compare(&zip).map_err(|e| format!("{e:#}"))?;
+        // Los nombres cortos salen de las ubicaciones detectadas; si ya no se detecta alguna, de la carpeta del juego.
+        let det = detect(&db, m.as_deref(), &g);
+        let env = sys_env();
+        let gdir = exe_of(&g).and_then(|e| e.parent().map(Path::to_path_buf));
+        let locs = r
+            .locs
+            .into_iter()
+            .map(|l| {
+                let place = det
+                    .locs
+                    .iter()
+                    .find(|d| core::path_key(&d.path) == core::path_key(&l.path))
+                    .map(|d| d.place.clone())
+                    .unwrap_or_else(|| core::place_name(&l.path, l.kind, &env, gdir.as_deref()));
+                CopyLocInfo { path: l.path, kind: l.kind, place }
+            })
+            .collect();
+        Ok(CopyFilesInfo { locs, files: r.files })
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 /// Abre en el Explorador la carpeta de copias del juego.

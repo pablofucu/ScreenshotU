@@ -1,11 +1,13 @@
 # Visor de capturas (Tauri + Svelte)
 
-## Compilación
+## Subir los cambios
 
-Tras cada cambio en el código (frontend `src/` o backend `src-tauri/`), compila el proyecto antes de dar la tarea por terminada:
+Tras cada cambio en el código (frontend `src/` o backend `src-tauri/`), no hace falta compilar: haz commit y súbelo a GitHub antes de dar la tarea por terminada:
 
 ```
-npm run tauri build -- --no-bundle
+git add -A
+git commit -m "<mensaje>"
+git push
 ```
 
-Si la compilación falla, corrige los errores y vuelve a compilar. Informa del resultado (éxito o errores) al usuario.
+Informa del resultado (éxito o errores) al usuario.

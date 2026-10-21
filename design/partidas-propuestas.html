@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Partidas guardadas · Visor de capturas</title>
+<style>
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:400;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-400-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:500;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-500-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:700;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-700-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:800;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-800-latin.woff2') format('woff2')}
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+
+/* ============ Página de documentación ============ */
+html,body{margin:0;background:#dfe3e9;font-family:var(--round);color:#3a414e}
+.doc{max-width:1360px;margin:0 auto;padding:40px 24px 80px}
+.doc>header h1{font-size:34px;font-weight:800;margin:0 0 6px}
+.doc>header p{font-size:17px;line-height:1.55;margin:0 0 10px;max-width:880px;color:#545c6a}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+.toc a{font-size:15px;font-weight:700;color:#3a414e;text-decoration:none;background:#fff;border-radius:999px;padding:6px 14px;box-shadow:0 0 0 1px rgba(95,110,135,.2)}
+.toc a:hover{background:#00A0D8;color:#fff}
+section.p{margin-top:56px}
+section.p h2{font-size:26px;font-weight:800;margin:0 0 4px;display:flex;align-items:center;gap:12px}
+section.p h2 .n{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#3a414e;color:#fff;font-size:19px}
+section.p .why{font-size:16px;color:#5f6776;margin:0 0 16px 50px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:24px;align-items:start}
+@media (max-width:1100px){.row{grid-template-columns:1fr}}
+.frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:18px;overflow:hidden;box-shadow:0 0 0 1px rgba(60,70,90,.25),0 24px 50px -24px rgba(30,40,60,.55);background:#0f1218}
+.notes{background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 0 0 1px rgba(95,110,135,.18)}
+.notes h3{margin:0 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:#7a8291}
+.notes ol{margin:0;padding:0;list-style:none;counter-reset:k}
+.notes li{counter-increment:k;position:relative;padding-left:36px;margin-bottom:14px;font-size:15px;line-height:1.5}
+.notes li::before{content:counter(k);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:#ff4f7b;color:#fff;font-weight:800;font-size:14px;display:grid;place-items:center}
+.notes li b{display:block;font-size:16px}
+.notes .now{margin-top:14px;padding-top:12px;border-top:1px solid #e6e9ee;font-size:14px;color:#6a7282;line-height:1.5}
+.notes .now strong{color:#3a414e}
+
+/* ============ Mundo de la app (copia de src/app.css adaptada a .stage) ============ */
+.stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;
+  font-family:var(--round);color:#3a414e;background:#eceef2;--acc:#00A0D8;--acc-ink:#fff;user-select:none}
+.bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(34px);opacity:.9}
+.blob.w{background:radial-gradient(circle,#fff,rgba(255,255,255,0) 70%)}
+.blob.a{background:radial-gradient(circle,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%);opacity:.55}
+.ghost{position:absolute;width:118px;height:118px;border-radius:28px;padding:10px;background:rgba(255,255,255,.7);box-shadow:0 0 0 1px rgba(120,130,150,.25),0 10px 18px -10px rgba(40,50,70,.4);filter:blur(5px)}
+.ghost i{display:block;width:100%;height:100%;border-radius:18px;background:linear-gradient(160deg,color-mix(in srgb,var(--g) 30%,white),var(--g))}
+.glass{position:absolute;--r:28px;--bw:10px;border-radius:var(--r);padding:var(--bw);isolation:isolate;
+  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  -webkit-backdrop-filter:blur(14px) saturate(1.7);backdrop-filter:blur(14px) saturate(1.7);
+  box-shadow:inset 0 1.5px 0 #fff,inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.95),inset 0 -1.5px 0 rgba(110,125,150,.30),0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42)}
+.glass::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.62) 0%,rgba(255,255,255,.20) 55%,rgba(255,255,255,0) 100%);
+  -webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.85}
+.glass::after{content:'';position:absolute;z-index:3;left:12%;top:3px;width:34%;height:5px;border-radius:5px;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 40%,rgba(255,255,255,0));filter:blur(.6px);opacity:.9}
+.glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:#dfe3e9}
+.glass .face::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(20,30,50,.20),inset 0 3px 6px -2px rgba(0,0,0,.35),inset 0 -2px 4px -2px rgba(255,255,255,.5)}
+.glass.f{transform:scale(1.06);z-index:3;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)) 0%,color-mix(in srgb,var(--acc) 72%,transparent) 55%,color-mix(in srgb,var(--acc) 92%,black) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),inset 0 -10px 14px -8px color-mix(in srgb,var(--acc) 30%,white),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 0 26px 2px color-mix(in srgb,var(--acc) 50%,transparent),0 22px 34px -16px color-mix(in srgb,var(--acc) 70%,black)}
+.pill{-webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);background:linear-gradient(180deg,rgba(255,255,255,.80),rgba(255,255,255,.52));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+.avatar{left:22px;top:12px;width:60px;height:60px;--r:16px;--bw:5px}
+.avatar .face{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white),var(--acc));display:grid;place-items:center}
+.avatar svg{width:34px;height:34px}
+.crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:20px;font-weight:700;color:#4a5260;z-index:5}
+.crumb .sep{color:#a3abb8;font-weight:500}.crumb .cur{color:var(--acc)}
+.clock{position:absolute;right:24px;top:24px;display:flex;gap:14px;align-items:center;font-size:20px;font-weight:700;color:#4a5260;z-index:5}
+.clock small{font-size:15px;font-weight:500;color:#7a8291}
+.batt{display:flex;gap:2px}.batt b{width:6px;height:13px;border-radius:2px;background:var(--acc)}.batt b.off{background:#c3c9d3}
+.hints{position:absolute;right:22px;bottom:16px;display:flex;gap:10px;z-index:6}
+.hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:999px;font-size:16px;font-weight:700;color:#4a5260;white-space:nowrap}
+.btn{min-width:28px;height:28px;border-radius:14px;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;--b:#4a5260;padding:0 6px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--b) 70%,black),0 1px 2px rgba(0,0,0,.2);text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.btn.a{--b:#3BB54A}.btn.b{--b:#E8384F}.btn.x{--b:#3F63E0}.btn.y{--b:#F2B807;color:#3a2f00;text-shadow:none}.btn.sh{border-radius:8px;--b:#6b7383}
+.chip{font-size:15px;font-weight:700;color:var(--acc-ink);background:var(--acc);padding:3px 12px;border-radius:999px;white-space:nowrap}
+.sc{position:absolute;inset:0;background-size:cover;background-position:center;background-color:#c9cfd8}
+.mk{position:absolute;z-index:20;width:34px;height:34px;border-radius:50%;background:#ff4f7b;color:#fff;font-weight:800;font-size:18px;display:grid;place-items:center;
+  box-shadow:0 0 0 3px #fff,0 6px 14px rgba(255,79,123,.5)}
+.ico{display:grid;place-items:center}.ico svg{width:100%;height:100%}
+
+/* ============ Partidas: piezas comunes ============ */
+code{font-size:.92em;background:#eef1f5;border-radius:6px;padding:1px 6px}
+.frame{cursor:default}
+.frame:focus-within,.frame.act{box-shadow:0 0 0 3px #00A0D8,0 24px 50px -24px rgba(30,40,60,.55)}
+.panel{position:absolute;border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(250,251,253,.86));
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px rgba(95,110,135,.20),0 18px 30px -18px rgba(40,50,70,.45)}
+.ptitle{font-size:18px;font-weight:800;color:#4a5260;display:flex;align-items:center;gap:10px}
+.ptitle small{font-size:14px;font-weight:600;color:#8a92a0}
+.glass.rel{position:relative;flex:none}
+.cov .face{background:linear-gradient(135deg,#ffd6e6 0%,#f7a3c4 40%,#c66bd8 100%);display:grid;place-items:center}
+.cov .face b{font-size:20px;font-weight:800;color:#fff;text-shadow:0 2px 6px rgba(120,20,80,.45);letter-spacing:.02em;line-height:1;text-align:center}
+.hero{position:absolute;left:40px;top:90px;width:1200px;height:100px;display:flex;align-items:center;gap:20px;z-index:4}
+.hero h1{margin:0;font-size:30px;font-weight:800;color:#3a414e;white-space:nowrap}
+.hero .meta{margin-top:6px;font-size:15px;font-weight:700;color:#6a7282;display:flex;gap:8px;align-items:center;white-space:nowrap}
+.hero .meta i{width:4px;height:4px;border-radius:50%;background:#b5bcc7}
+.hero .right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.okst{display:flex;align-items:center;gap:10px;height:44px;padding:0 16px 0 7px;border-radius:999px;background:#e2f4e5;color:#23772f;font-weight:800;font-size:15px;white-space:nowrap}
+.okst .ico{width:30px;height:30px;border-radius:50%;background:#3BB54A;color:#fff}
+.okst .ico svg{width:18px;height:18px}
+.okst small{display:block;font-size:12.5px;font-weight:700;color:#4b9157;margin-top:-1px}
+.bt{height:44px;padding:0 18px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;font:800 16px var(--round);color:#4a5260;white-space:nowrap;flex:none;
+  background:linear-gradient(180deg,#fff,#eef1f5);box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.25),0 4px 10px -6px rgba(40,50,70,.4);border:0;cursor:pointer;transition:transform .12s,filter .12s}
+.bt:hover{filter:brightness(1.04);transform:translateY(-1px)}
+.bt:active{transform:translateY(1px)}
+.bt.pri{color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 45%,white),var(--acc) 60%);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 8px 16px -8px var(--acc)}
+.bt.dan,.bt.pri.dan{color:#fff;background:linear-gradient(180deg,#f58a98,#E8384F 60%);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.6),0 0 0 1px #a8202f,0 8px 16px -8px #E8384F}
+.bt.red{color:#c4283d}
+.bt svg{width:19px;height:19px;flex:none}
+.bt.sm{height:36px;font-size:14px;padding:0 13px;gap:6px}
+.bt.sm svg{width:16px;height:16px}
+.bt.ic{width:44px;padding:0;justify-content:center}.bt.sm.ic{width:36px}
+.btn.mini{min-width:20px;height:20px;font-size:11px;border-radius:10px;padding:0 5px}
+.bt.pri .btn.mini{box-shadow:0 0 0 1.5px rgba(255,255,255,.85)}
+.k-auto{--k:#00A0D8}.k-manual{--k:#3BB54A}.k-antes{--k:#F29A07}
+.badge{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;font-size:12.5px;font-weight:800;white-space:nowrap;
+  background:color-mix(in srgb,var(--k) 16%,white);color:color-mix(in srgb,var(--k) 62%,black)}
+.badge::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--k)}
+.badge.solid{background:var(--k);color:#fff}.badge.solid::before{background:#fff}
+.pin{color:#F2B807}.pin svg{width:18px;height:18px}
+.ico{display:grid;place-items:center;flex:none}.ico svg{width:100%;height:100%}
+.tog{flex:none;position:relative;width:40px;height:23px;border-radius:12px;background:rgba(120,130,150,.35);cursor:pointer;transition:background .15s}
+.tog i{position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
+.tog.on{background:#3BB54A}.tog.on i{left:20px}
+.bar{height:6px;border-radius:3px;background:#e3e6eb;overflow:hidden}.bar i{display:block;height:100%;border-radius:3px;background:var(--acc)}
+.scr{position:absolute;width:6px;border-radius:3px;background:rgba(95,110,135,.15)}.scr i{position:absolute;left:0;width:6px;border-radius:3px;background:rgba(95,110,135,.45)}
+.thumb{position:absolute;background-size:cover;background-position:center;border-radius:16px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(20,30,50,.18)}
+.toast{position:absolute;z-index:30;left:50%;bottom:72px;transform:translateX(-50%);padding:12px 22px;border-radius:999px;background:rgba(40,46,58,.92);color:#fff;font-size:16px;font-weight:700;white-space:nowrap;
+  box-shadow:0 14px 30px -10px rgba(0,0,0,.5);animation:tin .25s ease-out}
+@keyframes tin{from{opacity:0;transform:translate(-50%,10px)}}
+.menu{position:absolute;z-index:28;width:268px;padding:8px;border-radius:20px;background:rgba(252,253,255,.97);box-shadow:0 0 0 1px rgba(95,110,135,.25),0 24px 40px -16px rgba(30,40,60,.55)}
+.menu div{display:flex;align-items:center;gap:12px;height:40px;padding:0 12px;border-radius:12px;font-size:15.5px;font-weight:700;color:#4a5260;cursor:pointer}
+.menu div:hover,.menu div.f{background:var(--acc);color:#fff}
+.menu div svg{width:18px;height:18px;flex:none}
+.menu div kbd{margin-left:auto;font:700 12px var(--round);color:#9aa1ad}
+.menu div:hover kbd,.menu div.f kbd{color:#fff}
+.menu hr{border:0;border-top:1px solid #e6e9ee;margin:6px 4px}
+.menu .red{color:#c4283d}
+.keys{margin-top:14px;padding-top:12px;border-top:1px solid #e6e9ee;font-size:13.5px;color:#6a7282;line-height:1.6}
+.keys kbd{display:inline-block;min-width:22px;padding:0 6px;border-radius:6px;background:#eef1f5;box-shadow:inset 0 -1px 0 #cfd4dc;font:700 12px var(--round);color:#3a414e;text-align:center}
+.legend{display:flex;gap:14px;font-size:13px;font-weight:700;color:#7a8291;align-items:center}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:50%;background:var(--k)}
+.legend i.sq{border-radius:3px;background:color-mix(in srgb,var(--acc) 30%,white);width:12px}
+
+/* ============ 1 · Cronología ============ */
+.tl{left:40px;top:204px;width:1200px;height:182px}
+.tl .ptitle{position:absolute;left:24px;top:14px}
+.tl .legend{position:absolute;right:24px;top:18px}
+.lane{position:absolute;left:24px;right:24px;height:1px;background:#e9ecf0}
+.lanel{position:absolute;left:24px;font-size:11.5px;font-weight:800;color:#a3abb8;text-transform:uppercase;letter-spacing:.05em}
+.dcol{position:absolute;top:44px;bottom:28px;border-radius:12px}
+.dcol.today{background:color-mix(in srgb,var(--acc) 7%,transparent)}
+.dcol.sel{background:color-mix(in srgb,var(--acc) 12%,transparent)}
+.dbar{position:absolute;bottom:30px;width:44px;border-radius:6px 6px 2px 2px;background:color-mix(in srgb,var(--acc) 28%,white)}
+.dlab{position:absolute;bottom:8px;width:82px;text-align:center;font-size:12.5px;font-weight:700;color:#8a92a0}
+.dlab.today{color:var(--acc);font-weight:800}
+.mkr{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:var(--k);box-shadow:0 0 0 2.5px #fff,0 2px 5px rgba(0,0,0,.25);cursor:pointer;z-index:2;transition:transform .15s}
+.mkr:hover{transform:scale(1.3)}
+.mkr.s{width:24px;height:24px;margin:-12px 0 0 -12px;box-shadow:0 0 0 3px #fff,0 0 0 6px var(--acc),0 6px 14px -2px var(--acc);z-index:3}
+.mkr .st{position:absolute;left:50%;top:-17px;width:14px;height:14px;margin-left:-7px;color:#F2B807}
+.mkr.s .st{top:-24px}
+.mkr .st svg{width:100%;height:100%}
+.tlv{position:absolute;width:2px;margin-left:-1px;background:repeating-linear-gradient(180deg,var(--acc) 0 4px,transparent 4px 8px);opacity:.6}
+.det{left:40px;top:400px;width:800px;height:250px}
+.det .thumb{left:16px;top:16px;width:390px;height:218px}
+.det .cap{position:absolute;left:28px;top:200px;font-size:12.5px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);display:flex;gap:6px;align-items:center}
+.det .cap svg{width:14px;height:14px}
+.det .inf{position:absolute;left:426px;top:18px;right:20px;bottom:16px;display:flex;flex-direction:column}
+.det h3{margin:10px 0 2px;font-size:22px;font-weight:800;color:#3a414e;display:flex;align-items:center;gap:8px;white-space:nowrap;overflow:hidden}
+.det h3 .ed{width:18px;height:18px;color:#a3abb8;cursor:pointer}
+.det .when{font-size:15px;font-weight:700;color:#6a7282}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin:12px 0 auto}
+.sgrid div{font-size:12.5px;font-weight:700;color:#8a92a0;text-transform:uppercase;letter-spacing:.04em}
+.sgrid b{display:block;font-size:17px;color:#3a414e;text-transform:none;letter-spacing:0}
+.sgrid b em{font-style:normal;font-size:13px;font-weight:800;margin-left:4px}
+.add{color:#2a9b3a}.chg{color:#c27d00}.del{color:#c4283d}
+.brow{display:flex;gap:8px}
+.locp{left:856px;top:400px;width:384px;height:250px;padding:14px 18px}
+.locp .ptitle{justify-content:space-between;margin-bottom:6px}
+.lrow{display:flex;align-items:center;gap:12px;height:56px;padding:0 6px;border-radius:14px;cursor:pointer}
+.lrow:hover{background:#eef1f5}
+.lrow .ico{width:34px;height:34px;border-radius:10px;background:#eef1f5;color:#5f6776;padding:7px}
+.lrow .tx{flex:1;min-width:0}
+.lrow .tx b{display:block;font-size:14.5px;font-weight:800;color:#3a414e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow .tx small{display:block;font-size:12.5px;font-weight:700;color:#8a92a0;white-space:nowrap}
+.lrow.off .tx b{color:#9aa1ad}
+.lrow.off .ico{opacity:.5}
+
+/* ============ 2 · Galería ============ */
+.tbar{position:absolute;left:40px;right:40px;top:92px;height:48px;display:flex;align-items:center;gap:10px;z-index:4}
+.seg{display:flex;gap:4px;padding:4px;border-radius:999px}
+.seg span{height:38px;padding:0 15px;border-radius:999px;display:flex;align-items:center;gap:7px;font-size:15px;font-weight:800;color:#5f6776;cursor:pointer;white-space:nowrap}
+.seg span:hover{background:rgba(255,255,255,.7)}
+.seg span.on{background:var(--acc);color:#fff;box-shadow:0 6px 12px -6px var(--acc)}
+.seg span small{font-size:12.5px;font-weight:800;opacity:.7}
+.seg span i{width:9px;height:9px;border-radius:50%;background:var(--k)}
+.seg span.on i{background:#fff}
+.srch{margin-left:auto;width:200px;height:44px;border-radius:999px;display:flex;align-items:center;gap:8px;padding:0 14px;font-size:15px;font-weight:700;color:#9aa1ad}
+.srch svg{width:18px;height:18px}
+.grid{position:absolute;left:40px;top:156px;width:1216px;height:500px;overflow:hidden}
+.card{position:absolute;width:284px;height:222px;border-radius:22px;background:rgba(255,255,255,.92);cursor:pointer;
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px rgba(95,110,135,.2),0 14px 24px -16px rgba(40,50,70,.5);transition:transform .2s cubic-bezier(.34,1.32,.64,1),box-shadow .2s}
+.card:hover{transform:translateY(-3px)}
+.card.s{transform:scale(1.04);z-index:3;box-shadow:inset 0 1.5px 0 #fff,0 0 0 3px var(--acc),0 0 22px 2px color-mix(in srgb,var(--acc) 45%,transparent),0 18px 30px -14px color-mix(in srgb,var(--acc) 70%,black)}
+.card .thumb{left:8px;top:8px;width:268px;height:150px;border-radius:15px}
+.card .thumb::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25),transparent 30%,transparent 55%,rgba(0,0,0,.6))}
+.card .tl0{position:absolute;z-index:2;left:18px;top:16px}
+.card .tr0{position:absolute;z-index:2;right:16px;top:14px;width:24px;height:24px;color:#F2B807;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.card .bl0{position:absolute;z-index:2;left:20px;top:128px;color:#fff;font-size:16px;font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.card .br0{position:absolute;z-index:2;right:18px;top:130px;color:#fff;font-size:13px;font-weight:800;display:flex;gap:5px;align-items:center;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.card .br0 svg{width:14px;height:14px}
+.card .nm{position:absolute;left:18px;right:18px;top:166px;font-size:16px;font-weight:800;color:#3a414e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .nm.plain{color:#7a8291}
+.card .sb{position:absolute;left:18px;right:18px;top:191px;font-size:13px;font-weight:700;color:#8a92a0;white-space:nowrap;display:flex;gap:6px}
+.card .hov{position:absolute;z-index:4;left:8px;top:8px;width:268px;height:150px;border-radius:15px;display:flex;align-items:center;justify-content:center;gap:8px;
+  background:rgba(20,26,38,.45);opacity:0;transition:opacity .15s}
+.card:hover .hov,.card.s .hov{opacity:1}
+.dayh{position:absolute;left:0;font-size:13px;font-weight:800;color:#8a92a0;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.grid .now{border:2.5px dashed rgba(95,110,135,.35);background:rgba(255,255,255,.35);box-shadow:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#6a7282;font-weight:800;font-size:16px}
+.grid .now:hover{border-color:var(--acc);color:var(--acc)}
+.grid .now .ico{width:52px;height:52px;border-radius:50%;background:var(--acc);color:#fff;padding:13px;box-shadow:0 8px 16px -8px var(--acc)}
+.grid .now small{font-size:13px;font-weight:700;color:#8a92a0}
+.drawer{position:absolute;z-index:12;right:0;top:0;bottom:0;width:430px;padding:96px 26px 70px;background:rgba(250,251,253,.97);box-shadow:-20px 0 40px -20px rgba(30,40,60,.45),inset 1px 0 0 rgba(95,110,135,.2)}
+.drawer .ptitle{font-size:22px;margin-bottom:4px}
+.drawer p{margin:0 0 14px;font-size:14px;font-weight:600;color:#6a7282;line-height:1.4}
+.drawer .lrow{height:62px}
+.drawer .bt{margin-top:10px}
+
+/* ============ 3 · Explorador ============ */
+.lst{left:40px;top:92px;width:392px;height:560px;padding:16px 14px}
+.stor{padding:0 8px 12px;border-bottom:1px solid #e6e9ee;margin-bottom:6px}
+.stor .top{display:flex;justify-content:space-between;align-items:baseline;font-size:15px;font-weight:800;color:#3a414e}
+.stor .top small{font-size:13px;font-weight:700;color:#8a92a0}
+.sbar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:8px 0 6px;background:#e3e6eb}
+.sbar i{background:var(--k)}
+.stor .sub{font-size:12.5px;font-weight:700;color:#8a92a0}
+.lwrap{position:absolute;left:14px;right:14px;top:96px;bottom:14px;overflow:hidden}
+.lgh{height:28px;padding:8px 10px 0;font-size:12px;font-weight:800;color:#a3abb8;text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between}
+.lgh span:last-child{text-transform:none;letter-spacing:0}
+.li{display:flex;align-items:center;gap:10px;height:46px;padding:0 10px;border-radius:14px;cursor:pointer;margin-bottom:2px}
+.li:hover{background:#eef1f5}
+.li .dot{width:10px;height:10px;border-radius:50%;background:var(--k);flex:none}
+.li .t{width:52px;flex:none;font-size:15px;font-weight:800;color:#3a414e}
+.li .n{flex:1;min-width:0;font-size:14.5px;font-weight:700;color:#5f6776;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .n.plain{color:#9aa1ad}
+.li .z{font-size:12.5px;font-weight:700;color:#9aa1ad;flex:none}
+.li .pin svg{width:15px;height:15px}
+.li.s{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)),var(--acc));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 8px 16px -8px color-mix(in srgb,var(--acc) 70%,black)}
+.li.s .t,.li.s .n,.li.s .z{color:#fff}.li.s .dot{box-shadow:0 0 0 2px #fff}
+.rp{left:448px;top:92px;width:792px;height:560px;padding:18px 22px}
+.rp .head{display:flex;gap:16px;align-items:center}
+.rp .head .thumb{position:relative;width:176px;height:99px;flex:none;border-radius:14px}
+.rp .head h3{margin:0;font-size:22px;font-weight:800;color:#3a414e;display:flex;gap:8px;align-items:center}
+.rp .head .when{font-size:14.5px;font-weight:700;color:#6a7282;margin:4px 0 8px;display:flex;gap:8px;align-items:center}
+.rp .head .brow{margin-left:auto;align-self:flex-start;flex-direction:column;align-items:stretch;gap:6px}
+.diff{display:flex;gap:8px;margin:14px 0 10px;align-items:center}
+.diff .dchip{height:30px;padding:0 12px;border-radius:999px;font-size:13.5px;font-weight:800;display:flex;align-items:center;gap:6px;background:#eef1f5;color:#5f6776;cursor:pointer}
+.diff .dchip.on{box-shadow:0 0 0 2px var(--acc)}
+.diff .dchip b{font-size:14px}
+.diff .lbl{font-size:13.5px;font-weight:800;color:#8a92a0;margin-right:2px}
+.ftab{position:relative;border-radius:16px;box-shadow:0 0 0 1px #e3e6eb;overflow:hidden}
+.fh,.fr{display:grid;grid-template-columns:28px minmax(0,1fr) 170px 76px 112px 116px;align-items:center;gap:10px;padding:0 14px}
+.fh{height:32px;background:#f3f5f8;font-size:12px;font-weight:800;color:#8a92a0;text-transform:uppercase;letter-spacing:.05em}
+.fr{height:38px;border-top:1px solid #eef0f3;font-size:14px;font-weight:700;color:#4a5260;cursor:pointer;position:relative}
+.fr:hover{background:#f6f8fb}
+.fr.s{background:color-mix(in srgb,var(--acc) 12%,white);box-shadow:inset 3px 0 0 var(--acc)}
+.fr .ico{width:20px;height:20px;color:#8a92a0}
+.fr .fn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fr .fn small{font-size:12px;color:#9aa1ad;margin-left:6px}
+.fr .loc,.fr .md{font-size:12.5px;color:#8a92a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fr .zz{font-size:13px;color:#6a7282;text-align:right}
+.fst{font-size:12px;font-weight:800;height:22px;border-radius:999px;display:inline-flex;align-items:center;padding:0 9px;justify-self:start}
+.fst.same{background:#eef1f5;color:#8a92a0}.fst.chg{background:#fff1d6;color:#a76a00}.fst.del{background:#fde0e3;color:#b3253a}.fst.add{background:#dff3e2;color:#24803a}
+.fr .one{position:absolute;right:12px;top:4px;display:none}
+.fr:hover .one,.fr.s .one{display:inline-flex}
+.fr:hover .fst,.fr.s .fst{visibility:hidden}
+.rp .foot{position:absolute;left:22px;right:22px;bottom:16px;display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:700;color:#6a7282}
+.rp .foot .bt{margin-left:auto}
+
+/* ============ 4 · Resumen ============ */
+.tile{padding:16px 20px}
+.tile .ptitle{margin-bottom:8px}
+.big{font-size:34px;font-weight:800;color:#3a414e;line-height:1.05}
+.big small{font-size:16px;font-weight:700;color:#8a92a0;margin-left:4px}
+.ring{position:absolute;width:118px;height:118px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;color:#3BB54A}
+.ring b svg{transform:none;width:44px;height:44px}
+.t1 .txt{position:absolute;left:156px;top:52px;right:18px}
+.t1 h4{margin:0;font-size:22px;font-weight:800;color:#23772f}
+.t1 p{margin:4px 0 12px;font-size:14px;font-weight:700;color:#6a7282;line-height:1.4}
+.spark{position:absolute;left:20px;right:20px;bottom:16px;height:64px}
+.spark svg{width:100%;height:100%;display:block;overflow:visible}
+.kv{display:flex;gap:22px;margin-top:6px}
+.kv div{font-size:12px;font-weight:800;color:#8a92a0;text-transform:uppercase;letter-spacing:.04em}
+.kv b{display:block;font-size:20px;color:#3a414e;letter-spacing:0;text-transform:none}
+.ret{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:14px;font-weight:700;color:#5f6776}
+.step{display:flex;align-items:center;height:36px;border-radius:999px;background:#eef1f5;box-shadow:inset 0 0 0 1px #dfe3e9}
+.step span{width:34px;text-align:center;font-size:18px;font-weight:800;color:#5f6776;cursor:pointer}
+.step b{min-width:34px;text-align:center;font-size:16px;color:#3a414e}
+.lcards{display:flex;gap:12px;margin-top:4px}
+.lc{flex:1;min-width:0;height:128px;border-radius:18px;background:#f3f5f8;box-shadow:inset 0 0 0 1px #e3e6eb;padding:12px 14px;position:relative;cursor:pointer}
+.lc:hover{background:#eef1f5}
+.lc.off{opacity:.6}
+.lc .tog{position:absolute;right:12px;top:12px}
+.lc .ico{width:36px;height:36px;border-radius:11px;background:#fff;color:#5f6776;padding:8px;box-shadow:0 0 0 1px #e3e6eb}
+.lc b{display:block;margin-top:8px;font-size:14.5px;font-weight:800;color:#3a414e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lc small{display:block;font-size:12.5px;font-weight:700;color:#8a92a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lc .bar{position:absolute;left:14px;right:14px;bottom:12px}
+.lc.addc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:transparent;box-shadow:inset 0 0 0 2px #dfe3e9;border-radius:18px;color:#8a92a0;font-size:14px;font-weight:800;flex:0 0 130px}
+.lc.addc:hover{color:var(--acc);box-shadow:inset 0 0 0 2px var(--acc)}
+.lc.addc .ico{background:transparent;box-shadow:none;color:inherit;width:30px;height:30px;padding:0}
+.opt{display:flex;align-items:center;gap:12px;height:40px;font-size:15px;font-weight:700;color:#4a5260;border-radius:12px;padding:0 6px;cursor:pointer}
+.opt:hover{background:#eef1f5}
+.opt>span:first-child{flex:1}
+.opt small{font-size:12.5px;color:#9aa1ad;font-weight:700}
+.strip{display:flex;gap:12px}
+.mshot{position:relative;width:176px;height:99px;border-radius:14px;flex:none;cursor:pointer;background-size:cover;background-position:center;box-shadow:inset 0 0 0 1px rgba(20,30,50,.18);transition:transform .15s}
+.mshot:hover{transform:translateY(-2px)}
+.mshot::after{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.6))}
+.mshot span{position:absolute;z-index:2;left:10px;bottom:7px;color:#fff;font-size:13px;font-weight:800}
+.mshot i{position:absolute;z-index:2;left:10px;top:9px;width:10px;height:10px;border-radius:50%;background:var(--k);box-shadow:0 0 0 2px #fff}
+.mshot .p{position:absolute;z-index:2;right:8px;top:6px;width:18px;height:18px;color:#F2B807}
+.more{width:120px;height:99px;border-radius:14px;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,white);cursor:pointer}
+.more b{font-size:26px}
+.fx{outline:3px solid var(--acc);outline-offset:3px;box-shadow:0 0 20px 2px color-mix(in srgb,var(--acc) 40%,transparent)}
+
+/* ============ Datos ============ */
+table.data{width:100%;border-collapse:collapse;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 0 0 1px rgba(95,110,135,.18);font-size:15px}
+table.data th,table.data td{text-align:left;padding:10px 14px;border-top:1px solid #eef0f3;vertical-align:top;line-height:1.45}
+table.data th{background:#f3f5f8;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:#7a8291;border-top:0}
+table.data td:first-child{font-weight:800;white-space:nowrap}
+.tag{display:inline-block;font-size:12px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.tag.y{background:#dff3e2;color:#24803a}.tag.n{background:#fff1d6;color:#a76a00}.tag.b{background:#e3ecfb;color:#2f56c8}
+</style>
+</head>
+<body>
+<div class="doc">
+<header>
+  <h1>Partidas guardadas: cuatro diseños</h1>
+  <p>Hoy es una ventana pequeña con dos pestañas de filas de texto, pensada para el mando. Estas propuestas pasan a <b>pantalla completa</b> y están pensadas primero para el <b>ratón</b> (clic, botones visibles, menú con clic derecho, pasar el ratón por encima), sin dejar el mando: todo lo que se puede pulsar es también un elemento con foco y las pistas de abajo siguen ahí.</p>
+  <p>Son interactivas: <b>haz clic</b> en copias, ubicaciones e interruptores, <b>clic derecho</b> en la galería, y tras hacer clic en un diseño puedes moverte con <b>las flechas</b>, <b>Intro</b> (= A, restaurar en dos pulsaciones) y <b>Esc</b> (= B).</p>
+  <nav class="toc">
+    <a href="#p1">1 · Cronología</a><a href="#p2">2 · Galería de momentos</a><a href="#p3">3 · Explorador de archivos</a><a href="#p4">4 · Panel de resumen</a><a href="#pd">Datos nuevos que hacen falta</a>
+  </nav>
+</header>
+
+<section class="p" id="p1">
+  <h2><span class="n">1</span>Cronología</h2>
+  <p class="why">Las copias puestas sobre los últimos 14 días, encima del tiempo que jugaste cada día. Se ve de un vistazo cuándo jugaste, cuándo se copió y qué copia es «la de antes de aquello».</p>
+  <div class="row">
+    <div class="frame" tabindex="0"><div class="stage" id="st1" style="--acc:#3F63E0"></div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Cabecera con estado</b>Portada, motor, ubicaciones, tamaño y cuándo cambiaron las partidas. A la derecha, un semáforo: <em>Al día</em> si la última copia es posterior al último cambio, o <em>Cambios sin copiar</em> en ámbar.</li>
+      <li><b>Línea de tiempo</b>Cada punto es una copia, en su carril según el tipo (manual, al cerrar, antes de restaurar). Las barras son los minutos jugados ese día; las fijadas llevan estrella. Clic en un punto o ← → con el mando.</li>
+      <li><b>Ficha de la copia</b>La última captura que hiciste antes de la copia, para saber «dónde ibas». Nota editable, duración de la sesión y qué archivos cambian si la restauras.</li>
+      <li><b>Dónde guarda, siempre a la vista</b>Ya no es otra pestaña: interruptor por ubicación y «+ Añadir» para carpeta o archivo.</li>
+    </ol>
+    <div class="keys"><b>Mando:</b> <kbd>←</kbd><kbd>→</kbd> copia · <kbd>LB</kbd><kbd>RB</kbd> día anterior/siguiente · <kbd>A</kbd> restaurar · <kbd>X</kbd> fijar · <kbd>Y</kbd> más opciones · <kbd>R3</kbd> ir a «Dónde guarda»</div></aside>
+  </div>
+</section>
+
+<section class="p" id="p2">
+  <h2><span class="n">2</span>Galería de momentos</h2>
+  <p class="why">Cada copia es una tarjeta con la captura de ese momento, como en un álbum. Es la más visual: reconoces la partida por la imagen, no por la fecha.</p>
+  <div class="row">
+    <div class="frame" tabindex="0"><div class="stage" id="st2" style="--acc:#3F63E0"></div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Filtros y búsqueda</b>Todas, fijadas o por tipo, con el número de cada una. La búsqueda mira las notas que escribas («antes del final», «ruta de Yuri»).</li>
+      <li><b>Tarjetas</b>Captura, tipo, hora, duración de la sesión y cambios. Al pasar el ratón (o con foco) aparece <em>Restaurar</em> encima de la imagen y el botón ⋯.</li>
+      <li><b>Clic derecho = menú</b>Restaurar, renombrar, fijar, exportar .zip, comparar con las actuales, abrir carpeta, borrar. Con el mando, el mismo menú sale con <em>Y</em>.</li>
+      <li><b>«Copiar ahora» como primera tarjeta</b>Hueco con borde discontinuo al principio de la galería. «Dónde guarda» se abre en un panel lateral (botón de arriba).</li>
+    </ol>
+    <div class="keys"><b>Mando:</b> cruceta por la cuadrícula · <kbd>A</kbd> restaurar · <kbd>Y</kbd> menú · <kbd>LB</kbd><kbd>RB</kbd> filtro · <kbd>Start</kbd> dónde guarda</div></aside>
+  </div>
+</section>
+
+<section class="p" id="p3">
+  <h2><span class="n">3</span>Explorador de archivos</h2>
+  <p class="why">Para el que quiere saber exactamente qué hay en cada copia: lista a la izquierda, contenido a la derecha y comparación archivo a archivo con las partidas de ahora. Permite restaurar un solo archivo.</p>
+  <div class="row">
+    <div class="frame" tabindex="0"><div class="stage" id="st3" style="--acc:#3F63E0"></div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Espacio ocupado</b>Cuánto ocupan todas las copias, repartido por tipo, y cuántas se conservan.</li>
+      <li><b>Lista por días</b>Agrupada por día con el tiempo jugado de cada día. Clic o ↑ ↓.</li>
+      <li><b>Comparar con ahora</b>Resumen de lo que pasaría al restaurar: cuántos archivos cambian, cuáles solo están en la copia y cuáles se quedan igual. Los chips filtran la tabla.</li>
+      <li><b>Restaurar un archivo</b>Al pasar el ratón por una fila aparece «Restaurar este». Útil para recuperar solo <code>persistent</code> o una ranura concreta.</li>
+    </ol>
+    <div class="keys"><b>Mando:</b> <kbd>↑</kbd><kbd>↓</kbd> copia · <kbd>→</kbd> entrar en la tabla · <kbd>A</kbd> restaurar (todo o el archivo con foco) · <kbd>X</kbd> fijar · <kbd>Y</kbd> más</div></aside>
+  </div>
+</section>
+
+<section class="p" id="p4">
+  <h2><span class="n">4</span>Panel de resumen</h2>
+  <p class="why">Un tablero: estado de protección, cuánto ocupan las partidas y las copias, dónde guarda y los ajustes de copia automática de este juego, todo en una pantalla. Las copias se ven en una tira y «Ver todas» abre la galería (diseño 2) o la cronología (1).</p>
+  <div class="row">
+    <div class="frame" tabindex="0"><div class="stage" id="st4" style="--acc:#3F63E0"></div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Estado</b>Anillo verde «Protegidas» o ámbar «Cambios sin copiar», con la explicación en una frase y el botón «Copiar ahora».</li>
+      <li><b>Partidas actuales</b>Archivos, tamaño y una gráfica de cuánto han crecido en el último mes (cada punto es una copia).</li>
+      <li><b>Copias y espacio</b>Cuántas hay, cuánto ocupan, y cuántas conservar de este juego con – / +, sin ir a Ajustes.</li>
+      <li><b>Copia automática por juego</b>Al cerrar, cada 30 min mientras juegas, y avisar. Hoy solo existe el ajuste general.</li>
+    </ol>
+    <div class="keys"><b>Mando:</b> la cruceta salta entre tarjetas y controles (el foco se ve como un anillo azul) · <kbd>A</kbd> pulsar · <kbd>B</kbd> atrás</div></aside>
+  </div>
+</section>
+
+<section class="p" id="pd">
+  <h2><span class="n">★</span>Datos nuevos que hacen falta</h2>
+  <p class="why">Lo que ya existe en <code>saves.svelte.ts</code> / el núcleo, y lo que habría que añadir para cada diseño.</p>
+  <table class="data">
+    <tr><th>Dato</th><th>Estado</th><th>De dónde sale</th><th>Diseños</th></tr>
+    <tr><td>Fecha, tipo, tamaño, nº de archivos</td><td><span class="tag y">Ya existe</span></td><td><code>SaveCopy</code></td><td>Todos</td></tr>
+    <tr><td>Ubicaciones, interruptor, tamaño, último cambio</td><td><span class="tag y">Ya existe</span></td><td><code>SaveLoc</code></td><td>Todos</td></tr>
+    <tr><td>Captura de ese momento</td><td><span class="tag b">Se puede calcular</span></td><td>La última captura del juego anterior a <code>createdMs</code> (ya están indexadas por juego y fecha).</td><td>1, 2, 3, 4</td></tr>
+    <tr><td>Duración de la sesión</td><td><span class="tag b">Se puede calcular</span></td><td>Las sesiones de juego que ya guarda el registro de tiempo; la copia «al cerrar» es el final de una sesión.</td><td>1, 2</td></tr>
+    <tr><td>Minutos jugados por día</td><td><span class="tag b">Se puede calcular</span></td><td>Lo mismo que usa Estadísticas.</td><td>1, 3</td></tr>
+    <tr><td>Nota / nombre de la copia, fijada</td><td><span class="tag n">Nuevo</span></td><td>Un <code>.json</code> junto a los .zip (o en el comentario del zip). Las fijadas no se borran al rotar.</td><td>Todos</td></tr>
+    <tr><td>Lista de archivos de la copia y comparación</td><td><span class="tag n">Nuevo comando</span></td><td>Leer el índice del zip y compararlo con tamaño + fecha (o hash) de los archivos actuales.</td><td>1 (resumen), 3</td></tr>
+    <tr><td>Restaurar un solo archivo, exportar, borrar copia</td><td><span class="tag n">Nuevo comando</span></td><td>Variantes de <code>saves_restore</code>; exportar = copiar el zip con el diálogo de guardar.</td><td>2, 3</td></tr>
+    <tr><td>Conservar N copias y automático por juego</td><td><span class="tag n">Nuevo ajuste</span></td><td>Hoy es global (Ajustes › Partidas); se guardaría por juego con el general como valor por defecto.</td><td>4</td></tr>
+  </table>
+</section>
+</div>
+
+<script>
+const PERSON=`<svg viewBox="0 0 40 40" width="34" height="34"><circle cx="20" cy="15" r="8" fill="#fff"/><path d="M5 37c2-9 8-13 15-13s13 4 15 13z" fill="#fff"/></svg>`;
+function scene(w,h,seed,hue,night){
+  const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');
+  let s=seed*9301+49297;const r=()=>{s=(s*16807)%2147483647;return s/2147483647};
+  const g=x.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,night?`hsl(${hue+220},45%,14%)`:`hsl(${hue},60%,${62+r()*12}%)`);g.addColorStop(1,night?`hsl(${hue+260},50%,32%)`:`hsl(${hue+30},80%,88%)`);
+  x.fillStyle=g;x.fillRect(0,0,w,h);
+  for(let L=0;L<4;L++){const base=h*(.46+.14*L);x.fillStyle=night?`hsl(${hue+230},28%,${26-L*5}%)`:`hsl(${hue+L*10},${32+L*9}%,${60-L*11}%)`;
+    x.beginPath();x.moveTo(0,h);const st=5+Math.floor(r()*6);for(let i=0;i<=st;i++)x.lineTo(w*i/st,base-r()*h*(.12+.08*(3-L)));x.lineTo(w,h);x.closePath();x.fill();}
+  // una «caja de diálogo» de novela visual
+  x.fillStyle='rgba(255,255,255,.82)';const bx=w*.06,by=h*.72,bw=w*.88,bh=h*.22;x.beginPath();x.roundRect?x.roundRect(bx,by,bw,bh,h*.04):x.rect(bx,by,bw,bh);x.fill();
+  x.fillStyle='rgba(120,60,110,.55)';for(let i=0;i<2;i++)x.fillRect(bx+w*.04,by+bh*(.3+i*.32),bw*(.55+r()*.3),Math.max(2,h*.022));
+  return c.toDataURL('image/jpeg',.85);
+}
+const SC={};const shot=c=>SC[c.seed]||(SC[c.seed]=scene(384,216,c.seed,c.hue,c.night));
+
+/* ---------- iconos ---------- */
+const sv=(p,f)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const I={
+  check:sv('<path d="M5 12l5 5L20 7"/>'),
+  plus:sv('<path d="M12 5v14M5 12h14"/>'),
+  restore:sv('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>'),
+  pin:'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.5l2.9 6 6.6.8-4.9 4.6 1.3 6.5L12 17.2l-5.9 3.2 1.3-6.5L2.5 9.3l6.6-.8z"/></svg>',
+  pino:sv('<path d="M12 2.5l2.9 6 6.6.8-4.9 4.6 1.3 6.5L12 17.2l-5.9 3.2 1.3-6.5L2.5 9.3l6.6-.8z"/>'),
+  more:sv('<circle cx="5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="19" cy="12" r="1.3" fill="currentColor"/>'),
+  export:sv('<path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/>'),
+  trash:sv('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'),
+  edit:sv('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/>'),
+  folder:sv('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'),
+  file:sv('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>'),
+  reg:sv('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/>'),
+  search:sv('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>'),
+  play:sv('<path d="M7 4l12 8-12 8z" fill="currentColor"/>'),
+  cam:sv('<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'),
+  compare:sv('<path d="M8 3v18M16 3v18M3 8h5M16 16h5"/>'),
+  open:sv('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1H3z"/><path d="M3 10h18l-2 9H5z"/>'),
+  gear:sv('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/>'),
+  shield:sv('<path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>'),
+  clock:sv('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+};
+
+/* ---------- datos de ejemplo ---------- */
+// hoy: martes 20 de octubre, 22:49
+const WDN=['dom','lun','mar','mié','jue','vie','sáb'];
+const dayName=d=>{const dt=new Date(2026,9,20-d);return d===0?'Hoy':d===1?'Ayer':`${WDN[dt.getDay()]} ${dt.getDate()}`};
+const dayLong=d=>{const dt=new Date(2026,9,20-d);return `${WDN[dt.getDay()]} ${dt.getDate()} oct`};
+const C=[
+  {d:0,h:22.52,k:'auto',  ses:108,files:18,kb:412,note:'',pin:0,seed:4,hue:200,night:0,chg:[0,0,0]},
+  {d:0,h:14.05,k:'manual',ses:42, files:18,kb:409,note:'Antes de elegir el poema',pin:1,seed:7,hue:330,night:0,chg:[0,3,0]},
+  {d:1,h:23.67,k:'auto',  ses:130,files:17,kb:398,note:'',pin:0,seed:11,hue:20,night:1,chg:[1,4,0]},
+  {d:1,h:19.2, k:'antes', ses:0,  files:17,kb:396,note:'Antes de restaurar «sáb 17, 21:05»',pin:0,seed:13,hue:40,night:0,chg:[1,5,0]},
+  {d:2,h:18.92,k:'auto',  ses:55, files:16,kb:380,note:'',pin:0,seed:17,hue:180,night:0,chg:[2,6,0]},
+  {d:3,h:21.08,k:'auto',  ses:182,files:16,kb:377,note:'',pin:0,seed:21,hue:300,night:0,chg:[2,7,1]},
+  {d:4,h:0.78, k:'manual',ses:95, files:15,kb:360,note:'Ruta de Yuri completada',pin:1,seed:25,hue:280,night:0,chg:[3,8,1]},
+  {d:5,h:22.17,k:'auto',  ses:80, files:14,kb:341,note:'',pin:0,seed:29,hue:100,night:0,chg:[4,8,1]},
+  {d:7,h:23.03,k:'auto',  ses:125,files:13,kb:322,note:'',pin:0,seed:33,hue:190,night:0,chg:[5,9,1]},
+  {d:8,h:20.5, k:'auto',  ses:40, files:12,kb:300,note:'',pin:0,seed:37,hue:60,night:0,chg:[6,9,1]},
+  {d:10,h:17.73,k:'auto', ses:95, files:11,kb:281,note:'',pin:0,seed:41,hue:150,night:0,chg:[7,10,1]},
+  {d:12,h:22.97,k:'manual',ses:60,files:9, kb:240,note:'Primer día en el club',pin:1,seed:45,hue:340,night:1,chg:[9,11,1]},
+];
+const PLAY=[150,175,55,182,95,80,0,125,40,0,95,0,60,30]; // minutos por día, 0 = hoy
+const KN={auto:'Al cerrar el juego',manual:'Copia manual',antes:'Antes de restaurar'};
+const KS={auto:'Al cerrar',manual:'Manual',antes:'Antes de restaurar'};
+const z2=n=>String(n).padStart(2,'0');
+const hm=h=>`${z2(Math.floor(h))}:${z2(Math.round((h%1)*60)%60)}`;
+const when=c=>`${c.d<2?dayName(c.d):dayLong(c.d)}, ${hm(c.h)}`;
+const dur=m=>!m?'—':m<60?`${m} min`:`${Math.floor(m/60)} h${m%60?` ${z2(m%60)}`:''}`;
+const kb=n=>n>=1000?`${(n/1000).toFixed(1).replace('.',',')} MB`:`${n} KB`;
+const title=c=>c.note||KN[c.k];
+const chgTxt=c=>{const [a,m,dl]=c.chg;if(!a&&!m&&!dl)return '<span class="add">Igual que ahora</span>';return [a&&`<span class="del">${a} solo en la copia</span>`,m&&`<span class="chg">${m} cambian</span>`,dl&&`<span class="add">${dl} nuevo ahora</span>`].filter(Boolean).join(' · ')};
+const LOCS=[
+  {ico:'folder',place:'AppData › RenPy › DDLC-1454445547',orig:"Ren'Py",files:14,kb:812,ago:'hace 18 min',on:1},
+  {ico:'folder',place:'Carpeta del juego › characters',orig:'Ludusavi',files:4,kb:96,ago:'hace 3 días',on:1},
+  {ico:'reg',place:'Registro › Team Salvato › DDLC',orig:'Ludusavi',files:0,kb:0,ago:'',on:0},
+];
+const locSub=l=>l.ico==='reg'?`${l.orig} · clave del registro`:`${l.orig} · ${l.files} archivos · ${kb(l.kb)}`;
+
+/* ---------- marco común ---------- */
+const chrome=(crumb,hints)=>`<div class="bg"><div class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></div><div class="blob a" style="left:760px;top:380px;width:520px;height:400px"></div></div>
+<div class="glass avatar"><div class="face">${PERSON}</div></div>
+<div class="crumb pill">Juegos PC <span class="sep">›</span> Doki Doki Literature Club! <span class="sep">›</span> <span class="cur">${crumb}</span></div>
+<div class="clock">20/10 <small>(mar)</small> 22:49 <span class="batt"><b></b><b></b><b></b><b class="off"></b></span></div>
+<div class="hints">${hints.map(([b,t,c])=>`<div class="hint pill"><span class="btn ${c}">${b}</span>${t}</div>`).join('')}</div>`;
+const cover=(w,h)=>`<div class="glass rel cov" style="width:${w}px;height:${h}px;--r:20px;--bw:6px"><div class="face"><b>Doki Doki<br><small style="font-size:.62em">Literature Club!</small></b></div></div>`;
+const tog=on=>`<span class="tog${on?' on':''}" data-a="tog"><i></i></span>`;
+const restoreBtn=(st,cls='')=>st.confirm?`<button class="bt dan ${cls}" data-a="restore">${I.restore}¿Seguro? Otra vez <span class="btn mini a">A</span></button>`:`<button class="bt pri ${cls}" data-a="restore">${I.restore}Restaurar <span class="btn mini a">A</span></button>`;
+const toastH=st=>st.toast?`<div class="toast">${st.toast}</div>`:'';
+
+/* ================= 1 · Cronología ================= */
+function build1(st){
+  const c=C[st.sel];
+  const L=24,W=1152,SW=W/14;
+  const X=(d,h)=>L+(13-d)*SW+(h/24)*SW;
+  const LY={manual:62,auto:86,antes:110};
+  let tl='';
+  for(let d=0;d<14;d++){
+    const x=L+(13-d)*SW;
+    tl+=`<div class="dcol${d===0?' today':''}${d===c.d?' sel':''}" style="left:${x+3}px;width:${SW-6}px"></div>`;
+    if(PLAY[d])tl+=`<div class="dbar" style="left:${x+SW/2-22}px;height:${Math.round(PLAY[d]/190*24)+4}px" title="${dur(PLAY[d])} jugados"></div>`;
+    tl+=`<div class="dlab${d===0?' today':''}" style="left:${x}px">${dayName(d)}</div>`;
+  }
+  for(const k in LY)tl+=`<div class="lane" style="top:${LY[k]}px"></div>`;
+  tl+=`<div class="tlv" style="left:${X(c.d,c.h)}px;top:${LY[c.k]}px;height:${152-LY[c.k]}px"></div>`;
+  C.forEach((x,i)=>tl+=`<div class="mkr k-${x.k}${i===st.sel?' s':''}" data-i="${i}" title="${when(x)} · ${title(x)}" style="left:${X(x.d,x.h)}px;top:${LY[x.k]}px">${x.pin?`<span class="st">${I.pin}</span>`:''}</div>`);
+  const [a,m,dl]=c.chg;
+  return chrome('Partidas',[['←→','Copia','sh'],['A','Restaurar','a'],['X',c.pin?'No fijar':'Fijar','x'],['Y','Más','y'],['B','Atrás','b']])+`
+  <div class="hero">${cover(170,96)}
+    <div><h1>Partidas guardadas</h1><div class="meta">Ren'Py <i></i> 2 ubicaciones <i></i> 908 KB <i></i> cambiaron hace 18 min</div></div>
+    <div class="right"><div class="okst"><span class="ico">${I.check}</span><div>Al día<small>Copia de hace 18 min</small></div></div>
+    <button class="bt" data-a="now">${I.plus}Copiar ahora</button></div></div>
+  <div class="panel tl"><div class="ptitle">Últimos 14 días <small>${C.length} copias · 4,3 MB</small></div>
+    <div class="legend"><span class="k-manual"><i></i>Manual</span><span class="k-auto"><i></i>Al cerrar</span><span class="k-antes"><i></i>Antes de restaurar</span><span><i class="sq"></i>Tiempo jugado</span><span style="color:#F2B807;gap:4px"><span style="width:13px;height:13px">${I.pin}</span><b style="color:#7a8291">Fijada</b></span></div>
+    ${tl}</div>
+  <div class="panel det"><div class="thumb" style="background-image:url(${shot(c)})"></div>
+    <div class="cap">${I.cam}Última captura antes de la copia</div>
+    <div class="inf">
+      <div style="display:flex;gap:8px;align-items:center"><span class="badge k-${c.k}">${KN[c.k]}</span>${c.pin?`<span class="badge" style="--k:#F2B807">Fijada</span>`:''}</div>
+      <h3>${c.note||'Sin nota'}<span class="ed" title="Escribir una nota">${I.edit}</span></h3>
+      <div class="when">${when(c)}${c.ses?` · tras ${dur(c.ses)} de juego`:''}</div>
+      <div class="sgrid">
+        <div>Archivos<b>${c.files}</b></div><div>Tamaño<b>${kb(c.kb)}</b></div>
+        <div style="grid-column:span 2">Si la restauras<b style="font-size:15px">${chgTxt(c)}</b></div>
+      </div>
+      <div class="brow">${restoreBtn(st)}<button class="bt" data-a="pin">${c.pin?I.pin:I.pino}${c.pin?'Fijada':'Fijar'}</button><button class="bt ic" title="Más: renombrar, exportar, borrar…" data-a="menu">${I.more}</button></div>
+    </div></div>
+  <div class="panel locp"><div class="ptitle">Dónde guarda <button class="bt sm" data-a="add">${I.plus}Añadir</button></div>
+    ${LOCS.map((l,i)=>`<div class="lrow${l.on?'':' off'}" data-l="${i}"><span class="ico">${I[l.ico]}</span><div class="tx"><b>${l.place}</b><small>${locSub(l)}</small></div>${tog(l.on)}</div>`).join('')}
+  </div>${st.menu?menuH(820,370):''}${toastH(st)}`;
+}
+function menuH(x,y){return `<div class="menu" style="left:${x}px;top:${y}px">
+  <div data-a="restore">${I.restore}Restaurar<kbd>A</kbd></div><div data-a="note">${I.edit}Escribir nota…</div><div data-a="pin">${I.pino}Fijar / no fijar<kbd>X</kbd></div>
+  <div data-a="cmp">${I.compare}Comparar con las actuales</div><div data-a="exp">${I.export}Exportar .zip…</div><div data-a="open">${I.open}Abrir en el explorador</div>
+  <hr><div class="red" data-a="del">${I.trash}Borrar copia</div></div>`}
+
+/* ================= 2 · Galería ================= */
+const FILT=[['all','Todas',null],['pin','Fijadas',null],['auto','Al cerrar','auto'],['manual','Manuales','manual'],['antes','Antes de restaurar','antes']];
+function list2(st){return C.map((c,i)=>({c,i})).filter(({c})=>st.f==='all'||(st.f==='pin'?c.pin:c.k===st.f))}
+function build2(st){
+  const items=list2(st);
+  const cnt=f=>f==='all'?C.length:f==='pin'?C.filter(c=>c.pin).length:C.filter(c=>c.k===f).length;
+  const CW=284,GAP=18;
+  let g='',slot=0;
+  const pos=s=>[(s%4)*(CW+GAP)+6,Math.floor(s/4)*(222+22)+8];
+  if(st.f==='all'){const [x,y]=pos(0);g+=`<div class="card now" data-a="now" style="left:${x}px;top:${y}px"><span class="ico">${I.plus}</span>Copiar ahora<small>Última: hace 18 min</small></div>`;slot=1}
+  items.forEach(({c,i})=>{const [x,y]=pos(slot++);
+    g+=`<div class="card${i===st.sel?' s':''}" data-i="${i}" style="left:${x}px;top:${y}px">
+      <div class="thumb" style="background-image:url(${shot(c)})"></div>
+      <span class="tl0 badge solid k-${c.k}">${KS[c.k]}</span>${c.pin?`<span class="tr0">${I.pin}</span>`:''}
+      <span class="bl0">${when(c)}</span>${c.ses?`<span class="br0">${I.clock}${dur(c.ses)}</span>`:''}
+      <div class="hov">${i===st.sel&&st.confirm?`<button class="bt dan sm" data-a="restore">¿Seguro? Otra vez</button>`:`<button class="bt pri sm" data-a="restore">${I.restore}Restaurar</button>`}<button class="bt sm ic" data-a="menu">${I.more}</button></div>
+      <div class="nm${c.note?'':' plain'}">${c.note||KN[c.k]}</div>
+      <div class="sb">${c.files} archivos · ${kb(c.kb)}${c.chg[1]?` · <span class="chg">${c.chg[1]} cambian</span>`:''}</div></div>`});
+  const rows=Math.ceil(slot/4),vis=2.1;
+  let mx=0,my=0;
+  if(st.menu){const s=items.findIndex(o=>o.i===st.sel)+(st.f==='all'?1:0);const [x,y]=pos(Math.max(0,s));mx=Math.min(40+x+190,1280-290);my=Math.min(156+y+40,720-370);if(st.mxy){[mx,my]=st.mxy}}
+  return chrome('Partidas',[['✚','Mover','sh'],['A','Restaurar','a'],['Y','Menú','y'],['LB','Filtro','sh'],['Start','Dónde guarda','sh'],['B','Atrás','b']])+`
+  <div class="tbar"><div class="seg pill">${FILT.map(([f,l,k])=>`<span class="${st.f===f?'on':''}${k?' k-'+k:''}" data-f="${f}">${k?'<i></i>':''}${l} <small>${cnt(f)}</small></span>`).join('')}</div>
+    <div class="srch pill">${I.search}Buscar en las notas</div>
+    <button class="bt" data-a="drawer">${I.folder}Dónde guarda <span class="badge k-manual" style="height:20px;padding:0 7px">2</span></button></div>
+  <div class="grid">${g}</div>
+  ${rows>vis?`<div class="scr" style="left:1252px;top:160px;height:490px"><i style="top:0;height:${490*vis/rows}px"></i></div>`:''}
+  ${st.drawer?`<div class="drawer"><div class="ptitle">Dónde guarda</div><p>Detectado con Ren'Py y la base de Ludusavi. Las copias incluyen las ubicaciones activas.</p>
+    ${LOCS.map((l,i)=>`<div class="lrow${l.on?'':' off'}" data-l="${i}"><span class="ico">${I[l.ico]}</span><div class="tx"><b>${l.place}</b><small>${locSub(l)}${l.ago?' · '+l.ago:''}</small></div>${tog(l.on)}</div>`).join('')}
+    <div style="display:flex;gap:8px"><button class="bt sm" data-a="add">${I.folder}Añadir carpeta…</button><button class="bt sm" data-a="add">${I.file}Añadir archivo…</button></div>
+    <p style="margin-top:22px">Copia automática al cerrar el juego: <b>activada</b> · conserva las 20 últimas y las fijadas.</p>
+    <button class="bt sm" data-a="drawer">Cerrar</button></div>`:''}
+  ${st.menu?menuH(mx,my):''}${toastH(st)}`;
+}
+
+/* ================= 3 · Explorador ================= */
+const FILES=[
+  ['file','persistent','RenPy','Avance general',8.2],['file','1-1-LT1.save','RenPy','Página 1 · ranura 1',61],['file','1-2-LT1.save','RenPy','Página 1 · ranura 2',60],
+  ['file','1-3-LT1.save','RenPy','Página 1 · ranura 3',62],['file','auto-1-LT1.save','RenPy','Guardado automático',59],['file','auto-2-LT1.save','RenPy','Guardado automático',58],
+  ['file','quick-1-LT1.save','RenPy','Guardado rápido',61],['file','monika.chr','characters','',24],['file','sayori.chr','characters','',24],['file','yuri.chr','characters','',24],['file','natsuki.chr','characters','',24],
+];
+function fileStates(c,i){const [a,m]=c.chg;const s=FILES.map(()=> 'same');
+  // reparte «cambian» y «solo en la copia» de forma estable
+  const order=[0,4,6,1,5,2,3,8,9,7,10];for(let k=0;k<Math.min(m,order.length);k++)s[order[k]]='chg';
+  for(let k=0;k<a;k++)s[(order[order.length-1-k])]='del';if(c.chg[2])s.push('add');return s}
+function build3(st){
+  const c=C[st.sel];const states=fileStates(c,st.sel);
+  const fl=FILES.concat(c.chg[2]?[['file','auto-3-LT1.save','RenPy','Guardado automático',60]]:[]);
+  const cnt={same:0,chg:0,del:0,add:0};states.forEach(s=>cnt[s]++);
+  const SL={same:'Igual',chg:'Cambia',del:'Solo en la copia',add:'Nuevo ahora'};
+  const rows=fl.map((f,j)=>({f,j,s:states[j]})).filter(o=>st.df==='all'||o.s===st.df||(st.df==='diff'&&o.s!=='same'));
+  let list='';let lastD=-1;
+  C.forEach((x,i)=>{if(x.d!==lastD){lastD=x.d;list+=`<div class="lgh"><span>${x.d<2?dayName(x.d)+' · '+dayLong(x.d):dayLong(x.d)}</span><span>${PLAY[x.d]?dur(PLAY[x.d])+' jugado':''}</span></div>`}
+    list+=`<div class="li k-${x.k}${i===st.sel?' s':''}" data-i="${i}"><span class="dot"></span><span class="t">${hm(x.h)}</span><span class="n${x.note?'':' plain'}">${x.note||KS[x.k]}</span>${x.pin?`<span class="pin">${I.pin}</span>`:''}<span class="z">${kb(x.kb)}</span></div>`});
+  const tot=C.reduce((a,x)=>a+x.kb,0),by=k=>C.filter(x=>x.k===k).reduce((a,x)=>a+x.kb,0);
+  // desplaza la lista para que la seleccionada se vea
+  const off=Math.max(0,st.sel-6)*48;
+  return chrome('Partidas',[['↑↓','Copia','sh'],['→','Archivos','sh'],['A','Restaurar','a'],['X',c.pin?'No fijar':'Fijar','x'],['Y','Más','y'],['B','Atrás','b']])+`
+  <div class="panel lst"><div class="stor"><div class="top">${C.length} copias<small>${kb(tot)} en disco</small></div>
+    <div class="sbar"><i class="k-auto" style="width:${by('auto')/tot*100}%;--k:#00A0D8"></i><i style="width:${by('manual')/tot*100}%;--k:#3BB54A"></i><i style="width:${by('antes')/tot*100}%;--k:#F29A07"></i></div>
+    <div class="sub">Al cerrar ${kb(by('auto'))} · manuales ${kb(by('manual'))} · conserva 20 + fijadas</div></div>
+    <div class="lwrap"><div style="transform:translateY(${-off}px);transition:transform .2s">${list}</div></div></div>
+  <div class="panel rp"><div class="head"><div class="thumb" style="background-image:url(${shot(c)})"></div>
+      <div style="min-width:0"><h3>${title(c)}${c.pin?`<span class="pin">${I.pin}</span>`:''}</h3>
+        <div class="when"><span class="badge k-${c.k}">${KS[c.k]}</span>${when(c)}${c.ses?` · ${dur(c.ses)} de juego`:''}</div>
+        <div style="font-size:13.5px;font-weight:700;color:#8a92a0">${fl.length - cnt.add} archivos · ${kb(c.kb)} · 2 ubicaciones</div></div>
+      <div class="brow">${restoreBtn(st,'sm')}<div style="display:flex;gap:6px"><button class="bt sm" data-a="pin" style="flex:1">${c.pin?I.pin:I.pino}${c.pin?'Fijada':'Fijar'}</button><button class="bt sm ic" data-a="menu">${I.more}</button></div></div></div>
+    <div class="diff"><span class="lbl">Comparada con ahora:</span>
+      ${[['all',`Todos <b>${fl.length}</b>`],['chg',`<b class="chg">${cnt.chg}</b> cambian`],['del',`<b class="del">${cnt.del}</b> solo en la copia`],['add',`<b class="add">${cnt.add}</b> nuevos ahora`],['same',`<b>${cnt.same}</b> iguales`]].map(([k,t])=>`<span class="dchip${st.df===k?' on':''}" data-df="${k}">${t}</span>`).join('')}</div>
+    <div class="ftab"><div class="fh"><span></span><span>Archivo</span><span>Ubicación</span><span style="text-align:right">Tamaño</span><span>Modificado</span><span>Al restaurar</span></div>
+      ${rows.slice(0,7).map(({f,j,s})=>`<div class="fr${st.fs===j?' s':''}" data-fj="${j}"><span class="ico">${I[f[0]]}</span><span class="fn">${f[1]}${f[3]?`<small>${f[3]}</small>`:''}</span><span class="loc">${f[2]==='RenPy'?'AppData › RenPy':'Juego › characters'}</span><span class="zz">${String(f[4]).replace('.',',')} KB</span><span class="md">${s==='same'?dayLong(c.d+2):when(c)}</span><span class="fst ${s}">${SL[s]}</span><button class="bt sm one" data-a="one">${I.restore}Restaurar este</button></div>`).join('')}
+      ${rows.length>7?`<div class="fr" style="color:#8a92a0;justify-content:center;display:flex">y ${rows.length-7} más…</div>`:''}</div>
+    <div class="foot">Lo que hay ahora se guarda antes en una copia «Antes de restaurar».</div></div>
+  ${st.menu?menuH(950,200):''}${toastH(st)}`;
+}
+
+/* ================= 4 · Resumen ================= */
+const F4=['now','ret-','ret+','l0','l1','l2','ladd','o0','o1','o2','m0','m1','m2','m3','m4','all'];
+function build4(st){
+  const f=k=>F4[st.foc]===k?' fx':'';
+  // crecimiento del tamaño: un punto por copia, de la más antigua a hoy
+  const pts=C.slice().reverse(),W=360,H=60,minD=13;
+  const px=c=>((minD-c.d)+(c.h/24))/(minD+1)*W,py=c=>H-(c.kb-220)/(420-220)*H;
+  const path=pts.map((c,i)=>`${i?'L':'M'}${px(c).toFixed(1)} ${py(c).toFixed(1)}`).join(' ');
+  const auto=st.auto;
+  return chrome('Partidas',[['✚','Mover','sh'],['A','Pulsar','a'],['B','Atrás','b']])+`
+  <div class="hero" style="top:86px;height:84px">${cover(150,84)}<div><h1 style="font-size:28px">Partidas guardadas</h1><div class="meta">Ren'Py <i></i> detectado con la base de Ludusavi (22.479 juegos)</div></div></div>
+  <div class="panel tile t1" style="left:40px;top:184px;width:392px;height:200px"><div class="ptitle">Estado</div>
+    <div class="ring" style="left:20px;top:56px"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="none" stroke="#e2f4e5" stroke-width="5"/><circle cx="20" cy="20" r="17" fill="none" stroke="#3BB54A" stroke-width="5" stroke-linecap="round" stroke-dasharray="106.8" stroke-dashoffset="0"/></svg><b>${I.shield}</b></div>
+    <div class="txt"><h4>Protegidas</h4><p>La última copia (hoy, 22:31) es posterior al último cambio de las partidas.</p>
+      <button class="bt pri sm${f('now')}" data-a="now">${I.plus}Copiar ahora</button></div></div>
+  <div class="panel tile" style="left:448px;top:184px;width:400px;height:200px"><div class="ptitle">Partidas actuales <small>· cambiaron hace 18 min</small></div>
+    <div class="kv"><div>Archivos<b>18</b></div><div>Tamaño<b>908 KB</b></div><div>Último cambio<b>22:31</b></div></div>
+    <div class="spark"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs><linearGradient id="g4" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#3F63E0" stop-opacity=".25"/><stop offset="1" stop-color="#3F63E0" stop-opacity="0"/></linearGradient></defs>
+      <path d="${path} L${W} ${py(C[0])} L${W} ${H} L${px(pts[0])} ${H}Z" fill="url(#g4)"/><path d="${path}" fill="none" stroke="#3F63E0" stroke-width="2.5" vector-effect="non-scaling-stroke"/>
+      ${pts.map(c=>`<circle cx="${px(c)}" cy="${py(c)}" r="3.2" fill="${c.k==='manual'?'#3BB54A':c.k==='antes'?'#F29A07':'#00A0D8'}" stroke="#fff" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`).join('')}</svg>
+      <div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;color:#a3abb8;margin-top:2px"><span>jue 8 oct</span><span>Hoy</span></div></div></div>
+  <div class="panel tile" style="left:864px;top:184px;width:376px;height:200px"><div class="ptitle">Copias</div>
+    <div class="kv"><div>Copias<b>${C.length}</b></div><div>Fijadas<b>3</b></div><div>En disco<b>4,3 MB</b></div></div>
+    <div class="sbar" style="margin-top:14px"><i style="width:68%;--k:#00A0D8"></i><i style="width:24%;--k:#3BB54A"></i><i style="width:8%;--k:#F29A07"></i></div>
+    <div class="ret" style="white-space:nowrap">Conservar<div class="step"><span class="${f('ret-')}" data-a="ret-">–</span><b>${st.ret}</b><span class="${f('ret+')}" data-a="ret+">+</span></div>copias + las fijadas</div></div>
+  <div class="panel tile" style="left:40px;top:400px;width:808px;height:178px"><div class="ptitle">Dónde guarda <small>· las copias incluyen las activas</small></div>
+    <div class="lcards">${LOCS.map((l,i)=>`<div class="lc${l.on?'':' off'}${f('l'+i)}" data-l="${i}"><span class="ico">${I[l.ico]}</span>${tog(l.on)}<b>${l.place.split(' › ').slice(-2).join(' › ')}</b><small>${locSub(l)}</small>${l.kb?`<div class="bar"><i style="width:${l.kb/908*100}%"></i></div>`:''}</div>`).join('')}
+      <div class="lc addc${f('ladd')}" data-a="add"><span class="ico">${I.plus}</span>Añadir<small style="font-size:12px">carpeta o archivo</small></div></div></div>
+  <div class="panel tile" style="left:864px;top:400px;width:376px;height:178px"><div class="ptitle">Copia automática</div>
+    ${[['Al cerrar el juego','solo si cambiaron'],['Cada 30 min jugando',''],['Avisar al copiar','']].map(([t,s],i)=>`<div class="opt${f('o'+i)}" data-o="${i}"><span>${t} ${s?`<small>· ${s}</small>`:''}</span>${tog(auto[i])}</div>`).join('')}</div>
+  <div style="position:absolute;left:40px;top:594px;width:1000px;display:flex;align-items:center;gap:14px">
+    <div class="strip">${C.slice(0,5).map((c,i)=>`<div class="mshot k-${c.k}${f('m'+i)}" data-i="${i}" title="${when(c)} · ${title(c)}" style="background-image:url(${shot(c)});width:150px;height:84px"><i></i>${c.pin?`<span class="p">${I.pin}</span>`:''}<span>${when(c)}</span></div>`).join('')}</div>
+    <div class="more${f('all')}" style="height:84px" data-a="all"><b>${C.length}</b>Ver todas →</div></div>
+  ${toastH(st)}`;
+}
+
+/* ---------- montaje e interacción ---------- */
+const S={
+  st1:{sel:0,confirm:0,menu:0,toast:''},
+  st2:{sel:0,confirm:0,menu:0,toast:'',f:'all',drawer:0,mxy:null},
+  st3:{sel:2,confirm:0,menu:0,toast:'',df:'all',fs:-1},
+  st4:{foc:0,ret:20,auto:[1,0,1],toast:''},
+};
+const B={st1:build1,st2:build2,st3:build3,st4:build4};
+let active='st1';
+function render(id){document.getElementById(id).innerHTML=B[id](S[id])}
+const timers={};
+function toast(id,msg){const s=S[id];s.toast=msg;render(id);clearTimeout(timers[id]);timers[id]=setTimeout(()=>{s.toast='';render(id)},2200)}
+function select(id,i){const s=S[id];if(s.sel!==i){s.confirm=0}s.sel=i;s.menu=0;render(id)}
+function restore(id){const s=S[id];if(!s.confirm){s.confirm=1;s.menu=0;render(id);clearTimeout(timers[id+'c']);timers[id+'c']=setTimeout(()=>{s.confirm=0;render(id)},3500);return}
+  s.confirm=0;toast(id,`Restaurados ${C[s.sel].files} archivos · lo de antes quedó en otra copia`)}
+function action(id,a,el){
+  const s=S[id];
+  if(a==='restore')return restore(id);
+  if(a==='menu'){s.menu=!s.menu;s.mxy=null;return render(id)}
+  if(a==='pin'){C[s.sel].pin^=1;s.menu=0;return toast(id,C[s.sel].pin?'Copia fijada: no se borrará al rotar':'Copia sin fijar')}
+  if(a==='now')return toast(id,'Copia guardada (18 archivos, 412 KB)');
+  if(a==='drawer'){s.drawer=!s.drawer;return render(id)}
+  if(a==='add')return toast(id,'Elegir carpeta o archivo…');
+  if(a==='one')return toast(id,'Restaurado solo ese archivo');
+  if(a==='ret-'){s.ret=Math.max(1,s.ret-1);return render(id)}
+  if(a==='ret+'){s.ret=Math.min(99,s.ret+1);return render(id)}
+  if(a==='all')return toast(id,'Abre la galería o la cronología');
+  const M={note:'Escribir nota…',cmp:'Comparar con las actuales',exp:'Exportar .zip…',open:'Abrir en el explorador',del:'Borrar: pide confirmación'};
+  if(M[a]){s.menu=0;return toast(id,M[a])}
+}
+Object.keys(B).forEach(id=>{
+  const st=document.getElementById(id);render(id);
+  const fr=st.parentElement;
+  fr.addEventListener('mousedown',()=>{active=id;document.querySelectorAll('.frame').forEach(f=>f.classList.toggle('act',f===fr))});
+  st.addEventListener('click',e=>{
+    const s=S[id];
+    const t=e.target.closest('[data-a],[data-i],[data-l],[data-f],[data-df],[data-fj],[data-o]');
+    if(!t){if(s.menu){s.menu=0;render(id)}return}
+    if(t.dataset.a==='tog'){const p=t.closest('[data-l],[data-o]');if(p){if(p.dataset.l!=null){const l=LOCS[+p.dataset.l];l.on^=1}else s.auto[+p.dataset.o]^=1;Object.keys(B).forEach(render)}return}
+    if(t.dataset.a){e.stopPropagation();return action(id,t.dataset.a,t)}
+    if(t.dataset.i!=null){if(id==='st4'){S.st4.foc=F4.indexOf('m'+t.dataset.i);return toast(id,`${when(C[+t.dataset.i])} · ${title(C[+t.dataset.i])}`)}return select(id,+t.dataset.i)}
+    if(t.dataset.l!=null){const l=LOCS[+t.dataset.l];return toast(id,l.ico==='reg'?'Es una clave del registro':'Abrir '+l.place)}
+    if(t.dataset.f){s.f=t.dataset.f;const it=list2(s);if(it.length&&!it.some(o=>o.i===s.sel))s.sel=it[0].i;s.menu=0;return render(id)}
+    if(t.dataset.df){s.df=t.dataset.df;s.fs=-1;return render(id)}
+    if(t.dataset.fj!=null){s.fs=+t.dataset.fj;return render(id)}
+    if(t.dataset.o!=null){s.auto[+t.dataset.o]^=1;return render(id)}
+  });
+  st.addEventListener('contextmenu',e=>{
+    const card=e.target.closest('[data-i]');if(!card||id==='st4')return;
+    e.preventDefault();const s=S[id];s.sel=+card.dataset.i;s.confirm=0;s.menu=1;
+    const r=st.getBoundingClientRect(),k=r.width/1280;
+    s.mxy=[Math.min((e.clientX-r.left)/k,1280-300),Math.min((e.clientY-r.top)/k,720-370)];
+    if(id!=='st2')s.mxy=null;render(id);
+  });
+});
+addEventListener('keydown',e=>{
+  if(!document.querySelector('.frame.act'))return;
+  const id=active,s=S[id],k=e.key;
+  const nav=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Enter','Escape'];if(!nav.includes(k))return;
+  e.preventDefault();
+  if(k==='Escape'){if(s.menu||s.drawer){s.menu=0;s.drawer=0;render(id)}else toast(id,'B: volver a la ficha del juego');return}
+  if(id==='st4'){
+    if(k==='Enter'){const a=F4[s.foc];if(/^l\d/.test(a)){LOCS[+a[1]].on^=1;Object.keys(B).forEach(render)}else if(/^o\d/.test(a)){s.auto[+a[1]]^=1;render(id)}else if(/^m\d/.test(a))toast(id,when(C[+a[1]]));else action(id,a);return}
+    const G=[['now','ret-','ret+'],['l0','l1','l2','ladd','o0','o1','o2'],['m0','m1','m2','m3','m4','all']];
+    let r=G.findIndex(g=>g.includes(F4[s.foc])),c=G[r].indexOf(F4[s.foc]);
+    if(k==='ArrowRight')c=Math.min(G[r].length-1,c+1);if(k==='ArrowLeft')c=Math.max(0,c-1);
+    if(k==='ArrowDown'){r=Math.min(2,r+1);c=Math.min(c,G[r].length-1)}if(k==='ArrowUp'){r=Math.max(0,r-1);c=Math.min(c,G[r].length-1)}
+    s.foc=F4.indexOf(G[r][c]);return render(id);
+  }
+  if(k==='Enter')return restore(id);
+  if(id==='st1'){if(k==='ArrowLeft')select(id,Math.min(C.length-1,s.sel+1));if(k==='ArrowRight')select(id,Math.max(0,s.sel-1));return}
+  if(id==='st3'){if(k==='ArrowUp')select(id,Math.max(0,s.sel-1));if(k==='ArrowDown')select(id,Math.min(C.length-1,s.sel+1));return}
+  if(id==='st2'){const it=list2(s).map(o=>o.i);let p=it.indexOf(s.sel);const d={ArrowLeft:-1,ArrowRight:1,ArrowUp:-4,ArrowDown:4}[k];p=Math.max(0,Math.min(it.length-1,p+d));select(id,it[p])}
+});
+function fit(){document.querySelectorAll('.frame').forEach(f=>{f.firstElementChild.style.transform=`scale(${f.clientWidth/1280})`})}
+addEventListener('resize',fit);fit();
+</script>
+</body>
+</html>
