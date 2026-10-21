@@ -311,7 +311,7 @@
   .cbadge { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: #3BB54A; color: #fff; font-size: 12px; }
 
   /* lista por días */
-  .lwrap { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+  .lwrap { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; margin: 0 -8px; padding: 0 8px 8px; }
   .lwrap::-webkit-scrollbar { display: none; }
   .empty { margin: 24px 10px; font-size: 14px; font-weight: 700; color: #8a92a0; }
   .lgh { height: 28px; padding: 8px 10px 0; font-size: 12px; font-weight: 800; color: #a3abb8; text-transform: uppercase; letter-spacing: 0.06em; display: flex; justify-content: space-between; }
@@ -411,7 +411,7 @@
   .sdrawer h2 { margin: 0; font-size: 24px; font-weight: 800; }
   .dsum { margin: 0 0 6px; font-size: 14px; font-weight: 600; color: #6a7282; line-height: 1.4; }
   .dsum b { font-weight: 800; color: #3a414e; }
-  .dlist { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+  .dlist { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; margin: -2px -8px -6px; padding: 2px 8px 6px; }
   .dlist::-webkit-scrollbar { display: none; }
   .sdrawer .srow { height: 50px; padding: 0 16px; font-size: 16px; }
   .sdrawer .srow .sl { overflow: hidden; text-overflow: ellipsis; }

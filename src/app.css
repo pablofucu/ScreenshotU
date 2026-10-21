@@ -199,7 +199,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .srow{flex:none;display:flex;align-items:center;gap:14px;height:54px;padding:0 22px;border-radius:18px;font-size:19px;font-weight:700;cursor:pointer;color:#4a5260;transition:background .15s,color .15s,transform .15s}
 .srow .sl{flex:1;white-space:nowrap}
 .srow .sv{max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:#5f6776}
-.srow.f{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 84%,white),var(--acc));color:var(--acc-ink);text-shadow:0 1px 2px rgba(0,0,0,.28);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 8px 16px -8px color-mix(in srgb,var(--acc) 70%,black)}
+.srow.f{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 84%,white),var(--acc));color:var(--acc-ink);text-shadow:0 1px 2px rgba(0,0,0,.28);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 6px 12px -8px color-mix(in srgb,var(--acc) 70%,black)}
 .srow.f .sv{color:inherit;opacity:.92}
 .sw{display:flex;gap:6px}
 .sw i{width:18px;height:18px;border-radius:6px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.8),0 0 0 1px rgba(60,70,90,.25)}
@@ -495,7 +495,8 @@ img.tin{animation:thumbIn .35s cubic-bezier(.2,.8,.3,1) both}
 .sbody{flex:1;min-width:0;position:relative;padding:26px 28px 0;display:flex;flex-direction:column;gap:4px}
 .sbody h3{margin:0 0 10px;font-size:20px;font-weight:800;color:#6a7282}
 .sbody .srow{height:52px;font-size:18px;margin-bottom:4px}
-.srows{position:relative;overflow:hidden;flex:none}
+/* margen negativo + padding: el recorte deja sitio al anillo y la sombra del foco sin mover las filas (content-box: el alto en línea sigue siendo el de las filas) */
+.srows{position:relative;overflow:hidden;flex:none;box-sizing:content-box;margin:-3px -10px 0;padding:3px 10px 0}
 .srtrack{transition:transform .2s cubic-bezier(.25,1,.4,1)}
 .sarr.hid{visibility:hidden}
 .sscroll2{position:absolute;right:10px;width:5px;border-radius:3px;background:rgba(160,168,182,.3)}
