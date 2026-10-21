@@ -150,7 +150,7 @@
             {#each rings as g, i (g.t.key)}
               <circle cx={S / 2} cy={S / 2} r={g.r} fill="none" stroke={GOAL_COL[g.t.key].soft} stroke-width={SW} />
               <circle class="sarc" cx={S / 2} cy={S / 2} r={g.r} fill="none" stroke={GOAL_COL[g.t.key].c} stroke-width={SW} stroke-linecap="round"
-                stroke-dasharray={g.C} stroke-dashoffset={drawn ? g.C * (1 - Math.min(1, g.t.today / g.t.goal)) : g.C}
+                stroke-dasharray={g.C} stroke-dashoffset={drawn ? g.C * (1 - g.t.frac) : g.C}
                 style="transition-delay:{0.25 + i * 0.25}s" transform="rotate(-90 {S / 2} {S / 2})" />
             {/each}
           </svg>
@@ -161,7 +161,7 @@
             <div class="sli" style="--c:{c.c};--soft:{c.soft};--ink:{c.ink}">
               <div class="sln"><i></i>{c.full}</div>
               <div class="slv"><b>{fmtMin(t.today)}</b> / {goalLabel(t.goal)}</div>
-              <div class="sgoal"><b style="width:{drawn ? Math.min(100, (t.today / t.goal) * 100) : 0}%"></b></div>
+              <div class="sgoal"><b style="width:{drawn ? t.frac * 100 : 0}%"></b></div>
               <div class="sln2" class:ok={t.done}>{todayNote(t)}</div>
             </div>
           {/each}

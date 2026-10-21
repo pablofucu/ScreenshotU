@@ -387,10 +387,24 @@ impl PlayStat {
 pub fn mark_started(st: &mut Stats, id: &str, now_ms: i64) {
     st.entry(id.to_string()).or_default().last_played = now_ms;
 }
-/// Registra una partida terminada: suma su duracion al total y la anade a la lista.
+/// Si una partida nueva empieza menos de esto (ms) despues de terminar la anterior del mismo juego, es la misma:
+/// se amplia la anterior y el hueco cuenta como tiempo jugado (reinicios del juego, cortes del vigilante...).
+pub const MERGE_GAP_MS: i64 = 120_000;
+
+/// Registra una partida terminada: suma su duracion al total y la anade a la lista. Si empieza menos de
+/// `MERGE_GAP_MS` despues del fin de la ultima de ese juego (o dentro de ella), la amplia en vez de crear otra.
 pub fn add_session(st: &mut Stats, id: &str, start_ms: i64, end_ms: i64) {
     let e = st.entry(id.to_string()).or_default();
     let end = end_ms.max(start_ms);
+    if let Some(last) = e.sessions.last_mut() {
+        if start_ms >= last.start && start_ms - last.end < MERGE_GAP_MS {
+            if end > last.end {
+                e.seconds += ((end - last.end) / 1000) as u64;
+                last.end = end;
+            }
+            return;
+        }
+    }
     e.seconds += ((end - start_ms) / 1000) as u64;
     e.sessions.push(Session { start: start_ms, end });
     if e.sessions.len() > MAX_SESSIONS {
@@ -519,7 +533,8 @@ mod tests {
         let mut st = Stats::new();
         mark_started(&mut st, "steam:1", 1000);
         db.with(|c| stat_mark_started(c, "steam:1", 1000)).unwrap();
-        for (a, b) in [(1000, 61_000), (100_000, 130_000)] {
+        // Separadas por mas de 2 minutos: son dos partidas.
+        for (a, b) in [(1000, 61_000), (300_000, 330_000)] {
             add_session(&mut st, "steam:1", a, b);
             db.with(|c| stat_add_session(c, "steam:1", a, b)).unwrap();
         }
@@ -528,10 +543,31 @@ mod tests {
         let e = &st2["steam:1"];
         assert_eq!((e.last_played, e.seconds, e.session_count()), (1000, 90, 2));
         assert_eq!(e.first_played(), Some(1000));
-        assert_eq!(e.sessions[1], Session { start: 100_000, end: 130_000 });
+        assert_eq!(e.sessions[1], Session { start: 300_000, end: 330_000 });
         // Una partida con fin anterior al inicio dura cero y no rompe nada.
         db.with(|c| stat_add_session(c, "steam:1", 500_000, 400_000)).unwrap();
         assert_eq!(db.with(stats_load).unwrap()["steam:1"].sessions[2], Session { start: 500_000, end: 500_000 });
+    }
+
+    #[test]
+    fn close_sessions_of_same_game_are_merged() {
+        use crate::db::data::*;
+        let db = crate::db::Db::open_memory().unwrap();
+        let mut st = Stats::new();
+        // 03:03:30-03:12:44 y 03:13:09-04:03:46 (corte de 25 s) + otro juego intercalado + una a mas de 2 min.
+        let (a1, b1) = (1_000_000, 1_554_000);
+        let (a2, b2) = (b1 + 25_000, b1 + 25_000 + 3_037_000);
+        let steps = [("g", a1, b1), ("otro", a2, b2), ("g", a2, b2), ("g", b2 + 10_000_000, b2 + 10_060_000)];
+        for (id, a, b) in steps {
+            add_session(&mut st, id, a, b);
+            db.with(|c| stat_add_session(c, id, a, b)).unwrap();
+        }
+        let e = &st["g"];
+        assert_eq!(e.sessions, vec![Session { start: a1, end: b2 }, Session { start: b2 + 10_000_000, end: b2 + 10_060_000 }]);
+        assert_eq!(e.seconds, ((b2 - a1) / 1000 + 60) as u64); // el hueco de 25 s cuenta
+        assert_eq!(st["otro"].sessions.len(), 1); // el otro juego no se mezcla
+        // La base queda igual que la memoria.
+        assert_eq!(db.with(stats_load).unwrap(), st);
     }
 
     #[test]

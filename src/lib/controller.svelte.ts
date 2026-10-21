@@ -19,7 +19,7 @@ import { READING_ROWS, isReadingId, readingAct, type ReadingId } from './reading
 import { checkUpdate, updateAct } from './updater.svelte';
 import { isRemoteId, remoteAct, type RemoteId } from './remote.svelte';
 import { openPhrases, phrasesCmd } from './phrases.svelte';
-import { goalLit, goalTrack, localDay, type GoalKey } from './readgoals';
+import { goalLit, goalMinLeft, goalTrack, localDay, type GoalKey } from './readgoals';
 import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
 import { libraryCmd, loadLibraryInfo, openLibrary } from './library.svelte';
 
@@ -572,8 +572,11 @@ function scheduleGoalNotice(gameId: string) {
   const now = Date.now(), goal = goalOf(k);
   const t = goalTrack(k, goal, app.lib.platforms, null, now);
   if (t.done) return;
+  // Con la partida que empieza ya contada: si la anterior de este juego terminó hace menos de 2 min, se unen y el
+  // hueco cuenta (como en el anillo); la meta se da por cumplida al llegar a `goal - 0,5` min (minutos redondeados).
+  const t2 = goalTrack(k, goal, app.lib.platforms, { id: gameId, since: now }, now);
   // Unos segundos de margen: el núcleo empieza a contar cuando ve el proceso del juego.
-  const at = now + (goal - t.today) * 60000 + 15000;
+  const at = now + goalMinLeft(t2.today, goal) * 60000 + 15000;
   if (localDay(at) !== localDay(now)) return;
   const n = t.streak + 1;
   const text = n > 1 ? `¡Meta cumplida! Racha de ${n} días` : '¡Meta de lectura cumplida!';

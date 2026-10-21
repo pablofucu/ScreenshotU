@@ -23,6 +23,8 @@ export interface GoalTrack {
   goal: number;
   /** Minutos de hoy. */
   today: number;
+  /** Parte de la meta de hoy cumplida (0..1; 1 en cuanto `done`). */
+  frac: number;
   done: boolean;
   streak: number;
   best: number;
@@ -40,6 +42,16 @@ const DAY_SHIFT = DAY_START_HOUR * 3600000;
 /** Día local (días desde 1970-01-01 en la hora de este equipo, con el día empezando a las 7:00) de una marca real en ms. */
 export const localDay = (ms: number) => Math.floor((ms - new Date(ms).getTimezoneOffset() * 60000 - DAY_SHIFT) / 864e5);
 
+/**
+ * ¿Un día con `min` minutos cumple la meta de `goal`? Se compara con los minutos REDONDEADOS, como se enseñan
+ * (59,85 min se ven como «1 h» y cuentan): unos segundos de menos no deben romper la racha.
+ */
+export const metGoal = (min: number, goal: number) => goal > 0 && Math.round(min) >= goal;
+/** Minutos que faltan para que `metGoal` se cumpla (0 si ya se cumple). */
+export const goalMinLeft = (min: number, goal: number) => (metGoal(min, goal) ? 0 : goal - 0.5 - min);
+/** Parte de la meta cumplida (0..1): llega a 1 en cuanto `metGoal` se cumple. */
+export const goalFrac = (min: number, goal: number) => (metGoal(min, goal) ? 1 : Math.max(0, Math.min(1, min / goal)));
+
 /** Reparte una partida `[a, b)` entre los días locales que toca (las que cruzan las 7:00 cuentan en los dos). */
 function addSpan(mins: Map<number, number>, a: number, b: number) {
   while (a < b) {
@@ -53,13 +65,32 @@ function addSpan(mins: Map<number, number>, a: number, b: number) {
 
 type Live = { id: string; since: number } | null;
 
-/** Recorre las partidas `[inicio, fin)` de los juegos de la categoría (la partida en curso, hasta `now`). */
+/** Dos partidas del mismo juego separadas por menos de esto (ms) son una sola; el hueco cuenta como tiempo jugado. */
+export const MERGE_GAP_MS = 120000;
+
+/**
+ * Ordena por inicio las partidas `[inicio, fin)` de un juego y une las que se solapan o dejan menos de `MERGE_GAP_MS`
+ * entre una y otra (reinicios del juego, cortes del vigilante…): el tiempo no se duplica y el hueco cuenta.
+ */
+export function mergeSpans(spans: Array<[number, number]>, gap = MERGE_GAP_MS): Array<[number, number]> {
+  const sorted = spans.filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b) && b >= a).sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+  const out: Array<[number, number]> = [];
+  for (const [a, b] of sorted) {
+    const last = out[out.length - 1];
+    if (last && a - last[1] < gap) last[1] = Math.max(last[1], b);
+    else out.push([a, b]);
+  }
+  return out;
+}
+
+/** Recorre las partidas `[inicio, fin)` de los juegos de la categoría (la partida en curso, hasta `now`), ya unidas. */
 function eachSpan(key: GoalKey, platforms: Platform[], live: Live, now: number, f: (t: Title, a: number, b: number) => void) {
   for (const p of platforms) {
     if (p.id !== key) continue;
     for (const t of p.titles) {
-      for (const [a, b] of t.plays ?? []) f(t, a, b);
-      if (live && t.gameId === live.id) f(t, live.since, now);
+      const spans: Array<[number, number]> = (t.plays ?? []).map(([a, b]) => [a, b]);
+      if (live && t.gameId === live.id) spans.push([live.since, Math.max(now, live.since)]);
+      for (const [a, b] of mergeSpans(spans)) f(t, a, b);
     }
   }
 }
@@ -71,7 +102,7 @@ function eachSpan(key: GoalKey, platforms: Platform[], live: Live, now: number, 
 export function goalTrack(key: GoalKey, goal: number, platforms: Platform[], live: Live, now: number, nWeeks = MAP_WEEKS): GoalTrack {
   const mins = new Map<number, number>();
   eachSpan(key, platforms, live, now, (_, a, b) => addSpan(mins, a, b));
-  const met = (d: number) => (mins.get(d) ?? 0) >= goal;
+  const met = (d: number) => metGoal(mins.get(d) ?? 0, goal);
   const today = localDay(now);
   const done = met(today);
 
@@ -95,11 +126,11 @@ export function goalTrack(key: GoalKey, goal: number, platforms: Platform[], liv
     const col: MapCell[] = [];
     for (let i = 0; i < 7; i++) {
       const d = first + w * 7 + i;
-      col.push({ v: Math.min(1, (mins.get(d) ?? 0) / goal), streak: streak > 0 && d >= streakFrom && d <= streakFrom + streak - 1, today: d === today, future: d > today });
+      col.push({ v: goalFrac(mins.get(d) ?? 0, goal), streak: streak > 0 && d >= streakFrom && d <= streakFrom + streak - 1, today: d === today, future: d > today });
     }
     weeks.push(col);
   }
-  return { key, goal, today: mins.get(today) ?? 0, done, streak, best, bestFrom: bestTo - best + 1, bestTo, weeks };
+  return { key, goal, today: mins.get(today) ?? 0, frac: goalFrac(mins.get(today) ?? 0, goal), done, streak, best, bestFrom: bestTo - best + 1, bestTo, weeks };
 }
 
 /** Fecha de calendario (en UTC) de un día local: `getUTCDate()`, `getUTCMonth()`… dan el día de este equipo. */
@@ -160,15 +191,15 @@ export function readDetail(key: GoalKey, goal: number, platforms: Platform[], li
 
   // Hora a la que se llegó a la meta hoy: se suman las partidas de hoy en orden.
   let doneAt: number | null = null;
-  if ((mins.get(today) ?? 0) >= goal) {
+  if (metGoal(mins.get(today) ?? 0, goal)) {
     let acc = 0;
     for (const [a, b] of todaySpans.sort((p, q) => p[0] - q[0])) {
       const one = new Map<number, number>();
       addSpan(one, a, b);
       const v = one.get(today) ?? 0;
-      if (acc + v >= goal) {
+      if (metGoal(acc + v, goal)) {
         const start = localDay(a) === today ? a : b - v * 60000;
-        doneAt = start + (goal - acc) * 60000;
+        doneAt = Math.min(b, start + Math.max(0, goalMinLeft(acc, goal)) * 60000);
         break;
       }
       acc += v;
@@ -177,8 +208,8 @@ export function readDetail(key: GoalKey, goal: number, platforms: Platform[], li
 
   let met = 0, yMin = 0, yMet = 0, sum30 = 0;
   for (const [d, v] of mins) {
-    if (d >= monthFirst && d <= today && v >= goal) met++;
-    if (d >= yearFirst && d <= today) { yMin += v; if (v >= goal) yMet++; }
+    if (d >= monthFirst && d <= today && metGoal(v, goal)) met++;
+    if (d >= yearFirst && d <= today) { yMin += v; if (metGoal(v, goal)) yMet++; }
     if (d >= from30 && d <= today) sum30 += v;
   }
   return {

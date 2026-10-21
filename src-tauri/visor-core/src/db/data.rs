@@ -178,10 +178,32 @@ pub fn stat_mark_started(c: &Connection, id: &str, now_ms: i64) -> Result<()> {
     Ok(())
 }
 
-/// Registra una partida terminada: suma su duracion al total y guarda la partida.
+/// Registra una partida terminada: suma su duracion al total y guarda la partida. Si empieza menos de
+/// `MERGE_GAP_MS` despues del fin de la ultima de ese juego (o dentro de ella), la amplia (el hueco cuenta).
 pub fn stat_add_session(c: &Connection, id: &str, start_ms: i64, end_ms: i64) -> Result<()> {
     let end = end_ms.max(start_ms);
     let secs = (end - start_ms) / 1000;
+    let last: Option<(i64, i64, i64)> = c
+        .query_row("SELECT id, start_ms, end_ms FROM sessions WHERE game_id = ?1 ORDER BY id DESC LIMIT 1", [id], |r| {
+            Ok((r.get(0)?, r.get(1)?, r.get(2)?))
+        })
+        .optional()?;
+    if let Some((sid, s, e)) = last {
+        if start_ms >= s && start_ms - e < crate::games::MERGE_GAP_MS {
+            let extra = if end > e { (end - e) / 1000 } else { 0 };
+            return atomic(c, || {
+                if end > e {
+                    c.execute("UPDATE sessions SET end_ms = ?1 WHERE id = ?2", params![end, sid])?;
+                }
+                c.execute(
+                    "INSERT INTO play_stats(game_id, last_played_ms, seconds) VALUES (?1, 0, ?2)
+                     ON CONFLICT(game_id) DO UPDATE SET seconds = seconds + excluded.seconds",
+                    params![id, extra],
+                )?;
+                Ok(())
+            });
+        }
+    }
     atomic(c, || {
         c.execute(
             "INSERT INTO play_stats(game_id, last_played_ms, seconds) VALUES (?1, 0, ?2)

@@ -94,7 +94,7 @@
             {#each rings as g, i (g.t.key)}
               <circle cx={S / 2} cy={S / 2} r={g.r} fill="none" stroke={COL[g.t.key].soft} stroke-width={SW} />
               <circle class="arc" cx={S / 2} cy={S / 2} r={g.r} fill="none" stroke={COL[g.t.key].c} stroke-width={SW} stroke-linecap="round"
-                stroke-dasharray={g.C} stroke-dashoffset={drawn ? g.C * (1 - Math.min(1, g.t.today / g.t.goal)) : g.C}
+                stroke-dasharray={g.C} stroke-dashoffset={drawn ? g.C * (1 - g.t.frac) : g.C}
                 style="transition-delay:{i * 0.2}s" transform="rotate(-90 {S / 2} {S / 2})" />
             {/each}
           </svg>
