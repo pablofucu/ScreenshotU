@@ -30,7 +30,7 @@ fn height_for(width: u32, height: u32) -> f64 {
 /// encima» sobre ella hace que Windows saque al juego del modo de pantalla completa optimizado y la pantalla parpadea
 /// en negro al aparecer y al desaparecer la miniatura.
 #[cfg(windows)]
-fn foreground_fullscreen() -> bool {
+pub fn foreground_fullscreen() -> bool {
     use windows::Win32::Foundation::RECT;
     use windows::Win32::Graphics::Gdi::{GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST};
     use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowRect};
@@ -50,7 +50,7 @@ fn foreground_fullscreen() -> bool {
 }
 
 #[cfg(not(windows))]
-fn foreground_fullscreen() -> bool {
+pub fn foreground_fullscreen() -> bool {
     false
 }
 
