@@ -117,7 +117,7 @@
     {/if}
   {/if}
   {#if !saga}
-    <div class="tfilters" class:car={!grid}>
+    <div class="tfilters" class:car={!grid} style={grid && cur ? `--acc:${app.titleAcc(app.p, app.t).c};--acc-ink:${app.titleAcc(app.p, app.t).dark ? '#3a2f00' : '#fff'}` : ''}>
       <span class="btn sh" data-hact="lt">LT</span>
       {#each TITLE_FILTERS as [f, label]}
         <span class="tflt" class:on={app.titleFilter === f}>{label}{#if f !== 'all' && f !== 'az'}<small>{counts[f]}</small>{/if}</span>

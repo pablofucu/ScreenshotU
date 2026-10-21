@@ -199,7 +199,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .srow{flex:none;display:flex;align-items:center;gap:14px;height:54px;padding:0 22px;border-radius:18px;font-size:19px;font-weight:700;cursor:pointer;color:#4a5260;transition:background .15s,color .15s,transform .15s}
 .srow .sl{flex:1;white-space:nowrap}
 .srow .sv{max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:#5f6776}
-.srow.f{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)),var(--acc));color:var(--acc-ink);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 8px 16px -8px color-mix(in srgb,var(--acc) 70%,black)}
+.srow.f{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 84%,white),var(--acc));color:var(--acc-ink);text-shadow:0 1px 2px rgba(0,0,0,.28);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 8px 16px -8px color-mix(in srgb,var(--acc) 70%,black)}
 .srow.f .sv{color:inherit;opacity:.92}
 .sw{display:flex;gap:6px}
 .sw i{width:18px;height:18px;border-radius:6px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.8),0 0 0 1px rgba(60,70,90,.25)}
@@ -439,7 +439,7 @@ img.tin{animation:thumbIn .35s cubic-bezier(.2,.8,.3,1) both}
   transition:transform .22s cubic-bezier(.34,1.32,.64,1),background .2s,color .2s,box-shadow .2s}
 .dpill i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(180deg,color-mix(in srgb,var(--dc) 25%,white),var(--dc) 72%);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--dc) 70%,black)}
 .dpill i svg{width:58%;height:58%}
-.dpill.f{transform:scale(1.08);background:linear-gradient(180deg,color-mix(in srgb,var(--dc) 35%,white),var(--dc));color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25);
+.dpill.f{transform:scale(1.08);background:linear-gradient(180deg,var(--dc),color-mix(in srgb,var(--dc) 78%,black));color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.45);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--dc) 70%,black),0 0 18px 2px color-mix(in srgb,var(--dc) 45%,transparent),0 10px 18px -10px rgba(40,50,70,.5)}
 .dpill.f i{background:rgba(255,255,255,.28);box-shadow:none}
 
@@ -507,7 +507,7 @@ img.tin{animation:thumbIn .35s cubic-bezier(.2,.8,.3,1) both}
 
 /* ---------- Estadísticas: clasificación, calendario y evolución de un juego ---------- */
 .sttop{position:absolute;left:48px;right:48px;top:84px;display:flex;gap:14px;align-items:center;z-index:4}
-.stabs,.stper,.stview{display:flex;align-items:center;gap:4px;height:46px;padding:0 6px;border-radius:999px;box-sizing:border-box}
+.stabs,.stper,.stview{display:flex;align-items:center;gap:4px;height:46px;padding:0 12px;border-radius:999px;box-sizing:border-box}
 .stview{margin-left:auto;cursor:pointer}
 .stabs .t,.stview .t{height:36px;padding:0 16px;border-radius:999px;display:grid;place-items:center;font-size:16px;font-weight:800;color:#5f6776;white-space:nowrap}
 .stabs .t.on,.stview .t.on{background:var(--acc);color:var(--acc-ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
