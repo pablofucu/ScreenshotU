@@ -77,9 +77,6 @@ fn run(app: &AppHandle, pads: u8) -> Result<Saved, String> {
     let cfg = st.config.lock().unwrap().clone();
     let active = st.active.lock().unwrap().clone();
     let pids = active.as_ref().map(|a| a.pids.lock().unwrap().clone()).unwrap_or_default();
-    // Con el juego a pantalla completa (o sin bordes) no salen avisos de Windows: la ventana del aviso encima del
-    // juego lo saca del modo de pantalla completa y la pantalla parpadea en negro. Bastan el sonido y la vibracion.
-    let toast = !crate::peek::foreground_fullscreen();
 
     let g = platform::grab(&pids, cfg.capture_magpie != "source")?;
     eprintln!("captura {}x{} por {}", g.width, g.height, g.method);
@@ -136,9 +133,7 @@ fn run(app: &AppHandle, pads: u8) -> Result<Saved, String> {
         // Se guarda una copia por si falla y hay que intentarlo en la carpeta de emergencia.
         match capture::save_rgba_png(&path, width, height, rgba.clone()) {
             Ok(()) => {
-                if toast {
-                    let _ = app.notification().builder().title("Visor de capturas").body(format!("Captura guardada: {display}")).show();
-                }
+                let _ = app.notification().builder().title("Visor de capturas").body(format!("Captura guardada: {display}")).show();
                 return Ok(Saved { path: path.to_string_lossy().into_owned(), name: display, platform_id: plat_id, folder });
             }
             Err(e) => why = format!("no se pudo guardar en la biblioteca: {e}"),
@@ -149,13 +144,11 @@ fn run(app: &AppHandle, pads: u8) -> Result<Saved, String> {
     let path = capture::unique_path(&dir, &capture::capture_filename(&wanted, at));
     capture::save_rgba_png(&path, width, height, rgba).map_err(|e| format!("No se pudo guardar ({why}; {e})"))?;
     let shown = path.to_string_lossy().into_owned();
-    if toast {
-        let _ = app
-            .notification()
-            .builder()
-            .title("Visor de capturas")
-            .body(format!("Captura guardada en {} ({why})", dir.display()))
-            .show();
-    }
+    let _ = app
+        .notification()
+        .builder()
+        .title("Visor de capturas")
+        .body(format!("Captura guardada en {} ({why})", dir.display()))
+        .show();
     Ok(Saved { path: shown, name: format!("{display} (en {})", dir.display()), platform_id: platform_id.clone(), folder: wanted })
 }

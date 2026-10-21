@@ -1,7 +1,6 @@
 //! Miniatura de la captura recien hecha, muy pequena, en la esquina superior derecha del monitor del juego (debajo del
 //! indicador REC si esta a la vista). Misma ventana que el indicador: transparente, siempre encima, sin foco, sin clics
 //! y fuera de las capturas (`peek.html`). Se va sola a los `SHOW_MS`.
-//! No se muestra sobre juegos que cubren todo el monitor (pantalla completa o sin bordes): parpadeaban en negro.
 use crate::overlay;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
@@ -26,39 +25,8 @@ fn height_for(width: u32, height: u32) -> f64 {
     (W * height as f64 / width as f64).clamp(40.0, W)
 }
 
-/// La ventana en primer plano cubre su monitor entero (pantalla completa o sin bordes). Poner otra ventana «siempre
-/// encima» sobre ella hace que Windows saque al juego del modo de pantalla completa optimizado y la pantalla parpadea
-/// en negro al aparecer y al desaparecer la miniatura.
-#[cfg(windows)]
-pub fn foreground_fullscreen() -> bool {
-    use windows::Win32::Foundation::RECT;
-    use windows::Win32::Graphics::Gdi::{GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST};
-    use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowRect};
-    unsafe {
-        let fg = GetForegroundWindow();
-        if fg.0.is_null() {
-            return false;
-        }
-        let mut r = RECT::default();
-        let mut mi = MONITORINFO { cbSize: std::mem::size_of::<MONITORINFO>() as u32, ..Default::default() };
-        if GetWindowRect(fg, &mut r).is_err() || !GetMonitorInfoW(MonitorFromWindow(fg, MONITOR_DEFAULTTONEAREST), &mut mi).as_bool() {
-            return false;
-        }
-        let m = mi.rcMonitor;
-        r.left <= m.left && r.top <= m.top && r.right >= m.right && r.bottom >= m.bottom
-    }
-}
-
-#[cfg(not(windows))]
-pub fn foreground_fullscreen() -> bool {
-    false
-}
-
 /// Muestra `jpeg` (miniatura de una captura de `width`x`height`) sobre el monitor del proceso `pid`.
 pub fn show(app: &AppHandle, jpeg: &[u8], width: u32, height: u32, pid: Option<u32>) {
-    if foreground_fullscreen() {
-        return;
-    }
     let url = format!("data:image/jpeg;base64,{}", visor_core::capture::base64(jpeg));
     let h = height_for(width, height);
     let gen = GEN.fetch_add(1, Ordering::SeqCst) + 1;
