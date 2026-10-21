@@ -18,7 +18,19 @@ export const KIND_COLS: Record<ArtKind, number> = { cover: 7, hero: 3, logo: 4 }
 export interface SgdbGame { id: number; name: string; year: number | null; verified: boolean }
 export interface SgdbImage { id: number; url: string; thumb: string; width: number; height: number; mime: string; style: string; author: string }
 interface SgdbEntry { gameId: number | null; gameName: string; autoDone: boolean }
-interface DoneEvent { images: number; missing: string[]; error: string | null }
+interface DoneEvent {
+  /** Títulos revisados y títulos que había que revisar. */
+  done: number; total: number;
+  /** Grafismos bajados. */
+  images: number;
+  /** Juegos que SteamGridDB no encontró. */
+  missing: string[];
+  /** Juegos que fallaron y el primer error, legible. */
+  failed: number; firstError: string | null;
+  /** La tanda se cortó (clave rechazada, red caída…): lo que quedaba sigue pendiente. */
+  error: string | null;
+}
+interface ArtEvent { titleId: string; cover: string | null; hero: string | null; logo: string | null }
 
 /* ---------- acceso al núcleo (o simulado en el navegador) ---------- */
 type Invoke = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
@@ -82,8 +94,10 @@ export const sg = new SgdbState();
 const hasKey = () => !!app.config.sgdbKey?.trim();
 const errText = (e: unknown) => (typeof e === 'string' ? e : e instanceof Error ? e.message : String(e));
 
-/** Un grafismo está guardado en la caché de SteamGridDB (y no en la carpeta del juego). */
-export const isSgdbPath = (p: string | null | undefined) => !!p && (/[\\/]sgdb[\\/]/.test(p) || p.startsWith('data:'));
+/** Un grafismo está guardado en la caché de SteamGridDB (y no en la carpeta del juego): `Grafismos/<título>/cover-<id>.ext`
+ *  en la biblioteca (`sgdb/` en la caché antigua). */
+export const isSgdbPath = (p: string | null | undefined) =>
+  !!p && (/[\\/](?:Grafismos|sgdb)[\\/][^\\/]+[\\/](?:cover|hero|logo)-\d+\.\w+$/i.test(p) || p.startsWith('data:'));
 /** Id de imagen de SteamGridDB de un grafismo en uso (por el nombre `cover-<id>.ext`). */
 export function usedImageId(t: Title | undefined, k: ArtKind): number | null {
   const p = t?.[k];
@@ -98,6 +112,47 @@ let listening = false;
 let autoFailed = false;
 let loudRun = false;
 
+/** Grafismos nuevos que llegan durante la tanda: se juntan y se ponen de una vez en la biblioteca en memoria
+ *  (sin escanear, que con miles de capturas es lento); el escaneo completo llega al terminar. */
+let artQueue = new Map<string, ArtEvent>();
+let artTimer: ReturnType<typeof setTimeout> | undefined;
+function flushArt() {
+  clearTimeout(artTimer);
+  artTimer = undefined;
+  const q = artQueue;
+  artQueue = new Map();
+  if (!q.size) return;
+  app.lib = {
+    ...app.lib,
+    platforms: app.lib.platforms.map((p) => {
+      let touched = false;
+      const titles = p.titles.map((t) => {
+        const a = q.get(t.id);
+        if (!a) return t;
+        // Solo rellenan huecos: lo que ya tenga el título (carpeta del juego incluida) gana.
+        const patch: Partial<Title> = {};
+        for (const k of ART_KINDS) if (!t[k] && a[k]) patch[k] = a[k];
+        if (!Object.keys(patch).length) return t;
+        touched = true;
+        return { ...t, ...patch };
+      });
+      return touched ? { ...p, titles } : p;
+    }),
+  };
+}
+
+/** Resumen de una tanda para el aviso final. */
+function doneMessage(d: DoneEvent): string {
+  const n = d.missing.length;
+  const parts = [d.images ? `${d.images} ${d.images === 1 ? 'grafismo bajado' : 'grafismos bajados'}` : 'ningún grafismo nuevo'];
+  if (n) parts.push(`${n} ${n === 1 ? 'juego' : 'juegos'} sin encontrar${n <= 3 ? ` (${d.missing.join(', ')})` : ''}`);
+  if (d.failed) parts.push(`${d.failed} con error${d.firstError ? ` (${d.firstError})` : ''}`);
+  let msg = `SteamGridDB: ${parts.join(' · ')}`;
+  if (d.error) msg = `${d.error}\n${msg}. Quedan ${Math.max(0, d.total - d.done)} por revisar.`;
+  else if (d.failed) msg += '. Los que fallaron se reintentan la próxima vez.';
+  return msg;
+}
+
 async function listen() {
   if (listening || !IS_TAURI) return;
   listening = true;
@@ -106,19 +161,23 @@ async function listen() {
     sg.status = `${e.payload.done + 1}/${e.payload.total} · ${e.payload.name}`;
     if (loudRun) toast(`SteamGridDB ${sg.status}`, 0);
   });
+  void listen<ArtEvent>('sgdb-art', (e) => {
+    artQueue.set(e.payload.titleId, e.payload);
+    artTimer ??= setTimeout(flushArt, 1500);
+  });
   void listen<DoneEvent>('sgdb-done', (e) => {
     const d = e.payload;
     sg.status = '';
-    if (d.error) {
-      autoFailed = true;
-      toast(d.error, 4200);
-    } else if (d.images) {
-      toast(`SteamGridDB: ${d.images} ${d.images === 1 ? 'grafismo nuevo' : 'grafismos nuevos'}`, 2600);
-    } else if (loudRun) {
-      toast(d.missing.length ? `SteamGridDB no encontró: ${d.missing.slice(0, 3).join(', ')}${d.missing.length > 3 ? '…' : ''}` : 'SteamGridDB: no había nada nuevo', 3200);
-    }
+    flushArt();
+    if (d.error) autoFailed = true;
+    if (d.error || d.failed) toast(doneMessage(d), 8000);
+    else if (d.images) toast(doneMessage(d), 3600);
+    else if (loudRun) toast(d.missing.length ? doneMessage(d) : 'SteamGridDB: no había nada nuevo', 3600);
     loudRun = false;
-    if (d.images) void softRefresh();
+    // Siempre se vuelve a leer la biblioteca al terminar (también tras un error); si hay un panel abierto
+    // espera a que se cierre.
+    markRefresh();
+    void softRefresh();
   });
 }
 
@@ -136,7 +195,7 @@ export async function sgdbAuto(force = false) {
     loudRun = force;
     const n = await call<number>('sgdb_auto', { titles, force });
     if (n) sg.status = `0/${n}`;
-    else { loudRun = false; if (force) toast('Todos los juegos tienen ya sus grafismos'); }
+    else { loudRun = false; if (force) toast('No queda nada por buscar: lo que SteamGridDB no tiene se puede elegir a mano en cada juego', 4200); }
     if (n && force) toast(`Buscando grafismos de ${n} ${n === 1 ? 'juego' : 'juegos'} en SteamGridDB…`, 0);
   } catch (e) {
     loudRun = false;

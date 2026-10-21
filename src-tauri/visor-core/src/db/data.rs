@@ -414,9 +414,12 @@ pub fn sagas_replace(c: &Connection, list: &[Saga]) -> Result<()> {
 /* ------------------------------------------------------------------ */
 
 pub fn sgdb_load(c: &Connection) -> Result<SgdbStore> {
-    let mut st = c.prepare("SELECT title_id, game_id, game_name, auto_done FROM sgdb")?;
+    let mut st = c.prepare("SELECT title_id, game_id, game_name, auto_done, tried FROM sgdb")?;
     let rows = st.query_map([], |r| {
-        Ok((r.get::<_, String>(0)?, SgdbEntry { game_id: r.get::<_, Option<i64>>(1)?.map(|x| x as u64), game_name: r.get(2)?, auto_done: r.get::<_, i64>(3)? != 0 }))
+        Ok((
+            r.get::<_, String>(0)?,
+            SgdbEntry { game_id: r.get::<_, Option<i64>>(1)?.map(|x| x as u64), game_name: r.get(2)?, auto_done: r.get::<_, i64>(3)? != 0, tried: r.get(4)? },
+        ))
     })?;
     let mut out = SgdbStore::new();
     for r in rows {
@@ -428,9 +431,9 @@ pub fn sgdb_load(c: &Connection) -> Result<SgdbStore> {
 
 pub fn sgdb_put(c: &Connection, title_id: &str, e: &SgdbEntry) -> Result<()> {
     c.execute(
-        "INSERT INTO sgdb(title_id, game_id, game_name, auto_done) VALUES (?1, ?2, ?3, ?4)
-         ON CONFLICT(title_id) DO UPDATE SET game_id = excluded.game_id, game_name = excluded.game_name, auto_done = excluded.auto_done",
-        params![title_id, e.game_id.map(|x| x as i64), e.game_name, e.auto_done as i64],
+        "INSERT INTO sgdb(title_id, game_id, game_name, auto_done, tried) VALUES (?1, ?2, ?3, ?4, ?5)
+         ON CONFLICT(title_id) DO UPDATE SET game_id = excluded.game_id, game_name = excluded.game_name, auto_done = excluded.auto_done, tried = excluded.tried",
+        params![title_id, e.game_id.map(|x| x as i64), e.game_name, e.auto_done as i64, e.tried],
     )?;
     Ok(())
 }

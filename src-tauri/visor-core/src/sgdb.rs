@@ -17,6 +17,26 @@ pub struct SgdbEntry {
     pub game_name: String,
     /// La descarga automatica ya paso por aqui: no se repite en cada arranque.
     pub auto_done: bool,
+    /// Tipos de grafismo (`cover,hero,logo`) que SteamGridDB no tiene para este titulo: la busqueda
+    /// automatica ya los intento y no los vuelve a contar como pendientes (el selector manual sigue abierto).
+    pub tried: String,
+}
+
+impl SgdbEntry {
+    /// SteamGridDB ya dijo que no tiene este tipo de grafismo.
+    pub fn has_tried(&self, k: ArtKind) -> bool {
+        self.tried.split(',').any(|t| t == kind_name(k))
+    }
+
+    /// Anota un tipo sin resultado (sin repetirlo).
+    pub fn add_tried(&mut self, k: ArtKind) {
+        if !self.has_tried(k) {
+            if !self.tried.is_empty() {
+                self.tried.push(',');
+            }
+            self.tried.push_str(kind_name(k));
+        }
+    }
 }
 
 /// Id de titulo -> entrada (tabla `sgdb` de la base; antes `sgdb.json`).
@@ -165,6 +185,17 @@ mod tests {
     }
 
     #[test]
+    fn tried_kinds_are_remembered_once() {
+        let mut e = SgdbEntry::default();
+        assert!(!e.has_tried(ArtKind::Logo));
+        e.add_tried(ArtKind::Logo);
+        e.add_tried(ArtKind::Logo);
+        e.add_tried(ArtKind::Cover);
+        assert_eq!(e.tried, "logo,cover");
+        assert!(e.has_tried(ArtKind::Cover) && e.has_tried(ArtKind::Logo) && !e.has_tried(ArtKind::Hero));
+    }
+
+    #[test]
     fn helpers() {
         assert_eq!(url_segment("Hades II: ¡ya!"), "Hades%20II%3A%20%C2%A1ya%21");
         assert_eq!(search_term("DOOM™ Eternal [v1.2] (GOG)"), "DOOM Eternal");
@@ -175,14 +206,14 @@ mod tests {
         assert_eq!(parse_kind("hero"), Some(ArtKind::Hero));
         let db = crate::db::Db::open_memory().unwrap();
         let mut s = SgdbStore::new();
-        s.insert("pc/x".into(), SgdbEntry { game_id: Some(5), game_name: "X".into(), auto_done: true });
-        s.insert("pc/y".into(), SgdbEntry { game_id: None, game_name: String::new(), auto_done: false });
+        s.insert("pc/x".into(), SgdbEntry { game_id: Some(5), game_name: "X".into(), auto_done: true, tried: "logo".into() });
+        s.insert("pc/y".into(), SgdbEntry { game_id: None, game_name: String::new(), auto_done: false, tried: String::new() });
         for (k, e) in &s {
             db.with(|c| crate::db::data::sgdb_put(c, k, e)).unwrap();
         }
         assert_eq!(db.with(crate::db::data::sgdb_load).unwrap(), s);
         // Actualizar una entrada la reemplaza.
-        let e = SgdbEntry { game_id: Some(9), game_name: "Y".into(), auto_done: true };
+        let e = SgdbEntry { game_id: Some(9), game_name: "Y".into(), auto_done: true, tried: "cover,hero".into() };
         db.with(|c| crate::db::data::sgdb_put(c, "pc/y", &e)).unwrap();
         assert_eq!(db.with(crate::db::data::sgdb_load).unwrap()["pc/y"], e);
     }

@@ -181,6 +181,10 @@ pub const MIGRATIONS: &[&str] = &[
     crate::catalog::SCHEMA,
     // 5: rutas de partidas guardadas (manuales y detectadas desactivadas).
     crate::saves::SCHEMA,
+    // 6: tipos de grafismo que SteamGridDB ya no tiene para un titulo (no se vuelven a contar como pendientes).
+    r#"
+    ALTER TABLE sgdb ADD COLUMN tried TEXT NOT NULL DEFAULT '';
+    "#,
 ];
 
 /// Version del esquema que entiende esta compilacion.
