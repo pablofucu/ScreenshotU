@@ -54,7 +54,8 @@ impl Provider for Real {
         let palettes = PaletteCache::load(&self.cache_dir.join("palettes.json"));
         let sgdb_dir = self.paths.art.clone();
         let found = games::all_games(&manual);
-        let opts = ScanOpts { hidden: &hidden, show_hidden: false, prefs: Some(&prefs), palettes: Some(&palettes), sgdb_dir: Some(&sgdb_dir) };
+        let cache = root.map(|r| log("catalogo", self.db.with(|c| visor_core::catalog::load_cache(c, r))));
+        let opts = ScanOpts { hidden: &hidden, show_hidden: false, prefs: Some(&prefs), palettes: Some(&palettes), sgdb_dir: Some(&sgdb_dir), shot_cache: cache.as_ref() };
         let mut library = scan::scan_library_ex(root, &cfg.platforms, &found, &stats, &opts);
         library.hidden.clear();
         let shots: usize = library.platforms.iter().flat_map(|p| &p.titles).map(|t| t.shots.len()).sum();

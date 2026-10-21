@@ -6,7 +6,7 @@ use crate::palette::{AccentInfo, PaletteCache};
 use crate::userdata::{title_id, HiddenEntry, TitlePrefs};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
@@ -162,9 +162,39 @@ pub struct Library {
     pub hidden: Vec<HiddenEntry>,
 }
 
+/// Dimensiones ya conocidas de capturas (las del catalogo `shots`), por ruta absoluta, con el tamano y la fecha
+/// de modificacion con que se leyeron: si el archivo no cambio, el escaneo no vuelve a abrirlo para leer su
+/// cabecera (en un disco mecanico abrir miles de imagenes en cada escaneo tarda minutos).
+#[derive(Default)]
+pub struct ShotCache {
+    map: HashMap<String, (u64, i64, u32, u32)>,
+}
+
+impl ShotCache {
+    pub fn insert(&mut self, path: String, size: u64, mtime: i64, width: u32, height: u32) {
+        self.map.insert(path, (size, mtime, width, height));
+    }
+
+    pub fn len(&self) -> usize {
+        self.map.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.map.is_empty()
+    }
+
+    /// Dimensiones conocidas de `path` si siguen valiendo (mismo tamano y fecha; 0x0 = no se pudo leer, se reintenta).
+    fn dims(&self, path: &str, size: u64, mtime: i64) -> Option<(u32, u32)> {
+        let &(s, m, w, h) = self.map.get(path)?;
+        (s == size && m == mtime && w > 0 && h > 0).then_some((w, h))
+    }
+}
+
 /// Opciones del escaneo ligadas a los datos del usuario.
 #[derive(Default)]
 pub struct ScanOpts<'a> {
+    /// Dimensiones ya conocidas (catalogo): solo se leen las cabeceras de las imagenes nuevas o modificadas.
+    pub shot_cache: Option<&'a ShotCache>,
     pub hidden: &'a [HiddenEntry],
     /// Mantener los ocultos en las listas (marcados `hidden`).
     pub show_hidden: bool,
@@ -202,7 +232,7 @@ fn find_dir_ci(root: &Path, folder: &str) -> Option<PathBuf> {
     })
 }
 
-fn scan_title(dir: &Path) -> Option<Title> {
+fn scan_title(dir: &Path, cache: Option<&ShotCache>) -> Option<Title> {
     let name = dir.file_name()?.to_string_lossy().into_owned();
     let mut shots = Vec::new();
     for entry in WalkDir::new(dir).follow_links(false).into_iter().flatten() {
@@ -216,10 +246,11 @@ fn scan_title(dir: &Path) -> Option<Title> {
         let mtime = mtime_ms(&md);
         let fname = entry.file_name().to_string_lossy();
         let date = parse_date_from_filename(&fname).unwrap_or(mtime);
-        let (width, height) = imagesize::size(entry.path())
-            .map(|s| (s.width as u32, s.height as u32))
-            .unwrap_or((0, 0));
-        shots.push(Shot { path: entry.path().to_string_lossy().into_owned(), mtime, date, width, height, size: md.len() });
+        let path = entry.path().to_string_lossy().into_owned();
+        let (width, height) = cache.and_then(|c| c.dims(&path, md.len(), mtime)).unwrap_or_else(|| {
+            imagesize::size(entry.path()).map(|s| (s.width as u32, s.height as u32)).unwrap_or((0, 0))
+        });
+        shots.push(Shot { path, mtime, date, width, height, size: md.len() });
     }
     if shots.is_empty() {
         return None;
@@ -279,9 +310,12 @@ pub fn scan_library_ex(root: Option<&Path>, platforms: &[PlatformCfg], games: &[
                 .as_ref()
                 .map(|pdir| {
                     let dirs: Vec<PathBuf> = fs::read_dir(pdir)
-                        .map(|rd| rd.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect())
+                        .map(|rd| {
+                            // `file_type` sale del listado (sin consulta por carpeta); solo los enlaces se resuelven.
+                            rd.flatten().filter(|e| e.file_type().map(|t| t.is_dir() || (t.is_symlink() && e.path().is_dir())).unwrap_or(false)).map(|e| e.path()).collect()
+                        })
                         .unwrap_or_default();
-                    dirs.par_iter().filter_map(|d| scan_title(d)).collect()
+                    dirs.par_iter().filter_map(|d| scan_title(d, opts.shot_cache)).collect()
                 })
                 .unwrap_or_default();
             // Directorio de plataforma donde viviran las carpetas nuevas (aunque no exista todavia).
@@ -458,6 +492,28 @@ mod tests {
         let z = &sw.titles[0].shots[0];
         assert_eq!(z.date, z.mtime, "sin fecha en el nombre se usa la de modificacion");
         assert!(sw.titles[0].cover.is_none());
+    }
+
+    #[test]
+    fn shot_cache_replaces_header_reads_only_while_the_file_is_unchanged() {
+        let d = tempfile::tempdir().unwrap();
+        let r = d.path();
+        png(&r.join("PC/Hades II/a.png"), 40, 20);
+        let plats = default_platforms();
+        let lib = scan_library(Some(r), &plats, &[], &Stats::new());
+        let s = lib.platforms[0].titles[0].shots[0].clone();
+        assert_eq!((s.width, s.height), (40, 20));
+        let dims_with = |size: u64, mtime: i64, w: u32, h: u32| {
+            let mut cache = ShotCache::default();
+            cache.insert(s.path.clone(), size, mtime, w, h);
+            let lib = scan_library_ex(Some(r), &plats, &[], &Stats::new(), &ScanOpts { shot_cache: Some(&cache), ..Default::default() });
+            let t = &lib.platforms[0].titles[0].shots[0];
+            (t.width, t.height)
+        };
+        assert_eq!(dims_with(s.size, s.mtime, 7, 9), (7, 9), "mismo tamano y fecha: se usan las dimensiones guardadas");
+        assert_eq!(dims_with(s.size + 1, s.mtime, 7, 9), (40, 20), "cambio de tamano: se lee de nuevo");
+        assert_eq!(dims_with(s.size, s.mtime + 1, 7, 9), (40, 20), "cambio de fecha: se lee de nuevo");
+        assert_eq!(dims_with(s.size, s.mtime, 0, 0), (40, 20), "una lectura fallida (0x0) se reintenta");
     }
 
     #[test]

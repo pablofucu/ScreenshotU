@@ -2,9 +2,11 @@ use anyhow::{Context, Result};
 use image::codecs::jpeg::JpegEncoder;
 use image::imageops::FilterType;
 use rayon::{ThreadPool, ThreadPoolBuilder};
+use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, OnceLock};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::UNIX_EPOCH;
 
 pub const THUMB_WIDTH: u32 = 480;
@@ -56,6 +58,26 @@ pub fn pool() -> &'static ThreadPool {
     })
 }
 
+/// Pool aparte (pequeno) para el precalentado: asi las miniaturas que la pantalla pide ahora (`pool`) no esperan
+/// detras de cientos de portadas encoladas, y el disco no se llena de lecturas en segundo plano.
+fn bg_pool() -> &'static ThreadPool {
+    static POOL: OnceLock<ThreadPool> = OnceLock::new();
+    POOL.get_or_init(|| {
+        let n = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
+        ThreadPoolBuilder::new()
+            .num_threads((n / 4).clamp(1, 3))
+            .thread_name(|i| format!("thumbs-bg-{i}"))
+            .build()
+            .expect("pool de precalentado")
+    })
+}
+
+/// Rutas ya encoladas en el precalentado: no se vuelven a encolar hasta que terminen.
+fn queued() -> &'static Mutex<HashSet<String>> {
+    static Q: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
+    Q.get_or_init(Default::default)
+}
+
 /// Genera (si hace falta) la miniatura JPEG de 480 px de ancho y devuelve su ruta.
 /// Solo lee `src`; escribe unicamente dentro de `cache_dir`.
 pub fn ensure_thumb(cache_dir: &Path, src: &Path) -> Result<PathBuf> {
@@ -73,7 +95,9 @@ pub fn ensure_thumb(cache_dir: &Path, src: &Path) -> Result<PathBuf> {
         img
     };
     let rgb = img.to_rgb8();
-    let tmp = out.with_extension(format!("tmp{}", std::process::id()));
+    // Temporal propio de cada llamada: el precalentado y la pantalla pueden generar la misma miniatura a la vez.
+    static SEQ: AtomicU64 = AtomicU64::new(0);
+    let tmp = out.with_extension(format!("tmp{}-{}", std::process::id(), SEQ.fetch_add(1, Ordering::Relaxed)));
     {
         let f = fs::File::create(&tmp)?;
         let mut enc = JpegEncoder::new_with_quality(std::io::BufWriter::new(f), JPEG_QUALITY);
@@ -89,7 +113,8 @@ pub fn ensure_thumb_pooled(cache_dir: &Path, src: &Path) -> Result<PathBuf> {
 }
 
 /// Lanza en segundo plano la generacion de varias miniaturas; `on_ready(origen, miniatura)`
-/// se llama desde un hilo del pool por cada una terminada.
+/// se llama desde un hilo del pool por cada una terminada. Va por un pool aparte y pequeno, y una ruta que
+/// ya esta encolada no se encola otra vez (la interfaz repite el mismo lote tras cada reescaneo).
 pub fn prefetch<F>(cache_dir: PathBuf, paths: Vec<String>, on_ready: F)
 where
     F: Fn(&str, &Path) + Send + Sync + 'static,
@@ -97,9 +122,14 @@ where
     let on_ready = Arc::new(on_ready);
     let cache_dir = Arc::new(cache_dir);
     for p in paths {
+        if !queued().lock().unwrap().insert(p.clone()) {
+            continue;
+        }
         let (cb, cd) = (on_ready.clone(), cache_dir.clone());
-        pool().spawn(move || {
-            if let Ok(t) = ensure_thumb(&cd, Path::new(&p)) {
+        bg_pool().spawn(move || {
+            let r = ensure_thumb(&cd, Path::new(&p));
+            queued().lock().unwrap().remove(&p);
+            if let Ok(t) = r {
                 cb(&p, &t);
             }
         });

@@ -49,8 +49,9 @@ pub fn find_art(dir: &Path) -> Art {
     let mut best: [Option<((usize, usize), String)>; 3] = [None, None, None];
     let Ok(rd) = fs::read_dir(dir) else { return Art::default() };
     for e in rd.flatten() {
+        // `file_type` sale del propio listado (sin tocar el disco); `Path::is_file` hacia una consulta por archivo.
         let p = e.path();
-        if !p.is_file() {
+        if !e.file_type().map(|t| t.is_file() || (t.is_symlink() && p.is_file())).unwrap_or(false) {
             continue;
         }
         for (i, k) in [ArtKind::Cover, ArtKind::Hero, ArtKind::Logo].into_iter().enumerate() {

@@ -2,16 +2,17 @@
 //! (ver [`crate::relpath`]), su titulo, tamano, fechas, dimensiones y su huella SHA-256.
 //!
 //! Es la base para sincronizar con la nube: la huella identifica el contenido aunque el archivo se
-//! mueva o se renombre, y permite saber que hay que subir sin releer todo. El catalogo se rehace
-//! con cada escaneo ([`sync`]) y la huella se calcula despues, en segundo plano ([`hash_pending`]):
-//! solo la de los archivos nuevos o modificados (cambia el tamano o la fecha de modificacion).
+//! mueva o se renombre, y permite saber que hay que subir sin releer todo. El catalogo se pone al dia
+//! con cada escaneo ([`sync`], solo las filas que cambian) y sirve de cache de dimensiones para el siguiente ([`load_cache`]);
+//! la huella se calcula despues, en segundo plano ([`hash_pending`]): solo la de los archivos nuevos o modificados (cambia el tamano o la fecha de modificacion).
 //! Los archivos del usuario solo se leen.
 use crate::db::Db;
 use crate::relpath;
-use crate::scan::{mtime_ms, Library};
+use crate::scan::{mtime_ms, Library, ShotCache};
 use anyhow::Result;
 use rusqlite::{params, Connection};
 use sha2::{Digest, Sha256};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
@@ -43,12 +44,38 @@ pub struct SyncReport {
     pub removed: usize,
 }
 
+/// Dimensiones ya conocidas del catalogo (ruta absoluta bajo `root`), para que el escaneo no abra de nuevo
+/// las imagenes que no cambiaron (ver [`crate::scan::ShotCache`]). Solo lee la base.
+pub fn load_cache(c: &Connection, root: &Path) -> Result<ShotCache> {
+    let mut st = c.prepare("SELECT path, size, mtime_ms, width, height FROM shots")?;
+    let mut cache = ShotCache::default();
+    let mut rows = st.query([])?;
+    while let Some(r) = rows.next()? {
+        let rel: String = r.get(0)?;
+        cache.insert(relpath::to_abs(root, &rel), r.get::<_, i64>(1)? as u64, r.get(2)?, r.get(3)?, r.get(4)?);
+    }
+    Ok(cache)
+}
+
+/// Fila del catalogo sin la huella: lo que un escaneo puede cambiar.
+type Row = (String, i64, i64, i64, u32, u32);
+
 /// Pone el catalogo al dia con un escaneo **completo** de `root` (con los titulos ocultos incluidos):
 /// anade y actualiza las capturas vistas y quita las que ya no estan. La huella se conserva si el
 /// archivo no cambio de tamano ni de fecha. Si la raiz no existe (disco desconectado) no se toca nada.
+/// Solo se escriben las filas nuevas o distintas (con la biblioteca sin cambios no se escribe nada: antes
+/// se reescribian las miles de filas en cada escaneo); `seen_ms` queda como la ultima vez que cambio la fila.
 pub fn sync(c: &Connection, root: &Path, lib: &Library, now_ms: i64) -> Result<SyncReport> {
     if !root.is_dir() {
         return Ok(SyncReport::default());
+    }
+    let mut old: HashMap<String, Row> = HashMap::new();
+    {
+        let mut st = c.prepare("SELECT path, title_id, size, mtime_ms, date_ms, width, height FROM shots")?;
+        let mut rows = st.query([])?;
+        while let Some(r) = rows.next()? {
+            old.insert(r.get(0)?, (r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?, r.get(6)?));
+        }
     }
     let tx = c.unchecked_transaction()?;
     let mut total = 0;
@@ -64,12 +91,23 @@ pub fn sync(c: &Connection, root: &Path, lib: &Library, now_ms: i64) -> Result<S
         for t in lib.platforms.iter().flat_map(|p| &p.titles) {
             for s in &t.shots {
                 let Some(rel) = relpath::to_rel(root, &s.path) else { continue };
-                up.execute(params![rel, t.id, s.size as i64, s.mtime, s.date, s.width, s.height, now_ms])?;
                 total += 1;
+                let row: Row = (t.id.clone(), s.size as i64, s.mtime, s.date, s.width, s.height);
+                if old.remove(&rel).as_ref() == Some(&row) {
+                    continue; // sin cambios
+                }
+                up.execute(params![rel, row.0, row.1, row.2, row.3, row.4, row.5, now_ms])?;
             }
         }
     }
-    let removed = tx.execute("DELETE FROM shots WHERE seen_ms <> ?1", [now_ms])?;
+    // Lo que queda en `old` ya no esta en la biblioteca.
+    let removed = old.len();
+    if removed > 0 {
+        let mut del = tx.prepare("DELETE FROM shots WHERE path = ?1")?;
+        for rel in old.keys() {
+            del.execute([rel])?;
+        }
+    }
     tx.commit()?;
     Ok(SyncReport { total, removed })
 }
@@ -220,6 +258,38 @@ mod tests {
         assert_eq!(db.with(|c| hash_of(c, "Switch/Kirby/1.png")).unwrap(), Some(h1));
         assert_eq!(db.with(rows).iter().find(|x| x.0 == "Switch/Kirby/1.png").unwrap().1, "switch/kirby");
         assert_eq!(db.with(counts).unwrap(), (2, 1), "la modificada espera nueva huella");
+    }
+
+    #[test]
+    fn sync_writes_only_what_changed_and_feeds_the_scan_cache() {
+        let d = tempfile::tempdir().unwrap();
+        let r = d.path();
+        png(&r.join("PC/X/1.png"), 8);
+        png(&r.join("PC/X/2.png"), 9);
+        png(&r.join("PC/Y/3.png"), 10);
+        let db = Db::open_memory().unwrap();
+        db.with(|c| sync(c, r, &scan(r), 1)).unwrap();
+        let seen = |c: &Connection, p: &str| c.query_row("SELECT seen_ms FROM shots WHERE path = ?1", [p], |x| x.get::<_, i64>(0)).unwrap();
+        // Sin cambios: no se reescribe ninguna fila.
+        let rep = db.with(|c| sync(c, r, &scan(r), 2)).unwrap();
+        assert_eq!(rep, SyncReport { total: 3, removed: 0 });
+        assert_eq!(db.with(|c| seen(c, "PC/X/1.png")), 1);
+        // Un archivo cambiado, uno nuevo y uno borrado: solo esas filas se tocan.
+        png(&r.join("PC/X/2.png"), 20);
+        png(&r.join("PC/Y/4.png"), 11);
+        fs::remove_file(r.join("PC/Y/3.png")).unwrap();
+        let rep = db.with(|c| sync(c, r, &scan(r), 3)).unwrap();
+        assert_eq!(rep, SyncReport { total: 3, removed: 1 });
+        assert_eq!(db.with(|c| seen(c, "PC/X/1.png")), 1, "la que no cambio sigue como estaba");
+        assert_eq!(db.with(|c| seen(c, "PC/X/2.png")), 3);
+        assert_eq!(db.with(|c| seen(c, "PC/Y/4.png")), 3);
+        assert_eq!(db.with(counts).unwrap().0, 3);
+        // El catalogo vale de cache de dimensiones para el siguiente escaneo.
+        let cache = db.with(|c| load_cache(c, r)).unwrap();
+        assert_eq!(cache.len(), 3);
+        let lib = scan_library_ex(Some(r), &default_platforms(), &[], &Stats::new(), &ScanOpts { shot_cache: Some(&cache), ..Default::default() });
+        let x = lib.platforms[0].titles.iter().find(|t| t.name == "X").unwrap();
+        assert!(x.shots.iter().any(|s| (s.width, s.height) == (20, 4)) && x.shots.iter().any(|s| (s.width, s.height) == (8, 4)));
     }
 
     #[test]

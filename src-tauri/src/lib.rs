@@ -156,6 +156,11 @@ pub(crate) fn scan_full(state: &AppState) -> (Library, Vec<games::Game>, Config)
     let prefs = state.prefs.lock().unwrap().clone();
     let sgdb_dir = state.sgdb_dir();
     let found = games::all_games(&manual);
+    let root = cfg.root.as_deref().map(Path::new);
+    let t0 = std::time::Instant::now();
+    // El catalogo hace de cache: solo se abren las imagenes nuevas o modificadas para leer sus dimensiones.
+    let cache = root.map(|r| state::log_db("catalogo", state.db.with(|c| catalog::load_cache(c, r))));
+    let t1 = t0.elapsed();
     let opts = ScanOpts {
         hidden: &hidden,
         // Se escanea todo (tambien lo oculto) para que el catalogo este completo; se filtra despues.
@@ -163,14 +168,16 @@ pub(crate) fn scan_full(state: &AppState) -> (Library, Vec<games::Game>, Config)
         prefs: Some(&prefs),
         palettes: Some(&state.palettes),
         sgdb_dir: Some(&sgdb_dir),
+        shot_cache: cache.as_ref(),
     };
-    let root = cfg.root.as_deref().map(Path::new);
     let lib = scan::scan_library_ex(root, &cfg.platforms, &found, &stats, &opts);
+    let t2 = t0.elapsed();
     state.palettes.save(&state.palettes_file());
     if let Some(r) = root {
         let now = chrono::Local::now().timestamp_millis();
         state::log_db_err("catalogo", state.db.with(|c| catalog::sync(c, r, &lib, now)).map(|_| ()));
     }
+    eprintln!("escaneo: cache {t1:?} · disco {:?} · catalogo {:?}", t2 - t1, t0.elapsed() - t2);
     (lib, found, cfg)
 }
 
