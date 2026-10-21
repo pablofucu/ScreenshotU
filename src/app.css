@@ -215,7 +215,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 /* ---------- Lanzador: ajustes con desplazamiento, menu de acciones, formulario ---------- */
 .setpanel .face{position:relative;padding-bottom:18px}
 .slist{position:relative;overflow:hidden;flex:none}
-.strack{padding:4px 2px;transition:transform .22s cubic-bezier(.25,1,.4,1)}
+.strack{padding:4px 10px 4px 6px;transition:transform .22s cubic-bezier(.25,1,.4,1)}
 .strack .srow{height:48px;margin-bottom:4px;font-size:18px}
 .sscroll{position:absolute;right:12px;top:70px;bottom:20px;width:5px;border-radius:3px;background:rgba(160,168,182,.3)}
 .sscroll i{position:absolute;left:0;right:0;border-radius:3px;background:var(--acc)}

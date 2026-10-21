@@ -883,17 +883,17 @@ export type SettingId =
   | ReadingId | RemoteId;
 /** Secciones de Ajustes (LB/RB las recorren). `color` es el índice del arcoíris. */
 export const SETTING_SECTIONS: Array<{ name: string; icon: string; color: number; rows: SettingId[] }> = [
-  { name: 'Biblioteca', icon: 'folder', color: 4, rows: ['root', 'rescan', 'addgame', 'hidden', 'showhidden'] },
-  { name: 'Apariencia', icon: 'palette', color: 6, rows: ['accent', 'view', 'shotsview'] },
+  { name: 'Biblioteca', icon: 'folder', color: 0, rows: ['root', 'rescan', 'addgame', 'hidden', 'showhidden'] },
+  { name: 'Apariencia', icon: 'palette', color: 1, rows: ['accent', 'view', 'shotsview'] },
   { name: 'SteamGridDB', icon: 'image', color: 2, rows: ['sgdbkey', 'sgdbauto', 'sgdbnow', 'sgdbgame'] },
-  { name: 'Capturas propias', icon: 'camera', color: 1, rows: ['combo', 'mouse', 'hotkey', 'capsound', 'cappeek', 'caprumble'] },
+  { name: 'Capturas propias', icon: 'camera', color: 3, rows: ['combo', 'mouse', 'hotkey', 'capsound', 'cappeek', 'caprumble'] },
   { name: 'Audio', icon: 'speaker', color: 4, rows: ['audioout', 'audiocombo', 'audiohotkey'] },
-  { name: 'Lectura', icon: 'jvn', color: 0, rows: READING_ROWS },
-  { name: 'Magpie', icon: 'image', color: 3, rows: ['magpieexe', 'magpie'] },
-  { name: 'Copias', icon: 'import', color: 2, rows: ['backup', 'backupmedia', 'restore', 'autobackup'] },
+  { name: 'Lectura', icon: 'jvn', color: 5, rows: READING_ROWS },
+  { name: 'Magpie', icon: 'image', color: 6, rows: ['magpieexe', 'magpie'] },
+  { name: 'Copias', icon: 'import', color: 0, rows: ['backup', 'backupmedia', 'restore', 'autobackup'] },
   { name: 'Partidas', icon: 'pad', color: 1, rows: ['savesauto', 'savesdir', 'ludusavi'] },
   // Móvil: fuera de la 1.0 (código en remote.svelte.ts; ver REMOTE_AVAILABLE en src-tauri/src/remote.rs).
-  { name: 'Sistema', icon: 'gear', color: 5, rows: ['sound', 'fullscreen', 'monitor', 'oncursor', 'update', 'quit'] },
+  { name: 'Sistema', icon: 'gear', color: 2, rows: ['sound', 'fullscreen', 'monitor', 'oncursor', 'update', 'quit'] },
 ];
 const secRows = () => SETTING_SECTIONS[app.setSec]?.rows ?? [];
 

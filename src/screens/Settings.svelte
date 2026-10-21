@@ -99,7 +99,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closeSettings(); }}>
-  <div class="glass setpanel secpanel" style="--acc:{app.chrome.c}">
+  <div class="glass setpanel secpanel" style="--acc:{RAINBOW[SETTING_SECTIONS[app.setSec].color].c};--acc-ink:{RAINBOW[SETTING_SECTIONS[app.setSec].color].dark ? '#3a2f00' : '#fff'}">
     <div class="face">
       <div class="scats">
         <h2>Ajustes</h2>

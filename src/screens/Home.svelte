@@ -8,13 +8,13 @@
   import ReadRings from '../components/ReadRings.svelte';
 
   const DOCK = [
-    { n: 'Buscar', ic: ICON.search, c: 1 },
-    { n: 'Favoritas', ic: ICON.star, c: 2 },
-    { n: 'Sagas', ic: ICON.saga, c: 3 },
-    { n: 'Estadísticas', ic: ICON.chart, c: 4 },
-    { n: 'Añadir juego', ic: ICON.plus, c: 5 },
-    { n: 'Ajustes', ic: ICON.gear, c: 6 },
-    { n: 'Salir', ic: ICON.power, c: 0 },
+    { n: 'Buscar', ic: ICON.search, c: 0 },
+    { n: 'Favoritas', ic: ICON.star, c: 1 },
+    { n: 'Sagas', ic: ICON.saga, c: 2 },
+    { n: 'Estadísticas', ic: ICON.chart, c: 3 },
+    { n: 'Añadir juego', ic: ICON.plus, c: 4 },
+    { n: 'Ajustes', ic: ICON.gear, c: 5 },
+    { n: 'Salir', ic: ICON.power, c: 6 },
   ];
 
   const plats = $derived(app.lib.platforms);
@@ -107,14 +107,14 @@
     {#if app.readCard}
       <div class="hsect" style="left:{rx}px">Lectura de hoy</div>
       <div class="glass rcard rread fx" class:f={app.focus === 'read'} data-k="read" data-act="read" style="left:{rx}px;width:{RW}px;--acc:#00A0D8"><div class="face"><ReadRings /></div></div>
-      <div class="rmeta" style="left:{rx + 4}px;width:{RW - 4}px">Meta diaria<span> · {metaGoal(app.config.goalVn)} novelas · {metaGoal(app.config.goalJvn)} japonés</span></div>
+      <div class="rmeta" style="left:{rx + 4}px;width:{RW - 4}px">Meta diaria<span>&nbsp;· {metaGoal(app.config.goalVn)} novelas · {metaGoal(app.config.goalJvn)} japonés</span></div>
     {/if}
   {:else if totalTitles > 0}
     <div class="hsect" style="left:96px">Seguir jugando</div>
     {#if app.readCard}
       <div class="hsect" style="left:{1280 - 96 - RW}px">Lectura de hoy</div>
       <div class="glass rcard rread fx" class:f={app.focus === 'read'} data-k="read" data-act="read" style="left:{1280 - 96 - RW}px;width:{RW}px;--acc:#00A0D8"><div class="face"><ReadRings /></div></div>
-      <div class="rmeta" style="left:{1280 - 96 - RW + 4}px;width:{RW - 4}px">Meta diaria<span> · {metaGoal(app.config.goalVn)} novelas · {metaGoal(app.config.goalJvn)} japonés</span></div>
+      <div class="rmeta" style="left:{1280 - 96 - RW + 4}px;width:{RW - 4}px">Meta diaria<span>&nbsp;· {metaGoal(app.config.goalVn)} novelas · {metaGoal(app.config.goalJvn)} japonés</span></div>
     {/if}
     <div class="rnone" style={app.readCard ? `max-width:${1280 - 96 - RW - 96 - 34}px;white-space:normal` : ''}>Aquí aparecerán los juegos a los que juegues desde el visor y los que tengan capturas nuevas.</div>
   {/if}
