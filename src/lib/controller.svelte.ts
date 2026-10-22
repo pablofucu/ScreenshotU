@@ -2,7 +2,7 @@ import { tick } from 'svelte';
 import { app, SORT_LABEL, SORT_ORDER, STATUS_LABEL, STATUS_ORDER, TITLE_FILTERS, type MenuItem, type SortMode, type View } from './store.svelte';
 import { backend, initBackend } from './backend';
 import { blip } from './sound';
-import type { BackendEvent, Config, GameStatus, MagpieMode, Shot, Title } from './types';
+import type { BackendEvent, Config, GameStatus, Library, MagpieMode, Shot, Title } from './types';
 import { fmtDur } from './format';
 import { oskCmd, oskKeydown } from './osk.svelte';
 import {
@@ -1238,8 +1238,20 @@ export async function boot() {
     for (const f of await backend.getFavorites()) app.favs.add(f);
   } catch { /* sin favoritas */ }
   try { app.fullscreen = await backend.isFullscreen(); } catch { /* */ }
-  await rescan();
-  app.ready = true;
+  // Con la biblioteca del último escaneo se pinta ya, y el escaneo real (lento en disco duro) va detrás sin bloquear.
+  let cached: Library | null = null;
+  try { cached = (await backend.cachedScan?.()) ?? null; } catch (e) { console.error(e); }
+  if (cached) {
+    try { app.sagas = await backend.getSagas(); } catch (e) { console.error(e); }
+    app.lib = withSagas(cached, app.sagas);
+    app.view = 'home';
+    setFocus(defaultKey('home'));
+    app.ready = true;
+    void softRefresh();
+  } else {
+    await rescan();
+    app.ready = true;
+  }
   void libraryGate();
   void announceStartup().then((shown) => { if (!shown) void announceDue(); });
   // Comprobación silenciosa de actualizaciones unos segundos después de arrancar (solo en la app, no en el navegador).

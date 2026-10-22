@@ -198,9 +198,59 @@ async fn scan_library(app: AppHandle, state: State<'_, AppState>) -> Result<Libr
     }
     *state.games.lock().unwrap() = found;
     if let Some(r) = cfg.root {
+        save_snapshot(&state.cache_dir, &r, &lib);
         start_hasher(state.db.clone(), PathBuf::from(r), state.hashing.clone());
     }
     Ok(lib)
+}
+
+#[derive(serde::Serialize)]
+struct SnapRef<'a> {
+    root: &'a str,
+    lib: &'a Library,
+}
+
+#[derive(serde::Deserialize)]
+struct Snap {
+    root: String,
+    lib: Library,
+}
+
+/// Guarda la ultima biblioteca escaneada (en la cache local, no en la biblioteca) para enseñarla al instante al abrir.
+fn save_snapshot(cache_dir: &Path, root: &str, lib: &Library) {
+    let Ok(bytes) = serde_json::to_vec(&SnapRef { root, lib }) else { return };
+    let file = cache_dir.join("library-snapshot.json");
+    std::thread::spawn(move || {
+        let tmp = file.with_extension("tmp");
+        if std::fs::write(&tmp, bytes).is_ok() {
+            let _ = std::fs::rename(&tmp, &file);
+        }
+    });
+}
+
+/// La biblioteca del ultimo escaneo, para pintar la interfaz sin esperar al disco. `None` si no hay o es de otra raiz.
+#[tauri::command]
+async fn cached_library(state: State<'_, AppState>) -> Result<Option<Library>, String> {
+    let (cfg_root, show_hidden) = {
+        let c = state.config.lock().unwrap();
+        (c.root.clone(), c.show_hidden)
+    };
+    let Some(root) = cfg_root else { return Ok(None) };
+    let file = state.cache_dir.join("library-snapshot.json");
+    let snap = tauri::async_runtime::spawn_blocking(move || {
+        let snap: Snap = serde_json::from_slice(&std::fs::read(file).ok()?).ok()?;
+        (snap.root == root).then_some(snap.lib)
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    Ok(snap.map(|mut lib| {
+        if !show_hidden {
+            for p in lib.platforms.iter_mut() {
+                p.titles.retain(|t| !t.hidden);
+            }
+        }
+        lib
+    }))
 }
 
 /// Calcula en segundo plano las huellas que falten en el catalogo (una sola tanda a la vez).
@@ -878,6 +928,7 @@ pub fn run() {
             get_config,
             save_config,
             scan_library,
+            cached_library,
             get_thumb,
             prefetch_thumbs,
             get_favorites,

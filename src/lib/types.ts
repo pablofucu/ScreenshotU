@@ -193,6 +193,8 @@ export interface Backend {
   saveConfig(c: Config): Promise<void>;
   pickFolder(title?: string): Promise<string | null>;
   scan(): Promise<Library>;
+  /** La biblioteca del último escaneo (para pintar al instante al abrir); solo en la app. */
+  cachedScan?(): Promise<Library | null>;
   /** URL de la miniatura (480 px) de una imagen. */
   thumb(path: string, signal?: AbortSignal): Promise<string>;
   /** URL de la imagen original (para el visor). */

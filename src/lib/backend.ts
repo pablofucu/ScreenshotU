@@ -46,6 +46,7 @@ async function tauriBackend(): Promise<Backend> {
       return typeof r === 'string' ? r : null;
     },
     scan: () => invoke<Library>('scan_library'),
+    cachedScan: () => invoke<Library | null>('cached_library'),
     async thumb(path, signal) {
       const hit = cache.get(path);
       if (hit) return hit;
