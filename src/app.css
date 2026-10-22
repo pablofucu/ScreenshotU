@@ -464,15 +464,32 @@ img.tin{animation:thumbIn .35s cubic-bezier(.2,.8,.3,1) both}
 .thead .tfav svg{width:22px;height:22px}
 .tfilters{position:absolute;left:96px;top:134px;display:flex;gap:8px;align-items:center;z-index:4}
 .tfilters.car{left:50%;transform:translateX(-50%);top:96px}
+.tfilters.lo{top:162px}
+.tfilters.lo.car{top:96px}
+/* Pestañas de la categoría (View) y orden activo (X) */
+.ttabs{position:absolute;left:96px;top:124px;display:flex;gap:8px;align-items:center;z-index:4}
+.ttabs.car{left:50%;transform:translateX(-50%);top:140px}
+.ttabs .btn{cursor:pointer}
+.ttabs .btn.x{margin-left:14px}
+.ttabs .tord{color:#3F63E0}
+.note-card.soon .face{gap:12px}
+.soonchip{font-size:14px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--acc-ink,#fff);background:var(--acc);padding:3px 14px;border-radius:999px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
 .tfilters .btn{cursor:pointer}
 .tflt{height:32px;padding:0 14px;border-radius:999px;display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;color:#4a5260;white-space:nowrap;
   background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.22)}
 .tflt small{font-size:13px;font-weight:700;opacity:.65}
 .tflt.on{background:var(--acc);color:var(--acc-ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 6px 14px -8px var(--acc)}
 .tcov{width:160px;height:214px;--r:22px;--bw:8px}
-.tcov .face{border-radius:15px}
-.tcov .addin span{width:54px;height:54px}
-.tcov .addin b{font-size:17px}
+.tcov .face{border-radius:var(--fr,15px)}
+.tcov .addin{gap:calc(12px*var(--ts,1))}
+.tcov .addin span{width:calc(54px*var(--ts,1));height:calc(54px*var(--ts,1));border-radius:calc(20px*var(--ts,1))}
+.tcov .addin b{font-size:calc(17px*var(--ts,1));padding:0 4px;overflow-wrap:anywhere}
+.tcov .noart{padding:calc(12px*var(--ts,1))}
+.tcov .noart b{font-size:calc(19px*var(--ts,1));overflow-wrap:anywhere;hyphens:auto;-webkit-line-clamp:6}
+.tcov .sstack .sname{font-size:calc(16px*var(--ts,1));padding:calc(18px*var(--ts,1)) 4px calc(8px*var(--ts,1));overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tcov .hbadge,.tcov .sbadge{width:calc(30px*var(--ts,1));height:calc(30px*var(--ts,1))}
+.tcov .hbadge{left:calc(8px*var(--ts,1));top:calc(8px*var(--ts,1))}
+.tcov .sbadge{right:calc(8px*var(--ts,1));top:calc(8px*var(--ts,1))}
 .pagep{position:absolute;left:50%;top:22px;transform:translateX(-50%);height:36px;padding:0 16px;border-radius:999px;display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:#4a5260;white-space:nowrap}
 .pagep i{position:relative;display:block;width:52px;height:6px;border-radius:3px;background:rgba(160,168,182,.45);overflow:hidden}
 .pagep i b{position:absolute;top:0;bottom:0;border-radius:3px;background:var(--acc);transition:left .3s}

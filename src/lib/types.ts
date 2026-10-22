@@ -73,7 +73,13 @@ export interface Config {
   remoteEnabled: boolean;
   remotePort: number;
   remoteToken: string;
+  /** Orden de la lista de juegos por categoría (id de plataforma → orden; ausente = «last»). */
+  titlesOrder: Record<string, TitleOrder>;
+  /** Tamaño de las portadas: 0 = 5 por fila (por defecto) … 3 = 8 por fila. */
+  titlesZoom: number;
 }
+/** Orden de la lista de juegos: última partida, A–Z o por color de la portada. */
+export type TitleOrder = 'last' | 'az' | 'color';
 export interface AnkiMap { word: string; reading: string; meaning: string; sentence: string; translation: string; shot: string; audio: string }
 export interface Shot {
   path: string;

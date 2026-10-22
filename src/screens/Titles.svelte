@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { app, STATUS_LABEL, TITLE_FILTERS } from '../lib/store.svelte';
+  import { app, STATUS_LABEL, TITLE_FILTERS, TITLE_ORDER_LABEL, TITLES_TABS } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { fmtAgo, fmtDur, fmtShort, nCapturas } from '../lib/format';
   import { backend } from '../lib/backend';
-  import { PAGE_SIZE, viewPos } from '../lib/controller.svelte';
+  import { titlesGrid, viewPos } from '../lib/controller.svelte';
   import TopBar from '../components/TopBar.svelte';
   import Hints from '../components/Hints.svelte';
   import Thumb from '../components/Thumb.svelte';
@@ -15,9 +15,17 @@
   // Lista visible (filtrada); la baldosa «Añadir juego» ocupa la posición siguiente a la última.
   const vis = $derived(app.tview);
   const slots = $derived(vis.length + 1);
-  const pages = $derived(Math.max(1, Math.ceil(slots / PAGE_SIZE)));
+  // Medidas de la cuadrícula según el tamaño elegido (5 a 8 por fila).
+  const G = $derived(titlesGrid());
+  const PS = $derived(G.size);
+  const pages = $derived(Math.max(1, Math.ceil(slots / PS)));
   const q = $derived(viewPos(app.t));
-  const pg = $derived(Math.floor(q / PAGE_SIZE));
+  const pg = $derived(Math.floor(q / PS));
+  // Pestaña de la categoría: Sagas no tiene; «Mi lista» y «Colecciones» llegan en las fases 3 y 4.
+  const tab = $derived(saga ? 'all' : app.titlesTab);
+  const tabInfo = $derived(tab === 'list'
+    ? { name: 'Mi lista', text: 'Tus juegos ordenados por estado: jugando ahora, pendientes, terminados por año y abandonados.' }
+    : { name: 'Colecciones', text: 'Estanterías con los juegos de esta categoría agrupados a tu manera: sagas, series o lo que quieras.' });
   const cur = $derived(titles[app.t]);
   const coverOf = (i: number) => titles[i].cover ?? titles[i].shots[0]?.path ?? null;
   const realAt = (pos: number) => (pos < vis.length ? vis[pos] : titles.length);
@@ -31,18 +39,18 @@
     playing: titles.filter((t) => t.status === 'playing').length,
     pending: titles.filter((t) => t.status === 'pending').length,
     finished: titles.filter((t) => t.status === 'finished').length,
-    az: titles.length,
   }));
 
   // Ventana virtual: solo se pintan la página actual y las vecinas (cuadrícula) o ±9 (carrusel).
   const range = $derived(
     grid
-      ? [Math.max(0, (pg - 1) * PAGE_SIZE), Math.min(slots, (pg + 2) * PAGE_SIZE)]
+      ? [Math.max(0, (pg - 1) * PS), Math.min(slots, (pg + 2) * PS)]
       : [Math.max(0, q - 9), Math.min(slots, q + 10)],
   );
   const idx = $derived(Array.from({ length: Math.max(0, range[1] - range[0]) }, (_, k) => range[0] + k));
-  const CW = 160, CH = 214, GAP = 44;
-  const gx = (1280 - 5 * CW - 4 * GAP) / 2;
+  // Posición y tamaño de la portada nº `j` de la página `page` (los textos y bordes se escalan con el tamaño).
+  const cellStyle = (page: number, j: number) =>
+    `left:${page * 1280 + G.gx + (j % G.cols) * (G.cw + G.gap)}px;top:${G.top + Math.floor(j / G.cols) * (G.ch + G.rg)}px;width:${G.cw}px;height:${G.ch}px;--r:${(22 * G.s).toFixed(1)}px;--bw:${(8 * G.s).toFixed(1)}px;--fr:${(15 * G.s).toFixed(1)}px;--ts:${(0.55 + 0.45 * G.s).toFixed(3)}`;
 
   // Fondo ambiental: el hero (o la portada) del juego enfocado, muy desenfocado, con fundido entre juegos.
   let layers = $state<Array<{ u: string; id: number }>>([]);
@@ -83,10 +91,29 @@
 <div class="amb" class:car={!grid}>
   {#each layers as l (l.id)}<div class="amblayer" style="background-image:url({l.u})"></div>{/each}
 </div>
-<TopBar crumbs={['Inicio', P?.name ?? '']} dots={grid ? pages : 0} dot={pg} />
+<TopBar crumbs={['Inicio', P?.name ?? '']} dots={grid && tab === 'all' ? pages : 0} dot={pg} />
 
-{#if titles.length === 0}
-  <div class="glass note-card" style="left:300px;top:130px;--acc:{app.chrome.c}">
+{#if !saga}
+  <div class="ttabs" class:car={!grid} style={grid && cur ? `--acc:${app.titleAcc(app.p, app.t).c};--acc-ink:${app.titleAcc(app.p, app.t).dark ? '#3a2f00' : '#fff'}` : ''}>
+    <span class="btn sh" data-hact="view">View</span>
+    {#each TITLES_TABS as [f, label]}
+      <span class="tflt" class:on={tab === f}>{label}</span>
+    {/each}
+    {#if tab === 'all' && titles.length > 1}<span class="btn x" data-hact="x">X</span><span class="tflt tord">{TITLE_ORDER_LABEL[app.titleOrder]}</span>{/if}
+  </div>
+{/if}
+
+{#if tab !== 'all'}
+  <!-- Hueco de las fases 3 (Mi lista) y 4 (Colecciones): se rellena aquí. -->
+  <div class="glass note-card soon" style="left:300px;top:230px;--acc:{app.chrome.c}">
+    <div class="face">
+      <span class="chip soonchip">Próximamente</span>
+      <h2>{tabInfo.name}</h2>
+      <p>{tabInfo.text}</p>
+    </div>
+  </div>
+{:else if titles.length === 0}
+  <div class="glass note-card" style="left:300px;top:{saga ? 130 : 170}px;--acc:{app.chrome.c}">
     <div class="face">
       {#if saga}
         <h2>Aún no tienes sagas</h2>
@@ -117,10 +144,10 @@
     {/if}
   {/if}
   {#if !saga}
-    <div class="tfilters" class:car={!grid} style={grid && cur ? `--acc:${app.titleAcc(app.p, app.t).c};--acc-ink:${app.titleAcc(app.p, app.t).dark ? '#3a2f00' : '#fff'}` : ''}>
+    <div class="tfilters lo" class:car={!grid} style={grid && cur ? `--acc:${app.titleAcc(app.p, app.t).c};--acc-ink:${app.titleAcc(app.p, app.t).dark ? '#3a2f00' : '#fff'}` : ''}>
       <span class="btn sh" data-hact="lt">LT</span>
       {#each TITLE_FILTERS as [f, label]}
-        <span class="tflt" class:on={app.titleFilter === f}>{label}{#if f !== 'all' && f !== 'az'}<small>{counts[f]}</small>{/if}</span>
+        <span class="tflt" class:on={app.titleFilter === f}>{label}{#if f !== 'all'}<small>{counts[f]}</small>{/if}</span>
       {/each}
       <span class="btn sh" data-hact="rt">RT</span>
     </div>
@@ -129,9 +156,9 @@
     <div class="ttrack" style="width:{pages * 1280}px;transform:translateX({-pg * 1280}px)">
       {#each idx as pos (realAt(pos))}
         {@const i = realAt(pos)}
-        {@const j = pos % PAGE_SIZE}
+        {@const j = pos % PS}
         <div class="glass cover tcov fx" class:addtile={i === titles.length} class:dim={titles[i]?.hidden} class:f={app.focus === 'tit' + i} data-k="tit{i}" data-act="tit:{i}" data-i={i}
-          style="left:{Math.floor(pos / PAGE_SIZE) * 1280 + gx + (j % 5) * (CW + GAP)}px;top:{(saga ? 160 : 190) + Math.floor(j / 5) * (CH + 24)}px;--acc:{i === titles.length ? app.chrome.c : app.titleAcc(app.p, i).c}">
+          style="{cellStyle(Math.floor(pos / PS), j)};--acc:{i === titles.length ? app.chrome.c : app.titleAcc(app.p, i).c}">
           {@render cell(i)}
         </div>
       {/each}
@@ -159,8 +186,16 @@
   {/if}
 {/if}
 
-{#if titles.length === 0}
-  <Hints list={[['A', saga ? 'Crear saga' : 'Añadir juego', 'a'], ['B', 'Volver', 'b']]} />
+{#if tab !== 'all'}
+  <Hints list={[['B', 'Volver', 'b'], ['View', 'Pestaña', 'view']]} />
+{:else if titles.length === 0}
+  <Hints list={[['A', saga ? 'Crear saga' : 'Añadir juego', 'a'], ['B', 'Volver', 'b'], ...(saga ? [] : [['View', 'Pestaña', 'view'] as [string, string, string]])]} />
 {:else}
-  <Hints list={[['A', 'Abrir', 'a'], ['B', 'Volver', 'b'], ...(grid ? [['LB/RB', 'Página', 'rb'] as [string, string, string]] : []), ...(saga ? [] : [['LT/RT', 'Filtro', 'rt'] as [string, string, string]]), ['Y', grid ? 'Carrusel' : 'Cuadrícula', 'y']]} />
+  <Hints list={[
+    ['A', 'Abrir', 'a'], ['B', 'Volver', 'b'],
+    ...(grid ? [['LB/RB', 'Página', 'rb'] as [string, string, string]] : []),
+    ...(saga ? [] : [['LT/RT', 'Filtro', 'rt'] as [string, string, string], ['X', 'Orden', 'x'] as [string, string, string], ['View', 'Pestaña', 'view'] as [string, string, string]]),
+    ...(grid ? [['Stick D', 'Tamaño'] as [string, string]] : []),
+    ['Y', grid ? 'Carrusel' : 'Cuadrícula', 'y'],
+  ]} />
 {/if}

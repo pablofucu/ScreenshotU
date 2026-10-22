@@ -1,8 +1,8 @@
 import { SvelteSet } from 'svelte/reactivity';
 import { untrack } from 'svelte';
 import { RAINBOW, type Accent } from './icons';
-import type { AudioOutput, Config, GameStatus, Library, MagpieStatus, Saga, Shot, SortMode as SortModeT, Swatch, Title } from './types';
-import { inkDark } from './oklch';
+import type { AudioOutput, Config, GameStatus, Library, MagpieStatus, Saga, Shot, SortMode as SortModeT, Swatch, Title, TitleOrder } from './types';
+import { hexToRgb, inkDark, rgbToLch } from './oklch';
 import { GOAL_COL, type GoalKey } from './readgoals';
 import { calendar, evoBuckets, playYears, rankPeriod, yearReview, type EvoKind, type PeriodKind } from './stats';
 
@@ -55,6 +55,8 @@ export const DEFAULT_CONFIG: Config = {
   remoteEnabled: false,
   remotePort: 47811,
   remoteToken: '',
+  titlesOrder: {},
+  titlesZoom: 0,
 };
 
 export type MenuItem =
@@ -162,11 +164,19 @@ export const SORT_LABEL: Record<SortMode, string> = {
 export const SORT_ORDER: SortMode[] = ['recent', 'oldest', 'favs', 'name'];
 
 /** Filtros de la lista de títulos (LT/RT). */
-export type TitleFilter = 'all' | 'launch' | 'shots' | 'favs' | 'playing' | 'pending' | 'finished' | 'az';
+export type TitleFilter = 'all' | 'launch' | 'shots' | 'favs' | 'playing' | 'pending' | 'finished';
 export const TITLE_FILTERS: Array<[TitleFilter, string]> = [
   ['all', 'Todos'], ['launch', 'Con lanzador'], ['shots', 'Solo capturas'], ['favs', 'Con favoritas'],
-  ['playing', 'Jugando'], ['pending', 'Pendientes'], ['finished', 'Terminados'], ['az', 'A–Z'],
+  ['playing', 'Jugando'], ['pending', 'Pendientes'], ['finished', 'Terminados'],
 ];
+
+/** Orden de la lista de juegos (botón X), en el orden en que se recorre; se recuerda por categoría. */
+export const TITLE_ORDERS: TitleOrder[] = ['last', 'az', 'color'];
+export const TITLE_ORDER_LABEL: Record<TitleOrder, string> = { last: 'Última partida', az: 'A–Z', color: 'Por color' };
+
+/** Pestañas dentro de cada categoría (botón View): Todos · Mi lista (fase 3) · Colecciones (fase 4). */
+export type TitlesTab = 'all' | 'list' | 'coll';
+export const TITLES_TABS: Array<[TitlesTab, string]> = [['all', 'Todos'], ['list', 'Mi lista'], ['coll', 'Colecciones']];
 
 /** Estados de un juego, en el orden en que los recorre el selector. */
 export const STATUS_ORDER: GameStatus[] = ['none', 'pending', 'playing', 'finished', 'dropped'];
@@ -188,6 +198,34 @@ export function sortShots(shots: Shot[], mode: SortMode, favs: Set<string>): Sho
   const f: Shot[] = [], r: Shot[] = [];
   for (const s of shots) (favs.has(s.path) ? f : r).push(s);
   return [...f, ...r];
+}
+
+/** Último uso de un juego: la última partida o, si no la hay, su última captura (0 = nada). */
+const lastUse = (t: Title) => t.lastPlayed || t.shots[0]?.date || 0;
+
+/** Tono (0..360, empezando en el rojo) del color de la portada, o null si no tiene color (sin acento o casi gris). */
+function coverHue(t: Title): number | null {
+  const hex = t.accentOverride ?? t.accent?.accent.color;
+  const rgb = hex ? hexToRgb(hex) : null;
+  if (!rgb) return null;
+  const [, c, h] = rgbToLch(rgb);
+  return c < 0.04 ? null : (h - 20 + 360) % 360;
+}
+
+/** Ordena índices de títulos: última partida (más reciente primero), A–Z o por tono del acento de la portada. */
+export function sortTitles(titles: Title[], idx: number[], order: TitleOrder): number[] {
+  const name = (a: number, b: number) => byName.compare(titles[a].name, titles[b].name) || a - b;
+  if (order === 'az') return [...idx].sort(name);
+  if (order === 'color') {
+    const hue = new Map(idx.map((i) => [i, coverHue(titles[i])] as const));
+    return [...idx].sort((a, b) => {
+      const ha = hue.get(a), hb = hue.get(b);
+      if (ha == null || hb == null) return ha == null && hb == null ? name(a, b) : ha == null ? 1 : -1;
+      return ha - hb || name(a, b);
+    });
+  }
+  // Los juegos sin nada de actividad quedan al final, por nombre.
+  return [...idx].sort((a, b) => lastUse(titles[b]) - lastUse(titles[a]) || name(a, b));
 }
 
 /** Un color `#rrggbb` como acento de la interfaz. */
@@ -306,20 +344,25 @@ class Store {
 
   /** Filtro de la lista de títulos y orden visible resultante (índices reales en `platform.titles`). */
   titleFilter = $state<TitleFilter>('all');
+  /** Pestaña de la lista de juegos (solo «Todos» tiene contenido por ahora). */
+  titlesTab = $state<TitlesTab>('all');
+  /** Orden activo de la categoría abierta. */
+  titleOrder = $derived<TitleOrder>(this.config.titlesOrder?.[this.lib.platforms[this.p]?.id ?? ''] ?? 'last');
   tview = $derived.by((): number[] => {
     const titles = this.lib.platforms[this.p]?.titles ?? [];
     const all = titles.map((_, i) => i);
     if (this.lib.platforms[this.p]?.id === 'sagas') return all;
+    let v: number[];
     switch (this.titleFilter) {
-      case 'launch': return all.filter((i) => titles[i].launchable);
-      case 'shots': return all.filter((i) => !titles[i].launchable);
-      case 'favs': return all.filter((i) => titles[i].shots.some((s) => this.favs.has(s.path)));
-      case 'playing': return all.filter((i) => titles[i].status === 'playing');
-      case 'pending': return all.filter((i) => titles[i].status === 'pending');
-      case 'finished': return all.filter((i) => titles[i].status === 'finished');
-      case 'az': return [...all].sort((a, b) => byName.compare(titles[a].name, titles[b].name));
-      default: return all;
+      case 'launch': v = all.filter((i) => titles[i].launchable); break;
+      case 'shots': v = all.filter((i) => !titles[i].launchable); break;
+      case 'favs': v = all.filter((i) => titles[i].shots.some((s) => this.favs.has(s.path))); break;
+      case 'playing': v = all.filter((i) => titles[i].status === 'playing'); break;
+      case 'pending': v = all.filter((i) => titles[i].status === 'pending'); break;
+      case 'finished': v = all.filter((i) => titles[i].status === 'finished'); break;
+      default: v = all;
     }
+    return sortTitles(titles, v, this.titleOrder);
   });
 
   /** Tarjeta «Lectura de hoy» en Inicio (si existe alguna categoría de novelas); ocupa el sitio de Sagas, que pasa al dock. */

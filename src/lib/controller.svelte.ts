@@ -1,5 +1,5 @@
 import { tick } from 'svelte';
-import { app, SORT_LABEL, SORT_ORDER, STATUS_LABEL, STATUS_ORDER, TITLE_FILTERS, type MenuItem, type SortMode, type View } from './store.svelte';
+import { app, SORT_LABEL, SORT_ORDER, STATUS_LABEL, STATUS_ORDER, TITLE_FILTERS, TITLE_ORDERS, TITLE_ORDER_LABEL, TITLES_TABS, type MenuItem, type SortMode, type View } from './store.svelte';
 import { backend, initBackend } from './backend';
 import { blip } from './sound';
 import type { BackendEvent, Config, GameStatus, Library, MagpieMode, Shot, Title } from './types';
@@ -12,6 +12,7 @@ import {
 } from './ops.svelte';
 import { SAGA_PLATFORM, isSagaPlatform, realPlatforms, withSagas } from './sagas';
 import { shotLayout, type ShotLayout } from './shotlayout';
+import { tgrid, TZOOM_MAX } from './tgrid';
 import { EVO_KINDS, PERIOD_KINDS } from './stats';
 import { editSgdbKey, openSgdbPicker, openSgdbTitles, sgdbAuto, sgdbCmd, sgdbTitlesCmd, toggleSgdbAuto } from './sgdb.svelte';
 import { AUDIO_COMBO_PRESETS, AUDIO_HOTKEY_PRESETS, COMBO_PRESETS, HOTKEY_PRESETS, MOUSE_PRESETS, learnKeydown, learnMouse, onLearnPad, startLearn } from './learn.svelte';
@@ -24,7 +25,10 @@ import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFro
 import { libraryCmd, loadLibraryInfo, openLibrary } from './library.svelte';
 
 export const GRID_VIEW_H = 480;
-export const PAGE_SIZE = 10;
+/** Medidas de la cuadrícula de juegos según el tamaño elegido (portadas por fila, filas, página). */
+export const titlesGrid = () => tgrid(app.config.titlesZoom, isSagaPlatform(app.platform));
+/** La lista de juegos tiene contenido (pestaña «Todos»; Sagas no tiene pestañas). */
+const onAllTab = () => isSagaPlatform(app.platform) || app.titlesTab === 'all';
 /** Capturas recientes que enseña la ficha de un juego. */
 export const DETAIL_SHOTS = 5;
 /** Lista de la clasificación: alto visible y posición/alto de cada fila (las 3 primeras, con hero, son más altas). */
@@ -474,7 +478,7 @@ export function activate(act: string | undefined) {
 function runAct(act: string, el: HTMLElement | null | undefined) {
   const [a, b, c] = act.split(':');
   if (a === 'plat') {
-    app.p = +b; app.hp = +b; app.t = 0; app.fk.titles = 'tit0';
+    app.p = +b; app.hp = +b; app.t = 0; app.fk.titles = 'tit0'; app.titlesTab = 'all';
     go('titles', 'fwd');
   } else if (a === 'tit') {
     const saga = isSagaPlatform(app.platform);
@@ -507,7 +511,7 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
     openStreak();
   } else if (a === 'sr') {
     // Juego de la clasificación: su ficha (B vuelve a las estadísticas).
-    app.p = +b; app.titleFilter = 'all';
+    app.p = +b; app.titleFilter = 'all'; app.titlesTab = 'all';
     openTitle(+c);
     app.detailFrom = 'stats';
   } else if (a === 'evo') {
@@ -523,7 +527,7 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
 function openRecent(i: number) {
   const r = app.recent[i];
   if (!r) return;
-  app.p = r.pi; app.hp = r.pi; app.titleFilter = 'all';
+  app.p = r.pi; app.hp = r.pi; app.titleFilter = 'all'; app.titlesTab = 'all';
   openTitle(r.ti);
 }
 
@@ -540,7 +544,7 @@ function dock(i: number) {
 function openSagas() {
   const i = app.lib.platforms.findIndex((p) => p.id === SAGA_PLATFORM);
   if (i < 0) { toast('No hay sagas'); return; }
-  app.p = i; app.hp = i; app.t = 0; app.fk.titles = 'tit0';
+  app.p = i; app.hp = i; app.t = 0; app.fk.titles = 'tit0'; app.titlesTab = 'all';
   go('titles', 'fwd');
 }
 
@@ -740,11 +744,12 @@ export function page(d: number) {
   if (app.view === 'stats' || app.view === 'evo') { statsKind(d); return; }
   if (app.view === 'titles') {
     const n = app.tview.length;
-    if (!n) return;
+    if (!n || !onAllTab()) return;
     const grid = app.config.titlesView === 'grid';
+    const size = titlesGrid().size;
     const cur = viewPos(app.t);
-    const np = Math.max(0, Math.min(n - 1, cur + d * (grid ? PAGE_SIZE : 5)));
-    if (np === cur || (grid && Math.floor(np / PAGE_SIZE) === Math.floor(cur / PAGE_SIZE))) {
+    const np = Math.max(0, Math.min(n - 1, cur + d * (grid ? size : 5)));
+    if (np === cur || (grid && Math.floor(np / size) === Math.floor(cur / size))) {
       bump(screenEl()?.querySelector('.fx.f'), d, 0);
       return;
     }
@@ -772,7 +777,7 @@ export function page(d: number) {
 /** LT/RT: filtro de títulos o, en la vista de capturas por días, día anterior/siguiente. */
 export function trigger(d: number) {
   if (app.view === 'stats' || app.view === 'evo') { statsShift(d); return; }
-  if (app.view === 'titles' && !isSagaPlatform(app.platform) && app.platform?.titles.length) {
+  if (app.view === 'titles' && !isSagaPlatform(app.platform) && app.platform?.titles.length && app.titlesTab === 'all') {
     const i = TITLE_FILTERS.findIndex(([f]) => f === app.titleFilter);
     const [f, label] = TITLE_FILTERS[(i + d + TITLE_FILTERS.length) % TITLE_FILTERS.length];
     // Se conserva el título enfocado si sigue visible con el nuevo filtro.
@@ -807,6 +812,44 @@ export function toggleShotsView() {
   } else {
     toast('Capturas: ' + (v === 'grid' ? 'cuadrícula continua' : 'agrupadas por días'));
   }
+  blip(700);
+}
+
+/** X en la lista de juegos: recorre los órdenes (se recuerda por categoría) conservando el juego enfocado. */
+function cycleTitleOrder() {
+  const p = app.platform;
+  if (!p || isSagaPlatform(p) || !onAllTab()) { bump(screenEl()?.querySelector('.fx.f'), 0, 0); return; }
+  const next = TITLE_ORDERS[(TITLE_ORDERS.indexOf(app.titleOrder) + 1) % TITLE_ORDERS.length];
+  const keep = app.t;
+  void patchConfig({ titlesOrder: { ...app.config.titlesOrder, [p.id]: next } });
+  if (p.titles.length) setFocus('tit' + (app.tview.includes(keep) ? keep : atPos(0)));
+  toast('Orden: ' + TITLE_ORDER_LABEL[next]);
+  blip(700);
+}
+
+/** View en la lista de juegos: pasa de pestaña (Todos · Mi lista · Colecciones). */
+function cycleTitlesTab() {
+  if (isSagaPlatform(app.platform)) { bump(screenEl()?.querySelector('.fx.f'), 0, 0); return; }
+  const i = TITLES_TABS.findIndex(([t]) => t === app.titlesTab);
+  const [tab, label] = TITLES_TABS[(i + 1) % TITLES_TABS.length];
+  app.titlesTab = tab;
+  // Las pestañas sin contenido no tienen nada que enfocar.
+  if (tab === 'all') setFocus(validKey('titles', 'tit' + app.t) ?? defaultKey('titles'));
+  else { app.focus = ''; app.fk.titles = 'tit' + app.t; }
+  toast(label);
+  blip(700);
+}
+
+/** Tamaño de las portadas: `d` > 0 = más grandes, < 0 = más pequeñas (5, 6, 7 u 8 por fila); se guarda en la config. */
+export function zoomTitles(d: number, fresh = true) {
+  if (app.view !== 'titles' || app.overlay || app.osk.open || app.config.titlesView !== 'grid' || !onAllTab()) return;
+  const z = Math.max(0, Math.min(TZOOM_MAX, app.config.titlesZoom - Math.sign(d)));
+  if (z === app.config.titlesZoom) {
+    if (fresh) toast(d > 0 ? 'Portadas al tamaño máximo' : 'Portadas al tamaño mínimo');
+    return;
+  }
+  void patchConfig({ titlesZoom: z });
+  toast(`Portadas: ${tgrid(z, false).cols} por fila`);
   blip(700);
 }
 
@@ -1336,13 +1379,15 @@ export function cmd(c: string) {
         const r = app.recent[+app.focus.slice(3)];
         const t = r && app.lib.platforms[r.pi]?.titles[r.ti];
         if (t?.launchable) void playTitle(t); else bump(screenEl()?.querySelector('.fx.f'), 0, 0);
-      } else toggleFav();
+      } else if (app.view === 'titles') cycleTitleOrder();
+      else toggleFav();
       break;
     case 'lt': trigger(-1); break;
     case 'rt': trigger(1); break;
     case 'view':
       if (app.view === 'shots') toggleShotsView();
       else if (app.view === 'viewer') toggleBare();
+      else if (app.view === 'titles') cycleTitlesTab();
       break;
     case 'y':
       if (app.view === 'titles') toggleTitlesView();
@@ -1375,6 +1420,11 @@ export function onKeyDown(e: KeyboardEvent) {
   if (app.view === 'viewer' && !app.overlay && (e.key === '+' || e.key === '=' || e.key === '-')) {
     e.preventDefault();
     zoomView(e.key === '-' ? 0.8 : 1.25);
+    return;
+  }
+  if (app.view === 'titles' && !app.overlay && (e.key === '+' || e.key === '=' || e.key === '-')) {
+    e.preventDefault();
+    zoomTitles(e.key === '-' ? -1 : 1);
     return;
   }
   let m = KEYS[e.key];
@@ -1445,7 +1495,21 @@ function onMouseButton(e: MouseEvent) {
 
 /** Rueda: recorre carruseles, páginas, capturas y listas sin llevar el ratón a los bordes. */
 let wheelAcc = 0, wheelT = 0;
+let zoomAcc = 0, zoomT = 0;
 function onWheel(e: WheelEvent) {
+  // Ctrl+rueda en la lista de juegos: tamaño de las portadas (arriba = más grandes).
+  if (e.ctrlKey && app.view === 'titles' && !app.overlay && !app.osk.open) {
+    e.preventDefault();
+    const now = performance.now();
+    if (now - zoomT > 250) zoomAcc = 0;
+    zoomT = now;
+    zoomAcc += e.deltaMode === 1 ? e.deltaY * 40 : e.deltaY;
+    if (Math.abs(zoomAcc) < 40) return;
+    const d = -Math.sign(zoomAcc);
+    zoomAcc = 0;
+    zoomTitles(d);
+    return;
+  }
   if (e.ctrlKey || app.osk.open) return;
   e.preventDefault();
   if (app.view === 'viewer' && !app.overlay) {
@@ -1531,6 +1595,8 @@ function rightStickY(pads: Gamepad[]): number {
 }
 
 let lastPoll = 0;
+/** Instante del último paso de tamaño con el stick derecho (0 = suelto). */
+let stickZ = 0;
 function poll(t: number) {
   const dt = Math.min(64, t - lastPoll);
   lastPoll = t;
@@ -1552,6 +1618,12 @@ function poll(t: number) {
     const ay = rightStickY(pads);
     if (ay) zoomView(Math.exp(-ay * dt * 0.0022));
   }
+  // Lista de juegos: el stick derecho cambia el tamaño de las portadas por pasos (arriba = más grandes), con repetición lenta.
+  if (app.view === 'titles' && !app.overlay && !app.osk.open && !app.learn) {
+    const ay = rightStickY(pads);
+    if (!ay) stickZ = 0;
+    else if (!stickZ || t - stickZ > 480) { const first = !stickZ; stickZ = t; zoomTitles(-Math.sign(ay), first); }
+  } else stickZ = 0;
   for (const k of PAD_KEYS) {
     if (st[k]) {
       try {

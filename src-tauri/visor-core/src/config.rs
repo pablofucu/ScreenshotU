@@ -118,6 +118,10 @@ pub struct Config {
     pub remote_enabled: bool,
     pub remote_port: u16,
     pub remote_token: String,
+    /// Orden de la lista de juegos por categoria (id de plataforma -> "last" | "az" | "color"; ausente = "last").
+    pub titles_order: std::collections::BTreeMap<String, String>,
+    /// Tamano de las portadas de la lista de juegos: 0 = 5 por fila (por defecto) .. 3 = 8 por fila.
+    pub titles_zoom: u8,
 }
 
 pub fn default_platforms() -> Vec<PlatformCfg> {
@@ -193,6 +197,8 @@ impl Default for Config {
             remote_enabled: false,
             remote_port: crate::remote::DEFAULT_PORT,
             remote_token: String::new(),
+            titles_order: Default::default(),
+            titles_zoom: 0,
         }
     }
 }
@@ -221,6 +227,7 @@ impl Config {
         c.goal_jvn = c.goal_jvn.clamp(5, 600);
         c.remote_port = c.remote_port.max(1024);
         c.remote_token = c.remote_token.trim().to_string();
+        c.titles_zoom = c.titles_zoom.min(3);
         if !["recent", "oldest"].contains(&c.shots_order.as_str()) {
             c.shots_order = "recent".into();
         }
