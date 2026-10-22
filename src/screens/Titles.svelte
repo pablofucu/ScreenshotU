@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { app, STATUS_LABEL, TITLE_FILTERS, TITLE_ORDER_LABEL, TITLES_TABS } from '../lib/store.svelte';
+  import { app, LIST_COLOR, STATUS_LABEL, TITLE_FILTERS, TITLE_ORDER_LABEL, TITLES_TABS, type ListShelf } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { fmtAgo, fmtDur, fmtShort, nCapturas } from '../lib/format';
   import { backend } from '../lib/backend';
@@ -7,6 +7,8 @@
   import TopBar from '../components/TopBar.svelte';
   import Hints from '../components/Hints.svelte';
   import Thumb from '../components/Thumb.svelte';
+  import Shelf, { type ShelfItem } from '../components/Shelf.svelte';
+  import { itemLabel, LIST_VIS, SHELF_STEP, shelfSub } from '../lib/milista.svelte';
 
   const P = $derived(app.platform);
   const saga = $derived(P?.id === 'sagas');
@@ -23,9 +25,19 @@
   const pg = $derived(Math.floor(q / PS));
   // Pestaña de la categoría: Sagas no tiene; «Mi lista» y «Colecciones» llegan en las fases 3 y 4.
   const tab = $derived(saga ? 'all' : app.titlesTab);
-  const tabInfo = $derived(tab === 'list'
-    ? { name: 'Mi lista', text: 'Tus juegos ordenados por estado: jugando ahora, pendientes, terminados por año y abandonados.' }
-    : { name: 'Colecciones', text: 'Estanterías con los juegos de esta categoría agrupados a tu manera: sagas, series o lo que quieras.' });
+  const tabInfo = { name: 'Colecciones', text: 'Estanterías con los juegos de esta categoría agrupados a tu manera: sagas, series o lo que quieras.' };
+  // «Mi lista»: estanterías por estado. Se pintan la enfocada y sus vecinas; cada una con el color fijo de su estado.
+  const shelves = $derived(app.shelves);
+  const focusShelf = $derived(shelves.findIndex((s) => s.items.includes(app.t)));
+  const listAcc = $derived(focusShelf >= 0 ? LIST_COLOR[shelves[focusShelf].kind] : app.chrome);
+  const shelfRange = $derived([Math.max(0, app.listTop - 1), Math.min(shelves.length, app.listTop + 4)] as const);
+  const shelfIdx = $derived(Array.from({ length: Math.max(0, shelfRange[1] - shelfRange[0]) }, (_, k) => shelfRange[0] + k));
+  const shelfItems = (sh: ListShelf): ShelfItem[] =>
+    sh.items.map((ti, k) => {
+      const { label, stars } = itemLabel(sh, titles[ti], k);
+      return { k: 'tit' + ti, act: 'tit:' + ti, path: coverOf(ti), name: titles[ti].name, label, stars };
+    });
+  const curShelf = $derived(focusShelf >= 0 ? shelves[focusShelf] : null);
   const cur = $derived(titles[app.t]);
   const coverOf = (i: number) => titles[i].cover ?? titles[i].shots[0]?.path ?? null;
   const realAt = (pos: number) => (pos < vis.length ? vis[pos] : titles.length);
@@ -94,7 +106,7 @@
 <TopBar crumbs={['Inicio', P?.name ?? '']} dots={grid && tab === 'all' ? pages : 0} dot={pg} />
 
 {#if !saga}
-  <div class="ttabs" class:car={!grid} style={grid && cur ? `--acc:${app.titleAcc(app.p, app.t).c};--acc-ink:${app.titleAcc(app.p, app.t).dark ? '#3a2f00' : '#fff'}` : ''}>
+  <div class="ttabs" class:car={!grid && tab === 'all'} style={tab === 'list' ? `--acc:${listAcc.c};--acc-ink:${listAcc.dark ? '#3a2f00' : '#fff'}` : grid && cur ? `--acc:${app.titleAcc(app.p, app.t).c};--acc-ink:${app.titleAcc(app.p, app.t).dark ? '#3a2f00' : '#fff'}` : ''}>
     <span class="btn sh" data-hact="view">View</span>
     {#each TITLES_TABS as [f, label]}
       <span class="tflt" class:on={tab === f}>{label}</span>
@@ -103,8 +115,26 @@
   </div>
 {/if}
 
-{#if tab !== 'all'}
-  <!-- Hueco de las fases 3 (Mi lista) y 4 (Colecciones): se rellena aquí. -->
+{#if tab === 'list'}
+  {#if !shelves.length}
+    <div class="glass note-card" style="left:300px;top:230px;--acc:{app.chrome.c}">
+      <div class="face">
+        <h2>Aún no hay juegos en {P?.name}</h2>
+        <p>Cuando haya juegos aparecerán aquí ordenados por estado. Con Y marcas si lo estás jugando, lo tienes pendiente, lo terminaste o lo abandonaste.</p>
+      </div>
+    </div>
+  {:else}
+    <div class="lclip">
+      {#each shelfIdx as k (shelves[k].key)}
+        {@const sh = shelves[k]}
+        <Shelf acc={LIST_COLOR[sh.kind].c} title={sh.label} sub={shelfSub(sh, titles)} items={shelfItems(sh)}
+          focus={k === focusShelf ? sh.items.indexOf(app.t) : -1} from={app.listFrom[sh.key] ?? 0} visible={LIST_VIS}
+          top={(k - app.listTop) * SHELF_STEP} dim={k !== focusShelf} />
+      {/each}
+    </div>
+  {/if}
+{:else if tab !== 'all'}
+  <!-- Hueco de la fase 4 (Colecciones): se rellena aquí. -->
   <div class="glass note-card soon" style="left:300px;top:230px;--acc:{app.chrome.c}">
     <div class="face">
       <span class="chip soonchip">Próximamente</span>
@@ -186,7 +216,15 @@
   {/if}
 {/if}
 
-{#if tab !== 'all'}
+{#if tab === 'list' && shelves.length}
+  <Hints list={[
+    ['A', 'Abrir', 'a'], ['B', 'Volver', 'b'],
+    ...(cur?.launchable ? [['X', 'Jugar', 'x'] as [string, string, string]] : []),
+    ['Y', 'Estado', 'y'],
+    ['LB/RB', curShelf?.kind === 'pending' ? 'Mover' : 'Saltar', 'rb'],
+    ['View', 'Pestaña', 'view'],
+  ]} />
+{:else if tab !== 'all'}
   <Hints list={[['B', 'Volver', 'b'], ['View', 'Pestaña', 'view']]} />
 {:else if titles.length === 0}
   <Hints list={[['A', saga ? 'Crear saga' : 'Añadir juego', 'a'], ['B', 'Volver', 'b'], ...(saga ? [] : [['View', 'Pestaña', 'view'] as [string, string, string]])]} />
@@ -199,3 +237,8 @@
     ['Y', grid ? 'Carrusel' : 'Cuadrícula', 'y'],
   ]} />
 {/if}
+
+<style>
+  /* «Mi lista»: zona de las estanterías (recorta lo que se desplaza fuera, a ancho completo para no cortar las sombras). */
+  .lclip{position:absolute;left:0;top:166px;width:1280px;height:510px;overflow:hidden}
+</style>

@@ -295,13 +295,19 @@ pub fn prefs_load(c: &Connection) -> Result<TitlePrefs> {
         }
     }
     {
-        let mut st = c.prepare("SELECT title_id, status, finished_ms FROM title_status")?;
-        let rows = st.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, Option<i64>>(2)?)))?;
+        let mut st = c.prepare("SELECT title_id, status, finished_ms, rating, list_pos, snooze_ms, updated_ms FROM title_status")?;
+        let rows = st.query_map([], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, Option<i64>>(2)?, r.get::<_, Option<i64>>(3)?, r.get::<_, Option<i64>>(4)?, r.get::<_, Option<i64>>(5)?, r.get::<_, i64>(6)?))
+        })?;
         for row in rows {
-            let (id, status, fin) = row?;
+            let (id, status, fin, rating, pos, snooze, upd) = row?;
             let p = out.entry(id).or_default();
             p.status = Some(status);
             p.finished_ms = fin;
+            p.rating = rating;
+            p.list_pos = pos;
+            p.snooze_ms = snooze;
+            p.status_ms = if upd > 0 { Some(upd) } else { None };
         }
     }
     Ok(out)
@@ -366,6 +372,33 @@ pub fn status_save(c: &Connection, id: &str, status: Option<(&str, Option<i64>)>
         }
     }
     Ok(())
+}
+
+/// Nota, sitio en la lista de pendientes y «dejarlo» de un titulo que ya tiene estado (no hace nada si no lo tiene).
+/// Va aparte de `status_save` para no tocar `updated_ms` al reordenar o al decir «dejarlo».
+pub fn status_extra_save(c: &Connection, id: &str, rating: Option<i64>, list_pos: Option<i64>, snooze_ms: Option<i64>) -> Result<()> {
+    c.execute("UPDATE title_status SET rating = ?2, list_pos = ?3, snooze_ms = ?4 WHERE title_id = ?1", params![id, rating, list_pos, snooze_ms])?;
+    Ok(())
+}
+
+/// Guarda de golpe el orden de varios pendientes (`(id, posicion)`); los que no son pendientes no se tocan.
+pub fn pending_order_save(c: &Connection, order: &[(String, i64)]) -> Result<()> {
+    atomic(c, || {
+        for (id, pos) in order {
+            c.execute("UPDATE title_status SET list_pos = ?2 WHERE title_id = ?1 AND status = 'pending'", params![id, pos])?;
+        }
+        Ok(())
+    })
+}
+
+/// Guarda de golpe el «dejarlo» de varios juegos.
+pub fn snooze_save(c: &Connection, ids: &[String], now_ms: i64) -> Result<()> {
+    atomic(c, || {
+        for id in ids {
+            c.execute("UPDATE title_status SET snooze_ms = ?2 WHERE title_id = ?1", params![id, now_ms])?;
+        }
+        Ok(())
+    })
 }
 
 /* ------------------------------------------------------------------ */

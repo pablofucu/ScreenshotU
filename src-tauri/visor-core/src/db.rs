@@ -185,6 +185,12 @@ pub const MIGRATIONS: &[&str] = &[
     r#"
     ALTER TABLE sgdb ADD COLUMN tried TEXT NOT NULL DEFAULT '';
     "#,
+    // 7: «Mi lista»: nota (1-5) de los terminados, orden manual de los pendientes y «dejarlo» de los juegos parados.
+    r#"
+    ALTER TABLE title_status ADD COLUMN rating INTEGER;
+    ALTER TABLE title_status ADD COLUMN list_pos INTEGER;
+    ALTER TABLE title_status ADD COLUMN snooze_ms INTEGER;
+    "#,
 ];
 
 /// Version del esquema que entiende esta compilacion.
@@ -501,6 +507,62 @@ mod tests {
         assert_eq!((prefs["steam:2"].status.as_deref(), prefs["steam:2"].sort.as_deref()), (Some("playing"), Some("name")));
         db.with(|c| status_save(c, "steam:1", None, 7000)).unwrap();
         assert!(!db.with(prefs_load).unwrap().contains_key("steam:1"));
+    }
+
+    #[test]
+    fn migration_7_adds_list_columns_and_keeps_old_status() {
+        // Una base en version 6 con un estado sube a la 7 sin perderlo; nota, orden y «dejarlo» se guardan y se leen.
+        let d = tempfile::tempdir().unwrap();
+        let p = d.path().join("visor.db");
+        {
+            let mut c = Connection::open(&p).unwrap();
+            migrate(&mut c, &MIGRATIONS[..6]).unwrap();
+            c.execute("INSERT INTO title_status(title_id, status, finished_ms, updated_ms) VALUES ('steam:1', 'finished', 5000, 6000)", []).unwrap();
+        }
+        let db = Db::open_path(&p).unwrap();
+        assert_eq!(db.with(|c| c.query_row::<i64, _, _>("PRAGMA user_version", [], |r| r.get(0))).unwrap(), latest_version());
+        let prefs = db.with(prefs_load).unwrap();
+        let old = &prefs["steam:1"];
+        assert_eq!((old.status.as_deref(), old.finished_ms, old.rating, old.list_pos, old.snooze_ms, old.status_ms), (Some("finished"), Some(5000), None, None, None, Some(6000)));
+        db.with(|c| {
+            status_save(c, "steam:1", Some(("finished", Some(5000))), 7000).unwrap();
+            status_extra_save(c, "steam:1", Some(4), None, None).unwrap();
+            status_save(c, "steam:2", Some(("pending", None)), 7000).unwrap();
+            status_save(c, "steam:3", Some(("pending", None)), 7000).unwrap();
+            status_extra_save(c, "steam:2", None, Some(2), None).unwrap();
+            status_extra_save(c, "steam:3", None, Some(1), None).unwrap();
+            status_save(c, "steam:4", Some(("playing", None)), 7000).unwrap();
+            status_extra_save(c, "steam:4", None, None, Some(8000)).unwrap();
+        });
+        let prefs = db.with(prefs_load).unwrap();
+        assert_eq!((prefs["steam:1"].rating, prefs["steam:1"].status_ms), (Some(4), Some(7000)));
+        assert_eq!((prefs["steam:2"].list_pos, prefs["steam:3"].list_pos), (Some(2), Some(1)));
+        assert_eq!(prefs["steam:4"].snooze_ms, Some(8000));
+        // Cambiar el estado con status_save no pisa las columnas nuevas (las fija quien llama con status_extra_save).
+        db.with(|c| {
+            status_save(c, "steam:2", Some(("playing", None)), 9000).unwrap();
+            status_extra_save(c, "steam:2", None, None, None).unwrap();
+        });
+        let prefs = db.with(prefs_load).unwrap();
+        assert_eq!((prefs["steam:2"].status.as_deref(), prefs["steam:2"].list_pos), (Some("playing"), None));
+        // Quitar el estado borra tambien nota y orden.
+        db.with(|c| status_save(c, "steam:1", None, 9500)).unwrap();
+        assert!(!db.with(prefs_load).unwrap().contains_key("steam:1"));
+    }
+
+    #[test]
+    fn pending_order_is_saved_for_the_given_ids() {
+        let db = Db::open_memory().unwrap();
+        db.with(|c| {
+            for id in ["a", "b", "c"] {
+                status_save(c, id, Some(("pending", None)), 1).unwrap();
+            }
+            status_save(c, "z", Some(("playing", None)), 1).unwrap();
+            pending_order_save(c, &[("c".to_string(), 1), ("a".to_string(), 2), ("b".to_string(), 3), ("z".to_string(), 9)]).unwrap();
+        });
+        let prefs = db.with(prefs_load).unwrap();
+        assert_eq!((prefs["c"].list_pos, prefs["a"].list_pos, prefs["b"].list_pos), (Some(1), Some(2), Some(3)));
+        assert_eq!(prefs["z"].list_pos, None, "solo se ordenan los pendientes");
     }
 
     #[test]

@@ -236,6 +236,27 @@ function parse(path: string): { pid: string; name: string; idx: number | 'cover'
   return { pid, name: rest.join('/'), idx: last === 'cover' || last === 'hero' || last === 'logo' ? last : Number(last) };
 }
 
+/** Estados de ejemplo para «Mi lista» en el navegador (solo la primera vez; luego manda lo guardado). */
+function mockStates(lib: Library): Record<string, { status: string; finishedMs?: number; rating?: number; listPos?: number; statusMs: number }> {
+  const out: Record<string, { status: string; finishedMs?: number; rating?: number; listPos?: number; statusMs: number }> = {};
+  const idOf = (pid: string, name: string) => lib.platforms.find((p) => p.id === pid)?.titles.find((t) => t.name === name)?.id;
+  const put = (pid: string, name: string, v: Omit<(typeof out)[string], 'statusMs'>) => { const id = idOf(pid, name); if (id) out[id] = { ...v, statusMs: NOW - 2 * 864e5 }; };
+  const d = (y: number, m: number, day: number) => Date.UTC(y, m - 1, day, 12);
+  for (const n of ['Elden Ring', 'Hades II', 'Hollow Knight']) put('pc', n, { status: 'playing' });
+  ['Disco Elysium', "Baldur's Gate 3", 'Outer Wilds', 'Sekiro'].forEach((n, i) => put('pc', n, { status: 'pending', listPos: i + 1 }));
+  put('pc', 'Celeste', { status: 'finished', finishedMs: d(2026, 8, 14), rating: 5 });
+  put('pc', 'Stardew Valley', { status: 'finished', finishedMs: d(2026, 3, 2), rating: 4 });
+  put('pc', 'Balatro', { status: 'finished', finishedMs: d(2026, 9, 30), rating: 3 });
+  put('pc', 'The Witcher 3', { status: 'finished', finishedMs: d(2025, 11, 20), rating: 5 });
+  put('pc', 'Red Dead Redemption 2', { status: 'finished', finishedMs: d(2025, 6, 1) });
+  put('pc', 'Cyberpunk 2077', { status: 'dropped' });
+  put('switch', 'Zelda: Tears of the Kingdom', { status: 'playing' });
+  put('switch', 'Xenoblade Chronicles 3', { status: 'pending', listPos: 5 });
+  put('switch', 'Metroid Dread', { status: 'pending', listPos: 6 });
+  put('switch', 'Super Mario Odyssey', { status: 'finished', finishedMs: d(2026, 5, 9), rating: 4 });
+  return out;
+}
+
 const LS = 'visor.mock.config';
 let pickN = 0;
 function store(): Storage | null { try { return window.localStorage; } catch { return null; } }
@@ -247,7 +268,7 @@ export async function mockBackend(): Promise<Backend> {
     platforms: MOCK_PLATS.map((p) => ({ id: p.id, name: p.name, folder: p.folder, accent: p.accent, icon: p.icon })),
     captureHotkey: 'F12', captureCombo: 'back+rb', captureMouse: '', captureMagpie: 'scaled', captureSound: true, capturePeek: true, captureRumble: true, magpieExe: '', showHidden: false,
     sgdbKey: q.has('sgdb') ? 'mock' : '', sgdbAuto: true, deepseekKey: '', deepseekModel: 'deepseek-chat',
-    ankiUrl: 'http://127.0.0.1:8765', ankiDeck: 'Japonés::Novelas', ankiModel: '', ankiStyle: 'limpio', ankiAutostart: true, ankiExe: '', recordHotkey: 'F9', audioCombo: 'start+rb', audioHotkey: '', autoBackup: true, openOnCursor: false, savesAuto: true, savesDir: '', goalVn: 60, goalJvn: 30, remoteEnabled: false, remotePort: 47811, remoteToken: '', titlesOrder: {}, titlesZoom: 0, ankiMap: { word: 'Word', reading: 'WordReading', meaning: 'PrimaryDefinition', sentence: 'Sentence', translation: 'SentenceTranslation', shot: 'Picture', audio: 'SentenceAudio' } };
+    ankiUrl: 'http://127.0.0.1:8765', ankiDeck: 'Japonés::Novelas', ankiModel: '', ankiStyle: 'limpio', ankiAutostart: true, ankiExe: '', recordHotkey: 'F9', audioCombo: 'start+rb', audioHotkey: '', autoBackup: true, openOnCursor: false, savesAuto: true, savesDir: '', goalVn: 60, goalJvn: 30, remoteEnabled: false, remotePort: 47811, remoteToken: '', titlesOrder: {}, titlesZoom: 0, listStalled: true, listStalledDays: 30, listStalledAction: 'ask', listAutoPlay: true, ankiMap: { word: 'Word', reading: 'WordReading', meaning: 'PrimaryDefinition', sentence: 'Sentence', translation: 'SentenceTranslation', shot: 'Picture', audio: 'SentenceAudio' } };
   let cfg: Config = base;
   try { const s = store()?.getItem(LS); if (s) cfg = { ...base, ...JSON.parse(s) }; } catch {}
   if (q.has('empty')) cfg = { ...cfg, root: null };
@@ -262,7 +283,8 @@ export async function mockBackend(): Promise<Backend> {
   const load = <T,>(k: string, d: T): T => { try { const v = store()?.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
   const save = (k: string, v: unknown) => { try { store()?.setItem(k, JSON.stringify(v)); } catch {} };
   let hidden: HiddenEntry[] = load('visor.mock.hidden', []);
-  const prefs: Record<string, { accent?: string; sort?: string; status?: string; finishedMs?: number }> = load('visor.mock.prefs', {});
+  type MockPref = { accent?: string; sort?: string; status?: string; finishedMs?: number; rating?: number; listPos?: number; statusMs?: number; snoozeMs?: number };
+  const prefs: Record<string, MockPref> = load('visor.mock.prefs', mockStates(lib));
   // Capturas movidas: la copia nueva se dibuja igual que la original.
   const alias = new Map<string, string>();
   let seq = 5000;
@@ -297,7 +319,7 @@ export async function mockBackend(): Promise<Backend> {
       const platforms = lib.platforms.map((p) => ({
         ...p,
         titles: p.titles
-          .map((t) => ({ ...t, shots: [...t.shots], hidden: ids.has(t.id), accentOverride: prefs[t.id]?.accent ?? null, sortMode: (prefs[t.id]?.sort as SortMode | undefined) ?? null, status: (prefs[t.id]?.status as Title['status']) ?? null, finishedMs: prefs[t.id]?.finishedMs ?? null }))
+          .map((t) => ({ ...t, shots: [...t.shots], hidden: ids.has(t.id), accentOverride: prefs[t.id]?.accent ?? null, sortMode: (prefs[t.id]?.sort as SortMode | undefined) ?? null, status: (prefs[t.id]?.status as Title['status']) ?? null, finishedMs: prefs[t.id]?.finishedMs ?? null, rating: prefs[t.id]?.rating ?? null, listPos: prefs[t.id]?.listPos ?? null, statusMs: prefs[t.id]?.statusMs ?? null, snoozeMs: prefs[t.id]?.snoozeMs ?? null }))
           .filter((t) => cfg.showHidden || !t.hidden),
       }));
       return { platforms, hidden: [...hidden] };
@@ -380,15 +402,30 @@ export async function mockBackend(): Promise<Backend> {
       if (!p.accent && !p.sort && !p.status) delete prefs[id];
       save('visor.mock.prefs', prefs);
     },
-    async setTitleStatus(id, status) {
+    async setTitleStatus(id, status, finishedMs, rating) {
       const p = (prefs[id] ??= {});
-      if (status === 'none') { delete p.status; delete p.finishedMs; }
+      const nextPos = Math.max(0, ...Object.values(prefs).map((x) => x.listPos ?? 0)) + 1;
+      if (status === 'none') { delete p.status; delete p.finishedMs; delete p.rating; delete p.listPos; delete p.snoozeMs; delete p.statusMs; }
       else {
-        if (status === 'finished') { if (p.status !== 'finished' || !p.finishedMs) p.finishedMs = Date.now(); }
-        else delete p.finishedMs;
+        if (status === 'finished') {
+          if (p.status !== 'finished' || !p.finishedMs) p.finishedMs = Date.now();
+          if (finishedMs) p.finishedMs = finishedMs;
+          if (rating && rating >= 1 && rating <= 5) p.rating = rating; else delete p.rating;
+        } else { delete p.finishedMs; delete p.rating; }
+        if (status === 'pending') p.listPos ??= nextPos; else delete p.listPos;
+        if (p.status !== status) p.statusMs = Date.now();
+        delete p.snoozeMs;
         p.status = status;
       }
       if (!p.accent && !p.sort && !p.status) delete prefs[id];
+      save('visor.mock.prefs', prefs);
+    },
+    async setPendingOrder(ids) {
+      ids.forEach((id, i) => { const p = prefs[id]; if (p?.status === 'pending') p.listPos = i + 1; });
+      save('visor.mock.prefs', prefs);
+    },
+    async snoozeStalled(ids) {
+      for (const id of ids) if (prefs[id]?.status) prefs[id].snoozeMs = Date.now();
       save('visor.mock.prefs', prefs);
     },
     async pickSaveZip(name) { return 'C:/Usuarios/Mock/' + name; },

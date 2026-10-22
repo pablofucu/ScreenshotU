@@ -1,8 +1,8 @@
 import { tick } from 'svelte';
-import { app, SORT_LABEL, SORT_ORDER, STATUS_LABEL, STATUS_ORDER, TITLE_FILTERS, TITLE_ORDERS, TITLE_ORDER_LABEL, TITLES_TABS, type MenuItem, type SortMode, type View } from './store.svelte';
+import { app, SORT_LABEL, SORT_ORDER, TITLE_FILTERS, TITLE_ORDERS, TITLE_ORDER_LABEL, TITLES_TABS, type MenuItem, type SortMode, type View } from './store.svelte';
 import { backend, initBackend } from './backend';
 import { blip } from './sound';
-import type { BackendEvent, Config, GameStatus, Library, MagpieMode, Shot, Title } from './types';
+import type { BackendEvent, Config, Library, MagpieMode, Shot, Title } from './types';
 import { fmtDur } from './format';
 import { oskCmd, oskKeydown } from './osk.svelte';
 import {
@@ -23,6 +23,7 @@ import { openPhrases, phrasesCmd } from './phrases.svelte';
 import { goalMinLeft, goalTrack, localDay, type GoalKey } from './readgoals';
 import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
 import { libraryCmd, loadLibraryInfo, openLibrary } from './library.svelte';
+import { checkStalled, listCmd, listFirst, listHas, listReveal, listTab, onLaunched, openStatusBar, resetList, stalledCmd, statusBarCmd } from './milista.svelte';
 
 export const GRID_VIEW_H = 480;
 /** Medidas de la cuadrícula de juegos según el tamaño elegido (portadas por fila, filas, página). */
@@ -94,7 +95,10 @@ function validKey(view: View, key: string | undefined): string | undefined {
     if (key === 'read') return app.readCard ? key : undefined;
   } else if (view === 'titles') {
     // La baldosa «Añadir juego» es la posición `titles.length`.
-    if (/^tit\d+$/.test(key)) return n === (app.platform?.titles.length ?? 0) || app.tview.includes(n) ? key : undefined;
+    if (/^tit\d+$/.test(key)) {
+      if (listTab()) return listHas(n) ? key : undefined;
+      return n === (app.platform?.titles.length ?? 0) || app.tview.includes(n) ? key : undefined;
+    }
   } else if (view === 'detail') {
     const t = app.platform?.titles[app.t];
     if (!t) return undefined;
@@ -114,7 +118,7 @@ function validKey(view: View, key: string | undefined): string | undefined {
 }
 function defaultKey(view: View): string {
   if (view === 'home') return app.config.root ? validKey('home', 'plat' + Math.min(app.hp, Math.max(0, app.lib.platforms.length - 1))) ?? 'plat0' : 'welcome';
-  if (view === 'titles') return 'tit' + atPos(0);
+  if (view === 'titles') return listTab() ? (listFirst() === undefined ? '' : 'tit' + listFirst()) : 'tit' + atPos(0);
   if (view === 'detail') {
     const t = app.platform?.titles[app.t];
     return t?.launchable ? 'play' : t?.shots.length ? 'ds0' : '';
@@ -137,7 +141,11 @@ export function setFocus(k: string, mouse = false) {
   if (app.view === 'home') {
     if (k.startsWith('plat')) app.hp = +k.slice(4);
   } else if (app.view === 'titles') {
-    if (k.startsWith('tit')) app.t = +k.slice(3);
+    if (k.startsWith('tit')) {
+      app.t = +k.slice(3);
+      // «Mi lista»: la estantería y la balda se desplazan para que el juego enfocado se vea (con el ratón no, para no mover lo que hay bajo el cursor).
+      if (!mouse && app.titlesTab === 'list') listReveal();
+    }
   } else if (app.view === 'stats') {
     // La lista se desplaza para que la fila enfocada se vea entera.
     if (!k.startsWith('sr')) return;
@@ -355,6 +363,7 @@ export async function playTitle(t: Title) {
   try {
     await backend.launch(t.gameId);
     if (!app.playing) app.playing = { id: t.gameId, since: Date.now() };
+    onLaunched(t);
     toast(backend.isTauri ? `Iniciando ${t.name}…` : `Jugar: ${t.name} (simulado en el navegador)`, 2400);
   } catch (e) {
     toast(String(e), 3600);
@@ -369,7 +378,7 @@ export async function menuAct(item: MenuItem) {
   if (item === 'hide' || item === 'unhide') { await toggleHideTitle(t, item === 'hide'); return; }
   if (item === 'accent') { openAccentPicker(); return; }
   if (item === 'magpie') { void cycleMagpie(t); return; }
-  if (item === 'status') { void cycleStatus(t, 1); return; }
+  if (item === 'status') { openStatusBar(app.menu.title); return; }
   if (item === 'sgdb') { void openSgdbPicker(app.p, app.menu.title); return; }
   if (item === 'phrases') { closeOverlay(); void openPhrases(t.gameId, t.name); return; }
   if (item === 'saves' && t.gameId) { void openSaves(t.gameId, t.name); return; }
@@ -421,22 +430,6 @@ export async function menuAct(item: MenuItem) {
   blip(1320);
 }
 
-/** Estado del juego: Sin estado → Pendiente → Jugando → Terminado → Abandonado. Terminado guarda la fecha en el núcleo. */
-async function cycleStatus(t: Title, d: number) {
-  const cur = (t.status ?? 'none') as GameStatus;
-  const next = cycleIn(STATUS_ORDER, cur, d);
-  try {
-    await backend.setTitleStatus(t.id, next);
-    const patch = { status: next === 'none' ? null : next, finishedMs: next === 'finished' ? (cur === 'finished' && t.finishedMs ? t.finishedMs : Date.now()) : null };
-    // La biblioteca es «raw»: se sustituye el título (y su plataforma) por copias para que ficha, filtros y marcas se repinten.
-    app.lib = {
-      ...app.lib,
-      platforms: app.lib.platforms.map((p) => (p.titles.includes(t) ? { ...p, titles: p.titles.map((x) => (x === t ? { ...x, ...patch } : x)) } : p)),
-    };
-    blip(1320);
-  } catch (e) { toast(String(e), 3200); }
-}
-
 export const MAGPIE_LABEL: Record<MagpieMode, string> = { off: 'Desactivado', auto: 'Automático', '2x': 'Forzar 2x', '4x': 'Forzar 4x' };
 const MAGPIE_ORDER: MagpieMode[] = ['off', 'auto', '2x', '4x'];
 
@@ -457,10 +450,6 @@ function menuCmd(c: string) {
   if (c === 'up') { app.menu.row = Math.max(0, app.menu.row - 1); app.menu.confirm = false; blip(880); }
   else if (c === 'down') { app.menu.row = Math.min(n - 1, app.menu.row + 1); app.menu.confirm = false; blip(880); }
   else if (c === 'a') void menuAct(app.menu.items[app.menu.row]);
-  else if ((c === 'left' || c === 'right') && app.menu.kind === 'detail' && app.menu.items[app.menu.row] === 'status') {
-    const t = app.platform?.titles[app.menu.title];
-    if (t) void cycleStatus(t, c === 'left' ? -1 : 1);
-  }
   else if (c === 'b' || c === 'menu') { closeOverlay(); blip(520); }
 }
 
@@ -478,7 +467,7 @@ export function activate(act: string | undefined) {
 function runAct(act: string, el: HTMLElement | null | undefined) {
   const [a, b, c] = act.split(':');
   if (a === 'plat') {
-    app.p = +b; app.hp = +b; app.t = 0; app.fk.titles = 'tit0'; app.titlesTab = 'all';
+    app.p = +b; app.hp = +b; app.t = 0; app.fk.titles = 'tit0'; app.titlesTab = 'all'; resetList();
     go('titles', 'fwd');
   } else if (a === 'tit') {
     const saga = isSagaPlatform(app.platform);
@@ -511,7 +500,7 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
     openStreak();
   } else if (a === 'sr') {
     // Juego de la clasificación: su ficha (B vuelve a las estadísticas).
-    app.p = +b; app.titleFilter = 'all'; app.titlesTab = 'all';
+    app.p = +b; app.titleFilter = 'all'; app.titlesTab = 'all'; resetList();
     openTitle(+c);
     app.detailFrom = 'stats';
   } else if (a === 'evo') {
@@ -527,7 +516,7 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
 function openRecent(i: number) {
   const r = app.recent[i];
   if (!r) return;
-  app.p = r.pi; app.hp = r.pi; app.titleFilter = 'all'; app.titlesTab = 'all';
+  app.p = r.pi; app.hp = r.pi; app.titleFilter = 'all'; app.titlesTab = 'all'; resetList();
   openTitle(r.ti);
 }
 
@@ -544,7 +533,7 @@ function dock(i: number) {
 function openSagas() {
   const i = app.lib.platforms.findIndex((p) => p.id === SAGA_PLATFORM);
   if (i < 0) { toast('No hay sagas'); return; }
-  app.p = i; app.hp = i; app.t = 0; app.fk.titles = 'tit0'; app.titlesTab = 'all';
+  app.p = i; app.hp = i; app.t = 0; app.fk.titles = 'tit0'; app.titlesTab = 'all'; resetList();
   go('titles', 'fwd');
 }
 
@@ -834,8 +823,11 @@ function cycleTitlesTab() {
   const [tab, label] = TITLES_TABS[(i + 1) % TITLES_TABS.length];
   app.titlesTab = tab;
   // Las pestañas sin contenido no tienen nada que enfocar.
-  if (tab === 'all') setFocus(validKey('titles', 'tit' + app.t) ?? defaultKey('titles'));
-  else { app.focus = ''; app.fk.titles = 'tit' + app.t; }
+  if (tab === 'all' || tab === 'list') {
+    // «Mi lista» conserva el juego enfocado si está en alguna estantería.
+    if (tab === 'list') resetList();
+    setFocus(validKey('titles', 'tit' + app.t) ?? defaultKey('titles'));
+  } else { app.focus = ''; app.fk.titles = 'tit' + app.t; }
   toast(label);
   blip(700);
 }
@@ -966,6 +958,7 @@ export type SettingId =
   | 'sgdbkey' | 'sgdbauto' | 'sgdbnow' | 'sgdbgame'
   | 'backup' | 'backupmedia' | 'restore' | 'autobackup'
   | 'savesauto' | 'ludusavi' | 'update'
+  | 'liststalled' | 'liststalleddays' | 'liststalledact' | 'listautoplay'
   | ReadingId | RemoteId;
 /** Secciones de Ajustes (LB/RB las recorren). `color` es el índice del arcoíris. */
 export const SETTING_SECTIONS: Array<{ name: string; icon: string; color: number; rows: SettingId[] }> = [
@@ -974,6 +967,7 @@ export const SETTING_SECTIONS: Array<{ name: string; icon: string; color: number
   { name: 'SteamGridDB', icon: 'image', color: 2, rows: ['sgdbkey', 'sgdbauto', 'sgdbnow', 'sgdbgame'] },
   { name: 'Capturas propias', icon: 'camera', color: 3, rows: ['combo', 'mouse', 'hotkey', 'capsound', 'cappeek', 'caprumble'] },
   { name: 'Audio', icon: 'speaker', color: 4, rows: ['audioout', 'audiocombo', 'audiohotkey'] },
+  { name: 'Mi lista', icon: 'checks', color: 3, rows: ['liststalled', 'liststalleddays', 'liststalledact', 'listautoplay'] },
   { name: 'Lectura', icon: 'jvn', color: 5, rows: READING_ROWS },
   { name: 'Magpie', icon: 'image', color: 6, rows: ['magpieexe', 'magpie'] },
   { name: 'Copias', icon: 'import', color: 0, rows: ['backup', 'backupmedia', 'restore', 'autobackup'] },
@@ -1173,6 +1167,15 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'restore' && dir === 0) void restoreBackup();
   else if (id === 'autobackup') { void patchConfig({ autoBackup: !app.config.autoBackup }); blip(1320); }
   else if (id === 'savesauto') { void patchConfig({ savesAuto: !app.config.savesAuto }); blip(1320); }
+  else if (id === 'liststalled') { void patchConfig({ listStalled: !app.config.listStalled }); blip(1320); }
+  else if (id === 'liststalleddays') {
+    // ‹ › de uno en uno (mantener pulsado acelera); A suma una semana y da la vuelta al llegar a 180.
+    const d = app.config.listStalledDays;
+    void patchConfig({ listStalledDays: dir ? Math.max(7, Math.min(180, d + dir)) : d >= 180 ? 7 : Math.min(180, d + 7) });
+    blip(880);
+  }
+  else if (id === 'liststalledact') { void patchConfig({ listStalledAction: cycleIn(['ask', 'pending', 'dropped'] as Config['listStalledAction'][], app.config.listStalledAction, dir || 1) }); blip(1320); }
+  else if (id === 'listautoplay') { void patchConfig({ listAutoPlay: !app.config.listAutoPlay }); blip(1320); }
   else if (id === 'ludusavi' && dir === 0) void updateManifestFromSettings();
   else if (id === 'sgdbkey' && dir === 0) editSgdbKey();
   else if (id === 'sgdbauto') toggleSgdbAuto();
@@ -1197,6 +1200,8 @@ function overlayCmd(c: string) {
     case 'sgdbtitles': sgdbTitlesCmd(c); return;
     case 'saves': savesCmd(c); return;
     case 'library': libraryCmd(c); return;
+    case 'status': statusBarCmd(c); return;
+    case 'stalled': stalledCmd(c); return;
   }
   // Arriba/abajo pasan de una sección a la siguiente al llegar al borde; LB/RB (o LT/RT) saltan de sección.
   const rows = secRows();
@@ -1337,6 +1342,7 @@ export async function boot() {
   try { app.fullscreen = await backend.isFullscreen(); } catch { /* */ }
   // Con la biblioteca del último escaneo se pinta ya, y el escaneo real (lento en disco duro) va detrás sin bloquear.
   let cached: Library | null = null;
+  let fresh: Promise<void> = Promise.resolve();
   try { cached = (await backend.cachedScan?.()) ?? null; } catch (e) { console.error(e); }
   if (cached) {
     try { app.sagas = await backend.getSagas(); } catch (e) { console.error(e); }
@@ -1344,13 +1350,18 @@ export async function boot() {
     app.view = 'home';
     setFocus(defaultKey('home'));
     app.ready = true;
-    void softRefresh();
+    fresh = softRefresh().catch(() => {});
   } else {
     await rescan();
     app.ready = true;
   }
   void libraryGate();
-  void announceStartup().then((shown) => { if (!shown) void announceDue(); });
+  void announceStartup().then(async (shown) => {
+    if (!shown) await announceDue();
+    // Con la biblioteca de la caché, los estados pueden estar desfasados: se espera al escaneo real. Nunca pisa los avisos de arriba.
+    await fresh;
+    void checkStalled();
+  });
   // Comprobación silenciosa de actualizaciones unos segundos después de arrancar (solo en la app, no en el navegador).
   if (backend.isTauri) setTimeout(() => void checkUpdate(true), 8000);
   setInterval(() => (app.now = new Date()), 20000);
@@ -1363,6 +1374,7 @@ export function cmd(c: string) {
   wake();
   if (app.osk.open) { oskCmd(c); return; }
   if (app.overlay) { overlayCmd(c); return; }
+  if (listTab() && listCmd(c)) return;
   switch (c) {
     case 'left': move(-1, 0); break;
     case 'right': move(1, 0); break;
@@ -1537,6 +1549,7 @@ function onWheel(e: WheelEvent) {
     case 'home': case 'detail': case 'evo': move(d, 0); break;
     case 'stats': if (app.statsTab === 'rank') move(0, d); else move(d, 0); break;
     case 'titles': {
+      if (listTab()) { listCmd(d > 0 ? 'down' : 'up'); break; }
       if (app.config.titlesView === 'grid') { page(d); break; }
       const np = viewPos(app.t) + d;
       if (np >= 0 && np <= app.tview.length) { setFocus('tit' + atPos(np)); blip(880); }

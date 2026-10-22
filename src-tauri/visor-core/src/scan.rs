@@ -104,6 +104,15 @@ pub struct Title {
     pub status: Option<String>,
     #[serde(default)]
     pub finished_ms: Option<i64>,
+    /// «Mi lista»: nota (1-5) del terminado, sitio entre los pendientes, cuando se fijo el estado y «dejarlo» ante el aviso de parado.
+    #[serde(default)]
+    pub rating: Option<i64>,
+    #[serde(default)]
+    pub list_pos: Option<i64>,
+    #[serde(default)]
+    pub status_ms: Option<i64>,
+    #[serde(default)]
+    pub snooze_ms: Option<i64>,
 }
 
 impl Title {
@@ -138,6 +147,10 @@ impl Title {
             magpie_summary: None,
             status: None,
             finished_ms: None,
+            rating: None,
+            list_pos: None,
+            status_ms: None,
+            snooze_ms: None,
         }
     }
 }
@@ -367,6 +380,10 @@ pub fn scan_library_ex(root: Option<&Path>, platforms: &[PlatformCfg], games: &[
                     t.sort_mode = p.sort.clone();
                     t.status = p.status.clone();
                     t.finished_ms = p.finished_ms;
+                    t.rating = p.rating;
+                    t.list_pos = p.list_pos;
+                    t.status_ms = p.status_ms;
+                    t.snooze_ms = p.snooze_ms;
                     if let Some(m) = &p.magpie {
                         t.magpie_mode = Some(m.mode.clone());
                         t.magpie_summary = m.summary.clone();

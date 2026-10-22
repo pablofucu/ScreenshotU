@@ -141,7 +141,7 @@
   </div>
 
   {#if T.status}
-    <div class="stpill pill st-{T.status}">{@html T.status === 'finished' ? ICON.check : ''}<b>{STATUS_LABEL[T.status]}</b>{#if T.status === 'finished' && T.finishedMs}<small>{new Date(T.finishedMs).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</small>{/if}</div>
+    <div class="stpill pill st-{T.status}">{@html T.status === 'finished' ? ICON.check : ''}<b>{STATUS_LABEL[T.status]}</b>{#if T.status === 'finished' && T.finishedMs}<small>{new Date(T.finishedMs).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</small>{/if}{#if T.status === 'finished' && T.rating}<small>{'★'.repeat(T.rating)}</small>{/if}</div>
   {/if}
 
   {#if T.launchable}

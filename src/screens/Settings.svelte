@@ -17,7 +17,7 @@
   const yn = (b: boolean) => (b ? 'Sí' : 'No');
 
   // Filas que cambian de valor con izquierda/derecha (se marcan con ‹ › al enfocarlas).
-  const CYCLE = new Set<SettingId>(['showhidden', 'view', 'shotsview', 'shotsorder', 'accent', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto']);
+  const CYCLE = new Set<SettingId>(['showhidden', 'view', 'shotsview', 'shotsorder', 'accent', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay']);
 
   function row(id: SettingId): { l: string; v: string; d: string } {
     if (isReadingId(id)) return readingRow(id);
@@ -61,6 +61,10 @@
       case 'autobackup': return { l: 'Copia automática', v: yn(app.config.autoBackup), d: 'Al arrancar, si la última copia automática tiene 7 días o más, guarda la base de datos en la carpeta «Copias de la base» de la biblioteca (visor-AAAA-MM-DD.db) y conserva las 5 últimas.' };
       case 'savesauto': return { l: 'Copiar partidas al cerrar el juego', v: yn(app.config.savesAuto), d: 'Al cerrar un juego lanzado desde el visor, guarda en un .zip sus partidas si cambiaron desde la última copia. Se conservan las 10 últimas automáticas de cada juego; las manuales no se borran. Las ubicaciones de cada juego se revisan en su ficha (Y › Partidas guardadas).' };
       case 'ludusavi': return { l: 'Base de partidas de Ludusavi', v: ludusaviLabel(), d: 'Base libre de PCGamingWiki y Ludusavi con dónde guarda sus partidas cada juego. Pulsa A para descargarla o actualizarla (unos 18 MB). Para novelas visuales y juegos que no aparecen se usan además reglas por motor (Ren’Py, RPG Maker, KiriKiri, Unity, Unreal…).' };
+      case 'liststalled': return { l: 'Avisar de juegos parados', v: yn(app.config.listStalled), d: 'Al arrancar, revisa los juegos en «Jugando» que llevan tiempo sin jugarse y te pregunta qué hacer con ellos (una sola tarjeta para todos). «Jugar» cuenta como la última partida registrada o, si el juego no tiene partidas, su captura más reciente.' };
+      case 'liststalleddays': return { l: 'Días sin jugar', v: `${app.config.listStalledDays} días`, d: 'Un juego en «Jugando» se considera parado cuando pasan estos días sin jugarlo (de 7 a 180). Pulsa ‹ › para cambiarlo de uno en uno, o A para sumar una semana.' };
+      case 'liststalledact': return { l: 'Qué hacer con ellos', v: app.config.listStalledAction === 'pending' ? 'Pasar a Pendiente' : app.config.listStalledAction === 'dropped' ? 'Pasar a Abandonado' : 'Preguntar', d: 'Preguntar enseña una tarjeta al arrancar con Pendiente, Abandonado o Dejarlo para cada juego; «Dejarlo» no se vuelve a preguntar hasta que lo juegues otra vez. Las otras opciones los cambian solas y avisan con un mensaje.' };
+      case 'listautoplay': return { l: 'Al lanzar un pendiente, pasa a Jugando', v: yn(app.config.listAutoPlay), d: 'Cuando lanzas desde el visor un juego marcado como Pendiente, pasa solo a Jugando.' };
       case 'update': return updateRow();
       case 'quit': return { l: 'Salir de la aplicación', v: '', d: 'Cierra el visor. Las capturas con el atajo dejan de funcionar hasta que lo vuelvas a abrir.' };
       case 'sgdbkey': return { l: 'Clave de API', v: sgdbKeyLabel(), d: 'Clave gratuita de steamgriddb.com (inicia sesión → Preferencias → API). Pulsa A para escribirla o pegarla con Ctrl+V.' };

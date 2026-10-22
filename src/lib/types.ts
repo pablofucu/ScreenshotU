@@ -77,6 +77,14 @@ export interface Config {
   titlesOrder: Record<string, TitleOrder>;
   /** Tamaño de las portadas: 0 = 5 por fila (por defecto) … 3 = 8 por fila. */
   titlesZoom: number;
+  /** «Mi lista · Juegos parados»: avisar de los juegos en «Jugando» sin jugar desde hace `listStalledDays` días. */
+  listStalled: boolean;
+  /** Días sin jugar (7 a 180). */
+  listStalledDays: number;
+  /** Qué hacer con ellos: preguntar, pasarlos a Pendiente o a Abandonado. */
+  listStalledAction: 'ask' | 'pending' | 'dropped';
+  /** Al lanzar un pendiente desde el visor, pasa a «Jugando». */
+  listAutoPlay: boolean;
 }
 /** Orden de la lista de juegos: última partida, A–Z o por color de la portada. */
 export type TitleOrder = 'last' | 'az' | 'color';
@@ -151,6 +159,11 @@ export interface Title {
   /** Estado del juego (null = sin estado) y, si está terminado, cuándo (ms desde epoch). */
   status?: Exclude<GameStatus, 'none'> | null;
   finishedMs?: number | null;
+  /** Nota de 1 a 5 (solo terminados), sitio entre los pendientes, cuándo se fijó el estado y «dejarlo» ante el aviso de juego parado. */
+  rating?: number | null;
+  listPos?: number | null;
+  statusMs?: number | null;
+  snoozeMs?: number | null;
   /** Solo en la categoría Sagas: los juegos que la forman. */
   members?: SagaMember[];
 }
@@ -244,8 +257,12 @@ export interface Backend {
   setSortPref(id: string, mode: SortMode): Promise<void>;
   /** Escalado con Magpie de un juego; se aplica al lanzarlo. */
   setMagpieMode(id: string, mode: MagpieMode): Promise<void>;
-  /** Estado del juego (`none` lo quita); terminado guarda la fecha. */
-  setTitleStatus(id: string, status: GameStatus): Promise<void>;
+  /** Estado del juego (`none` lo quita); terminado guarda la fecha (`finishedMs`, hoy por defecto) y la nota (1-5; 0 = sin nota). */
+  setTitleStatus(id: string, status: GameStatus, finishedMs?: number | null, rating?: number | null): Promise<void>;
+  /** Orden manual de «Mi lista › Pendientes»: los ids de izquierda a derecha. */
+  setPendingOrder(ids: string[]): Promise<void>;
+  /** «Dejarlo» ante el aviso de juegos parados: no se vuelve a preguntar hasta que se jueguen otra vez. */
+  snoozeStalled(ids: string[]): Promise<void>;
   magpieStatus(): Promise<MagpieStatus>;
   /** Acceso desde el móvil: dirección, código y si el servidor está en marcha. */
   remoteInfo(): Promise<RemoteInfo>;

@@ -122,6 +122,14 @@ pub struct Config {
     pub titles_order: std::collections::BTreeMap<String, String>,
     /// Tamano de las portadas de la lista de juegos: 0 = 5 por fila (por defecto) .. 3 = 8 por fila.
     pub titles_zoom: u8,
+    /// «Mi lista · Juegos parados»: avisar de los juegos en «Jugando» que llevan tiempo sin jugarse.
+    pub list_stalled: bool,
+    /// Dias sin jugar para considerar un juego parado (7 a 180).
+    pub list_stalled_days: u32,
+    /// Que hacer con ellos: "ask" (preguntar) | "pending" | "dropped".
+    pub list_stalled_action: String,
+    /// Al lanzar un pendiente desde el visor, pasa a «Jugando».
+    pub list_auto_play: bool,
 }
 
 pub fn default_platforms() -> Vec<PlatformCfg> {
@@ -199,6 +207,10 @@ impl Default for Config {
             remote_token: String::new(),
             titles_order: Default::default(),
             titles_zoom: 0,
+            list_stalled: true,
+            list_stalled_days: 30,
+            list_stalled_action: "ask".into(),
+            list_auto_play: true,
         }
     }
 }
@@ -228,6 +240,10 @@ impl Config {
         c.remote_port = c.remote_port.max(1024);
         c.remote_token = c.remote_token.trim().to_string();
         c.titles_zoom = c.titles_zoom.min(3);
+        c.list_stalled_days = c.list_stalled_days.clamp(7, 180);
+        if !["ask", "pending", "dropped"].contains(&c.list_stalled_action.as_str()) {
+            c.list_stalled_action = "ask".into();
+        }
         if !["recent", "oldest"].contains(&c.shots_order.as_str()) {
             c.shots_order = "recent".into();
         }
@@ -326,6 +342,20 @@ mod tests {
         assert_eq!(c.platforms.len(), 4);
         c.save(&p).unwrap();
         assert_eq!(Config::load(&p), c);
+    }
+
+    #[test]
+    fn my_list_settings_default_on_and_are_clamped() {
+        let d = tempfile::tempdir().unwrap();
+        let p = d.path().join("c.json");
+        let c = Config::load(&p);
+        assert_eq!((c.list_stalled, c.list_stalled_days, c.list_stalled_action.as_str(), c.list_auto_play), (true, 30, "ask", true));
+        fs::write(&p, r#"{"listStalledDays":1,"listStalledAction":"raro","listAutoPlay":false}"#).unwrap();
+        let c = Config::load(&p);
+        assert_eq!((c.list_stalled_days, c.list_stalled_action.as_str(), c.list_auto_play, c.list_stalled), (7, "ask", false, true));
+        fs::write(&p, r#"{"listStalledDays":999,"listStalledAction":"dropped"}"#).unwrap();
+        let c = Config::load(&p);
+        assert_eq!((c.list_stalled_days, c.list_stalled_action.as_str()), (180, "dropped"));
     }
 
     #[test]

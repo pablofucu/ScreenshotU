@@ -57,12 +57,16 @@ export const DEFAULT_CONFIG: Config = {
   remoteToken: '',
   titlesOrder: {},
   titlesZoom: 0,
+  listStalled: true,
+  listStalledDays: 30,
+  listStalledAction: 'ask',
+  listAutoPlay: true,
 };
 
 export type MenuItem =
   | 'folder' | 'reload' | 'remove' | 'hide' | 'unhide' | 'addshots' | 'accent'
   | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'editsaga' | 'delsaga' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'saves' | 'category' | 'delshot' | 'delsel' | `cat:${string}`;
-export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'saga' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library';
+export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'saga' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library' | 'status' | 'stalled';
 export interface SagaFormState {
   /** null = saga nueva. */
   id: string | null;
@@ -183,6 +187,37 @@ export const STATUS_ORDER: GameStatus[] = ['none', 'pending', 'playing', 'finish
 export const STATUS_LABEL: Record<GameStatus, string> = {
   none: 'Sin estado', pending: 'Pendiente', playing: 'Jugando', finished: 'Terminado', dropped: 'Abandonado',
 };
+/** Estantería de «Mi lista»: color fijo de cada estado (los terminados se agrupan por año). */
+export type ListKind = 'playing' | 'pending' | 'finished' | 'dropped' | 'none';
+export const LIST_COLOR: Record<ListKind, Accent> = {
+  playing: RAINBOW[4], pending: RAINBOW[1], finished: RAINBOW[3], dropped: RAINBOW[0],
+  none: { n: 'Gris', c: '#8a93a3', dark: false },
+};
+export interface ListShelf {
+  /** Clave estable (`playing`, `finished-2026`…): recuerda el desplazamiento de cada estantería. */
+  key: string;
+  kind: ListKind;
+  label: string;
+  /** Año de los terminados (0 = sin fecha). */
+  year: number;
+  /** Índices de títulos en la categoría, en el orden de la estantería. */
+  items: number[];
+}
+/** Barra rápida de estado: paso 1 elige el estado; con «Terminado» el paso 2 pide fecha y nota. */
+export interface StatusBarState {
+  title: number;
+  row: number;
+  step: 'pick' | 'finish';
+  /** 0 día · 1 mes · 2 año · 3 nota */
+  field: number;
+  y: number; m: number; d: number;
+  rating: number;
+}
+/** Aviso de juegos parados: una fila por juego; `choice` 0 = Pendiente, 1 = Abandonado, 2 = Dejarlo. */
+export interface StalledState {
+  rows: Array<{ id: string; name: string; days: number; choice: number }>;
+  row: number;
+}
 /** Un juego de «Seguir jugando» en Inicio: plataforma e índice del título. */
 export interface RecentRef { pi: number; ti: number }
 export const RECENT_N = 3;
@@ -201,7 +236,7 @@ export function sortShots(shots: Shot[], mode: SortMode, favs: Set<string>): Sho
 }
 
 /** Último uso de un juego: la última partida o, si no la hay, su última captura (0 = nada). */
-const lastUse = (t: Title) => t.lastPlayed || t.shots[0]?.date || 0;
+export const lastUse = (t: Title) => t.lastPlayed || t.shots[0]?.date || 0;
 
 /** Tono (0..360, empezando en el rojo) del color de la portada, o null si no tiene color (sin acento o casi gris). */
 function coverHue(t: Title): number | null {
@@ -346,6 +381,35 @@ class Store {
   titleFilter = $state<TitleFilter>('all');
   /** Pestaña de la lista de juegos (solo «Todos» tiene contenido por ahora). */
   titlesTab = $state<TitlesTab>('all');
+  /** «Mi lista»: primera portada visible de cada estantería, primera estantería visible, barra de estado y aviso de parados. */
+  listFrom = $state<Record<string, number>>({});
+  listTop = $state(0);
+  statusBar = $state<StatusBarState>({ title: 0, row: 0, step: 'pick', field: 0, y: 2026, m: 1, d: 1, rating: 0 });
+  stalled = $state<StalledState>({ rows: [], row: 0 });
+  /** Estanterías de «Mi lista» de la categoría abierta (sin ocultos ni sagas; las vacías no existen). */
+  shelves = $derived.by((): ListShelf[] => {
+    const p = this.lib.platforms[this.p];
+    if (!p || p.id === 'sagas') return [];
+    const titles = p.titles;
+    const idx = titles.map((_, i) => i).filter((i) => !titles[i].hidden && !titles[i].members);
+    const of = (s: string) => idx.filter((i) => (titles[i].status ?? 'none') === s);
+    const out: ListShelf[] = [];
+    const add = (kind: ListKind, label: string, items: number[], year = 0, key: string = kind) => { if (items.length) out.push({ key, kind, label, year, items }); };
+    add('playing', 'Jugando ahora', sortTitles(titles, of('playing'), 'last'));
+    const pend = of('pending').sort((a, b) => (titles[a].listPos ?? 1e9) - (titles[b].listPos ?? 1e9) || byName.compare(titles[a].name, titles[b].name) || a - b);
+    add('pending', 'Pendientes', pend);
+    const fin = of('finished').sort((a, b) => (titles[b].finishedMs ?? 0) - (titles[a].finishedMs ?? 0) || a - b);
+    const years = new Map<number, number[]>();
+    for (const i of fin) {
+      const ms = titles[i].finishedMs;
+      const y = ms ? new Date(ms).getFullYear() : 0;
+      (years.get(y) ?? years.set(y, []).get(y)!).push(i);
+    }
+    for (const y of [...years.keys()].sort((a, b) => (a || -1) < (b || -1) ? 1 : -1)) add('finished', y ? `Terminados ${y}` : 'Terminados', years.get(y)!, y, 'finished-' + y);
+    add('dropped', 'Abandonados', sortTitles(titles, of('dropped'), 'last'));
+    add('none', 'Sin estado', sortTitles(titles, of('none'), this.titleOrder));
+    return out;
+  });
   /** Orden activo de la categoría abierta. */
   titleOrder = $derived<TitleOrder>(this.config.titlesOrder?.[this.lib.platforms[this.p]?.id ?? ''] ?? 'last');
   tview = $derived.by((): number[] => {

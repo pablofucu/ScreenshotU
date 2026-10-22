@@ -60,6 +60,18 @@ pub struct TitlePref {
     /// Cuando se marco como terminado (ms desde epoch). Solo con `status == "finished"`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub finished_ms: Option<i64>,
+    /// Nota (1 a 5) de un juego terminado; sin valor = sin nota.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rating: Option<i64>,
+    /// Posicion en «Mi lista › Pendientes» (menor = antes). Solo con `status == "pending"`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub list_pos: Option<i64>,
+    /// «Dejarlo» ante el aviso de juego parado: cuando se dijo (no se vuelve a preguntar hasta que se juegue de nuevo).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snooze_ms: Option<i64>,
+    /// Cuando se fijo el estado actual (ms desde epoch); lo rellena la base al cargar.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status_ms: Option<i64>,
     /// Escalado con Magpie al lanzar el juego.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub magpie: Option<MagpiePref>,
@@ -148,6 +160,10 @@ pub fn set_status(p: &mut TitlePrefs, id: &str, status: &str, now_ms: i64) -> Re
         if let Some(x) = p.get_mut(id) {
             x.status = None;
             x.finished_ms = None;
+            x.rating = None;
+            x.list_pos = None;
+            x.snooze_ms = None;
+            x.status_ms = None;
         }
         prune(p, id);
         return Ok(());
@@ -155,6 +171,8 @@ pub fn set_status(p: &mut TitlePrefs, id: &str, status: &str, now_ms: i64) -> Re
     if !STATUSES.contains(&status) {
         return Err(format!("Estado desconocido: {status}"));
     }
+    // Un pendiente nuevo va al final de la lista de pendientes.
+    let next_pos = p.values().filter_map(|x| x.list_pos).max().unwrap_or(0) + 1;
     let e = p.entry(id.to_string()).or_default();
     if status == "finished" {
         if e.status.as_deref() != Some("finished") || e.finished_ms.is_none() {
@@ -162,9 +180,57 @@ pub fn set_status(p: &mut TitlePrefs, id: &str, status: &str, now_ms: i64) -> Re
         }
     } else {
         e.finished_ms = None;
+        e.rating = None;
     }
+    if status == "pending" {
+        e.list_pos.get_or_insert(next_pos);
+    } else {
+        e.list_pos = None;
+    }
+    if e.status.as_deref() != Some(status) {
+        e.status_ms = Some(now_ms);
+    }
+    e.snooze_ms = None;
     e.status = Some(status.to_string());
     Ok(())
+}
+
+/// Fecha de fin y nota de un juego ya marcado como terminado (la fecha viene editada por el usuario).
+/// La nota va de 1 a 5; 0 o `None` = sin nota.
+pub fn set_finish(p: &mut TitlePrefs, id: &str, finished_ms: Option<i64>, rating: Option<i64>) {
+    let Some(e) = p.get_mut(id) else { return };
+    if e.status.as_deref() != Some("finished") {
+        return;
+    }
+    if let Some(f) = finished_ms {
+        e.finished_ms = Some(f);
+    }
+    e.rating = rating.filter(|r| (1..=5).contains(r));
+}
+
+/// Orden de los pendientes: a cada id se le da la posicion que indica su lugar en la lista (1, 2, 3…).
+/// Devuelve las parejas `(id, posicion)` que se han fijado (solo juegos pendientes).
+pub fn set_pending_order(p: &mut TitlePrefs, ids: &[String]) -> Vec<(String, i64)> {
+    let mut out = Vec::new();
+    for (i, id) in ids.iter().enumerate() {
+        if let Some(e) = p.get_mut(id).filter(|e| e.status.as_deref() == Some("pending")) {
+            e.list_pos = Some(i as i64 + 1);
+            out.push((id.clone(), i as i64 + 1));
+        }
+    }
+    out
+}
+
+/// «Dejarlo» ante el aviso de juego parado: se recuerda cuando, hasta que se vuelva a jugar.
+pub fn set_snooze(p: &mut TitlePrefs, ids: &[String], now_ms: i64) -> Vec<String> {
+    let mut out = Vec::new();
+    for id in ids {
+        if let Some(e) = p.get_mut(id).filter(|e| e.status.is_some()) {
+            e.snooze_ms = Some(now_ms);
+            out.push(id.clone());
+        }
+    }
+    out
 }
 
 /// Cambia el modo de Magpie de un titulo. Lo medido se conserva para no tener que volver a medir.
@@ -198,11 +264,45 @@ mod tests {
         assert_eq!(p["a"].finished_ms, Some(20), "la fecha de fin se conserva");
         set_status(&mut p, "a", "dropped", 30).unwrap();
         assert_eq!(p["a"].finished_ms, None);
+        assert_eq!(p["a"].status_ms, Some(30));
         set_accent(&mut p, "a", Some("#112233")).unwrap();
         set_status(&mut p, "a", "none", 40).unwrap();
         assert!(p.contains_key("a"), "conserva el acento");
         set_accent(&mut p, "a", None).unwrap();
         assert!(p.is_empty(), "sin nada que guardar se poda");
+    }
+
+    #[test]
+    fn list_rules_rating_order_and_snooze() {
+        let mut p = TitlePrefs::new();
+        for (i, id) in ["a", "b", "c"].iter().enumerate() {
+            set_status(&mut p, id, "pending", 10 + i as i64).unwrap();
+        }
+        assert_eq!((p["a"].list_pos, p["b"].list_pos, p["c"].list_pos), (Some(1), Some(2), Some(3)), "cada pendiente nuevo va al final");
+        set_status(&mut p, "a", "pending", 99).unwrap();
+        assert_eq!((p["a"].list_pos, p["a"].status_ms), (Some(1), Some(10)), "repetir el estado no cambia ni el orden ni la fecha");
+        // Reordenar solo afecta a los pendientes.
+        set_status(&mut p, "z", "playing", 5).unwrap();
+        let done = set_pending_order(&mut p, &["c".into(), "a".into(), "z".into(), "b".into(), "nada".into()]);
+        assert_eq!(done, vec![("c".to_string(), 1), ("a".to_string(), 2), ("b".to_string(), 4)]);
+        assert_eq!(p["z"].list_pos, None);
+        // Nota y fecha: solo en terminados; 0 = sin nota; fuera de 1..5 se ignora.
+        set_finish(&mut p, "b", Some(1), Some(3));
+        assert_eq!((p["b"].finished_ms, p["b"].rating), (None, None), "b no esta terminado");
+        set_status(&mut p, "b", "finished", 50).unwrap();
+        assert_eq!(p["b"].list_pos, None, "al salir de pendientes pierde su sitio");
+        set_finish(&mut p, "b", Some(777), Some(4));
+        assert_eq!((p["b"].finished_ms, p["b"].rating), (Some(777), Some(4)));
+        set_finish(&mut p, "b", None, Some(0));
+        assert_eq!((p["b"].finished_ms, p["b"].rating), (Some(777), None));
+        set_finish(&mut p, "b", None, Some(4));
+        set_status(&mut p, "b", "dropped", 60).unwrap();
+        assert_eq!(p["b"].rating, None, "la nota solo vale con terminado");
+        // «Dejarlo»: se guarda y se borra al cambiar de estado.
+        assert_eq!(set_snooze(&mut p, &["z".into(), "ninguno".into()], 123), vec!["z".to_string()]);
+        assert_eq!(p["z"].snooze_ms, Some(123));
+        set_status(&mut p, "z", "playing", 200).unwrap();
+        assert_eq!(p["z"].snooze_ms, None);
     }
 
     #[test]

@@ -498,14 +498,49 @@ fn set_sort_pref(state: State<'_, AppState>, id: String, mode: String) -> Result
     state.db.with(|c| dbd::pref_save(c, &id, p.get(&id))).map_err(|e| e.to_string())
 }
 
-/// Estado de un titulo ("none" | "pending" | "playing" | "finished" | "dropped"). Terminado guarda la fecha.
+/// Guarda en la base la fila de estado de un titulo tal y como esta en memoria (o la borra si ya no tiene estado).
+fn save_status_row(state: &AppState, p: &userdata::TitlePrefs, id: &str, now: i64) -> Result<(), String> {
+    let cur = p.get(id).and_then(|x| x.status.as_deref().map(|s| (s.to_string(), x.finished_ms, x.rating, x.list_pos, x.snooze_ms)));
+    state
+        .db
+        .with(|c| {
+            dbd::status_save(c, id, cur.as_ref().map(|(s, f, ..)| (s.as_str(), *f)), now)?;
+            if let Some((_, _, r, l, sn)) = &cur {
+                dbd::status_extra_save(c, id, *r, *l, *sn)?;
+            }
+            Ok::<(), anyhow::Error>(())
+        })
+        .map_err(|e| e.to_string())
+}
+
+/// Estado de un titulo ("none" | "pending" | "playing" | "finished" | "dropped"). Terminado guarda la fecha
+/// (`finished_ms`, la de hoy si no se da) y una nota de 1 a 5 (`rating`; 0 o sin valor = sin nota).
 #[tauri::command]
-fn set_title_status(state: State<'_, AppState>, id: String, status: String) -> Result<(), String> {
+fn set_title_status(state: State<'_, AppState>, id: String, status: String, finished_ms: Option<i64>, rating: Option<i64>) -> Result<(), String> {
     let now = chrono_now_ms();
     let mut p = state.prefs.lock().unwrap();
     userdata::set_status(&mut p, &id, &status, now)?;
-    let cur = p.get(&id).and_then(|x| x.status.as_deref().map(|s| (s.to_string(), x.finished_ms)));
-    state.db.with(|c| dbd::status_save(c, &id, cur.as_ref().map(|(s, f)| (s.as_str(), *f)), now)).map_err(|e| e.to_string())
+    if status == "finished" {
+        userdata::set_finish(&mut p, &id, finished_ms, rating);
+    }
+    save_status_row(&state, &p, &id, now)
+}
+
+/// Orden manual de los pendientes: los ids en el orden en que van (de izquierda a derecha en «Mi lista»).
+#[tauri::command]
+fn set_pending_order(state: State<'_, AppState>, ids: Vec<String>) -> Result<(), String> {
+    let mut p = state.prefs.lock().unwrap();
+    let order = userdata::set_pending_order(&mut p, &ids);
+    state.db.with(|c| dbd::pending_order_save(c, &order)).map_err(|e| e.to_string())
+}
+
+/// «Dejarlo» ante el aviso de juegos parados: no se vuelve a preguntar por ellos hasta que se jueguen otra vez.
+#[tauri::command]
+fn snooze_stalled(state: State<'_, AppState>, ids: Vec<String>) -> Result<(), String> {
+    let now = chrono_now_ms();
+    let mut p = state.prefs.lock().unwrap();
+    let done = userdata::set_snooze(&mut p, &ids, now);
+    state.db.with(|c| dbd::snooze_save(c, &done, now)).map_err(|e| e.to_string())
 }
 
 fn chrono_now_ms() -> i64 {
@@ -1012,6 +1047,8 @@ pub fn run() {
             set_sort_pref,
             set_magpie_mode,
             set_title_status,
+            set_pending_order,
+            snooze_stalled,
             backup::backup_create,
             backup::restore_prepare,
             backup::restore_cancel,
