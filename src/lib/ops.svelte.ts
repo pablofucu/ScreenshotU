@@ -406,6 +406,9 @@ export function shotMenuItems(): MenuItem[] {
   } else it.push('move');
   it.push('reveal');
   if (!app.favView) it.push('addshots');
+  // Borrar (a la Papelera): la captura enfocada o, en el modo selección, las marcadas.
+  if (app.selMode) { if (app.sel.size) it.push('delsel'); }
+  else if (app.cur.shots[app.s]) it.push('delshot');
   return it;
 }
 
@@ -425,6 +428,12 @@ export async function shotMenuAct(item: MenuItem) {
   else if (item === 'move') {
     const paths = app.selMode && app.sel.size ? [...app.sel] : focused ? [focused.path] : [];
     if (paths.length) openMoveTo(paths);
+  } else if (item === 'delshot' || item === 'delsel') {
+    const paths = item === 'delsel' ? [...app.sel] : focused ? [focused.path] : [];
+    if (!paths.length) return;
+    // Primera pulsación: confirmar; la segunda las manda a la Papelera.
+    if (!app.menu.confirm) { app.menu.confirm = true; blip(520); return; }
+    await trashShots(paths);
   } else if (item === 'reveal') {
     closeOverlay();
     if (!focused) return;
@@ -433,6 +442,59 @@ export async function shotMenuAct(item: MenuItem) {
   } else if (item === 'addshots') {
     closeOverlay();
     await addShotsTo(curTitle());
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Borrar capturas (a la Papelera de Windows)                           */
+/* ------------------------------------------------------------------ */
+/** Quita capturas de la biblioteca en memoria, de las favoritas y de la selección, sin reescanear. El foco pasa a la
+ *  siguiente que se queda (o a la anterior si era la última). */
+function forgetShots(gone: string[]) {
+  const dead = new Set(gone);
+  const list = app.cur.shots;
+  let keep: string | undefined;
+  for (let i = app.s; i < list.length && !keep; i++) if (!dead.has(list[i].path)) keep = list[i].path;
+  for (let i = app.s - 1; i >= 0 && !keep; i--) if (!dead.has(list[i].path)) keep = list[i].path;
+  app.lib = {
+    ...app.lib,
+    platforms: app.lib.platforms.map((p) => ({
+      ...p,
+      titles: p.titles.map((t) => (t.shots.some((s) => dead.has(s.path)) ? { ...t, shots: t.shots.filter((s) => !dead.has(s.path)) } : t)),
+    })),
+  };
+  for (const p of gone) { app.favs.delete(p); app.sel.delete(p); }
+  if (app.favView) app.favSnap = app.favSnap.filter((s) => !dead.has(s.path));
+  const now = app.cur.shots;
+  const i = keep ? now.findIndex((s) => s.path === keep) : -1;
+  if (app.view === 'viewer') {
+    if (!now.length) { back(); return; }
+    app.vdir = 1;
+    app.s = Math.max(0, i);
+  } else if (app.view === 'shots') {
+    setFocus(now.length ? 'shot' + Math.max(0, i) : '');
+  } else {
+    app.s = Math.max(0, Math.min(app.s, now.length - 1));
+  }
+}
+
+/** Manda capturas a la Papelera (el núcleo quita también favoritas y catálogo) y las olvida en la interfaz. */
+async function trashShots(paths: string[]) {
+  app.overlay = ''; app.overlayStack = [];
+  try {
+    const rep = await backend.trashShots(paths);
+    if (rep.trashed.length) forgetShots(rep.trashed);
+    if (app.selMode) exitSel();
+    const n = rep.trashed.length;
+    toast(
+      n
+        ? `${n} ${n === 1 ? 'captura enviada' : 'capturas enviadas'} a la Papelera${rep.failed.length ? ` · ${rep.failed.length} con error` : ''}`
+        : (rep.failed[0] ?? 'No se borró nada'),
+      3200,
+    );
+    if (n) blip(520);
+  } catch (e) {
+    toast(String(e), 3600);
   }
 }
 
@@ -641,7 +703,7 @@ export async function deleteSaga(sagaId: string) {
 export function openSaga(i: number) {
   const t = app.platform?.titles[i];
   if (!t) return;
-  app.t = i; app.s = 0; app.favView = false; app.sagaFilter = -1; app.sortMode = 'recent';
+  app.t = i; app.s = 0; app.favView = false; app.sagaFilter = -1; app.sortMode = app.config.shotsOrder;
   app.fk.shots = 'shot0';
   go('shots', 'fwd');
 }

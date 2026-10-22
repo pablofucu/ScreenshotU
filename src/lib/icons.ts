@@ -21,6 +21,7 @@ export const ICON: Record<string, string> = {
   star:`<svg viewBox="0 0 48 48"><path d="M24 5l5.8 12.2 13.2 1.6-9.8 9.1 2.6 13.1L24 34.5 12.2 41l2.6-13.1L5 18.8l13.2-1.6z" fill="#fff"/></svg>`,
   import:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M24 6v20M15 18l9 9 9-9"/><path d="M7 30v8a4 4 0 0 0 4 4h26a4 4 0 0 0 4-4v-8"/></svg>`,
   gear:`<svg viewBox="0 0 48 48"><path fill="#fff" fill-rule="evenodd" d="M20 4h8l1.2 5.6a15 15 0 0 1 4 2.3l5.4-1.8 4 6.9-4.2 3.8a15 15 0 0 1 0 4.6l4.2 3.8-4 6.9-5.4-1.8a15 15 0 0 1-4 2.3L28 44h-8l-1.2-5.6a15 15 0 0 1-4-2.3l-5.4 1.8-4-6.9 4.2-3.8a15 15 0 0 1 0-4.6L5.4 18.8l4-6.9 5.4 1.8a15 15 0 0 1 4-2.3zM24 17a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"/></svg>`,
+  trash:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13h32"/><path d="M18 13V7h12v6"/><path d="M11 13l2 28h22l2-28"/><path d="M20 20v14M28 20v14"/></svg>`,
   power:`<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"><path d="M24 5v18"/><path d="M14 11a16 16 0 1 0 20 0"/></svg>`,
   starY:`<svg viewBox="0 0 48 48"><path d="M24 5l5.8 12.2 13.2 1.6-9.8 9.1 2.6 13.1L24 34.5 12.2 41l2.6-13.1L5 18.8l13.2-1.6z" fill="#F2B807" stroke="#fff" stroke-width="3" stroke-linejoin="round"/></svg>`,
   arrowR:`<svg viewBox="0 0 56 110"><path d="M8 6 L52 55 L8 104 Q2 108 2 100 V10 Q2 2 8 6z" fill="rgba(255,255,255,.96)" stroke="rgba(150,160,180,.6)" stroke-width="2"/></svg>`,

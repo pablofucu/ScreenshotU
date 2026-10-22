@@ -10,6 +10,8 @@ export interface Config {
   titlesView: 'grid' | 'carousel';
   /** Cuadrícula de capturas continua o agrupada por días. */
   shotsView: 'grid' | 'days';
+  /** Orden inicial de toda lista de capturas (el orden propio de un juego, elegido con Y, manda en ese juego). */
+  shotsOrder: 'recent' | 'oldest';
   /** art = del juego (automático), rainbow = arcoíris, fixed = color fijo. */
   accentMode: 'art' | 'rainbow' | 'fixed';
   accentFixed: number;
@@ -168,6 +170,8 @@ export interface RestorePreview { dbVersion: number; size: number; hasConfig: bo
 export interface StartupNotice { kind: 'error' | 'info'; message: string }
 export interface ImportReport { copied: string[]; skipped: string[] }
 export interface MoveReport { moved: Array<[string, string]>; failed: string[] }
+/** `trashed`: rutas que ya no están (mandadas a la Papelera); `failed`: errores legibles. */
+export interface TrashReport { trashed: string[]; failed: string[] }
 /** Dispositivo de reproducción de Windows. */
 export interface AudioOutput { id: string; name: string; short: string; default: boolean }
 export type BackendEvent =
@@ -249,6 +253,8 @@ export interface Backend {
   importShots(dir: string, paths: string[], onProgress: (done: number, total: number) => void): Promise<ImportReport>;
   /** Mueve capturas a la carpeta de otro juego (dentro de la biblioteca). */
   moveShots(paths: string[], targetDir: string): Promise<MoveReport>;
+  /** Manda capturas a la Papelera de Windows (nunca borrado definitivo). */
+  trashShots(paths: string[]): Promise<TrashReport>;
   reveal(path: string): Promise<void>;
   /** Archivos soltados sobre la ventana. */
   onFilesDropped(cb: (paths: string[]) => void): void;

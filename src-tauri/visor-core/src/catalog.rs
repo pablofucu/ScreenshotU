@@ -118,6 +118,12 @@ pub fn rename(c: &Connection, old_rel: &str, new_rel: &str) -> Result<()> {
     Ok(())
 }
 
+/// Una captura se ha borrado (a la papelera): se quita su fila del catalogo.
+pub fn remove(c: &Connection, rel: &str) -> Result<()> {
+    c.execute("DELETE FROM shots WHERE path = ?1", [rel])?;
+    Ok(())
+}
+
 /// Capturas en el catalogo y cuantas tienen ya huella.
 pub fn counts(c: &Connection) -> Result<(usize, usize)> {
     Ok(c.query_row("SELECT count(*), count(sha256) FROM shots", [], |r| Ok((r.get::<_, i64>(0)? as usize, r.get::<_, i64>(1)? as usize)))?)
@@ -258,6 +264,12 @@ mod tests {
         assert_eq!(db.with(|c| hash_of(c, "Switch/Kirby/1.png")).unwrap(), Some(h1));
         assert_eq!(db.with(rows).iter().find(|x| x.0 == "Switch/Kirby/1.png").unwrap().1, "switch/kirby");
         assert_eq!(db.with(counts).unwrap(), (2, 1), "la modificada espera nueva huella");
+
+        // Borrar una captura (papelera) quita su fila y no falla si ya no estaba.
+        db.with(|c| remove(c, "Switch/Kirby/1.png")).unwrap();
+        db.with(|c| remove(c, "Switch/Kirby/1.png")).unwrap();
+        assert_eq!(db.with(counts).unwrap(), (1, 0));
+        assert_eq!(db.with(|c| hash_of(c, "Switch/Kirby/1.png")).unwrap(), None);
     }
 
     #[test]

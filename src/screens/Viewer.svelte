@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { app } from '../lib/store.svelte';
+  import { resetZoom } from '../lib/controller.svelte';
   import { ICON } from '../lib/icons';
   import { backend } from '../lib/backend';
   import { fmt, resText } from '../lib/format';
@@ -42,6 +44,14 @@
     }
   });
 
+  // Al cambiar de captura el zoom vuelve al 100 %.
+  $effect(() => {
+    void cur?.path;
+    untrack(resetZoom);
+  });
+
+  const zoomed = $derived(app.vz.k > 1);
+
   let bg = $state('');
   $effect(() => {
     if (!cur) return;
@@ -51,13 +61,15 @@
   });
 </script>
 
-<div class="vw" class:idle={app.idle}>
+<div class="vw" class:idle={app.idle} class:bare={app.vbare}>
   <div class="vbg" style={bg ? `background-image:url(${bg})` : ''}></div>
   <div class="glass vframe">
     <div class="face">
-      {#key shown}
-        {#if shown}<img class={dir > 0 ? 'in-r' : dir < 0 ? 'in-l' : ''} alt="" src={shown} draggable="false" />{/if}
-      {/key}
+      <div class="vzoom" style={zoomed ? `transform:translate(${app.vz.x}px,${app.vz.y}px) scale(${app.vz.k})` : ''}>
+        {#key shown}
+          {#if shown}<img class={dir > 0 ? 'in-r' : dir < 0 ? 'in-l' : ''} alt="" src={shown} draggable="false" />{/if}
+        {/key}
+      </div>
     </div>
   </div>
   <div class="varrow" class:dis={app.s === 0} data-hact="left" style="left:30px">{@html ICON.chevL}</div>
@@ -76,5 +88,8 @@
       {/each}
     </div>
   </div>
-  <Hints list={[['LB/RB', '±10', 'rb'], ['X', 'Favorita', 'x'], ['Start', 'Menú', 'menu'], ['B', 'Volver', 'b']]} />
+  <!-- Con zoom hay menos pistas para no tapar los datos de la captura. -->
+  <Hints list={zoomed
+    ? [['Stick I', 'Mover'], ['Stick D', `Zoom ${Math.round(app.vz.k * 100)} %`], ['View', 'Solo imagen', 'view'], ['B', '100 %', 'b']]
+    : [['LB/RB', '±10', 'rb'], ['Stick D', 'Zoom'], ['X', 'Favorita', 'x'], ['View', 'Solo imagen', 'view'], ['Start', 'Menú', 'menu'], ['B', 'Volver', 'b']]} />
 </div>

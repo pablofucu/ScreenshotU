@@ -243,7 +243,7 @@ function store(): Storage | null { try { return window.localStorage; } catch { r
 export async function mockBackend(): Promise<Backend> {
   try { await Promise.race([document.fonts.load('800 40px "M PLUS Rounded 1c"'), new Promise((r) => setTimeout(r, 1500))]); } catch {}
   const q = new URLSearchParams(location.search);
-  const base: Config = { root: 'mock://biblioteca', titlesView: 'grid', shotsView: 'grid', accentMode: 'art', accentFixed: 4, sound: false,
+  const base: Config = { root: 'mock://biblioteca', titlesView: 'grid', shotsView: 'grid', shotsOrder: 'recent', accentMode: 'art', accentFixed: 4, sound: false,
     platforms: MOCK_PLATS.map((p) => ({ id: p.id, name: p.name, folder: p.folder, accent: p.accent, icon: p.icon })),
     captureHotkey: 'F12', captureCombo: 'back+rb', captureMouse: '', captureMagpie: 'scaled', captureSound: true, capturePeek: true, captureRumble: true, magpieExe: '', showHidden: false,
     sgdbKey: q.has('sgdb') ? 'mock' : '', sgdbAuto: true, deepseekKey: '', deepseekModel: 'deepseek-chat',
@@ -470,6 +470,14 @@ export async function mockBackend(): Promise<Backend> {
       for (const { t } of allTitles()) t.shots.sort((a, b) => b.date - a.date);
       save('visor.mock.favs', favs);
       return { moved, failed: [] };
+    },
+    async trashShots(paths) {
+      await new Promise((r) => setTimeout(r, 80));
+      const dead = new Set(paths);
+      for (const { t } of allTitles()) t.shots = t.shots.filter((s) => !dead.has(s.path));
+      favs = favs.filter((f) => !dead.has(f));
+      save('visor.mock.favs', favs);
+      return { trashed: paths, failed: [] };
     },
     async reveal() {},
     onFilesDropped(cb) {

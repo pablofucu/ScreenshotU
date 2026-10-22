@@ -183,6 +183,7 @@ export function bump(e: Element | null | undefined, dx: number, dy: number) {
 
 export function move(dx: number, dy: number) {
   if (app.view === 'viewer') {
+    if (app.vz.k > 1) { panView(dx, dy); return; }
     if (dx) stepViewer(dx);
     return;
   }
@@ -273,6 +274,8 @@ export function go(v: View, anim: 'fwd' | 'back' | '' = '') {
   app.anim = anim;
   app.animKey++;
   app.goff = 0;
+  resetZoom();
+  app.vbare = false;
   if (v !== 'shots' && v !== 'viewer') exitSel();
   if (v === 'viewer') {
     app.vdir = 0;
@@ -308,7 +311,7 @@ export function openTitle(i: number) {
   const t = app.platform?.titles[i];
   if (!t) return;
   app.detailFrom = 'titles';
-  app.t = i; app.s = 0; app.favView = false; app.sortMode = t.sortMode ?? 'recent';
+  app.t = i; app.s = 0; app.favView = false; app.sortMode = t.sortMode ?? app.config.shotsOrder;
   delete app.fk.detail;
   go('detail', 'fwd');
   backend.prefetch(t.shots.slice(0, DETAIL_SHOTS + 1).map((s) => s.path));
@@ -482,7 +485,9 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
     const t = app.platform?.titles[app.t];
     if (t) void playTitle(t);
   } else if (a === 'dshot') {
-    app.s = +b; app.viewerFrom = 'detail';
+    // La fila de la ficha es siempre «más recientes primero»; el visor sigue el orden de la lista.
+    const ds = app.platform?.titles[app.t]?.shots[+b];
+    app.s = Math.max(0, ds ? app.cur.shots.findIndex((s) => s.path === ds.path) : +b); app.viewerFrom = 'detail';
     morph(el, () => go('viewer', ''), () => screenEl()?.querySelector('.vframe'));
   } else if (a === 'dall') {
     app.s = 0; app.fk.shots = 'shot0';
@@ -674,16 +679,19 @@ export function openFavs() {
     return;
   }
   app.favSnap = list;
-  app.favView = true; app.sortMode = 'recent'; app.s = 0; app.fk.shots = 'shot0';
+  app.favView = true; app.sortMode = app.config.shotsOrder; app.s = 0; app.fk.shots = 'shot0';
   go('shots', 'fwd');
 }
 
 export function back() {
   if (app.view === 'shots' && app.selMode) { exitSel(); toast('Selección terminada'); blip(520); return; }
   if (app.view === 'viewer') {
+    if (app.vbare) { app.vbare = false; blip(520); return; }
+    if (app.vz.k > 1) { resetZoom(); blip(520); return; }
     const frame = screenEl()?.querySelector<HTMLElement>('.vframe');
     if (app.viewerFrom === 'detail') {
-      app.fk.detail = app.s < DETAIL_SHOTS ? 'ds' + app.s : 'dall';
+      const di = app.platform?.titles[app.t]?.shots.findIndex((s) => s.path === app.cur.shots[app.s]?.path) ?? app.s;
+      app.fk.detail = di >= 0 && di < DETAIL_SHOTS ? 'ds' + di : 'dall';
       const k = app.fk.detail;
       morph(frame, () => go('detail', ''), () => screenEl()?.querySelector(`[data-k="${k}"]`));
     } else {
@@ -824,7 +832,7 @@ function cycleSort() {
   // Se recuerda por juego (no en la vista de favoritas, que mezcla varios).
   const t = app.platform?.titles[app.t];
   if (!app.favView && t && !t.members) {
-    patchTitle(app.p, app.t, { sortMode: app.sortMode === 'recent' ? null : (app.sortMode as SortMode) });
+    patchTitle(app.p, app.t, { sortMode: app.sortMode });
     backend.setSortPref(t.id, app.sortMode).catch((e) => console.error(e));
   }
 }
@@ -849,6 +857,51 @@ export function stepViewer(d: number) {
   blip(880);
   wake();
 }
+/* Zoom del visor: `app.vz` = aumento y desplazamiento (px del escenario) de la imagen respecto al centro del marco. */
+const ZOOM_MAX = 8;
+export function resetZoom() {
+  if (app.vz.k !== 1 || app.vz.x || app.vz.y) app.vz = { k: 1, x: 0, y: 0 };
+}
+/** Mantiene la imagen ampliada dentro del marco (sin enseñar fondo si ya lo cubre). */
+function clampPan() {
+  const z = app.vz;
+  const box = screenEl()?.querySelector<HTMLElement>('.vzoom');
+  const im = box?.querySelector('img');
+  if (!box || !im || !im.naturalWidth) return;
+  const fw = box.offsetWidth, fh = box.offsetHeight;
+  const s = Math.min(fw / im.naturalWidth, fh / im.naturalHeight);
+  const mx = Math.max(0, (im.naturalWidth * s * z.k - fw) / 2), my = Math.max(0, (im.naturalHeight * s * z.k - fh) / 2);
+  z.x = Math.max(-mx, Math.min(mx, z.x));
+  z.y = Math.max(-my, Math.min(my, z.y));
+}
+/** Multiplica el aumento por `f` manteniendo fijo el punto (px, py) respecto al centro del marco. */
+export function zoomView(f: number, px = 0, py = 0) {
+  const z = app.vz;
+  const k = Math.max(1, Math.min(ZOOM_MAX, z.k * f));
+  if (k === z.k) return;
+  const r = k / z.k;
+  z.x = px - (px - z.x) * r;
+  z.y = py - (py - z.y) * r;
+  z.k = k;
+  if (k < 1.005) { resetZoom(); return; }
+  clampPan();
+}
+/** Mueve la imagen ampliada; la dirección es hacia dónde se «mira». */
+function panView(dx: number, dy: number) {
+  const z = app.vz;
+  const x0 = z.x, y0 = z.y;
+  z.x -= dx * 90;
+  z.y -= dy * 90;
+  clampPan();
+  if (z.x === x0 && z.y === y0) bump(document.querySelector('.vframe'), dx, dy);
+  else blip(880);
+}
+/** Botón View en el visor: alterna «solo imagen». */
+export function toggleBare() {
+  app.vbare = !app.vbare;
+  blip(700);
+}
+
 export function jumpViewer(i: number) {
   const d = i - app.s;
   if (!d) return;
@@ -865,7 +918,7 @@ export function wake() {
 
 /* ---------- ajustes ---------- */
 export type SettingId =
-  | 'root' | 'rescan' | 'addgame' | 'hidden' | 'showhidden' | 'view' | 'shotsview' | 'accent' | 'sound' | 'fullscreen' | 'monitor' | 'oncursor'
+  | 'root' | 'rescan' | 'addgame' | 'hidden' | 'showhidden' | 'view' | 'shotsview' | 'shotsorder' | 'accent' | 'sound' | 'fullscreen' | 'monitor' | 'oncursor'
   | 'audioout' | 'audiocombo' | 'audiohotkey' | 'hotkey' | 'combo' | 'mouse' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caprumble' | 'quit'
   | 'sgdbkey' | 'sgdbauto' | 'sgdbnow' | 'sgdbgame'
   | 'backup' | 'backupmedia' | 'restore' | 'autobackup'
@@ -874,7 +927,7 @@ export type SettingId =
 /** Secciones de Ajustes (LB/RB las recorren). `color` es el índice del arcoíris. */
 export const SETTING_SECTIONS: Array<{ name: string; icon: string; color: number; rows: SettingId[] }> = [
   { name: 'Biblioteca', icon: 'folder', color: 0, rows: ['root', 'rescan', 'addgame', 'hidden', 'showhidden'] },
-  { name: 'Apariencia', icon: 'palette', color: 1, rows: ['accent', 'view', 'shotsview'] },
+  { name: 'Apariencia', icon: 'palette', color: 1, rows: ['accent', 'view', 'shotsview', 'shotsorder'] },
   { name: 'SteamGridDB', icon: 'image', color: 2, rows: ['sgdbkey', 'sgdbauto', 'sgdbnow', 'sgdbgame'] },
   { name: 'Capturas propias', icon: 'camera', color: 3, rows: ['combo', 'mouse', 'hotkey', 'capsound', 'cappeek', 'caprumble'] },
   { name: 'Audio', icon: 'speaker', color: 4, rows: ['audioout', 'audiocombo', 'audiohotkey'] },
@@ -1052,6 +1105,7 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   }
   else if (id === 'view') toggleTitlesView();
   else if (id === 'shotsview') toggleShotsView();
+  else if (id === 'shotsorder') { void patchConfig({ shotsOrder: app.config.shotsOrder === 'oldest' ? 'recent' : 'oldest' }); blip(1320); }
   else if (id === 'accent') cycleAccent(dir || 1);
   else if (id === 'sound') { void patchConfig({ sound: !app.config.sound }); blip(1320); }
   else if (id === 'fullscreen') void toggleFullscreen();
@@ -1286,7 +1340,10 @@ export function cmd(c: string) {
       break;
     case 'lt': trigger(-1); break;
     case 'rt': trigger(1); break;
-    case 'view': if (app.view === 'shots') toggleShotsView(); break;
+    case 'view':
+      if (app.view === 'shots') toggleShotsView();
+      else if (app.view === 'viewer') toggleBare();
+      break;
     case 'y':
       if (app.view === 'titles') toggleTitlesView();
       else if (app.view === 'detail') openDetailMenu();
@@ -1315,6 +1372,11 @@ export function onKeyDown(e: KeyboardEvent) {
   if (e.ctrlKey || e.altKey || e.metaKey) return;
   const tag = (e.target as HTMLElement | null)?.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if (app.view === 'viewer' && !app.overlay && (e.key === '+' || e.key === '=' || e.key === '-')) {
+    e.preventDefault();
+    zoomView(e.key === '-' ? 0.8 : 1.25);
+    return;
+  }
   let m = KEYS[e.key];
   if (e.key === 'Escape') m = app.view === 'home' && !app.overlay ? 'menu' : 'b';
   if (!m) return;
@@ -1351,7 +1413,7 @@ export function onScreenClick(e: MouseEvent) {
   const th = t.closest<HTMLElement>('.vthumb');
   if (th) { jumpViewer(+th.dataset.vi!); wake(); return; }
   // Visor: clic en el tercio izquierdo/derecho = anterior/siguiente sin ir a las flechas.
-  if (app.view === 'viewer' && performance.now() - goT > 400) { const z = viewerZone(e); if (z !== 1) stepViewer(z === 0 ? -1 : 1); }
+  if (app.view === 'viewer' && app.vz.k === 1 && !app.vbare && performance.now() - goT > 400) { const z = viewerZone(e); if (z !== 1) stepViewer(z === 0 ? -1 : 1); }
   wake();
 }
 
@@ -1386,6 +1448,16 @@ let wheelAcc = 0, wheelT = 0;
 function onWheel(e: WheelEvent) {
   if (e.ctrlKey || app.osk.open) return;
   e.preventDefault();
+  if (app.view === 'viewer' && !app.overlay) {
+    // Acerca/aleja hacia el puntero.
+    const fr = screenEl()?.querySelector<HTMLElement>('.vframe');
+    if (!fr) return;
+    wake();
+    const r = fr.getBoundingClientRect(), s = r.width / fr.offsetWidth || 1;
+    const dy = e.deltaMode === 1 ? e.deltaY * 40 : e.deltaY;
+    zoomView(Math.exp(-dy * 0.002), (e.clientX - r.left - r.width / 2) / s, (e.clientY - r.top - r.height / 2) / s);
+    return;
+  }
   const now = performance.now();
   if (now - wheelT > 250) wheelAcc = 0;
   wheelT = now;
@@ -1398,7 +1470,6 @@ function onWheel(e: WheelEvent) {
   if (app.overlay) { cmd(d > 0 ? 'down' : 'up'); return; }
   wake();
   switch (app.view) {
-    case 'viewer': stepViewer(d); break;
     case 'home': case 'detail': case 'evo': move(d, 0); break;
     case 'stats': if (app.statsTab === 'rank') move(0, d); else move(d, 0); break;
     case 'titles': {
@@ -1428,7 +1499,9 @@ export function startMouse() {
 
 /* ---------- mando ---------- */
 const held: Record<string, { t0: number; last: number }> = {};
-const REPEAT = ['up', 'down', 'left', 'right', 'lb', 'rb'];
+const REPEAT = ['up', 'down', 'left', 'right', 'lb', 'rb', 'lt', 'rt'];
+/** Repetición al mantener pulsado: espera 300 ms, repite cada 85 ms y acelera hasta 30 ms tras ~2 s más. */
+const repeatEvery = (heldMs: number) => Math.max(30, 85 - Math.max(0, heldMs - 300) / 36);
 
 const PAD_KEYS = ['a', 'b', 'x', 'y', 'lb', 'rb', 'lt', 'rt', 'view', 'menu', 'up', 'down', 'left', 'right'] as const;
 
@@ -1446,7 +1519,21 @@ function padState(pads: Gamepad[]): Record<string, boolean> {
   return st;
 }
 
+/** Eje vertical del stick derecho de los mandos conectados (el de mayor recorrido), con zona muerta; -1 = arriba. */
+function rightStickY(pads: Gamepad[]): number {
+  let v = 0;
+  for (const p of pads) {
+    const a = p.axes?.[3] ?? 0;
+    if (Math.abs(a) > Math.abs(v)) v = a;
+  }
+  const DEAD = 0.3;
+  return Math.abs(v) < DEAD ? 0 : Math.sign(v) * ((Math.abs(v) - DEAD) / (1 - DEAD));
+}
+
+let lastPoll = 0;
 function poll(t: number) {
+  const dt = Math.min(64, t - lastPoll);
+  lastPoll = t;
   // Se programa el siguiente fotograma antes de nada: un error en un comando no debe parar el mando para siempre.
   requestAnimationFrame(poll);
   let pads: Gamepad[] = [];
@@ -1460,11 +1547,16 @@ function poll(t: number) {
     return;
   }
   const st = padState(pads);
+  // Visor: el stick derecho acerca (arriba) o aleja (abajo) de forma continua.
+  if (app.view === 'viewer' && !app.overlay && !app.osk.open && !app.learn) {
+    const ay = rightStickY(pads);
+    if (ay) zoomView(Math.exp(-ay * dt * 0.0022));
+  }
   for (const k of PAD_KEYS) {
     if (st[k]) {
       try {
         if (!held[k]) { held[k] = { t0: t, last: t }; cmd(k); }
-        else if (REPEAT.includes(k) && t - held[k].t0 > 300 && t - held[k].last > 85) { held[k].last = t; cmd(k); }
+        else if (REPEAT.includes(k) && t - held[k].t0 > 300 && t - held[k].last > repeatEvery(t - held[k].t0)) { held[k].last = t; cmd(k); }
       } catch (e) { console.error(e); }
     } else delete held[k];
   }

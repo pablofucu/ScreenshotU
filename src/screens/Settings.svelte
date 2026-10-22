@@ -17,7 +17,7 @@
   const yn = (b: boolean) => (b ? 'Sí' : 'No');
 
   // Filas que cambian de valor con izquierda/derecha (se marcan con ‹ › al enfocarlas).
-  const CYCLE = new Set<SettingId>(['showhidden', 'view', 'shotsview', 'accent', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto']);
+  const CYCLE = new Set<SettingId>(['showhidden', 'view', 'shotsview', 'shotsorder', 'accent', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto']);
 
   function row(id: SettingId): { l: string; v: string; d: string } {
     if (isReadingId(id)) return readingRow(id);
@@ -31,6 +31,7 @@
       case 'accent': return { l: 'Color de acento', v: accentState() === 0 ? 'Del juego (automático)' : accentState() === 1 ? 'Arcoíris' : RAINBOW[app.config.accentFixed].n, d: '«Del juego» saca el color del hero y la portada de cada juego. También puedes usar el arcoíris o un color fijo. Cada juego puede tener el suyo desde su ficha (Y → Color de acento).' };
       case 'view': return { l: 'Vista de títulos', v: app.config.titlesView === 'grid' ? 'Cuadrícula' : 'Carrusel', d: 'Cuadrícula paginada de 5×2 o carrusel con la portada enfocada en grande. También se cambia con Y en la lista.' };
       case 'shotsview': return { l: 'Cuadrícula de capturas', v: app.config.shotsView === 'days' ? 'Agrupada por días' : 'Continua', d: 'Agrupada por días pone una cabecera por día (con lo que jugaste ese día) y una línea de tiempo por meses; LT/RT saltan de día. Solo con orden por fecha. También se cambia con el botón View.' };
+      case 'shotsorder': return { l: 'Orden de las capturas', v: app.config.shotsOrder === 'oldest' ? 'Más antiguas primero' : 'Más recientes primero', d: 'Orden con el que se abre cualquier lista de capturas: la de un juego, una saga, las favoritas o las agrupadas por días. Si un juego tiene su propio orden (Y en su lista de capturas), ese manda en ese juego.' };
       case 'sound': return { l: 'Sonido de navegación', v: yn(app.config.sound), d: 'Pequeños sonidos al moverte por los menús y al confirmar.' };
       case 'fullscreen': return { l: 'Pantalla completa (F11)', v: yn(app.fullscreen), d: 'La interfaz se diseña a 1280×720 y se escala para llenar la pantalla.' };
       case 'monitor': return { l: 'Monitor del visor', v: app.monitorLabel || '…', d: 'Pulsa A o ‹ › para llevar el visor a otro monitor; se abre ahí la próxima vez. Los juegos se lanzan en el monitor donde esté el visor: si no es el principal de Windows, pasa a serlo mientras dura la partida (también para el escalado de Magpie) y al salir se restaura.' };

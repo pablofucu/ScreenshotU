@@ -52,6 +52,8 @@ pub struct Config {
     pub titles_view: String,
     /// Cuadricula de capturas: "grid" (continua) | "days" (agrupada por dias)
     pub shots_view: String,
+    /// Orden inicial de toda lista de capturas: "recent" (mas recientes primero) | "oldest" (mas antiguas primero)
+    pub shots_order: String,
     /// "art" (del juego, por defecto) | "rainbow" | "fixed"
     pub accent_mode: String,
     pub accent_fixed: u8,
@@ -154,6 +156,7 @@ impl Default for Config {
             root: None,
             titles_view: "grid".into(),
             shots_view: "grid".into(),
+            shots_order: "recent".into(),
             accent_mode: "art".into(),
             accent_fixed: 4,
             sound: false,
@@ -218,6 +221,9 @@ impl Config {
         c.goal_jvn = c.goal_jvn.clamp(5, 600);
         c.remote_port = c.remote_port.max(1024);
         c.remote_token = c.remote_token.trim().to_string();
+        if !["recent", "oldest"].contains(&c.shots_order.as_str()) {
+            c.shots_order = "recent".into();
+        }
         if !["art", "rainbow", "fixed"].contains(&c.accent_mode.as_str()) {
             c.accent_mode = "art".into();
         }
@@ -334,6 +340,17 @@ mod tests {
         assert_eq!((c.accent_mode.as_str(), c.accent_fixed, c.show_hidden), ("rainbow", 6, false));
         fs::write(&p, r#"{"accentMode":"raro"}"#).unwrap();
         assert_eq!(Config::load(&p).accent_mode, "art");
+    }
+
+    #[test]
+    fn shots_order_defaults_to_recent_and_rejects_unknown() {
+        let d = tempfile::tempdir().unwrap();
+        let p = d.path().join("c.json");
+        assert_eq!(Config::load(&p).shots_order, "recent");
+        fs::write(&p, r#"{"shotsOrder":"oldest"}"#).unwrap();
+        assert_eq!(Config::load(&p).shots_order, "oldest");
+        fs::write(&p, r#"{"shotsOrder":"raro"}"#).unwrap();
+        assert_eq!(Config::load(&p).shots_order, "recent");
     }
 
     #[test]

@@ -1,4 +1,4 @@
-import type { AddReport, AudioOutput, Backend, BackupResult, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, MoveReport, RemoteInfo, NewGame, Saga, SortMode } from './types';
+import type { AddReport, AudioOutput, Backend, BackupResult, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, MoveReport, TrashReport, RemoteInfo, NewGame, Saga, SortMode } from './types';
 
 export const IS_TAURI = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
@@ -115,6 +115,7 @@ async function tauriBackend(): Promise<Backend> {
       try { return await invoke<ImportReport>('import_shots', { dir, paths }); } finally { un(); }
     },
     moveShots: (paths: string[], targetDir: string) => invoke<MoveReport>('move_shots', { paths, targetDir }),
+    trashShots: (paths: string[]) => invoke<TrashReport>('trash_shots', { paths }),
     reveal: (path: string) => invoke('reveal_in_explorer', { path }),
     onFilesDropped(cb: (paths: string[]) => void) {
       void getCurrentWebview().onDragDropEvent((e) => { if (e.payload.type === 'drop') cb(e.payload.paths); });

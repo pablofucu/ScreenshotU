@@ -23,6 +23,7 @@ mod shots;
 mod snap;
 mod state;
 mod texthook;
+mod trash;
 mod voice;
 
 use state::AppState;
@@ -592,6 +593,74 @@ fn move_shots(state: State<'_, AppState>, paths: Vec<String>, target_dir: String
     Ok(rep)
 }
 
+#[derive(serde::Serialize)]
+struct TrashReport {
+    /// Rutas que ya no estan (a la Papelera, o ya no existian).
+    trashed: Vec<String>,
+    failed: Vec<String>,
+}
+
+/// Manda capturas a la Papelera de Windows (nunca borrado definitivo), solo dentro de la raiz. Quita tambien sus
+/// favoritas, su fila del catalogo y su entrada de la biblioteca guardada para pintar al arrancar, sin reescanear.
+#[tauri::command]
+async fn trash_shots(state: State<'_, AppState>, paths: Vec<String>) -> Result<TrashReport, String> {
+    let root = PathBuf::from(state.config.lock().unwrap().root.clone().ok_or("Sin carpeta raiz")?);
+    let (root2, paths2) = (root.clone(), paths.clone());
+    let rep = tauri::async_runtime::spawn_blocking(move || {
+        let mut rep = TrashReport { trashed: Vec::new(), failed: Vec::new() };
+        for p in paths2 {
+            let pb = PathBuf::from(&p);
+            let name = pb.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| p.clone());
+            if !importer::is_within_root(&root2, &pb) {
+                rep.failed.push(format!("{name}: no esta en la biblioteca"));
+            } else if !pb.exists() {
+                rep.trashed.push(p);
+            } else {
+                match trash::to_recycle_bin(&pb) {
+                    Ok(()) => rep.trashed.push(p),
+                    Err(e) => rep.failed.push(format!("{name}: {e}")),
+                }
+            }
+        }
+        rep
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    if rep.trashed.is_empty() {
+        return Ok(rep);
+    }
+    {
+        let mut f = state.favorites.lock().unwrap();
+        f.retain(|x| !rep.trashed.contains(x));
+    }
+    let keys: Vec<String> = rep.trashed.iter().map(|p| relpath::stored(Some(&root), p)).collect();
+    state::log_db_err("favoritas", state.db.with(|c| keys.iter().try_for_each(|k| dbd::favorite_set(c, k, false))));
+    state::log_db_err("catalogo", state.db.with(|c| keys.iter().try_for_each(|k| catalog::remove(c, k))));
+    forget_in_snapshot(&state.cache_dir, &root.to_string_lossy(), &rep.trashed);
+    Ok(rep)
+}
+
+/// Quita capturas de la biblioteca guardada del ultimo escaneo (la que se pinta al abrir).
+fn forget_in_snapshot(cache_dir: &Path, root: &str, gone: &[String]) {
+    let file = cache_dir.join("library-snapshot.json");
+    let (root, gone) = (root.to_string(), gone.to_vec());
+    std::thread::spawn(move || {
+        let Some(mut snap) = std::fs::read(&file).ok().and_then(|b| serde_json::from_slice::<Snap>(&b).ok()) else { return };
+        if snap.root != root {
+            return;
+        }
+        for t in snap.lib.platforms.iter_mut().flat_map(|p| p.titles.iter_mut()) {
+            t.shots.retain(|s| !gone.contains(&s.path));
+        }
+        if let Ok(bytes) = serde_json::to_vec(&SnapRef { root: &snap.root, lib: &snap.lib }) {
+            let tmp = file.with_extension("tmp");
+            if std::fs::write(&tmp, bytes).is_ok() {
+                let _ = std::fs::rename(&tmp, &file);
+            }
+        }
+    });
+}
+
 /// Muestra una captura en el Explorador (solo dentro de la raiz).
 #[tauri::command]
 fn reveal_in_explorer(state: State<'_, AppState>, path: String) -> Result<(), String> {
@@ -975,6 +1044,7 @@ pub fn run() {
             save_sagas,
             import_shots,
             move_shots,
+            trash_shots,
             reveal_in_explorer,
             remove_game,
             move_game_platform,

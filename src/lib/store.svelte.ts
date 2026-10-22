@@ -13,6 +13,7 @@ export const DEFAULT_CONFIG: Config = {
   root: null,
   titlesView: 'grid',
   shotsView: 'grid',
+  shotsOrder: 'recent',
   accentMode: 'art',
   accentFixed: 4,
   sound: false,
@@ -58,7 +59,7 @@ export const DEFAULT_CONFIG: Config = {
 
 export type MenuItem =
   | 'folder' | 'reload' | 'remove' | 'hide' | 'unhide' | 'addshots' | 'accent'
-  | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'editsaga' | 'delsaga' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'saves' | 'category' | `cat:${string}`;
+  | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'editsaga' | 'delsaga' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'saves' | 'category' | 'delshot' | 'delsel' | `cat:${string}`;
 export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'saga' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library';
 export interface SagaFormState {
   /** null = saga nueva. */
@@ -248,6 +249,10 @@ class Store {
   favSnap = $state.raw<Shot[]>([]);
   sortMode = $state<SortMode>('recent');
   idle = $state(false);
+  /** Zoom del visor: aumento (1 = ajustado al marco) y desplazamiento de la imagen en píxeles del escenario. */
+  vz = $state({ k: 1, x: 0, y: 0 });
+  /** Visor en modo «solo imagen»: sin barra, pistas ni datos. */
+  vbare = $state(false);
   vdir = $state(0); // sentido de la ultima animacion del visor
   padConnected = $state(false);
   /** Ajustes espera un botón para capturar (mando, ratón o tecla). */
