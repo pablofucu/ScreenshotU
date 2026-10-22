@@ -19,7 +19,7 @@ import { READING_ROWS, isReadingId, readingAct, type ReadingId } from './reading
 import { checkUpdate, updateAct } from './updater.svelte';
 import { isRemoteId, remoteAct, type RemoteId } from './remote.svelte';
 import { openPhrases, phrasesCmd } from './phrases.svelte';
-import { goalLit, goalMinLeft, goalTrack, localDay, type GoalKey } from './readgoals';
+import { goalMinLeft, goalTrack, localDay, type GoalKey } from './readgoals';
 import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
 import { libraryCmd, loadLibraryInfo, openLibrary } from './library.svelte';
 
@@ -581,20 +581,6 @@ function scheduleGoalNotice(gameId: string) {
   const n = t.streak + 1;
   const text = n > 1 ? `¡Meta cumplida! Racha de ${n} días` : '¡Meta de lectura cumplida!';
   backend.goalNotice(gameId, at, text).catch((e) => console.error(e));
-}
-
-/** Al cerrar una novela con la meta de hoy cumplida y sin celebrar: se abre la racha para encenderla. */
-function celebrateGoal(gameId: string) {
-  const k = goalKeyOf(gameId);
-  if (!k) return;
-  const now = Date.now();
-  if (!goalTrack(k, goalOf(k), app.lib.platforms, null, now).done || goalLit(k, localDay(now))) return;
-  const ok = () => !app.overlay && !app.osk.open && !app.playing && !goalLit(k, localDay(Date.now()));
-  // En la ficha se deja ver antes cómo sube el tiempo jugado; en el resto se abre ya (en Inicio, antes de que la
-  // tarjeta pequeña encienda la racha por su cuenta).
-  const v = app.view, f = app.focus;
-  if (v !== 'detail') { if (ok()) openStreak(k); return; }
-  setTimeout(() => { if (app.view === v && app.focus === f && ok()) openStreak(k); }, 2300);
 }
 
 export function openStats() {
@@ -1236,7 +1222,7 @@ function onBackendEvent(e: BackendEvent) {
     const t = e.seconds >= 60 ? realPlatforms(app.lib).flatMap((p) => p.titles).find((t) => t.gameId === e.id) : undefined;
     app.gain = t ? { id: e.id, seconds: e.seconds, secs: t.playSeconds, week: [...t.week], day: new Date().toDateString(), at: Date.now() } : null;
     toast(e.seconds >= 60 ? `Has jugado ${fmtDur(e.seconds)} a ${e.name}` : `${e.name} se ha cerrado`, 3200);
-    void softRefresh().then(() => { if (e.seconds >= 60) celebrateGoal(e.id); });
+    void softRefresh();
   }
 }
 

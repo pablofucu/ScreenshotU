@@ -152,7 +152,7 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
     let mut first_seen_ms: i64 = 0;
     let mut misses = 0u32;
     loop {
-        std::thread::sleep(Duration::from_millis(500));
+        std::thread::sleep(Duration::from_millis(250));
         sys.refresh_processes_specifics(
             ProcessesToUpdate::All,
             true,
@@ -177,8 +177,8 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
         if found.is_empty() {
             if first_seen.is_some() {
                 misses += 1;
-                if misses >= 4 {
-                    break; // ~2 s sin ningun proceso: la partida termino
+                if misses >= 3 {
+                    break; // ~0,75 s sin ningun proceso: la partida termino
                 }
             } else if launched.elapsed() > Duration::from_secs(180) || (dir.is_none() && child.is_none() && launched.elapsed() > Duration::from_secs(60)) {
                 break; // nunca llego a verse el proceso
@@ -192,7 +192,7 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
             *pids.lock().unwrap() = found;
         }
     }
-    let seconds = first_seen.map(|t| t.elapsed().as_secs().saturating_sub(2)).unwrap_or(0);
+    let seconds = first_seen.map(|t| t.elapsed().as_secs().saturating_sub(1)).unwrap_or(0);
     let st = app.state::<AppState>();
     if seconds > 0 {
         let mut stats = st.stats.lock().unwrap();
@@ -206,11 +206,16 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
             *a = None;
         }
     }
-    crate::display::restore_primary(&st.config_dir);
     if let Some(w) = app.get_webview_window("main") {
+        allow_foreground();
         let _ = w.unminimize();
+        let _ = w.show();
+        // Truco de always-on-top: Windows suele negar el foco a una ventana que estaba detras del juego.
+        let _ = w.set_always_on_top(true);
         let _ = w.set_focus();
+        let _ = w.set_always_on_top(false);
     }
+    crate::display::restore_primary(&st.config_dir);
     if game.platform == visor_core::config::NOVELS_PLATFORM {
         crate::novel::on_exit(&app, &game.id);
     }
