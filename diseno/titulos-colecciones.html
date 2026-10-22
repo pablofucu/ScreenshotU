@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Títulos de colecciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--round:'M PLUS Rounded 1c','Segoe UI',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--round);color:#3a414e;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%) fixed}
+main{max-width:1180px;margin:0 auto;padding:36px 16px 80px}
+h1{font-size:30px;font-weight:800;margin:0 0 6px;color:#2f3540}
+.lead{margin:0 0 10px;color:#657083;font-size:16px}
+.prop{margin-top:48px}
+.prop>h2{font-size:22px;font-weight:800;margin:0 0 2px;color:#2f3540}
+.prop>h2 small{font-size:14px;font-weight:500;color:#8a93a3;margin-left:8px}
+.prop>p{margin:0 0 14px;color:#657083;font-size:15px;max-width:820px}
+.stage{position:relative;border-radius:22px;padding:26px 28px 18px;overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%);
+  box-shadow:0 0 0 1px rgba(95,110,135,.18),0 20px 40px -26px rgba(40,50,70,.5)}
+.shelf{position:relative;margin-bottom:26px}
+.shelf:last-child{margin-bottom:6px}
+.dim{opacity:.62}
+
+.glass{position:relative;--r:16px;--bw:6px;border-radius:var(--r);padding:var(--bw);flex:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  box-shadow:inset 0 1.5px 0 #fff,inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -1.5px 0 rgba(110,125,150,.30),0 0 0 1px rgba(95,110,135,.24),0 12px 20px -12px rgba(40,50,70,.42);transition:transform .2s}
+.glass .face{position:relative;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden}
+.glass .face::after{content:'';position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(20,30,50,.18),inset 0 3px 6px -2px rgba(0,0,0,.3)}
+.glass.f{transform:scale(1.07);z-index:2;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)) 0%,color-mix(in srgb,var(--acc) 72%,transparent) 55%,color-mix(in srgb,var(--acc) 92%,black) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 0 22px 2px color-mix(in srgb,var(--acc) 50%,transparent)}
+.cov{width:104px;height:139px}
+.cov .face{display:flex;align-items:flex-end;padding:7px;font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);line-height:1.15}
+.row{display:flex;gap:16px;align-items:flex-end;padding:8px 2px}
+.more{align-self:center;font-size:13px;font-weight:700;color:#8a93a3;padding-left:4px;white-space:nowrap}
+
+.pill{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 6px 0 14px;border-radius:999px;font-size:14px;font-weight:700;color:#4a5260;white-space:nowrap;
+  background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.55));box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 8px 16px -10px rgba(40,50,70,.4)}
+.pill svg{width:18px;height:18px;color:var(--acc)}
+.btn{display:inline-grid;place-items:center;min-width:24px;height:24px;border-radius:999px;background:#5a6272;color:#fff;font-size:12px;font-weight:800;padding:0 6px}
+.pill.on{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white),var(--acc));color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 8px 18px -8px var(--acc)}
+.pill.on svg{color:#fff}
+.meta{font-size:14px;font-weight:500;color:#7a8394;white-space:nowrap}
+.meta b{color:#4a5260;font-weight:700}
+
+/* A Rótulo */
+.va .head{display:flex;align-items:center;gap:16px;margin-bottom:4px}
+.va h3{margin:0;font-size:32px;font-weight:800;color:var(--acc);letter-spacing:-.01em;line-height:1.1}
+.va .meta{margin:0 0 4px}
+.va .line{height:3px;border-radius:3px;background:linear-gradient(90deg,var(--acc),transparent 70%);margin-top:8px;opacity:.6}
+
+/* B Pestaña sobre balda */
+.vb .tab{display:inline-flex;align-items:center;gap:14px;padding:8px 10px 8px 20px;border-radius:18px 18px 6px 18px;margin-bottom:-6px;position:relative;z-index:3;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 40%,white),var(--acc) 70%,color-mix(in srgb,var(--acc) 85%,black));
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 10px 20px -10px var(--acc)}
+.vb .tab h3{margin:0;font-size:24px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.vb .tab .meta{color:rgba(255,255,255,.9)}
+.vb .tab .meta b{color:#fff}
+.vb .board{position:relative;padding:16px 14px 0;border-radius:6px 22px 22px 22px;
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.2));box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.18)}
+.vb .board::after{content:'';display:block;height:14px;margin:0 -14px;border-radius:0 0 22px 22px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 20%,white),color-mix(in srgb,var(--acc) 45%,#dfe3e9));box-shadow:inset 0 2px 0 rgba(255,255,255,.9),0 8px 14px -8px rgba(40,50,70,.5)}
+
+/* C Banner */
+.vc .band{position:relative;height:118px;border-radius:22px;overflow:hidden;margin-bottom:-44px;padding:18px 24px;display:flex;align-items:flex-start;justify-content:space-between;
+  box-shadow:0 0 0 1px rgba(95,110,135,.2),0 14px 26px -18px rgba(40,50,70,.6)}
+.vc .band .bg{position:absolute;inset:-20px;filter:blur(18px) saturate(1.3);transform:scale(1.1)}
+.vc .band::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(15,20,30,.55),rgba(15,20,30,.1) 70%)}
+.vc .band>*{position:relative;z-index:1}
+.vc h3{margin:0;font-size:34px;font-weight:800;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.4);line-height:1.1}
+.vc .meta{color:rgba(255,255,255,.85)}
+.vc .meta b{color:#fff}
+.vc .row{padding-left:24px;position:relative;z-index:2}
+
+/* D Editorial */
+.vd .head{display:flex;align-items:center;gap:18px;margin-bottom:6px}
+.vd .num{font-size:64px;font-weight:800;line-height:.9;color:transparent;-webkit-text-stroke:2px var(--acc);min-width:70px;text-align:center}
+.vd h3{margin:0;font-size:28px;font-weight:800;color:#2f3540;line-height:1.1}
+.vd .years{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:13px;font-weight:700;color:#7a8394}
+.vd .track{position:relative;width:260px;height:4px;border-radius:4px;background:color-mix(in srgb,var(--acc) 25%,#dfe3e9)}
+.vd .track i{position:absolute;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 2px #fff}
+.vd .sp{flex:1}
+
+/* E Paleta */
+.ve .head{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+.ve .sw{display:flex}
+.ve .sw i{width:22px;height:22px;border-radius:50%;margin-right:-7px;box-shadow:0 0 0 2.5px #fff,0 2px 4px rgba(0,0,0,.2)}
+.ve h3{margin:0 0 0 8px;font-size:30px;font-weight:800;line-height:1.1;background:linear-gradient(90deg,var(--c1),var(--c2) 60%,var(--c3));-webkit-background-clip:text;background-clip:text;color:transparent}
+.ve .stripe{height:6px;border-radius:6px;margin-top:10px;opacity:.75}
+
+/* F Lomo */
+.vf .shelf{display:flex;gap:18px;align-items:stretch}
+.vf .spine{flex:none;width:86px;border-radius:18px;padding:14px 0;display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  background:linear-gradient(90deg,color-mix(in srgb,var(--acc) 85%,black),var(--acc) 35%,color-mix(in srgb,var(--acc) 55%,white) 55%,var(--acc) 75%,color-mix(in srgb,var(--acc) 80%,black));
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.6),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 12px 20px -12px var(--acc)}
+.vf .spine h3{margin:0;writing-mode:vertical-rl;transform:rotate(180deg);font-size:24px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.3);white-space:nowrap}
+.vf .spine span{font-size:20px;font-weight:800;color:#fff}
+.vf .body{flex:1;min-width:0}
+.vf .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+
+/* Color picker */
+.picker{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.swatch{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#5a6272}
+.swatch i{display:block;width:54px;height:54px;border-radius:16px;box-shadow:inset 0 1.5px 0 rgba(255,255,255,.7),0 0 0 1px rgba(0,0,0,.15),0 8px 14px -8px rgba(40,50,70,.5)}
+.swatch.sel i{outline:3px solid #2f3540;outline-offset:3px}
+.swatch.auto i{background:conic-gradient(from 200deg,#3F63E0,#9A4BD8,#E8384F,#F27A1A,#3F63E0)}
+@media (max-width:760px){.cov{width:76px;height:102px}.va h3,.vc h3{font-size:24px}.stage{padding:18px 14px}.head{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<main>
+<h1>Títulos de las colecciones</h1>
+<p class="lead">Seis estilos para la cabecera de cada estantería. En cada propuesta, la primera colección está enfocada y la segunda no. El color sale automáticamente de las portadas, y al final está el selector para elegirlo a mano.</p>
+<div id="props"></div>
+
+<section class="prop">
+  <h2>Color de la colección <small>Y › Editar colección › Color</small></h2>
+  <p>«Automático» calcula el tono a partir de las portadas, igual que ya hace la app con cada juego. Las demás son los siete colores de la app.</p>
+  <div class="stage"><div class="picker" id="picker"></div></div>
+</section>
+</main>
+
+<script>
+const CAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+const COLS = [
+  { name: 'Trails', acc: '#3F63E0', n: 10, shots: '2.341', y0: 2004, y1: 2024, years: [2004, 2006, 2007, 2010, 2011, 2013, 2014, 2018, 2020, 2024],
+    pal: ['#3F63E0', '#00A0D8', '#F27A1A', '#9A4BD8', '#E8384F'],
+    games: [['Trails in the Sky', '#F27A1A', '#7a3b12'], ['Trails in the Sky SC', '#3F63E0', '#1d2b6b'], ['Trails in the Sky 3rd', '#9A4BD8', '#3b1966'], ['Trails from Zero', '#00A0D8', '#0a3e5c'], ['Trails to Azure', '#2f7fd8', '#14305e'], ['Cold Steel', '#E8384F', '#5c1020'], ['Cold Steel II', '#c2334a', '#3d0c18'], ['Cold Steel III', '#3BB54A', '#14451b'], ['Cold Steel IV', '#5a5f8a', '#1e2140']] },
+  { name: 'Kingdom Hearts', acc: '#00A0D8', n: 3, shots: '612', y0: 2013, y1: 2019, years: [2013, 2017, 2019],
+    pal: ['#00A0D8', '#F2B807', '#3F63E0', '#E8384F', '#3BB54A'],
+    games: [['KH 1.5+2.5', '#F2B807', '#6b4e00'], ['KH 2.8', '#00A0D8', '#063a55'], ['Kingdom Hearts III', '#3F63E0', '#18245c']] },
+];
+const cover = (g, f) => `<div class="glass cov${f ? ' f' : ''}"><div class="face" style="background:radial-gradient(120% 80% at 30% 15%,${g[1]},${g[2]})">${g[0]}</div></div>`;
+const row = (c, focus) => `<div class="row">${c.games.slice(0, 8).map((g, i) => cover(g, focus && i === 1)).join('')}${c.games.length > 8 ? `<span class="more">+${c.n - 8}</span>` : ''}</div>`;
+const all = (on) => `<span class="pill${on ? ' on' : ''}">${CAM}Ver todas las capturas<span class="btn">X</span></span>`;
+const meta = (c) => `<span class="meta"><b>${c.n}</b> juegos · <b>${c.shots}</b> capturas · ${c.y0}–${c.y1}</span>`;
+
+const V = {
+  va: { t: 'A · Rótulo', d: 'Lo más limpio: título grande en el color de la colección, datos debajo y el botón redondo al lado. Un trazo de color cierra la estantería.',
+    s: (c, f) => `<div class="head"><h3>${c.name}</h3>${all(f)}</div>${meta(c)}${row(c, f)}<div class="line"></div>` },
+  vb: { t: 'B · Pestaña sobre balda', d: 'La colección es una balda física: una pestaña de cristal con el color y los juegos apoyados encima. Muy Wii U.',
+    s: (c, f) => `<div class="tab"><h3>${c.name}</h3>${meta(c)}${all(false)}</div><div class="board">${row(c, f)}</div>` },
+  vc: { t: 'C · Banner', d: 'Franja con el arte del juego enfocado muy difuminado y el título en blanco encima. Las portadas pisan el borde del banner. Es la más espectacular, pero también la que más espacio ocupa.',
+    s: (c, f) => `<div class="band"><div class="bg" style="background:linear-gradient(110deg,${c.games[1][1]},${c.games[0][1]} 50%,${c.games[2][2]})"></div><div><h3>${c.name}</h3>${meta(c)}</div>${all(f)}</div>${row(c, f)}` },
+  vd: { t: 'D · Editorial', d: 'El número de juegos en grande y hueco, y una línea de tiempo con un punto por juego según el año. Se ve de un vistazo cuánto abarca la saga.',
+    s: (c, f) => `<div class="head"><span class="num">${c.n}</span><div><h3>${c.name}</h3><div class="years">${c.y0}<span class="track">${c.years.map((y) => `<i style="left:${((y - c.y0) / Math.max(1, c.y1 - c.y0)) * 100}%"></i>`).join('')}</span>${c.y1}<span>· ${c.shots} capturas</span></div></div><span class="sp"></span>${all(f)}</div>${row(c, f)}` },
+  ve: { t: 'E · Paleta', d: 'Enseña los colores que ha sacado de las portadas: unos puntos delante del título, el título en degradado y una franja con la paleta debajo.',
+    s: (c, f) => `<div class="head"><span class="sw">${c.pal.map((p) => `<i style="background:${p}"></i>`).join('')}</span><h3 style="--c1:${c.pal[0]};--c2:${c.pal[1]};--c3:${c.pal[2]}">${c.name}</h3>${all(f)}</div>${meta(c)}${row(c, f)}<div class="stripe" style="background:linear-gradient(90deg,${c.pal.join(',')})"></div>` },
+  vf: { t: 'F · Lomo', d: 'Cada colección es como la caja de una edición coleccionista: un lomo vertical con el título y el número de juegos, y las portadas al lado.',
+    s: (c, f) => `<div class="spine"><span>${c.n}</span><h3>${c.name}</h3></div><div class="body"><div class="top">${meta(c)}${all(f)}</div>${row(c, f)}</div>` },
+};
+
+document.getElementById('props').innerHTML = Object.entries(V).map(([k, v]) => `
+  <section class="prop"><h2>${v.t}</h2><p>${v.d}</p>
+    <div class="stage ${k}">${COLS.map((c, i) => `<div class="shelf${i ? ' dim' : ''}" style="--acc:${c.acc}">${v.s(c, i === 0)}</div>`).join('')}</div>
+  </section>`).join('');
+
+const RAINBOW = [['Rojo', '#E8384F'], ['Naranja', '#F27A1A'], ['Amarillo', '#F2B807'], ['Verde', '#3BB54A'], ['Azul Wii U', '#00A0D8'], ['Añil', '#3F63E0'], ['Violeta', '#9A4BD8']];
+document.getElementById('picker').innerHTML = `<div class="swatch auto sel"><i></i>Automático</div>` + RAINBOW.map(([n, c]) => `<div class="swatch"><i style="background:linear-gradient(180deg,color-mix(in srgb,${c} 45%,white),${c})"></i>${n}</div>`).join('');
+</script>
+</body>
+</html>

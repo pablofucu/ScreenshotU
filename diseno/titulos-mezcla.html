@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Títulos: mezclas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--round:'M PLUS Rounded 1c','Segoe UI',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--round);color:#3a414e;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%) fixed}
+main{max-width:1180px;margin:0 auto;padding:36px 16px 80px}
+h1{font-size:30px;font-weight:800;margin:0 0 6px;color:#2f3540}
+.lead{margin:0 0 10px;color:#657083;font-size:16px;max-width:860px}
+.prop{margin-top:48px}
+.prop>h2{font-size:22px;font-weight:800;margin:0 0 2px;color:#2f3540}
+.prop>h2 small{font-size:13px;font-weight:700;color:#fff;background:#3BB54A;border-radius:999px;padding:3px 10px;margin-left:8px;vertical-align:3px}
+.prop>p{margin:0 0 14px;color:#657083;font-size:15px;max-width:860px}
+.stage{position:relative;border-radius:22px;padding:26px 28px 22px;overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%);
+  box-shadow:0 0 0 1px rgba(95,110,135,.18),0 20px 40px -26px rgba(40,50,70,.5)}
+.shelf{position:relative;margin-bottom:30px;--hi:color-mix(in srgb,var(--acc) 35%,white);--lo:color-mix(in srgb,var(--acc) 70%,black)}
+.shelf:last-child{margin-bottom:4px}
+.dim{opacity:.6}
+
+.glass{position:relative;--r:16px;--bw:6px;border-radius:var(--r);padding:var(--bw);flex:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  box-shadow:inset 0 1.5px 0 #fff,inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -1.5px 0 rgba(110,125,150,.30),0 0 0 1px rgba(95,110,135,.24),0 12px 20px -12px rgba(40,50,70,.42)}
+.glass .face{position:relative;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden}
+.glass .face::after{content:'';position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(20,30,50,.18),inset 0 3px 6px -2px rgba(0,0,0,.3)}
+.glass.f{transform:scale(1.07);z-index:2;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)) 0%,color-mix(in srgb,var(--acc) 72%,transparent) 55%,color-mix(in srgb,var(--acc) 92%,black) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 0 22px 2px color-mix(in srgb,var(--acc) 50%,transparent)}
+.cov{width:104px;height:139px}
+.cov .face{display:flex;align-items:flex-end;padding:7px;font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);line-height:1.15}
+.slot{display:flex;flex-direction:column;align-items:center;gap:0}
+.row{display:flex;gap:16px;align-items:flex-end;padding:10px 4px 0;overflow:hidden}
+.more{align-self:center;font-size:13px;font-weight:700;color:#8a93a3;padding:0 6px;white-space:nowrap}
+
+.pill{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 6px 0 14px;border-radius:999px;font-size:14px;font-weight:700;color:#4a5260;white-space:nowrap;flex:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,255,255,.6));box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 8px 16px -10px rgba(40,50,70,.4)}
+.pill svg{width:18px;height:18px;color:var(--acc)}
+.btn{display:inline-grid;place-items:center;min-width:24px;height:24px;border-radius:999px;background:#5a6272;color:#fff;font-size:12px;font-weight:800;padding:0 6px}
+.meta{font-size:14px;font-weight:500;white-space:nowrap}
+
+/* Pestaña */
+.tab{display:inline-flex;align-items:center;gap:22px;padding:10px 10px 10px 22px;border-radius:20px 20px 6px 20px;margin-bottom:-6px;position:relative;z-index:3;max-width:100%;
+  background:linear-gradient(180deg,var(--hi),var(--acc) 62%,var(--lo));
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),inset 0 -2px 6px -2px rgba(0,0,0,.25),0 0 0 1px var(--lo),0 10px 20px -10px var(--acc)}
+.tab h3{margin:0;font-size:27px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25);white-space:nowrap;line-height:1.1}
+.tab .meta{color:rgba(255,255,255,.88)}
+.tab .meta b{color:#fff;font-weight:700}
+.tab .info{display:flex;flex-direction:column;gap:6px}
+
+/* Línea de tiempo */
+.tl{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700}
+.tl .tr{position:relative;width:230px;height:4px;border-radius:4px}
+.tl .tr i{position:absolute;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%}
+.tl .tr i.on{width:15px;height:15px;margin:-7.5px 0 0 -7.5px}
+.tab .tl{color:rgba(255,255,255,.85)}
+.tab .tl .tr{background:rgba(255,255,255,.35)}
+.tab .tl .tr i{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.tab .tl .tr i.on{box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 60%,white),0 0 10px 2px rgba(255,255,255,.9)}
+
+/* Balda */
+.board{position:relative;padding:14px 16px 0;border-radius:6px 22px 22px 22px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.2));box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.18)}
+.board .art{position:absolute;inset:-30px;filter:blur(26px) saturate(1.2);opacity:.38;transform:scale(1.1)}
+.board>.row{position:relative}
+.lip{position:relative;display:flex;gap:16px;padding:0 20px;height:24px;margin:0 -16px;align-items:center;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 22%,white),color-mix(in srgb,var(--acc) 48%,#dfe3e9));box-shadow:inset 0 2px 0 rgba(255,255,255,.9),0 8px 14px -8px rgba(40,50,70,.5)}
+.lip span{width:104px;flex:none;text-align:center;font-size:12px;font-weight:800;color:color-mix(in srgb,var(--acc) 55%,#1e2433);letter-spacing:.04em}
+.lip span.on{color:#fff;text-shadow:0 1px 2px var(--lo)}
+
+/* M3: rótulo degradado sin pestaña */
+.rhead{display:flex;align-items:center;gap:18px;margin-bottom:8px;flex-wrap:wrap}
+.rhead h3{margin:0;font-size:34px;font-weight:800;line-height:1.1;white-space:nowrap;
+  background:linear-gradient(180deg,var(--hi) 0%,var(--acc) 50%,var(--lo) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 1px 0 #fff)}
+.rhead .col{display:flex;flex-direction:column;gap:5px}
+.rhead .meta{color:#7a8394}
+.rhead .meta b{color:#4a5260}
+.rhead .tl{color:#7a8394}
+.rhead .tl .tr{background:color-mix(in srgb,var(--acc) 22%,#dfe3e9)}
+.rhead .tl .tr i{background:var(--acc);box-shadow:0 0 0 2px #fff}
+.rhead .tl .tr i.on{box-shadow:0 0 0 3px #fff,0 0 10px 2px var(--acc)}
+.rhead .sp{flex:1}
+.m3 .board{border-radius:22px}
+
+/* Comparación de color */
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.cmp .box{padding:18px 20px;border-radius:18px;background:rgba(255,255,255,.5);box-shadow:0 0 0 1px rgba(95,110,135,.18)}
+.cmp .box p{margin:0 0 10px;font-size:14px;font-weight:700;color:#5a6272}
+.cmp .t{font-size:34px;font-weight:800;line-height:1.15;-webkit-background-clip:text;background-clip:text;color:transparent}
+.mini{display:flex;gap:8px;margin-top:10px}
+.mini i{width:34px;height:46px;border-radius:7px;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+@media (max-width:760px){.cmp{grid-template-columns:1fr}.tab{flex-wrap:wrap;gap:10px}.cov,.lip span{width:80px}.cov{height:107px}}
+</style>
+</head>
+<body>
+<main>
+<h1>Mezclas: pestaña + línea de tiempo + color</h1>
+<p class="lead">Base: la pestaña sobre balda. Encima van la línea de tiempo (sin el número grande) y un degradado de un solo color en lugar de la paleta multicolor. La tercera estantería de cada propuesta es una colección «difícil», con portadas muy distintas, para ver que el color aguanta.</p>
+<div id="props"></div>
+
+<section class="prop">
+  <h2>¿Por qué un solo color?</h2>
+  <p>Con portadas muy distintas, el degradado multicolor sale de colores que no casan entre sí. El degradado de un solo color (claro → color → oscuro) siempre queda armónico, da igual qué portadas tenga la colección.</p>
+  <div class="cmp">
+    <div class="box"><p>Multicolor (paleta de las portadas)</p><div class="t" style="background-image:linear-gradient(90deg,#3BB54A,#E8384F 45%,#F2B807 75%,#9A4BD8)">Japonés 2026</div><div class="mini"><i style="background:#3BB54A"></i><i style="background:#E8384F"></i><i style="background:#F2B807"></i><i style="background:#9A4BD8"></i></div></div>
+    <div class="box"><p>Un solo color (el automático o el que elijas)</p><div class="t" style="background-image:linear-gradient(180deg,color-mix(in srgb,#9A4BD8 35%,white),#9A4BD8 50%,color-mix(in srgb,#9A4BD8 70%,black))">Japonés 2026</div><div class="mini"><i style="background:#3BB54A"></i><i style="background:#E8384F"></i><i style="background:#F2B807"></i><i style="background:#9A4BD8"></i></div></div>
+  </div>
+</section>
+</main>
+
+<script>
+const CAM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+const COLS = [
+  { name: 'Trails', acc: '#3F63E0', shots: '2.341', games: [
+    ['Trails in the Sky', '#F27A1A', '#7a3b12', 2004], ['Trails in the Sky SC', '#3F63E0', '#1d2b6b', 2006], ['Trails in the Sky 3rd', '#9A4BD8', '#3b1966', 2007],
+    ['Trails from Zero', '#00A0D8', '#0a3e5c', 2010], ['Trails to Azure', '#2f7fd8', '#14305e', 2011], ['Cold Steel', '#E8384F', '#5c1020', 2013],
+    ['Cold Steel II', '#c2334a', '#3d0c18', 2014], ['Cold Steel III', '#3BB54A', '#14451b', 2017], ['Cold Steel IV', '#5a5f8a', '#1e2140', 2018], ['Reverie', '#F2B807', '#6b4e00', 2020]] },
+  { name: 'Kingdom Hearts', acc: '#00A0D8', shots: '612', games: [
+    ['KH 1.5+2.5', '#F2B807', '#6b4e00', 2013], ['KH 2.8', '#00A0D8', '#063a55', 2017], ['Kingdom Hearts III', '#3F63E0', '#18245c', 2019]] },
+  { name: 'Japonés 2026', acc: '#9A4BD8', shots: '1.087', games: [
+    ['Summer Pockets', '#3BB54A', '#12461a', 2024], ['Tsukihime', '#E8384F', '#4d0d18', 2021], ['Hira Hira Hihiru', '#F2B807', '#6b4e00', 2017], ['Rose Guns Days', '#9A4BD8', '#3b1966', 2012], ['ATRI', '#00A0D8', '#063a55', 2020]] },
+];
+for (const c of COLS) c.games.sort((a, b) => a[3] - b[3]);
+const FOCUS = 1;
+const years = (c) => c.games.map((g) => g[3]);
+const span = (c) => [Math.min(...years(c)), Math.max(...years(c))];
+const cover = (g, f) => `<div class="glass cov${f ? ' f' : ''}"><div class="face" style="background:radial-gradient(120% 80% at 30% 15%,${g[1]},${g[2]})">${g[0]}</div></div>`;
+const MAX = 8;
+const row = (c, focus) => `<div class="row">${c.games.slice(0, MAX).map((g, i) => cover(g, focus && i === FOCUS)).join('')}${c.games.length > MAX ? `<span class="more">+${c.games.length - MAX}</span>` : ''}</div>`;
+const lip = (c, focus) => `<div class="lip">${c.games.slice(0, MAX).map((g, i) => `<span class="${focus && i === FOCUS ? 'on' : ''}">${g[3]}</span>`).join('')}</div>`;
+const all = () => `<span class="pill">${CAM}Ver todas las capturas<span class="btn">X</span></span>`;
+const meta = (c) => `<span class="meta"><b>${c.games.length}</b> juegos · <b>${c.shots}</b> capturas</span>`;
+const tl = (c, focus) => { const [a, b] = span(c); return `<div class="tl">${a}<span class="tr">${c.games.map((g, i) => `<i class="${focus && i === FOCUS ? 'on' : ''}" style="left:${((g[3] - a) / Math.max(1, b - a)) * 100}%"></i>`).join('')}</span>${b}</div>`; };
+const art = (c) => `<div class="art" style="background:radial-gradient(60% 90% at 25% 40%,${c.games[FOCUS][1]},transparent),radial-gradient(60% 90% at 75% 60%,${c.games[FOCUS][2]},transparent)"></div>`;
+
+const V = [
+  { k: 'm1', t: 'M1 · Pestaña con línea de tiempo', rec: true,
+    d: 'La pestaña de B con el degradado de un solo color. Dentro van los datos y la línea de tiempo, y el punto del juego enfocado se ilumina al moverte. En el borde de la balda, el año en que jugaste cada juego (su primera captura o partida) bajo su portada, como las etiquetas de una estantería de biblioteca.',
+    s: (c, f) => `<div class="tab"><h3>${c.name}</h3><div class="info">${meta(c)}${tl(c, f)}</div>${all()}</div><div class="board">${row(c, f)}${lip(c, f)}</div>` },
+  { k: 'm2', t: 'M2 · M1 + fondo del banner',
+    d: 'Igual que M1, pero la balda enfocada se tiñe con el arte difuminado del juego enfocado (la idea del banner, en suave). Las demás baldas quedan neutras, así se nota cuál estás mirando.',
+    s: (c, f) => `<div class="tab"><h3>${c.name}</h3><div class="info">${meta(c)}${tl(c, f)}</div>${all()}</div><div class="board">${f ? art(c) : ''}${row(c, f)}${lip(c, f)}</div>` },
+  { k: 'm3', t: 'M3 · Rótulo degradado sobre balda',
+    d: 'Sin pestaña: el título va directamente sobre el fondo, con el degradado de un solo color que te gustó en «Paleta», y la línea de tiempo al lado. La balda sigue llevando el color en el borde. Es más ligera y deja más aire.',
+    s: (c, f) => `<div class="rhead"><h3>${c.name}</h3><div class="col">${meta(c)}${tl(c, f)}</div><span class="sp"></span>${all()}</div><div class="board">${row(c, f)}${lip(c, f)}</div>` },
+];
+
+document.getElementById('props').innerHTML = V.map((v) => `
+  <section class="prop ${v.k}"><h2>${v.t}${v.rec ? '<small>Mi recomendación</small>' : ''}</h2><p>${v.d}</p>
+    <div class="stage">${COLS.map((c, i) => `<div class="shelf${i ? ' dim' : ''}" style="--acc:${c.acc}">${v.s(c, i === 0)}</div>`).join('')}</div>
+  </section>`).join('');
+</script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Propuestas de diseño</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root{--surface-0:#f4f3ef;--surface-1:#faf9f6;--surface-2:#ffffff;--text-primary:#1f1e1d;--text-secondary:#5f5e5a;--text-muted:#8a8984;
+  --border:rgba(0,0,0,.10);--border-strong:rgba(0,0,0,.18);--bg-accent:#e6f1fb;--text-accent:#185fa5;--border-accent:#378add}
+@media (prefers-color-scheme:dark){:root{--surface-0:#1a1a19;--surface-1:#232322;--surface-2:#2b2b2a;--text-primary:#f1efe8;--text-secondary:#b4b2a9;--text-muted:#888780;
+  --border:rgba(255,255,255,.10);--border-strong:rgba(255,255,255,.20);--bg-accent:#0c447c;--text-accent:#b5d4f4;--border-accent:#85b7eb}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface-0);color:var(--text-primary);font-family:system-ui,'Segoe UI',sans-serif;line-height:1.6}
+main{max-width:980px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:24px;font-weight:500;margin:0 0 4px}
+h2{font-size:19px;font-weight:500;margin:40px 0 4px}
+p.sub{color:var(--text-secondary);margin:0 0 8px}
+.scr{position:relative;aspect-ratio:16/9;background:var(--surface-1);border:0.5px solid var(--border);border-radius:12px;overflow:hidden;padding:14px 16px;font-size:12px;color:var(--text-secondary)}
+.lbl{font-size:14px;font-weight:500;color:var(--text-primary);margin:1.5rem 0 6px}
+.cv{background:var(--surface-2);border:0.5px solid var(--border-strong);border-radius:6px;flex:none}
+.f{outline:2px solid var(--border-accent);outline-offset:2px}
+.row{display:flex;gap:8px;align-items:flex-end}
+.top{display:flex;justify-content:space-between;margin-bottom:10px;color:var(--text-primary)}
+.chip{padding:2px 8px;border-radius:999px;border:0.5px solid var(--border-strong)}
+.on{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+.hint{position:absolute;bottom:10px;left:16px;right:16px;display:flex;gap:14px;font-size:11px;color:var(--text-muted);flex-wrap:wrap}
+.col{flex:1;background:var(--surface-2);border:0.5px solid var(--border);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.it{display:flex;gap:6px;align-items:center;color:var(--text-primary)}
+@media (max-width:640px){.scr{aspect-ratio:auto;min-height:300px;padding-bottom:48px}}
+</style>
+</head>
+<body>
+<main>
+<h1>Propuestas de diseño</h1>
+<p class="sub">Colecciones (sagas y listas propias) y organización de juegos por estado. Bocetos de estructura, no del estilo visual final.</p>
+
+<h2>Colecciones</h2>
+
+<div class="lbl">A · Estanterías (pantalla propia, abierta desde el dock)</div>
+<div class="scr">
+  <div class="top"><span>Inicio › Colecciones</span><span class="chip">+ Nueva colección</span></div>
+  <div style="margin-bottom:4px;color:var(--text-primary)">Trails <span style="color:var(--text-muted)">· 10 juegos · 2.341 capturas</span></div>
+  <div class="row" style="margin-bottom:12px"><div class="cv f" style="width:64px;height:86px;display:grid;place-items:center;text-align:center;font-size:11px">Todas las capturas</div><div class="cv" style="width:52px;height:70px"></div><div class="cv" style="width:52px;height:70px"></div><div class="cv" style="width:52px;height:70px"></div><div class="cv" style="width:52px;height:70px"></div><div class="cv" style="width:52px;height:70px"></div><div class="cv" style="width:52px;height:70px"></div><div class="cv" style="width:52px;height:70px"></div><span>›</span></div>
+  <div style="margin-bottom:4px;color:var(--text-primary)">Kingdom Hearts <span style="color:var(--text-muted)">· 3 juegos</span></div>
+  <div class="row" style="margin-bottom:12px"><div class="cv" style="width:52px;height:70px"></div><div class="cv" style="width:52px;height:70px"></div><div class="cv" style="width:52px;height:70px"></div></div>
+  <div style="color:var(--text-primary)">Novelas de 2026 <span style="color:var(--text-muted)">· lista</span></div>
+  <div class="hint"><span>↕ Colección</span><span>↔ Juego</span><span>A Abrir</span><span>Y Editar</span><span>Start Ordenar colecciones</span></div>
+</div>
+
+<div class="lbl">B · Mosaico de pilas (cada colección es una baldosa con 3 portadas apiladas)</div>
+<div class="scr">
+  <div class="top"><span>Inicio › Colecciones</span><span>Ordenar: manual</span></div>
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;padding:6px 10px">
+    <div><div style="position:relative;height:96px"><div class="cv" style="position:absolute;left:18px;top:0;width:58px;height:78px"></div><div class="cv" style="position:absolute;left:9px;top:6px;width:58px;height:78px"></div><div class="cv f" style="position:absolute;left:0;top:12px;width:58px;height:78px"></div></div><div style="color:var(--text-primary)">Trails</div>10 juegos</div>
+    <div><div style="position:relative;height:96px"><div class="cv" style="position:absolute;left:18px;top:0;width:58px;height:78px"></div><div class="cv" style="position:absolute;left:9px;top:6px;width:58px;height:78px"></div><div class="cv" style="position:absolute;left:0;top:12px;width:58px;height:78px"></div></div><div style="color:var(--text-primary)">Kingdom Hearts</div>3 juegos</div>
+    <div><div style="position:relative;height:96px"><div class="cv" style="position:absolute;left:9px;top:6px;width:58px;height:78px"></div><div class="cv" style="position:absolute;left:0;top:12px;width:58px;height:78px"></div></div><div style="color:var(--text-primary)">NieR</div>2 juegos</div>
+    <div><div style="position:relative;height:96px"><div class="cv" style="position:absolute;left:18px;top:0;width:58px;height:78px"></div><div class="cv" style="position:absolute;left:9px;top:6px;width:58px;height:78px"></div><div class="cv" style="position:absolute;left:0;top:12px;width:58px;height:78px"></div></div><div style="color:var(--text-primary)">Novelas 2026</div>14 juegos</div>
+    <div><div class="cv" style="height:78px;width:58px;margin-top:12px;display:grid;place-items:center;border-style:dashed;font-size:18px">+</div><div style="color:var(--text-primary)">Nueva</div></div>
+  </div>
+  <div style="margin:4px 10px;padding:8px 10px;border:0.5px solid var(--border);border-radius:8px;background:var(--surface-2)">Sugerencias: <span class="chip">Utawarerumono · 3</span> <span class="chip">Final Fantasy VII · 2</span> <span class="chip">Xenoblade · 2</span></div>
+  <div class="hint"><span>A Abrir (lista de juegos + «Todas las capturas»)</span><span>X Ver capturas directo</span><span>Y Editar</span></div>
+</div>
+
+<div class="lbl">C · Panel lateral dentro de la biblioteca (las colecciones son un filtro más)</div>
+<div class="scr" style="display:flex;gap:12px">
+  <div style="width:150px;flex:none;border-right:0.5px solid var(--border);padding-right:10px;display:flex;flex-direction:column;gap:5px">
+    <span style="color:var(--text-muted)">Biblioteca</span><span>Todos · 128</span><span>PC · 96</span><span>Switch · 12</span>
+    <span style="color:var(--text-muted);margin-top:6px">Colecciones</span><span class="chip on">Trails · 10</span><span>Kingdom Hearts · 3</span><span>Novelas 2026 · 14</span><span style="color:var(--text-muted)">+ Nueva</span>
+  </div>
+  <div style="flex:1">
+    <div class="top"><span>Trails</span><span class="chip">Ver las 2.341 capturas juntas</span></div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px"><div class="cv f" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div></div>
+  </div>
+  <div class="hint" style="left:178px"><span>← Panel</span><span>A Abrir</span><span>LT/RT Ordenar</span></div>
+</div>
+
+<div class="lbl">Selector de juegos (común a las tres)</div>
+<div class="scr">
+  <div class="top"><span>Editar «Trails»</span><span class="chip on">10 seleccionados</span></div>
+  <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap"><div style="flex:1;min-width:120px;padding:6px 10px;border:0.5px solid var(--border-accent);border-radius:8px;background:var(--surface-2);color:var(--text-primary)">trails|</div><span class="chip">Todos</span><span class="chip">Seleccionados</span><span class="chip">PC</span></div>
+  <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px">
+    <div class="cv f" style="aspect-ratio:3/4;display:grid;place-items:end center;padding-bottom:4px;color:var(--text-accent)"><i class="ti ti-check" aria-hidden="true"></i></div><div class="cv" style="aspect-ratio:3/4;display:grid;place-items:end center;padding-bottom:4px;color:var(--text-accent)"><i class="ti ti-check" aria-hidden="true"></i></div><div class="cv" style="aspect-ratio:3/4;display:grid;place-items:end center;padding-bottom:4px;color:var(--text-accent)"><i class="ti ti-check" aria-hidden="true"></i></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div>
+  </div>
+  <div class="hint"><span>A Marcar</span><span>X Marcar todos los resultados</span><span>Y Escribir</span><span>LB/RB Plataforma</span><span>Start Guardar</span></div>
+</div>
+
+<h2>Estados de los juegos</h2>
+<p class="sub">Separar «dónde está» (plataforma/carpeta) de «qué es para ti» (estado, tipo y colecciones).</p>
+
+<div class="lbl">A · «Mi lista»: estanterías automáticas por estado</div>
+<div class="scr">
+  <div class="top"><span>Inicio › Mi lista</span><span>128 juegos · 41 terminados</span></div>
+  <div style="color:var(--text-primary);margin-bottom:4px">Jugando ahora <span style="color:var(--text-muted)">· 3</span></div>
+  <div class="row" style="margin-bottom:10px;align-items:center"><div class="cv f" style="width:56px;height:75px"></div><div class="cv" style="width:56px;height:75px"></div><div class="cv" style="width:56px;height:75px"></div><span style="margin-left:8px">Persona 5 Royal · 62 h · última partida ayer</span></div>
+  <div style="color:var(--text-primary);margin-bottom:4px">Pendientes <span style="color:var(--text-muted)">· 18 · en tu orden</span></div>
+  <div class="row" style="margin-bottom:10px;align-items:center"><div class="cv" style="width:48px;height:64px"></div><div class="cv" style="width:48px;height:64px"></div><div class="cv" style="width:48px;height:64px"></div><div class="cv" style="width:48px;height:64px"></div><div class="cv" style="width:48px;height:64px"></div><div class="cv" style="width:48px;height:64px"></div><span>›</span></div>
+  <div style="color:var(--text-primary)">Terminados en 2026 <span style="color:var(--text-muted)">· 9</span> · Terminados antes · Abandonados · Sin estado</div>
+  <div class="hint"><span>↕ Estantería</span><span>A Abrir</span><span>Y Cambiar estado</span><span>LB/RB Mover en pendientes</span></div>
+</div>
+
+<div class="lbl">B · Tablero en columnas (mueves el juego de columna con LB/RB)</div>
+<div class="scr">
+  <div class="top"><span>Inicio › Mi lista</span><span class="chip">Vista tablero</span></div>
+  <div style="display:flex;gap:10px;height:72%">
+    <div class="col"><b style="font-weight:500;color:var(--text-primary)">Pendiente · 18</b><div class="it"><div class="cv" style="width:22px;height:30px"></div>Outer Wilds</div><div class="it"><div class="cv" style="width:22px;height:30px"></div>Xenogears</div><div class="it"><div class="cv" style="width:22px;height:30px"></div>Rance 01</div></div>
+    <div class="col"><b style="font-weight:500;color:var(--text-primary)">Jugando · 3</b><div class="it f" style="border-radius:6px"><div class="cv" style="width:22px;height:30px"></div>Persona 5 Royal</div><div class="it"><div class="cv" style="width:22px;height:30px"></div>Umineko</div></div>
+    <div class="col"><b style="font-weight:500;color:var(--text-primary)">Terminado · 41</b><div class="it"><div class="cv" style="width:22px;height:30px"></div>Elden Ring <span style="color:var(--text-muted)">mar 2026</span></div><div class="it"><div class="cv" style="width:22px;height:30px"></div>Sekiro <span style="color:var(--text-muted)">ene 2026</span></div></div>
+    <div class="col"><b style="font-weight:500;color:var(--text-primary)">Abandonado · 4</b><div class="it"><div class="cv" style="width:22px;height:30px"></div>Fall Guys</div></div>
+  </div>
+  <div class="hint"><span>↕↔ Moverse</span><span>LB/RB Pasar a otra columna</span><span>A Abrir</span></div>
+</div>
+
+<div class="lbl">C · Integrado en la lista de juegos: pestañas de estado + insignias en las portadas</div>
+<div class="scr">
+  <div class="top"><span>Inicio › PC</span><span>Orden: última partida</span></div>
+  <div class="row" style="margin-bottom:12px;flex-wrap:wrap"><span class="chip">Todos 96</span><span class="chip on">Pendientes 18</span><span class="chip">Jugando 3</span><span class="chip">Terminados 41</span><span class="chip">Abandonados 4</span><span class="chip">Sin estado 30</span></div>
+  <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:10px">
+    <div class="cv f" style="aspect-ratio:3/4;position:relative"><span style="position:absolute;top:3px;left:3px;font-size:11px" class="chip">1</span></div><div class="cv" style="aspect-ratio:3/4;position:relative"><span style="position:absolute;top:3px;left:3px;font-size:11px" class="chip">2</span></div><div class="cv" style="aspect-ratio:3/4;position:relative"><span style="position:absolute;top:3px;left:3px;font-size:11px" class="chip">3</span></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div>
+    <div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div><div class="cv" style="aspect-ratio:3/4"></div>
+  </div>
+  <div class="hint"><span>LT/RT Estado</span><span>Y Cambiar estado</span><span>View Más pequeño / más grande</span></div>
+</div>
+
+<div class="lbl">Marcar el estado rápido (común): barra que aparece al pulsar Y sobre cualquier juego</div>
+<div class="scr" style="aspect-ratio:auto;min-height:0;padding:18px">
+  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+    <span class="chip">Sin estado</span><span class="chip">Pendiente</span><span class="chip">Jugando</span><span class="chip on">Terminado</span><span class="chip">Abandonado</span>
+  </div>
+  <div style="text-align:center;margin-top:12px">Al marcar «Terminado»: fecha de hoy (editable), nota de 1 a 5 opcional y la opción de añadirlo a una colección</div>
+</div>
+</main>
+</body>
+</html>
