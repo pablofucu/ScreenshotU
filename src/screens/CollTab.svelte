@@ -78,7 +78,8 @@
 
 <style>
   /* Zona de las estanterías (recorta lo que se desplaza fuera, a ancho completo para no cortar las sombras). */
-  .lclip{position:absolute;left:0;top:166px;width:1280px;height:510px;overflow:hidden}
+  /* Alto justo para que de la tercera estantería solo asome el borde de su pestaña (sin meterse bajo las pistas). */
+  .lclip{position:absolute;left:0;top:166px;width:1280px;height:494px;overflow:hidden}
   /* Línea de tiempo dentro de la pestaña. */
   .ctl{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--ink);text-shadow:0 1px 2px rgba(0,0,0,.25)}
   .ctr{position:relative;width:230px;height:4px;border-radius:4px;background:color-mix(in srgb,var(--ink) 38%,transparent)}

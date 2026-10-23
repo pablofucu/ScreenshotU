@@ -137,7 +137,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 
 /* viewer */
 .vw{position:absolute;inset:0;background:#1a1d24;overflow:hidden}
-.vbg{position:absolute;inset:-80px;background-size:cover;background-position:center;filter:blur(60px) brightness(.62) saturate(1.3)}
+.vbg{position:absolute;inset:-80px;background-size:cover;background-position:center;filter:blur(60px) brightness(.62) saturate(1.3);transition:background-image .4s ease}
 .vw::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(0,0,0,.45))}
 .vframe{position:absolute;left:148px;top:66px;width:984px;height:553px;--r:22px;--bw:7px;cursor:default;transform:none !important}
 .vframe .face{border-radius:16px;background:#000}
@@ -186,7 +186,8 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .glass img{user-select:none;-webkit-user-drag:none}
 .mini .mstar{display:grid;place-items:center;width:100%;height:100%;background:linear-gradient(180deg,#9aa3b3,#657083)}
 .mini .mstar svg{width:70%;height:70%}
-.shot .face,.cover .face,.vthumb .face{background:linear-gradient(160deg,#e6e9ee,#d3d8e0)}
+/* Mientras carga la miniatura, la cara lleva un tono suave del acento (nunca un hueco blanco). */
+.shot .face,.cover .face,.vthumb .face,.scov .face{background:linear-gradient(160deg,color-mix(in srgb,var(--acc,#8a93a3) 18%,#e4e7ec),color-mix(in srgb,var(--acc,#8a93a3) 34%,#c9cfd8))}
 
 /* paneles de mensaje (bienvenida, plataforma vacia) */
 .welcome{width:800px;height:390px;--r:40px;--bw:14px;cursor:pointer}
@@ -401,14 +402,14 @@ i.big.sel{outline:4px solid #3a414e;outline-offset:2px;transform:scale(1.08)}
 .shot .gbadge{position:absolute;left:8px;bottom:8px;max-width:calc(100% - 16px);padding:2px 9px;border-radius:999px;font-size:13px;font-weight:800;color:#fff;background:rgba(40,46,60,.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
 
 /* ---------- animaciones extra ---------- */
-/* miniaturas: aparecen con fundido y desenfoque en vez de golpe */
-img.tin{animation:thumbIn .35s cubic-bezier(.2,.8,.3,1) both}
-@keyframes thumbIn{from{opacity:0;filter:blur(8px);transform:scale(1.05)}}
+/* miniaturas: la primera vez que llegan aparecen con un fundido suave; las ya cargadas se pintan al instante */
+img.tin.fade{animation:thumbIn .28s ease-out both}
+@keyframes thumbIn{from{opacity:0}}
 /* transicion compartida miniatura <-> visor */
 ::view-transition-group(shot){animation-duration:.38s;animation-timing-function:cubic-bezier(.2,.8,.3,1);z-index:10}
 ::view-transition-old(shot),::view-transition-new(shot){height:100%;object-fit:cover}
 ::view-transition-old(root),::view-transition-new(root){animation-duration:.3s}
-@media (prefers-reduced-motion: reduce){img.tin{animation:none}
+@media (prefers-reduced-motion: reduce){img.tin.fade{animation:none}
   .rplaying i,.play.on .pi,.caret,.ycard,.screen.fwd,.screen.back,.gainchip{animation:none!important}}
 
 /* ---------- Inicio: plataformas compactas, «Seguir jugando» y dock con texto ---------- */
@@ -445,7 +446,11 @@ img.tin{animation:thumbIn .35s cubic-bezier(.2,.8,.3,1) both}
 
 /* ---------- Títulos: fondo ambiental, cabecera, filtros y página ---------- */
 .amb{position:absolute;inset:0;overflow:hidden;pointer-events:none}
-.amblayer{position:absolute;inset:-70px;background-size:cover;background-position:center;filter:blur(44px) saturate(1.4);opacity:.5;animation:ambin .6s ease both}
+.amb{transition:opacity .6s ease}
+.amb.off{opacity:0}
+/* Cada capa nueva entra encima con un fundido; las de debajo se quitan al terminar (fundido cruzado sin cortes). */
+.amblayer{position:absolute;inset:-70px;background-size:cover;background-position:center;filter:blur(44px) saturate(1.4);opacity:.5;animation:ambin .7s ease both}
+.amblayer.still{animation:none}
 .amb::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(236,238,242,.1) 0%,rgba(236,238,242,.55) 45%,rgba(236,238,242,.88) 100%)}
 .amb.car .amblayer{opacity:.45}
 @keyframes ambin{from{opacity:0}}
@@ -454,21 +459,20 @@ img.tin{animation:thumbIn .35s cubic-bezier(.2,.8,.3,1) both}
 .thead > span b{color:#3a414e;font-weight:800}
 .thead .tfav{display:flex;align-items:center;gap:4px}
 .thead .tfav svg{width:22px;height:22px}
-.tfilters{position:absolute;left:96px;top:134px;display:flex;gap:8px;align-items:center;z-index:4}
-.tfilters.car{left:50%;transform:translateX(-50%);top:96px}
-.tfilters.lo{top:162px}
-.tfilters.lo.car{top:96px}
 /* Pestañas de la categoría (View) y orden activo (X) */
 .ttabs{position:absolute;left:96px;top:124px;display:flex;gap:8px;align-items:center;z-index:4}
 .ttabs.car{left:50%;transform:translateX(-50%);top:140px}
 .ttabs .btn{cursor:pointer}
 .ttabs .btn.x{margin-left:14px}
 .ttabs .tord{color:#3F63E0}
+/* Filtro activo (Start › Filtrar): chip discreto junto al orden; el clic lo quita. */
+.ttabs .tchip{margin-left:6px;cursor:pointer;color:#4a5260;background:rgba(255,255,255,.55);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--acc) 55%,transparent)}
+.ttabs .tchip b{display:grid;place-items:center;width:18px;height:18px;margin-right:-6px;border-radius:50%;font-size:11px;color:#fff;background:#8a93a3}
+.ttabs .tchip:hover b{background:#E8384F}
 .note-card.soon .face{gap:12px}
 .soonchip{font-size:14px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--acc-ink,#fff);background:var(--acc);padding:3px 14px;border-radius:999px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
-.tfilters .btn{cursor:pointer}
 .tflt{height:32px;padding:0 14px;border-radius:999px;display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;color:#4a5260;white-space:nowrap;
-  background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.22)}
+  background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.22);transition:background .25s,color .25s,box-shadow .25s}
 .tflt small{font-size:13px;font-weight:700;opacity:.65}
 .tflt.on{background:var(--acc);color:var(--acc-ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 6px 14px -8px var(--acc)}
 .tcov{width:160px;height:214px;--r:22px;--bw:8px}

@@ -408,6 +408,7 @@ export function shotMenuItems(): MenuItem[] {
   // Borrar (a la Papelera): la captura enfocada o, en el modo selección, las marcadas.
   if (app.selMode) { if (app.sel.size) it.push('delsel'); }
   else if (app.cur.shots[app.s]) it.push('delshot');
+  if (app.audioOutputs.length) it.push('audio');
   return it;
 }
 

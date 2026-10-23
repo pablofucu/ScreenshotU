@@ -3,7 +3,7 @@
   import { app } from '../lib/store.svelte';
   import { resetZoom } from '../lib/controller.svelte';
   import { ICON } from '../lib/icons';
-  import { backend } from '../lib/backend';
+  import { backend, decodeImg, thumbNow } from '../lib/backend';
   import { fmt, resText } from '../lib/format';
   import Hints from '../components/Hints.svelte';
   import Thumb from '../components/Thumb.svelte';
@@ -52,11 +52,12 @@
 
   const zoomed = $derived(app.vz.k > 1);
 
-  let bg = $state('');
+  // Fondo desenfocado: cambia cuando la miniatura nueva ya está decodificada (la anterior se queda hasta entonces).
+  let bg = $state(untrack(() => (cur ? (thumbNow(cur.path) ?? '') : '')));
   $effect(() => {
     if (!cur) return;
     const ctl = new AbortController();
-    backend.thumb(cur.path, ctl.signal).then((u) => { if (!ctl.signal.aborted) bg = u; }, () => {});
+    backend.thumb(cur.path, ctl.signal).then(async (u) => { await decodeImg(u); if (!ctl.signal.aborted) bg = u; }, () => {});
     return () => ctl.abort();
   });
 </script>

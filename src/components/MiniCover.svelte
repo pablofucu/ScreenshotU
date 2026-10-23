@@ -2,19 +2,20 @@
   // Mini portada vertical (2:3) de un juego para las listas de estadísticas. Si falta algo se usa lo
   // siguiente: portada → hero recortado → captura más reciente → acento con iniciales.
   import { app } from '../lib/store.svelte';
-  import { backend } from '../lib/backend';
+  import { untrack } from 'svelte';
+  import { backend, thumbNow } from '../lib/backend';
   import { initials } from '../lib/stats';
   import type { Title } from '../lib/types';
 
   let { t, acc, small = false }: { t: Title; acc: string; small?: boolean } = $props();
 
   const srcs = $derived([t.cover, t.hero, t.shots[0]?.path].filter((x): x is string => !!x));
-  let src = $state('');
+  // La primera ya resuelta se pinta al instante; las demás se prueban en orden sin vaciar la que se ve.
+  let src = $state(untrack(() => (srcs[0] ? (thumbNow(srcs[0]) ?? '') : '')));
   $effect(() => {
     const list = srcs;
     void app.artVer;
     const ctl = new AbortController();
-    src = '';
     (async () => {
       for (const p of list) {
         try {
@@ -23,6 +24,7 @@
           if (await loads(u)) { src = u; return; }
         } catch { if (ctl.signal.aborted) return; }
       }
+      if (!ctl.signal.aborted) src = '';
     })();
     return () => ctl.abort();
   });

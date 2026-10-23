@@ -2,7 +2,8 @@
   // Fondo y logo de una fila de la clasificación (top 3): el hero se funde hacia el blanco y el logo va
   // encima. Sin hero, la captura más reciente o la portada; sin nada, el acento. Sin logo, el nombre.
   import { app } from '../lib/store.svelte';
-  import { backend } from '../lib/backend';
+  import { untrack } from 'svelte';
+  import { backend, decodeImg, thumbNow } from '../lib/backend';
   import type { Title } from '../lib/types';
 
   let { t }: { t: Title } = $props();
@@ -15,12 +16,13 @@
   const showLogo = $derived(!!logoUrl && logoBad !== logoUrl);
 
   const fbPath = $derived(t.shots[0]?.path ?? t.cover ?? null);
-  let fb = $state('');
+  // Lo ya cargado se pinta al instante; lo nuevo, cuando ya está decodificado (sin hueco entre medias).
+  let fb = $state(untrack(() => (showHero || !fbPath ? '' : (thumbNow(fbPath) ?? ''))));
   $effect(() => {
     const src = showHero ? null : fbPath;
     if (!src) { fb = ''; return; }
     const ctl = new AbortController();
-    backend.thumb(src, ctl.signal).then((u) => { if (!ctl.signal.aborted) fb = u; }, () => {});
+    backend.thumb(src, ctl.signal).then(async (u) => { await decodeImg(u); if (!ctl.signal.aborted) fb = u; }, () => {});
     return () => ctl.abort();
   });
 </script>

@@ -25,13 +25,38 @@ class Queue {
 
 const IMG_EXT = ['png', 'jpg', 'jpeg', 'webp'];
 
+/* Miniaturas ya resueltas (ruta → URL) y ya decodificadas: lo que ya se cargó una vez se pinta al instante, sin
+ * esperar a la promesa ni pasar por el hueco vacío (al cambiar de pestaña, filtro, orden, página o tamaño). */
+const thumbUrls = new Map<string, string>();
+const decoded = new Set<string>();
+const decoding = new Map<string, Promise<void>>();
+/** URL de la miniatura si ya se conoce (síncrono). */
+export const thumbNow = (path: string) => thumbUrls.get(path);
+/** La URL ya se decodificó alguna vez: se puede pintar sin fundido. */
+export const thumbReady = (url: string) => decoded.has(url);
+/** Carga y decodifica una URL de imagen (una sola vez por URL); nunca falla. */
+export function decodeImg(url: string): Promise<void> {
+  if (!url || decoded.has(url)) return Promise.resolve();
+  let p = decoding.get(url);
+  if (!p) {
+    const im = new Image();
+    im.decoding = 'async';
+    im.src = url;
+    p = (im.decode ? im.decode() : new Promise<void>((ok) => { im.onload = im.onerror = () => ok(); }))
+      .catch(() => {})
+      .then(() => { decoded.add(url); decoding.delete(url); });
+    decoding.set(url, p);
+  }
+  return p;
+}
+
 async function tauriBackend(): Promise<Backend> {
   const { invoke, convertFileSrc } = await import('@tauri-apps/api/core');
   const { listen } = await import('@tauri-apps/api/event');
   const { getCurrentWindow } = await import('@tauri-apps/api/window');
   const { getCurrentWebview } = await import('@tauri-apps/api/webview');
   const q = new Queue(6);
-  const cache = new Map<string, string>();
+  const cache = thumbUrls;
   let artVer = 0;
   listen<{ src: string; thumb: string }>('thumb-ready', (e) => {
     cache.set(e.payload.src, convertFileSrc(e.payload.thumb));
@@ -158,6 +183,14 @@ export async function createBackend(): Promise<Backend> {
 
 export let backend: Backend;
 export async function initBackend() {
-  backend = await createBackend();
+  const b = await createBackend();
+  // Toda miniatura resuelta queda en la caché síncrona (`thumbNow`), también en el modo navegador.
+  const raw = b.thumb.bind(b);
+  b.thumb = (path, signal) => {
+    const hit = thumbUrls.get(path);
+    if (hit) return Promise.resolve(hit);
+    return raw(path, signal).then((u) => { thumbUrls.set(path, u); return u; });
+  };
+  backend = b;
   return backend;
 }
