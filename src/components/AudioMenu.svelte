@@ -32,14 +32,12 @@
       {#if o.default}<b>✓</b>{/if}
     </button>
   {/each}
-  <div class="audfoot"><span class="btn a">A</span>Elegir<span class="btn b">B</span>Cerrar</div>
 </div>
 
 <style>
   .audmenu {
     position: absolute; top: 66px; right: 24px; z-index: 40; min-width: 280px; max-width: 420px; padding: 8px; cursor: default;
     display: flex; flex-direction: column; gap: 2px; font-size: 17px; animation: audIn 0.16s ease-out both;
-    background: rgba(247, 249, 252, 0.95);
   }
   @keyframes audIn { from { opacity: 0; transform: translateY(-6px); } }
   .audhead { padding: 4px 10px 6px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #657083; }
@@ -53,8 +51,5 @@
   .audit b { color: var(--acc); }
   .audit.f { background: rgba(255, 255, 255, 0.85); box-shadow: inset 0 0 0 2px var(--acc); }
   .audit.on, .audit.on i { color: var(--acc); }
-  .audfoot { display: flex; align-items: center; gap: 6px; padding: 8px 10px 2px; font-size: 13px; font-weight: 700; color: #657083; }
-  .audfoot .btn { min-width: 22px; height: 22px; font-size: 11px; }
-  .audfoot .btn.b { margin-left: 8px; }
   @media (prefers-reduced-motion: reduce) { .audmenu { animation: none; } }
 </style>
