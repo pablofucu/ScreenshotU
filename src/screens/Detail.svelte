@@ -1,6 +1,6 @@
 <script lang="ts">
   import { app, STATUS_LABEL } from '../lib/store.svelte';
-  import { backend } from '../lib/backend';
+  import { backend, decodeImg, thumbNow } from '../lib/backend';
   import { ICON } from '../lib/icons';
   import { fmtDur, nCapturas } from '../lib/format';
   import { DETAIL_SHOTS } from '../lib/controller.svelte';
@@ -28,8 +28,10 @@
   $effect(() => {
     const src = showHero ? null : coverPath;
     if (!src) { blur = ''; return; }
+    const known = thumbNow(src);
+    if (known) { blur = known; return; }
     const ctl = new AbortController();
-    backend.thumb(src, ctl.signal).then((u) => { if (!ctl.signal.aborted) blur = u; }, () => {});
+    backend.thumb(src, ctl.signal).then((u) => decodeImg(u).then(() => { if (!ctl.signal.aborted) blur = u; }), () => {});
     return () => ctl.abort();
   });
 
