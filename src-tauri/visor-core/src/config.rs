@@ -71,6 +71,8 @@ pub struct Config {
     pub capture_sound: bool,
     /// Miniatura de la captura unos instantes sobre el juego.
     pub capture_peek: bool,
+    /// Capturar solo dentro de un juego (lanzado desde el visor, conocido o en pantalla completa); fuera, no.
+    pub capture_only_games: bool,
     /// Vibracion corta del mando cuando se captura con el.
     pub capture_rumble: bool,
     /// Ruta de `Magpie.exe` ("" = buscarlo solo).
@@ -181,6 +183,7 @@ impl Default for Config {
             capture_magpie: "scaled".into(),
             capture_sound: true,
             capture_peek: true,
+            capture_only_games: true,
             capture_rumble: true,
             magpie_exe: String::new(),
             show_hidden: false,

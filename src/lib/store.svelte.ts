@@ -31,6 +31,7 @@ export const DEFAULT_CONFIG: Config = {
   magpieExe: '',
   captureSound: true,
   capturePeek: true,
+  captureOnlyGames: true,
   captureRumble: true,
   showHidden: false,
   sgdbKey: '',

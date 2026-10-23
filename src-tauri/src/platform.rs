@@ -424,6 +424,36 @@ mod imp {
         Grabbed { width: img.w, height: img.h, rgba: img.px, method, fg_pid }
     }
 
+    /// Ventana en primer plano «util» (ni el visor ni Magpie) y si ocupa su monitor entero. Devuelve el pid
+    /// de esa ventana y sus datos; si la ventana es del visor, `own` y pid propio.
+    pub fn foreground_info() -> Option<(u32, visor_core::capture::ForegroundInfo)> {
+        use visor_core::capture::{covers_monitor, ForegroundInfo};
+        let own = std::process::id();
+        let fg = foreground()?;
+        let fg_pid = pid_of(fg)?;
+        if fg_pid == own {
+            return Some((own, ForegroundInfo { own: true, ..Default::default() }));
+        }
+        let magpie = find_magpie();
+        let magpie_pid = magpie.and_then(pid_of);
+        // Si el primer plano es la ventana de Magpie, el juego es la que esta debajo.
+        let (win, via_magpie) = if Some(fg_pid) == magpie_pid {
+            (window_below(magpie?, &[own, fg_pid])?, true)
+        } else {
+            (fg, false)
+        };
+        let pid = pid_of(win)?;
+        let covers = |h: HWND| {
+            let mon = unsafe { MonitorFromWindow(h, MONITOR_DEFAULTTONEAREST) };
+            match (frame_rect(h), monitor_rect(mon)) {
+                (Some(w), Some(m)) => covers_monitor(rect_t(w), rect_t(m)),
+                _ => false,
+            }
+        };
+        let fullscreen = covers(win) || (via_magpie && magpie.map(covers).unwrap_or(false));
+        Some((pid, ForegroundInfo { own: false, exe_name: exe_name(pid), class: class_name(win), fullscreen, known_game: false }))
+    }
+
     /// Captura el juego. `target_pids`: procesos del juego lanzado desde el visor (vacio = el del primer
     /// plano). `magpie_scaled`: con Magpie activo, guardar lo que se ve escalado en vez de la imagen original.
     pub fn grab(target_pids: &[u32], magpie_scaled: bool) -> Result<Grabbed, String> {
@@ -522,7 +552,7 @@ mod imp {
 }
 
 #[cfg(windows)]
-pub use imp::{grab, own_window_focused, play_shutter};
+pub use imp::{foreground_info, grab, own_window_focused, play_shutter};
 
 #[cfg(not(windows))]
 pub fn grab(_target_pids: &[u32], _magpie_scaled: bool) -> Result<Grabbed, String> {
@@ -533,4 +563,8 @@ pub fn play_shutter() {}
 #[cfg(not(windows))]
 pub fn own_window_focused() -> bool {
     false
+}
+#[cfg(not(windows))]
+pub fn foreground_info() -> Option<(u32, visor_core::capture::ForegroundInfo)> {
+    None
 }

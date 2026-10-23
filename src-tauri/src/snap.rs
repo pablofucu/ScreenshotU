@@ -46,8 +46,12 @@ pub fn trigger_from_pad(app: &AppHandle, pads: u8) {
             run(&app, pads)
         };
         match r {
-            Ok(s) => {
+            Ok(Some(s)) => {
                 let _ = app.emit("capture-saved", s);
+            }
+            // Sin juego abierto: ni sonido, ni vibracion, ni miniatura; solo un aviso breve en el visor.
+            Ok(None) => {
+                let _ = app.emit("capture-error", "No hay ningún juego abierto: no se ha hecho la captura");
             }
             Err(e) => {
                 eprintln!("captura fallida: {e}");
@@ -71,12 +75,27 @@ fn fallback_dir(app: &AppHandle) -> Option<PathBuf> {
     app.path().picture_dir().ok().or_else(|| app.path().home_dir().ok()).map(|d| d.join("Visor de capturas"))
 }
 
-fn run(app: &AppHandle, pads: u8) -> Result<Saved, String> {
+fn run(app: &AppHandle, pads: u8) -> Result<Option<Saved>, String> {
     let at = chrono::Local::now().naive_local();
     let st = app.state::<AppState>();
     let cfg = st.config.lock().unwrap().clone();
     let active = st.active.lock().unwrap().clone();
     let pids = active.as_ref().map(|a| a.pids.lock().unwrap().clone()).unwrap_or_default();
+
+    if cfg.capture_only_games && active.is_none() {
+        let fg = platform::foreground_info().map(|(pid, mut info)| {
+            if !info.own {
+                if let Some(exe) = exe_of(pid) {
+                    let games_list = st.games.lock().unwrap();
+                    info.known_game = games::game_for_exe(&games_list, &exe).is_some();
+                }
+            }
+            info
+        });
+        if !capture::should_capture(true, false, fg.as_ref()) {
+            return Ok(None);
+        }
+    }
 
     let g = platform::grab(&pids, cfg.capture_magpie != "source")?;
     eprintln!("captura {}x{} por {}", g.width, g.height, g.method);
@@ -134,7 +153,7 @@ fn run(app: &AppHandle, pads: u8) -> Result<Saved, String> {
         match capture::save_rgba_png(&path, width, height, rgba.clone()) {
             Ok(()) => {
                 let _ = app.notification().builder().title("Visor de capturas").body(format!("Captura guardada: {display}")).show();
-                return Ok(Saved { path: path.to_string_lossy().into_owned(), name: display, platform_id: plat_id, folder });
+                return Ok(Some(Saved { path: path.to_string_lossy().into_owned(), name: display, platform_id: plat_id, folder }));
             }
             Err(e) => why = format!("no se pudo guardar en la biblioteca: {e}"),
         }
@@ -150,5 +169,5 @@ fn run(app: &AppHandle, pads: u8) -> Result<Saved, String> {
         .title("Visor de capturas")
         .body(format!("Captura guardada en {} ({why})", dir.display()))
         .show();
-    Ok(Saved { path: shown, name: format!("{display} (en {})", dir.display()), platform_id: platform_id.clone(), folder: wanted })
+    Ok(Some(Saved { path: shown, name: format!("{display} (en {})", dir.display()), platform_id: platform_id.clone(), folder: wanted }))
 }

@@ -30,6 +30,8 @@ export interface Config {
   capturePeek: boolean;
   /** Vibracion corta del mando al capturar con el. */
   captureRumble: boolean;
+  /** Capturar solo dentro de un juego (no en el escritorio ni en otras aplicaciones). */
+  captureOnlyGames: boolean;
   /** Ruta de Magpie.exe ("" = buscarlo solo). */
   magpieExe: string;
   /** Mostrar atenuados los juegos ocultos. */

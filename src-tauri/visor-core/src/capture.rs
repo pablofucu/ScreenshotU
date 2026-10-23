@@ -391,9 +391,82 @@ pub fn shutter_wav() -> Vec<u8> {
     w
 }
 
+/// Datos de la ventana en primer plano que decide si se captura.
+#[derive(Debug, Clone, Default)]
+pub struct ForegroundInfo {
+    /// Es una ventana del propio visor (incluidos el overlay y la miniatura).
+    pub own: bool,
+    /// Nombre del exe (sin ruta), en cualquier caso.
+    pub exe_name: String,
+    pub class: String,
+    /// Ocupa su monitor entero (pantalla completa o sin bordes).
+    pub fullscreen: bool,
+    /// Su exe esta dentro de la carpeta de un juego conocido.
+    pub known_game: bool,
+}
+
+/// `true` si `win` cubre por completo `mon` (rectangulos izquierda, arriba, derecha, abajo).
+pub fn covers_monitor(win: Rect, mon: Rect) -> bool {
+    mon.2 > mon.0 && mon.3 > mon.1 && win.0 <= mon.0 && win.1 <= mon.1 && win.2 >= mon.2 && win.3 >= mon.3
+}
+
+/// Ventanas del escritorio y del shell de Windows: nunca cuentan como «un juego», aunque ocupen la pantalla.
+pub fn is_shell_window(exe_name: &str, class: &str) -> bool {
+    const CLASSES: [&str; 4] = ["progman", "workerw", "shell_traywnd", "shell_secondarytraywnd"];
+    const EXES: [&str; 7] = [
+        "explorer.exe", "searchhost.exe", "searchapp.exe", "startmenuexperiencehost.exe", "shellexperiencehost.exe",
+        "lockapp.exe", "textinputhost.exe",
+    ];
+    let (e, c) = (exe_name.to_ascii_lowercase(), class.to_ascii_lowercase());
+    EXES.contains(&e.as_str()) || CLASSES.contains(&c.as_str())
+}
+
+/// Decide si hay que capturar. `only_games` = ajuste `capture_only_games`; `has_active` = hay un juego lanzado
+/// desde el visor; `fg` = ventana en primer plano (si no se pudo leer, no se captura).
+pub fn should_capture(only_games: bool, has_active: bool, fg: Option<&ForegroundInfo>) -> bool {
+    if !only_games || has_active {
+        return true;
+    }
+    match fg {
+        None => false,
+        Some(f) if f.own => false,
+        Some(f) if f.known_game => true,
+        Some(f) => f.fullscreen && !is_shell_window(&f.exe_name, &f.class),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn fgi(exe: &str, class: &str, fullscreen: bool, known: bool) -> ForegroundInfo {
+        ForegroundInfo { own: false, exe_name: exe.into(), class: class.into(), fullscreen, known_game: known }
+    }
+
+    #[test]
+    fn capture_rule() {
+        // Desactivado o juego activo: siempre.
+        assert!(should_capture(false, false, None));
+        assert!(should_capture(true, true, None));
+        // Escritorio, explorador a pantalla completa y ventanas normales: no.
+        assert!(!should_capture(true, false, None));
+        assert!(!should_capture(true, false, Some(&fgi("explorer.exe", "Progman", true, false))));
+        assert!(!should_capture(true, false, Some(&fgi("explorer.exe", "CabinetWClass", true, false))));
+        assert!(!should_capture(true, false, Some(&fgi("chrome.exe", "Chrome_WidgetWin_1", false, false))));
+        assert!(!should_capture(true, false, Some(&ForegroundInfo { own: true, fullscreen: true, ..Default::default() })));
+        // Juego conocido (ventana) o cualquier ventana a pantalla completa que no sea el shell: si.
+        assert!(should_capture(true, false, Some(&fgi("game.exe", "UnityWndClass", false, true))));
+        assert!(should_capture(true, false, Some(&fgi("emu.exe", "SDL_app", true, false))));
+    }
+
+    #[test]
+    fn monitor_cover() {
+        let m = (0, 0, 1920, 1080);
+        assert!(covers_monitor((0, 0, 1920, 1080), m));
+        assert!(covers_monitor((-8, -8, 1928, 1088), m));
+        assert!(!covers_monitor((0, 0, 1920, 1040), m));
+        assert!(!covers_monitor((0, 0, 100, 100), (0, 0, 0, 0)));
+    }
     use crate::dates::parse_date_from_filename;
     use chrono::NaiveDate;
 

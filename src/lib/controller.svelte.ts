@@ -961,7 +961,7 @@ export function wake() {
 /* ---------- ajustes ---------- */
 export type SettingId =
   | 'root' | 'rescan' | 'addgame' | 'hidden' | 'showhidden' | 'view' | 'shotsview' | 'shotsorder' | 'collstyle' | 'accent' | 'sound' | 'fullscreen' | 'monitor' | 'oncursor'
-  | 'audioout' | 'audiocombo' | 'audiohotkey' | 'hotkey' | 'combo' | 'mouse' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caprumble' | 'quit'
+  | 'audioout' | 'audiocombo' | 'audiohotkey' | 'hotkey' | 'combo' | 'mouse' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caponly' | 'caprumble' | 'quit'
   | 'sgdbkey' | 'sgdbauto' | 'sgdbnow' | 'sgdbgame'
   | 'backup' | 'backupmedia' | 'restore' | 'autobackup'
   | 'savesauto' | 'ludusavi' | 'update'
@@ -972,7 +972,7 @@ export const SETTING_SECTIONS: Array<{ name: string; icon: string; color: number
   { name: 'Biblioteca', icon: 'folder', color: 0, rows: ['root', 'rescan', 'addgame', 'hidden', 'showhidden'] },
   { name: 'Apariencia', icon: 'palette', color: 1, rows: ['accent', 'view', 'shotsview', 'shotsorder', 'collstyle'] },
   { name: 'SteamGridDB', icon: 'image', color: 2, rows: ['sgdbkey', 'sgdbauto', 'sgdbnow', 'sgdbgame'] },
-  { name: 'Capturas propias', icon: 'camera', color: 3, rows: ['combo', 'mouse', 'hotkey', 'capsound', 'cappeek', 'caprumble'] },
+  { name: 'Capturas propias', icon: 'camera', color: 3, rows: ['combo', 'mouse', 'hotkey', 'capsound', 'cappeek', 'caprumble', 'caponly'] },
   { name: 'Audio', icon: 'speaker', color: 4, rows: ['audioout', 'audiocombo', 'audiohotkey'] },
   { name: 'Mi lista', icon: 'checks', color: 3, rows: ['liststalled', 'liststalleddays', 'liststalledact', 'listautoplay'] },
   { name: 'Lectura', icon: 'jvn', color: 5, rows: READING_ROWS },
@@ -1167,6 +1167,7 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'magpieexe') void chooseMagpieExe(dir);
   else if (id === 'capsound') { void patchConfig({ captureSound: !app.config.captureSound }); blip(1320); }
   else if (id === 'cappeek') { void patchConfig({ capturePeek: !app.config.capturePeek }); blip(1320); }
+  else if (id === 'caponly') { void patchConfig({ captureOnlyGames: !app.config.captureOnlyGames }); blip(1320); }
   else if (id === 'caprumble') { void patchConfig({ captureRumble: !app.config.captureRumble }); blip(1320); }
   else if (id === 'update') updateAct(dir);
   else if (id === 'quit' && dir === 0) void quit();
