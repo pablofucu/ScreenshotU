@@ -2,87 +2,49 @@
   // Tarjeta «Lectura de hoy» de Inicio: anillos concéntricos con los minutos de hoy (azul = novelas visuales,
   // rosa = novelas japonesas), una medalla con la racha de cada una y el mapa de las últimas semanas.
   // Al entrar se dibuja en cascada; al cumplir una meta «se enciende la racha» (una vez por día y anillo).
-  import { onDestroy, onMount, tick } from 'svelte';
-  import { app } from '../lib/store.svelte';
-  import { GOAL_COL, goalLit, goalTrack, localDay, markGoalLit, type GoalKey, type GoalTrack } from '../lib/readgoals';
-  import { blip } from '../lib/sound';
+  import { GOAL_COL, type GoalKey } from '../lib/readgoals';
+  import { createReadRings, fmtMin } from '../lib/readrings.svelte';
 
   const COL = GOAL_COL;
   const S = 112, SW = 11;
 
-  const now = $derived(app.now.getTime());
-  const today = $derived(localDay(now));
-  const tracks = $derived(
-    (['vn', 'jvn'] as GoalKey[])
-      .filter((k) => app.lib.platforms.some((p) => p.id === k))
-      .map((k) => goalTrack(k, k === 'vn' ? app.config.goalVn : app.config.goalJvn, app.lib.platforms, app.playing, now)),
-  );
-  const rings = $derived(tracks.map((t, i) => {
-    const r = S / 2 - SW / 2 - 1 - i * SW * 1.15;
-    return { t, r, C: 2 * Math.PI * r };
-  }));
+  // Geometría, pistas y «racha pendiente» compartidas con la pantalla de racha (Streak).
+  const rr = createReadRings({ size: S, stroke: SW, gap: 1.15, empty: '#dde1e7' });
+  const tracks = $derived(rr.tracks);
+  const rings = $derived(rr.rings);
+  const { pending, cellBg } = rr;
 
-  // Racha ya celebrada (día local) por anillo: se guarda para no repetirla al volver a Inicio.
-  let lit = $state<Partial<Record<GoalKey, number>>>({});
-  /** Meta cumplida hoy cuya racha aún no se ha «encendido»: se enseña el día anterior hasta la animación. */
-  const pending = (t: GoalTrack) => t.done && lit[t.key] !== today && !goalLit(t.key, today);
-
-  let drawn = $state(false);
-  let mountedAt = 0;
   let root: HTMLDivElement | undefined = $state();
-  onMount(() => {
-    mountedAt = Date.now();
-    requestAnimationFrame(() => requestAnimationFrame(() => (drawn = true)));
-  });
 
   const scheduled = new Set<string>();
-  const timers: ReturnType<typeof setTimeout>[] = [];
-  onDestroy(() => timers.forEach(clearTimeout));
   $effect(() => {
     for (const t of tracks) {
-      const id = `${t.key}:${today}`;
+      const id = `${t.key}:${rr.today}`;
       if (!pending(t) || scheduled.has(id)) continue;
       scheduled.add(id);
       // Tras la cascada de entrada si acaba de abrirse Inicio.
-      const wait = Math.max(150, 1500 - (Date.now() - mountedAt));
-      timers.push(setTimeout(() => light(t.key), wait));
+      const wait = Math.max(150, 1500 - (Date.now() - rr.mountedAt));
+      rr.timers.push(setTimeout(() => light(t.key), wait));
     }
   });
 
   /** «La racha se enciende»: el número gira, la casilla de hoy se rellena y un brillo recorre la racha. */
   function light(k: GoalKey) {
     if (!root?.isConnected) return;
-    const day = today;
-    const done = () => {
-      lit[k] = day;
-      markGoalLit(k, day);
-    };
-    const box = root.querySelector<HTMLElement>(`[data-g="${k}"]`);
-    const num = box?.querySelector<HTMLElement>('.rnum');
-    if (!box || !num) { done(); return; }
-    num.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-30px)' }], { duration: 180, easing: 'ease-in', fill: 'forwards' }).onfinish = async () => {
-      done();
-      await tick();
-      num.getAnimations().forEach((a) => a.cancel());
-      num.animate([{ transform: 'translateY(30px)' }, { transform: 'translateY(-5px)' }, { transform: 'translateY(0)' }], { duration: 420, easing: 'ease-out' });
-      box.querySelector('.rmed')?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.2)' }, { transform: 'scale(.96)' }, { transform: 'scale(1)' }], { duration: 600, easing: 'ease-out' });
-      box.querySelector('.rfl')?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.8) rotate(-10deg)' }, { transform: 'scale(1)' }], { duration: 600 });
-      box.querySelector('.cell.td')?.animate([{ transform: 'scale(2.4)' }, { transform: 'scale(1)' }], { duration: 450, easing: 'ease-out' });
-      box.querySelectorAll('.cell.st').forEach((e, i) =>
-        e.animate([{ filter: 'brightness(1)', transform: 'scale(1)' }, { filter: 'brightness(1.8)', transform: 'scale(1.5)' }, { filter: 'brightness(1)', transform: 'scale(1)' }], { duration: 400, delay: 120 + i * 55 }));
-      blip(1320);
-      setTimeout(() => blip(1760), 110);
-    };
-  }
-
-  const fmtMin = (m: number) => {
-    const n = Math.floor(m);
-    return n < 60 ? `${n}m` : `${Math.floor(n / 60)}h ${String(n % 60).padStart(2, '0')}m`;
-  };
-  function cellBg(t: GoalTrack, v: number, isToday: boolean) {
-    if (isToday && pending(t)) v = Math.min(v, 0.6);
-    const c = COL[t.key].c;
-    return v >= 1 ? c : v >= 0.5 ? c + 'aa' : v > 0 ? c + '55' : '#dde1e7';
+    rr.light(k, root, {
+      box: '[data-g="{k}"]',
+      num: '.rnum',
+      out: [{ transform: 'translateY(0)' }, { transform: 'translateY(-30px)' }],
+      outOpts: { duration: 180, easing: 'ease-in', fill: 'forwards' },
+      enter: (box, num) => {
+        num.animate([{ transform: 'translateY(30px)' }, { transform: 'translateY(-5px)' }, { transform: 'translateY(0)' }], { duration: 420, easing: 'ease-out' });
+        box.querySelector('.rmed')?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.2)' }, { transform: 'scale(.96)' }, { transform: 'scale(1)' }], { duration: 600, easing: 'ease-out' });
+        box.querySelector('.rfl')?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.8) rotate(-10deg)' }, { transform: 'scale(1)' }], { duration: 600 });
+        box.querySelector('.cell.td')?.animate([{ transform: 'scale(2.4)' }, { transform: 'scale(1)' }], { duration: 450, easing: 'ease-out' });
+        box.querySelectorAll('.cell.st').forEach((e, i) =>
+          e.animate([{ filter: 'brightness(1)', transform: 'scale(1)' }, { filter: 'brightness(1.8)', transform: 'scale(1.5)' }, { filter: 'brightness(1)', transform: 'scale(1)' }], { duration: 400, delay: 120 + i * 55 }));
+      },
+    });
   }
 </script>
 
@@ -92,7 +54,7 @@
       {#each rings as g, i (g.t.key)}
         <circle cx={S / 2} cy={S / 2} r={g.r} fill="none" stroke={COL[g.t.key].soft} stroke-width={SW} />
         <circle class="arc" cx={S / 2} cy={S / 2} r={g.r} fill="none" stroke={COL[g.t.key].c} stroke-width={SW} stroke-linecap="round"
-          stroke-dasharray={g.C} stroke-dashoffset={drawn ? g.C * (1 - g.t.frac) : g.C}
+          stroke-dasharray={g.C} stroke-dashoffset={rr.drawn ? g.C * (1 - g.t.frac) : g.C}
           style="transition-delay:{i * 0.2}s" transform="rotate(-90 {S / 2} {S / 2})" />
       {/each}
     </svg>

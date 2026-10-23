@@ -2,11 +2,11 @@
   // Pantalla «Racha de lectura»: la tarjeta «Lectura de hoy» de Inicio a pantalla completa. Arriba, los anillos de hoy,
   // una medalla con la racha de cada anillo y el mapa de 6 meses del anillo elegido (LB/RB); abajo, qué novelas se han
   // leído este mes, a qué horas y el resumen del año. Si hay una racha cumplida sin «encender», se enciende aquí.
-  import { onDestroy, onMount, tick } from 'svelte';
+  import { onMount } from 'svelte';
   import { app } from '../lib/store.svelte';
-  import { GOAL_COL, dayDate, goalLit, goalTrack, localDay, markGoalLit, readDetail, type GoalKey, type GoalTrack } from '../lib/readgoals';
+  import { GOAL_COL, dayDate, readDetail, type GoalKey, type GoalTrack } from '../lib/readgoals';
+  import { createReadRings, fmtMin as fmtMinShared } from '../lib/readrings.svelte';
   import { fmtClock, fmtHM } from '../lib/stats';
-  import { blip } from '../lib/sound';
   import TopBar from '../components/TopBar.svelte';
   import Hints from '../components/Hints.svelte';
   import MiniCover from '../components/MiniCover.svelte';
@@ -16,28 +16,22 @@
   const MON_L = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
   const WD = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
-  const now = $derived(app.now.getTime());
-  const today = $derived(localDay(now));
-  const goalOf = (k: GoalKey) => (k === 'vn' ? app.config.goalVn : app.config.goalJvn);
-  const tracks = $derived(
-    (['vn', 'jvn'] as GoalKey[])
-      .filter((k) => app.lib.platforms.some((p) => p.id === k))
-      .map((k) => goalTrack(k, goalOf(k), app.lib.platforms, app.playing, now, WEEKS)),
-  );
+  // Pistas, anillos y «racha pendiente» compartidos con la tarjeta de Inicio (ReadRings).
+  const S = 150, SW = 16;
+  const rr = createReadRings({ weeks: WEEKS, size: S, stroke: SW, gap: 1.18, empty: '#e3e6eb' });
+  const now = $derived(rr.now);
+  const today = $derived(rr.today);
+  const tracks = $derived(rr.tracks);
+  const rings = $derived(rr.rings);
+  const { pending, cellBg } = rr;
   const sel = $derived(tracks.find((t) => t.key === app.streakKey) ?? tracks[0]);
   const C = $derived(GOAL_COL[sel?.key ?? 'vn']);
   const det = $derived(sel ? readDetail(sel.key, sel.goal, app.lib.platforms, app.playing, now) : null);
 
-  // Racha cumplida hoy que aún no se ha «encendido»: se enseña la de ayer hasta la animación.
-  let lit = $state<Partial<Record<GoalKey, number>>>({});
-  const pending = (t: GoalTrack) => t.done && lit[t.key] !== today && !goalLit(t.key, today);
-  const shown = (t: GoalTrack) => (pending(t) ? t.streak - 1 : t.streak);
+  const shown = rr.shown;
 
   /* ---------- formatos ---------- */
-  const fmtMin = (m: number) => {
-    const n = Math.floor(m);
-    return n < 60 ? `${n} min` : `${Math.floor(n / 60)} h ${String(n % 60).padStart(2, '0')}`;
-  };
+  const fmtMin = (m: number) => fmtMinShared(m, true);
   const goalLabel = (m: number) => (m % 60 === 0 ? `${m / 60} h` : fmtMin(m));
   const dm = (d: number) => { const x = dayDate(d); return `${x.getUTCDate()} ${MON[x.getUTCMonth()]}`; };
   function range(a: number, b: number) {
@@ -49,11 +43,6 @@
   const todayLabel = $derived.by(() => { const x = dayDate(today); return `${WD[x.getUTCDay()]} ${x.getUTCDate()} de ${MON_L[x.getUTCMonth()]}`; });
 
   /* ---------- anillos de hoy ---------- */
-  const S = 150, SW = 16;
-  const rings = $derived(tracks.map((t, i) => {
-    const r = S / 2 - SW / 2 - 1 - i * SW * 1.18;
-    return { t, r, C: 2 * Math.PI * r };
-  }));
   function todayNote(t: GoalTrack) {
     if (t.done) {
       const d = t.key === sel?.key ? det : readDetail(t.key, t.goal, app.lib.platforms, app.playing, now);
@@ -75,11 +64,6 @@
     }
     return out[0]?.x === 0 && out[1]?.x <= CELL * 2 ? out.slice(1) : out;
   });
-  function cellBg(t: GoalTrack, v: number, isToday: boolean) {
-    if (isToday && pending(t)) v = Math.min(v, 0.6);
-    const c = GOAL_COL[t.key].c;
-    return v >= 1 ? c : v >= 0.5 ? c + 'aa' : v > 0 ? c + '55' : '#e3e6eb';
-  }
 
   /* ---------- horas ---------- */
   const hmax = $derived(Math.max(1, ...(det?.hours ?? [0])));
@@ -93,47 +77,41 @@
 
   /* ---------- entrada y racha que se enciende ---------- */
   const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let drawn = $state(false);
+  const drawn = $derived(rr.drawn);
   let root: HTMLDivElement | undefined = $state();
-  const timers: ReturnType<typeof setTimeout>[] = [];
-  onDestroy(() => timers.forEach(clearTimeout));
   onMount(() => {
-    requestAnimationFrame(() => requestAnimationFrame(() => (drawn = true)));
     const todo = tracks.filter(pending).map((t) => t.key);
     // Primero la del anillo que se está viendo.
     todo.sort((a, b) => (a === sel?.key ? -1 : b === sel?.key ? 1 : 0));
-    todo.forEach((k, i) => timers.push(setTimeout(() => light(k), calm() ? 0 : 1100 + i * 900)));
+    todo.forEach((k, i) => rr.timers.push(setTimeout(() => light(k), calm() ? 0 : 1100 + i * 900)));
   });
 
   function light(k: GoalKey) {
-    const day = today;
-    const done = () => { lit[k] = day; markGoalLit(k, day); };
-    const box = root?.querySelector<HTMLElement>(`.smed[data-g="${k}"]`);
-    const num = box?.querySelector<HTMLElement>('.snum');
-    if (!box || !num || calm()) { done(); return; }
-    num.animate([{ transform: 'translateY(0)', opacity: 1 }, { transform: 'translateY(-60px)', opacity: 0 }], { duration: 200, easing: 'ease-in', fill: 'forwards' }).onfinish = async () => {
-      done();
-      await tick();
-      num.getAnimations().forEach((a) => a.cancel());
-      num.animate([{ transform: 'translateY(60px)', opacity: 0 }, { transform: 'translateY(-8px)', opacity: 1 }, { transform: 'translateY(0)' }], { duration: 480, easing: 'ease-out' });
-      box.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.07)' }, { transform: 'scale(.98)' }, { transform: 'scale(1)' }], { duration: 650, easing: 'ease-out' });
-      box.animate([{ boxShadow: `0 0 0 0 ${GOAL_COL[k].c}aa` }, { boxShadow: `0 0 0 26px ${GOAL_COL[k].c}00` }], { duration: 800, easing: 'ease-out' });
-      const fl = box.querySelector<HTMLElement>('.sfl');
-      fl?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.45) rotate(-12deg)' }, { transform: 'scale(1)' }], { duration: 650 });
-      // Chispas que salen de la llama.
-      const sp = box.querySelector<HTMLElement>('.sparks');
-      sp?.querySelectorAll<HTMLElement>('i').forEach((e, i) => {
-        const a = (i / 10) * Math.PI * 2, r = 46 + (i % 3) * 10;
-        e.animate([{ transform: 'translate(0,0) scale(1)', opacity: 1 }, { transform: `translate(${Math.cos(a) * r}px,${Math.sin(a) * r}px) scale(.3)`, opacity: 0 }], { duration: 700, easing: 'cubic-bezier(.2,.8,.3,1)' });
-      });
-      if (k === sel?.key) {
-        root?.querySelector('.scell.td')?.animate([{ transform: 'scale(2.4)' }, { transform: 'scale(1)' }], { duration: 450, easing: 'ease-out' });
-        root?.querySelectorAll('.scell.st').forEach((e, i) =>
-          e.animate([{ filter: 'brightness(1)', transform: 'scale(1)' }, { filter: 'brightness(1.8)', transform: 'scale(1.5)' }, { filter: 'brightness(1)', transform: 'scale(1)' }], { duration: 400, delay: 120 + i * 45 }));
-      }
-      blip(1320);
-      setTimeout(() => blip(1760), 110);
-    };
+    rr.light(k, root, {
+      box: '.smed[data-g="{k}"]',
+      num: '.snum',
+      out: [{ transform: 'translateY(0)', opacity: 1 }, { transform: 'translateY(-60px)', opacity: 0 }],
+      outOpts: { duration: 200, easing: 'ease-in', fill: 'forwards' },
+      skip: calm,
+      enter: (box, num) => {
+        num.animate([{ transform: 'translateY(60px)', opacity: 0 }, { transform: 'translateY(-8px)', opacity: 1 }, { transform: 'translateY(0)' }], { duration: 480, easing: 'ease-out' });
+        box.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.07)' }, { transform: 'scale(.98)' }, { transform: 'scale(1)' }], { duration: 650, easing: 'ease-out' });
+        box.animate([{ boxShadow: `0 0 0 0 ${GOAL_COL[k].c}aa` }, { boxShadow: `0 0 0 26px ${GOAL_COL[k].c}00` }], { duration: 800, easing: 'ease-out' });
+        const fl = box.querySelector<HTMLElement>('.sfl');
+        fl?.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.45) rotate(-12deg)' }, { transform: 'scale(1)' }], { duration: 650 });
+        // Chispas que salen de la llama.
+        const sp = box.querySelector<HTMLElement>('.sparks');
+        sp?.querySelectorAll<HTMLElement>('i').forEach((e, i) => {
+          const a = (i / 10) * Math.PI * 2, r = 46 + (i % 3) * 10;
+          e.animate([{ transform: 'translate(0,0) scale(1)', opacity: 1 }, { transform: `translate(${Math.cos(a) * r}px,${Math.sin(a) * r}px) scale(.3)`, opacity: 0 }], { duration: 700, easing: 'cubic-bezier(.2,.8,.3,1)' });
+        });
+        if (k === sel?.key) {
+          root?.querySelector('.scell.td')?.animate([{ transform: 'scale(2.4)' }, { transform: 'scale(1)' }], { duration: 450, easing: 'ease-out' });
+          root?.querySelectorAll('.scell.st').forEach((e, i) =>
+            e.animate([{ filter: 'brightness(1)', transform: 'scale(1)' }, { filter: 'brightness(1.8)', transform: 'scale(1.5)' }, { filter: 'brightness(1)', transform: 'scale(1)' }], { duration: 400, delay: 120 + i * 45 }));
+        }
+      },
+    });
   }
 </script>
 
