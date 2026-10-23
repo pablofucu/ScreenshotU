@@ -74,6 +74,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:20px;font-weight:700;color:#4a5260;max-width:820px;overflow:hidden}
 .crumb span{white-space:nowrap;flex:none}
 .crumb .sep{color:#a3abb8;font-weight:500}
+.crumb.withp{max-width:420px}
 .crumb .cur{color:var(--acc);transition:color .3s;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .clock{position:absolute;right:24px;top:24px;display:flex;gap:14px;align-items:center;font-size:20px;font-weight:700;color:#4a5260}
 .clock small{font-size:15px;font-weight:500;color:#657083}
@@ -617,7 +618,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .evhead{left:48px;top:84px;width:1184px;height:150px;--r:26px;--bw:8px}
 .evhead .face img.rhero{object-position:center 35%}
 .evhead .face img.rlogo{max-width:36%;max-height:92px}
-.evhead .rname{right:560px}
+.evhead .rname{right:600px}
 .evhead .rshade{background:linear-gradient(0deg,rgba(8,10,18,.7),rgba(8,10,18,0) 75%)}
 .evtot{position:absolute;right:28px;bottom:20px;z-index:4;display:flex;gap:24px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.6)}
 .evtot small{display:block;font-size:13px;font-weight:700;opacity:.85}
@@ -636,6 +637,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .ecol.f i{box-shadow:0 0 0 3px #3a414e}
 .xl{position:absolute;text-align:center;font-size:13px;font-weight:700;color:#6f7787;white-space:nowrap}
 .xl.on{color:#3a414e;font-weight:800}
+.xl.tight{font-size:12px}
 .edots{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
 .edots polyline{fill:none;stroke:#3a414e;stroke-width:2;stroke-dasharray:4 4;opacity:.5}
 .edots circle{fill:#3a414e;stroke:#fff;stroke-width:2.5}

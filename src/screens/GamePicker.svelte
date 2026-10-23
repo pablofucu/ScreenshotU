@@ -81,7 +81,7 @@
   .pkscrim{background:rgba(236,238,242,.95)}
   .pkhead{position:absolute;left:69px;top:26px}
   .pkhead h2{margin:0;font-size:30px;font-weight:800;color:#3a414e}
-  .pkhead p{margin:2px 0 0;font-size:16px;font-weight:600;color:#5f6776;max-width:760px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pkhead p{margin:2px 0 0;font-size:16px;font-weight:600;color:#5f6776;max-width:700px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pkbar{position:absolute;left:69px;right:69px;top:92px;display:flex;align-items:center;gap:10px}
   .pksearch{display:flex;align-items:center;gap:10px;width:380px;height:44px;padding:0 8px 0 14px;border-radius:999px;cursor:pointer;margin-right:10px;
     background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(240,243,248,.85));box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.28),0 8px 16px -10px rgba(40,50,70,.4)}

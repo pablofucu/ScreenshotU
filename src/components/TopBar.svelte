@@ -24,7 +24,7 @@
 
 <div class="top">
   <div class="glass avatar" aria-hidden="true"><div class="face">{@html ICON.person}</div></div>
-  <div class="crumb pill">
+  <div class="crumb pill" class:withp={dots > 1}>
     {#each crumbs as x, i}
       {#if i === crumbs.length - 1}<span class="cur">{x}</span>{:else}<span>{x}</span><span class="sep">›</span>{/if}
     {/each}

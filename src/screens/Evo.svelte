@@ -84,7 +84,7 @@
       <div class="ecol fx" class:f={app.focus === 'eb' + i} data-k="eb{i}" data-act="evo-bar" style="left:{L + i * cw}px;top:{TOP}px;width:{cw}px;height:{PH}px">
         {#if x.ms > 0}<i style="height:{PH - (yT(x.ms) - TOP)}px"></i>{/if}
       </div>
-      <span class="xl" class:on={i === sel} style="left:{L + i * cw}px;width:{cw}px;top:{TOP + PH + 8}px">{x.label}</span>
+      <span class="xl" class:on={i === sel} class:tight={cw < 60} style="left:{L + i * cw}px;width:{cw}px;top:{TOP + PH + 8}px">{x.label}</span>
     {/each}
     <svg class="edots" width={W} height={H} aria-hidden="true">
       <polyline points={dots} />
