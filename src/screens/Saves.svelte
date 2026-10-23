@@ -362,7 +362,7 @@
   .brow2 { display: flex; gap: 6px; }
 
   /* comparación */
-  .diff { flex: none; display: flex; gap: 8px; margin: 14px 0 10px; align-items: center; flex-wrap: nowrap; }
+  .diff { flex: none; display: flex; gap: 8px; margin: 14px 0 10px; align-items: center; flex-wrap: wrap; row-gap: 6px; }
   .dchip { height: 30px; padding: 0 12px; border-radius: 999px; font-size: 13.5px; font-weight: 800; display: flex; align-items: center; gap: 6px; background: #eef1f5; color: #5f6776; cursor: pointer; white-space: nowrap; }
   .dchip.on { box-shadow: 0 0 0 2px var(--acc); }
   .dchip b { font-size: 14px; }

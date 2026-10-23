@@ -94,7 +94,8 @@
   .phtx b { font-size: 19px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .phtx small { font-size: 14px; font-weight: 600; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .phbd { font-size: 14px; font-weight: 800; white-space: nowrap; opacity: 0.85; }
-  .phdet { display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+  .phdet { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+  .phdet::-webkit-scrollbar { display: none; }
   .phshot { width: 100%; max-height: 220px; object-fit: cover; border-radius: 16px; box-shadow: 0 0 0 1px rgba(95, 110, 135, 0.25); }
   .phbig { font-family: var(--jp, 'Yu Gothic UI', sans-serif); font-size: 30px; line-height: 1.7; margin: 0; color: #2f3642; }
   .phbig :global(rt) { font-size: 0.45em; color: #8a919c; }

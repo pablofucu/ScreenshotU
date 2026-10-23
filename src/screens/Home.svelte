@@ -85,13 +85,13 @@
     </div>
   {/each}
   {#if totalTitles === 0 && !app.scanning}
-    <div class="note pill" style="left:50%;top:84px">No encontré capturas en esta carpeta. Espero <b>Biblioteca/Plataforma/Juego/imagen.png</b>. Cambia la carpeta en Ajustes.</div>
+    <div class="note pill" style="left:50%;top:452px">No encontré capturas en esta carpeta. Espero <b>Biblioteca/Plataforma/Juego/imagen.png</b>. Cambia la carpeta en Ajustes.</div>
   {/if}
 
   {#if recent.length}
     <div class="hsect" style="left:{cx0}px">Seguir jugando</div>
     {#if week.min > 0 || week.shots > 0}
-      <div class="hweek" style="right:{1280 - lastR}px">Últimos 7 días: <b>{week.min > 0 ? fmtDur(week.min * 60) : 'sin partidas'}</b> · <b>{nCapturas(week.shots)}</b></div>
+      <div class="hweek" style={lastR - cx0 < 520 ? `left:${cx0 + 190}px` : `right:${1280 - lastR}px`}>Últimos 7 días: <b>{week.min > 0 ? fmtDur(week.min * 60) : 'sin partidas'}</b> · <b>{nCapturas(week.shots)}</b></div>
     {/if}
     {#each recent as r, i (r.t.id)}
       {@const x = cx0 + i * (CW + CGAP)}

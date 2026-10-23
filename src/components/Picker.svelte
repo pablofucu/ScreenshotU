@@ -29,6 +29,8 @@
       {#if rows.length === 0}
         <p class="pickempty">{empty}</p>
       {:else}
+        <!-- La barra va dentro del envoltorio de la lista: queda alineada con ella sea cual sea la cabecera. -->
+        <div class="slwrap">
         <div class="slist" style="height:{visible * ROW_H + 8}px">
           <div class="strack" style="transform:translateY({-off * ROW_H}px)">
             {#each rows as r, i}
@@ -41,10 +43,15 @@
           </div>
         </div>
         {#if rows.length > visible}
-          <div class="sscroll" style="top:104px"><i style="height:{(visible / rows.length) * 100}%;top:{(off / rows.length) * 100}%"></i></div>
+          <div class="sscroll" style="top:0;bottom:0;right:-20px"><i style="height:{(visible / rows.length) * 100}%;top:{(off / rows.length) * 100}%"></i></div>
         {/if}
+        </div>
       {/if}
     </div>
   </div>
   <Hints list={hints} />
 </div>
+
+<style>
+  .slwrap { position: relative; flex: none; }
+</style>

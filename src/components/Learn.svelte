@@ -38,7 +38,7 @@
 
 <style>
   .learnscrim { z-index: 40; }
-  .learnpanel { top: 200px; height: 320px; left: 390px; width: 500px; }
+  .learnpanel { top: 200px; min-height: 320px; left: 390px; width: 500px; }
   .learnpanel .face { align-items: center; text-align: center; gap: 6px; }
   .lic {
     width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 4px;

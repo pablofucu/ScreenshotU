@@ -21,7 +21,9 @@
   };
   const audioOut = $derived(app.audioOutputs.find((o) => o.default)?.short ?? '');
   // Alto del panel según las acciones; centrado en el escenario.
-  const pitch = $derived(items.length > 11 ? 44 : items.length > 9 ? 50 : 58);
+  // Con 14 o más acciones el paso se reduce para que el panel (máx. ~704 px) quepa en los 720 px del escenario.
+  const pitch = $derived(Math.min(items.length > 11 ? 44 : items.length > 9 ? 50 : 58, Math.floor(558 / items.length)));
+  const squeeze = $derived(pitch < 44);
   const H = $derived(28 + 100 + items.length * pitch + 18);
   const sel = $derived(app.sel.size);
   const label = (it: MenuItem) => {
@@ -79,7 +81,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closeOverlay(); }}>
-  <div class="glass menupanel" class:tight={items.length > 9} class:tighter={items.length > 11} style="--acc:{app.chrome.c};top:{(720 - H) / 2}px;height:{H}px">
+  <div class="glass menupanel" class:tight={items.length > 9} class:tighter={items.length > 11} class:squeeze style="--acc:{app.chrome.c};--mrh:{pitch - 4}px;top:{(720 - H) / 2}px;height:{H}px">
     <div class="face">
       <h2>{list ? (app.menu.items[0]?.startsWith('flt:') ? 'Filtrar' : 'Lista de juegos') : shots ? 'Capturas' : 'Grafismos y opciones'}</h2>
       <p class="msub">{sub}</p>
@@ -100,6 +102,8 @@
   /* Con muchas acciones (juego .exe con todo) las filas se aprietan un poco más para que el panel quepa. */
   .menupanel.tighter .mrow{height:40px}
   .menupanel.tighter .mrow.addrow{height:48px}
+  .menupanel.squeeze .mrow{height:var(--mrh)}
+  .menupanel.squeeze .mrow.addrow{height:calc(var(--mrh) + 8px)}
   .mcount { margin-left: auto; font-size: 15px; font-weight: 700; color: #7a8496; }
   .f .mcount { color: inherit; opacity: 0.85; }
   /* Textos largos (p. ej. el nombre de una salida de audio) se cortan con puntos suspensivos. */

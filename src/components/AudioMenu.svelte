@@ -38,6 +38,8 @@
   .audmenu {
     position: absolute; top: 66px; right: 24px; z-index: 40; min-width: 280px; max-width: 420px; padding: 8px; cursor: default;
     display: flex; flex-direction: column; gap: 2px; font-size: 17px; animation: audIn 0.16s ease-out both;
+    /* Sobre el visor oscuro el cristal translúcido deja el texto oscuro sin contraste: fondo casi opaco. */
+    background: rgba(247, 249, 252, 0.96);
   }
   @keyframes audIn { from { opacity: 0; transform: translateY(-6px); } }
   .audhead { padding: 4px 10px 6px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #657083; }
