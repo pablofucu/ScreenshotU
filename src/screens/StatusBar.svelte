@@ -26,11 +26,10 @@
         <p class="msub">{t?.name ?? ''}</p>
         <div class="schips">
           {#each STATUS_ORDER as s, i}
-            <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-            <div class="schip" class:f={sb.row === i} class:cur={(t?.status ?? 'none') === s} style="--c:{LIST_COLOR[s].c}" onclick={() => pick(i)}>
+            <button type="button" class="schip" class:f={sb.row === i} class:cur={(t?.status ?? 'none') === s} style="--c:{LIST_COLOR[s].c}" onclick={() => pick(i)}>
               <i>{#if s === 'finished'}{@html ICON.check}{/if}</i>
               <b>{STATUS_LABEL[s]}</b>
-            </div>
+            </button>
           {/each}
         </div>
         <p class="shint">{(t?.status ?? 'none') === STATUS_ORDER[sb.row] ? 'Es el estado actual.' : 'A para guardar.'}{STATUS_ORDER[sb.row] === 'finished' ? ' Después eliges la fecha y la nota.' : ''}</p>
@@ -61,8 +60,8 @@
         </div>
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
         <div class="fbtns">
-          <div class="fsave" onclick={() => statusBarCmd('a')}><span class="btn a">A</span>Guardar como terminado</div>
-          <div class="fsave alt" onclick={() => statusBarCmd('y')}><span class="btn y">Y</span>Guardar y añadir a una colección</div>
+          <button type="button" class="fsave" onclick={() => statusBarCmd('a')}><span class="btn a">A</span>Guardar como terminado</button>
+          <button type="button" class="fsave alt" onclick={() => statusBarCmd('y')}><span class="btn y">Y</span>Guardar y añadir a una colección</button>
         </div>
       {/if}
     </div>

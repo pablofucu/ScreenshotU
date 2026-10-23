@@ -39,14 +39,13 @@
       {#if lb.step === 'choose'}
         <p class="lintro">{intro}</p>
         {#each rows as r, i (r)}
-          <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-          <div class="srow" class:f={lb.row === i} class:save={r === 'go'} onmousemove={(e) => hover(e, i)} onclick={() => { lb.row = i; libraryAct(r); }}>
+          <button type="button" class="srow" class:f={lb.row === i} class:save={r === 'go'} onmousemove={(e) => hover(e, i)} onclick={() => { lb.row = i; libraryAct(r); }}>
             {#if r === 'dest'}
               <span class="sl fl">{ROWL.dest}</span><span class="sv lpath">{lb.dest || 'Pulsa A para elegir'}</span>
             {:else}
               <span class="sl">{r === 'go' ? goLabel() : ROWL[r]}</span>
             {/if}
-          </div>
+          </button>
         {/each}
         {#if lb.err}
           <p class="lerr">{lb.err}</p>

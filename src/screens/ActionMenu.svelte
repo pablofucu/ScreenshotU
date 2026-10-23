@@ -86,12 +86,11 @@
       <h2>{list ? (app.menu.items[0]?.startsWith('flt:') ? 'Filtrar' : 'Lista de juegos') : shots ? 'Capturas' : 'Grafismos y opciones'}</h2>
       <p class="msub">{sub}</p>
       {#each items as it, i}
-        <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-        <div class="srow mrow" class:f={app.menu.row === i} class:danger={it === 'remove' || it === 'delshot' || it === 'delsel'} class:addrow={it === 'magpie' && !!magpie.detail} data-item={it} onmousemove={(e) => hover(e, i)} onclick={() => { app.menu.row = i; void menuAct(it); }}>
+        <button type="button" class="srow mrow" class:f={app.menu.row === i} class:danger={it === 'remove' || it === 'delshot' || it === 'delsel'} class:addrow={it === 'magpie' && !!magpie.detail} data-item={it} onmousemove={(e) => hover(e, i)} onclick={() => { app.menu.row = i; void menuAct(it); }}>
           <span class="mic">{@html icon(it)}</span>
           <span class="sl">{label(it)}{#if it === 'magpie' && magpie.detail}<small>{magpie.detail}</small>{/if}</span>
           {#if it.startsWith('flt:')}<span class="mcount">{fltCount(it.slice(4) as TitleFilter)}</span>{/if}
-        </div>
+        </button>
       {/each}
     </div>
   </div>

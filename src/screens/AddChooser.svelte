@@ -26,11 +26,10 @@
       <h2>Añadir juego</h2>
       <p class="msub">¿De dónde viene?</p>
       {#each ADD_ITEMS as it, i}
-        <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-        <div class="srow mrow addrow" class:f={app.addRow === i} data-add={it} onmousemove={(e) => hover(e, i)} onclick={() => { app.addRow = i; addAct(i); }}>
+        <button type="button" class="srow mrow addrow" class:f={app.addRow === i} data-add={it} onmousemove={(e) => hover(e, i)} onclick={() => { app.addRow = i; addAct(i); }}>
           <span class="mic">{@html INFO[it].ic}</span>
           <span class="sl">{INFO[it].l}<small>{INFO[it].s}</small></span>
-        </div>
+        </button>
       {/each}
     </div>
   </div>

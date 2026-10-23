@@ -36,8 +36,8 @@
       <p class="rhint">{saved}. El año basta; mes y día son opcionales («—» = sin poner).</p>
       <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
       <div class="fbtns">
-        <div class="fsave" onclick={releaseSave}><span class="btn a">A</span>Guardar</div>
-        <div class="fsave alt" class:dis={!t?.release} onclick={releaseClear}><span class="btn x">X</span>Quitar fecha</div>
+        <button type="button" class="fsave" onclick={releaseSave}><span class="btn a">A</span>Guardar</button>
+        <button type="button" class="fsave alt" class:dis={!t?.release} onclick={releaseClear}><span class="btn x">X</span>Quitar fecha</button>
       </div>
     </div>
   </div>

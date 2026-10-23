@@ -34,11 +34,10 @@
         <div class="slist" style="height:{visible * ROW_H + 8}px">
           <div class="strack" style="transform:translateY({-off * ROW_H}px)">
             {#each rows as r, i}
-              <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-              <div class="srow" class:f={row === i} class:danger={r.danger} data-row={i} onmousemove={(e) => hover(e, i)} onclick={() => { onhover(i); onpick(i); }}>
+              <button type="button" class="srow" class:f={row === i} class:danger={r.danger} data-row={i} onmousemove={(e) => hover(e, i)} onclick={() => { onhover(i); onpick(i); }}>
                 <span class="sl">{r.l}</span>
                 <span class="sv">{r.v ?? ''}</span>
-              </div>
+              </button>
             {/each}
           </div>
         </div>
