@@ -206,6 +206,9 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
             *a = None;
         }
     }
+    // Primero se devuelve el monitor principal y despues se trae el visor: cambiar la pantalla con la ventana ya
+    // delante deja la webview en negro y sin responder.
+    crate::display::restore_primary(&st.config_dir);
     if let Some(w) = app.get_webview_window("main") {
         allow_foreground();
         let _ = w.unminimize();
@@ -215,7 +218,6 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
         let _ = w.set_focus();
         let _ = w.set_always_on_top(false);
     }
-    crate::display::restore_primary(&st.config_dir);
     if game.platform == visor_core::config::NOVELS_PLATFORM {
         crate::novel::on_exit(&app, &game.id);
     }
