@@ -49,7 +49,7 @@
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
     <span class="tflt" class:on={p.filter === 'all'} onclick={() => pickerSetFilter('all')}>Todos<small>{total}</small></span>
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-    <span class="tflt" class:on={p.filter === 'sel'} onclick={() => pickerSetFilter('sel')}>Seleccionados ({p.ids.length})</span>
+    <span class="tflt" class:on={p.filter === 'sel'} onclick={() => pickerSetFilter('sel')}>Seleccionados<small>{p.ids.length}</small></span>
     <span class="pkcount">{p.q ? `${res.length} resultados` : `${res.length} ${res.length === 1 ? 'juego' : 'juegos'}`}</span>
   </div>
   <div class="pkgrid" style="height:{PICK_ROWS * PY}px">

@@ -1,5 +1,5 @@
 import { tick } from 'svelte';
-import { app, SORT_LABEL, SORT_ORDER, TITLE_FILTERS, TITLE_ORDERS, TITLE_ORDER_LABEL, TITLES_TABS, type MenuItem, type SortMode, type View } from './store.svelte';
+import { app, SORT_LABEL, SORT_ORDER, TITLE_FILTERS, TITLE_ORDERS, TITLE_ORDER_LABEL, TITLES_TABS, validFilter, type MenuItem, type SortMode, type TitleFilter, type View } from './store.svelte';
 import { backend, initBackend } from './backend';
 import { blip } from './sound';
 import type { BackendEvent, Config, Library, MagpieMode, Shot, Title } from './types';
@@ -21,7 +21,7 @@ import { openPhrases, phrasesCmd } from './phrases.svelte';
 import { goalMinLeft, goalTrack, localDay, type GoalKey } from './readgoals';
 import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
 import { libraryCmd, loadLibraryInfo, openLibrary } from './library.svelte';
-import { addCollCmd, collCmd, collFirst, collFormCmd, collReveal, collTab, collValid, loadCollections, openAddColl, openCollForm, pickerCmd, resetColl, setCollFocus } from './coleccion.svelte';
+import { addCollCmd, collCmd, collFirst, collFormCmd, collKey, collReveal, collTab, collValid, loadCollections, openAddColl, openCollForm, pickerCmd, resetColl, setCollFocus } from './coleccion.svelte';
 import { checkStalled, listCmd, listFirst, listHas, listReveal, listTab, onLaunched, openStatusBar, resetList, stalledCmd, statusBarCmd } from './milista.svelte';
 
 export const GRID_VIEW_H = 480;
@@ -289,6 +289,7 @@ function morph(from: HTMLElement | null | undefined, update: () => void, to: () 
 let goT = 0;
 export function go(v: View, anim: 'fwd' | 'back' | '' = '') {
   goT = performance.now();
+  app.audioMenu = false;
   app.view = v;
   app.anim = anim;
   app.animKey++;
@@ -378,6 +379,8 @@ export async function playTitle(t: Title) {
 }
 
 export async function menuAct(item: MenuItem) {
+  if (item === 'audio') { closeOverlay(); void openAudioMenu(); return; }
+  if (app.menu.kind === 'titles') { titlesMenuAct(item); return; }
   if (app.menu.kind === 'shots') { await shotMenuAct(item); return; }
   const t = app.platform?.titles[app.menu.title];
   if (!t) { closeOverlay(); return; }
@@ -474,7 +477,7 @@ export function activate(act: string | undefined) {
 function runAct(act: string, el: HTMLElement | null | undefined) {
   const [a, b, c] = act.split(':');
   if (a === 'plat') {
-    app.p = +b; app.hp = +b; app.t = 0; app.fk.titles = 'tit0'; app.titlesTab = 'all'; resetList();
+    app.p = +b; app.hp = +b; app.t = 0; app.fk.titles = 'tit0'; app.titleFilter = 'all'; app.titlesTab = 'all'; resetList(); resetColl();
     go('titles', 'fwd');
   } else if (a === 'tit') {
     if (+b >= (app.platform?.titles.length ?? 0)) openAdd(app.platform?.id);
@@ -512,7 +515,7 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
     openStreak();
   } else if (a === 'sr') {
     // Juego de la clasificación: su ficha (B vuelve a las estadísticas).
-    app.p = +b; app.titleFilter = 'all'; app.titlesTab = 'all'; resetList();
+    app.p = +b; app.titleFilter = 'all'; app.titlesTab = 'all'; resetList(); resetColl();
     openTitle(+c);
     app.detailFrom = 'stats';
   } else if (a === 'evo') {
@@ -528,7 +531,7 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
 function openRecent(i: number) {
   const r = app.recent[i];
   if (!r) return;
-  app.p = r.pi; app.hp = r.pi; app.titleFilter = 'all'; app.titlesTab = 'all'; resetList();
+  app.p = r.pi; app.hp = r.pi; app.titleFilter = 'all'; app.titlesTab = 'all'; resetList(); resetColl();
   openTitle(r.ti);
 }
 
@@ -769,20 +772,10 @@ export function page(d: number) {
   move(d, 0);
 }
 
-/** LT/RT: filtro de títulos o, en la vista de capturas por días, día anterior/siguiente. */
+/** LT/RT: en la lista de juegos, pestaña anterior/siguiente; en la vista de capturas por días, día anterior/siguiente. */
 export function trigger(d: number) {
   if (app.view === 'stats' || app.view === 'evo') { statsShift(d); return; }
-  if (app.view === 'titles' && app.platform?.titles.length && app.titlesTab === 'all') {
-    const i = TITLE_FILTERS.findIndex(([f]) => f === app.titleFilter);
-    const [f, label] = TITLE_FILTERS[(i + d + TITLE_FILTERS.length) % TITLE_FILTERS.length];
-    // Se conserva el título enfocado si sigue visible con el nuevo filtro.
-    const keep = app.t;
-    app.titleFilter = f;
-    setFocus('tit' + (app.tview.includes(keep) ? keep : atPos(0)));
-    toast(app.tview.length ? `${label}: ${app.tview.length}` : `${label}: ningún juego`);
-    blip(700);
-    return;
-  }
+  if (app.view === 'titles') { cycleTitlesTab(d); return; }
   if (app.view === 'shots' && daysOn()) {
     const heads = curLayout().heads;
     const k = heads.findIndex((h) => h.first <= app.s && app.s < h.first + h.n);
@@ -822,20 +815,71 @@ function cycleTitleOrder() {
   blip(700);
 }
 
-/** View en la lista de juegos: pasa de pestaña (Todos · Mi lista · Colecciones). */
-function cycleTitlesTab() {
+/** Filtro de la pestaña «Todos» (Start › Filtrar). Se conserva el juego enfocado si sigue visible. */
+export function setTitleFilter(f: TitleFilter) {
+  const keep = app.t;
+  app.titleFilter = validFilter(f);
+  if (app.view === 'titles' && onAllTab()) setFocus('tit' + (app.tview.includes(keep) ? keep : atPos(0)));
+  const label = TITLE_FILTERS.find(([k]) => k === app.titleFilter)?.[1] ?? '';
+  toast(app.titleFilter === 'all' ? 'Sin filtro' : app.tview.length ? `${label}: ${app.tview.length}` : `${label}: ningún juego`);
+  blip(700);
+}
+
+/** Start en la lista de juegos: filtrar, estado del juego enfocado, salida de audio y Ajustes. */
+export function openTitlesMenu() {
+  const items: MenuItem[] = [];
+  const t = app.platform?.titles[app.t];
+  if (onAllTab() && app.platform?.titles.length) {
+    items.push('filter');
+    if (app.config.titlesView === 'grid') items.push('tsize');
+    if (t?.id && !t.members) items.push('status');
+  }
+  if (app.audioOutputs.length) items.push('audio');
+  items.push('settings');
+  app.menu = { kind: 'titles', title: app.t, row: 0, items, confirm: false };
+  pushOverlay('menu');
+  blip(1320);
+}
+function titlesMenuAct(item: MenuItem) {
+  if (item === 'filter') {
+    // El menú pasa a listar los filtros, con el activo enfocado.
+    app.menu.items = TITLE_FILTERS.map(([f]): MenuItem => `flt:${f}`);
+    app.menu.row = Math.max(0, TITLE_FILTERS.findIndex(([f]) => f === app.titleFilter));
+    blip(1320);
+  } else if (item.startsWith('flt:')) {
+    closeOverlay();
+    setTitleFilter(item.slice(4) as TitleFilter);
+  } else if (item === 'tsize') {
+    // A recorre los tamaños (de más grandes a más pequeñas y vuelta); el menú sigue abierto para ver el cambio.
+    void patchConfig({ titlesZoom: (app.config.titlesZoom + 1) % (TZOOM_MAX + 1) });
+    const keep = app.t;
+    setFocus('tit' + (app.tview.includes(keep) ? keep : atPos(0)));
+    blip(880);
+  } else if (item === 'status') {
+    openStatusBar(app.menu.title);
+  } else if (item === 'settings') {
+    closeOverlay();
+    openSettings();
+  }
+}
+
+/** View / LT / RT en la lista de juegos: pasa de pestaña (Todos · Mi lista · Colecciones). */
+function cycleTitlesTab(d = 1) {
+  const n = TITLES_TABS.length;
   const i = TITLES_TABS.findIndex(([t]) => t === app.titlesTab);
-  const [tab, label] = TITLES_TABS[(i + 1) % TITLES_TABS.length];
+  const [tab] = TITLES_TABS[(((i + d) % n) + n) % n];
   app.titlesTab = tab;
   if (tab === 'coll') {
-    resetColl();
-    setFocus(defaultKey('titles'));
+    // Se vuelve a la colección en la que se estaba (se reinicia al entrar en la categoría).
+    const k = collKey();
+    if (!collValid(k)) resetColl();
+    setFocus(validKey('titles', k) ?? defaultKey('titles'));
   } else {
     // «Mi lista» conserva el juego enfocado si está en alguna estantería.
     if (tab === 'list') resetList();
     setFocus(validKey('titles', 'tit' + app.t) ?? defaultKey('titles'));
   }
-  toast(label);
+  // Sin aviso: la barra de pestañas ya enseña dónde se está.
   blip(700);
 }
 
@@ -1082,6 +1126,35 @@ export async function switchAudio(dir: number, id?: string) {
   } catch (e) {
     toast(String(e), 3600);
   }
+}
+
+/* Desplegable de la barra superior: con el mando arriba/abajo eligen, A cambia, B (o Start) cierra. Mientras está
+ * abierto se queda con todas las pulsaciones. */
+export async function openAudioMenu() {
+  await refreshAudio();
+  if (!app.audioOutputs.length) { toast('No se encontraron salidas de audio', 2200); return; }
+  app.audioRow = Math.max(0, app.audioOutputs.findIndex((o) => o.default));
+  app.audioMenu = true;
+  blip(1320);
+}
+export function closeAudioMenu() {
+  if (!app.audioMenu) return;
+  app.audioMenu = false;
+  blip(520);
+}
+function audioCmd(c: string) {
+  const n = app.audioOutputs.length;
+  if (!n) { closeAudioMenu(); return; }
+  if (c === 'up' || c === 'down') {
+    const r = Math.max(0, Math.min(n - 1, app.audioRow + (c === 'up' ? -1 : 1)));
+    if (r === app.audioRow) bump(document.querySelector('.audmenu'), 0, c === 'up' ? -1 : 1);
+    else { app.audioRow = r; blip(880); }
+  } else if (c === 'a') {
+    const o = app.audioOutputs[Math.min(app.audioRow, n - 1)];
+    app.audioMenu = false;
+    if (o && !o.default) void switchAudio(0, o.id);
+    else blip(520);
+  } else if (c === 'b' || c === 'menu') closeAudioMenu();
 }
 
 export function openSettings() {
@@ -1382,6 +1455,7 @@ export function cmd(c: string) {
   // Mientras Ajustes espera un botón de captura, el mando y el teclado no navegan.
   if (app.learn) return;
   wake();
+  if (app.audioMenu) { audioCmd(c); return; }
   if (app.osk.open) { oskCmd(c); return; }
   if (app.overlay) { overlayCmd(c); return; }
   if (listTab() && listCmd(c)) return;
@@ -1407,6 +1481,8 @@ export function cmd(c: string) {
       break;
     case 'lt': trigger(-1); break;
     case 'rt': trigger(1); break;
+    // Chip del filtro activo en la barra de pestañas (clic).
+    case 'nofilter': if (app.view === 'titles' && app.titleFilter !== 'all') setTitleFilter('all'); break;
     case 'view':
       if (app.view === 'shots') toggleShotsView();
       else if (app.view === 'viewer') toggleBare();
@@ -1420,6 +1496,7 @@ export function cmd(c: string) {
       break;
     case 'menu':
       if (app.view === 'shots' || app.view === 'viewer') openShotMenu();
+      else if (app.view === 'titles') openTitlesMenu();
       else openSettings();
       break;
   }
@@ -1439,12 +1516,12 @@ export function onKeyDown(e: KeyboardEvent) {
   if (e.ctrlKey || e.altKey || e.metaKey) return;
   const tag = (e.target as HTMLElement | null)?.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
-  if (app.view === 'viewer' && !app.overlay && (e.key === '+' || e.key === '=' || e.key === '-')) {
+  if (app.view === 'viewer' && !app.overlay && !app.audioMenu && (e.key === '+' || e.key === '=' || e.key === '-')) {
     e.preventDefault();
     zoomView(e.key === '-' ? 0.8 : 1.25);
     return;
   }
-  if (app.view === 'titles' && !app.overlay && (e.key === '+' || e.key === '=' || e.key === '-')) {
+  if (app.view === 'titles' && !app.overlay && !app.audioMenu && (e.key === '+' || e.key === '=' || e.key === '-')) {
     e.preventDefault();
     zoomTitles(e.key === '-' ? -1 : 1);
     return;
@@ -1462,6 +1539,7 @@ export function onScreenMove(e: MouseEvent) {
   const xy = e.clientX + ',' + e.clientY;
   if (xy === lastXY) return; // el ratón solo roba el foco si se mueve de verdad
   lastXY = xy;
+  if (app.audioMenu) return;
   // En el carrusel el foco centra la portada: con el ratón sería un baile bajo el cursor (se navega con la rueda).
   if (app.view === 'titles' && app.config.titlesView !== 'grid') return;
   const f = (e.target as HTMLElement).closest<HTMLElement>('.fx');
@@ -1478,6 +1556,8 @@ function viewerZone(e: MouseEvent) {
 
 export function onScreenClick(e: MouseEvent) {
   const t = e.target as HTMLElement;
+  // Con el desplegable de audio abierto, un clic fuera solo lo cierra (no activa lo que haya debajo).
+  if (app.audioMenu) { if (!t.closest('.aud')) closeAudioMenu(); return; }
   const f = t.closest<HTMLElement>('.fx');
   if (f) { setFocus(f.dataset.k!); activate(f.dataset.act); return; }
   const h = t.closest<HTMLElement>('[data-hact]');
@@ -1491,7 +1571,7 @@ export function onScreenClick(e: MouseEvent) {
 
 /** Doble clic en el centro del visor = favorita. */
 export function onScreenDblClick(e: MouseEvent) {
-  if (app.overlay || app.osk.open || app.view !== 'viewer' || performance.now() - goT < 400) return;
+  if (app.overlay || app.osk.open || app.audioMenu || app.view !== 'viewer' || performance.now() - goT < 400) return;
   if ((e.target as HTMLElement).closest('.vthumb,.hint,[data-hact]')) return;
   if (viewerZone(e) === 1) toggleFav();
 }
@@ -1499,7 +1579,7 @@ export function onScreenDblClick(e: MouseEvent) {
 /** Clic derecho: opciones del elemento (capturas/ficha) o, si no hay, volver/cerrar. */
 function onContextMenu(e: MouseEvent) {
   e.preventDefault();
-  if (app.osk.open || app.overlay) { cmd('b'); return; }
+  if (app.osk.open || app.overlay || app.audioMenu) { cmd('b'); return; }
   const f = (e.target as HTMLElement).closest<HTMLElement>('.fx');
   if (f && app.view === 'shots') { setFocus(f.dataset.k!, true); cmd('menu'); return; }
   if (f && app.view === 'detail' && f.dataset.k !== 'play') { setFocus(f.dataset.k!); openDetailMenu(); return; }
@@ -1520,7 +1600,7 @@ let wheelAcc = 0, wheelT = 0;
 let zoomAcc = 0, zoomT = 0;
 function onWheel(e: WheelEvent) {
   // Ctrl+rueda en la lista de juegos: tamaño de las portadas (arriba = más grandes).
-  if (e.ctrlKey && app.view === 'titles' && !app.overlay && !app.osk.open) {
+  if (e.ctrlKey && app.view === 'titles' && !app.overlay && !app.osk.open && !app.audioMenu) {
     e.preventDefault();
     const now = performance.now();
     if (now - zoomT > 250) zoomAcc = 0;
@@ -1534,6 +1614,7 @@ function onWheel(e: WheelEvent) {
   }
   if (e.ctrlKey || app.osk.open) return;
   e.preventDefault();
+  if (app.audioMenu) { const d = Math.sign(e.deltaY); if (d) cmd(d > 0 ? 'down' : 'up'); return; }
   if (app.view === 'viewer' && !app.overlay) {
     // Acerca/aleja hacia el puntero.
     const fr = screenEl()?.querySelector<HTMLElement>('.vframe');
@@ -1638,12 +1719,12 @@ function poll(t: number) {
   }
   const st = padState(pads);
   // Visor: el stick derecho acerca (arriba) o aleja (abajo) de forma continua.
-  if (app.view === 'viewer' && !app.overlay && !app.osk.open && !app.learn) {
+  if (app.view === 'viewer' && !app.overlay && !app.osk.open && !app.learn && !app.audioMenu) {
     const ay = rightStickY(pads);
     if (ay) zoomView(Math.exp(-ay * dt * 0.0022));
   }
   // Lista de juegos: el stick derecho cambia el tamaño de las portadas por pasos (arriba = más grandes), con repetición lenta.
-  if (app.view === 'titles' && !app.overlay && !app.osk.open && !app.learn) {
+  if (app.view === 'titles' && !app.overlay && !app.osk.open && !app.learn && !app.audioMenu) {
     const ay = rightStickY(pads);
     if (!ay) stickZ = 0;
     else if (!stickZ || t - stickZ > 480) { const first = !stickZ; stickZ = t; zoomTitles(-Math.sign(ay), first); }

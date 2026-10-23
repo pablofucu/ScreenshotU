@@ -2,7 +2,8 @@
   // Tarjeta de «Seguir jugando»: el hero del juego con su logo. Sin hero se usa la primera captura
   // (o la portada, ampliada y desenfocada); sin logo, el nombre escrito.
   import { app } from '../lib/store.svelte';
-  import { backend } from '../lib/backend';
+  import { untrack } from 'svelte';
+  import { backend, decodeImg, thumbNow } from '../lib/backend';
   import { ICON } from '../lib/icons';
   import type { Title } from '../lib/types';
 
@@ -18,12 +19,13 @@
   // Sin hero: la captura más reciente (nítida) o, si no hay, la portada desenfocada.
   const fbPath = $derived(t.shots[0]?.path ?? t.cover ?? null);
   const fbBlur = $derived(!t.shots[0]);
-  let fb = $state('');
+  // Lo ya cargado se pinta al instante; lo nuevo, cuando ya está decodificado (sin hueco entre medias).
+  let fb = $state(untrack(() => (showHero || !fbPath ? '' : (thumbNow(fbPath) ?? ''))));
   $effect(() => {
     const src = showHero ? null : fbPath;
     if (!src) { fb = ''; return; }
     const ctl = new AbortController();
-    backend.thumb(src, ctl.signal).then((u) => { if (!ctl.signal.aborted) fb = u; }, () => {});
+    backend.thumb(src, ctl.signal).then(async (u) => { await decodeImg(u); if (!ctl.signal.aborted) fb = u; }, () => {});
     return () => ctl.abort();
   });
 </script>

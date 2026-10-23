@@ -67,7 +67,9 @@ export const DEFAULT_CONFIG: Config = {
 
 export type MenuItem =
   | 'folder' | 'reload' | 'remove' | 'hide' | 'unhide' | 'addshots' | 'accent'
-  | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'addcoll' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'saves' | 'category' | 'delshot' | 'delsel' | `cat:${string}`;
+  | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'addcoll' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'saves' | 'category' | 'delshot' | 'delsel' | `cat:${string}`
+  /* Menú de Start de la lista de juegos (y «Salida de audio», también en el de capturas). */
+  | 'filter' | `flt:${string}` | 'tsize' | 'audio' | 'settings';
 export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'collform' | 'picker' | 'addcoll' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library' | 'status' | 'stalled';
 /** «Nueva colección» / «Editar colección». */
 export interface CollFormState {
@@ -96,8 +98,8 @@ export interface PickerState { q: string; ids: string[]; filter: 'all' | 'sel'; 
 /** «Añadir a una colección»: juego (índice en la categoría) y fila elegida. */
 export interface AddCollState { ti: number; row: number }
 export interface MenuState {
-  /** detail = ficha del juego; shots = cuadrícula o visor de capturas. */
-  kind: 'detail' | 'shots';
+  /** detail = ficha del juego; shots = cuadrícula o visor de capturas; titles = lista de juegos (Start). */
+  kind: 'detail' | 'shots' | 'titles';
   title: number;
   row: number;
   items: MenuItem[];
@@ -186,12 +188,13 @@ export const SORT_LABEL: Record<SortMode, string> = {
 };
 export const SORT_ORDER: SortMode[] = ['recent', 'oldest', 'favs', 'name'];
 
-/** Filtros de la lista de títulos (LT/RT). */
-export type TitleFilter = 'all' | 'launch' | 'shots' | 'favs' | 'playing' | 'pending' | 'finished';
+/** Filtros de la pestaña «Todos» (Start › Filtrar). Los de estado viven en «Mi lista». */
+export type TitleFilter = 'all' | 'launch' | 'shots' | 'favs';
 export const TITLE_FILTERS: Array<[TitleFilter, string]> = [
-  ['all', 'Todos'], ['launch', 'Con lanzador'], ['shots', 'Solo capturas'], ['favs', 'Con favoritas'],
-  ['playing', 'Jugando'], ['pending', 'Pendientes'], ['finished', 'Terminados'],
+  ['all', 'Sin filtro'], ['launch', 'Con lanzador'], ['shots', 'Solo capturas'], ['favs', 'Con favoritas'],
 ];
+/** Un filtro guardado de una versión anterior (o desconocido) cuenta como «Sin filtro». */
+export const validFilter = (f: string | null | undefined): TitleFilter => (TITLE_FILTERS.some(([k]) => k === f) ? (f as TitleFilter) : 'all');
 
 /** Orden de la lista de juegos (botón X), en el orden en que se recorre; se recuerda por categoría. */
 export const TITLE_ORDERS: TitleOrder[] = ['last', 'az', 'color'];
@@ -365,7 +368,9 @@ class Store {
   monitorLabel = $state('');
   /** Salidas de audio de Windows (icono de la barra superior y Ajustes). */
   audioOutputs = $state<AudioOutput[]>([]);
+  /** Desplegable de la salida de audio (barra superior): abierto y fila enfocada con el mando. */
   audioMenu = $state(false);
+  audioRow = $state(0);
   /** Copia de seguridad: incluir los medios del glosario (phrases/) y, si hay una restauración preparada, su descripción (A otra vez para confirmar). */
   backupMedia = $state(false);
   backupBusy = $state(false);
@@ -455,13 +460,10 @@ class Store {
     const titles = this.lib.platforms[this.p]?.titles ?? [];
     const all = titles.map((_, i) => i);
     let v: number[];
-    switch (this.titleFilter) {
+    switch (validFilter(this.titleFilter)) {
       case 'launch': v = all.filter((i) => titles[i].launchable); break;
       case 'shots': v = all.filter((i) => !titles[i].launchable); break;
       case 'favs': v = all.filter((i) => titles[i].shots.some((s) => this.favs.has(s.path))); break;
-      case 'playing': v = all.filter((i) => titles[i].status === 'playing'); break;
-      case 'pending': v = all.filter((i) => titles[i].status === 'pending'); break;
-      case 'finished': v = all.filter((i) => titles[i].status === 'finished'); break;
       default: v = all;
     }
     return sortTitles(titles, v, this.titleOrder);

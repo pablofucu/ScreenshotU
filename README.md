@@ -102,12 +102,14 @@ Se guarda en la carpeta de configuración de la aplicación (en Windows, `%APPDA
 | Volver | B | Esc o Retroceso | Botones de la barra de pistas |
 | Página anterior / siguiente (títulos), ±12 (capturas), ±10 (visor) | LB / RB | Q / E | Flechas laterales |
 | Marcar favorita (en «Seguir jugando» de Inicio: jugar) | X | X | — |
-| Filtro de títulos · día anterior/siguiente (capturas por días) · sección de Ajustes | LT / RT | Z / C | Píldoras LT/RT |
-| Cuadrícula de capturas continua o por días | View | V | — |
+| Pestaña anterior/siguiente en la lista de juegos (Todos · Mi lista · Colecciones) · día anterior/siguiente (capturas por días) · sección de Ajustes | LT / RT | Z / C | Botones LT/RT |
+| Siguiente pestaña en la lista de juegos · cuadrícula de capturas continua o por días | View | V | — |
 | Vista de títulos (cuadrícula/carrusel) · orden de capturas (recientes, antiguas, favoritas, nombre) · menú «Grafismos y opciones» en la ficha | Y | Y | — |
-| Menú de capturas (mover, mostrar en el Explorador, seleccionar) en la cuadrícula de capturas y el visor | Start (Menú) | M | — |
+| Menú de capturas (mover, mostrar en el Explorador, seleccionar, salida de audio) en la cuadrícula de capturas y el visor | Start (Menú) | M | — |
+| Menú de la lista de juegos: filtrar «Todos» (con lanzador, solo capturas, con favoritas), tamaño de las portadas, estado del juego, salida de audio y Ajustes | Start (Menú) | M | — |
+| Salida de audio (desplegable de la barra superior): elegir · cambiar · cerrar | ↑↓ · A · B | Flechas · Intro · Esc | Clic en el icono del altavoz |
 | Teclado en pantalla: escribir tecla · borrar · espacio · mayúsculas · confirmar | A · B · X · Y · Start | las letras se escriben tal cual · Retroceso · — · — · Tab (Intro = A, Esc = cancelar) | Clic en las teclas |
-| Ajustes | Start (Menú) | Esc en Inicio | Icono de engranaje |
+| Ajustes | Start (Menú; en la lista de juegos, Start › Ajustes) | Esc en Inicio | Icono de engranaje |
 | Pantalla completa | — | F11 | — |
 | Captura propia (también con el visor minimizado) | `View + RB` (configurable) | `F12` (configurable) | — |
 
@@ -166,7 +168,7 @@ Menú `Y` de la ficha → **Ocultar juego**. Un juego oculto desaparece de las l
 
 ## Colecciones
 
-Pestaña «Colecciones» dentro de cada categoría (`View` pasa de Todos a Mi lista y a Colecciones). Agrupa varios juegos **de esa categoría** (p. ej. Trails, Kingdom Hearts) en una estantería y reúne todas sus capturas en una sola vista. Sustituyen a las antiguas sagas (que eran una categoría aparte): al arrancar con la biblioteca cargada, cada saga pasa a ser colección de la categoría donde tenga más juegos (si mezclaba varias, se divide en una por categoría). Es solo una agrupación virtual (nombre, categoría, color y ids de juego en la base de datos): **no crea, copia ni mueve archivos**; borrar una colección no borra nada.
+Pestaña «Colecciones» dentro de cada categoría (`LT`/`RT` o `View` pasan de Todos a Mi lista y a Colecciones). Agrupa varios juegos **de esa categoría** (p. ej. Trails, Kingdom Hearts) en una estantería y reúne todas sus capturas en una sola vista. Sustituyen a las antiguas sagas (que eran una categoría aparte): al arrancar con la biblioteca cargada, cada saga pasa a ser colección de la categoría donde tenga más juegos (si mezclaba varias, se divide en una por categoría). Es solo una agrupación virtual (nombre, categoría, color y ids de juego en la base de datos): **no crea, copia ni mueve archivos**; borrar una colección no borra nada.
 
 - **Estantería**: pestaña con el título, «N juegos · N capturas», una línea de tiempo con un punto por juego (año de su primera captura o partida) y el botón «Ver todas las capturas» (`X`); debajo, las portadas por año con el año en el borde. `A` abre el juego; `X` abre las capturas de toda la colección (`LB/RB` filtran por juego); `Y` la edita.
 - **Crear y editar**: «Nueva colección» al final (con sugerencias de grupos con nombre en común). «Editar colección»: nombre (teclado en pantalla), juegos (selector a pantalla completa con buscador, `A` marca, `X` marca todos los resultados, `Y` busca, `Start` guarda), color (automático, sacado de las portadas, o uno de los 7), mover arriba/abajo y borrar.

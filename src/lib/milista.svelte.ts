@@ -218,6 +218,11 @@ export async function setStatus(t: Title, status: GameStatus, opts: { finishedMs
   return true;
 }
 
+/** En «Mi lista», el juego cambia de estantería al cambiar de estado: la vista lo sigue para que no quede fuera. */
+function followFocus() {
+  if (listTab() && listHas(app.t)) listReveal();
+}
+
 /** Al lanzar un juego desde el visor: un pendiente pasa a «Jugando» (si el ajuste está activado). */
 export function onLaunched(t: Title) {
   if (app.config.listAutoPlay && t.status === 'pending') void setStatus(t, 'playing');
@@ -273,6 +278,7 @@ async function statusBarSave(thenColl = false) {
   const ms = same ? t.finishedMs! : isToday ? Date.now() : new Date(sb.y, sb.m - 1, sb.d, 12).getTime();
   if (await setStatus(t, 'finished', { finishedMs: ms, rating: sb.rating })) {
     closeOverlay();
+    followFocus();
     toast(`«${t.name}»: Terminado${sb.rating ? ' · ' + '★'.repeat(sb.rating) : ''}`);
     blip(1320);
     if (thenColl) openAddColl(sb.title);
@@ -288,6 +294,7 @@ export async function statusBarPick() {
   if (st === 'finished') { sb.step = 'finish'; sb.field = 0; blip(1100); return; }
   if (await setStatus(t, st)) {
     closeOverlay();
+    followFocus();
     toast(`«${t.name}»: ${STATUS_LABEL[st]}`);
     blip(1320);
   }

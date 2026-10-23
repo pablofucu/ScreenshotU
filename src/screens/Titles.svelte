@@ -2,7 +2,8 @@
   import { app, LIST_COLOR, STATUS_LABEL, TITLE_FILTERS, TITLE_ORDER_LABEL, TITLES_TABS, type ListShelf } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { fmtAgo, fmtDur, fmtShort, nCapturas } from '../lib/format';
-  import { backend } from '../lib/backend';
+  import { untrack } from 'svelte';
+  import { backend, decodeImg, thumbNow, thumbReady } from '../lib/backend';
   import { titlesGrid, viewPos } from '../lib/controller.svelte';
   import TopBar from '../components/TopBar.svelte';
   import Hints from '../components/Hints.svelte';
@@ -41,16 +42,12 @@
   const coverOf = (i: number) => titles[i].cover ?? titles[i].shots[0]?.path ?? null;
   const realAt = (pos: number) => (pos < vis.length ? vis[pos] : titles.length);
   const favCount = $derived(cur ? cur.shots.reduce((n, s) => n + (app.favs.has(s.path) ? 1 : 0), 0) : 0);
+  // Filtro activo de «Todos» (Start › Filtrar): solo se enseña como un chip junto al orden.
+  const filtered = $derived(app.titleFilter !== 'all');
   const filterName = $derived(TITLE_FILTERS.find(([f]) => f === app.titleFilter)?.[1] ?? '');
-  const counts = $derived.by(() => ({
-    all: titles.length,
-    launch: titles.filter((t) => t.launchable).length,
-    shots: titles.filter((t) => !t.launchable).length,
-    favs: titles.filter((t) => t.shots.some((s) => app.favs.has(s.path))).length,
-    playing: titles.filter((t) => t.status === 'playing').length,
-    pending: titles.filter((t) => t.status === 'pending').length,
-    finished: titles.filter((t) => t.status === 'finished').length,
-  }));
+  // Acento de la barra de pestañas: el del estado (Mi lista) o el del juego enfocado (cuadrícula de «Todos»).
+  type H = [string, string, string];
+  const tabsAcc = $derived(tab === 'list' ? listAcc : tab === 'all' && grid && cur ? app.titleAcc(app.p, app.t) : null);
 
   // Ventana virtual: solo se pintan la página actual y las vecinas (cuadrícula) o ±9 (carrusel).
   const range = $derived(
@@ -63,21 +60,41 @@
   const cellStyle = (page: number, j: number) =>
     `left:${page * 1280 + G.gx + (j % G.cols) * (G.cw + G.gap)}px;top:${G.top + Math.floor(j / G.cols) * (G.ch + G.rg)}px;width:${G.cw}px;height:${G.ch}px;--r:${(22 * G.s).toFixed(1)}px;--bw:${(8 * G.s).toFixed(1)}px;--fr:${(15 * G.s).toFixed(1)}px;--ts:${(0.55 + 0.45 * G.s).toFixed(3)}`;
 
-  // Fondo ambiental: el hero (o la portada) del juego enfocado, muy desenfocado, con fundido entre juegos.
-  let layers = $state<Array<{ u: string; id: number }>>([]);
+  // Fondo ambiental: el hero (o la portada) del juego enfocado, muy desenfocado, con fundido cruzado entre juegos.
+  // La capa nueva entra encima (ya decodificada) y las de debajo se quitan solo cuando acabó de entrar; si no hay
+  // imagen, el fondo se apaga con un fundido en vez de vaciarse de golpe.
+  const ambTitle = $derived.by(() => {
+    if (tab !== 'coll') return cur;
+    const ti = app.collShelves[app.collAt.c]?.items[app.collAt.i];
+    return ti === undefined ? undefined : titles[ti];
+  });
+  const ambSrc = (t: typeof cur | undefined) => (t ? (t.hero ?? t.cover ?? t.shots[0]?.path ?? null) : null);
   let lid = 0;
+  const firstAmb = untrack(() => { const p = ambSrc(ambTitle); const u = p ? thumbNow(p) : undefined; return u && thumbReady(u) ? u : ''; });
+  // `still`: capa pintada al montar con una imagen ya cargada (sin fundido de entrada).
+  let layers = $state<Array<{ u: string; id: number; still?: boolean }>>(firstAmb ? [{ u: firstAmb, id: ++lid, still: true }] : []);
+  let ambOff = $state(false);
   $effect(() => {
-    const src = cur ? (cur.hero ?? cur.cover ?? cur.shots[0]?.path) : null;
-    if (!src) { layers = []; return; }
+    const src = ambSrc(ambTitle);
     const ctl = new AbortController();
+    // En la pestaña «Colecciones», la baldosa «Nueva colección» no tiene juego: se conserva el último fondo.
+    if (!src) {
+      if (tab !== 'coll' || !untrack(() => layers.length)) ambOff = true;
+      return;
+    }
     const t = setTimeout(() => {
-      backend.thumb(src, ctl.signal).then((u) => {
-        if (ctl.signal.aborted || layers.at(-1)?.u === u) return;
-        layers = [...layers.slice(-1), { u, id: ++lid }];
+      backend.thumb(src, ctl.signal).then(async (u) => {
+        await decodeImg(u);
+        if (ctl.signal.aborted) return;
+        ambOff = false;
+        if (untrack(() => layers.at(-1)?.u) === u) return;
+        layers = [...untrack(() => layers).slice(-2), { u, id: ++lid }];
       }, () => {});
     }, 90);
     return () => { clearTimeout(t); ctl.abort(); };
   });
+  /** La capa `id` terminó de entrar: las de debajo ya no se ven. */
+  const settled = (id: number) => { if (layers.some((l) => l.id < id)) layers = layers.filter((l) => l.id >= id); };
 </script>
 
 {#snippet cell(i: number)}
@@ -90,17 +107,19 @@
   </div>
 {/snippet}
 
-<div class="amb" class:car={!grid}>
-  {#each layers as l (l.id)}<div class="amblayer" style="background-image:url({l.u})"></div>{/each}
+<div class="amb" class:car={!grid} class:off={ambOff}>
+  {#each layers as l (l.id)}<div class="amblayer" class:still={l.still} style="background-image:url({l.u})" onanimationend={() => settled(l.id)}></div>{/each}
 </div>
 <TopBar crumbs={['Inicio', P?.name ?? '']} dots={grid && tab === 'all' ? pages : 0} dot={pg} />
 
-<div class="ttabs" class:car={!grid && tab === 'all'} style={tab === 'list' ? `--acc:${listAcc.c};--acc-ink:${listAcc.dark ? '#3a2f00' : '#fff'}` : tab === 'all' && grid && cur ? `--acc:${app.titleAcc(app.p, app.t).c};--acc-ink:${app.titleAcc(app.p, app.t).dark ? '#3a2f00' : '#fff'}` : ''}>
-  <span class="btn sh" data-hact="view">View</span>
+<div class="ttabs" class:car={!grid && tab === 'all'} style={tabsAcc ? `--acc:${tabsAcc.c};--acc-ink:${tabsAcc.dark ? '#3a2f00' : '#fff'}` : ''}>
+  <span class="btn sh" data-hact="lt">LT</span>
   {#each TITLES_TABS as [f, label]}
     <span class="tflt" class:on={tab === f}>{label}</span>
   {/each}
+  <span class="btn sh" data-hact="rt">RT</span>
   {#if tab === 'all' && titles.length > 1}<span class="btn x" data-hact="x">X</span><span class="tflt tord">{TITLE_ORDER_LABEL[app.titleOrder]}</span>{/if}
+  {#if tab === 'all' && filtered}<span class="tflt tchip" data-hact="nofilter" title="Quitar el filtro">{filterName}<small>{vis.length}</small><b aria-label="Quitar el filtro">✕</b></span>{/if}
 </div>
 
 {#if tab === 'list'}
@@ -146,16 +165,11 @@
         {#if favCount}<span class="tfav">{@html ICON.starY}<b>{favCount}</b></span>{/if}
       </div>
     {:else if !vis.length}
-      <div class="thead"><h3>Ningún juego</h3><span>con el filtro «{filterName}»</span></div>
+      <div class="thead"><h3>Ningún juego</h3><span>con el filtro «{filterName}» (Start › Filtrar para cambiarlo)</span></div>
+    {:else}
+      <div class="thead"><h3>Añadir juego</h3><span>Un ejecutable, un emulador o una carpeta de capturas</span></div>
     {/if}
   {/if}
-  <div class="tfilters lo" class:car={!grid} style={grid && cur ? `--acc:${app.titleAcc(app.p, app.t).c};--acc-ink:${app.titleAcc(app.p, app.t).dark ? '#3a2f00' : '#fff'}` : ''}>
-    <span class="btn sh" data-hact="lt">LT</span>
-    {#each TITLE_FILTERS as [f, label]}
-      <span class="tflt" class:on={app.titleFilter === f}>{label}{#if f !== 'all'}<small>{counts[f]}</small>{/if}</span>
-    {/each}
-    <span class="btn sh" data-hact="rt">RT</span>
-  </div>
   {#if grid}
     <div class="ttrack" style="width:{pages * 1280}px;transform:translateX({-pg * 1280}px)">
       {#each idx as pos (realAt(pos))}
@@ -185,40 +199,41 @@
         <p>{cur.shots.length ? `${nCapturas(cur.shots.length)} · última el ${fmtShort(cur.shots[0].date)}` : 'Sin capturas'}{cur.playSeconds >= 60 ? ` · jugado ${fmtDur(cur.playSeconds)}` : ''} · {q + 1} de {vis.length}</p>
       </div>
     {:else if !vis.length}
-      <div class="cinfo"><h3>Ningún juego</h3><p>con el filtro «{filterName}»</p></div>
+      <div class="cinfo"><h3>Ningún juego</h3><p>con el filtro «{filterName}» (Start › Filtrar para cambiarlo)</p></div>
+    {:else}
+      <div class="cinfo"><h3>Añadir juego</h3><p>Un ejecutable, un emulador o una carpeta de capturas</p></div>
     {/if}
   {/if}
 {/if}
 
+<!-- Pistas: solo lo principal de cada pestaña; el resto (filtro, tamaño, audio, Ajustes) está en Start. -->
 {#if tab === 'list' && shelves.length}
   <Hints list={[
-    ['A', 'Abrir', 'a'], ['B', 'Volver', 'b'],
-    ...(cur?.launchable ? [['X', 'Jugar', 'x'] as [string, string, string]] : []),
+    ['A', 'Abrir', 'a'],
+    ...(cur?.launchable ? [['X', 'Jugar', 'x'] as H] : []),
     ['Y', 'Estado', 'y'],
     ['LB/RB', curShelf?.kind === 'pending' ? 'Mover' : 'Saltar', 'rb'],
-    ['View', 'Pestaña', 'view'],
+    ['LT/RT', 'Pestaña', 'rt'], ['B', 'Volver', 'b'],
   ]} />
 {:else if tab === 'list'}
-  <Hints list={[['B', 'Volver', 'b'], ['View', 'Pestaña', 'view']]} />
+  <Hints list={[['LT/RT', 'Pestaña', 'rt'], ['B', 'Volver', 'b']]} />
 {:else if tab === 'coll'}
   <Hints list={[
-    ['A', app.collAt.c >= app.collShelves.length ? 'Nueva colección' : 'Abrir', 'a'], ['B', 'Volver', 'b'],
-    ...(app.collAt.c < app.collShelves.length ? [['X', 'Capturas', 'x'] as [string, string, string], ['Y', 'Editar', 'y'] as [string, string, string], ['LB/RB', 'Saltar', 'rb'] as [string, string, string]] : []),
-    ['View', 'Pestaña', 'view'],
+    ['A', app.collAt.c >= app.collShelves.length ? 'Nueva colección' : 'Abrir', 'a'],
+    ...(app.collAt.c < app.collShelves.length ? [['X', 'Capturas', 'x'] as H, ['Y', 'Editar', 'y'] as H] : []),
+    ['LT/RT', 'Pestaña', 'rt'], ['B', 'Volver', 'b'],
   ]} />
 {:else if titles.length === 0}
-  <Hints list={[['A', 'Añadir juego', 'a'], ['B', 'Volver', 'b'], ['View', 'Pestaña', 'view']]} />
+  <Hints list={[['A', 'Añadir juego', 'a'], ['LT/RT', 'Pestaña', 'rt'], ['B', 'Volver', 'b']]} />
 {:else}
   <Hints list={[
-    ['A', 'Abrir', 'a'], ['B', 'Volver', 'b'],
-    ...(grid ? [['LB/RB', 'Página', 'rb'] as [string, string, string]] : []),
-    ['LT/RT', 'Filtro', 'rt'], ['X', 'Orden', 'x'], ['View', 'Pestaña', 'view'],
-    ...(grid ? [['Stick D', 'Tamaño'] as [string, string]] : []),
-    ['Y', grid ? 'Carrusel' : 'Cuadrícula', 'y'],
+    ['A', 'Abrir', 'a'], ['X', 'Orden', 'x'], ['Y', grid ? 'Carrusel' : 'Cuadrícula', 'y'],
+    ['LT/RT', 'Pestaña', 'rt'], ['Start', 'Menú', 'menu'], ['B', 'Volver', 'b'],
   ]} />
 {/if}
 
 <style>
   /* «Mi lista»: zona de las estanterías (recorta lo que se desplaza fuera, a ancho completo para no cortar las sombras). */
-  .lclip{position:absolute;left:0;top:166px;width:1280px;height:510px;overflow:hidden}
+  /* Alto justo para que de la tercera estantería solo asome el borde de su pestaña (sin meterse bajo las pistas). */
+  .lclip{position:absolute;left:0;top:166px;width:1280px;height:494px;overflow:hidden}
 </style>

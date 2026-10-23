@@ -364,6 +364,8 @@ function pickToggle(t: Title) {
   const p = app.picker;
   const at = p.ids.indexOf(t.id);
   if (at >= 0) p.ids.splice(at, 1); else p.ids.push(t.id);
+  // En «Seleccionados», desmarcar quita el juego de la lista: el foco no se queda fuera de ella.
+  p.at = Math.max(0, Math.min(p.at, pickerResults().length - 1));
   blip(at >= 0 ? 700 : 1100);
 }
 
