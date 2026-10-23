@@ -2,13 +2,14 @@
   import { app, STATUS_LABEL, type MenuItem } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { closeOverlay, MAGPIE_LABEL, menuAct } from '../lib/controller.svelte';
+  import { fmtRelease } from '../lib/release.svelte';
   import Hints from '../components/Hints.svelte';
 
   const t = $derived(app.platform?.titles[app.menu.title]);
   const items = $derived(app.menu.items);
   const shots = $derived(app.menu.kind === 'shots');
   // Alto del panel según las acciones; centrado en el escenario.
-  const pitch = $derived(items.length > 9 ? 50 : 58);
+  const pitch = $derived(items.length > 11 ? 44 : items.length > 9 ? 50 : 58);
   const H = $derived(28 + 100 + items.length * pitch + 18);
   const sel = $derived(app.sel.size);
   const label = (it: MenuItem) => {
@@ -33,6 +34,7 @@
       case 'saves': return 'Partidas guardadas…';
       case 'magpie': return magpie.label;
       case 'status': return `Estado: ${STATUS_LABEL[t?.status ?? 'none']}`;
+      case 'release': return t?.release ? `Fecha de lanzamiento: ${fmtRelease(t.release)}` : 'Fecha de lanzamiento…';
       case 'category': return 'Cambiar de categoría…';
       default: return `Mover a ${app.config.platforms.find((p) => p.id === it.slice(4))?.name ?? it.slice(4)}`;
     }
@@ -45,7 +47,7 @@
   });
   const icon = (it: MenuItem) => it === 'category' || it.startsWith('cat:') ? ICON.move : ({
     folder: ICON.folder, reload: ICON.reload, remove: ICON.power, addshots: ICON.image, accent: ICON.palette, hide: ICON.eyeOff,
-    unhide: ICON.eye, magpie: ICON.image, select: ICON.check, unselect: ICON.check, selall: ICON.checks, move: ICON.move, reveal: ICON.folder, delshot: ICON.trash, delsel: ICON.trash, addcoll: ICON.saga, sgdb: ICON.search, phrases: ICON.jvn, status: ICON.checks, saves: ICON.import,
+    unhide: ICON.eye, magpie: ICON.image, select: ICON.check, unselect: ICON.check, selall: ICON.checks, move: ICON.move, reveal: ICON.folder, delshot: ICON.trash, delsel: ICON.trash, addcoll: ICON.saga, sgdb: ICON.search, phrases: ICON.jvn, status: ICON.checks, release: ICON.calendar, saves: ICON.import,
   } as Record<string, string>)[it];
   const sub = $derived(
     shots ? (app.selMode ? `${sel} ${sel === 1 ? 'seleccionada' : 'seleccionadas'}` : (app.cur.name || '')) : (t?.name ?? ''),
@@ -59,7 +61,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closeOverlay(); }}>
-  <div class="glass menupanel" class:tight={items.length > 9} style="--acc:{app.chrome.c};top:{(720 - H) / 2}px;height:{H}px">
+  <div class="glass menupanel" class:tight={items.length > 9} class:tighter={items.length > 11} style="--acc:{app.chrome.c};top:{(720 - H) / 2}px;height:{H}px">
     <div class="face">
       <h2>{shots ? 'Capturas' : 'Grafismos y opciones'}</h2>
       <p class="msub">{sub}</p>
@@ -74,3 +76,9 @@
   </div>
   <Hints list={[['A', 'Seleccionar', 'a'], ['B', 'Cerrar', 'b']]} />
 </div>
+
+<style>
+  /* Con muchas acciones (juego .exe con todo) las filas se aprietan un poco más para que el panel quepa. */
+  .menupanel.tighter .mrow{height:40px}
+  .menupanel.tighter .mrow.addrow{height:48px}
+</style>

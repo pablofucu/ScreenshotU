@@ -27,7 +27,7 @@
     return sh.items.map((ti, j) => ({ k: `cl${k}.${j}`, act: `cgame:${k}:${j}`, path: coverOf(ti), name: titles[ti].name, label: String(gameYear(titles[ti]) ?? '–') }));
   }
 
-  /** Línea de tiempo: un punto por juego según el año de su primera captura o partida. */
+  /** Línea de tiempo: un punto por juego según su año (de lanzamiento o, sin él, de su primera captura o partida). */
   function timeline(k: number) {
     const ys = shelves[k].items.map((ti) => gameYear(titles[ti]));
     const known = ys.filter((y): y is number => y !== null);

@@ -169,10 +169,14 @@ export interface Title {
   listPos?: number | null;
   statusMs?: number | null;
   snoozeMs?: number | null;
+  /** Fecha de lanzamiento (null = sin poner): a mano o sacada de SteamGridDB (`auto`). */
+  release?: ReleaseDate | null;
   /** Solo en la vista de capturas de una colección: los juegos que la forman. */
   members?: SagaMember[];
 }
 export interface HiddenEntry { id: string; name: string; platform: string }
+/** Fecha de lanzamiento: año siempre; mes (1-12) y día opcionales. `auto` = sacada de SteamGridDB (se puede sustituir sola). */
+export interface ReleaseDate { year: number; month?: number | null; day?: number | null; auto?: boolean }
 export interface NewGame {
   kind: 'exe' | 'emulator' | 'captures';
   name: string;
@@ -264,6 +268,8 @@ export interface Backend {
   setMagpieMode(id: string, mode: MagpieMode): Promise<void>;
   /** Estado del juego (`none` lo quita); terminado guarda la fecha (`finishedMs`, hoy por defecto) y la nota (1-5; 0 = sin nota). */
   setTitleStatus(id: string, status: GameStatus, finishedMs?: number | null, rating?: number | null): Promise<void>;
+  /** Fecha de lanzamiento puesta a mano (null la quita). */
+  setReleaseDate(id: string, date: { year: number; month: number | null; day: number | null } | null): Promise<void>;
   /** Orden manual de «Mi lista › Pendientes»: los ids de izquierda a derecha. */
   setPendingOrder(ids: string[]): Promise<void>;
   /** «Dejarlo» ante el aviso de juegos parados: no se vuelve a preguntar hasta que se jueguen otra vez. */

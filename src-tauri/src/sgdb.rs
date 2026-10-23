@@ -12,10 +12,11 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{Duration, Instant};
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 use visor_core::art::{Art, ArtKind};
 use visor_core::db::{data as dbd, Db};
 use visor_core::sgdb::{self, url_segment, SgdbEntry};
+use visor_core::userdata::{self, ReleaseDate};
 
 use crate::state::AppState;
 
@@ -446,6 +447,16 @@ fn save_entry(db: &Db, title_id: &str, e: &SgdbEntry) {
     crate::state::log_db_err("sgdb", db.with(|c| dbd::sgdb_put(c, title_id, e)));
 }
 
+/// Año de lanzamiento de SteamGridDB: se guarda como fecha automatica si el juego no tiene una puesta a mano.
+/// Devuelve la fecha que queda guardada (la de antes si no cambia nada).
+fn auto_release(state: &AppState, title_id: &str, year: Option<i32>) -> Option<ReleaseDate> {
+    let mut p = state.prefs.lock().unwrap();
+    if let Some(d) = year.and_then(|y| userdata::set_release_auto(&mut p, title_id, y)) {
+        crate::state::log_db_err("fecha de lanzamiento", state.db.with(|c| dbd::release_save(c, title_id, Some(&d))));
+    }
+    p.get(title_id).and_then(|x| x.release)
+}
+
 /// Marca un titulo como revisado (la descarga automatica ya no lo vuelve a tocar).
 fn touch(state: &AppState, title_id: String, f: impl FnOnce(&mut SgdbEntry)) {
     let mut s = state.sgdb.lock().unwrap();
@@ -549,11 +560,13 @@ enum Found {
 
 /// Busca y baja los grafismos que faltan de un titulo. Anota en `e` lo que averigua (juego, tipos sin
 /// resultado); el que llama lo guarda. `images` cuenta cada imagen bajada, aunque el titulo acabe fallando.
-fn run_title(key: &str, base: &Path, t: &Pending, e: &mut SgdbEntry, images: &mut usize) -> Result<Found, ApiError> {
+/// `year` recibe el año de lanzamiento si se ha buscado el juego (sale gratis en la busqueda).
+fn run_title(key: &str, base: &Path, t: &Pending, e: &mut SgdbEntry, images: &mut usize, year: &mut Option<i32>) -> Result<Found, ApiError> {
     let gid = match e.game_id {
         Some(g) => g,
         None => match search_with(key, &t.name, BATCH)?.into_iter().next() {
             Some(h) => {
+                *year = h.year;
                 e.game_id = Some(h.id);
                 e.game_name = h.name;
                 h.id
@@ -666,7 +679,11 @@ pub fn sgdb_auto(app: AppHandle, state: State<'_, AppState>, titles: Vec<AutoTit
                 let orig = store.lock().unwrap().get(&t.id).cloned().unwrap_or_default();
                 let mut e = orig.clone();
                 let before = done.images;
-                let r = run_title(&key, &base, t, &mut e, &mut done.images);
+                let mut year = None;
+                let r = run_title(&key, &base, t, &mut e, &mut done.images, &mut year);
+                if year.is_some() {
+                    auto_release(&app.state::<AppState>(), &t.id, year);
+                }
                 if r.is_ok() {
                     e.auto_done = true;
                 }
@@ -738,9 +755,11 @@ pub fn sgdb_info(state: State<'_, AppState>, title_id: String) -> Option<SgdbEnt
     state.sgdb.lock().unwrap().get(&title_id).cloned()
 }
 
-/// Asocia un titulo a otro juego de SteamGridDB (para elegir entre sus imagenes).
+/// Asocia un titulo a otro juego de SteamGridDB (para elegir entre sus imagenes). Con `year` (el de la busqueda)
+/// rellena la fecha de lanzamiento si no hay una puesta a mano; devuelve la fecha que queda guardada.
 #[tauri::command]
-pub fn sgdb_link(state: State<'_, AppState>, title_id: String, game_id: u64, game_name: String) {
+pub fn sgdb_link(state: State<'_, AppState>, title_id: String, game_id: u64, game_name: String, year: Option<i32>) -> Option<ReleaseDate> {
+    let release = auto_release(&state, &title_id, year);
     touch(&state, title_id, |e| {
         // Otro juego: lo que le faltaba al anterior puede estar aqui.
         if e.game_id != Some(game_id) {
@@ -749,6 +768,7 @@ pub fn sgdb_link(state: State<'_, AppState>, title_id: String, game_id: u64, gam
         e.game_id = Some(game_id);
         e.game_name = game_name;
     });
+    release
 }
 
 /// Descarga la imagen elegida como grafismo del titulo (sustituye la anterior de ese tipo) y devuelve su ruta.

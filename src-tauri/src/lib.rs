@@ -543,6 +543,16 @@ fn snooze_stalled(state: State<'_, AppState>, ids: Vec<String>) -> Result<(), St
     state.db.with(|c| dbd::snooze_save(c, &done, now)).map_err(|e| e.to_string())
 }
 
+/// Fecha de lanzamiento puesta a mano (año; mes y dia opcionales). `year` sin valor la quita.
+#[tauri::command]
+fn set_release_date(state: State<'_, AppState>, id: String, year: Option<i32>, month: Option<u32>, day: Option<u32>) -> Result<(), String> {
+    let mut p = state.prefs.lock().unwrap();
+    let date = year.map(|year| userdata::ReleaseDate { year, month, day, auto: false });
+    userdata::set_release(&mut p, &id, date)?;
+    let cur = p.get(&id).and_then(|x| x.release);
+    state.db.with(|c| dbd::release_save(c, &id, cur.as_ref())).map_err(|e| e.to_string())
+}
+
 fn chrono_now_ms() -> i64 {
     std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_millis() as i64).unwrap_or(0)
 }
@@ -1054,6 +1064,7 @@ pub fn run() {
             set_sort_pref,
             set_magpie_mode,
             set_title_status,
+            set_release_date,
             set_pending_order,
             snooze_stalled,
             backup::backup_create,

@@ -22,6 +22,7 @@ import { goalMinLeft, goalTrack, localDay, type GoalKey } from './readgoals';
 import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
 import { libraryCmd, loadLibraryInfo, openLibrary } from './library.svelte';
 import { addCollCmd, collCmd, collFirst, collFormCmd, collReveal, collTab, collValid, loadCollections, openAddColl, openCollForm, pickerCmd, resetColl, setCollFocus } from './coleccion.svelte';
+import { openRelease, releaseCmd } from './release.svelte';
 import { checkStalled, listCmd, listFirst, listHas, listReveal, listTab, onLaunched, openStatusBar, resetList, stalledCmd, statusBarCmd } from './milista.svelte';
 
 export const GRID_VIEW_H = 480;
@@ -315,7 +316,7 @@ export function menuItemsFor(t: Title): MenuItem[] {
   if (t.gameId && app.platform?.id === 'jvn') items.push('phrases');
   if (app.config.root && t.dir) items.push('addshots');
   items.push('accent');
-  if (!t.members && t.id) items.push('status', 'addcoll');
+  if (!t.members && t.id) items.push('status', 'release', 'addcoll');
   if (t.gameId && !t.members) items.push('saves');
   // Escalado con Magpie: solo juegos .exe (no emuladores).
   if (t.launchable && t.source === 'manual' && t.gameId) items.push('magpie');
@@ -385,6 +386,7 @@ export async function menuAct(item: MenuItem) {
   if (item === 'accent') { openAccentPicker(); return; }
   if (item === 'magpie') { void cycleMagpie(t); return; }
   if (item === 'status') { openStatusBar(app.menu.title); return; }
+  if (item === 'release') { openRelease(app.menu.title); return; }
   if (item === 'addcoll') { const ti = app.menu.title; closeOverlay(); openAddColl(ti); return; }
   if (item === 'sgdb') { void openSgdbPicker(app.p, app.menu.title); return; }
   if (item === 'phrases') { closeOverlay(); void openPhrases(t.gameId, t.name); return; }
@@ -1211,6 +1213,7 @@ function overlayCmd(c: string) {
     case 'saves': savesCmd(c); return;
     case 'library': libraryCmd(c); return;
     case 'status': statusBarCmd(c); return;
+    case 'release': releaseCmd(c); return;
     case 'stalled': stalledCmd(c); return;
   }
   // Arriba/abajo pasan de una sección a la siguiente al llegar al borde; LB/RB (o LT/RT) saltan de sección.

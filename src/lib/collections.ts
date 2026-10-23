@@ -15,12 +15,22 @@ export function firstMs(t: Title): number | null {
   for (const s of t.shots) if (s.date < m) m = s.date;
   return Number.isFinite(m) ? m : null;
 }
+/** Año de un juego: el de su fecha de lanzamiento y, si no la tiene, el de su primera captura o partida. */
 export const gameYear = (t: Title): number | null => {
+  if (t.release) return t.release.year;
   const ms = firstMs(t);
   return ms === null ? null : new Date(ms).getFullYear();
 };
+/** Clave para ordenar por fecha: la de lanzamiento (lo que falte de mes o día cuenta como el principio del año o del
+ *  mes) o, si no hay, la primera captura o partida. null = sin fecha. */
+export function gameDateMs(t: Title): number | null {
+  const r = t.release;
+  if (r) return new Date(r.year, (r.month ?? 1) - 1, r.day ?? 1).getTime();
+  return firstMs(t);
+}
 
-/** Índices (en `p.titles`) de los juegos visibles de la colección, por año de menor a mayor (los sin año al final) y,
+/** Índices (en `p.titles`) de los juegos visibles de la colección, por fecha de lanzamiento (o, sin ella, de primera
+ *  captura o partida) de menor a mayor (los sin fecha al final) y,
  *  a igualdad, en el orden en que están en la colección. Los juegos que ya no están en la categoría no se muestran. */
 export function collItems(c: Collection, p: Platform): number[] {
   const at = new Map<string, number>();
@@ -28,9 +38,9 @@ export function collItems(c: Collection, p: Platform): number[] {
   const out: Array<{ i: number; y: number; k: number }> = [];
   c.members.forEach((id, k) => {
     const i = at.get(id);
-    if (i !== undefined) out.push({ i, y: gameYear(p.titles[i]) ?? 1e9, k });
+    if (i !== undefined) out.push({ i, y: gameDateMs(p.titles[i]) ?? Infinity, k });
   });
-  return out.sort((a, b) => a.y - b.y || a.k - b.k).map((o) => o.i);
+  return out.sort((a, b) => (a.y === b.y ? 0 : a.y < b.y ? -1 : 1) || a.k - b.k).map((o) => o.i);
 }
 
 /** Vista de capturas de una colección: un título virtual cuyas capturas son la unión de las de sus juegos. */

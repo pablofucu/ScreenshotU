@@ -7,7 +7,7 @@ use crate::jp::phrases::{Phrase, Review};
 use crate::jp::NovelPrefs;
 use crate::sagas::Saga;
 use crate::sgdb::{SgdbEntry, SgdbStore};
-use crate::userdata::{HiddenEntry, MagpiePref, TitlePref, TitlePrefs};
+use crate::userdata::{HiddenEntry, MagpiePref, ReleaseDate, TitlePref, TitlePrefs};
 use anyhow::Result;
 use rusqlite::{params, Connection, OptionalExtension};
 use std::collections::{BTreeMap, HashMap};
@@ -310,7 +310,37 @@ pub fn prefs_load(c: &Connection) -> Result<TitlePrefs> {
             p.status_ms = if upd > 0 { Some(upd) } else { None };
         }
     }
+    {
+        let mut st = c.prepare("SELECT title_id, year, month, day, auto FROM title_release")?;
+        let rows = st.query_map([], |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                ReleaseDate { year: r.get(1)?, month: r.get(2)?, day: r.get(3)?, auto: r.get::<_, i64>(4)? != 0 },
+            ))
+        })?;
+        for row in rows {
+            let (id, d) = row?;
+            out.entry(id).or_default().release = Some(d);
+        }
+    }
     Ok(out)
+}
+
+/// Guarda (o quita, con `None`) la fecha de lanzamiento de un titulo.
+pub fn release_save(c: &Connection, id: &str, d: Option<&ReleaseDate>) -> Result<()> {
+    match d {
+        Some(d) => {
+            c.execute(
+                "INSERT INTO title_release(title_id, year, month, day, auto) VALUES (?1, ?2, ?3, ?4, ?5)
+                 ON CONFLICT(title_id) DO UPDATE SET year = excluded.year, month = excluded.month, day = excluded.day, auto = excluded.auto",
+                params![id, d.year, d.month, d.day, d.auto as i64],
+            )?;
+        }
+        None => {
+            c.execute("DELETE FROM title_release WHERE title_id = ?1", [id])?;
+        }
+    }
+    Ok(())
 }
 
 /// Guarda las preferencias de un titulo tal y como estan en memoria (`None` = no tiene: se borran).

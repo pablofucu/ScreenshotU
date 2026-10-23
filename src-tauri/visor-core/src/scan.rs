@@ -113,6 +113,9 @@ pub struct Title {
     pub status_ms: Option<i64>,
     #[serde(default)]
     pub snooze_ms: Option<i64>,
+    /// Fecha de lanzamiento (a mano o de SteamGridDB).
+    #[serde(default)]
+    pub release: Option<crate::userdata::ReleaseDate>,
 }
 
 impl Title {
@@ -151,6 +154,7 @@ impl Title {
             list_pos: None,
             status_ms: None,
             snooze_ms: None,
+            release: None,
         }
     }
 }
@@ -384,6 +388,7 @@ pub fn scan_library_ex(root: Option<&Path>, platforms: &[PlatformCfg], games: &[
                     t.list_pos = p.list_pos;
                     t.status_ms = p.status_ms;
                     t.snooze_ms = p.snooze_ms;
+                    t.release = p.release;
                     if let Some(m) = &p.magpie {
                         t.magpie_mode = Some(m.mode.clone());
                         t.magpie_summary = m.summary.clone();

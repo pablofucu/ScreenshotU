@@ -1,7 +1,7 @@
 // Biblioteca simulada para desarrollo en navegador (sin Tauri). El arte procede del mockup aprobado.
 import { hash, rng } from './rng';
 import type {
-  AccentInfo, AudioOutput, Backend, BackendEvent, Config, GameSource, HiddenEntry, Library, Platform, Collection, Shot, SortMode, Swatch, Title,
+  AccentInfo, AudioOutput, Backend, BackendEvent, Config, GameSource, HiddenEntry, Library, Platform, Collection, ReleaseDate, Shot, SortMode, Swatch, Title,
 } from './types';
 import { normalizeHex } from './oklch';
 
@@ -329,7 +329,7 @@ export async function mockBackend(): Promise<Backend> {
   const load = <T,>(k: string, d: T): T => { try { const v = store()?.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
   const save = (k: string, v: unknown) => { try { store()?.setItem(k, JSON.stringify(v)); } catch {} };
   let hidden: HiddenEntry[] = load('visor.mock.hidden', []);
-  type MockPref = { accent?: string; sort?: string; status?: string; finishedMs?: number; rating?: number; listPos?: number; statusMs?: number; snoozeMs?: number };
+  type MockPref = { accent?: string; sort?: string; status?: string; finishedMs?: number; rating?: number; listPos?: number; statusMs?: number; snoozeMs?: number; release?: ReleaseDate };
   const prefs: Record<string, MockPref> = load('visor.mock.prefs', mockStates(lib));
   // Capturas movidas: la copia nueva se dibuja igual que la original.
   const alias = new Map<string, string>();
@@ -365,7 +365,7 @@ export async function mockBackend(): Promise<Backend> {
       const platforms = lib.platforms.map((p) => ({
         ...p,
         titles: p.titles
-          .map((t) => ({ ...t, shots: [...t.shots], hidden: ids.has(t.id), accentOverride: prefs[t.id]?.accent ?? null, sortMode: (prefs[t.id]?.sort as SortMode | undefined) ?? null, status: (prefs[t.id]?.status as Title['status']) ?? null, finishedMs: prefs[t.id]?.finishedMs ?? null, rating: prefs[t.id]?.rating ?? null, listPos: prefs[t.id]?.listPos ?? null, statusMs: prefs[t.id]?.statusMs ?? null, snoozeMs: prefs[t.id]?.snoozeMs ?? null }))
+          .map((t) => ({ ...t, shots: [...t.shots], hidden: ids.has(t.id), accentOverride: prefs[t.id]?.accent ?? null, sortMode: (prefs[t.id]?.sort as SortMode | undefined) ?? null, status: (prefs[t.id]?.status as Title['status']) ?? null, finishedMs: prefs[t.id]?.finishedMs ?? null, rating: prefs[t.id]?.rating ?? null, listPos: prefs[t.id]?.listPos ?? null, statusMs: prefs[t.id]?.statusMs ?? null, snoozeMs: prefs[t.id]?.snoozeMs ?? null, release: prefs[t.id]?.release ?? null }))
           .filter((t) => cfg.showHidden || !t.hidden),
       }));
       return { platforms, hidden: [...hidden] };
@@ -439,13 +439,13 @@ export async function mockBackend(): Promise<Backend> {
     async setAccentOverride(id, color) {
       const p = (prefs[id] ??= {});
       if (color) p.accent = color; else delete p.accent;
-      if (!p.accent && !p.sort && !p.status) delete prefs[id];
+      if (!p.accent && !p.sort && !p.status && !p.release) delete prefs[id];
       save('visor.mock.prefs', prefs);
     },
     async setSortPref(id, mode) {
       const p = (prefs[id] ??= {});
       if (mode === 'recent') delete p.sort; else p.sort = mode;
-      if (!p.accent && !p.sort && !p.status) delete prefs[id];
+      if (!p.accent && !p.sort && !p.status && !p.release) delete prefs[id];
       save('visor.mock.prefs', prefs);
     },
     async setTitleStatus(id, status, finishedMs, rating) {
@@ -463,7 +463,16 @@ export async function mockBackend(): Promise<Backend> {
         delete p.snoozeMs;
         p.status = status;
       }
-      if (!p.accent && !p.sort && !p.status) delete prefs[id];
+      if (!p.accent && !p.sort && !p.status && !p.release) delete prefs[id];
+      save('visor.mock.prefs', prefs);
+    },
+    async setReleaseDate(id, d) {
+      const p = (prefs[id] ??= {});
+      if (d) {
+        if (d.year < 1950 || d.year > 2100) throw new Error(`Año de lanzamiento fuera de rango: ${d.year}`);
+        p.release = { year: d.year, month: d.month, day: d.month ? d.day : null, auto: false };
+      } else delete p.release;
+      if (!p.accent && !p.sort && !p.status && !p.release) delete prefs[id];
       save('visor.mock.prefs', prefs);
     },
     async setPendingOrder(ids) {
