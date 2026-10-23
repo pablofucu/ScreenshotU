@@ -206,6 +206,9 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .srow{flex:none;display:flex;align-items:center;gap:14px;height:54px;padding:0 22px;border-radius:18px;font-size:19px;font-weight:700;cursor:pointer;color:#4a5260;transition:background .15s,color .15s,transform .15s}
 .srow .sl{flex:1;white-space:nowrap}
 .srow .sv{max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:#5f6776}
+/* Filas, categorías y botones que son <button>: sin el aspecto por defecto del navegador (:where = sin especificidad, las clases de cada uno mandan). */
+:where(button.srow,button.scat,button.schip,button.fsave){appearance:none;margin:0;padding:0;border:0;outline:none;background:transparent;color:inherit;font-family:inherit;font-style:inherit;line-height:inherit;letter-spacing:inherit;word-spacing:inherit;text-align:inherit;text-transform:inherit;text-indent:inherit;text-shadow:inherit;white-space:inherit}
+button.srow,button.scat{width:100%}
 .srow.f{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 84%,white),var(--acc));color:var(--acc-ink);text-shadow:0 1px 2px rgba(0,0,0,.28);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 6px 12px -8px color-mix(in srgb,var(--acc) 70%,black)}
 .srow.f .sv{color:inherit;opacity:.92}
 .sw{display:flex;gap:6px}

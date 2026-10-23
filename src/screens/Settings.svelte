@@ -115,10 +115,9 @@
       <div class="scats">
         <h2>Ajustes</h2>
         {#each SETTING_SECTIONS as s, k (s.name)}
-          <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-          <div class="scat" class:on={app.setSec === k} style="--c:{RAINBOW[s.color].c}" onclick={() => setSection(k)}>
+          <button type="button" class="scat" class:on={app.setSec === k} style="--c:{RAINBOW[s.color].c}" onclick={() => setSection(k)}>
             <i>{@html ICON[s.icon]}</i>{s.name}
-          </div>
+          </button>
         {/each}
       </div>
       <div class="sbody">
@@ -127,8 +126,7 @@
         <div class="srows" style="height:{VIS * RH}px" onwheel={wheel}>
         <div class="srtrack" style="transform:translateY({-off * RH}px)">
         {#each rows as r, i (r.id)}
-          <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-          <div class="srow" class:f={app.setRow === i} class:danger={r.id === 'quit' || (r.id === 'restore' && !!app.restoreReady)} data-set={r.id} onmousemove={(e) => hover(e, i)} onclick={() => { app.setRow = i; settingsAct(r.id, 0); }}>
+          <button type="button" class="srow" class:f={app.setRow === i} class:danger={r.id === 'quit' || (r.id === 'restore' && !!app.restoreReady)} data-set={r.id} onmousemove={(e) => hover(e, i)} onclick={() => { app.setRow = i; settingsAct(r.id, 0); }}>
             <span class="sl">{r.l}</span>
             {#if r.id === 'accent'}
               <span class="sw">
@@ -142,7 +140,7 @@
             <span class="sv">{r.v}</span>
             <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
             {#if showArrows(r.id)}<span class="sarr" class:hid={app.setRow !== i} onclick={(e) => { e.stopPropagation(); settingsAct(r.id, 1); }}>›</span>{/if}
-          </div>
+          </button>
         {/each}
         </div>
         </div>
