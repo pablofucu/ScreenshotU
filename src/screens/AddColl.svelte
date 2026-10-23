@@ -1,7 +1,8 @@
 <script lang="ts">
   // «Añadir a una colección»: las colecciones de la categoría del juego y «Nueva colección».
   import { app } from '../lib/store.svelte';
-  import { addCollAct, addCollCmd, nGames, platformCollections } from '../lib/coleccion.svelte';
+  import { addCollAct, addCollCmd, platformCollections } from '../lib/coleccion.svelte';
+  import { nGames } from '../lib/format';
   import Picker from '../components/Picker.svelte';
 
   const t = $derived(app.platform?.titles[app.addColl.ti]);

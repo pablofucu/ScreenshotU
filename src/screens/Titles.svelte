@@ -11,6 +11,7 @@
   import Shelf, { type ShelfItem } from '../components/Shelf.svelte';
   import CollTab from './CollTab.svelte';
   import { itemLabel, LIST_VIS, SHELF_STEP, shelfSub } from '../lib/milista.svelte';
+  import { collFocusAccent } from '../lib/coleccion.svelte';
 
   const P = $derived(app.platform);
   const titles = $derived(P?.titles ?? []);
@@ -45,9 +46,9 @@
   // Filtro activo de «Todos» (Start › Filtrar): solo se enseña como un chip junto al orden.
   const filtered = $derived(app.titleFilter !== 'all');
   const filterName = $derived(TITLE_FILTERS.find(([f]) => f === app.titleFilter)?.[1] ?? '');
-  // Acento de la barra de pestañas: el del estado (Mi lista) o el del juego enfocado (cuadrícula de «Todos»).
+  // Acento de la barra de pestañas: el del estado (Mi lista), el de la colección enfocada (Colecciones) o el del juego enfocado (cuadrícula de «Todos»).
   type H = [string, string, string];
-  const tabsAcc = $derived(tab === 'list' ? listAcc : tab === 'all' && grid && cur ? app.titleAcc(app.p, app.t) : null);
+  const tabsAcc = $derived(tab === 'list' ? listAcc : tab === 'coll' ? collFocusAccent() : tab === 'all' && grid && cur ? app.titleAcc(app.p, app.t) : null);
 
   // Ventana virtual: solo se pintan la página actual y las vecinas (cuadrícula) o ±9 (carrusel).
   const range = $derived(
@@ -102,7 +103,7 @@
     {#if i === titles.length}
       <div class="addin"><span>{@html ICON.plus}</span><b>Añadir juego</b></div>
     {:else}
-      {#if coverOf(i)}<Thumb path={coverOf(i)!} />{:else}<div class="noart"><b>{titles[i].name}</b></div>{/if}{#if titles[i].hidden}<span class="hbadge">{@html ICON.eyeOff}</span>{/if}{#if titles[i].status === 'finished' || titles[i].status === 'dropped'}<span class="sbadge {titles[i].status}" title={STATUS_LABEL[titles[i].status!]}>{#if titles[i].status === 'finished'}{@html ICON.check}{:else}<i></i>{/if}</span>{/if}
+      {#if coverOf(i)}<Thumb path={coverOf(i)!} />{:else}<div class="noart"><b>{titles[i].name}</b></div>{/if}{#if titles[i].hidden}<span class="hbadge">{@html ICON.eyeOff}</span>{/if}{#if titles[i].status === 'finished' || titles[i].status === 'dropped'}<span class="sbadge {titles[i].status}" style="--c:{LIST_COLOR[titles[i].status!].c}" title={STATUS_LABEL[titles[i].status!]}>{#if titles[i].status === 'finished'}{@html ICON.check}{:else}<i></i>{/if}</span>{/if}
     {/if}
   </div>
 {/snippet}
@@ -231,9 +232,3 @@
     ['LT/RT', 'Pestaña', 'rt'], ['Start', 'Menú', 'menu'], ['B', 'Volver', 'b'],
   ]} />
 {/if}
-
-<style>
-  /* «Mi lista»: zona de las estanterías (recorta lo que se desplaza fuera, a ancho completo para no cortar las sombras). */
-  /* Alto justo para que de la tercera estantería solo asome el borde de su pestaña (sin meterse bajo las pistas). */
-  .lclip{position:absolute;left:0;top:166px;width:1280px;height:494px;overflow:hidden}
-</style>

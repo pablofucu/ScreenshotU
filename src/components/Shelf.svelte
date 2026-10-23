@@ -9,7 +9,7 @@
     label?: string;
     stars?: number;
     hidden?: boolean;
-    /** Glifo SVG (blanco) en vez de portada: baldosas de acción como «Nueva colección». */
+    /** Glifo SVG (blanco) en vez de portada: baldosas de acción como «Nueva colección» (llevan el nombre debajo). */
     icon?: string;
   }
 </script>
@@ -52,7 +52,7 @@
   const more = $derived(Math.max(0, items.length - (from + visible)));
 </script>
 
-<div class="shelf" class:dim style="top:{top}px;--acc:{acc};--ink:{ink}">
+<div class="shelf" class:dim class:dk={ink !== '#fff'} style="top:{top}px;--acc:{acc};--ink:{ink}">
   <div class="stab" class:tint={aurora.length > 0 || !!tabStyle} class:hasaur={aurora.length > 0} style={tabStyle}>
     {#if aurora.length}
       <div class="aur">{#each aurora as c, k}<b style="left:{8 + k * 21}%;background:{c}"></b>{/each}</div>
@@ -71,10 +71,10 @@
       <div class="rtrack" style="transform:translateX({-from * SHELF_PITCH}px)">
         {#each win as p (items[p].k)}
           {@const it = items[p]}
-          <div class="glass scov fx" class:f={focus === p} class:hid={it.hidden} data-k={it.k} data-act={it.act}
+          <div class="glass scov fx" class:addtile={!it.path && !!it.icon} class:f={focus === p} class:hid={it.hidden} data-k={it.k} data-act={it.act}
             style="left:{p * SHELF_PITCH}px;width:{SHELF_CW}px;height:{SHELF_CH}px">
             <div class="face">
-              {#if it.path}<Thumb path={it.path} />{:else if it.icon}<div class="sicon">{@html it.icon}</div>{:else}<div class="noart"><b>{it.name}</b></div>{/if}
+              {#if it.path}<Thumb path={it.path} />{:else if it.icon}<div class="addin"><span>{@html it.icon}</span><b>{it.name}</b></div>{:else}<div class="noart"><b>{it.name}</b></div>{/if}
             </div>
           </div>
         {/each}
@@ -107,12 +107,12 @@
   .smeta{font-size:15px;font-weight:600;color:var(--ink);white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.2)}
   /* Pestañas teñidas (colecciones): el texto lleva una sombra suave para leerse sobre cualquier color. */
   .stab.tint h3,.stab.tint .smeta{text-shadow:0 1px 3px rgba(0,0,0,.4)}
+  /* Tinta oscura (pestañas claras, como el amarillo): sin sombra oscura bajo el texto (igual que .btn.y). */
+  .shelf.dk .stab h3,.shelf.dk .stab .smeta{text-shadow:none}
   .stab.hasaur{overflow:hidden}
   .aur{position:absolute;inset:0;pointer-events:none}
   .aur b{position:absolute;top:-30%;width:34%;height:160%;border-radius:50%;filter:blur(22px);opacity:.55}
   .stab>:global(*:not(.aur)){position:relative}
-  .sicon{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(160deg,color-mix(in srgb,var(--acc) 40%,white),color-mix(in srgb,var(--acc) 85%,#445));filter:saturate(.9)}
-  .sicon :global(svg){width:44%;height:44%;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
   .sboard{position:relative;height:179px;border-radius:6px 22px 22px 22px;overflow:hidden;
     background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.26));
     -webkit-backdrop-filter:blur(14px) saturate(1.5);backdrop-filter:blur(14px) saturate(1.5);
@@ -122,6 +122,10 @@
   .scov{--r:16px;--bw:6px;top:0}
   .scov .face{border-radius:11px}
   .scov.hid{opacity:.55}
+  /* Baldosas de acción («Nueva colección», «Añadir juegos»): la cara de .addtile de app.css, a la medida de la portada. */
+  .scov .addin{gap:8px}
+  .scov .addin span{width:40px;height:40px;border-radius:14px}
+  .scov .addin b{font-size:13px;padding:0 4px;overflow-wrap:anywhere}
   .scov :global(.noart){padding:6px}
   .scov :global(.noart b){font-size:12px;line-height:1.15;overflow-wrap:anywhere}
   .slip{position:absolute;left:0;right:0;bottom:0;height:24px;
@@ -129,7 +133,7 @@
     box-shadow:inset 0 2px 0 rgba(255,255,255,.9),0 -8px 14px -10px rgba(40,50,70,.4);overflow:hidden}
   .slip .rtrack{left:18px}
   .slab{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;
-    font-size:12px;font-weight:800;letter-spacing:.03em;color:color-mix(in srgb,var(--acc) 55%,#1e2433);transition:color .2s}
+    font-size:12px;font-weight:800;letter-spacing:.03em;color:color-mix(in srgb,var(--acc) 55%,#3a414e);transition:color .2s}
   .slab em{font-style:normal;font-size:10px;letter-spacing:-.5px;color:color-mix(in srgb,var(--acc) 80%,#8a5a00)}
   .slab s{text-decoration:none;display:flex;align-items:center;gap:5px;padding:1px 8px;border-radius:999px}
   .slab.on s{background:var(--lo);color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.3)}

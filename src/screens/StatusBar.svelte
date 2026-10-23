@@ -19,7 +19,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) { if (fin) sb.step = 'pick'; else popOverlay(); } }}>
-  <div class="glass spanel" class:fin style="--acc:{color.c};--acc-ink:{color.dark ? '#3a2f00' : '#fff'}">
+  <div class="glass menupanel spanel" class:fin style="--acc:{color.c};--acc-ink:{color.dark ? '#3a2f00' : '#fff'}">
     <div class="face">
       {#if !fin}
         <h2>Estado del juego</h2>
@@ -75,13 +75,9 @@
 </div>
 
 <style>
-  .spanel{left:170px;width:940px;top:190px;height:250px;--r:36px;--bw:14px;cursor:default;transition:height .25s cubic-bezier(.25,1,.4,1),top .25s cubic-bezier(.25,1,.4,1)}
+  .spanel{left:170px;width:940px;top:190px;height:250px;transition:height .25s cubic-bezier(.25,1,.4,1),top .25s cubic-bezier(.25,1,.4,1)}
   .spanel.fin{top:140px;height:376px}
-  .spanel::before{opacity:.3}
-  .spanel::after{opacity:.5}
-  .spanel .face{background:rgba(247,249,252,.95);padding:20px 30px 16px;display:flex;flex-direction:column;gap:6px;color:#3a414e}
-  h2{margin:0;font-size:28px;font-weight:800}
-  .msub{margin:0 0 8px;font-size:16px;font-weight:600;color:#5f6776;height:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .spanel .face{padding:20px 30px 16px;gap:6px}
   .schips{display:flex;gap:12px;margin-top:4px}
   .schip{flex:1;height:84px;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:#4a5260;font-size:18px;font-weight:800;
     background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(235,239,245,.8));box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.22);transition:transform .18s,box-shadow .18s,background .18s}

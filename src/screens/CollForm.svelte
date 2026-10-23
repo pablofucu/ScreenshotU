@@ -2,8 +2,9 @@
   // «Nueva colección» / «Editar colección»: nombre, juegos, color, orden entre colecciones y borrar.
   import { app } from '../lib/store.svelte';
   import { RAINBOW } from '../lib/icons';
-  import { collFormAct, collFormCmd, collFormRows, collSuggestPick, nGames, platformGames, setFormColor, type CollRow } from '../lib/coleccion.svelte';
+  import { collFormAct, collFormCmd, collFormRows, collSuggestPick, formAccent, platformGames, setFormColor, type CollRow } from '../lib/coleccion.svelte';
   import { autoHex } from '../lib/collections';
+  import { nGames } from '../lib/format';
   import Hints from '../components/Hints.svelte';
   import Picker from '../components/Picker.svelte';
 
@@ -13,6 +14,7 @@
   const sub = $derived(`${plat?.name ?? ''} · no se mueve ni se copia ninguna captura`);
   // Color automático: el que saldría de las portadas de los juegos elegidos.
   const auto = $derived(autoHex(platformGames(f.platform).filter((t) => f.members.includes(t.id))));
+  const acc = $derived(formAccent());
   const H = $derived(28 + 118 + rows.length * 58 + 30);
   const label = (r: CollRow) => {
     switch (r) {
@@ -25,6 +27,7 @@
       case 'save': return f.id ? 'Guardar cambios' : 'Crear colección';
     }
   };
+  const empty = (r: CollRow) => (r === 'name' && !f.name) || (r === 'games' && !f.members.length);
   const value = (r: CollRow) => {
     switch (r) {
       case 'name': return f.name || 'Pulsa A para escribirlo';
@@ -52,7 +55,7 @@
   />
 {:else}
   <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) collFormCmd('b'); }}>
-    <div class="glass setpanel cfpanel" style="--acc:{app.chrome.c};height:{H}px;top:{(720 - H) / 2}px">
+    <div class="glass setpanel cfpanel" style="--acc:{acc.c};--acc-ink:{acc.dark ? '#3a2f00' : '#fff'};height:{H}px;top:{(720 - H) / 2}px">
       <div class="face">
         <h2>{f.id ? 'Editar colección' : 'Nueva colección'}</h2>
         <p class="msub">{sub}</p>
@@ -76,7 +79,7 @@
             <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
             <div class="srow" class:f={f.row === i} class:danger={r === 'del'} onmousemove={(e) => hover(e, i)} onclick={() => collFormAct(i)}>
               <span class="sl">{label(r)}</span>
-              <span class="sv">{value(r)}</span>
+              <span class="sv" class:ph={empty(r)}>{value(r)}</span>
             </div>
           {/if}
         {/each}
@@ -98,6 +101,7 @@
   .cauto{display:flex;align-items:center;gap:8px;height:34px;padding:0 12px 0 8px;border-radius:11px;font-size:15px;font-weight:800;cursor:pointer;color:#4a5260;
     background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(235,239,245,.85));box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.3)}
   .cauto .dot{width:18px;height:18px;border-radius:6px}
+  .cfpanel .sv.ph{opacity:.55}
   .cauto.sel{outline:4px solid #3a414e;outline-offset:2px}
   .srow.f .cauto.sel{outline-color:#fff}
 </style>

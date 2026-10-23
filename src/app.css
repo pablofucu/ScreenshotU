@@ -776,12 +776,12 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .stpill{position:absolute;left:100px;top:108px;z-index:6;height:36px;padding:0 16px;border-radius:999px;display:flex;align-items:center;gap:8px;font-size:17px;font-weight:800;color:#fff;box-sizing:border-box;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 14px -6px rgba(0,0,0,.5);pointer-events:none}
 .stpill svg{width:18px;height:18px}
 .stpill small{font-size:14px;font-weight:700;opacity:.9}
-.stpill.st-pending{background:linear-gradient(180deg,#8fa0b8,#66778f)}
-.stpill.st-playing{background:linear-gradient(180deg,#5ec7f2,#1f98d1)}
-.stpill.st-finished{background:linear-gradient(180deg,#6fd58a,#2fa653)}
-.stpill.st-dropped{background:linear-gradient(180deg,#a8a3b3,#7b7587)}
+/* El color de cada estado sale de LIST_COLOR (store): la pastilla de la ficha y la insignia de la cuadrícula lo reciben en --c. */
+.stpill,.sbadge.finished,.sbadge.dropped{background:linear-gradient(180deg,color-mix(in srgb,var(--c) 70%,white),var(--c))}
 .sbadge{position:absolute;right:8px;top:8px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 3px 8px -2px rgba(0,0,0,.5)}
 .sbadge svg{width:62%;height:62%}
-.sbadge.finished{background:linear-gradient(180deg,#6fd58a,#2fa653)}
-.sbadge.dropped{background:linear-gradient(180deg,#a8a3b3,#7b7587)}
 .sbadge.dropped i{width:14px;height:4px;border-radius:2px;background:#fff}
+
+/* Zona de las estanterías de «Mi lista» y «Colecciones» (recorta lo que se desplaza fuera, a ancho completo para no cortar las sombras). */
+/* Alto justo para que de la tercera estantería solo asome el borde de su pestaña (sin meterse bajo las pistas). */
+.lclip{position:absolute;left:0;top:166px;width:1280px;height:494px;overflow:hidden}

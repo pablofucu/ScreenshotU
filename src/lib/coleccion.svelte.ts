@@ -8,14 +8,11 @@ import { RAINBOW, type Accent } from './icons';
 import { inkDark } from './oklch';
 import { openOsk } from './osk.svelte';
 import { bump, closeOverlay, go, openTitle, popOverlay, pushOverlay, setFocus, toast } from './controller.svelte';
-import { closeOrConfirm } from './ops.svelte';
-import { LIST_VIS } from './milista.svelte';
+import { closeOrConfirm, inkFor } from './ops.svelte';
+import { LIST_VIS, revealShelf } from './milista.svelte';
 import { autoHex, coverColors, suggestGroups, suggestName } from './collections';
 import type { Collection, Library, Title } from './types';
 
-/** Estanterías que caben a la vez (la enfocada siempre se ve). */
-const ROWS = 2;
-export const nGames = (n: number) => `${n} ${n === 1 ? 'juego' : 'juegos'}`;
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const byName = new Intl.Collator('es', { numeric: true, sensitivity: 'base' });
 
@@ -60,16 +57,32 @@ export function collAccent(coll: Collection, games: Title[]): Accent {
   return hex ? accentOf(hex, inkDark(hex), 'Automático') : app.chrome;
 }
 
+/** Color de una estantería de «Colecciones» (el de su colección, con las portadas de sus juegos). */
+export const shelfAccent = (sh: { coll: Collection; items: number[] }): Accent =>
+  collAccent(sh.coll, sh.items.map((ti) => app.platform!.titles[ti]));
+
+/** Color de la estantería enfocada (el de «Nueva colección», o sin estanterías, es el de la app): acento de las pestañas superiores. */
+export function collFocusAccent(): Accent {
+  const sh = app.collShelves[app.collAt.c];
+  return sh ? shelfAccent(sh) : app.chrome;
+}
+
+/** Color del formulario «Nueva colección» / «Editar colección» y de su selector de juegos: el color elegido o el de la app. */
+export function formAccent(): Accent {
+  const c = app.collForm.color;
+  return c !== null && RAINBOW[c] ? RAINBOW[c] : app.chrome;
+}
+
 /** Aspecto de la pestaña según el estilo elegido en Ajustes: Aurora (manchas de color dentro) o multicolor (degradado). */
 export function tabLook(games: Title[], acc: Accent): { style: string; aurora: string[]; ink: string } {
-  const ink = acc.dark ? '#3a2f00' : '#fff';
+  const ink = inkFor(acc.c);
   if (app.config.collectionsStyle === 'multi') {
     let cols = coverColors(games, 0.6, 0.15, 6);
     if (cols.length === 1) cols = [cols[0], cols[0]];
     if (!cols.length) return { style: '', aurora: [], ink };
     return {
       style: `background:linear-gradient(180deg,rgba(255,255,255,.35),transparent 45%,rgba(0,0,0,.18)),linear-gradient(90deg,${cols.join(',')})`,
-      aurora: [], ink: '#fff',
+      aurora: [], ink: cols.every((c) => inkDark(c)) ? '#3a2f00' : '#fff',
     };
   }
   return { style: '', aurora: coverColors(games, 0.72, 0.16, 5), ink };
@@ -102,18 +115,10 @@ export function setCollFocus(key: string) {
 export function collReveal() {
   const { c, i } = app.collAt;
   const sh = app.collShelves[c];
-  if (sh) {
-    const n = cols(c);
-    let f = app.collFrom[sh.coll.id] ?? 0;
-    if (i < f + 1) f = Math.max(0, i - 1);
-    else if (i > f + LIST_VIS - 2) f = Math.min(Math.max(0, n - LIST_VIS), i - LIST_VIS + 2);
-    f = Math.max(0, Math.min(f, Math.max(0, n - LIST_VIS)));
-    if (f !== (app.collFrom[sh.coll.id] ?? 0)) app.collFrom = { ...app.collFrom, [sh.coll.id]: f };
-  }
-  let top = app.collTop;
-  if (c < top) top = c;
-  else if (c > top + ROWS - 1) top = c - ROWS + 1;
-  if (top !== app.collTop) app.collTop = top;
+  const f0 = sh ? (app.collFrom[sh.coll.id] ?? 0) : 0;
+  const r = revealShelf(i, cols(c), f0, c, app.collTop);
+  if (sh && r.from !== f0) app.collFrom = { ...app.collFrom, [sh.coll.id]: r.from };
+  if (r.top !== app.collTop) app.collTop = r.top;
 }
 
 /** Vuelve a empezar al entrar en una categoría. */

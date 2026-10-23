@@ -5,7 +5,7 @@ import { backend } from './backend';
 import { blip } from './sound';
 import { openAddColl } from './coleccion.svelte';
 import { bump, closeOverlay, openTitle, playTitle, popOverlay, pushOverlay, setFocus, toast } from './controller.svelte';
-import { fmtShort } from './format';
+import { fmtShort, nGames } from './format';
 import type { GameStatus, Title } from './types';
 
 /** Portadas visibles por estantería y paso (portada + hueco) en píxeles. */
@@ -16,7 +16,7 @@ export const SHELF_PITCH = 120;
 /** Alto de una estantería (pestaña + balda) y hueco hasta la siguiente. */
 export const SHELF_STEP = 241;
 /** Estanterías que caben a la vez (la enfocada siempre se ve). */
-const SHELF_ROWS = 2;
+export const SHELF_ROWS = 2;
 const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const DAY = 864e5;
 
@@ -41,21 +41,28 @@ function place(ti = app.t): { s: number; i: number } | null {
   return null;
 }
 
+/** Qué estantería se ve (`top`) y desde qué portada (`from`) para que la portada `i` de la estantería `s` (de `n`
+ *  portadas) quede a la vista, con un vecino a cada lado si se puede. Lo comparten «Mi lista» y «Colecciones». */
+export function revealShelf(i: number, n: number, from: number, s: number, top: number): { from: number; top: number } {
+  let f = from;
+  if (i < f + 1) f = Math.max(0, i - 1);
+  else if (i > f + LIST_VIS - 2) f = Math.min(Math.max(0, n - LIST_VIS), i - LIST_VIS + 2);
+  f = Math.max(0, Math.min(f, Math.max(0, n - LIST_VIS)));
+  let t = top;
+  if (s < t) t = s;
+  else if (s > t + SHELF_ROWS - 1) t = s - SHELF_ROWS + 1;
+  return { from: f, top: t };
+}
+
 /** Desplaza lo justo para que el juego enfocado se vea, con un vecino a cada lado si se puede. */
 export function listReveal() {
   const at = place();
   if (!at) return;
   const sh = app.shelves[at.s];
-  const n = sh.items.length;
-  let f = app.listFrom[sh.key] ?? 0;
-  if (at.i < f + 1) f = Math.max(0, at.i - 1);
-  else if (at.i > f + LIST_VIS - 2) f = Math.min(Math.max(0, n - LIST_VIS), at.i - LIST_VIS + 2);
-  f = Math.max(0, Math.min(f, Math.max(0, n - LIST_VIS)));
-  if (f !== (app.listFrom[sh.key] ?? 0)) app.listFrom = { ...app.listFrom, [sh.key]: f };
-  let top = app.listTop;
-  if (at.s < top) top = at.s;
-  else if (at.s > top + SHELF_ROWS - 1) top = at.s - SHELF_ROWS + 1;
-  if (top !== app.listTop) app.listTop = top;
+  const f0 = app.listFrom[sh.key] ?? 0;
+  const r = revealShelf(at.i, sh.items.length, f0, at.s, app.listTop);
+  if (r.from !== f0) app.listFrom = { ...app.listFrom, [sh.key]: r.from };
+  if (r.top !== app.listTop) app.listTop = r.top;
 }
 
 /** Vuelve a empezar al entrar en una categoría. */
@@ -139,7 +146,6 @@ export function listCmd(c: string): boolean {
 /* ------------------------------------------------------------------ */
 /* Textos de las estanterías                                            */
 /* ------------------------------------------------------------------ */
-const nGames = (n: number) => `${n} ${n === 1 ? 'juego' : 'juegos'}`;
 const fmtHours = (sec: number) => {
   if (sec < 60) return '';
   if (sec < 3600) return `${Math.floor(sec / 60)} min`;

@@ -11,6 +11,7 @@ export const fmtShort = (t: number) => {
 };
 export const resText = (w: number, h: number) => (w > 0 && h > 0 ? `${w}×${h}` : '');
 export const nCapturas = (n: number) => `${n} ${n === 1 ? 'captura' : 'capturas'}`;
+export const nGames = (n: number) => `${n} ${n === 1 ? 'juego' : 'juegos'}`;
 export const nTitulos = (n: number) => `${n} ${n === 1 ? 'título' : 'títulos'}`;
 /** 3720 -> «1 h 02 min»; 2400 -> «40 min»; menos de un minuto -> «menos de 1 min». */
 export const fmtDur = (sec: number) => {

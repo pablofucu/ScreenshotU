@@ -1,10 +1,9 @@
 <script lang="ts">
   // Selector de juegos de una colección (a pantalla completa): buscador con teclado en pantalla, cuadrícula de portadas
   // de la categoría con check en las elegidas y filtro «Todos / Seleccionados». Ventana virtual por filas.
-  import { app, accentOf } from '../lib/store.svelte';
-  import { ICON, RAINBOW } from '../lib/icons';
-  import { inkDark } from '../lib/oklch';
-  import { PICK_COLS, PICK_ROWS, pickerAct, pickerResults, pickerSearch, pickerSetFilter, platformGames } from '../lib/coleccion.svelte';
+  import { app } from '../lib/store.svelte';
+  import { ICON } from '../lib/icons';
+  import { formAccent, PICK_COLS, PICK_ROWS, pickerAct, pickerResults, pickerSearch, pickerSetFilter, platformGames } from '../lib/coleccion.svelte';
   import { gameYear } from '../lib/collections';
   import Hints from '../components/Hints.svelte';
   import Thumb from '../components/Thumb.svelte';
@@ -14,7 +13,7 @@
   const plat = $derived(app.lib.platforms.find((x) => x.id === f.platform));
   const res = $derived(pickerResults());
   const total = $derived(platformGames(f.platform).length);
-  const acc = $derived(f.color !== null ? accentOf(RAINBOW[f.color].c, RAINBOW[f.color].dark) : accentOf(app.chrome.c, inkDark(app.chrome.c)));
+  const acc = $derived(formAccent());
   const sel = $derived(new Set(p.ids));
 
   // Cada celda: portada y hueco; la cuadrícula se desplaza para que la fila enfocada quede en el centro.
@@ -96,9 +95,10 @@
   .pktrack{position:absolute;left:69px;top:0;transition:transform .22s cubic-bezier(.25,1,.4,1)}
   .pkcov{--r:16px;--bw:6px}
   .pkcov .face{border-radius:11px}
-  .pkcov.on{box-shadow:inset 0 1.5px 0 #fff,0 0 0 2px #3BB54A,0 8px 16px -8px rgba(59,181,74,.7)}
+  /* El marcado va en la cara (anillo del acento sobre la portada) para no pisar el resplandor del foco, que va en el cristal. */
+  .pkcov.on .face::after{box-shadow:inset 0 0 0 4px var(--acc),inset 0 3px 6px -2px rgba(0,0,0,.35)}
   .pkchk{position:absolute;right:6px;top:6px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
-    background:linear-gradient(180deg,#6fd58a,#2fa653);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 3px 8px -2px rgba(0,0,0,.5);z-index:3}
+    background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 2px #fff,0 3px 8px -2px rgba(0,0,0,.5);z-index:3}
   .pkchk :global(svg){width:62%;height:62%}
   .pkempty{position:absolute;left:0;right:0;top:150px;text-align:center;font-size:20px;font-weight:700;color:#5f6776;margin:0}
   .pkname{position:absolute;right:69px;top:34px;display:flex;flex-direction:column;align-items:flex-end;gap:2px;max-width:420px;white-space:nowrap}

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { app, STATUS_LABEL } from '../lib/store.svelte';
+  import { app, LIST_COLOR, STATUS_LABEL } from '../lib/store.svelte';
   import { backend, decodeImg, thumbNow } from '../lib/backend';
   import { ICON } from '../lib/icons';
   import { fmtDur, nCapturas } from '../lib/format';
@@ -145,7 +145,7 @@
 
   <div class="dchips">
   {#if T.status}
-    <div class="stpill pill st-{T.status}">{@html T.status === 'finished' ? ICON.check : ''}<b>{STATUS_LABEL[T.status]}</b>{#if T.status === 'finished' && T.finishedMs}<small>{new Date(T.finishedMs).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</small>{/if}{#if T.status === 'finished' && T.rating}<small>{'★'.repeat(T.rating)}</small>{/if}</div>
+    <div class="stpill pill st-{T.status}" style="--c:{LIST_COLOR[T.status].c}">{@html T.status === 'finished' ? ICON.check : ''}<b>{STATUS_LABEL[T.status]}</b>{#if T.status === 'finished' && T.finishedMs}<small>{new Date(T.finishedMs).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</small>{/if}{#if T.status === 'finished' && T.rating}<small>{'★'.repeat(T.rating)}</small>{/if}</div>
   {/if}
   {#if T.release && !T.members}
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
