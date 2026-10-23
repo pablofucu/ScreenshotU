@@ -42,12 +42,11 @@ function eachDay(p: Play, from: number, to: number, f: (day: number, ms: number)
   }
 }
 
-/** Juegos reales (sin sagas ni ocultos) con su posición en la biblioteca. */
+/** Juegos reales (sin ocultos) con su posición en la biblioteca. */
 export interface GameRef { pi: number; ti: number; t: Title }
 export function games(lib: Library): GameRef[] {
   const out: GameRef[] = [];
   lib.platforms.forEach((p, pi) => {
-    if (p.id === 'sagas') return;
     p.titles.forEach((t, ti) => { if (!t.hidden && (t.plays?.length || t.playSeconds > 0)) out.push({ pi, ti, t }); });
   });
   return out;
@@ -311,7 +310,6 @@ function yearTotals(lib: Library, year: number): YearTotals {
   const days = new Set<number>();
   let ms = 0, n = 0, shots = 0;
   lib.platforms.forEach((pl) => {
-    if (pl.id === 'sagas') return;
     for (const t of pl.titles) {
       if (t.hidden) continue;
       for (const p of (t.plays ?? []) as Play[]) {
@@ -365,7 +363,6 @@ export function yearReview(lib: Library, year: number, favs: { has(p: string): b
   const shotGames: YearReview['shotGames'] = [];
   let shot: YearShot | null = null, shotFav = false;
   lib.platforms.forEach((pl, pi) => {
-    if (pl.id === 'sagas') return;
     pl.titles.forEach((t, ti) => {
       if (t.hidden) return;
       let n = 0;

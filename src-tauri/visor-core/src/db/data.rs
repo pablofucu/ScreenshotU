@@ -405,11 +405,25 @@ pub fn snooze_save(c: &Connection, ids: &[String], now_ms: i64) -> Result<()> {
 /* Sagas                                                                */
 /* ------------------------------------------------------------------ */
 
+/// Convierte las sagas antiguas (sin categoria) con la biblioteca ya cargada y guarda el resultado solo si
+/// algo ha cambiado. Devuelve la lista final.
+pub fn sagas_convert_legacy(c: &Connection, platform_of: &HashMap<String, String>) -> Result<Vec<Saga>> {
+    let list = sagas_load(c)?;
+    if platform_of.is_empty() || list.iter().all(|s| s.platform.is_some()) {
+        return Ok(list);
+    }
+    let (out, changed) = crate::sagas::convert_legacy(&list, platform_of);
+    if changed {
+        sagas_replace(c, &out)?;
+    }
+    Ok(out)
+}
+
 pub fn sagas_load(c: &Connection) -> Result<Vec<Saga>> {
     let mut sagas: Vec<Saga> = Vec::new();
     {
-        let mut st = c.prepare("SELECT id, name FROM sagas ORDER BY position")?;
-        let rows = st.query_map([], |r| Ok(Saga { id: r.get(0)?, name: r.get(1)?, members: Vec::new() }))?;
+        let mut st = c.prepare("SELECT id, name, platform, color FROM sagas ORDER BY position")?;
+        let rows = st.query_map([], |r| Ok(Saga { id: r.get(0)?, name: r.get(1)?, members: Vec::new(), platform: r.get(2)?, color: r.get::<_, Option<i64>>(3)?.map(|v| v as u8) }))?;
         for r in rows {
             sagas.push(r?);
         }
@@ -430,10 +444,10 @@ pub fn sagas_load(c: &Connection) -> Result<Vec<Saga>> {
 pub fn sagas_replace(c: &Connection, list: &[Saga]) -> Result<()> {
     atomic(c, || {
         c.execute("DELETE FROM sagas", [])?; // los miembros caen en cascada
-        let mut s = c.prepare("INSERT INTO sagas(id, name, position) VALUES (?1, ?2, ?3)")?;
+        let mut s = c.prepare("INSERT INTO sagas(id, name, position, platform, color) VALUES (?1, ?2, ?3, ?4, ?5)")?;
         let mut m = c.prepare("INSERT OR IGNORE INTO saga_members(saga_id, title_id, position) VALUES (?1, ?2, ?3)")?;
         for (i, saga) in list.iter().enumerate() {
-            s.execute(params![saga.id, saga.name, i as i64])?;
+            s.execute(params![saga.id, saga.name, i as i64, saga.platform, saga.color.map(|v| v as i64)])?;
             for (j, t) in saga.members.iter().enumerate() {
                 m.execute(params![saga.id, t, j as i64])?;
             }

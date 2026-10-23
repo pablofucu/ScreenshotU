@@ -3,9 +3,9 @@
 import { app, lastUse, STATUS_LABEL, STATUS_ORDER, type ListShelf } from './store.svelte';
 import { backend } from './backend';
 import { blip } from './sound';
+import { openAddColl } from './coleccion.svelte';
 import { bump, closeOverlay, openTitle, playTitle, popOverlay, pushOverlay, setFocus, toast } from './controller.svelte';
 import { fmtShort } from './format';
-import { isSagaPlatform } from './sagas';
 import type { GameStatus, Title } from './types';
 
 /** Portadas visibles por estantería y paso (portada + hueco) en píxeles. */
@@ -25,7 +25,7 @@ const DAY = 864e5;
 /* ------------------------------------------------------------------ */
 
 /** La pestaña «Mi lista» de una categoría normal está a la vista (sin paneles encima). */
-export const listTab = () => app.view === 'titles' && !isSagaPlatform(app.platform) && app.titlesTab === 'list';
+export const listTab = () => app.view === 'titles' && app.titlesTab === 'list';
 /** Algún estante tiene este título (el foco de «Mi lista» solo cae en juegos que se ven). */
 export const listHas = (ti: number) => app.shelves.some((s) => s.items.includes(ti));
 /** Primer juego de «Mi lista» (foco por defecto). */
@@ -261,7 +261,8 @@ function stepField(dir: number) {
   blip(880);
 }
 
-async function statusBarSave() {
+/** Guarda «Terminado» con fecha y nota. `thenColl`: después abre «Añadir a una colección» para ese juego. */
+async function statusBarSave(thenColl = false) {
   const sb = app.statusBar;
   const t = app.platform?.titles[sb.title];
   if (!t) { closeOverlay(); return; }
@@ -274,6 +275,7 @@ async function statusBarSave() {
     closeOverlay();
     toast(`«${t.name}»: Terminado${sb.rating ? ' · ' + '★'.repeat(sb.rating) : ''}`);
     blip(1320);
+    if (thenColl) openAddColl(sb.title);
   }
 }
 
@@ -304,7 +306,8 @@ export function statusBarCmd(c: string) {
   else if (c === 'right') { sb.field = Math.min(3, sb.field + 1); blip(880); }
   else if (c === 'up') stepField(1);
   else if (c === 'down') stepField(-1);
-  else if (c === 'a' || c === 'y') void statusBarSave();
+  else if (c === 'a') void statusBarSave();
+  else if (c === 'y') void statusBarSave(true);
   else if (c === 'b' || c === 'menu') { sb.step = 'pick'; blip(520); }
 }
 
@@ -318,7 +321,6 @@ export function stalledGames(): Array<{ t: Title; days: number }> {
   const cutoff = now - app.config.listStalledDays * DAY;
   const out: Array<{ t: Title; days: number }> = [];
   for (const p of app.lib.platforms) {
-    if (isSagaPlatform(p)) continue;
     for (const t of p.titles) {
       if (t.status !== 'playing' || t.hidden || t.members || !t.id) continue;
       const use = lastUse(t);

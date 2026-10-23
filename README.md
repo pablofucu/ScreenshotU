@@ -8,7 +8,7 @@ Pila: **Tauri 2 + Svelte 5 + TypeScript + Vite** en el frontend y **Rust** en el
 
 ## Qué hace
 
-- Inicio con los iconos de plataforma (Juegos PC, Juegos Switch, Novelas visuales, Sagas), la fila **Seguir jugando** (los 3 juegos jugados o capturados más recientemente, con su hero y su logo; `A` abre la ficha y `X` lo lanza), el resumen de los últimos 7 días (horas y capturas) y un dock con texto (Buscar, Favoritas, Añadir juego, Ajustes, Salir).
+- Inicio con los iconos de plataforma (Juegos PC, Juegos Switch, Novelas visuales…), la fila **Seguir jugando** (los 3 juegos jugados o capturados más recientemente, con su hero y su logo; `A` abre la ficha y `X` lo lanza), el resumen de los últimos 7 días (horas y capturas) y un dock con texto (Buscar, Favoritas, Añadir juego, Ajustes, Salir).
 - Títulos de la plataforma en **cuadrícula paginada de 5×2** o en **carrusel**; se cambia con `Y` o en Ajustes (por defecto, cuadrícula). El hero (o la portada) del juego enfocado tiñe el fondo, la cabecera muestra capturas, horas, última partida y favoritas, y `LT`/`RT` cambian el filtro: *Todos*, *Con lanzador*, *Solo capturas*, *Con favoritas*, *A–Z*. La página se indica como «Página 1 de 4».
 - Capturas del juego en cuadrícula de 4 columnas con desplazamiento virtual (solo se pintan las filas visibles), ordenables con `Y` (recientes, antiguas, favoritas primero, por nombre; el orden se recuerda por juego). Vista alternativa **agrupada por días** (botón `View` o Ajustes → Apariencia): 5 columnas, una cabecera por día (con lo jugado ese día si es de la última semana; los días con pocas capturas comparten fila), una línea de tiempo por meses a la derecha y `LT`/`RT` para saltar de día. Solo se agrupa con orden por fecha.
 - Visor con anterior/siguiente, tira de miniaturas, píldora de información, interfaz que se oculta sola a los 3 s y precarga de las vecinas.
@@ -164,14 +164,14 @@ Menú `Y` de la ficha → **Ocultar juego**. Un juego oculto desaparece de las l
 - **Orden**: `Y` recorre recientes, antiguas, favoritas primero y por nombre; se recuerda por juego.
 - **Menú de capturas** (`Start`/`M`): *Mover a otro juego…* (elige el destino, pide confirmar con otra `A`; solo dentro de la raíz de la biblioteca, y las favoritas siguen a la captura), *Mostrar en el Explorador* y *Seleccionar* (modo de selección para mover varias a la vez).
 
-## Sagas
+## Colecciones
 
-Cuarta categoría de Inicio («Sagas», con su propio icono) que agrupa varios juegos en una sola vista de capturas (p. ej. Mass Effect 1, 2 y 3). En las demás categorías los juegos siguen sueltos. Es solo una agrupación virtual: se guarda en `sagas.json` (nombre y ids de juego) y **no crea, copia ni mueve archivos**; disolver una saga no borra nada.
+Pestaña «Colecciones» dentro de cada categoría (`View` pasa de Todos a Mi lista y a Colecciones). Agrupa varios juegos **de esa categoría** (p. ej. Trails, Kingdom Hearts) en una estantería y reúne todas sus capturas en una sola vista. Sustituyen a las antiguas sagas (que eran una categoría aparte): al arrancar con la biblioteca cargada, cada saga pasa a ser colección de la categoría donde tenga más juegos (si mezclaba varias, se divide en una por categoría). Es solo una agrupación virtual (nombre, categoría, color y ids de juego en la base de datos): **no crea, copia ni mueve archivos**; borrar una colección no borra nada.
 
-- **Crear**: baldosa «Crear saga» al final de la lista de Sagas. Se marcan los juegos con `A` (mínimo dos) y se escribe el nombre con el teclado en pantalla (se sugiere el prefijo común).
-- **Lista**: cada saga es una pila de portadas. `A` abre directamente todas sus capturas juntas, con el juego de origen en cada miniatura y en el visor.
-- **Filtrar**: `LB/RB` recorren «Todos» y cada juego; `Y` ordena como siempre.
-- **Editar o disolver**: `Start` en la vista de la saga (pide confirmar al disolver).
+- **Estantería**: pestaña con el título, «N juegos · N capturas», una línea de tiempo con un punto por juego (año de su primera captura o partida) y el botón «Ver todas las capturas» (`X`); debajo, las portadas por año con el año en el borde. `A` abre el juego; `X` abre las capturas de toda la colección (`LB/RB` filtran por juego); `Y` la edita.
+- **Crear y editar**: «Nueva colección» al final (con sugerencias de grupos con nombre en común). «Editar colección»: nombre (teclado en pantalla), juegos (selector a pantalla completa con buscador, `A` marca, `X` marca todos los resultados, `Y` busca, `Start` guarda), color (automático, sacado de las portadas, o uno de los 7), mover arriba/abajo y borrar.
+- **Añadir a una colección**: desde el menú de la ficha del juego y, al marcar un juego como Terminado, con `Y` en la barra de estado.
+- **Estilo**: en Ajustes › Apariencia, «Estilo de las colecciones»: Aurora (pestaña del color de la colección con manchas difuminadas de las portadas) o Multicolor armonizada (degradado con los colores de las portadas, igualados en luz e intensidad).
 
 ## Acento por juego
 

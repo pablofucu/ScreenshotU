@@ -191,6 +191,12 @@ pub const MIGRATIONS: &[&str] = &[
     ALTER TABLE title_status ADD COLUMN list_pos INTEGER;
     ALTER TABLE title_status ADD COLUMN snooze_ms INTEGER;
     "#,
+    // 8: colecciones (antes sagas): categoria a la que pertenecen y color manual. El orden entre colecciones
+    // es `sagas.position`. La categoria de las sagas antiguas se rellena al cargar la biblioteca (`sagas::convert_legacy`).
+    r#"
+    ALTER TABLE sagas ADD COLUMN platform TEXT;
+    ALTER TABLE sagas ADD COLUMN color INTEGER;
+    "#,
 ];
 
 /// Version del esquema que entiende esta compilacion.
@@ -548,6 +554,40 @@ mod tests {
         // Quitar el estado borra tambien nota y orden.
         db.with(|c| status_save(c, "steam:1", None, 9500)).unwrap();
         assert!(!db.with(prefs_load).unwrap().contains_key("steam:1"));
+    }
+
+    #[test]
+    fn migration_8_adds_collection_columns_and_converts_old_sagas() {
+        // Una base en version 7 con sagas sube a la 8 sin perderlas; luego se convierten con la biblioteca cargada.
+        let d = tempfile::tempdir().unwrap();
+        let p = d.path().join("visor.db");
+        {
+            let mut c = Connection::open(&p).unwrap();
+            migrate(&mut c, &MIGRATIONS[..7]).unwrap();
+            c.execute_batch(
+                "INSERT INTO sagas(id, name, position) VALUES ('s1', 'Mezcla', 0), ('s2', 'Perdida', 1);
+                 INSERT INTO saga_members(saga_id, title_id, position) VALUES ('s1', 'pc/a', 0), ('s1', 'sw/b', 1), ('s1', 'pc/c', 2), ('s1', 'fuera', 3), ('s2', 'nada', 0);",
+            )
+            .unwrap();
+        }
+        let db = Db::open_path(&p).unwrap();
+        assert_eq!(db.with(|c| c.query_row::<i64, _, _>("PRAGMA user_version", [], |r| r.get(0))).unwrap(), latest_version());
+        let antes = db.with(sagas_load).unwrap();
+        assert_eq!(antes.len(), 2);
+        assert!(antes.iter().all(|s| s.platform.is_none() && s.color.is_none()));
+        // Sin biblioteca cargada no se convierte nada.
+        let vacio = std::collections::HashMap::new();
+        assert!(db.with(|c| sagas_convert_legacy(c, &vacio)).unwrap().iter().all(|s| s.platform.is_none()));
+        let map: std::collections::HashMap<String, String> =
+            [("pc/a", "pc"), ("sw/b", "switch"), ("pc/c", "pc")].iter().map(|(a, b)| (a.to_string(), b.to_string())).collect();
+        let out = db.with(|c| sagas_convert_legacy(c, &map)).unwrap();
+        assert_eq!(out.len(), 3);
+        assert_eq!((out[0].id.as_str(), out[0].platform.as_deref(), out[0].members.clone()), ("s1", Some("pc"), vec!["pc/a".to_string(), "pc/c".into(), "fuera".into()]));
+        assert_eq!((out[1].platform.as_deref(), out[1].name.as_str(), out[1].members.clone()), (Some("switch"), "Mezcla", vec!["sw/b".to_string()]));
+        assert_eq!(out[2].platform, None, "la que no tiene ningun juego conocido espera");
+        // Persistido: al recargar sigue igual y una segunda pasada no cambia nada.
+        assert_eq!(db.with(sagas_load).unwrap(), out);
+        assert_eq!(db.with(|c| sagas_convert_legacy(c, &map)).unwrap(), out);
     }
 
     #[test]

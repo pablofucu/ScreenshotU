@@ -1,7 +1,7 @@
 // Biblioteca simulada para desarrollo en navegador (sin Tauri). El arte procede del mockup aprobado.
 import { hash, rng } from './rng';
 import type {
-  AccentInfo, AudioOutput, Backend, BackendEvent, Config, GameSource, HiddenEntry, Library, Platform, Saga, Shot, SortMode, Swatch, Title,
+  AccentInfo, AudioOutput, Backend, BackendEvent, Config, GameSource, HiddenEntry, Library, Platform, Collection, Shot, SortMode, Swatch, Title,
 } from './types';
 import { normalizeHex } from './oklch';
 
@@ -66,6 +66,12 @@ const EMULATOR = 'Ryujinx';
 const MANUAL = new Set(['Stardew Valley', 'Steins;Gate', 'Clannad']);
 const AGO_H: Record<string, number> = { 'Elden Ring': 3, 'Hades II': 30, 'Zelda: Tears of the Kingdom': 27, 'Steins;Gate': 80, Hades: 200 };
 const NOW = Date.UTC(2026, 9, 14, 18, 0);
+// Años que se retrasan las capturas de algunos juegos, para que las colecciones tengan una línea de tiempo con años distintos.
+const YEAR_BACK: Record<string, number> = {
+  'Hollow Knight': 9, Celeste: 8, 'Outer Wilds': 7, 'Disco Elysium': 5, 'Metroid Dread': 5, 'Zelda: Tears of the Kingdom': 3,
+  "Baldur's Gate 3": 3, 'The Witcher 3': 11, 'Elden Ring': 4, 'Cyberpunk 2077': 6, 'Steins;Gate': 10, Clannad: 12, Danganronpa: 9,
+  'Doki Doki Literature Club': 8, 'Ace Attorney': 6, 'Hades II': 1,
+};
 
 function gameInfo(pid: string, name: string): { src: GameSource | null } {
   if (NOT_LAUNCHABLE.has(pid + '|' + name)) return { src: null };
@@ -132,7 +138,7 @@ function weekFromPlays(plays: Array<[number, number]>): number[] {
 function mockTitle(p: (typeof MOCK_PLATS)[number], name: string, withShots: boolean): Title {
   const r = rng(hash(p.id + name));
   const n = withShots ? 12 + Math.floor(r() * 44) : 0;
-  let d = Date.UTC(2026, 9, 12) - Math.floor(r() * 40) * 864e5;
+  let d = Date.UTC(2026, 9, 12) - Math.floor(r() * 40) * 864e5 - (YEAR_BACK[name] ?? 0) * 365 * 864e5;
   const shots: Shot[] = [];
   for (let i = 0; i < n; i++) {
     const res = p.res[Math.floor(r() * p.res.length)];
@@ -257,6 +263,45 @@ function mockStates(lib: Library): Record<string, { status: string; finishedMs?:
   return out;
 }
 
+/** Colecciones de ejemplo: dos sagas antiguas sin categoría (una mezcla categorías, para ver cómo se divide) y dos ya convertidas. */
+function seedCollections(lib: Library): Collection[] {
+  const id = (pid: string, name: string) => lib.platforms.find((p) => p.id === pid)?.titles.find((t) => t.name === name)?.id;
+  const ids = (pid: string, names: string[]) => names.map((n) => id(pid, n)).filter((x): x is string => !!x);
+  return [
+    { id: 's-mezcla', name: 'Aventuras', members: [...ids('pc', ['Hollow Knight', 'Celeste', 'Outer Wilds', 'Disco Elysium']), ...ids('switch', ['Metroid Dread', 'Zelda: Tears of the Kingdom']), 'steam:fuera-de-la-biblioteca'], platform: null, color: null },
+    { id: 's-hades', name: 'Hades', members: ids('pc', ['Hades', 'Hades II']), platform: null, color: null },
+    { id: 'c-vn', name: 'Novelas clásicas', members: ids('vn', ['Steins;Gate', 'Clannad', 'Danganronpa', 'Doki Doki Literature Club', 'Ace Attorney']), platform: 'vn', color: 3 },
+    { id: 'c-rpg', name: 'RPG', members: ids('pc', ["Baldur's Gate 3", 'The Witcher 3', 'Elden Ring', 'Cyberpunk 2077']), platform: 'pc', color: null },
+  ];
+}
+
+/** Réplica en TypeScript de `visor_core::sagas::convert_legacy` (en el navegador no hay núcleo en Rust). */
+function convertLegacy(list: Collection[], platformOf: Record<string, string>): Collection[] {
+  const used = new Set(list.map((c) => c.id));
+  const out: Collection[] = [];
+  for (const s of list) {
+    if (s.platform) { out.push(s); continue; }
+    const cats: Array<[string, number]> = [];
+    for (const m of s.members) {
+      const p = platformOf[m];
+      if (!p) continue;
+      const c = cats.find((x) => x[0] === p);
+      if (c) c[1]++; else cats.push([p, 1]);
+    }
+    if (!cats.length) { out.push(s); continue; }
+    cats.sort((a, b) => b[1] - a[1]);
+    const main = cats[0][0];
+    out.push({ ...s, platform: main, members: s.members.filter((m) => !platformOf[m] || platformOf[m] === main) });
+    cats.slice(1).forEach(([plat], n) => {
+      let nid = `${s.id}-${n + 2}`;
+      while (used.has(nid)) nid += 'x';
+      used.add(nid);
+      out.push({ id: nid, name: s.name, members: s.members.filter((m) => platformOf[m] === plat), platform: plat, color: s.color });
+    });
+  }
+  return out;
+}
+
 const LS = 'visor.mock.config';
 let pickN = 0;
 function store(): Storage | null { try { return window.localStorage; } catch { return null; } }
@@ -268,11 +313,12 @@ export async function mockBackend(): Promise<Backend> {
     platforms: MOCK_PLATS.map((p) => ({ id: p.id, name: p.name, folder: p.folder, accent: p.accent, icon: p.icon })),
     captureHotkey: 'F12', captureCombo: 'back+rb', captureMouse: '', captureMagpie: 'scaled', captureSound: true, capturePeek: true, captureRumble: true, magpieExe: '', showHidden: false,
     sgdbKey: q.has('sgdb') ? 'mock' : '', sgdbAuto: true, deepseekKey: '', deepseekModel: 'deepseek-chat',
-    ankiUrl: 'http://127.0.0.1:8765', ankiDeck: 'Japonés::Novelas', ankiModel: '', ankiStyle: 'limpio', ankiAutostart: true, ankiExe: '', recordHotkey: 'F9', audioCombo: 'start+rb', audioHotkey: '', autoBackup: true, openOnCursor: false, savesAuto: true, savesDir: '', goalVn: 60, goalJvn: 30, remoteEnabled: false, remotePort: 47811, remoteToken: '', titlesOrder: {}, titlesZoom: 0, listStalled: true, listStalledDays: 30, listStalledAction: 'ask', listAutoPlay: true, ankiMap: { word: 'Word', reading: 'WordReading', meaning: 'PrimaryDefinition', sentence: 'Sentence', translation: 'SentenceTranslation', shot: 'Picture', audio: 'SentenceAudio' } };
+    ankiUrl: 'http://127.0.0.1:8765', ankiDeck: 'Japonés::Novelas', ankiModel: '', ankiStyle: 'limpio', ankiAutostart: true, ankiExe: '', recordHotkey: 'F9', audioCombo: 'start+rb', audioHotkey: '', autoBackup: true, openOnCursor: false, savesAuto: true, savesDir: '', goalVn: 60, goalJvn: 30, remoteEnabled: false, remotePort: 47811, remoteToken: '', titlesOrder: {}, titlesZoom: 0, collectionsStyle: 'aurora', listStalled: true, listStalledDays: 30, listStalledAction: 'ask', listAutoPlay: true, ankiMap: { word: 'Word', reading: 'WordReading', meaning: 'PrimaryDefinition', sentence: 'Sentence', translation: 'SentenceTranslation', shot: 'Picture', audio: 'SentenceAudio' } };
   let cfg: Config = base;
   try { const s = store()?.getItem(LS); if (s) cfg = { ...base, ...JSON.parse(s) }; } catch {}
   if (q.has('empty')) cfg = { ...cfg, root: null };
   if (q.get('view') === 'carousel') cfg = { ...cfg, titlesView: 'carousel' };
+  if (q.get('style') === 'multi' || q.get('style') === 'aurora') cfg = { ...cfg, collectionsStyle: q.get('style') as Config['collectionsStyle'] };
   const lib = buildLibrary();
   let mockOuts: AudioOutput[] = [{ id: "a", name: "Altavoces (Realtek Audio)", short: "Altavoces", default: true }, { id: "b", name: "Auriculares (USB Headset)", short: "Auriculares", default: false }, { id: "c", name: "LG ULTRAGEAR (NVIDIA)", short: "LG ULTRAGEAR", default: false }];
   let emit: ((e: BackendEvent) => void) | undefined;
@@ -454,11 +500,17 @@ export async function mockBackend(): Promise<Backend> {
       return { enabled: cfg.remoteEnabled, running: cfg.remoteEnabled, port: cfg.remotePort, addresses: cfg.remoteEnabled ? ['192.168.1.20'] : [], code, error: null };
     },
     async magpieStatus() { return { exe: 'C:\\Magpie\\Magpie.exe (simulado)', running: true, cunny: true }; },
-    async getSagas() { return load<Saga[]>('visor.mock.sagas', []); },
-    async saveSagas(list) {
-      const clean = list.filter((s) => s.name.trim() && s.members.length);
-      save('visor.mock.sagas', clean);
+    async getCollections() { return load<Collection[]>('visor.mock.colls', seedCollections(lib)); },
+    async saveCollections(list) {
+      const clean = list.filter((c) => c.name.trim() && c.members.length).map((c) => ({ ...c, name: c.name.trim(), color: c.color !== null && c.color >= 0 && c.color < 7 ? c.color : null }));
+      save('visor.mock.colls', clean);
       return clean;
+    },
+    async convertCollections(platforms) {
+      const list = load<Collection[]>('visor.mock.colls', seedCollections(lib));
+      const out = convertLegacy(list, platforms);
+      save('visor.mock.colls', out);
+      return out;
     },
     async pickImages() {
       pickN++;

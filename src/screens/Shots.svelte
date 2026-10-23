@@ -23,12 +23,12 @@
   const cur = $derived(shots[app.s]);
   const crumbs = $derived(app.favView ? ['Inicio', 'Favoritas'] : ['Inicio', app.platform?.name ?? '', T.name]);
   const coverPath = $derived(T.cover ?? shots[0]?.path);
-  const title = $derived(!app.favView ? app.platform?.titles[app.t] : undefined);
+  const title = $derived(!app.favView ? (app.collTitle ?? app.platform?.titles[app.t]) : undefined);
   const members = $derived(title?.members);
   const days = $derived(L.days);
   const wantDays = $derived(app.config.shotsView === 'days');
 
-  // Los filtros de una saga con muchos juegos no caben: el activo se mantiene a la vista.
+  // Los filtros de una colección con muchos juegos no caben: el activo se mantiene a la vista.
   let sfEl = $state<HTMLElement>();
   $effect(() => {
     void app.sagaFilter;
@@ -116,5 +116,5 @@
   ['X', 'Favorita', 'x'],
   ['Y', 'Ordenar', 'y'],
   ['View', wantDays ? 'Continua' : 'Por días', 'view'],
-  ['Start', members ? 'Saga' : 'Menú', 'menu'],
+  ['Start', 'Menú', 'menu'],
 ]} />

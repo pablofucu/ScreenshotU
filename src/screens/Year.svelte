@@ -22,7 +22,7 @@
   const mins = $derived(Math.round((Y.ms % 36e5) / 6e4));
   const top = $derived(Y.games[0]);
   // Juegos marcados como terminados este año.
-  const finished = $derived(app.lib.platforms.reduce((n, p) => n + (p.id === 'sagas' ? 0 : p.titles.filter((t) => !t.hidden && t.status === 'finished' && t.finishedMs && new Date(t.finishedMs).getFullYear() === Y.year).length), 0));
+  const finished = $derived(app.lib.platforms.reduce((n, p) => n + (p.titles.filter((t) => !t.hidden && t.status === 'finished' && t.finishedMs && new Date(t.finishedMs).getFullYear() === Y.year).length), 0));
   const top5 = $derived(Y.games.slice(0, 5));
   const max5 = $derived(Math.max(1, ...top5.map((g) => g.ms)));
   const monthMax = $derived(Math.max(1, ...Y.months));

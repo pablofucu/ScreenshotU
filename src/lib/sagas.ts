@@ -1,5 +1,5 @@
-// Las sagas son una categoría virtual («Sagas») que se añade a la biblioteca en memoria: cada saga es un
-// título cuyas capturas son la unión de las de sus juegos. No se escribe nada en las carpetas de capturas.
+// Antigua categoría virtual «Sagas». El escritorio ya no la usa (ahora hay colecciones dentro de cada categoría, ver
+// collections.ts); se conserva solo porque la app del móvil la importa como `@shared/sagas`.
 import type { Library, Platform, Saga, Shot, Title } from './types';
 
 export const SAGA_PLATFORM = 'sagas';
@@ -35,15 +35,4 @@ export function withSagas(lib: Library, sagas: Saga[]): Library {
   return { ...lib, platforms: [...real, plat] };
 }
 
-/** Prefijo común de los nombres (sin números ni signos finales): sugerencia de nombre de saga. */
-export function suggestName(names: string[]): string {
-  if (names.length < 2) return '';
-  let p = names[0];
-  for (const n of names.slice(1)) {
-    let i = 0;
-    while (i < p.length && i < n.length && p[i].toLowerCase() === n[i].toLowerCase()) i++;
-    p = p.slice(0, i);
-  }
-  p = p.replace(/[\s:\-–—_.,0-9IVXivx]+$/, '').trim();
-  return p.length >= 3 ? p : '';
-}
+export { suggestName } from './collections';

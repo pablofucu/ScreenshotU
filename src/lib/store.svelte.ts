@@ -1,8 +1,9 @@
 import { SvelteSet } from 'svelte/reactivity';
 import { untrack } from 'svelte';
 import { RAINBOW, type Accent } from './icons';
-import type { AudioOutput, Config, GameStatus, Library, MagpieStatus, Saga, Shot, SortMode as SortModeT, Swatch, Title, TitleOrder } from './types';
+import type { AudioOutput, Config, GameStatus, Library, MagpieStatus, Collection, Shot, SortMode as SortModeT, Swatch, Title, TitleOrder } from './types';
 import { hexToRgb, inkDark, rgbToLch } from './oklch';
+import { collItems, collectionTitle } from './collections';
 import { GOAL_COL, type GoalKey } from './readgoals';
 import { calendar, evoBuckets, playYears, rankPeriod, yearReview, type EvoKind, type PeriodKind } from './stats';
 
@@ -57,6 +58,7 @@ export const DEFAULT_CONFIG: Config = {
   remoteToken: '',
   titlesOrder: {},
   titlesZoom: 0,
+  collectionsStyle: 'aurora',
   listStalled: true,
   listStalledDays: 30,
   listStalledAction: 'ask',
@@ -65,17 +67,34 @@ export const DEFAULT_CONFIG: Config = {
 
 export type MenuItem =
   | 'folder' | 'reload' | 'remove' | 'hide' | 'unhide' | 'addshots' | 'accent'
-  | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'editsaga' | 'delsaga' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'saves' | 'category' | 'delshot' | 'delsel' | `cat:${string}`;
-export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'saga' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library' | 'status' | 'stalled';
-export interface SagaFormState {
-  /** null = saga nueva. */
+  | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'addcoll' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'saves' | 'category' | 'delshot' | 'delsel' | `cat:${string}`;
+export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'collform' | 'picker' | 'addcoll' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library' | 'status' | 'stalled';
+/** «Nueva colección» / «Editar colección». */
+export interface CollFormState {
+  /** null = colección nueva. */
   id: string | null;
+  platform: string;
   name: string;
   nameTouched: boolean;
+  /** Ids de juego elegidos, en orden. */
   members: string[];
-  /** 0 nombre · 1..n juegos · n+1 guardar */
+  /** Ids que ya no están en la biblioteca: se conservan al guardar aunque no se vean. */
+  keep: string[];
+  /** null = color automático; si no, índice en `RAINBOW`. */
+  color: number | null;
+  /** Al crear, primero se puede partir de una sugerencia. */
+  step: 'suggest' | 'form';
+  sugg: Array<{ name: string; ids: string[] }>;
+  /** Fila del panel (la lista depende de si se crea o se edita). */
   row: number;
+  /** «Borrar»: pulsar A otra vez para confirmar. */
+  confirm: boolean;
+  dirty: boolean;
 }
+/** Selector de juegos de una colección: búsqueda, juegos marcados (ids) y filtro «Todos / Seleccionados». */
+export interface PickerState { q: string; ids: string[]; filter: 'all' | 'sel'; at: number; start: string }
+/** «Añadir a una colección»: juego (índice en la categoría) y fila elegida. */
+export interface AddCollState { ti: number; row: number }
 export interface MenuState {
   /** detail = ficha del juego; shots = cuadrícula o visor de capturas. */
   kind: 'detail' | 'shots';
@@ -287,10 +306,18 @@ class Store {
   addRow = $state(0);
   gdir = $state<GameDirState>({ loading: false, dir: '', items: [], i: 0, row: 0, added: 0, known: 0, empty: 0 });
   hiddenRow = $state(0);
-  sagas = $state.raw<Saga[]>([]);
-  sagaForm = $state<SagaFormState>({ id: null, name: '', nameTouched: false, members: [], row: 0 });
-  /** Filtro por juego en la vista de una saga: -1 = todos, si no el índice del miembro. */
+  collections = $state.raw<Collection[]>([]);
+  collForm = $state<CollFormState>({ id: null, platform: '', name: '', nameTouched: false, members: [], keep: [], color: null, step: 'form', sugg: [], row: 0, confirm: false, dirty: false });
+  picker = $state<PickerState>({ q: '', ids: [], filter: 'all', at: 0, start: '' });
+  addColl = $state<AddCollState>({ ti: 0, row: 0 });
+  /** Colección cuyas capturas se están viendo (vista de capturas combinada); null = una vista normal. */
+  collOpen = $state<string | null>(null);
+  /** Filtro por juego en la vista de una colección: -1 = todos, si no el índice del miembro. */
   sagaFilter = $state(-1);
+  /** Pestaña «Colecciones»: estantería y portada enfocadas (la estantería `collShelves.length` es «Nueva colección»), primera estantería visible y desplazamiento de cada una. */
+  collAt = $state({ c: 0, i: 0 });
+  collTop = $state(0);
+  collFrom = $state<Record<string, number>>({});
   moveTo = $state<MoveState>({ paths: [], targets: [], row: 0, confirm: false });
   osk = $state<OskState>({ open: false, label: '', value: '', shift: false, r: 1, c: 0, hint: '' });
   accentPick = $state<AccentPickState>({ title: 0, row: 0, col: 0, hue: 220, palette: [] });
@@ -386,10 +413,22 @@ class Store {
   listTop = $state(0);
   statusBar = $state<StatusBarState>({ title: 0, row: 0, step: 'pick', field: 0, y: 2026, m: 1, d: 1, rating: 0 });
   stalled = $state<StalledState>({ rows: [], row: 0 });
-  /** Estanterías de «Mi lista» de la categoría abierta (sin ocultos ni sagas; las vacías no existen). */
+  /** Colecciones de la categoría abierta, en su orden, con los índices de sus juegos por año. */
+  collShelves = $derived.by((): Array<{ coll: Collection; items: number[] }> => {
+    const p = this.lib.platforms[this.p];
+    if (!p) return [];
+    return this.collections.filter((c) => c.platform === p.id).map((coll) => ({ coll, items: collItems(coll, p) }));
+  });
+  /** Título virtual con las capturas de todos los juegos de la colección abierta. */
+  collTitle = $derived.by((): Title | null => {
+    const c = this.collOpen ? this.collections.find((x) => x.id === this.collOpen) : undefined;
+    const p = c ? this.lib.platforms.find((x) => x.id === c.platform) : undefined;
+    return c && p ? collectionTitle(c, p.titles) : null;
+  });
+  /** Estanterías de «Mi lista» de la categoría abierta (sin ocultos; las vacías no existen). */
   shelves = $derived.by((): ListShelf[] => {
     const p = this.lib.platforms[this.p];
-    if (!p || p.id === 'sagas') return [];
+    if (!p) return [];
     const titles = p.titles;
     const idx = titles.map((_, i) => i).filter((i) => !titles[i].hidden && !titles[i].members);
     const of = (s: string) => idx.filter((i) => (titles[i].status ?? 'none') === s);
@@ -415,7 +454,6 @@ class Store {
   tview = $derived.by((): number[] => {
     const titles = this.lib.platforms[this.p]?.titles ?? [];
     const all = titles.map((_, i) => i);
-    if (this.lib.platforms[this.p]?.id === 'sagas') return all;
     let v: number[];
     switch (this.titleFilter) {
       case 'launch': v = all.filter((i) => titles[i].launchable); break;
@@ -429,14 +467,13 @@ class Store {
     return sortTitles(titles, v, this.titleOrder);
   });
 
-  /** Tarjeta «Lectura de hoy» en Inicio (si existe alguna categoría de novelas); ocupa el sitio de Sagas, que pasa al dock. */
+  /** Tarjeta «Lectura de hoy» en Inicio (si existe alguna categoría de novelas). */
   readCard = $derived(!!this.config.root && this.lib.platforms.some((p) => p.id === 'vn' || p.id === 'jvn'));
 
   /** «Seguir jugando»: los juegos jugados (o con capturas) más recientemente, de todas las plataformas. */
   recent = $derived.by((): RecentRef[] => {
     const out: Array<RecentRef & { k: number }> = [];
     this.lib.platforms.forEach((p, pi) => {
-      if (p.id === 'sagas') return;
       p.titles.forEach((t, ti) => {
         if (t.hidden) return;
         const k = Math.max(t.lastPlayed ?? 0, t.shots[0]?.date ?? 0);
@@ -450,7 +487,7 @@ class Store {
     if (this.favView) {
       return { name: 'Favoritas', cover: null, shots: sortShots(this.favSnap, this.sortMode, untrack(() => this.favs)), isFavs: true };
     }
-    const t = this.lib.platforms[this.p]?.titles[this.t];
+    const t = this.collTitle ?? this.lib.platforms[this.p]?.titles[this.t];
     if (!t) return { name: '', cover: null, shots: [], isFavs: false };
     if (t.members && this.sagaFilter >= 0) {
       const gid = t.members[this.sagaFilter]?.id;

@@ -12,7 +12,6 @@
   const z = (n: number) => String(n).padStart(2, '0');
   const color = $derived(LIST_COLOR[fin ? 'finished' : STATUS_ORDER[sb.row]]);
   const dateBoxes = $derived([[0, z(sb.d)], [1, `${z(sb.m)} · ${MONTHS[sb.m - 1]}`], [2, String(sb.y)]] as Array<[number, string]>);
-  // Hueco para la fase de colecciones: aquí irá «Añadir a una colección» (de momento no se muestra).
 
   function pick(i: number) { sb.row = i; void statusBarPick(); }
   function field(f: number) { sb.field = f; }
@@ -61,12 +60,15 @@
           </div>
         </div>
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-        <div class="fsave" onclick={() => statusBarCmd('a')}><span class="btn a">A</span>Guardar como terminado</div>
+        <div class="fbtns">
+          <div class="fsave" onclick={() => statusBarCmd('a')}><span class="btn a">A</span>Guardar como terminado</div>
+          <div class="fsave alt" onclick={() => statusBarCmd('y')}><span class="btn y">Y</span>Guardar y añadir a una colección</div>
+        </div>
       {/if}
     </div>
   </div>
   {#if fin}
-    <Hints list={[['←→', 'Campo'], ['↑↓', 'Valor'], ['A', 'Guardar', 'a'], ['B', 'Atrás', 'b']]} />
+    <Hints list={[['←→', 'Campo'], ['↑↓', 'Valor'], ['A', 'Guardar', 'a'], ['Y', 'Guardar y a una colección', 'y'], ['B', 'Atrás', 'b']]} />
   {:else}
     <Hints list={[['←→', 'Elegir'], ['A', 'Confirmar', 'a'], ['B', 'Cerrar', 'b']]} />
   {/if}
@@ -109,6 +111,8 @@
   .fbox.f .rstar.on{color:#FFD84A}
   .fbox.stars small{margin-left:8px;font-size:17px;font-weight:700;color:#5f6776}
   .fbox.stars.f small{color:var(--acc-ink)}
-  .fsave{margin-top:auto;margin-bottom:2px;align-self:center;display:flex;align-items:center;gap:10px;height:44px;padding:0 22px 0 8px;border-radius:999px;cursor:pointer;font-size:18px;font-weight:800;color:#fff;
+  .fbtns{margin-top:auto;margin-bottom:2px;align-self:center;display:flex;gap:14px}
+  .fsave.alt{background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(235,239,245,.85));color:#4a5260;box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.3)}
+  .fsave{display:flex;align-items:center;gap:10px;height:44px;padding:0 22px 0 8px;border-radius:999px;cursor:pointer;font-size:18px;font-weight:800;color:#fff;
     background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 80%,white),var(--acc));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black)}
 </style>

@@ -10,7 +10,6 @@
   const DOCK = [
     { n: 'Buscar', ic: ICON.search, c: 0 },
     { n: 'Favoritas', ic: ICON.star, c: 1 },
-    { n: 'Sagas', ic: ICON.saga, c: 2 },
     { n: 'Estadísticas', ic: ICON.chart, c: 3 },
     { n: 'Añadir juego', ic: ICON.plus, c: 4 },
     { n: 'Ajustes', ic: ICON.gear, c: 5 },
@@ -18,15 +17,14 @@
   ];
 
   const plats = $derived(app.lib.platforms);
-  // Con la tarjeta «Lectura de hoy» arriba, Sagas sale de la fila (se abre desde el dock).
-  const shown = $derived(plats.map((p, i) => ({ p, i })).filter(({ p }) => !(app.readCard && p.id === 'sagas')));
+  const shown = $derived(plats.map((p, i) => ({ p, i })));
   const size = 190;
   // Con muchas plataformas el paso se encoge para que todas quepan en pantalla.
   const step = $derived(shown.length > 1 ? Math.min(shown.length > 3 ? 232 : 270, (1280 - 80 - size) / (shown.length - 1)) : 270);
   const x0 = $derived((1280 - (shown.length - 1) * step - size) / 2);
   const lw = $derived(Math.min(size + 40, step - 4));
   const metaGoal = (m: number) => (m % 60 === 0 ? `${m / 60} h` : m > 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`);
-  const totalTitles = $derived(plats.filter((p) => p.id !== 'sagas').reduce((n, p) => n + p.titles.length, 0));
+  const totalTitles = $derived(plats.reduce((n, p) => n + p.titles.length, 0));
   const count = (p: (typeof plats)[number]) => p.titles.reduce((s, t) => s + t.shots.length, 0);
   const wacc = $derived(app.acc(4));
 
@@ -50,7 +48,6 @@
     let min = 0, shots = 0;
     const from = dayKey(naiveNow() - 6 * 864e5);
     for (const p of plats) {
-      if (p.id === 'sagas') continue;
       for (const t of p.titles) {
         if (t.hidden) continue;
         min += (t.week ?? []).reduce((a, b) => a + b, 0);
@@ -84,7 +81,7 @@
       <div class="face">{@html ICON[p.icon] ?? ICON.pc}</div>
     </div>
     <div class="plabel hl" class:on={app.focus === 'plat' + i} style="left:{x + (size - lw) / 2}px;top:{112 + size}px;width:{lw}px;--pc:{a.c}">
-      {p.name}<small>{p.id === 'sagas' ? `${p.titles.length} ${p.titles.length === 1 ? 'saga' : 'sagas'}` : nTitulos(p.titles.length)} · {nCapturas(count(p))}</small>
+      {p.name}<small>{nTitulos(p.titles.length)} · {nCapturas(count(p))}</small>
     </div>
   {/each}
   {#if totalTitles === 0 && !app.scanning}

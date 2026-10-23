@@ -393,15 +393,7 @@ i.big.sel{outline:4px solid #3a414e;outline-offset:2px;transform:scale(1.08)}
 .accprev .chip{font-size:16px;font-weight:800;padding:5px 16px;border-radius:999px;white-space:nowrap}
 .accprev .fhint{margin:0;font-size:14px}
 
-/* ---- Sagas ---- */
-.sstack{position:absolute;inset:0;background:linear-gradient(160deg,#e6e9ee,#d3d8e0);overflow:hidden}
-.sstack .sc{position:absolute;width:62%;height:74%;top:8%;border-radius:10px;overflow:hidden;box-shadow:0 4px 10px rgba(0,0,0,.28);background:#cfd5de}
-.sstack .sc img{width:100%;height:100%;object-fit:cover;display:block}
-.sstack .sc0{left:19%;z-index:3}
-.sstack .sc1{left:4%;transform:rotate(-9deg);z-index:2}
-.sstack .sc2{left:34%;transform:rotate(9deg);z-index:1}
-.sstack .sc0:only-of-type{left:19%}
-.sstack .sname{position:absolute;left:0;right:0;bottom:0;z-index:4;padding:18px 8px 8px;text-align:center;font-weight:800;font-size:16px;line-height:1.1;color:#fff;background:linear-gradient(transparent,rgba(30,36,48,.82));text-shadow:0 1px 2px rgba(0,0,0,.5)}
+/* ---- Filtro por juego en la vista de capturas de una colección ---- */
 .ghead .sfilter{position:relative;display:flex;gap:8px;min-width:0;flex:1;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent)}
 .ghead .sf{flex:none}
 .ghead .sf{font-size:15px;font-weight:700;color:#5a6270;background:rgba(255,255,255,.75);box-shadow:0 0 0 1px rgba(150,160,180,.35);padding:4px 12px;border-radius:999px;white-space:nowrap}
@@ -486,7 +478,6 @@ img.tin{animation:thumbIn .35s cubic-bezier(.2,.8,.3,1) both}
 .tcov .addin b{font-size:calc(17px*var(--ts,1));padding:0 4px;overflow-wrap:anywhere}
 .tcov .noart{padding:calc(12px*var(--ts,1))}
 .tcov .noart b{font-size:calc(19px*var(--ts,1));overflow-wrap:anywhere;hyphens:auto;-webkit-line-clamp:6}
-.tcov .sstack .sname{font-size:calc(16px*var(--ts,1));padding:calc(18px*var(--ts,1)) 4px calc(8px*var(--ts,1));overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .tcov .hbadge,.tcov .sbadge{width:calc(30px*var(--ts,1));height:calc(30px*var(--ts,1))}
 .tcov .hbadge{left:calc(8px*var(--ts,1));top:calc(8px*var(--ts,1))}
 .tcov .sbadge{right:calc(8px*var(--ts,1));top:calc(8px*var(--ts,1))}

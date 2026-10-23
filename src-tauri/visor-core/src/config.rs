@@ -122,6 +122,8 @@ pub struct Config {
     pub titles_order: std::collections::BTreeMap<String, String>,
     /// Tamano de las portadas de la lista de juegos: 0 = 5 por fila (por defecto) .. 3 = 8 por fila.
     pub titles_zoom: u8,
+    /// Estilo de la pestana de las colecciones: "aurora" (por defecto) | "multi" (multicolor armonizada).
+    pub collections_style: String,
     /// «Mi lista · Juegos parados»: avisar de los juegos en «Jugando» que llevan tiempo sin jugarse.
     pub list_stalled: bool,
     /// Dias sin jugar para considerar un juego parado (7 a 180).
@@ -207,6 +209,7 @@ impl Default for Config {
             remote_token: String::new(),
             titles_order: Default::default(),
             titles_zoom: 0,
+            collections_style: "aurora".into(),
             list_stalled: true,
             list_stalled_days: 30,
             list_stalled_action: "ask".into(),
@@ -240,6 +243,9 @@ impl Config {
         c.remote_port = c.remote_port.max(1024);
         c.remote_token = c.remote_token.trim().to_string();
         c.titles_zoom = c.titles_zoom.min(3);
+        if !["aurora", "multi"].contains(&c.collections_style.as_str()) {
+            c.collections_style = "aurora".into();
+        }
         c.list_stalled_days = c.list_stalled_days.clamp(7, 180);
         if !["ask", "pending", "dropped"].contains(&c.list_stalled_action.as_str()) {
             c.list_stalled_action = "ask".into();
@@ -377,6 +383,17 @@ mod tests {
         assert_eq!((c.accent_mode.as_str(), c.accent_fixed, c.show_hidden), ("rainbow", 6, false));
         fs::write(&p, r#"{"accentMode":"raro"}"#).unwrap();
         assert_eq!(Config::load(&p).accent_mode, "art");
+    }
+
+    #[test]
+    fn collections_style_defaults_to_aurora_and_rejects_unknown() {
+        let d = tempfile::tempdir().unwrap();
+        let p = d.path().join("config.json");
+        assert_eq!(Config::load(&p).collections_style, "aurora");
+        fs::write(&p, r#"{"collectionsStyle":"multi"}"#).unwrap();
+        assert_eq!(Config::load(&p).collections_style, "multi");
+        fs::write(&p, r#"{"collectionsStyle":"raro"}"#).unwrap();
+        assert_eq!(Config::load(&p).collections_style, "aurora");
     }
 
     #[test]

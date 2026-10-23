@@ -9,10 +9,9 @@ import { accentForHue, hueOf, inkDark } from './oklch';
 import {
   back, closeOverlay, go, markRefresh, popOverlay, pushOverlay, setFocus, softRefresh, toast, hideToast,
 } from './controller.svelte';
-import type { HiddenEntry, NewGame, Saga, Shot, Title } from './types';
-import { realPlatforms, SAGA_PLATFORM, suggestName, withSagas } from './sagas';
+import type { HiddenEntry, NewGame, Shot, Title } from './types';
 
-export const curTitle = (): Title | undefined => app.platform?.titles[app.t];
+export const curTitle = (): Title | undefined => app.collTitle ?? app.platform?.titles[app.t];
 const isImagePath = (p: string) => /\.(png|jpe?g|webp)$/i.test(p);
 const baseName = (p: string) => (p.split(/[\\/]/).pop() ?? '').replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ').trim();
 const shortFile = (p: string) => p.split(/[\\/]/).pop() ?? p;
@@ -152,7 +151,7 @@ async function refreshAfterAdd(platformId: string, name: string) {
 
 let discardAt = 0;
 /** Cierra un panel con datos sin guardar solo si se pulsa B dos veces seguidas. */
-function closeOrConfirm(dirty: boolean) {
+export function closeOrConfirm(dirty: boolean) {
   if (dirty && performance.now() - discardAt > 3000) {
     discardAt = performance.now();
     toast('Pulsa B otra vez para descartar los cambios');
@@ -376,7 +375,7 @@ export function onFilesDropped(paths: string[]) {
   const imgs = paths.filter(isImagePath);
   if (!imgs.length) { toast('Solo se pueden añadir imágenes (png, jpg, jpeg o webp)', 3000); return; }
   const t = curTitle();
-  if (t?.members) { toast('Abre un juego (no una saga) para soltar capturas encima', 3000); return; }
+  if (t?.members) { toast('Abre un juego (no una colección) para soltar capturas encima', 3000); return; }
   if (!t || app.favView || !['detail', 'shots', 'viewer'].includes(app.view)) { toast('Abre un juego para soltar capturas encima', 3000); return; }
   void importInto(t, imgs);
 }
@@ -405,7 +404,7 @@ export function shotMenuItems(): MenuItem[] {
     else { it.push('selall'); if (app.sel.size) it.push('move'); it.push('unselect'); }
   } else it.push('move');
   it.push('reveal');
-  if (!app.favView) it.push('addshots');
+  if (!app.favView && !app.collTitle) it.push('addshots');
   // Borrar (a la Papelera): la captura enfocada o, en el modo selección, las marcadas.
   if (app.selMode) { if (app.sel.size) it.push('delsel'); }
   else if (app.cur.shots[app.s]) it.push('delshot');
@@ -413,7 +412,7 @@ export function shotMenuItems(): MenuItem[] {
 }
 
 export function openShotMenu() {
-  if (!app.cur.shots.length && !app.platform?.titles[app.t]) return;
+  if (!app.cur.shots.length && !curTitle()) return;
   app.menu = { kind: 'shots', title: app.t, row: 0, items: shotMenuItems(), confirm: false };
   pushOverlay('menu');
   blip(1320);
@@ -641,121 +640,6 @@ export function accentCmd(c: string) {
     }
   } else if (c === 'a') void applyAccent();
   else if (c === 'b' || c === 'menu') cancelAccent();
-}
-
-/* ------------------------------------------------------------------ */
-/* Sagas (agrupaciones virtuales de juegos)                             */
-/* ------------------------------------------------------------------ */
-export interface SagaCandidate { id: string; name: string; platform: string }
-
-/** Juegos que se pueden meter en una saga: todos los visibles de las categorías reales. */
-export function sagaCandidates(): SagaCandidate[] {
-  return realPlatforms(app.lib).flatMap((p) => p.titles.filter((t) => !t.hidden).map((t) => ({ id: t.id, name: t.name, platform: p.name })));
-}
-
-/** Aplica la lista de sagas a la biblioteca en memoria (sin reescanear). */
-export function applySagas(list: Saga[]) {
-  app.sagas = list;
-  app.lib = withSagas(app.lib, list);
-}
-
-export function openSagaForm(editId?: string) {
-  const s = editId ? app.sagas.find((x) => x.id === editId) : undefined;
-  app.sagaForm = { id: s?.id ?? null, name: s?.name ?? '', nameTouched: !!s, members: [...(s?.members ?? [])], row: 0 };
-  pushOverlay('saga');
-  blip(1320);
-}
-
-function autoName() {
-  const f = app.sagaForm;
-  if (f.nameTouched) return;
-  const names = sagaCandidates().filter((c) => f.members.includes(c.id)).map((c) => c.name);
-  f.name = suggestName(names);
-}
-
-export async function saveSagaForm() {
-  const f = app.sagaForm;
-  const name = f.name.trim();
-  if (!name) { toast('Escribe un nombre para la saga'); app.sagaForm.row = 0; return; }
-  if (f.members.length < 2) { toast('Elige al menos dos juegos'); return; }
-  const id = f.id ?? `s${Date.now().toString(36)}`;
-  const entry: Saga = { id, name, members: [...f.members] };
-  const list = f.id ? app.sagas.map((s) => (s.id === f.id ? entry : s)) : [...app.sagas, entry];
-  try {
-    const saved = await backend.saveSagas(list);
-    applySagas(saved);
-  } catch (e) { toast(String(e), 3600); return; }
-  app.overlay = ''; app.overlayStack = [];
-  toast(f.id ? `Saga «${name}» actualizada` : `Saga «${name}» creada`);
-  const pi = app.lib.platforms.findIndex((p) => p.id === SAGA_PLATFORM);
-  const ti = app.lib.platforms[pi]?.titles.findIndex((t) => t.id === `saga:${id}`) ?? -1;
-  if (app.view === 'titles' && pi === app.p && ti >= 0) setFocus('tit' + ti);
-  else if (app.view === 'shots' || app.view === 'detail') { app.sagaFilter = -1; app.s = 0; setFocus('shot0'); }
-}
-
-export async function deleteSaga(sagaId: string) {
-  const list = app.sagas.filter((s) => s.id !== sagaId);
-  try { applySagas(await backend.saveSagas(list)); } catch (e) { toast(String(e), 3600); return; }
-  toast('Saga disuelta · tus capturas no se han tocado');
-}
-
-/** Abre la saga `i` de la categoría Sagas directamente en la vista unificada. */
-export function openSaga(i: number) {
-  const t = app.platform?.titles[i];
-  if (!t) return;
-  app.t = i; app.s = 0; app.favView = false; app.sagaFilter = -1; app.sortMode = app.config.shotsOrder;
-  app.fk.shots = 'shot0';
-  go('shots', 'fwd');
-}
-
-export function openSagaMenu() {
-  const t = app.platform?.titles[app.t];
-  if (!t?.members) return;
-  app.menu = { kind: 'detail', title: app.t, row: 0, items: ['editsaga', 'delsaga'], confirm: false };
-  pushOverlay('menu');
-  blip(1320);
-}
-
-export async function sagaMenuAct(item: MenuItem) {
-  const t = app.platform?.titles[app.menu.title];
-  if (!t) { closeOverlay(); return; }
-  const id = t.id.replace(/^saga:/, '');
-  if (item === 'editsaga') { app.overlay = ''; app.overlayStack = []; openSagaForm(id); return; }
-  if (!app.menu.confirm) { app.menu.confirm = true; blip(520); return; }
-  closeOverlay();
-  await deleteSaga(id);
-  app.t = Math.max(0, app.t - 1);
-  app.fk.titles = 'tit' + app.t;
-  go('titles', 'back');
-}
-
-export function sagaToggle(i: number) {
-  const c = sagaCandidates()[i];
-  if (!c) return;
-  const m = app.sagaForm.members;
-  const at = m.indexOf(c.id);
-  if (at >= 0) m.splice(at, 1); else m.push(c.id);
-  autoName();
-  blip(at >= 0 ? 700 : 1100);
-}
-
-export function sagaAct(row: number) {
-  const n = sagaCandidates().length;
-  if (row === 0) {
-    openOsk({ label: 'Nombre de la saga', value: app.sagaForm.name, capitalize: true, onDone: (v) => { app.sagaForm.name = v.trim(); app.sagaForm.nameTouched = true; } });
-  } else if (row <= n) sagaToggle(row - 1);
-  else void saveSagaForm();
-}
-
-export function sagaCmd(c: string) {
-  const f = app.sagaForm;
-  const last = sagaCandidates().length + 1;
-  if (c === 'up') { f.row = Math.max(0, f.row - 1); blip(880); }
-  else if (c === 'down') { f.row = Math.min(last, f.row + 1); blip(880); }
-  else if (c === 'lb') { f.row = Math.max(0, f.row - 6); blip(700); }
-  else if (c === 'rb') { f.row = Math.min(last, f.row + 6); blip(700); }
-  else if (c === 'a') sagaAct(f.row);
-  else if (c === 'b' || c === 'menu') closeOrConfirm(f.nameTouched || f.members.length > 0);
 }
 
 /** Texto de tinta para un color elegido (se usa en el selector). */

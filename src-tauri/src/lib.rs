@@ -562,18 +562,25 @@ async fn magpie_status(state: State<'_, AppState>) -> Result<magpie::MagpieStatu
     tauri::async_runtime::spawn_blocking(move || magpie::status(&configured)).await.map_err(|e| e.to_string())
 }
 
-/// Sagas guardadas (agrupaciones virtuales de juegos).
+/// Colecciones guardadas (agrupaciones virtuales de juegos de una categoria; antes sagas).
 #[tauri::command]
-fn get_sagas(state: State<'_, AppState>) -> Vec<visor_core::sagas::Saga> {
+fn get_collections(state: State<'_, AppState>) -> Vec<visor_core::sagas::Saga> {
     state::log_db("sagas", state.db.with(dbd::sagas_load))
 }
 
-/// Guarda la lista completa de sagas y devuelve la lista saneada. No toca capturas.
+/// Guarda la lista completa de colecciones y devuelve la lista saneada. No toca capturas.
 #[tauri::command]
-fn save_sagas(state: State<'_, AppState>, sagas: Vec<visor_core::sagas::Saga>) -> Result<Vec<visor_core::sagas::Saga>, String> {
-    let clean = visor_core::sagas::sanitize(&sagas);
+fn save_collections(state: State<'_, AppState>, collections: Vec<visor_core::sagas::Saga>) -> Result<Vec<visor_core::sagas::Saga>, String> {
+    let clean = visor_core::sagas::sanitize(&collections);
     state.db.with(|c| dbd::sagas_replace(c, &clean)).map_err(|e| e.to_string())?;
     Ok(clean)
+}
+
+/// Una sola vez, con la biblioteca ya cargada: pasa las sagas antiguas (sin categoria) a colecciones de la
+/// categoria donde tienen mas juegos (o las divide si mezclan). `platforms` = id de juego -> id de categoria.
+#[tauri::command]
+fn convert_collections(state: State<'_, AppState>, platforms: std::collections::HashMap<String, String>) -> Result<Vec<visor_core::sagas::Saga>, String> {
+    state.db.with(|c| dbd::sagas_convert_legacy(c, &platforms)).map_err(|e| e.to_string())
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -1077,8 +1084,9 @@ pub fn run() {
             remote::remote_info,
             remote::remote_new_code,
             magpie_status,
-            get_sagas,
-            save_sagas,
+            get_collections,
+            save_collections,
+            convert_collections,
             import_shots,
             move_shots,
             trash_shots,

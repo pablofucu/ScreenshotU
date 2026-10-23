@@ -8,10 +8,10 @@
   import Hints from '../components/Hints.svelte';
   import Thumb from '../components/Thumb.svelte';
   import Shelf, { type ShelfItem } from '../components/Shelf.svelte';
+  import CollTab from './CollTab.svelte';
   import { itemLabel, LIST_VIS, SHELF_STEP, shelfSub } from '../lib/milista.svelte';
 
   const P = $derived(app.platform);
-  const saga = $derived(P?.id === 'sagas');
   const titles = $derived(P?.titles ?? []);
   const grid = $derived(app.config.titlesView === 'grid');
   // Lista visible (filtrada); la baldosa «Añadir juego» ocupa la posición siguiente a la última.
@@ -23,9 +23,8 @@
   const pages = $derived(Math.max(1, Math.ceil(slots / PS)));
   const q = $derived(viewPos(app.t));
   const pg = $derived(Math.floor(q / PS));
-  // Pestaña de la categoría: Sagas no tiene; «Mi lista» y «Colecciones» llegan en las fases 3 y 4.
-  const tab = $derived(saga ? 'all' : app.titlesTab);
-  const tabInfo = { name: 'Colecciones', text: 'Estanterías con los juegos de esta categoría agrupados a tu manera: sagas, series o lo que quieras.' };
+  // Pestaña de la categoría: Todos, Mi lista o Colecciones.
+  const tab = $derived(app.titlesTab);
   // «Mi lista»: estanterías por estado. Se pintan la enfocada y sus vecinas; cada una con el color fijo de su estado.
   const shelves = $derived(app.shelves);
   const focusShelf = $derived(shelves.findIndex((s) => s.items.includes(app.t)));
@@ -84,16 +83,7 @@
 {#snippet cell(i: number)}
   <div class="face">
     {#if i === titles.length}
-      <div class="addin"><span>{@html ICON.plus}</span><b>{saga ? 'Crear saga' : 'Añadir juego'}</b></div>
-    {:else if titles[i].members}
-      <div class="sstack">
-        {#each titles[i].members!.filter((m) => m.cover).slice(0, 3) as m, k (m.id)}
-          <div class="sc sc{k}"><Thumb path={m.cover!} /></div>
-        {:else}
-          <div class="noart"><b>{titles[i].name}</b></div>
-        {/each}
-        <span class="sname">{titles[i].name}</span>
-      </div>
+      <div class="addin"><span>{@html ICON.plus}</span><b>Añadir juego</b></div>
     {:else}
       {#if coverOf(i)}<Thumb path={coverOf(i)!} />{:else}<div class="noart"><b>{titles[i].name}</b></div>{/if}{#if titles[i].hidden}<span class="hbadge">{@html ICON.eyeOff}</span>{/if}{#if titles[i].status === 'finished' || titles[i].status === 'dropped'}<span class="sbadge {titles[i].status}" title={STATUS_LABEL[titles[i].status!]}>{#if titles[i].status === 'finished'}{@html ICON.check}{:else}<i></i>{/if}</span>{/if}
     {/if}
@@ -105,15 +95,13 @@
 </div>
 <TopBar crumbs={['Inicio', P?.name ?? '']} dots={grid && tab === 'all' ? pages : 0} dot={pg} />
 
-{#if !saga}
-  <div class="ttabs" class:car={!grid && tab === 'all'} style={tab === 'list' ? `--acc:${listAcc.c};--acc-ink:${listAcc.dark ? '#3a2f00' : '#fff'}` : grid && cur ? `--acc:${app.titleAcc(app.p, app.t).c};--acc-ink:${app.titleAcc(app.p, app.t).dark ? '#3a2f00' : '#fff'}` : ''}>
-    <span class="btn sh" data-hact="view">View</span>
-    {#each TITLES_TABS as [f, label]}
-      <span class="tflt" class:on={tab === f}>{label}</span>
-    {/each}
-    {#if tab === 'all' && titles.length > 1}<span class="btn x" data-hact="x">X</span><span class="tflt tord">{TITLE_ORDER_LABEL[app.titleOrder]}</span>{/if}
-  </div>
-{/if}
+<div class="ttabs" class:car={!grid && tab === 'all'} style={tab === 'list' ? `--acc:${listAcc.c};--acc-ink:${listAcc.dark ? '#3a2f00' : '#fff'}` : tab === 'all' && grid && cur ? `--acc:${app.titleAcc(app.p, app.t).c};--acc-ink:${app.titleAcc(app.p, app.t).dark ? '#3a2f00' : '#fff'}` : ''}>
+  <span class="btn sh" data-hact="view">View</span>
+  {#each TITLES_TABS as [f, label]}
+    <span class="tflt" class:on={tab === f}>{label}</span>
+  {/each}
+  {#if tab === 'all' && titles.length > 1}<span class="btn x" data-hact="x">X</span><span class="tflt tord">{TITLE_ORDER_LABEL[app.titleOrder]}</span>{/if}
+</div>
 
 {#if tab === 'list'}
   {#if !shelves.length}
@@ -133,29 +121,17 @@
       {/each}
     </div>
   {/if}
-{:else if tab !== 'all'}
-  <!-- Hueco de la fase 4 (Colecciones): se rellena aquí. -->
-  <div class="glass note-card soon" style="left:300px;top:230px;--acc:{app.chrome.c}">
-    <div class="face">
-      <span class="chip soonchip">Próximamente</span>
-      <h2>{tabInfo.name}</h2>
-      <p>{tabInfo.text}</p>
-    </div>
-  </div>
+{:else if tab === 'coll'}
+  <CollTab />
 {:else if titles.length === 0}
-  <div class="glass note-card" style="left:300px;top:{saga ? 130 : 170}px;--acc:{app.chrome.c}">
+  <div class="glass note-card" style="left:300px;top:170px;--acc:{app.chrome.c}">
     <div class="face">
-      {#if saga}
-        <h2>Aún no tienes sagas</h2>
-        <p>Una saga junta en una sola vista las capturas de varios juegos (por ejemplo Mass Effect 1, 2 y 3). Solo es una agrupación: no mueve ni copia ningún archivo. Crea la primera con la baldosa de abajo.</p>
-      {:else}
-        <h2>Aún no hay juegos en {P?.name}</h2>
-        <p>Crea una carpeta por juego dentro de <b>{P?.folder}</b> y copia dentro tus capturas (png, jpg, jpeg o webp), o añade un juego con la baldosa de abajo.</p>
-      {/if}
+      <h2>Aún no hay juegos en {P?.name}</h2>
+      <p>Crea una carpeta por juego dentro de <b>{P?.folder}</b> y copia dentro tus capturas (png, jpg, jpeg o webp), o añade un juego con la baldosa de abajo.</p>
     </div>
   </div>
   <div class="glass cover addtile fx" class:f={app.focus === 'tit0'} data-k="tit0" data-act="tit:0" style="left:552px;top:430px;--acc:{app.chrome.c}">
-    <div class="face"><div class="addin"><span>{@html ICON.plus}</span><b>{saga ? 'Crear saga' : 'Añadir juego'}</b></div></div>
+    <div class="face"><div class="addin"><span>{@html ICON.plus}</span><b>Añadir juego</b></div></div>
   </div>
 {:else}
   {#if grid}
@@ -173,15 +149,13 @@
       <div class="thead"><h3>Ningún juego</h3><span>con el filtro «{filterName}»</span></div>
     {/if}
   {/if}
-  {#if !saga}
-    <div class="tfilters lo" class:car={!grid} style={grid && cur ? `--acc:${app.titleAcc(app.p, app.t).c};--acc-ink:${app.titleAcc(app.p, app.t).dark ? '#3a2f00' : '#fff'}` : ''}>
-      <span class="btn sh" data-hact="lt">LT</span>
-      {#each TITLE_FILTERS as [f, label]}
-        <span class="tflt" class:on={app.titleFilter === f}>{label}{#if f !== 'all'}<small>{counts[f]}</small>{/if}</span>
-      {/each}
-      <span class="btn sh" data-hact="rt">RT</span>
-    </div>
-  {/if}
+  <div class="tfilters lo" class:car={!grid} style={grid && cur ? `--acc:${app.titleAcc(app.p, app.t).c};--acc-ink:${app.titleAcc(app.p, app.t).dark ? '#3a2f00' : '#fff'}` : ''}>
+    <span class="btn sh" data-hact="lt">LT</span>
+    {#each TITLE_FILTERS as [f, label]}
+      <span class="tflt" class:on={app.titleFilter === f}>{label}{#if f !== 'all'}<small>{counts[f]}</small>{/if}</span>
+    {/each}
+    <span class="btn sh" data-hact="rt">RT</span>
+  </div>
   {#if grid}
     <div class="ttrack" style="width:{pages * 1280}px;transform:translateX({-pg * 1280}px)">
       {#each idx as pos (realAt(pos))}
@@ -224,15 +198,21 @@
     ['LB/RB', curShelf?.kind === 'pending' ? 'Mover' : 'Saltar', 'rb'],
     ['View', 'Pestaña', 'view'],
   ]} />
-{:else if tab !== 'all'}
+{:else if tab === 'list'}
   <Hints list={[['B', 'Volver', 'b'], ['View', 'Pestaña', 'view']]} />
+{:else if tab === 'coll'}
+  <Hints list={[
+    ['A', app.collAt.c >= app.collShelves.length ? 'Nueva colección' : 'Abrir', 'a'], ['B', 'Volver', 'b'],
+    ...(app.collAt.c < app.collShelves.length ? [['X', 'Capturas', 'x'] as [string, string, string], ['Y', 'Editar', 'y'] as [string, string, string], ['LB/RB', 'Saltar', 'rb'] as [string, string, string]] : []),
+    ['View', 'Pestaña', 'view'],
+  ]} />
 {:else if titles.length === 0}
-  <Hints list={[['A', saga ? 'Crear saga' : 'Añadir juego', 'a'], ['B', 'Volver', 'b'], ...(saga ? [] : [['View', 'Pestaña', 'view'] as [string, string, string]])]} />
+  <Hints list={[['A', 'Añadir juego', 'a'], ['B', 'Volver', 'b'], ['View', 'Pestaña', 'view']]} />
 {:else}
   <Hints list={[
     ['A', 'Abrir', 'a'], ['B', 'Volver', 'b'],
     ...(grid ? [['LB/RB', 'Página', 'rb'] as [string, string, string]] : []),
-    ...(saga ? [] : [['LT/RT', 'Filtro', 'rt'] as [string, string, string], ['X', 'Orden', 'x'] as [string, string, string], ['View', 'Pestaña', 'view'] as [string, string, string]]),
+    ['LT/RT', 'Filtro', 'rt'], ['X', 'Orden', 'x'], ['View', 'Pestaña', 'view'],
     ...(grid ? [['Stick D', 'Tamaño'] as [string, string]] : []),
     ['Y', grid ? 'Carrusel' : 'Cuadrícula', 'y'],
   ]} />

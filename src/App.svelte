@@ -20,7 +20,9 @@
   import HiddenList from './screens/HiddenList.svelte';
   import MoveTo from './screens/MoveTo.svelte';
   import AccentPicker from './screens/AccentPicker.svelte';
-  import SagaForm from './screens/SagaForm.svelte';
+  import CollForm from './screens/CollForm.svelte';
+  import GamePicker from './screens/GamePicker.svelte';
+  import AddColl from './screens/AddColl.svelte';
   import SgdbTitles from './screens/SgdbTitles.svelte';
   import SgdbPicker from './screens/SgdbPicker.svelte';
   import Phrases from './screens/Phrases.svelte';
@@ -105,7 +107,9 @@
     {#if app.overlay === 'hidden'}<HiddenList />{/if}
     {#if app.overlay === 'moveto'}<MoveTo />{/if}
     {#if app.overlay === 'accent'}<AccentPicker />{/if}
-    {#if app.overlay === 'saga'}<SagaForm />{/if}
+    {#if app.overlay === 'collform'}<CollForm />{/if}
+    {#if app.overlay === 'picker'}<GamePicker />{/if}
+    {#if app.overlay === 'addcoll'}<AddColl />{/if}
     {#if app.overlay === 'sgdbtitles'}<SgdbTitles />{/if}
     {#if app.overlay === 'sgdb'}<SgdbPicker />{/if}
     {#if app.overlay === 'phrases'}<Phrases />{/if}

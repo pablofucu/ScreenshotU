@@ -1,4 +1,4 @@
-import type { AddReport, AudioOutput, Backend, BackupResult, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, MoveReport, TrashReport, RemoteInfo, NewGame, Saga, SortMode } from './types';
+import type { AddReport, AudioOutput, Backend, BackupResult, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, MoveReport, TrashReport, RemoteInfo, NewGame, Collection, SortMode } from './types';
 
 export const IS_TAURI = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
@@ -105,8 +105,9 @@ async function tauriBackend(): Promise<Backend> {
     restoreCancel: () => invoke('restore_cancel'),
     restoreApply: () => invoke('restore_apply'),
     startupNotices: () => invoke<StartupNotice[]>('startup_notices'),
-    getSagas: () => invoke<Saga[]>('get_sagas'),
-    saveSagas: (sagas: Saga[]) => invoke<Saga[]>('save_sagas', { sagas }),
+    getCollections: () => invoke<Collection[]>('get_collections'),
+    saveCollections: (collections: Collection[]) => invoke<Collection[]>('save_collections', { collections }),
+    convertCollections: (platforms: Record<string, string>) => invoke<Collection[]>('convert_collections', { platforms }),
     async pickImages() {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const r = await open({ multiple: true, title: 'Elige capturas', filters: [{ name: 'Imágenes', extensions: IMG_EXT }] });

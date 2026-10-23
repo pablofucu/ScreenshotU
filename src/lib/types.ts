@@ -77,6 +77,8 @@ export interface Config {
   titlesOrder: Record<string, TitleOrder>;
   /** Tamaño de las portadas: 0 = 5 por fila (por defecto) … 3 = 8 por fila. */
   titlesZoom: number;
+  /** Estilo de la pestaña de las colecciones: Aurora o multicolor armonizada. */
+  collectionsStyle: 'aurora' | 'multi';
   /** «Mi lista · Juegos parados»: avisar de los juegos en «Jugando» sin jugar desde hace `listStalledDays` días. */
   listStalled: boolean;
   /** Días sin jugar (7 a 180). */
@@ -97,12 +99,15 @@ export interface Shot {
   height: number;
   /** Tamaño en bytes. */
   size?: number;
-  /** Solo en sagas: juego de origen (nombre e id). */
+  /** Solo en la vista de una colección: juego de origen (nombre e id). */
   game?: string;
   gid?: string;
 }
-/** Agrupación virtual de juegos (no mueve ni copia capturas). */
+/** Saga antigua (la usa la app del móvil); en el escritorio son `Collection`. */
 export interface Saga { id: string; name: string; members: string[] }
+/** Colección: agrupación virtual de juegos de una sola categoría (no mueve ni copia capturas). `platform` null = saga
+ *  antigua aún sin convertir; `color` null = automático, si no el índice en `RAINBOW`. */
+export interface Collection { id: string; name: string; members: string[]; platform: string | null; color: number | null }
 export interface SagaMember { id: string; name: string; cover: string | null }
 /** Un color normalizado (`#rrggbb`) y si el texto encima debe ser oscuro. */
 export interface Swatch { color: string; dark: boolean }
@@ -164,7 +169,7 @@ export interface Title {
   listPos?: number | null;
   statusMs?: number | null;
   snoozeMs?: number | null;
-  /** Solo en la categoría Sagas: los juegos que la forman. */
+  /** Solo en la vista de capturas de una colección: los juegos que la forman. */
   members?: SagaMember[];
 }
 export interface HiddenEntry { id: string; name: string; platform: string }
@@ -268,8 +273,12 @@ export interface Backend {
   remoteInfo(): Promise<RemoteInfo>;
   /** Genera otro código de emparejamiento (el móvil tendrá que escribirlo de nuevo). */
   remoteNewCode(): Promise<RemoteInfo>;
-  getSagas(): Promise<Saga[]>;
-  saveSagas(list: Saga[]): Promise<Saga[]>;
+  /** Colecciones guardadas (las sagas antiguas sin categoría vienen con `platform` null). */
+  getCollections(): Promise<Collection[]>;
+  saveCollections(list: Collection[]): Promise<Collection[]>;
+  /** Una vez, con la biblioteca cargada: pasa las sagas antiguas a colecciones de la categoría donde tienen más juegos
+   *  (`platforms` = id de juego → id de categoría). Devuelve la lista final. */
+  convertCollections(platforms: Record<string, string>): Promise<Collection[]>;
   /** Elige imágenes (png, jpg, jpeg, webp). */
   pickImages(): Promise<string[]>;
   /** Copia imágenes a la carpeta de un juego. */

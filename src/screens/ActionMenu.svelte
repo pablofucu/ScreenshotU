@@ -27,8 +27,7 @@
       case 'reveal': return 'Mostrar en el Explorador';
       case 'delshot': return app.menu.confirm ? 'Pulsa A otra vez: a la Papelera' : 'Borrar captura';
       case 'delsel': return app.menu.confirm ? `Pulsa A otra vez: ${sel} a la Papelera` : `Borrar las ${sel} seleccionadas`;
-      case 'editsaga': return 'Editar saga';
-      case 'delsaga': return app.menu.confirm ? 'Pulsa A otra vez para disolver' : 'Disolver saga';
+      case 'addcoll': return 'Añadir a una colección…';
       case 'sgdb': return 'Grafismos (SteamGridDB o del PC)…';
       case 'phrases': return 'Frases y repaso…';
       case 'saves': return 'Partidas guardadas…';
@@ -46,7 +45,7 @@
   });
   const icon = (it: MenuItem) => it === 'category' || it.startsWith('cat:') ? ICON.move : ({
     folder: ICON.folder, reload: ICON.reload, remove: ICON.power, addshots: ICON.image, accent: ICON.palette, hide: ICON.eyeOff,
-    unhide: ICON.eye, magpie: ICON.image, select: ICON.check, unselect: ICON.check, selall: ICON.checks, move: ICON.move, reveal: ICON.folder, delshot: ICON.trash, delsel: ICON.trash, editsaga: ICON.palette, delsaga: ICON.power, sgdb: ICON.search, phrases: ICON.jvn, status: ICON.checks, saves: ICON.import,
+    unhide: ICON.eye, magpie: ICON.image, select: ICON.check, unselect: ICON.check, selall: ICON.checks, move: ICON.move, reveal: ICON.folder, delshot: ICON.trash, delsel: ICON.trash, addcoll: ICON.saga, sgdb: ICON.search, phrases: ICON.jvn, status: ICON.checks, saves: ICON.import,
   } as Record<string, string>)[it];
   const sub = $derived(
     shots ? (app.selMode ? `${sel} ${sel === 1 ? 'seleccionada' : 'seleccionadas'}` : (app.cur.name || '')) : (t?.name ?? ''),
@@ -62,11 +61,11 @@
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closeOverlay(); }}>
   <div class="glass menupanel" class:tight={items.length > 9} style="--acc:{app.chrome.c};top:{(720 - H) / 2}px;height:{H}px">
     <div class="face">
-      <h2>{shots ? 'Capturas' : t?.members ? 'Saga' : 'Grafismos y opciones'}</h2>
+      <h2>{shots ? 'Capturas' : 'Grafismos y opciones'}</h2>
       <p class="msub">{sub}</p>
       {#each items as it, i}
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-        <div class="srow mrow" class:f={app.menu.row === i} class:danger={it === 'remove' || it === 'delsaga' || it === 'delshot' || it === 'delsel'} class:addrow={it === 'magpie' && !!magpie.detail} data-item={it} onmousemove={(e) => hover(e, i)} onclick={() => { app.menu.row = i; void menuAct(it); }}>
+        <div class="srow mrow" class:f={app.menu.row === i} class:danger={it === 'remove' || it === 'delshot' || it === 'delsel'} class:addrow={it === 'magpie' && !!magpie.detail} data-item={it} onmousemove={(e) => hover(e, i)} onclick={() => { app.menu.row = i; void menuAct(it); }}>
           <span class="mic">{@html icon(it)}</span>
           <span class="sl">{label(it)}{#if it === 'magpie' && magpie.detail}<small>{magpie.detail}</small>{/if}</span>
         </div>

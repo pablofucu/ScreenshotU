@@ -6,7 +6,6 @@ import { blip } from './sound';
 import { openOsk } from './osk.svelte';
 import { closeOverlay, markRefresh, patchConfig, popOverlay, pushOverlay, softRefresh, toast } from './controller.svelte';
 import { patchTitle } from './ops.svelte';
-import { isSagaPlatform } from './sagas';
 import type { Title } from './types';
 
 export type ArtKind = 'cover' | 'hero' | 'logo';
@@ -187,7 +186,6 @@ export async function sgdbAuto(force = false) {
   if (sg.status) { if (force) toast('Ya se están buscando grafismos…'); return; }
   await listen();
   const titles = app.lib.platforms
-    .filter((p) => !isSagaPlatform(p))
     .flatMap((p) => p.titles)
     .map((t) => ({ id: t.id, name: t.name, missing: missingKinds(t) }))
     .filter((t) => t.missing.length);
@@ -235,7 +233,7 @@ export function toggleSgdbAuto() {
 /** Juegos que se pueden personalizar (los de las categorías reales). */
 export function sgdbTitleRefs(): Array<{ pi: number; ti: number }> {
   const out: Array<{ pi: number; ti: number }> = [];
-  app.lib.platforms.forEach((p, pi) => { if (!isSagaPlatform(p)) p.titles.forEach((_, ti) => out.push({ pi, ti })); });
+  app.lib.platforms.forEach((p, pi) => { p.titles.forEach((_, ti) => out.push({ pi, ti })); });
   return out;
 }
 

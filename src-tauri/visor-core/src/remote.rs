@@ -803,7 +803,7 @@ mod tests {
                 config: RemoteConfig { goal_vn: 60, goal_jvn: 30, accent_mode: "art".into(), accent_fixed: 4 },
                 library: self.lib.clone(),
                 favorites: vec![],
-                sagas: vec![Saga { id: "s1".into(), name: "Saga".into(), members: vec!["pc/A".into()] }],
+                sagas: vec![Saga { id: "s1".into(), name: "Saga".into(), members: vec!["pc/A".into()], platform: None, color: None }],
                 playing: None,
             })
         }

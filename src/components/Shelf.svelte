@@ -9,6 +9,8 @@
     label?: string;
     stars?: number;
     hidden?: boolean;
+    /** Glifo SVG (blanco) en vez de portada: baldosas de acción como «Nueva colección». */
+    icon?: string;
   }
 </script>
 
@@ -19,9 +21,11 @@
 
   // «Pestaña sobre balda» (boceto M1): pestaña de cristal con un solo color (claro → color → oscuro), título y datos,
   // y debajo la balda con las portadas y un borde de color con una etiqueta bajo cada una.
-  // Ranuras para la fase de colecciones: `extra` (línea de tiempo bajo los datos) y `end` (botón a la derecha de la pestaña).
+  // Ranuras: `extra` (línea de tiempo bajo los datos) y `end` (botón a la derecha de la pestaña). Las colecciones
+  // pueden teñir la pestaña (`tabStyle`: un fondo propio, `aurora`: manchas de color flotando por dentro) y cambiar
+  // la tinta del texto (`ink`, para pestañas claras como el amarillo).
   let {
-    acc, title, sub = '', items, focus = -1, from = 0, visible = 9, top = 0, dim = false, extra, end,
+    acc, title, sub = '', items, focus = -1, from = 0, visible = 9, top = 0, dim = false, ink = '#fff', tabStyle = '', aurora = [], extra, end,
   }: {
     acc: string;
     title: string;
@@ -34,6 +38,9 @@
     visible?: number;
     top?: number;
     dim?: boolean;
+    ink?: string;
+    tabStyle?: string;
+    aurora?: string[];
     extra?: Snippet;
     end?: Snippet;
   } = $props();
@@ -45,8 +52,11 @@
   const more = $derived(Math.max(0, items.length - (from + visible)));
 </script>
 
-<div class="shelf" class:dim style="top:{top}px;--acc:{acc}">
-  <div class="stab">
+<div class="shelf" class:dim style="top:{top}px;--acc:{acc};--ink:{ink}">
+  <div class="stab" class:tint={aurora.length > 0 || !!tabStyle} class:hasaur={aurora.length > 0} style={tabStyle}>
+    {#if aurora.length}
+      <div class="aur">{#each aurora as c, k}<b style="left:{8 + k * 21}%;background:{c}"></b>{/each}</div>
+    {/if}
     <h3>{title}</h3>
     {#if sub || extra}
       <div class="sinfo">
@@ -64,7 +74,7 @@
           <div class="glass scov fx" class:f={focus === p} class:hid={it.hidden} data-k={it.k} data-act={it.act}
             style="left:{p * SHELF_PITCH}px;width:{SHELF_CW}px;height:{SHELF_CH}px">
             <div class="face">
-              {#if it.path}<Thumb path={it.path} />{:else}<div class="noart"><b>{it.name}</b></div>{/if}
+              {#if it.path}<Thumb path={it.path} />{:else if it.icon}<div class="sicon">{@html it.icon}</div>{:else}<div class="noart"><b>{it.name}</b></div>{/if}
             </div>
           </div>
         {/each}
@@ -92,9 +102,17 @@
   .stab{display:inline-flex;align-items:center;gap:22px;max-width:100%;padding:8px 10px 8px 22px;border-radius:20px 20px 6px 20px;margin-bottom:-6px;position:relative;z-index:3;min-height:50px;box-sizing:border-box;
     background:linear-gradient(180deg,var(--hi),var(--acc) 62%,var(--lo));
     box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),inset 0 -2px 6px -2px rgba(0,0,0,.25),0 0 0 1px var(--lo),0 10px 20px -10px var(--acc)}
-  .stab h3{margin:0;font-size:27px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25);white-space:nowrap;line-height:1.1}
+  .stab h3{margin:0;font-size:27px;font-weight:800;color:var(--ink);text-shadow:0 1px 2px rgba(0,0,0,.25);white-space:nowrap;line-height:1.1;max-width:430px;overflow:hidden;text-overflow:ellipsis}
   .sinfo{display:flex;flex-direction:column;gap:5px;padding-right:12px}
-  .smeta{font-size:15px;font-weight:600;color:rgba(255,255,255,.92);white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.2)}
+  .smeta{font-size:15px;font-weight:600;color:var(--ink);white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.2)}
+  /* Pestañas teñidas (colecciones): el texto lleva una sombra suave para leerse sobre cualquier color. */
+  .stab.tint h3,.stab.tint .smeta{text-shadow:0 1px 3px rgba(0,0,0,.4)}
+  .stab.hasaur{overflow:hidden}
+  .aur{position:absolute;inset:0;pointer-events:none}
+  .aur b{position:absolute;top:-30%;width:34%;height:160%;border-radius:50%;filter:blur(22px);opacity:.55}
+  .stab>:global(*:not(.aur)){position:relative}
+  .sicon{position:absolute;inset:0;display:grid;place-items:center;background:linear-gradient(160deg,color-mix(in srgb,var(--acc) 40%,white),color-mix(in srgb,var(--acc) 85%,#445));filter:saturate(.9)}
+  .sicon :global(svg){width:44%;height:44%;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
   .sboard{position:relative;height:179px;border-radius:6px 22px 22px 22px;overflow:hidden;
     background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.26));
     -webkit-backdrop-filter:blur(14px) saturate(1.5);backdrop-filter:blur(14px) saturate(1.5);

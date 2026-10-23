@@ -19,10 +19,10 @@ export interface TGrid {
   s: number;
 }
 
-/** Medidas de la cuadrícula para un nivel; `saga` (sin pestañas ni filtros) empieza más arriba. */
-export function tgrid(level: number, saga: boolean): TGrid {
+/** Medidas de la cuadrícula para un nivel. */
+export function tgrid(level: number): TGrid {
   const L = LEVELS[Math.max(0, Math.min(TZOOM_MAX, Math.round(level) || 0))];
-  const top = saga ? 160 : 204;
+  const top = 204;
   const rows = Math.max(1, Math.floor((BOTTOM - top + L.rg) / (L.ch + L.rg)));
   return { ...L, rows, size: L.cols * rows, top, gx: (1280 - L.cols * L.cw - (L.cols - 1) * L.gap) / 2, s: L.cw / 160 };
 }
