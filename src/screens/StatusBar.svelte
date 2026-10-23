@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { z } from '../lib/format';
   import { app, LIST_COLOR, STATUS_LABEL, STATUS_ORDER } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { popOverlay } from '../lib/controller.svelte';
@@ -9,7 +10,6 @@
   const t = $derived(app.platform?.titles[sb.title]);
   const fin = $derived(sb.step === 'finish');
   const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-  const z = (n: number) => String(n).padStart(2, '0');
   const color = $derived(LIST_COLOR[fin ? 'finished' : STATUS_ORDER[sb.row]]);
   const dateBoxes = $derived([[0, z(sb.d)], [1, `${z(sb.m)} · ${MONTHS[sb.m - 1]}`], [2, String(sb.y)]] as Array<[number, string]>);
 

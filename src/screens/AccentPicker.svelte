@@ -15,7 +15,6 @@
   function setHue(e: MouseEvent) {
     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const f = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
-    accentFocus(3);
     a.hue = Math.round(f * 360) % 360;
     accentFocus(3);
   }
@@ -29,7 +28,6 @@
       <p class="msub">{t?.name ?? ''}</p>
 
       <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div class="srow accrow" class:f={a.row === 0} data-acc-row="0" onclick={() => { accentFocus(0); void applyAccent(); }} onmousemove={() => { if (a.row !== 0) accentFocus(0); }}>
         <span class="sl">Automático</span>
         <span class="sv">{autoColor ? 'del arte del juego' : 'arcoíris (sin arte con color)'}</span>

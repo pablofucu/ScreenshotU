@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { z } from '../lib/format';
   // Selector de la fecha de lanzamiento (mismo aspecto que la fecha de «Terminado» en la barra de estado).
   import { app } from '../lib/store.svelte';
   import { popOverlay } from '../lib/controller.svelte';
@@ -6,7 +7,6 @@
   import Hints from '../components/Hints.svelte';
 
   const t = $derived(app.platform?.titles[rel.title]);
-  const z = (n: number) => String(n).padStart(2, '0');
   const boxes = $derived([
     [0, rel.d ? z(rel.d) : '—', 'Día'],
     [1, rel.m ? `${z(rel.m)} · ${MONTH_SHORT[rel.m - 1]}` : '—', 'Mes'],
@@ -41,7 +41,7 @@
       </div>
     </div>
   </div>
-  <Hints list={[['←→', 'Campo'], ['↑↓', 'Valor'], ['LB RB', '±10 años'], ['A', 'Guardar', 'a'], ['X', 'Quitar fecha', 'x'], ['B', 'Cancelar', 'b']]} />
+  <Hints list={[['←→', 'Campo'], ['↑↓', 'Valor'], ['LB/RB', '±10 años'], ['A', 'Guardar', 'a'], ['X', 'Quitar fecha', 'x'], ['B', 'Cancelar', 'b']]} />
 </div>
 
 <style>

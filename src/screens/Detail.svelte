@@ -2,7 +2,7 @@
   import { app, LIST_COLOR, STATUS_LABEL } from '../lib/store.svelte';
   import { backend, decodeImg, thumbNow } from '../lib/backend';
   import { ICON } from '../lib/icons';
-  import { fmtDur, nCapturas } from '../lib/format';
+  import { fmtDur, nCapturas, z } from '../lib/format';
   import { DETAIL_SHOTS } from '../lib/controller.svelte';
   import { fmtRelease, openRelease } from '../lib/release.svelte';
   import TopBar from '../components/TopBar.svelte';
@@ -109,7 +109,6 @@
     const id = setInterval(() => (tick = Date.now()), 1000);
     return () => clearInterval(id);
   });
-  const z = (n: number) => String(n).padStart(2, '0');
   const sess = $derived.by(() => {
     const s = Math.max(0, Math.floor((tick - (app.playing?.since ?? tick)) / 1000));
     return `${z(Math.floor(s / 3600))}:${z(Math.floor(s / 60) % 60)}:${z(s % 60)}`;

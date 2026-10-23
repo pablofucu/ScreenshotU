@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { z } from '../lib/format';
   import { app } from '../lib/store.svelte';
   import { ICON, audioKind, audioSvg } from '../lib/icons';
   import { closeAudioMenu, openAudioMenu } from '../lib/controller.svelte';
@@ -13,7 +14,6 @@
     if (app.audioMenu) closeAudioMenu(); else void openAudioMenu();
   }
 
-  const z = (n: number) => String(n).padStart(2, '0');
   const DAYS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
   const clock = $derived({
     d: `${z(app.now.getDate())}/${z(app.now.getMonth() + 1)}`,

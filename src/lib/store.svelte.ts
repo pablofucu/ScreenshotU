@@ -201,7 +201,7 @@ export const validFilter = (f: string | null | undefined): TitleFilter => (TITLE
 export const TITLE_ORDERS: TitleOrder[] = ['last', 'az', 'color'];
 export const TITLE_ORDER_LABEL: Record<TitleOrder, string> = { last: 'Última partida', az: 'A–Z', color: 'Por color' };
 
-/** Pestañas dentro de cada categoría (botón View): Todos · Mi lista (fase 3) · Colecciones (fase 4). */
+/** Pestañas dentro de cada categoría (botón View): Todos · Mi lista · Colecciones. */
 export type TitlesTab = 'all' | 'list' | 'coll';
 export const TITLES_TABS: Array<[TitlesTab, string]> = [['all', 'Todos'], ['list', 'Mi lista'], ['coll', 'Colecciones']];
 

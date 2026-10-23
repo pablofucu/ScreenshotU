@@ -1,5 +1,6 @@
 const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-const z = (n: number) => String(n).padStart(2, '0');
+/** Número con al menos dos cifras («07»). */
+export const z = (n: number) => String(n).padStart(2, '0');
 // Las fechas del nombre de archivo son "ingenuas" y el backend las codifica como UTC: se muestran en UTC.
 export const fmt = (t: number) => {
   const d = new Date(t);
