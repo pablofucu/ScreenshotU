@@ -1,6 +1,7 @@
 <script lang="ts">
   import { app } from '../lib/store.svelte';
   import Hints from './Hints.svelte';
+  import { makeMoved } from '../lib/pointer';
 
   type PickerRow = { l: string; v?: string; danger?: boolean };
   let {
@@ -14,10 +15,9 @@
   // Alto a medida: cabecera + filas visibles (o el aviso de lista vacía), centrado en el escenario.
   const H = $derived(rows.length ? 28 + 104 + Math.min(rows.length, visible) * ROW_H + 28 : 250);
   const off = $derived(Math.max(0, Math.min(row - 3, rows.length - visible)));
-  let lastXY = '';
+  const moved = makeMoved();
   function hover(e: MouseEvent, i: number) {
-    const xy = e.clientX + ',' + e.clientY;
-    if (xy !== lastXY) { lastXY = xy; onhover(i); }
+    if (moved(e)) { onhover(i); }
   }
 </script>
 

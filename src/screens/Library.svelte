@@ -3,6 +3,7 @@
   import { fmtBytes } from '../lib/controller.svelte';
   import { goLabel, lb, libForced, libraryAct, libraryCmd, libRows, type LibRow } from '../lib/library.svelte';
   import Hints from '../components/Hints.svelte';
+  import { makeMoved } from '../lib/pointer';
 
   const mode = $derived(lb.info?.mode ?? 'library');
   const title = $derived(
@@ -25,10 +26,9 @@
   const items = $derived(lb.plan?.items ?? []);
   const H = $derived(lb.step === 'choose' ? Math.min(640, 250 + rows.length * 56 + (items.length ? 40 + items.length * 30 : 34)) : 330);
 
-  let lastXY = '';
+  const moved = makeMoved();
   function hover(e: MouseEvent, i: number) {
-    const xy = e.clientX + ',' + e.clientY;
-    if (xy !== lastXY) { lastXY = xy; lb.row = i; }
+    if (moved(e)) { lb.row = i; }
   }
 </script>
 

@@ -7,6 +7,7 @@
   import { gameYear } from '../lib/collections';
   import Hints from '../components/Hints.svelte';
   import Thumb from '../components/Thumb.svelte';
+  import { makeMoved } from '../lib/pointer';
 
   const p = $derived(app.picker);
   const f = $derived(app.collForm);
@@ -26,10 +27,9 @@
   const cur = $derived(res[p.at]);
   const coverOf = (i: number) => res[i].cover ?? res[i].shots[0]?.path ?? null;
 
-  let lastXY = '';
+  const moved = makeMoved();
   function hover(e: MouseEvent, i: number) {
-    const xy = e.clientX + ',' + e.clientY;
-    if (xy !== lastXY) { lastXY = xy; p.at = i; }
+    if (moved(e)) { p.at = i; }
   }
 </script>
 

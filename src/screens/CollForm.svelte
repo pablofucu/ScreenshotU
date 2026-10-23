@@ -7,6 +7,7 @@
   import { nGames } from '../lib/format';
   import Hints from '../components/Hints.svelte';
   import Picker from '../components/Picker.svelte';
+  import { makeMoved } from '../lib/pointer';
 
   const f = $derived(app.collForm);
   const rows = $derived(collFormRows());
@@ -38,10 +39,9 @@
     }
   };
 
-  let lastXY = '';
+  const moved = makeMoved();
   function hover(e: MouseEvent, i: number) {
-    const xy = e.clientX + ',' + e.clientY;
-    if (xy !== lastXY) { lastXY = xy; f.row = i; f.confirm = false; }
+    if (moved(e)) { f.row = i; f.confirm = false; }
   }
 </script>
 

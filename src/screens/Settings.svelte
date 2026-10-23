@@ -13,6 +13,7 @@
   import { REMOTE_CYCLE, isRemoteId, remoteRow } from '../lib/remote.svelte';
   import Learn from '../components/Learn.svelte';
   import Hints from '../components/Hints.svelte';
+  import { makeMoved } from '../lib/pointer';
 
   const yn = (b: boolean) => (b ? 'Sí' : 'No');
 
@@ -98,10 +99,9 @@
     off = Math.max(0, Math.min(rows.length - VIS, off + d));
   }
 
-  let lastXY = '';
+  const moved = makeMoved();
   function hover(e: MouseEvent, i: number) {
-    const xy = e.clientX + ',' + e.clientY;
-    if (xy !== lastXY) { lastXY = xy; if (app.setRow !== i) dropRestore(); app.setRow = i; }
+    if (moved(e)) { if (app.setRow !== i) dropRestore(); app.setRow = i; }
   }
 </script>
 

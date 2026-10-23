@@ -3,6 +3,7 @@
   import { formAct, formRows, fileLabel, isArtRow, type FormRow } from '../lib/ops.svelte';
   import { cmd } from '../lib/controller.svelte';
   import Hints from '../components/Hints.svelte';
+  import { makeMoved } from '../lib/pointer';
 
   const rows = $derived(formRows());
   const RH = $derived(rows.length > 7 ? 42 : 52);
@@ -30,10 +31,9 @@
     return (r === 'name' && !f.name) || (r === 'args' && !f.args) || (isArtRow(r) && !f[r as 'hero' | 'logo' | 'cover']);
   };
 
-  let lastXY = '';
+  const moved = makeMoved();
   function hover(e: MouseEvent, i: number) {
-    const xy = e.clientX + ',' + e.clientY;
-    if (xy !== lastXY) { lastXY = xy; app.formRow = i; }
+    if (moved(e)) { app.formRow = i; }
   }
 </script>
 

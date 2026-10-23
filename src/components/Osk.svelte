@@ -2,11 +2,11 @@
   import { app } from '../lib/store.svelte';
   import { OSK_ROWS, keyLabel, oskCmd, oskPress } from '../lib/osk.svelte';
   import Hints from './Hints.svelte';
+  import { makeMoved } from '../lib/pointer';
 
-  let lastXY = '';
+  const moved = makeMoved();
   function hover(e: MouseEvent, r: number, c: number) {
-    const xy = e.clientX + ',' + e.clientY;
-    if (xy !== lastXY) { lastXY = xy; app.osk.r = r; app.osk.c = c; }
+    if (moved(e)) { app.osk.r = r; app.osk.c = c; }
   }
   function click(e: MouseEvent) {
     const h = (e.target as HTMLElement).closest<HTMLElement>('[data-hact]');

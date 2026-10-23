@@ -4,15 +4,15 @@
   import { app } from '../lib/store.svelte';
   import { audioKind, audioSvg } from '../lib/icons';
   import { switchAudio } from '../lib/controller.svelte';
+  import { makeMoved } from '../lib/pointer';
 
   function pick(id: string, on: boolean) {
     app.audioMenu = false;
     if (!on) void switchAudio(0, id);
   }
-  let lastXY = '';
+  const moved = makeMoved();
   function hover(e: MouseEvent, i: number) {
-    const xy = e.clientX + ',' + e.clientY;
-    if (xy !== lastXY) { lastXY = xy; app.audioRow = i; }
+    if (moved(e)) { app.audioRow = i; }
   }
   // Un clic fuera lo cierra (los de #screen ya los recoge el controlador sin activar lo de debajo).
   function outside(e: MouseEvent) {

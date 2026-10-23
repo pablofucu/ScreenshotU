@@ -3,6 +3,7 @@
   import { gdirAct, gdirExe, GDIR_ROWS, type GdirRow } from '../lib/ops.svelte';
   import { cmd } from '../lib/controller.svelte';
   import Hints from '../components/Hints.svelte';
+  import { makeMoved } from '../lib/pointer';
 
   const g = $derived(app.gdir);
   const it = $derived(g.items[g.i]);
@@ -25,10 +26,9 @@
     return '';
   };
 
-  let lastXY = '';
+  const moved = makeMoved();
   function hover(e: MouseEvent, i: number) {
-    const xy = e.clientX + ',' + e.clientY;
-    if (xy !== lastXY) { lastXY = xy; g.row = i; }
+    if (moved(e)) { g.row = i; }
   }
 </script>
 

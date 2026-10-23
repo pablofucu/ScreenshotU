@@ -5,6 +5,7 @@
   import { fmtRelease } from '../lib/release.svelte';
   import Hints from '../components/Hints.svelte';
   import { tgrid } from '../lib/tgrid';
+  import { makeMoved } from '../lib/pointer';
 
   const t = $derived(app.platform?.titles[app.menu.title]);
   const items = $derived(app.menu.items);
@@ -73,10 +74,9 @@
       : shots ? (app.selMode ? `${sel} ${sel === 1 ? 'seleccionada' : 'seleccionadas'}` : (app.cur.name || '')) : (t?.name ?? ''),
   );
 
-  let lastXY = '';
+  const moved = makeMoved();
   function hover(e: MouseEvent, i: number) {
-    const xy = e.clientX + ',' + e.clientY;
-    if (xy !== lastXY) { lastXY = xy; app.menu.row = i; app.menu.confirm = false; }
+    if (moved(e)) { app.menu.row = i; app.menu.confirm = false; }
   }
 </script>
 

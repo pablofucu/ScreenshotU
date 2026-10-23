@@ -22,6 +22,7 @@ import { goalMinLeft, goalTrack, localDay, type GoalKey } from './readgoals';
 import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
 import { libraryCmd, loadLibraryInfo, openLibrary } from './library.svelte';
 import { addCollCmd, collCmd, collFirst, collFormCmd, collKey, collReveal, collTab, collValid, loadCollections, openAddColl, openCollForm, pickerCmd, resetColl, setCollFocus } from './coleccion.svelte';
+import { makeMoved } from './pointer';
 import { openRelease, releaseCmd } from './release.svelte';
 import { checkStalled, listCmd, listFirst, listHas, listReveal, listTab, onLaunched, openStatusBar, resetList, stalledCmd, statusBarCmd } from './milista.svelte';
 
@@ -1537,12 +1538,10 @@ export function onKeyDown(e: KeyboardEvent) {
   cmd(m);
 }
 
-let lastXY = '';
+const moved = makeMoved();
 export function onScreenMove(e: MouseEvent) {
   if (app.view === 'viewer') wake();
-  const xy = e.clientX + ',' + e.clientY;
-  if (xy === lastXY) return; // el ratón solo roba el foco si se mueve de verdad
-  lastXY = xy;
+  if (!moved(e)) return; // el ratón solo roba el foco si se mueve de verdad
   if (app.audioMenu) return;
   // En el carrusel el foco centra la portada: con el ratón sería un baile bajo el cursor (se navega con la rueda).
   if (app.view === 'titles' && app.config.titlesView !== 'grid') return;

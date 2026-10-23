@@ -4,6 +4,7 @@
   import { lineHtml } from '../reader/render';
   import type { Phrase, ReaderLine } from '../lib/novel-types';
   import Hints from '../components/Hints.svelte';
+  import { makeMoved } from '../lib/pointer';
 
   const ROW_H = 74;
   const VIS = 6;
@@ -21,10 +22,9 @@
       : ph.revealed ? [['X', 'Otra vez', 'x'], ['LB', 'Difícil', 'lb'], ['A', 'Bien', 'a'], ['Y', 'Fácil', 'y'], ['RB', 'Audio', 'rb'], ['B', 'Salir', 'b']]
       : [['A', 'Mostrar', 'a'], ['Y', 'Furigana', 'y'], ['RB', 'Audio', 'rb'], ['B', 'Salir', 'b']],
   );
-  let lastXY = '';
+  const moved = makeMoved();
   function hover(e: MouseEvent, i: number) {
-    const xy = e.clientX + ',' + e.clientY;
-    if (xy !== lastXY) { lastXY = xy; pickRow(i); }
+    if (moved(e)) { pickRow(i); }
   }
 </script>
 

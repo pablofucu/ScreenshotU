@@ -4,6 +4,7 @@
   import { ADD_ITEMS, addAct } from '../lib/ops.svelte';
   import { popOverlay } from '../lib/controller.svelte';
   import Hints from '../components/Hints.svelte';
+  import { makeMoved } from '../lib/pointer';
 
   const INFO: Record<(typeof ADD_ITEMS)[number], { l: string; s: string; ic: string }> = {
     exe: { l: 'Ejecutable (.exe)', s: 'Un juego de PC', ic: ICON.pad },
@@ -13,10 +14,9 @@
   };
   const H = 28 + 100 + ADD_ITEMS.length * 64 + 18;
 
-  let lastXY = '';
+  const moved = makeMoved();
   function hover(e: MouseEvent, i: number) {
-    const xy = e.clientX + ',' + e.clientY;
-    if (xy !== lastXY) { lastXY = xy; app.addRow = i; }
+    if (moved(e)) { app.addRow = i; }
   }
 </script>
 

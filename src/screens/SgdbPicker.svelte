@@ -5,6 +5,7 @@
     applyImage, ART_KINDS, closeSgdbPicker, isSgdbPath, KIND_COLS, KIND_LABEL, pickTitle, setKind, sg, sgdbCmd, sgdbFocus, usedImageId,
   } from '../lib/sgdb.svelte';
   import Hints from '../components/Hints.svelte';
+  import { makeMoved } from '../lib/pointer';
 
   const VIEW_H = 430;
   const GAP = 14;
@@ -33,13 +34,7 @@
   const GROW_H = 52;
   const goff = $derived(Math.max(0, Math.min(p.gi - 3, p.games.length - Math.floor(VIEW_H / GROW_H))) * GROW_H);
 
-  let lastXY = '';
-  function moved(e: MouseEvent) {
-    const xy = e.clientX + ',' + e.clientY;
-    if (xy === lastXY) return false;
-    lastXY = xy;
-    return true;
-  }
+  const moved = makeMoved();
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closeSgdbPicker(); }}>
