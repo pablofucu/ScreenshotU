@@ -6,7 +6,7 @@ import { blip } from './sound';
 import { openOsk } from './osk.svelte';
 import { closeOverlay, markRefresh, patchConfig, popOverlay, pushOverlay, softRefresh, toast } from './controller.svelte';
 import { patchTitle } from './ops.svelte';
-import type { Title } from './types';
+import type { ReleaseDate, Title } from './types';
 
 export type ArtKind = 'cover' | 'hero' | 'logo';
 export const ART_KINDS: ArtKind[] = ['cover', 'hero', 'logo'];
@@ -55,7 +55,11 @@ function mock(cmd: string, a: Record<string, unknown> = {}): unknown {
     return Array.from({ length: 24 }, (_, j) => { const i = p * 24 + j, u = mockArt(k, i); return { id: 1000 + i, url: u, thumb: u, width: 600, height: 900, mime: 'image/png', style: 'alternate', author: 'mock' }; });
   }
   if (cmd === 'sgdb_info') return mockStore.get(a.titleId as string) ?? null;
-  if (cmd === 'sgdb_link') { mockStore.set(a.titleId as string, { gameId: a.gameId as number, gameName: a.gameName as string, autoDone: true }); return null; }
+  if (cmd === 'sgdb_link') {
+    mockStore.set(a.titleId as string, { gameId: a.gameId as number, gameName: a.gameName as string, autoDone: true });
+    const cur = pickTitle()?.release;
+    return cur && !cur.auto ? cur : a.year ? { year: a.year as number, auto: true } : cur ?? null;
+  }
   if (cmd === 'sgdb_apply') return (a.image as SgdbImage).url;
   if (cmd === 'sgdb_local') return mockArt(a.kind as ArtKind, 99);
   if (cmd === 'sgdb_auto') return 0;
@@ -318,7 +322,11 @@ async function chooseGame(g: SgdbGame, user: boolean) {
   if (!t) return;
   sg.pick.game = { id: g.id, name: g.name };
   sg.pick.mode = 'images';
-  try { await call('sgdb_link', { titleId: t.id, gameId: g.id, gameName: g.name }); } catch (e) { console.error(e); }
+  try {
+    // El año de la búsqueda rellena la fecha de lanzamiento si no hay una puesta a mano (lo decide el núcleo).
+    const release = await call<ReleaseDate | null>('sgdb_link', { titleId: t.id, gameId: g.id, gameName: g.name, year: g.year ?? null });
+    if (release && (release.year !== t.release?.year || release.auto !== t.release?.auto)) patchTitle(sg.pick.pi, sg.pick.ti, { release });
+  } catch (e) { console.error(e); }
   if (user) blip(1320);
   await loadImages(true);
 }

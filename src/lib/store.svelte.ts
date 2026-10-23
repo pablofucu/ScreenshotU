@@ -68,8 +68,8 @@ export const DEFAULT_CONFIG: Config = {
 
 export type MenuItem =
   | 'folder' | 'reload' | 'remove' | 'hide' | 'unhide' | 'addshots' | 'accent'
-  | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'addcoll' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'saves' | 'category' | 'delshot' | 'delsel' | `cat:${string}`;
-export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'collform' | 'picker' | 'addcoll' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library' | 'status' | 'stalled';
+  | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'addcoll' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'release' | 'saves' | 'category' | 'delshot' | 'delsel' | `cat:${string}`;
+export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'collform' | 'picker' | 'addcoll' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library' | 'status' | 'release' | 'stalled';
 /** «Nueva colección» / «Editar colección». */
 export interface CollFormState {
   /** null = colección nueva. */

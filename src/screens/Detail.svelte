@@ -4,6 +4,7 @@
   import { ICON } from '../lib/icons';
   import { fmtDur, nCapturas } from '../lib/format';
   import { DETAIL_SHOTS } from '../lib/controller.svelte';
+  import { fmtRelease, openRelease } from '../lib/release.svelte';
   import TopBar from '../components/TopBar.svelte';
   import Hints from '../components/Hints.svelte';
   import Thumb from '../components/Thumb.svelte';
@@ -140,9 +141,15 @@
     </div>
   </div>
 
+  <div class="dchips">
   {#if T.status}
     <div class="stpill pill st-{T.status}">{@html T.status === 'finished' ? ICON.check : ''}<b>{STATUS_LABEL[T.status]}</b>{#if T.status === 'finished' && T.finishedMs}<small>{new Date(T.finishedMs).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</small>{/if}{#if T.status === 'finished' && T.rating}<small>{'★'.repeat(T.rating)}</small>{/if}</div>
   {/if}
+  {#if T.release && !T.members}
+    <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+    <div class="relpill pill" title="Cambiar la fecha de lanzamiento (Y › Fecha de lanzamiento)" onclick={() => openRelease(app.t)}>{@html ICON.calendar}<b>{T.release.month ? 'Salió el' : 'Salió en'}</b><small>{fmtRelease(T.release)}</small></div>
+  {/if}
+  </div>
 
   {#if T.launchable}
     <div class="glass play fx" class:f={app.focus === 'play'} class:on={playing} data-k="play" data-act="play">
@@ -203,3 +210,13 @@
 
   <Hints list={[['A', app.focus === 'dhrs' || app.focus === 'dwk' ? 'Estadísticas' : 'Seleccionar', 'a'], ['B', 'Volver', 'b'], ['Y', 'Opciones', 'y']]} />
 {/if}
+
+<style>
+  /* Estado y fecha de lanzamiento, uno tras otro sobre el hero. */
+  .dchips{position:absolute;left:100px;top:108px;z-index:6;display:flex;gap:10px}
+  .dchips :global(.stpill){position:static}
+  .relpill{height:36px;padding:0 16px 0 12px;border-radius:999px;display:flex;align-items:center;gap:8px;font-size:17px;font-weight:800;color:#fff;box-sizing:border-box;cursor:pointer;
+    background:linear-gradient(180deg,rgba(60,68,84,.78),rgba(30,36,48,.82));box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 14px -6px rgba(0,0,0,.5)}
+  .relpill :global(svg){width:18px;height:18px}
+  .relpill small{font-size:15px;font-weight:700;opacity:.92}
+</style>

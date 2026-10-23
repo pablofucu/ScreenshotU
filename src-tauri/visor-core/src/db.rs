@@ -197,6 +197,17 @@ pub const MIGRATIONS: &[&str] = &[
     ALTER TABLE sagas ADD COLUMN platform TEXT;
     ALTER TABLE sagas ADD COLUMN color INTEGER;
     "#,
+    // 9: fecha de lanzamiento de cada titulo (mismo id que el resto de datos por titulo). Año siempre; mes y dia
+    // opcionales. `auto` = sacada de SteamGridDB (se puede sustituir sola); 0 = puesta a mano (no se pisa nunca).
+    r#"
+    CREATE TABLE title_release (
+        title_id TEXT PRIMARY KEY,
+        year     INTEGER NOT NULL,
+        month    INTEGER,
+        day      INTEGER,
+        auto     INTEGER NOT NULL DEFAULT 0
+    );
+    "#,
 ];
 
 /// Version del esquema que entiende esta compilacion.
@@ -588,6 +599,51 @@ mod tests {
         // Persistido: al recargar sigue igual y una segunda pasada no cambia nada.
         assert_eq!(db.with(sagas_load).unwrap(), out);
         assert_eq!(db.with(|c| sagas_convert_legacy(c, &map)).unwrap(), out);
+    }
+
+    #[test]
+    fn migration_9_adds_release_dates_and_keeps_old_prefs() {
+        // Una base en version 8 con estado y acento sube a la 9 sin perderlos; la fecha de lanzamiento se guarda,
+        // se lee junto al resto de datos del titulo y se quita sin tocar lo demas.
+        use crate::userdata::ReleaseDate;
+        let d = tempfile::tempdir().unwrap();
+        let p = d.path().join("visor.db");
+        {
+            let mut c = Connection::open(&p).unwrap();
+            migrate(&mut c, &MIGRATIONS[..8]).unwrap();
+            c.execute_batch(
+                "INSERT INTO title_status(title_id, status, finished_ms, updated_ms) VALUES ('steam:1', 'finished', 5000, 6000);
+                 INSERT INTO title_prefs(title_id, accent, sort) VALUES ('pc/b', '#112233', NULL);",
+            )
+            .unwrap();
+        }
+        let db = Db::open_path(&p).unwrap();
+        assert_eq!(db.with(|c| c.query_row::<i64, _, _>("PRAGMA user_version", [], |r| r.get(0))).unwrap(), latest_version());
+        let prefs = db.with(prefs_load).unwrap();
+        assert_eq!((prefs["steam:1"].status.as_deref(), prefs["steam:1"].release), (Some("finished"), None));
+        assert_eq!(prefs["pc/b"].accent.as_deref(), Some("#112233"));
+        let full = ReleaseDate { year: 2017, month: Some(3), day: Some(3), auto: false };
+        let auto = ReleaseDate { year: 2019, month: None, day: None, auto: true };
+        db.with(|c| {
+            release_save(c, "steam:1", Some(&full)).unwrap();
+            release_save(c, "pc/c", Some(&auto)).unwrap();
+        });
+        let prefs = db.with(prefs_load).unwrap();
+        assert_eq!((prefs["steam:1"].release, prefs["steam:1"].finished_ms), (Some(full), Some(5000)));
+        assert_eq!(prefs["pc/c"].release, Some(auto), "un titulo solo con fecha tambien se carga");
+        db.with(|c| release_save(c, "steam:1", Some(&ReleaseDate { year: 2018, ..auto }))).unwrap();
+        assert_eq!(db.with(prefs_load).unwrap()["steam:1"].release.map(|r| (r.year, r.month, r.auto)), Some((2018, None, true)));
+        // Quitar el estado no borra la fecha, y quitar la fecha no borra el estado.
+        db.with(|c| status_save(c, "steam:1", None, 7000)).unwrap();
+        assert!(db.with(prefs_load).unwrap()["steam:1"].release.is_some());
+        db.with(|c| {
+            status_save(c, "steam:1", Some(("playing", None)), 8000).unwrap();
+            release_save(c, "steam:1", None).unwrap();
+            release_save(c, "pc/c", None).unwrap();
+        });
+        let prefs = db.with(prefs_load).unwrap();
+        assert_eq!((prefs["steam:1"].status.as_deref(), prefs["steam:1"].release), (Some("playing"), None));
+        assert!(!prefs.contains_key("pc/c"));
     }
 
     #[test]

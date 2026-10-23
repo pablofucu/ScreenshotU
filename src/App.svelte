@@ -29,6 +29,7 @@
   import Saves from './screens/Saves.svelte';
   import Library from './screens/Library.svelte';
   import StatusBar from './screens/StatusBar.svelte';
+  import ReleasePicker from './screens/ReleasePicker.svelte';
   import StalledCard from './screens/StalledCard.svelte';
   import Osk from './components/Osk.svelte';
 
@@ -116,6 +117,7 @@
     {#if app.overlay === 'saves'}<Saves />{/if}
     {#if app.overlay === 'library'}<Library />{/if}
     {#if app.overlay === 'status'}<StatusBar />{/if}
+    {#if app.overlay === 'release'}<ReleasePicker />{/if}
     {#if app.overlay === 'stalled'}<StalledCard />{/if}
     {#if app.osk.open}<Osk />{/if}
   {/if}

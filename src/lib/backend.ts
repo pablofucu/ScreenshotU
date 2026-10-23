@@ -86,6 +86,8 @@ async function tauriBackend(): Promise<Backend> {
     setSortPref: (id: string, mode: SortMode) => invoke('set_sort_pref', { id, mode }),
     setMagpieMode: (id: string, mode: MagpieMode) => invoke('set_magpie_mode', { id, mode }),
     setTitleStatus: (id: string, status: GameStatus, finishedMs?: number | null, rating?: number | null) => invoke('set_title_status', { id, status, finishedMs: finishedMs ?? null, rating: rating ?? null }),
+    setReleaseDate: (id: string, d: { year: number; month: number | null; day: number | null } | null) =>
+      invoke('set_release_date', { id, year: d?.year ?? null, month: d?.month ?? null, day: d?.day ?? null }),
     setPendingOrder: (ids: string[]) => invoke('set_pending_order', { ids }),
     snoozeStalled: (ids: string[]) => invoke('snooze_stalled', { ids }),
     magpieStatus: () => invoke<MagpieStatus>('magpie_status'),

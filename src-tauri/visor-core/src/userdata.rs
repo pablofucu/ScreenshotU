@@ -75,6 +75,51 @@ pub struct TitlePref {
     /// Escalado con Magpie al lanzar el juego.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub magpie: Option<MagpiePref>,
+    /// Fecha de lanzamiento del juego (puesta a mano o sacada de SteamGridDB).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub release: Option<ReleaseDate>,
+}
+
+/// Fecha de lanzamiento de un juego: el año siempre; mes y dia solo si se conocen (SteamGridDB solo da el año
+/// fiable y mucha gente solo recuerda el año). `auto` = la puso el visor (SteamGridDB) y se puede sustituir sola;
+/// una fecha puesta a mano nunca se pisa.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ReleaseDate {
+    pub year: i32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub month: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub day: Option<u32>,
+    #[serde(default)]
+    pub auto: bool,
+}
+
+/// Años de lanzamiento que se aceptan.
+pub const RELEASE_YEARS: std::ops::RangeInclusive<i32> = 1950..=2100;
+
+fn days_in_month(year: i32, month: u32) -> u32 {
+    match month {
+        2 if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 => 29,
+        2 => 28,
+        4 | 6 | 9 | 11 => 30,
+        _ => 31,
+    }
+}
+
+impl ReleaseDate {
+    /// Comprueba que la fecha existe (el dia necesita mes).
+    pub fn validate(&self) -> Result<(), String> {
+        if !RELEASE_YEARS.contains(&self.year) {
+            return Err(format!("Año de lanzamiento fuera de rango: {}", self.year));
+        }
+        match (self.month, self.day) {
+            (None, Some(_)) => Err("El dia necesita el mes".into()),
+            (Some(m), _) if !(1..=12).contains(&m) => Err(format!("Mes no valido: {m}")),
+            (Some(m), Some(d)) if d < 1 || d > days_in_month(self.year, m) => Err(format!("Dia no valido: {d}")),
+            _ => Ok(()),
+        }
+    }
 }
 
 /// Escalado con Magpie de un juego: el modo elegido y lo medido de su ventana la ultima vez que se lanzo.
@@ -112,7 +157,7 @@ impl MagpiePref {
 pub type TitlePrefs = BTreeMap<String, TitlePref>;
 
 fn prune(p: &mut TitlePrefs, id: &str) {
-    if p.get(id).map(|x| x.accent.is_none() && x.sort.is_none() && x.magpie.is_none() && x.status.is_none()).unwrap_or(false) {
+    if p.get(id).map(|x| x.accent.is_none() && x.sort.is_none() && x.magpie.is_none() && x.status.is_none() && x.release.is_none()).unwrap_or(false) {
         p.remove(id);
     }
 }
@@ -233,6 +278,38 @@ pub fn set_snooze(p: &mut TitlePrefs, ids: &[String], now_ms: i64) -> Vec<String
     out
 }
 
+/// Fecha de lanzamiento puesta a mano (`None` = quitarla). Se guarda como manual aunque venga marcada como automatica.
+pub fn set_release(p: &mut TitlePrefs, id: &str, date: Option<ReleaseDate>) -> Result<(), String> {
+    match date {
+        Some(d) => {
+            d.validate()?;
+            p.entry(id.to_string()).or_default().release = Some(ReleaseDate { auto: false, ..d });
+        }
+        None => {
+            if let Some(x) = p.get_mut(id) {
+                x.release = None;
+            }
+            prune(p, id);
+        }
+    }
+    Ok(())
+}
+
+/// Año de lanzamiento sacado de SteamGridDB: solo se guarda si el juego no tiene fecha o la que tiene tambien es
+/// automatica (nunca pisa una puesta a mano). Devuelve la fecha nueva si ha cambiado algo.
+pub fn set_release_auto(p: &mut TitlePrefs, id: &str, year: i32) -> Option<ReleaseDate> {
+    if !RELEASE_YEARS.contains(&year) {
+        return None;
+    }
+    let cur = p.get(id).and_then(|x| x.release);
+    if cur.is_some_and(|r| !r.auto || r.year == year) {
+        return None;
+    }
+    let d = ReleaseDate { year, month: None, day: None, auto: true };
+    p.entry(id.to_string()).or_default().release = Some(d);
+    Some(d)
+}
+
 /// Cambia el modo de Magpie de un titulo. Lo medido se conserva para no tener que volver a medir.
 pub fn set_magpie_mode(p: &mut TitlePrefs, id: &str, mode: &str) -> Result<(), String> {
     if !crate::magpie::MODES.contains(&mode) {
@@ -303,6 +380,35 @@ mod tests {
         assert_eq!(p["z"].snooze_ms, Some(123));
         set_status(&mut p, "z", "playing", 200).unwrap();
         assert_eq!(p["z"].snooze_ms, None);
+    }
+
+    #[test]
+    fn release_date_rules() {
+        let mut p = TitlePrefs::new();
+        let d = |year, month, day| ReleaseDate { year, month, day, auto: false };
+        assert!(set_release(&mut p, "a", Some(d(1800, None, None))).is_err());
+        assert!(set_release(&mut p, "a", Some(d(2017, None, Some(3)))).is_err(), "dia sin mes");
+        assert!(set_release(&mut p, "a", Some(d(2017, Some(13), None))).is_err());
+        assert!(set_release(&mut p, "a", Some(d(2017, Some(2), Some(29)))).is_err());
+        set_release(&mut p, "a", Some(d(2016, Some(2), Some(29)))).unwrap();
+        assert!(p.contains_key("a"));
+        // Automatica: rellena huecos y sustituye otra automatica, pero nunca una puesta a mano.
+        assert_eq!(set_release_auto(&mut p, "a", 2020), None, "a mano no se pisa");
+        assert_eq!(p["a"].release, Some(d(2016, Some(2), Some(29))));
+        let auto = set_release_auto(&mut p, "b", 2019).unwrap();
+        assert_eq!((auto.year, auto.auto), (2019, true));
+        assert_eq!(set_release_auto(&mut p, "b", 2019), None, "sin cambios");
+        assert_eq!(set_release_auto(&mut p, "b", 2021).map(|r| r.year), Some(2021), "otra automatica si se sustituye");
+        assert_eq!(set_release_auto(&mut p, "c", 0), None);
+        // Ponerla a mano la deja como manual aunque llegue marcada como automatica.
+        set_release(&mut p, "b", Some(ReleaseDate { auto: true, ..d(2018, Some(5), None) })).unwrap();
+        assert!(!p["b"].release.unwrap().auto);
+        // Quitarla poda la entrada si no queda nada.
+        set_release(&mut p, "b", None).unwrap();
+        assert!(!p.contains_key("b"));
+        set_status(&mut p, "a", "playing", 1).unwrap();
+        set_release(&mut p, "a", None).unwrap();
+        assert_eq!(p["a"].status.as_deref(), Some("playing"), "quitar la fecha no toca el estado");
     }
 
     #[test]
