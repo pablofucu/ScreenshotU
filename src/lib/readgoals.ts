@@ -8,6 +8,13 @@ export const GOAL_COL: Record<GoalKey, { c: string; soft: string; ink: string; e
   vn: { c: '#00A0D8', soft: '#cfe6f1', ink: '#00739c', edge: '#0073a0', name: 'novelas', full: 'Novelas visuales' },
   jvn: { c: '#E5487A', soft: '#f6d3df', ink: '#a82b58', edge: '#b02c5c', name: 'japonés', full: 'Novelas japonesas' },
 };
+/** Colores del rescate de racha de cada categoría (nunca el de la categoría): ámbar para novelas, violeta para japonés. */
+export const RESCUE_COL: Record<GoalKey, { rc: string; rsoft: string; rink: string; rmid: string }> = {
+  vn: { rc: '#E9A100', rsoft: '#fcefc7', rink: '#8a5d00', rmid: '#f1dca0' },
+  jvn: { rc: '#6E56CF', rsoft: '#e8e3fb', rink: '#4a3aa0', rmid: '#cdc3f2' },
+};
+/** Clase global (`.r-vn` / `.r-jv`, en app.css) que da las variables --rc, --rsoft, --rink y --rmid del rescate. */
+export const rescueCls = (k: GoalKey) => (k === 'vn' ? 'r-vn' : 'r-jv');
 export const MAP_WEEKS = 10;
 
 export interface MapCell {
@@ -17,6 +24,63 @@ export interface MapCell {
   streak: boolean;
   today: boolean;
   future: boolean;
+  /** Día fallado y recuperado con un rescate pagado (parche del color del rescate). */
+  rescued: boolean;
+}
+
+/** Solo las partidas de al menos esto (minutos) cuentan como extra para pagar un rescate. */
+export const RESCUE_MIN_PLAY = 10;
+/** Un día fallado es rescatable si tiene al menos esta parte de la meta, tras esta racha previa mínima (días seguidos). */
+export const RESCUE_MIN_FRAC = 0.5;
+export const RESCUE_PRIOR_DAYS = 3;
+/** Días de la ventana tras el día fallado; máximo de rescates pagados en cualquier periodo móvil de `RESCUE_PERIOD` días. */
+export const RESCUE_WINDOW = 3;
+export const RESCUE_MAX = 2;
+export const RESCUE_PERIOD = 30;
+/** Un segundo rescate dentro del periodo exige este múltiplo del déficit. */
+export const RESCUE_REPEAT_MULT = 1.5;
+
+/** Partida (unida) dentro de la ventana de un rescate. */
+export interface RescuePlay {
+  /** Día local de la partida (o del trozo de partida si cruza las 7:00). */
+  day: number;
+  name: string;
+  /** Minutos de la partida ese día. */
+  min: number;
+  /** Cuenta para pagar el rescate (la partida entera dura `RESCUE_MIN_PLAY` min o más). */
+  counts: boolean;
+  /** Inicio real (ms), para ordenar. */
+  at: number;
+}
+/** Un rescate pendiente: el día fallado `day` se recupera leyendo de más en los 3 días siguientes. */
+export interface Rescue {
+  key: GoalKey;
+  /** Día fallado (D). */
+  day: number;
+  goal: number;
+  /** Minutos leídos ese día (redondeados) y lo que faltó. */
+  played: number;
+  deficit: number;
+  /** Extra que hay que reunir (el déficit, o ×1,5 si es el segundo rescate en 30 días). */
+  need: number;
+  repeat: boolean;
+  /** Extra reunido (limitado a `need`), repartido en lo de días anteriores a hoy y lo de hoy. */
+  got: number;
+  gotBefore: number;
+  gotToday: number;
+  /** Rescates (incluido este) en el periodo de 30 días, de un máximo de `RESCUE_MAX`. */
+  used: number;
+  /** Ventana: primer y último día (D+1 a D+3). */
+  from: number;
+  to: number;
+  /** Hoy es el último día de la ventana. */
+  last: boolean;
+  /** Momento real (ms) en que cierra la ventana: las 7:00 del día siguiente a `to`. */
+  closeAt: number;
+  /** Minutos que haría falta leer el próximo día (su meta más lo que falte); en el último día, lo que falta hoy. */
+  next: number;
+  /** Partidas de la ventana hasta hoy, de la más antigua a la más reciente. */
+  plays: RescuePlay[];
 }
 export interface GoalTrack {
   key: GoalKey;
@@ -33,6 +97,10 @@ export interface GoalTrack {
   bestTo: number;
   /** Semanas (lunes a domingo), la última es la actual. */
   weeks: MapCell[][];
+  /** Rescate pendiente de esta categoría (la racha se ve «pendiente de recuperar»); null si no hay. */
+  rescue: Rescue | null;
+  /** Día fallado cuyo rescate se acaba de pagar hoy (para el aviso «¡Hucha llena!»); null si no. */
+  paidDay: number | null;
 }
 
 /** Hora local a la que empieza el día de las metas (antes de esa hora todavía cuenta como el día anterior). */
@@ -51,6 +119,9 @@ export const metGoal = (min: number, goal: number) => goal > 0 && Math.round(min
 export const goalMinLeft = (min: number, goal: number) => (metGoal(min, goal) ? 0 : goal - 0.5 - min);
 /** Parte de la meta cumplida (0..1): llega a 1 en cuanto `metGoal` se cumple. */
 export const goalFrac = (min: number, goal: number) => (metGoal(min, goal) ? 1 : Math.max(0, Math.min(1, min / goal)));
+
+/** Momento real (ms) en que empieza el día local `d` (a las 7:00). */
+export const dayStart = (d: number) => d * 864e5 + DAY_SHIFT + new Date(d * 864e5 + DAY_SHIFT + 12 * 3600000).getTimezoneOffset() * 60000;
 
 /** Reparte una partida `[a, b)` entre los días locales que toca (las que cruzan las 7:00 cuentan en los dos). */
 function addSpan(mins: Map<number, number>, a: number, b: number) {
@@ -101,18 +172,75 @@ function eachSpan(key: GoalKey, platforms: Platform[], live: Live, now: number, 
  */
 export function goalTrack(key: GoalKey, goal: number, platforms: Platform[], live: Live, now: number, nWeeks = MAP_WEEKS): GoalTrack {
   const mins = new Map<number, number>();
-  eachSpan(key, platforms, live, now, (_, a, b) => addSpan(mins, a, b));
+  // Para el rescate: minutos de cada día solo con partidas de `RESCUE_MIN_PLAY` min o más, y las partidas por trozo de día.
+  const valid = new Map<number, number>();
+  const pieces: RescuePlay[] = [];
+  eachSpan(key, platforms, live, now, (t, a, b) => {
+    addSpan(mins, a, b);
+    const per = new Map<number, number>();
+    addSpan(per, a, b);
+    const counts = (b - a) / 60000 >= RESCUE_MIN_PLAY;
+    for (const [d, v] of per) {
+      if (counts) valid.set(d, (valid.get(d) ?? 0) + v);
+      pieces.push({ day: d, name: t.name, min: v, counts, at: a });
+    }
+  });
   const met = (d: number) => metGoal(mins.get(d) ?? 0, goal);
   const today = localDay(now);
+
+  // Rescates (retroactivo, sobre todo el historial): un día fallado D con 3 días cumplidos antes, al menos la mitad
+  // de la meta, y sin 2 rescates pagados en los 30 días anteriores, se recupera leyendo de más en D+1..D+3.
+  const repaired = new Set<number>();
+  const paidDays: number[] = [];
+  let rescue: Rescue | null = null;
+  let paidDay: number | null = null;
+  if (goal > 0) {
+    const cands = [...mins.keys()].filter((d) => d < today && !met(d) && Math.round(mins.get(d)!) >= goal * RESCUE_MIN_FRAC
+      &&Array.from({ length: RESCUE_PRIOR_DAYS }, (_, i) => met(d - 1 - i)).every(Boolean)).sort((p, q) => p - q);
+    for (const D of cands) {
+      const recent = paidDays.filter((p) => D - p <= RESCUE_PERIOD).length;
+      if (recent >= RESCUE_MAX) continue;
+      const played = Math.round(mins.get(D)!);
+      const deficit = goal - played;
+      const repeat = recent >= 1;
+      const need = Math.ceil(deficit * (repeat ? RESCUE_REPEAT_MULT : 1) - 1e-9);
+      let sum = 0, before = 0, tod = 0, state: 'pending' | 'paid' | 'failed' = 'pending', payDay = NaN;
+      for (let w = D + 1; w <= D + RESCUE_WINDOW && w <= today; w++) {
+        if (w < today && !met(w)) { state = 'failed'; break; }
+        const ex = Math.max(0, (valid.get(w) ?? 0) - goal);
+        sum += ex;
+        if (w === today) tod = ex; else before += ex;
+        if (Math.round(sum) >= need) { state = 'paid'; payDay = w; break; }
+      }
+      if (state === 'pending' && today > D + RESCUE_WINDOW) state = 'failed';
+      if (state === 'paid') {
+        paidDays.push(D);
+        repaired.add(D);
+        if (payDay === today) paidDay = D;
+      } else if (state === 'pending') {
+        const got = Math.min(need, Math.round(sum));
+        const gotBefore = Math.min(got, Math.round(before));
+        const to = D + RESCUE_WINDOW;
+        rescue = {
+          key, day: D, goal, played, deficit, need, repeat, got, gotBefore, gotToday: got - gotBefore,
+          used: recent + 1, from: D + 1, to, last: today >= to, closeAt: dayStart(to + 1),
+          next: today >= to ? need - got : goal + need - got,
+          plays: pieces.filter((p) => p.day > D && p.day <= Math.min(to, today)).sort((p, q) => p.at - q.at),
+        };
+      }
+    }
+  }
+  // El día fallado cuyo rescate sigue abierto cuenta provisionalmente: la racha se ve «pendiente», no rota.
+  const kept = (d: number) => met(d) || repaired.has(d) || d === rescue?.day;
   const done = met(today);
 
   // Racha: días seguidos cumplidos hasta hoy (o hasta ayer mientras hoy siga abierto).
   let streak = 0;
-  for (let d = done ? today : today - 1; met(d); d--) streak++;
+  for (let d = done ? today : today - 1; kept(d); d--) streak++;
   const streakFrom = (done ? today : today - 1) - streak + 1;
 
   let best = streak, bestTo = streak ? streakFrom + streak - 1 : NaN, run = 0, prev = NaN;
-  for (const d of [...mins.keys()].filter(met).sort((a, b) => a - b)) {
+  for (const d of [...mins.keys()].filter(kept).sort((a, b) => a - b)) {
     run = d === prev + 1 ? run + 1 : 1;
     prev = d;
     if (run > best) { best = run; bestTo = d; }
@@ -126,11 +254,11 @@ export function goalTrack(key: GoalKey, goal: number, platforms: Platform[], liv
     const col: MapCell[] = [];
     for (let i = 0; i < 7; i++) {
       const d = first + w * 7 + i;
-      col.push({ v: goalFrac(mins.get(d) ?? 0, goal), streak: streak > 0 && d >= streakFrom && d <= streakFrom + streak - 1, today: d === today, future: d > today });
+      col.push({ v: goalFrac(mins.get(d) ?? 0, goal), streak: streak > 0 && d >= streakFrom && d <= streakFrom + streak - 1, today: d === today, future: d > today, rescued: repaired.has(d) });
     }
     weeks.push(col);
   }
-  return { key, goal, today: mins.get(today) ?? 0, frac: goalFrac(mins.get(today) ?? 0, goal), done, streak, best, bestFrom: bestTo - best + 1, bestTo, weeks };
+  return { key, goal, today: mins.get(today) ?? 0, frac: goalFrac(mins.get(today) ?? 0, goal), done, streak, best, bestFrom: bestTo - best + 1, bestTo, weeks, rescue, paidDay };
 }
 
 /** Fecha de calendario (en UTC) de un día local: `getUTCDate()`, `getUTCMonth()`… dan el día de este equipo. */
@@ -230,4 +358,13 @@ export function goalLit(k: GoalKey, day: number) {
 }
 export function markGoalLit(k: GoalKey, day: number) {
   try { localStorage.setItem(LIT_KEY(k), String(day)); } catch { /* sin almacenamiento */ }
+}
+
+/* El aviso «¡Hucha llena!» de un rescate pagado se da una sola vez: se guarda el día fallado ya avisado por categoría. */
+const RESCUE_KEY = (k: GoalKey) => `visor.rescueSeen.${k}`;
+export function rescueSeen(k: GoalKey, day: number) {
+  try { return Number(localStorage.getItem(RESCUE_KEY(k)) ?? 0) === day; } catch { return false; }
+}
+export function markRescueSeen(k: GoalKey, day: number) {
+  try { localStorage.setItem(RESCUE_KEY(k), String(day)); } catch { /* sin almacenamiento */ }
 }

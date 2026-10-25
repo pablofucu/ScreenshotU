@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hucha de rescate · Visor de capturas</title>
+<style>
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:400;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-400-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:500;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-500-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:700;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-700-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:800;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-800-latin.woff2') format('woff2')}
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;color-scheme:light;--bad:#E8384F}
+*{box-sizing:border-box}
+
+/* Color del rescate por categoría. Se aplica con .r-vn / .r-jv en el contenedor. */
+.r-vn{--rc:#E9A100;--rsoft:#fcefc7;--rink:#8a5d00;--rmid:#f1dca0}
+.r-jv{--rc:#6E56CF;--rsoft:#e8e3fb;--rink:#4a3aa0;--rmid:#cdc3f2}
+
+/* ============ Página de documentación (igual que racha/rescate-propuestas.html) ============ */
+html,body{margin:0;background:#dfe3e9;font-family:var(--round);color:#3a414e}
+.doc{max-width:1360px;margin:0 auto;padding:40px 24px 80px}
+.doc>header h1{font-size:34px;font-weight:800;margin:0 0 6px}
+.doc>header p{font-size:17px;line-height:1.55;margin:0 0 10px;max-width:920px;color:#545c6a}
+section.p{margin-top:48px}
+section.p h2{font-size:26px;font-weight:800;margin:0 0 4px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+section.p h2 .n{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#3a414e;color:#fff;font-size:19px}
+section.p h2 .where{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#fff;background:var(--rc,#7a8291);border-radius:999px;padding:3px 10px}
+section.p .why{font-size:16px;color:#5f6776;margin:0 0 16px 50px;line-height:1.5}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:24px;align-items:start}
+@media (max-width:1100px){.row{grid-template-columns:1fr}}
+.frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:18px;overflow:hidden;box-shadow:0 0 0 1px rgba(60,70,90,.25),0 24px 50px -24px rgba(30,40,60,.55);background:#0f1218}
+.notes{background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 0 0 1px rgba(95,110,135,.18)}
+.notes h3{margin:0 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:#7a8291}
+.notes ol{margin:0;padding:0;list-style:none;counter-reset:k}
+.notes li{counter-increment:k;position:relative;padding-left:36px;margin-bottom:14px;font-size:15px;line-height:1.5}
+.notes li::before{content:counter(k);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:#ff4f7b;color:#fff;font-weight:800;font-size:14px;display:grid;place-items:center}
+.notes li b{display:block;font-size:16px}
+.notes .now{margin-top:12px;padding-top:12px;border-top:1px solid #e6e9ee;font-size:14px;color:#6a7282;line-height:1.5}
+.notes .now strong{color:#3a414e}
+.notes .rule{margin:0 0 14px;padding:10px 14px;border-radius:14px;background:var(--rsoft);color:var(--rink);font-size:15px;font-weight:800;line-height:1.45}
+.notes .rule small{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.05em;opacity:.8}
+code{font-size:.92em;background:#eef1f5;border-radius:6px;padding:1px 6px}
+
+/* Pestañas de versión y de estado */
+.vtabs{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 0}
+.vtabs button,.seg button{font:800 15px var(--round);border:0;cursor:pointer;border-radius:999px;padding:8px 16px;background:#fff;color:#3a414e;box-shadow:0 0 0 1px rgba(95,110,135,.2);display:flex;align-items:center;gap:8px}
+.vtabs button i{width:12px;height:12px;border-radius:50%;background:var(--rc)}
+.vtabs button.on{background:#3a414e;color:#fff}
+.seg{display:inline-flex;gap:6px;margin:0 0 12px 50px;flex-wrap:wrap}
+.seg button{font-size:14px;padding:6px 14px}
+.seg button.on{background:var(--rc);color:#fff;box-shadow:none}
+.ver{display:none}.ver.on{display:block}
+
+/* Paleta */
+.pal{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.pal{grid-template-columns:1fr 1fr}}
+.sw{background:#fff;border-radius:16px;padding:12px 14px;box-shadow:0 0 0 1px rgba(95,110,135,.18);font-size:13.5px;line-height:1.45;color:#545c6a}
+.sw .chip{height:54px;border-radius:12px;margin-bottom:8px;display:flex;align-items:flex-end;padding:6px 10px;font-weight:800;color:#fff;font-size:14px}
+.sw b{display:block;font-size:15px;color:#3a414e}
+.sw .on-bg{display:flex;gap:6px;margin-top:6px}
+.sw .on-bg span{flex:1;border-radius:8px;padding:3px 6px;font-weight:800;font-size:12px;text-align:center}
+.just{margin-top:14px;background:#fff;border-radius:18px;padding:14px 18px;box-shadow:0 0 0 1px rgba(95,110,135,.18);font-size:15px;line-height:1.55;color:#545c6a}
+.just b{color:#3a414e}
+.wheel{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.pair{display:flex;flex-wrap:wrap;gap:24px;margin-top:18px}
+.pair>div{display:flex;flex-direction:column;gap:8px}
+.pair .lbl{font-size:14px;font-weight:800;color:#7a8291;text-transform:uppercase;letter-spacing:.05em}
+
+/* Tira de estados */
+.states{margin-top:18px;background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 0 0 1px rgba(95,110,135,.18)}
+.states>h3{margin:0 0 12px;font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:#7a8291}
+.sgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:900px){.sgrid{grid-template-columns:1fr}}
+.stc{border-radius:16px;padding:12px 14px;background:#f5f7fa;box-shadow:0 0 0 1px rgba(95,110,135,.14);display:flex;flex-direction:column;gap:10px;min-height:180px}
+.stc .sn{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#7a8291;display:flex;align-items:center;gap:6px}
+.stc .sn i{width:9px;height:9px;border-radius:50%;background:var(--d,#3BB54A)}
+.stc .cap{font-size:13.5px;font-weight:700;line-height:1.4;color:#545c6a;margin-top:auto}
+.stc .cap b{color:#3a414e}
+.homes{display:flex;flex-wrap:wrap;gap:22px;align-items:center;margin-bottom:16px}
+.homes .lbl{font-size:14.5px;color:#545c6a;line-height:1.5;max-width:520px}
+.homes .lbl b{display:block;color:#3a414e;font-size:16px}
+
+/* ============ Mundo de la app (copia de src/app.css adaptada a .stage) ============ */
+.stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;
+  font-family:var(--round);color:#3a414e;background:#eceef2;--acc:#00A0D8;--acc-ink:#fff;user-select:none}
+.bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(34px);opacity:.9}
+.blob.w{background:radial-gradient(circle,#fff,rgba(255,255,255,0) 70%)}
+.blob.a{background:radial-gradient(circle,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%);opacity:.55}
+.glass{position:absolute;--r:28px;--bw:10px;border-radius:var(--r);padding:var(--bw);isolation:isolate;
+  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  box-shadow:inset 0 1.5px 0 #fff,inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.95),inset 0 -1.5px 0 rgba(110,125,150,.30),0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42)}
+.glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:#dfe3e9}
+.pill{background:linear-gradient(180deg,rgba(255,255,255,.80),rgba(255,255,255,.52));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+.avatar{left:22px;top:12px;width:60px;height:60px;--r:16px;--bw:5px}
+.avatar .face{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white),var(--acc));display:grid;place-items:center}
+.crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:20px;font-weight:700;color:#4a5260;z-index:5}
+.crumb .sep{color:#a3abb8;font-weight:500}.crumb .cur{color:var(--acc)}
+.clock{position:absolute;right:24px;top:24px;display:flex;gap:14px;align-items:center;font-size:20px;font-weight:700;color:#4a5260;z-index:5}
+.clock small{font-size:15px;font-weight:500;color:#7a8291}
+.batt{display:flex;gap:2px}.batt b{width:6px;height:13px;border-radius:2px;background:var(--acc)}.batt b.off{background:#c3c9d3}
+.hints{position:absolute;right:22px;bottom:16px;display:flex;gap:10px;z-index:6}
+.hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:999px;font-size:16px;font-weight:700;color:#4a5260;white-space:nowrap}
+.btn{min-width:28px;height:28px;border-radius:14px;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;--b:#4a5260;padding:0 6px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--b) 70%,black),0 1px 2px rgba(0,0,0,.2);text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.btn.a{--b:#3BB54A}.btn.b{--b:#E8384F}.btn.sh{border-radius:8px;--b:#6b7383}
+.mk{position:absolute;z-index:20;width:34px;height:34px;border-radius:50%;background:#ff4f7b;color:#fff;font-weight:800;font-size:18px;display:grid;place-items:center;box-shadow:0 0 0 3px #fff,0 6px 14px rgba(255,79,123,.5)}
+.panel{position:absolute;border-radius:26px;background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(250,251,253,.82));
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px rgba(95,110,135,.20),0 18px 30px -18px rgba(40,50,70,.45)}
+.ptitle{font-size:20px;font-weight:800;color:#4a5260;display:flex;align-items:center;gap:10px;white-space:nowrap}
+.ptitle small{font-size:15px;font-weight:600;color:#8a92a0}
+.tabs{display:inline-flex;gap:4px;padding:4px;border-radius:999px;align-items:center;margin-left:auto}
+.tabs .t{height:30px;padding:0 14px;border-radius:999px;display:flex;align-items:center;font-size:14px;font-weight:800;color:#5f6776}
+.tabs .t.on{background:var(--c);color:#fff}
+.k{font-size:14px;font-weight:700;color:#7a8291}
+.fl{display:inline-block;flex:none}.fl svg{width:100%;height:100%;display:block}
+.vn{--c:#00A0D8;--soft:#cfe6f1;--ink:#00739c;--edge:#0073a0}
+.jvn{--c:#E5487A;--soft:#f6d3df;--ink:#a82b58;--edge:#b02c5c}
+
+/* ---------- Casillas del mapa ---------- */
+.cell{display:block;border-radius:3px;background:#dde1e7;position:relative}
+.cell.st{box-shadow:0 0 0 1.5px var(--edge)}
+.cell.td{box-shadow:0 0 0 2px #fff,0 0 0 3.5px var(--c)}
+.cell.fu{background:transparent;box-shadow:inset 0 0 0 1px #e3e6eb}
+/* Día reparado (tras pagar): parche del color de rescate con puntada */
+.cell.rd{background:var(--rc)!important;box-shadow:0 0 0 1.5px var(--edge);outline:1.5px dashed rgba(255,255,255,.9);outline-offset:-4px}
+.wk{display:flex;gap:4px}
+.wk span{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:800;color:#9aa1ad}
+.wk .cell{width:22px;height:22px}
+.wk .cell.ok{background:var(--c)}
+
+/* ---------- Tarjeta de Inicio (ReadRings) ---------- */
+.hcard{position:relative;width:440px;border-radius:24px;padding:8px;background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(225,234,246,.5));box-shadow:0 0 0 1px rgba(95,110,135,.24),0 18px 30px -16px rgba(40,50,70,.42)}
+.hcard>.face{position:relative;height:134px;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,#fbfcfd,#eef1f5);display:flex;align-items:center;gap:12px;padding:0 12px;box-shadow:inset 0 0 0 1px rgba(20,30,50,.2),inset 0 3px 6px -2px rgba(0,0,0,.3)}
+.rrc{display:flex;flex-direction:column;gap:8px;flex:1;min-width:0}
+.rmed{position:relative;display:grid;grid-template-columns:18px max-content minmax(0,1fr);align-items:center;column-gap:4px;height:48px;padding:0 8px;border-radius:14px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--soft) 45%,white),var(--soft));box-shadow:inset 0 1px 0 #fff,0 0 0 1px color-mix(in srgb,var(--c) 40%,white)}
+.rmed .fl{width:18px;height:18px}
+.rnum{display:inline-block;font-size:24px;font-weight:800;line-height:26px;color:var(--ink)}
+.rlab{font-size:12px;font-weight:800;line-height:1.15;color:#4a5260;white-space:nowrap}
+.rlab small{display:block;font-size:10px;color:var(--ink);text-transform:uppercase;letter-spacing:.04em}
+.rlab small.r{color:var(--rink)}
+.rmap{display:flex;gap:2px}.rmap>div{display:flex;flex-direction:column;gap:2px}
+.rmap .cell{width:8px;height:8px;border-radius:2px}
+.rmap .cell.td{box-shadow:0 0 0 1px var(--c)}
+.rmap .cell.rd{box-shadow:0 0 0 1px var(--rc);outline:none}
+
+/* Hucha en miniatura (Inicio): ocupa exactamente el alto del mapa pequeño (7×8 + 6×2 = 68 px) */
+.mini{height:68px;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:0 2px}
+.mjar{display:flex;gap:2px;height:12px}
+.mjar i{flex:1;border-radius:3px;background:repeating-linear-gradient(135deg,#e3e6eb 0 2px,#eef0f3 2px 4px)}
+.mjar i.d1{background:var(--rc)}.mjar i.d2{background:color-mix(in srgb,var(--rc) 60%,white)}
+.mjl{font-size:11px;font-weight:800;color:var(--rink);display:flex;justify-content:space-between;white-space:nowrap}
+.mjl span:first-child{text-transform:uppercase;letter-spacing:.04em}
+.mjt{font-size:10.5px;font-weight:700;color:#8a92a0;white-space:nowrap}
+
+/* ---------- Pantalla de racha (Streak) ---------- */
+.big{left:48px;top:96px;width:400px;height:520px;padding:26px}
+.rings{position:relative;width:250px;height:250px;margin:6px auto 0}
+.rings svg{position:absolute;inset:0;overflow:visible}
+.rings .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:28px;font-weight:800;line-height:1.15}
+.rings .mid small{font-size:13px;color:#8a92a0;font-weight:700}
+.leg{display:flex;flex-direction:column;gap:9px;margin-top:20px}
+.leg>div{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;color:#4a5260}
+.leg i{width:14px;height:14px;border-radius:50%;background:var(--c);flex:none}
+.leg span{margin-left:auto;color:var(--ink)}
+.leg small{font-size:13.5px;color:#8a92a0;font-weight:700;margin:-5px 0 0 24px}
+.leg small b{color:var(--rink)}
+.bar{height:9px;border-radius:5px;background:var(--soft);overflow:hidden;margin:-3px 0 2px 24px}
+.bar b{display:block;height:100%;background:var(--c);border-radius:5px}
+.medals{position:absolute;left:472px;top:96px;width:760px;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.bmed{position:relative;height:150px;border-radius:24px;padding:18px 22px;display:grid;grid-template-columns:76px 1fr;column-gap:16px;align-items:center;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--soft) 40%,white),var(--soft));box-shadow:inset 0 1.5px 0 #fff,0 0 0 1.5px color-mix(in srgb,var(--c) 45%,white),0 18px 30px -18px color-mix(in srgb,var(--c) 70%,black)}
+.bmed .fl{width:76px;height:76px;grid-row:span 2}
+.bmed b{font-size:52px;font-weight:800;line-height:1;color:var(--ink)}
+.bmed b small{font-size:20px;margin-left:6px}
+.bmed p{margin:4px 0 0;font-size:14.5px;font-weight:700;color:#5f6776;line-height:1.35}
+.bmed p b{font-size:inherit;line-height:inherit;color:var(--rink)}
+.tag{display:inline-block;margin-left:8px;font-size:12px;font-weight:800;color:#fff;background:var(--rc);border-radius:999px;padding:3px 10px;text-transform:uppercase;letter-spacing:.05em;vertical-align:8px}
+.tag.ok{background:#3BB54A}
+.cal{left:472px;top:264px;width:760px;height:352px;padding:18px 26px}
+.heat{display:flex;gap:5px;margin-top:12px}
+.heat>div{display:flex;flex-direction:column;gap:5px}
+.heat .cell{width:22px;height:22px}
+.mon{display:flex;gap:4px;font-size:12px;font-weight:700;color:#8a92a0;height:16px;margin-top:6px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}
+.tiles div{background:#f3f5f8;border-radius:16px;padding:6px 14px}
+.tiles b{display:block;font-size:22px;font-weight:800;color:#3a414e}
+.tiles b small{font-size:14px;color:#6a7282}
+.tiles .rt{background:var(--rsoft)}.tiles .rt .k{color:var(--rink)}
+
+/* ---------- La hucha (sustituye a .cal mientras hay rescate) ---------- */
+.resc{left:472px;top:264px;width:760px;height:352px;padding:18px 26px;
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 2px color-mix(in srgb,var(--rc) 60%,white),0 18px 30px -18px color-mix(in srgb,var(--rc) 55%,black)}
+.rdot{width:14px;height:14px;border-radius:50%;background:var(--rc);flex:none}
+.jar{display:flex;gap:3px;height:36px;margin:12px 0 6px;padding:4px;border-radius:14px;background:#f3f5f8;box-shadow:inset 0 1px 3px rgba(0,0,0,.12)}
+.jar i{flex:1;border-radius:5px;background:repeating-linear-gradient(135deg,#e3e6eb 0 3px,#eef0f3 3px 6px)}
+.jar i.d1{background:var(--rc)}
+.jar i.d2{background:color-mix(in srgb,var(--rc) 60%,white)}
+.jarl{display:flex;justify-content:space-between;align-items:baseline;line-height:20px;font-size:14px;font-weight:800;color:#7a8291}
+.jarl>*{white-space:nowrap}.jarl b{color:var(--rink);font-size:18px}
+.jarl .sw2{display:inline-block;width:11px;height:11px;border-radius:3px;margin:0 4px 0 10px;vertical-align:-1px;background:var(--rc)}
+.jarl .sw2.d2{background:color-mix(in srgb,var(--rc) 60%,white)}
+.hrow{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:16px;margin-top:12px}
+.plist{border-radius:18px;padding:8px 16px;background:#f5f7fa;box-shadow:0 0 0 1px rgba(95,110,135,.14)}
+.plist .k{font-size:13px;text-transform:uppercase;letter-spacing:.05em}
+.pr{display:grid;grid-template-columns:70px minmax(0,1fr) 62px;align-items:center;column-gap:10px;height:24px;font-size:15px;font-weight:700;color:#4a5260;border-top:1px solid #e8ebf0}
+.pr:first-of-type{border-top:0}
+.pr .pd{font-size:13px;font-weight:800;color:#8a92a0}
+.pr .pg{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pr .pm{text-align:right;font-weight:800;color:#3a414e}
+.pr.no{color:#a3abb8}
+.pr.no .pd,.pr.no .pm,.pr.no .pg>s{color:#a3abb8;text-decoration:line-through;text-decoration-thickness:2px}
+.pr.no .pg>em{font-style:normal;margin-left:8px;font-size:11.5px;font-weight:800;color:var(--rink);background:var(--rsoft);border-radius:999px;padding:2px 8px;text-decoration:none}
+.hside{display:flex;flex-direction:column;gap:10px}
+.cd{flex:1;border-radius:18px;padding:8px 16px;background:var(--rsoft);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--rc) 45%,white);color:var(--rink);font-size:13px;font-weight:800}
+.cd .k{color:var(--rink);font-size:13px;text-transform:uppercase;letter-spacing:.05em}
+.cd b{display:block;font-size:34px;line-height:1.05;margin:1px 0}
+.cd small{display:block;font-size:12.5px;font-weight:700;line-height:1.35;opacity:.9}
+.rcnt{border-radius:18px;padding:8px 16px;background:#f3f5f8;font-size:13px}
+.rcnt .k{font-size:13px;text-transform:uppercase;letter-spacing:.05em}
+.rcnt b{display:block;font-size:22px;font-weight:800;color:#3a414e}
+.rcnt b small{font-size:14px;color:#6a7282}
+
+/* Aviso de hucha llena (estado pagado) */
+.toast{position:absolute;z-index:25;left:50%;top:300px;transform:translate(-50%,0) scale(.6);opacity:0;pointer-events:none;
+  display:flex;align-items:center;gap:16px;padding:18px 28px;border-radius:26px;background:linear-gradient(180deg,#fff,var(--rsoft));
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 2px var(--rc),0 0 40px 6px color-mix(in srgb,var(--rc) 45%,transparent),0 30px 50px -20px color-mix(in srgb,var(--rc) 60%,black);transition:.45s cubic-bezier(.3,1.4,.4,1)}
+.toast b{display:block;font-size:30px;font-weight:800;color:var(--rink)}
+.toast span{font-size:16px;font-weight:700;color:var(--rink);opacity:.85}
+.toast .fl{width:64px;height:64px;color:var(--rc)}
+.toast.show{opacity:1;transform:translate(-50%,0) scale(1)}
+
+/* Controles de estado por categoría */
+.segs{display:flex;flex-wrap:wrap;gap:10px 24px;margin:0 0 12px 50px}
+.segs .seg{margin:0;align-items:center}
+.seg .sl{font-size:14px;font-weight:800;color:var(--rink);margin-right:4px}
+
+/* Dos huchas a la vez: el hueco del mapa (760×352) se parte en dos de 371×352 */
+.duo{position:absolute;left:472px;top:264px;width:760px;height:352px;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.duo .resc{position:relative;left:auto;top:auto;width:auto;height:auto;padding:14px 18px;display:flex;flex-direction:column}
+.half .ptitle{font-size:17px;gap:8px}.half .ptitle small{font-size:13px}
+.cdc{margin-left:auto;background:var(--rsoft);color:var(--rink);border-radius:999px;padding:2px 12px;font-size:17px;font-weight:800;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--rc) 45%,white)}
+.half .jar{height:36px;margin:12px 0 4px;gap:2px;padding:3px;border-radius:11px}.half .jar i{border-radius:4px}
+.half .jarl b{font-size:16px}
+.half .plist{margin-top:8px;padding:6px 12px;border-radius:14px}
+.half .plist .k{font-size:11.5px}
+.half .pr{grid-template-columns:48px minmax(0,1fr) 48px;column-gap:6px;height:28px;font-size:13.5px}
+.half .pr .pd{font-size:11.5px}
+.half .pr .pg em{margin-left:5px;font-size:10.5px;padding:1px 6px}
+.hfoot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;font-weight:800;color:var(--rink);padding-top:8px}
+.hfoot .rc2{background:#f3f5f8;border-radius:999px;padding:3px 10px;color:#6a7282}.hfoot .rc2 b{color:#3a414e}
+.pr .pg em.rt{font-style:normal;margin-left:8px;font-size:11.5px;font-weight:800;color:#5f6776;background:#e8ebf0;border-radius:999px;padding:2px 8px}
+</style>
+</head>
+<body>
+<div class="doc">
+<header>
+  <h1>Hucha de minutos: versión final</h1>
+  <p>La propuesta elegida de <code>rescate-propuestas.html</code>, recortada: <b>solo existe mientras hay un rescate pendiente</b> y se queda con lo esencial — una casilla por minuto que falta, las partidas de la ventana del rescate (las de menos de 10 min tachadas), la cuenta atrás y el contador de rescates. Sin columnas por día y sin pie.</p>
+  <p>Cada categoría tiene su rescate y su color: <b style="color:#8a5d00">ámbar</b> para novelas visuales y <b style="color:#4a3aa0">violeta frío</b> para novelas japonesas. <b>Pueden estar abiertos los dos a la vez</b>, y entonces se ven las dos huchas juntas. La hucha es retroactiva: cuentan las partidas de cualquier fecha de la ventana (lun 19 → mié 21). Hoy es martes 20 de octubre, 22:40; el plazo cierra el jueves 22 a las 7:00.</p>
+</header>
+
+<!-- ================================================================ 0 -->
+<section class="p" id="p0">
+  <h2><span class="n">0</span>Color del rescate por categoría</h2>
+  <p class="why">El color del rescate nunca es el de la categoría: el azul y el rosa siguen siendo los de los anillos y las rachas; el rescate se pinta encima con su propio tono.</p>
+  <div class="pal">
+    <div class="sw"><div class="chip" style="background:#00A0D8">#00A0D8</div><b>Novelas visuales</b>Anillo, medalla y mapa. Tono 195°.</div>
+    <div class="sw"><div class="chip" style="background:#E5487A">#E5487A</div><b>Novelas japonesas</b>Anillo, medalla y mapa. Tono 341°.</div>
+    <div class="sw r-vn"><div class="chip" style="background:var(--rc);color:#3a2f00">#E9A100</div><b>Rescate · novelas</b>Suave <code>#fcefc7</code> · tinta <code>#8a5d00</code> (texto siempre en tinta: el ámbar puro no llega a 3:1 sobre blanco).</div>
+    <div class="sw r-jv"><div class="chip" style="background:var(--rc)">#6E56CF</div><b>Rescate · japonés</b>Suave <code>#e8e3fb</code> · tinta <code>#4a3aa0</code>. Puro sobre blanco 5,4:1 y sobre el fondo <code>#eceef2</code> 4,6:1; tinta 8,9:1.</div>
+  </div>
+  <div class="just"><b>Por qué violeta frío #6E56CF (tono 252°).</b> Es el opuesto del ámbar (41° + 180° ≈ 221°, el violeta cae en su complemento dividido) y es la contraparte fría del rosa cálido, con la mitad de su luminosidad, así que contrasta con los dos. Frente al azul de novelas está a 57° de tono y es el doble de oscuro (luminancia 0,14 frente a 0,30), por lo que no se confunde aunque compartan la tarjeta de Inicio. Se descartó el verde azulado: es el complemento exacto del rosa, pero queda a solo 25–30° del azul #00A0D8 y cerca del verde de «cumplido» #3BB54A.</div>
+</section>
+
+<!-- ================================================================ 1 -->
+<section class="p" id="p1">
+  <h2><span class="n">1</span>Pantalla de racha e Inicio <span class="where" style="background:#3a414e">las dos categorías a la vez</span></h2>
+  <p class="why">Cada categoría tiene su propio rescate y pueden estar abiertos los dos. Elige el estado de cada una: con <b>los dos pendientes</b> el hueco del mapa se parte en dos huchas compactas (ámbar a la izquierda, violeta a la derecha); con <b>uno solo</b> la hucha ocupa el hueco entero; con <b>ninguno</b> vuelve el mapa.</p>
+  <div class="segs">
+    <div class="seg r-vn" data-for="vn"><span class="sl">Novelas visuales</span><button class="on" data-m="pend">Pendiente</button><button data-m="paid">Pagado</button><button data-m="none">Sin rescate</button></div>
+    <div class="seg r-jv" data-for="jv"><span class="sl">Novelas japonesas</span><button class="on" data-m="pend">Pendiente</button><button data-m="paid">Pagado</button><button data-m="none">Sin rescate</button></div>
+  </div>
+  <div class="row">
+    <div class="frame"><div class="stage" id="st"></div></div>
+    <aside class="notes"><h3>Cómo se lee</h3>
+      <p class="rule r-vn"><small>La regla en una línea</small>Lo que leas de más en los días del rescate va a su hucha; llénala antes del jueves 7:00 y el domingo cuenta.</p>
+      <ol>
+      <li><b>Medallas</b>La de cada categoría con rescate lleva la etiqueta PENDIENTE en su color (ámbar / violeta) y «recuperado X de Y min».</li>
+      <li><b>Huchas</b>Una casilla por minuto que faltó: 22 en novelas, 11 en japonés. Macizas: lo de días anteriores; claras: lo de hoy; rayadas: lo que falta.</li>
+      <li><b>Partidas de la ventana</b>Cuentan las de cualquier fecha dentro del rescate (lun 19 → mié 21), también las que se registran más tarde con fecha anterior (píldora «con fecha lun 19»). Las de menos de 10 min, tachadas.</li>
+      <li><b>Cuenta atrás y rescates</b>32 h hasta el jueves 7:00 y lo que hace falta mañana; contador «1 de 2» propio de cada categoría.</li>
+    </ol><p class="now"><strong>Sin panel:</strong> al pagar o si no hay rescate, esa hucha desaparece. Si queda la otra, se ensancha; si no queda ninguna, vuelve el mapa con LB/RB.</p></aside>
+  </div>
+  <div class="states"><h3>Tarjeta de Inicio (mismo estado que arriba)</h3><div class="homes" id="home"></div></div>
+</section>
+
+<!-- ================================================================ 2 -->
+<section class="p" id="p2">
+  <h2><span class="n">2</span>Estados por categoría</h2>
+  <p class="why">Novelas: meta 60 min, el domingo 38 → faltan 22; lunes +12, hoy +6 (la partida de 7 min no cuenta) → <b>18 de 22</b>; mañana 64 min. Japonés: meta 30 min, el domingo 19 → faltan 11; lunes +6 (una de sus partidas se registró hoy con fecha del lunes), hoy +3 (la de 6 min no cuenta) → <b>9 de 11</b>; mañana 32 min.</p>
+  <div class="states r-vn"><h3>Novelas visuales · ámbar</h3><div class="sgrid" id="g-vn"></div></div>
+  <div class="states r-jv"><h3>Novelas japonesas · violeta</h3><div class="sgrid" id="g-jv"></div></div>
+</section>
+</div>
+
+<script>
+const FLP='M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235';
+const FL=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${FLP}"/></svg>`;
+const FLF=`<svg viewBox="0 0 24 24"><path fill="currentColor" fill-opacity=".25" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="${FLP}"/></svg>`;
+const PERSON=`<svg viewBox="0 0 40 40" width="34" height="34"><circle cx="20" cy="15" r="8" fill="#fff"/><path d="M5 37c2-9 8-13 15-13s13 4 15 13z" fill="#fff"/></svg>`;
+
+// ---------- las dos categorías y su rescate ----------
+// games: [fecha, título, min, cuenta?, nota]  (nota = partida registrada más tarde con fecha anterior)
+const CAT={
+  vn:{k:'vn',cls:'vn',r:'r-vn',c:'#00A0D8',soft:'#cfe6f1',ink:'#00739c',full:'Novelas visuales',name:'novelas',goal:60,goalL:'1 h',
+      today:73,todayL:'1h 13m',read:38,miss:22,prev:12,got:18,need:64,pre:9,streak:12,best:21,bestR:'(2–22 ago)',
+      games:[['Lun 19','Steins;Gate 0',48,1],['Lun 19','Ever17',24,1],['Mar 20','Steins;Gate 0',52,1],['Mar 20','Ever17',14,1],['Mar 20','Ever17',7,0]]},
+  jv:{k:'jv',cls:'jvn',r:'r-jv',c:'#E5487A',soft:'#f6d3df',ink:'#a82b58',full:'Novelas japonesas',name:'japonés',goal:30,goalL:'30 min',
+      today:39,todayL:'39m',read:19,miss:11,prev:6,got:9,need:32,pre:5,streak:8,best:9,bestR:'(8–16 sep)',
+      games:[['Lun 19','Sakura no Uta',24,1],['Lun 19','Amayui',12,1,'registrada hoy'],['Mar 20','Sakura no Uta',21,1],['Mar 20','Amayui',12,1],['Mar 20','Amayui',6,0]]},
+};
+const KEYS=['vn','jv'];
+const RES={vn:'#E9A100',jv:'#6E56CF'};
+
+// ---------- minutos por día (offset 0 = hoy, 2 = domingo 18) ----------
+let sd=7;const rnd=()=>{sd=(sd*16807)%2147483647;return sd/2147483647};
+const FUT=5,N=26*7-FUT;const VAL={vn:[],jv:[]};
+for(let off=N-1;off>=0;off--){
+  let v;if(off<=1)v=off?72:73;else if(off===2)v=38;else if(off<=11)v=60+Math.round(rnd()*40);else if(off===12)v=18;else v=rnd()<.6?60+Math.round(rnd()*40):Math.round(rnd()*55);VAL.vn.push(v);
+  let j;if(off<=1)j=off?36:39;else if(off===2)j=19;else if(off<=7)j=30+Math.round(rnd()*15);else if(off===8)j=8;else j=rnd()<.55?30+Math.round(rnd()*15):Math.round(rnd()*28);VAL.jv.push(j);
+}
+const cellBg=(c,v)=>v>=1?c:v>=.5?c+'aa':v>0?c+'55':'#dde1e7';
+/** Casillas de mapa; mode de ESA categoría: pend | paid | none */
+function cells(C,weeks,mode){const start=N+FUT-weeks*7;let h='';
+  for(let w=0;w<weeks;w++){h+='<div>';for(let d=0;d<7;d++){const i=start+w*7+d;
+    if(i>=N){h+=`<span class="cell fu"></span>`;continue}
+    const off=N-1-i;let v=Math.min(1,VAL[C.k][i]/C.goal);if(off===2&&mode==='none')v=1;
+    let cls='';if(off<=C.pre+2&&!(off===2&&mode==='paid'))cls+=' st';if(off===0)cls+=' td';if(off===2&&mode==='paid')cls+=' rd';
+    h+=`<span class="cell${cls}" style="background:${cellBg(C.c,v)}"></span>`}h+='</div>'}return h}
+
+// ---------- piezas comunes ----------
+function rings(S,SW,list){let s=`<svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}" style="display:block;overflow:visible">`;
+  list.forEach(g=>{const C=2*Math.PI*g.r;s+=`<circle cx="${S/2}" cy="${S/2}" r="${g.r}" fill="none" stroke="${g.soft}" stroke-width="${SW}"/><circle cx="${S/2}" cy="${S/2}" r="${g.r}" fill="none" stroke="${g.c}" stroke-width="${SW}" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-g.p)}" transform="rotate(-90 ${S/2} ${S/2})"/>`});return s+'</svg>'}
+const twoRings=(S,SW,pad)=>rings(S,SW,[{r:S/2-SW/2-pad,c:CAT.vn.c,soft:CAT.vn.soft,p:1},{r:S/2-SW/2-pad-SW*1.15,c:CAT.jv.c,soft:CAT.jv.soft,p:1}]);
+const tabs=k=>`<span class="tabs pill"><span class="btn sh">LB</span>${KEYS.map(x=>`<span class="t${x===k?' on':''}" style="--c:${CAT[x].c}">${CAT[x].full}</span>`).join('')}<span class="btn sh">RB</span></span>`;
+const mon=['May','Jun','Jul','Ago','Sep','Oct'].map(m=>`<span style="width:${4.33*27}px">${m}</span>`).join('');
+const jarCells=C=>Array.from({length:C.miss},(_,i)=>`<i class="${i<C.prev?'d1':i<C.got?'d2':''}"></i>`).join('');
+
+function chrome(){return `<div class="bg"><div class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></div><div class="blob a" style="left:760px;top:380px;width:520px;height:400px"></div></div>
+<div class="glass avatar"><div class="face">${PERSON}</div></div>
+<div class="crumb pill">Inicio <span class="sep">›</span> <span class="cur">Racha de lectura</span></div>
+<div class="clock">20/10 <small>(mar)</small> 22:40 <span class="batt"><b></b><b></b><b></b><b class="off"></b></span></div>
+<div class="hints"><div class="hint pill"><span class="btn sh">LB</span>Novelas / japonés</div><div class="hint pill"><span class="btn b">B</span>Volver</div></div>`}
+
+function hoyPanel(S){const leg=C=>{const res=S[C.k]==='pend';
+    return `<div class="${C.cls}"><i></i>${C.full}<span>${C.today} / ${C.goal} min</span></div><div class="bar ${C.cls}"><b style="width:100%"></b></div>
+    <small class="${C.cls} ${C.r}">✓ Cumplida${res?` · <b>+${C.got-C.prev} min a la hucha</b>`:' a las 21:05'}</small>`};
+  return `<div class="panel big"><div class="ptitle">Hoy <small>· martes 20 de octubre</small></div>
+    <div class="rings">${twoRings(250,24,2)}<div class="mid"><span style="color:${CAT.vn.ink}">${CAT.vn.todayL}</span><span style="color:${CAT.jv.ink}">${CAT.jv.todayL}</span><small>leídos hoy</small></div></div>
+    <div class="leg">${leg(CAT.vn)}${leg(CAT.jv)}</div></div>`}
+
+function medal(C,mode){let n=C.streak,tag='',sub=`Racha de ${C.full.toLowerCase()} · mejor ${C.best} días <span style="color:#9aa1ad">${C.bestR}</span>`;
+  if(mode==='pend'){tag='<span class="tag">pendiente</span>';sub=`El domingo quedó a medias · recuperado <b>${C.got} de ${C.miss} min</b> · hasta el jueves 7:00`}
+  if(mode==='paid'){n++;tag='<span class="tag ok">salvada</span>';sub=`Domingo recuperado el miércoles · mejor ${Math.max(C.best,n)} días`}
+  return `<div class="bmed ${C.cls} ${C.r}"><span class="fl" style="color:${C.c}">${FLF}</span><b>${n}<small>días</small>${tag}</b><p>${sub}</p></div>`}
+
+const rowsOf=(C,half)=>C.games.map(([d,g,m,ok,note])=>`<div class="pr${ok?'':' no'}"><span class="pd">${d}</span><span class="pg"><s style="text-decoration:${ok?'none':''}">${g}</s>${ok?'':`<em>${half?'&lt; 10 min':'no cuenta · menos de 10 min'}</em>`}${note?`<em class="rt">${half?'reg. hoy':note}</em>`:''}</span><span class="pm">${m} min</span></div>`).join('');
+
+/** Componente HuchaRescate, variante ancha (un solo rescate): hueco del mapa, 760×352 en 472,264 */
+function huchaWide(C){
+  return `<div class="panel resc ${C.cls} ${C.r}"><div class="ptitle"><span class="rdot"></span>Rescate del domingo 18${tabs(C.k)}</div>
+    <div class="jar">${jarCells(C)}</div>
+    <div class="jarl"><span>Domingo ${C.read} de ${C.goal} min · 1 casilla = 1 min que faltó<span class="sw2"></span>antes<span class="sw2 d2"></span>hoy</span><b>Recuperado ${C.got} de ${C.miss} min</b></div>
+    <div class="hrow">
+      <div class="plist"><div class="k">Partidas del lun 19 al mié 21</div>${rowsOf(C,false)}</div>
+      <div class="hside">
+        <div class="cd"><span class="k">Cierra en</span><b>32 h</b><small>jueves 22 a las 7:00</small><small>Mañana: ${C.need} min en partidas de 10 min o más</small></div>
+        <div class="rcnt"><span class="k">Rescates · 30 días</span><b>1 <small>de 2</small></b></div>
+      </div></div></div>`}
+/** Variante media (dos rescates a la vez): 371×352 cada una, lado a lado */
+function huchaHalf(C){
+  return `<div class="panel resc half ${C.cls} ${C.r}"><div class="ptitle"><span class="rdot"></span>${C.full}<small>· dom 18</small><span class="cdc">32 h</span></div>
+    <div class="jar">${jarCells(C)}</div>
+    <div class="jarl"><span>${C.read} de ${C.goal} min</span><b>Recuperado ${C.got} de ${C.miss}</b></div>
+    <div class="plist"><div class="k">Partidas lun 19 – mié 21</div>${rowsOf(C,true)}</div>
+    <div class="hfoot"><span>Mañana ${C.need} min · cierra jue 7:00</span><span class="rc2">Rescates <b>1/2</b></span></div></div>`}
+
+function mapPanel(C,mode){
+  return `<div class="panel cal ${C.cls} ${C.r}"><div class="ptitle"><span style="width:14px;height:14px;border-radius:50%;background:var(--c)"></span>${C.full} <small>· 6 meses · meta ${C.goalL}</small>${tabs(C.k)}</div>
+    <div class="heat">${cells(C,26,mode)}</div><div class="mon">${mon}</div>
+    <div class="tiles"><div><span class="k">Este mes</span><b>15 <small>/ 20 días</small></b></div><div><span class="k">Media diaria</span><b>${C.k==='vn'?58:31} <small>min</small></b></div><div><span class="k">Días cumplidos</span><b>68 <small>%</small></b></div>
+    ${mode==='paid'?'<div class="rt"><span class="k">Rescates · 30 días</span><b>1 <small>de 2</small></b></div>':`<div><span class="k">Mejor racha</span><b>${C.best} <small>días</small></b></div>`}</div></div>`}
+
+const toast=C=>`<div class="toast ${C.r}"><span class="fl">${FLF}</span><div><b>¡Hucha llena!</b><span>${C.full}: el domingo cuenta · ${C.streak+1} días</span></div></div>`;
+
+function slot(S){const pend=KEYS.filter(k=>S[k]==='pend');
+  if(pend.length===2)return `<div class="duo">${huchaHalf(CAT.vn)}${huchaHalf(CAT.jv)}</div>`;
+  if(pend.length===1)return huchaWide(CAT[pend[0]]);
+  const k=KEYS.find(k=>S[k]==='paid')||'vn';return mapPanel(CAT[k],S[k])}
+function stage(S){const paid=KEYS.find(k=>S[k]==='paid');
+  return chrome()+hoyPanel(S)+`<div class="medals">${medal(CAT.vn,S.vn)}${medal(CAT.jv,S.jv)}</div>`+slot(S)+(paid?toast(CAT[paid]):'')}
+
+// ---------- tarjeta de Inicio ----------
+/** Componente HuchaMini (Inicio): mismo hueco que .rmap (≈148×68) */
+const miniJar=C=>`<div class="mini ${C.r}"><div class="mjl"><span>rescate</span><span>${C.got}/${C.miss} min</span></div><div class="mjar">${jarCells(C)}</div><div class="mjt">cierra en 32 h · jue 7:00</div></div>`;
+function col(C,mode){const n=C.streak+(mode==='paid'?1:0);
+  const sub=mode==='pend'?'<small class="r">pendiente</small>':mode==='paid'?'<small>salvada</small>':`<small>mejor ${C.best}</small>`;
+  return `<div class="rrc ${C.cls} ${C.r}"><div class="rmed"><span class="fl" style="color:${C.c}">${FL}</span><span class="rnum">${n}</span><span class="rlab">${C.name}${sub}</span></div>${mode==='pend'?miniJar(C):`<div class="rmap">${cells(C,10,mode)}</div>`}</div>`}
+const home=S=>`<div class="hcard"><div class="face"><div style="position:relative;flex:none">${twoRings(112,11,1)}<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:15px;font-weight:800;line-height:1.2"><span style="color:${CAT.vn.ink}">${CAT.vn.todayL}</span><span style="color:${CAT.jv.ink}">${CAT.jv.todayL}</span></div></div>
+  <div style="flex:1;display:flex;gap:10px;min-width:0">${col(CAT.vn,S.vn)}${col(CAT.jv,S.jv)}</div></div></div>`;
+
+// ---------- tira de estados ----------
+const wk=(C,paid)=>`<div class="wk ${C.cls} ${C.r}">${[['J','ok st'],['V','ok st'],['S','ok st'],['D',paid?'rd':'ok st'],['L','ok st'],['M','ok st td'],['X','fu']].map(([l,c])=>`<span><i class="cell ${c}"></i>${l}</span>`).join('')}</div>`;
+const medS=(C,n,sub)=>`<div class="rrc ${C.cls} ${C.r}" style="flex:none;width:170px"><div class="rmed"><span class="fl" style="color:${C.c}">${FL}</span><span class="rnum">${n}</span><span class="rlab">${C.name}${sub}</span></div></div>`;
+const card=(name,dot,body,cap)=>`<div class="stc"><div class="sn"><i style="--d:${dot}"></i>${name}</div>${body}<div class="cap">${cap}</div></div>`;
+function states(rk){const C=CAT[rk];return [
+  card('Normal · con rescate',RES[rk],`<div style="display:flex;gap:12px;align-items:center">${medS(C,C.streak,'<small class="r">pendiente</small>')}<div style="flex:1;min-width:0">${miniJar(C)}</div></div>`,
+    `Hucha en el hueco del mapa (entera, o media si la otra categoría también tiene rescate). En Inicio la barra sustituye al mapa pequeño. <b>Recuperado ${C.got} de ${C.miss} min.</b>`),
+  card('Pagado','#3BB54A',medS(C,C.streak+1,'<small>salvada</small>')+wk(C,true),
+    `<b>«¡Hucha llena!»</b> 2,6 s y su hucha desaparece; el domingo queda como parche ${rk==='vn'?'ámbar':'violeta'} en el mapa. <b>Sin panel.</b>`),
+  card('Sin rescate','#9aa1ad',medS(C,C.streak,`<small>mejor ${C.best}</small>`)+wk(C,false),
+    '<b>No hay hucha en ningún sitio.</b> Pantalla de racha y tarjeta de Inicio como ahora.'),
+].join('')}
+
+// ---------- montaje ----------
+const S={vn:'pend',jv:'pend'};
+function render(){const st=document.getElementById('st');st.innerHTML=stage(S);
+  document.getElementById('home').innerHTML=home(S)+`<div class="lbl"><b>Tarjeta de Inicio</b>Cada columna con rescate cambia su mapa pequeño por su hucha en miniatura (mismo hueco, 68 px de alto) y el rótulo pasa a «pendiente» en su color. Con los dos rescates, una barra ámbar y otra violeta, cada una bajo su medalla.</div>`;
+  const t=st.querySelector('.toast');if(t){requestAnimationFrame(()=>requestAnimationFrame(()=>t.classList.add('show')));setTimeout(()=>t.classList.remove('show'),2600)}fit()}
+document.querySelectorAll('.seg').forEach(s=>s.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  s.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));S[s.dataset.for]=b.dataset.m;render()}));
+KEYS.forEach(k=>document.getElementById('g-'+k).innerHTML=states(k));
+function fit(){document.querySelectorAll('.frame').forEach(f=>{if(f.clientWidth)f.firstElementChild.style.transform=`scale(${f.clientWidth/1280})`})}
+addEventListener('resize',fit);render();
+</script>
+</body>
+</html>

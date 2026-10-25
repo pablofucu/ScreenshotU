@@ -2,7 +2,8 @@
   // Tarjeta «Lectura de hoy» de Inicio: anillos concéntricos con los minutos de hoy (azul = novelas visuales,
   // rosa = novelas japonesas), una medalla con la racha de cada una y el mapa de las últimas semanas.
   // Al entrar se dibuja en cascada; al cumplir una meta «se enciende la racha» (una vez por día y anillo).
-  import { GOAL_COL, type GoalKey } from '../lib/readgoals';
+  import { GOAL_COL, rescueCls, type GoalKey } from '../lib/readgoals';
+  import HuchaMini from './HuchaMini.svelte';
   import { createReadRings, fmtMin } from '../lib/readrings.svelte';
 
   const COL = GOAL_COL;
@@ -66,22 +67,26 @@
     {#each tracks as t, i (t.key)}
       {@const c = COL[t.key]}
       {@const n = pending(t) ? t.streak - 1 : t.streak}
-      <div class="rr-col" data-g={t.key} style="--c:{c.c};--soft:{c.soft};--ink:{c.ink};--edge:{c.edge};--d:{0.3 + i * 0.14}s">
+      <div class="rr-col {rescueCls(t.key)}" data-g={t.key} style="--c:{c.c};--soft:{c.soft};--ink:{c.ink};--edge:{c.edge};--d:{0.3 + i * 0.14}s">
         <div class="rmed">
           <svg class="rfl" viewBox="0 0 24 24" fill="none" stroke={c.c} stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235" /></svg>
           <span class="rnw"><span class="rnum">{n}</span></span>
-          <span class="rlab" title="{n} {n === 1 ? 'día seguido' : 'días seguidos'}">{c.name}<small>{n > 0 && n >= t.best ? 'récord' : `mejor ${t.best}`}</small></span>
+          <span class="rlab" title="{n} {n === 1 ? 'día seguido' : 'días seguidos'}">{c.name}{#if t.rescue}<small class="rp">pendiente</small>{:else}<small>{n > 0 && n >= t.best ? 'récord' : `mejor ${t.best}`}</small>{/if}</span>
         </div>
-        <div class="rmap">
-          {#each t.weeks as w, wi}
-            <div>
-              {#each w as d, di}
-                <span class="cell" class:st={d.streak && !(d.today && pending(t))} class:td={d.today} class:fu={d.future}
-                  style="--k:{wi + di};background:{d.future ? 'transparent' : cellBg(t, d.v, d.today)}"></span>
-              {/each}
-            </div>
-          {/each}
-        </div>
+        {#if t.rescue}
+          <HuchaMini r={t.rescue} now={rr.now} />
+        {:else}
+          <div class="rmap">
+            {#each t.weeks as w, wi}
+              <div>
+                {#each w as d, di}
+                  <span class="cell" class:st={d.streak && !(d.today && pending(t))} class:td={d.today} class:fu={d.future} class:rd={d.rescued}
+                    style="--k:{wi + di};background:{d.future ? 'transparent' : d.rescued ? 'var(--rc)' : cellBg(t, d.v, d.today)}"></span>
+                {/each}
+              </div>
+            {/each}
+          </div>
+        {/if}
       </div>
     {/each}
   </div>
@@ -105,11 +110,13 @@
   .rnum{display:inline-block;font-size:24px;font-weight:800;line-height:26px;color:var(--ink)}
   .rlab{font-size:12px;font-weight:800;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#4a5260}
   .rlab small{display:block;font-size:10px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.04em}
+  .rlab small.rp{color:var(--rink)}
   .rmap{display:flex;gap:2px}
   .rmap>div{display:flex;flex-direction:column;gap:2px}
   .cell{width:8px;height:8px;border-radius:2px;animation:rpop .3s calc(.5s + var(--k) * 35ms) both}
   .cell.st{box-shadow:0 0 0 1.5px var(--edge)}
   .cell.td:not(.st){box-shadow:0 0 0 1px var(--c)}
+  .cell.rd{box-shadow:0 0 0 1px var(--rc);outline:none}
   @keyframes rdrop{0%{opacity:0;transform:translateY(-30px)}70%{opacity:1;transform:translateY(5px)}100%{opacity:1;transform:translateY(0)}}
   @keyframes rpop{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
 </style>

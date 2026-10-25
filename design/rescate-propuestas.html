@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Día de rescate · Visor de capturas</title>
+<style>
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:400;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-400-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:500;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-500-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:700;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-700-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:800;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-800-latin.woff2') format('woff2')}
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;color-scheme:light;
+  /* Color del rescate: ámbar (no compite con el azul de novelas ni el rosa de japonés) */
+  --rc:#E9A100;--rsoft:#fcefc7;--rink:#8a5d00;--bad:#E8384F}
+*{box-sizing:border-box}
+
+/* ============ Página de documentación (igual que racha-propuestas.html) ============ */
+html,body{margin:0;background:#dfe3e9;font-family:var(--round);color:#3a414e}
+.doc{max-width:1360px;margin:0 auto;padding:40px 24px 80px}
+.doc>header h1{font-size:34px;font-weight:800;margin:0 0 6px}
+.doc>header p{font-size:17px;line-height:1.55;margin:0 0 10px;max-width:900px;color:#545c6a}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+.toc a{font-size:15px;font-weight:700;color:#3a414e;text-decoration:none;background:#fff;border-radius:999px;padding:6px 14px;box-shadow:0 0 0 1px rgba(95,110,135,.2)}
+.toc a:hover{background:#00A0D8;color:#fff}
+section.p{margin-top:56px}
+section.p h2{font-size:26px;font-weight:800;margin:0 0 4px;display:flex;align-items:center;gap:12px}
+section.p h2 .n{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#3a414e;color:#fff;font-size:19px}
+section.p h2 .where{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#fff;background:#7a8291;border-radius:999px;padding:3px 10px}
+section.p .why{font-size:16px;color:#5f6776;margin:0 0 16px 50px;line-height:1.5}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:24px;align-items:start}
+@media (max-width:1100px){.row{grid-template-columns:1fr}}
+.frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:18px;overflow:hidden;box-shadow:0 0 0 1px rgba(60,70,90,.25),0 24px 50px -24px rgba(30,40,60,.55);background:#0f1218}
+.notes{background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 0 0 1px rgba(95,110,135,.18)}
+.notes h3{margin:0 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:#7a8291}
+.notes ol{margin:0;padding:0;list-style:none;counter-reset:k}
+.notes li{counter-increment:k;position:relative;padding-left:36px;margin-bottom:14px;font-size:15px;line-height:1.5}
+.notes li::before{content:counter(k);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:#ff4f7b;color:#fff;font-weight:800;font-size:14px;display:grid;place-items:center}
+.notes li b{display:block;font-size:16px}
+.notes .now{margin-top:12px;padding-top:12px;border-top:1px solid #e6e9ee;font-size:14px;color:#6a7282;line-height:1.5}
+.notes .now strong{color:#3a414e}
+.notes .rule{margin:0 0 14px;padding:10px 14px;border-radius:14px;background:var(--rsoft);color:var(--rink);font-size:15px;font-weight:800;line-height:1.45}
+.notes .rule small{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.05em;opacity:.8}
+code{font-size:.92em;background:#eef1f5;border-radius:6px;padding:1px 6px}
+
+/* Tira de estados bajo cada propuesta */
+.states{margin-top:18px;background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 0 0 1px rgba(95,110,135,.18)}
+.states>h3{margin:0 0 12px;font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:#7a8291}
+.sgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+@media (max-width:1100px){.sgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stc{border-radius:16px;padding:12px 14px;background:#f5f7fa;box-shadow:0 0 0 1px rgba(95,110,135,.14);display:flex;flex-direction:column;gap:10px;min-height:190px}
+.stc .sn{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#7a8291;display:flex;align-items:center;gap:6px}
+.stc .sn i{width:9px;height:9px;border-radius:50%;background:var(--d,#3BB54A)}
+.stc .cap{font-size:13.5px;font-weight:700;line-height:1.4;color:#545c6a;margin-top:auto}
+.stc .cap b{color:#3a414e}
+.homes{display:flex;flex-wrap:wrap;gap:22px;align-items:center;margin-bottom:16px}
+.homes .lbl{font-size:14.5px;color:#545c6a;line-height:1.5;max-width:520px}
+.homes .lbl b{display:block;color:#3a414e;font-size:16px}
+
+/* ============ Mundo de la app (copia de src/app.css adaptada a .stage) ============ */
+.stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;
+  font-family:var(--round);color:#3a414e;background:#eceef2;--acc:#00A0D8;--acc-ink:#fff;user-select:none}
+.bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(34px);opacity:.9}
+.blob.w{background:radial-gradient(circle,#fff,rgba(255,255,255,0) 70%)}
+.blob.a{background:radial-gradient(circle,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%);opacity:.55}
+.glass{position:absolute;--r:28px;--bw:10px;border-radius:var(--r);padding:var(--bw);isolation:isolate;
+  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  box-shadow:inset 0 1.5px 0 #fff,inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.95),inset 0 -1.5px 0 rgba(110,125,150,.30),0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42)}
+.glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:#dfe3e9}
+.pill{background:linear-gradient(180deg,rgba(255,255,255,.80),rgba(255,255,255,.52));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+.avatar{left:22px;top:12px;width:60px;height:60px;--r:16px;--bw:5px}
+.avatar .face{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white),var(--acc));display:grid;place-items:center}
+.crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:20px;font-weight:700;color:#4a5260;z-index:5}
+.crumb .sep{color:#a3abb8;font-weight:500}.crumb .cur{color:var(--acc)}
+.clock{position:absolute;right:24px;top:24px;display:flex;gap:14px;align-items:center;font-size:20px;font-weight:700;color:#4a5260;z-index:5}
+.clock small{font-size:15px;font-weight:500;color:#7a8291}
+.batt{display:flex;gap:2px}.batt b{width:6px;height:13px;border-radius:2px;background:var(--acc)}.batt b.off{background:#c3c9d3}
+.hints{position:absolute;right:22px;bottom:16px;display:flex;gap:10px;z-index:6}
+.hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:999px;font-size:16px;font-weight:700;color:#4a5260;white-space:nowrap}
+.btn{min-width:28px;height:28px;border-radius:14px;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;--b:#4a5260;padding:0 6px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--b) 70%,black),0 1px 2px rgba(0,0,0,.2);text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.btn.a{--b:#3BB54A}.btn.b{--b:#E8384F}.btn.x{--b:#3F63E0}.btn.y{--b:#F2B807;color:#3a2f00;text-shadow:none}.btn.sh{border-radius:8px;--b:#6b7383}
+.mk{position:absolute;z-index:20;width:34px;height:34px;border-radius:50%;background:#ff4f7b;color:#fff;font-weight:800;font-size:18px;display:grid;place-items:center;box-shadow:0 0 0 3px #fff,0 6px 14px rgba(255,79,123,.5)}
+.panel{position:absolute;border-radius:26px;background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(250,251,253,.82));
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px rgba(95,110,135,.20),0 18px 30px -18px rgba(40,50,70,.45)}
+.ptitle{font-size:20px;font-weight:800;color:#4a5260;display:flex;align-items:center;gap:10px}
+.ptitle{white-space:nowrap}
+.ptitle small{font-size:15px;font-weight:600;color:#8a92a0}
+.tabs{display:inline-flex;gap:4px;padding:4px;border-radius:999px;align-items:center;margin-left:auto}
+.tabs .t{height:30px;padding:0 14px;border-radius:999px;display:flex;align-items:center;font-size:14px;font-weight:800;color:#5f6776}
+.tabs .t.on{background:var(--c);color:#fff}
+.tip{position:absolute;z-index:8;padding:8px 14px;border-radius:14px;background:#3a414e;color:#fff;font-size:15px;font-weight:700;white-space:nowrap;box-shadow:0 10px 20px -8px rgba(0,0,0,.5)}
+.tip small{display:block;font-size:13px;font-weight:600;color:#c3c9d3}
+.tip small em{font-style:normal;color:#ffd76a}
+.k{font-size:14px;font-weight:700;color:#7a8291}
+.fl{display:inline-block;flex:none}.fl svg{width:100%;height:100%;display:block}
+.vn{--c:#00A0D8;--soft:#cfe6f1;--ink:#00739c;--edge:#0073a0}
+.jvn{--c:#E5487A;--soft:#f6d3df;--ink:#a82b58;--edge:#b02c5c}
+.replay{position:absolute;z-index:30;right:14px;top:14px;height:34px;padding:0 14px;border:0;border-radius:999px;font:800 14px var(--round);color:#fff;background:rgba(30,36,48,.7);cursor:pointer}
+.replay:hover{background:var(--rc)}
+
+/* ---------- Casillas del mapa (comunes) ---------- */
+.cell{display:block;border-radius:3px;background:#dde1e7;position:relative}
+.cell.st{box-shadow:0 0 0 1.5px var(--edge)}
+.cell.td{box-shadow:0 0 0 2px #fff,0 0 0 3.5px var(--c)}
+.cell.fu{background:transparent;box-shadow:inset 0 0 0 1px #e3e6eb}
+/* Día por recuperar: rayado ámbar que se rellena desde abajo con el progreso (--p) */
+.cell.rp{background:linear-gradient(to top,var(--rc) var(--p,0%),transparent var(--p,0%)),repeating-linear-gradient(135deg,var(--rc) 0 2px,var(--rsoft) 2px 5px)!important;box-shadow:0 0 0 1.5px var(--rc)}
+/* Día reparado: parche ámbar con puntada */
+.cell.rd{background:var(--rc)!important;box-shadow:0 0 0 1.5px var(--edge);outline:1.5px dashed rgba(255,255,255,.9);outline-offset:-4px}
+/* Día perdido */
+.cell.rx{background:#eef0f3!important;box-shadow:inset 0 0 0 1.5px var(--bad)}
+.cell.rx::after{content:'';position:absolute;inset:22%;background:linear-gradient(45deg,transparent 42%,var(--bad) 42% 58%,transparent 58%),linear-gradient(-45deg,transparent 42%,var(--bad) 42% 58%,transparent 58%)}
+/* Día de la ventana aún por llegar */
+.cell.wf{background:transparent;box-shadow:inset 0 0 0 1.5px var(--rc);background-image:radial-gradient(circle,var(--rc) 22%,transparent 24%)}
+/* Ventana con anillo (propuesta 3): marca discreta */
+.cell.ro{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--rc)}
+
+/* Tira semanal de los estados */
+.wk{display:flex;gap:4px}
+.wk span{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:800;color:#9aa1ad}
+.wk .cell{width:22px;height:22px}
+.wk .cell.ok{background:var(--c)}
+.wk .cell.half{background:color-mix(in srgb,var(--c) 55%,white)}
+
+/* ---------- Medalla de Inicio (ReadRings) ---------- */
+.hcard{position:relative;width:440px;border-radius:24px;padding:8px;background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(225,234,246,.5));box-shadow:0 0 0 1px rgba(95,110,135,.24),0 18px 30px -16px rgba(40,50,70,.42)}
+.hcard>.face{position:relative;height:134px;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,#fbfcfd,#eef1f5);display:flex;align-items:center;gap:12px;padding:0 12px;box-shadow:inset 0 0 0 1px rgba(20,30,50,.2),inset 0 3px 6px -2px rgba(0,0,0,.3)}
+.hcard.tall>.face{height:166px;padding-top:30px}
+.rrc{display:flex;flex-direction:column;gap:8px;flex:1;min-width:0}
+.rmed{position:relative;display:grid;grid-template-columns:18px max-content minmax(0,1fr);align-items:center;column-gap:4px;height:48px;padding:0 8px;border-radius:14px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--soft) 45%,white),var(--soft));box-shadow:inset 0 1px 0 #fff,0 0 0 1px color-mix(in srgb,var(--c) 40%,white)}
+.rmed .fl{width:18px;height:18px}
+.rnum{display:inline-block;font-size:24px;font-weight:800;line-height:26px;color:var(--ink)}
+.rlab{font-size:12px;font-weight:800;line-height:1.15;color:#4a5260;white-space:nowrap}
+.rlab small{display:block;font-size:10px;color:var(--ink);text-transform:uppercase;letter-spacing:.04em}
+.rmap{display:flex;gap:2px}.rmap>div{display:flex;flex-direction:column;gap:2px}
+.rmap .cell{width:8px;height:8px;border-radius:2px}
+.rmap .cell.td{box-shadow:0 0 0 1px var(--c)}
+.rmap .cell.rp,.rmap .cell.rd{box-shadow:0 0 0 1px var(--rc)}
+.rmap .cell.rd{outline:none}
+.rmap .cell.wf{box-shadow:inset 0 0 0 1px var(--rc);background-image:none}
+
+/* ---------- Panel de racha (Streak) ---------- */
+.big{left:48px;top:96px;width:400px;height:520px;padding:26px}
+.rings{position:relative;width:250px;height:250px;margin:6px auto 0}
+.rings svg{position:absolute;inset:0;overflow:visible}
+.rings .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:28px;font-weight:800;line-height:1.15}
+.rings .mid small{font-size:13px;color:#8a92a0;font-weight:700}
+.leg{display:flex;flex-direction:column;gap:9px;margin-top:20px}
+.leg>div{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;color:#4a5260}
+.leg i{width:14px;height:14px;border-radius:50%;background:var(--c);flex:none}
+.leg span{margin-left:auto;color:var(--ink)}
+.leg small{font-size:13.5px;color:#8a92a0;font-weight:700;margin:-5px 0 0 24px}
+.leg small.r{color:var(--rink)}
+.bar{height:9px;border-radius:5px;background:var(--soft);overflow:hidden;margin:-3px 0 2px 24px}
+.bar b{display:block;height:100%;background:var(--c);border-radius:5px}
+.medals{position:absolute;left:472px;top:96px;width:760px;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.bmed{position:relative;height:150px;border-radius:24px;padding:18px 22px;display:grid;grid-template-columns:76px 1fr;column-gap:16px;align-items:center;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--soft) 40%,white),var(--soft));box-shadow:inset 0 1.5px 0 #fff,0 0 0 1.5px color-mix(in srgb,var(--c) 45%,white),0 18px 30px -18px color-mix(in srgb,var(--c) 70%,black)}
+.bmed .fl{width:76px;height:76px;grid-row:span 2}
+.bmed b{font-size:52px;font-weight:800;line-height:1;color:var(--ink)}
+.bmed b small{font-size:20px;margin-left:6px}
+.bmed p{margin:4px 0 0;font-size:14.5px;font-weight:700;color:#5f6776;line-height:1.35}
+.bmed p b{font-size:inherit;line-height:inherit}
+.tag{display:inline-block;margin-left:8px;font-size:12px;font-weight:800;color:#fff;background:var(--rc);border-radius:999px;padding:3px 10px;text-transform:uppercase;letter-spacing:.05em;vertical-align:8px}
+.tag.ok{background:#3BB54A}.tag.bad{background:var(--bad)}.tag.ghost{background:#c3c9d3}
+.cal{left:472px;top:264px;width:760px;height:352px;padding:18px 26px}
+.heat{display:flex;gap:5px;margin-top:12px}
+.heat>div{display:flex;flex-direction:column;gap:5px}
+.heat .cell{width:22px;height:22px}
+.mon{display:flex;gap:4px;font-size:12px;font-weight:700;color:#8a92a0;height:16px;margin-top:6px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}
+.tiles div{background:#f3f5f8;border-radius:16px;padding:6px 14px}
+.tiles b{display:block;font-size:22px;font-weight:800;color:#3a414e}
+.tiles b small{font-size:14px;color:#6a7282}
+.tiles .rt{background:var(--rsoft)}.tiles .rt .k{color:var(--rink)}
+.lgd{display:flex;gap:16px;margin-left:auto;font-size:13px;font-weight:800;color:#7a8291}
+.lgd span{display:flex;align-items:center;gap:6px}.lgd .cell{width:14px;height:14px}
+
+/* Aviso de rescate pagado */
+.toast{position:absolute;z-index:25;left:50%;top:300px;transform:translate(-50%,0) scale(.6);opacity:0;pointer-events:none;
+  display:flex;align-items:center;gap:16px;padding:18px 28px;border-radius:26px;background:linear-gradient(180deg,#fff7df,#fde7a6);
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 2px var(--rc),0 0 40px 6px rgba(233,161,0,.45),0 30px 50px -20px rgba(120,80,0,.6);transition:.45s cubic-bezier(.3,1.4,.4,1)}
+.toast b{display:block;font-size:30px;font-weight:800;color:var(--rink)}
+.toast span{font-size:16px;font-weight:700;color:#7a5a12}
+.toast .fl{width:64px;height:64px;color:var(--rc)}
+.paid .toast{opacity:1;transform:translate(-50%,0) scale(1)}
+.paid .toast.off{opacity:0}
+
+/* ============ 1 · Remiendo ============ */
+.p1 .bmed.pend{box-shadow:inset 0 1.5px 0 #fff,0 0 0 2px var(--rc),0 18px 30px -18px rgba(150,100,0,.6)}
+.p1 .bmed.pend::after{content:'';position:absolute;inset:6px;border-radius:19px;border:2px dashed color-mix(in srgb,var(--rc) 70%,white);pointer-events:none}
+.p1 .heat .cell.rp,.p1 .heat .cell.rd{transition:--p .8s}
+.p1 .dtip{right:-14px;bottom:34px}
+.p1 .dtip::after{content:'';position:absolute;right:20px;bottom:-6px;border:6px solid transparent;border-bottom:0;border-top-color:#3a414e}
+.p1 .rmed.pend{box-shadow:inset 0 1px 0 #fff,0 0 0 1.5px var(--rc)}
+.p1 .rmed.pend::after{content:'';position:absolute;inset:3px;border-radius:11px;border:1.5px dashed color-mix(in srgb,var(--rc) 70%,white)}
+
+/* ============ 2 · Hucha de minutos ============ */
+.p2 .resc{left:472px;top:264px;width:760px;height:352px;padding:18px 26px;box-shadow:inset 0 1.5px 0 #fff,0 0 0 2px color-mix(in srgb,var(--rc) 60%,white),0 18px 30px -18px rgba(150,100,0,.5)}
+.p2 .jar{position:relative;display:flex;gap:3px;height:34px;margin:16px 0 6px;padding:4px;border-radius:14px;background:#f3f5f8;box-shadow:inset 0 1px 3px rgba(0,0,0,.12)}
+.p2 .jar i{flex:1;border-radius:4px;background:repeating-linear-gradient(135deg,#e3e6eb 0 3px,#eef0f3 3px 6px)}
+.p2 .jar i.d1{background:var(--rc)}.p2 .jar i.d2{background:color-mix(in srgb,var(--rc) 65%,white)}
+.p2 .jar i.d3{background:color-mix(in srgb,var(--rc) 40%,white)}
+.p2 .jarl{display:flex;justify-content:space-between;font-size:14px;font-weight:800;color:#7a8291}
+.p2 .jarl b{color:var(--rink);font-size:16px}
+.p2 .dcols{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.p2 .dcol{border-radius:16px;padding:10px 14px;background:#f5f7fa;box-shadow:0 0 0 1px rgba(95,110,135,.14);font-size:13.5px;font-weight:700;color:#5f6776;line-height:1.45}
+.p2 .dcol.today{background:#fff;box-shadow:0 0 0 2px var(--rc)}
+.p2 .dcol h4{margin:0 0 4px;font-size:15px;font-weight:800;color:#3a414e;display:flex;justify-content:space-between}
+.p2 .dcol h4 em{font-style:normal;color:var(--rink)}
+.p2 .dcol .no{color:#a3abb8;text-decoration:line-through}
+.p2 .foot{display:flex;gap:10px;margin-top:12px}
+.p2 .foot div{flex:1;background:#f3f5f8;border-radius:14px;padding:6px 12px;font-size:13px;font-weight:700;color:#7a8291}
+.p2 .foot b{display:block;font-size:17px;color:#3a414e}
+.p2 .mjar{display:flex;gap:2px;height:10px}
+.p2 .mjar i{flex:1;border-radius:2px;background:#e3e6eb}
+.p2 .mjar i.d1{background:var(--rc)}.p2 .mjar i.d2{background:color-mix(in srgb,var(--rc) 60%,white)}
+.p2 .mjl{font-size:11px;font-weight:800;color:var(--rink);display:flex;justify-content:space-between}
+
+/* ============ 3 · Anillo de rescate ============ */
+.p3 .bmed.pend .fl{color:var(--rc)!important}
+.p3 .rarc{transition:stroke-dashoffset 1s cubic-bezier(.3,.8,.3,1)}
+.p3 .big{padding:20px 26px}.p3 .leg{gap:6px;margin-top:22px}.p3 .leg small{font-size:12.5px}
+.p3 .glow{filter:drop-shadow(0 0 6px rgba(233,161,0,.7))}
+
+/* ============ 4 · Misión de 3 días ============ */
+.p4 .mission{left:472px;top:96px;width:760px;height:150px;padding:16px 24px;display:flex;align-items:center;gap:20px;
+  background:linear-gradient(180deg,#fffaf0,#fdf0cc);box-shadow:inset 0 1.5px 0 #fff,0 0 0 2px var(--rc),0 18px 30px -18px rgba(150,100,0,.6)}
+.p4 .shield{position:relative;width:84px;height:96px;flex:none;display:grid;place-items:center}
+.p4 .shield svg{position:absolute;inset:0}
+.p4 .shield b{position:relative;font-size:30px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(120,80,0,.5)}
+.p4 .mt{font-size:22px;font-weight:800;color:var(--rink);line-height:1.15}
+.p4 .mt small{display:block;font-size:14px;font-weight:700;color:#7a5a12;margin-top:3px}
+.p4 .track{display:flex;align-items:center;margin-left:auto}
+.p4 .node{position:relative;width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:15px;font-weight:800;color:#fff;background:var(--rc);box-shadow:0 0 0 3px #fff,0 6px 12px -4px rgba(120,80,0,.5)}
+.p4 .node.half{background:conic-gradient(var(--rc) 0 60%,#f1dca0 60% 100%)}
+.p4 .node.half.today{box-shadow:0 0 0 3px #fff,0 0 0 6px var(--rc),0 0 18px 3px rgba(233,161,0,.5)}
+.p4 .node.off{background:#fff;color:var(--rink);box-shadow:0 0 0 3px #fff,inset 0 0 0 2px var(--rc)}
+.p4 .node span{position:absolute;top:52px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:800;color:#7a5a12;white-space:nowrap;text-align:center;line-height:1.25}
+.p4 .node span em{display:block;font-style:normal;color:#9a8656;font-weight:700}
+.p4 .link{width:46px;height:6px;border-radius:3px;background:var(--rc)}
+.p4 .link.off{background:repeating-linear-gradient(90deg,var(--rc) 0 6px,transparent 6px 11px)}
+.p4 .cd{flex:none;text-align:center;padding-left:18px;border-left:2px dashed color-mix(in srgb,var(--rc) 50%,white)}
+.p4 .cd b{display:block;font-size:34px;font-weight:800;color:var(--rink);line-height:1}
+.p4 .cd small{font-size:13px;font-weight:800;color:#7a5a12}
+.p4 .smeds{position:absolute;left:472px;top:264px;width:760px;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.p4 .smeds .bmed{height:92px;padding:12px 18px;grid-template-columns:48px 1fr}
+.p4 .smeds .bmed .fl{width:48px;height:48px}
+.p4 .smeds .bmed b{font-size:34px}
+.p4 .smeds .bmed p{font-size:13px;margin:0}
+.p4 .cal{top:374px;height:242px}
+.p4 .strip{position:absolute;left:8px;right:8px;top:8px;height:26px;border-radius:12px 12px 6px 6px;z-index:2;display:flex;align-items:center;gap:8px;padding:0 10px;
+  background:linear-gradient(180deg,#fff3cf,#fbe2a0);box-shadow:inset 0 0 0 1px var(--rc);font-size:12.5px;font-weight:800;color:var(--rink)}
+.p4 .strip i{flex:1;height:6px;border-radius:3px;background:#f1dca0;overflow:hidden}.p4 .strip i b{display:block;height:100%;background:var(--rc)}
+.p4 .mtrk{display:flex;align-items:center}
+.p4 .mtrk .node{width:26px;height:26px;font-size:11px;box-shadow:0 0 0 2px #fff}
+.p4 .mtrk .node.off{box-shadow:0 0 0 2px #fff,inset 0 0 0 1.5px var(--rc)}
+.p4 .mtrk .node.bad{background:#fff;color:var(--bad);box-shadow:0 0 0 2px #fff,inset 0 0 0 1.5px var(--bad)}
+.p4 .mtrk .link{width:18px;height:4px}
+.p4 .mtrk .link.bad{background:repeating-linear-gradient(90deg,var(--bad) 0 4px,transparent 4px 8px)}
+
+/* ============ 0 · reglas ============ */
+.flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:4px 0 18px}
+@media (max-width:900px){.flow{grid-template-columns:1fr 1fr}}
+.flow div{background:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 0 0 1px rgba(95,110,135,.18);font-size:14.5px;line-height:1.5;color:#545c6a}
+.flow b{display:block;font-size:16px;color:#3a414e;margin-bottom:4px}
+.flow em{font-style:normal;font-weight:800;color:var(--rink)}
+.flow div.no{background:#fff5f6;box-shadow:0 0 0 1px #f3c6cd}
+.flow div.no em{color:var(--bad)}
+.ex{background:#fff;border-radius:18px;padding:18px 22px;box-shadow:0 0 0 1px rgba(95,110,135,.18);font-size:14.5px;color:#545c6a;line-height:1.55}
+.ex table{border-collapse:collapse;width:100%;margin-top:8px;font-size:14px}
+.ex th,.ex td{text-align:left;padding:6px 10px;border-bottom:1px solid #eef0f3}
+.ex th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#8a92a0}
+.ex td b{color:#3a414e}.ex td.r{color:var(--rink);font-weight:800}
+</style>
+</head>
+<body>
+<div class="doc">
+<header>
+  <h1>Día de rescate: cuatro propuestas</h1>
+  <p>Cómo enseñar en la pantalla de racha y en la tarjeta <b>Lectura de hoy</b> que un día fallado por poco todavía se puede recuperar leyendo de más los tres días siguientes. Todas usan el <b style="color:#8a5d00">ámbar</b> como color del rescate, para no confundirlo con el azul de novelas visuales ni el rosa de japonés. Cada propuesta tiene un mockup del estado «pendiente» (con botón para ver el pago) y una tira con los cinco estados.</p>
+  <nav class="toc">
+    <a href="#p0">0 · Reglas y números de ejemplo</a><a href="#p1">1 · Remiendo</a><a href="#p2">2 · Hucha de minutos</a><a href="#p3">3 · Anillo de rescate</a><a href="#p4">4 · Misión de 3 días</a>
+  </nav>
+</header>
+
+<!-- ================================================================ 0 -->
+<section class="p" id="p0">
+  <h2><span class="n">0</span>Reglas y números de ejemplo</h2>
+  <p class="why">Las reglas ya están decididas; aquí solo se resumen y se fijan los números que usan todos los mockups (novelas visuales, meta 60 min; hoy es martes 20 de octubre, 22:40).</p>
+  <div class="flow">
+    <div><b>1 · Fallo por poco</b>El día fallado necesita al menos <em>la mitad de la meta</em> (30 de 60 min, 15 de 30 en japonés) y <em>3 días cumplidos justo antes</em>.</div>
+    <div><b>2 · Tres días para pagar</b>Los 3 días siguientes deben cumplir su meta, y <em>lo que leas de más</em> va pagando lo que faltó. Solo cuentan partidas de <em>10 min o más</em>.</div>
+    <div><b>3 · Mientras tanto</b>La racha no se rompe: se ve <em>pendiente de recuperar</em>. Si el plazo acaba sin pagar, se rompe en ese momento.</div>
+    <div><b>4 · Límite</b>Como mucho <em>2 rescates en 30 días</em>; el segundo pide <em>un 50 % más</em>. Un día reparado no vale como «día anterior» de otro rescate.</div>
+  </div>
+  <div class="flow">
+    <div class="no"><b>No rescatable: muy lejos</b>Domingo con 24 de 60 min: <em>menos de la mitad</em>. La racha se rompe al momento, sin ventana.</div>
+    <div class="no"><b>No rescatable: racha corta</b>Solo 2 días cumplidos antes del fallo: <em>hacen falta 3</em>.</div>
+    <div class="no"><b>No rescatable: encadenado</b>El día anterior al fallo ya era un día reparado: <em>no cuenta</em> como día cumplido para otro rescate.</div>
+    <div class="no"><b>No disponible: límite</b>Ya usaste 2 rescates (3 y 12 de octubre). <em>Vuelve el 2 de noviembre</em>.</div>
+  </div>
+  <div class="ex"><b style="color:#3a414e;font-size:16px">El caso de los mockups</b> — racha de 9 días (9–17 oct), el domingo 18 se quedó corto.
+    <table>
+      <tr><th>Día</th><th>Leído</th><th>Partidas que cuentan (≥ 10 min)</th><th>Extra para el rescate</th><th>Acumulado</th></tr>
+      <tr><td><b>Dom 18</b> (fallo)</td><td>38 / 60 min</td><td>—</td><td class="r">faltan 22 min</td><td>0 / 22</td></tr>
+      <tr><td><b>Lun 19</b></td><td>72 min ✓</td><td>48 + 24</td><td class="r">+12</td><td>12 / 22</td></tr>
+      <tr><td><b>Mar 20</b> (hoy)</td><td>73 min ✓</td><td>52 + 14 (la de 7 min no cuenta)</td><td class="r">+6</td><td><b>18 / 22</b></td></tr>
+      <tr><td><b>Mié 21</b></td><td>—</td><td>hace falta 64 min en partidas ≥ 10 min</td><td class="r">+4</td><td>22 / 22 → salvada</td></tr>
+    </table>
+    El plazo acaba el jueves 22 a las 7:00 (el día de las metas empieza a las 7:00): a las 22:40 del martes quedan <b>32 h</b>. Mientras tanto la medalla enseña <b>12 días</b> (9 + domingo + lunes + hoy); si se paga, mañana sube a <b>13</b>; si no, la racha queda en <b>3 días</b> (desde el lunes). Un segundo rescate en 30 días pediría 22 × 1,5 = <b>33 min</b>.
+  </div>
+</section>
+
+<!-- ================================================================ 1 -->
+<section class="p" id="p1">
+  <h2><span class="n">1</span>Remiendo <span class="where">Racha + Inicio</span></h2>
+  <p class="why">El día fallado es un agujero en el mapa que se va cosiendo: la casilla rayada en ámbar se rellena desde abajo con cada minuto extra, y la medalla queda con un borde de puntadas mientras está «en vilo».</p>
+  <div class="row">
+    <div class="frame"><div class="stage p1" id="st1"></div></div>
+    <aside class="notes"><h3>Cómo funciona</h3>
+      <p class="rule"><small>La regla en una línea</small>Te faltó poco el domingo: lee algo más de tu meta hasta el miércoles y lo coses.</p>
+      <ol>
+      <li><b>Medalla en vilo</b>El número sigue (12) pero con borde de puntadas y la etiqueta PENDIENTE; debajo, «18 de 22 min · hasta el jueves 7:00».</li>
+      <li><b>La casilla rayada</b>El domingo se ve rayado; el relleno sube con el progreso (82 %). Al enfocarla con la cruceta sale el detalle.</li>
+      <li><b>Hoy</b>Bajo la barra de la meta: «+6 min al rescate», para ver qué parte de lo de hoy ha contado.</li>
+      <li><b>Cifra del mes</b>Una baldosa «Rescates 1 de 2» en lugar de una de las cifras.</li>
+    </ol><p class="now"><strong>Riesgo:</strong> el rayado puede leerse como «día a medias» (que ya se pinta más claro). <strong>Mitigación:</strong> el rayado solo existe para rescates, siempre en ámbar, con leyenda junto al mapa; y la pista inferior cambia a «A · Ver rescate» al enfocarlo.</p></aside>
+  </div>
+  <div class="states"><h3>Inicio y estados</h3><div class="homes" id="h1"></div><div class="sgrid" id="g1"></div></div>
+</section>
+
+<!-- ================================================================ 2 -->
+<section class="p" id="p2">
+  <h2><span class="n">2</span>Hucha de minutos <span class="where">Racha (+ barra en Inicio)</span></h2>
+  <p class="why">Más explícita: el rescate es una hucha con tantas casillas como minutos faltaron. Cada día de la ventana echa su extra (un tono por día) y se listan las partidas que han contado y las que no.</p>
+  <div class="row">
+    <div class="frame"><div class="stage p2" id="st2"></div></div>
+    <aside class="notes"><h3>Cómo funciona</h3>
+      <p class="rule"><small>La regla en una línea</small>Lo que leas de más estos 3 días va a la hucha; llénala y el domingo cuenta.</p>
+      <ol>
+      <li><b>Medalla</b>12 días con etiqueta PENDIENTE; el resto igual que ahora.</li>
+      <li><b>La hucha</b>22 casillas (una por minuto que faltó): 12 del lunes, 6 de hoy, 4 por llenar. Arriba, la cuenta atrás.</li>
+      <li><b>Un día por columna</b>Meta, extra y partidas. La de 7 min aparece tachada: «no cuenta, menos de 10 min».</li>
+      <li><b>Pie</b>Rescates usados (1 de 2 en 30 días) y aviso de que el siguiente pide 33 min.</li>
+    </ol><p class="now"><strong>Riesgo:</strong> el panel ocupa el sitio del mapa y la pantalla parece otra. <strong>Mitigación:</strong> solo aparece con un rescate abierto; el mapa baja un puesto (sigue con LB/RB) y en Inicio basta una barra fina bajo la medalla.</p></aside>
+  </div>
+  <div class="states"><h3>Inicio y estados</h3><div class="homes" id="h2"></div><div class="sgrid" id="g2"></div></div>
+</section>
+
+<!-- ================================================================ 3 -->
+<section class="p" id="p3">
+  <h2><span class="n">3</span>Anillo de rescate <span class="where">Inicio + Racha</span></h2>
+  <p class="why">La más integrada: mientras haya un rescate abierto, los anillos de hoy ganan un tercer anillo exterior ámbar, discontinuo, que se cierra con los minutos extra. Se ve de un vistazo en Inicio sin abrir nada.</p>
+  <div class="row">
+    <div class="frame"><div class="stage p3" id="st3"></div></div>
+    <aside class="notes"><h3>Cómo funciona</h3>
+      <p class="rule"><small>La regla en una línea</small>Cierra el anillo dorado antes del jueves y la racha sigue como si nada.</p>
+      <ol>
+      <li><b>Tercer anillo</b>Por fuera de los dos de siempre, más fino y discontinuo: 18 de 22 min (82 %). Solo existe con un rescate abierto.</li>
+      <li><b>Leyenda</b>Una tercera fila «Rescate del domingo» con la cifra y el plazo.</li>
+      <li><b>Llama ámbar</b>La medalla cambia el color de la llama mientras está en vilo; el número no cambia.</li>
+      <li><b>Mapa</b>Solo un aro ámbar alrededor del domingo, sin rayado.</li>
+    </ol><p class="now"><strong>Riesgo:</strong> parecer una tercera meta diaria, o no saber de qué categoría es. <strong>Mitigación:</strong> trazo discontinuo y más fino, fila «Rescate del domingo» en la leyenda, y la medalla de esa categoría con la llama ámbar; con rescates en las dos categorías, el anillo se parte en dos arcos con su color de borde.</p></aside>
+  </div>
+  <div class="states"><h3>Inicio y estados</h3><div class="homes" id="h3"></div><div class="sgrid" id="g3"></div></div>
+</section>
+
+<!-- ================================================================ 4 -->
+<section class="p" id="p4">
+  <h2><span class="n">4</span>Misión de 3 días <span class="where">Racha + Inicio</span></h2>
+  <p class="why">Más de juego: el rescate es una misión con tres etapas (lunes, martes, miércoles), un escudo con la racha que proteges y una cuenta atrás. Ocupa la cabecera de la pantalla mientras dura.</p>
+  <div class="row">
+    <div class="frame"><div class="stage p4" id="st4"></div></div>
+    <aside class="notes"><h3>Cómo funciona</h3>
+      <p class="rule"><small>La regla en una línea</small>Cumple tu meta 3 días seguidos y lee un poco más: así salvas el domingo.</p>
+      <ol>
+      <li><b>Escudo</b>Protege la racha de 12; al pagar, se rompe el escudo en brillo y queda la llama.</li>
+      <li><b>Etapas</b>Lunes hecho (+12), hoy a medias (+6 de lo que hace falta), miércoles por hacer (+4).</li>
+      <li><b>Cuenta atrás</b>32 h hasta el jueves a las 7:00.</li>
+      <li><b>Medallas y mapa</b>Bajan y se compactan mientras dura la misión.</li>
+    </ol><p class="now"><strong>Riesgo:</strong> las etapas parecen exigir el mismo extra cada día, o que haga falta cumplir los 3 aunque ya esté pagado. <strong>Mitigación:</strong> las etapas muestran el extra real de cada día y la misión acaba en cuanto se llena; en Inicio, una franja con barra única.</p></aside>
+  </div>
+  <div class="states"><h3>Inicio y estados</h3><div class="homes" id="h4"></div><div class="sgrid" id="g4"></div></div>
+</section>
+</div>
+
+<script>
+const FLP='M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235';
+const FL=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${FLP}"/></svg>`;
+const FLF=`<svg viewBox="0 0 24 24"><path fill="currentColor" fill-opacity=".25" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="${FLP}"/></svg>`;
+const COL={vn:{c:'#00A0D8',soft:'#cfe6f1',ink:'#00739c',name:'novelas',full:'Novelas visuales',goal:60},jvn:{c:'#E5487A',soft:'#f6d3df',ink:'#a82b58',name:'japonés',full:'Novelas japonesas',goal:30}};
+const PERSON=`<svg viewBox="0 0 40 40" width="34" height="34"><circle cx="20" cy="15" r="8" fill="#fff"/><path d="M5 37c2-9 8-13 15-13s13 4 15 13z" fill="#fff"/></svg>`;
+const RC='#E9A100',RSOFT='#fcefc7';
+
+// ---------- datos: minutos por día de novelas visuales; offset 0 = hoy (mar 20), 2 = dom 18 ----------
+let sd=7;const rnd=()=>{sd=(sd*16807)%2147483647;return sd/2147483647};
+const FUT=5,N=26*7-FUT;
+const VN=[],JV=[];
+for(let off=N-1;off>=0;off--){
+  let v;if(off<=1)v=off?72:73;else if(off===2)v=38;else if(off<=11)v=60+Math.round(rnd()*40);else if(off===12)v=18;
+  else v=rnd()<.6?60+Math.round(rnd()*40):Math.round(rnd()*55);VN.push(v);
+  JV.push(off===0?21:off<5?30+Math.round(rnd()*15):rnd()<.55?30+Math.round(rnd()*15):Math.round(rnd()*28));
+}
+const STREAK=12; // mostrado mientras está pendiente
+function cellBg(c,v){return v>=1?c:v>=.5?c+'aa':v>0?c+'55':'#dde1e7'}
+/** Mapa de `weeks` semanas. mode: pend | paid | broken | ring */
+function heat(weeks,mode,{p=82,tip=''}={}){
+  const tot=weeks*7,start=N+FUT-tot;let h='';
+  for(let w=0;w<weeks;w++){h+='<div>';for(let d=0;d<7;d++){const i=start+w*7+d;
+    if(i>=N){const wf=i===N&&mode!=='broken';h+=`<span class="cell fu${wf&&mode!=='paid'?' wf':''}"></span>`;continue}
+    const off=N-1-i,v=Math.min(1,VN[i]/60);let cls='',st='';
+    const inStreak=off<=11&&!(mode==='broken'&&off>=2);
+    if(inStreak&&off!==2)cls+=' st';if(off===0)cls+=' td';
+    if(off===2){cls+=mode==='pend'?' rp':mode==='paid'?' rd':mode==='ring'?' ro':' rx';st=`--p:${p}%;`}
+    h+=`<span class="cell${cls}" style="${st}background:${cellBg('#00A0D8',v)}">${off===2?tip:''}</span>`}h+='</div>'}
+  return h;
+}
+function miniMap(mode){const start=N+FUT-70;let h='';
+  for(let w=0;w<10;w++){h+='<div>';for(let d=0;d<7;d++){const i=start+w*7+d;
+    if(i>=N){h+=`<span class="cell${i===N&&mode==='pend'?' wf':''}" style="background:transparent"></span>`;continue}
+    const off=N-1-i,v=Math.min(1,VN[i]/60);let cls='';
+    if(off<=11&&off!==2&&!(mode==='broken'&&off>=2))cls+=' st';if(off===0)cls+=' td';
+    if(off===2)cls+=mode==='pend'?' rp':mode==='paid'?' rd':mode==='ring'?' ro':mode==='normal'?'':' rx';
+    h+=`<span class="cell${cls}" style="--p:82%;background:${off===2&&mode==='normal'?'#00A0D8':cellBg('#00A0D8',v)}"></span>`}h+='</div>'}return h}
+function jvMap(){const start=N+FUT-70;let h='';for(let w=0;w<10;w++){h+='<div>';for(let d=0;d<7;d++){const i=start+w*7+d;
+  if(i>=N){h+='<span class="cell" style="background:transparent"></span>';continue}const off=N-1-i;
+  h+=`<span class="cell${off<5&&off>0?' st':''}${off===0?' td':''}" style="background:${cellBg('#E5487A',Math.min(1,JV[i]/30))}"></span>`}h+='</div>'}return h}
+
+// ---------- anillos ----------
+function rings(S,SW,list,extra=''){let s=`<svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}" style="display:block;overflow:visible">`;
+  list.forEach(g=>{const C=2*Math.PI*g.r;
+    s+=`<circle cx="${S/2}" cy="${S/2}" r="${g.r}" fill="none" stroke="${g.soft}" stroke-width="${g.w||SW}" ${g.dash?`stroke-dasharray="${g.dash}"`:''}/>
+    <circle class="${g.cls||''}" cx="${S/2}" cy="${S/2}" r="${g.r}" fill="none" stroke="${g.c}" stroke-width="${g.w||SW}" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-g.p)}" transform="rotate(-90 ${S/2} ${S/2})"/>`});
+  return s+extra+'</svg>'}
+const homeRings=(res)=>{const S=112,SW=11;const L=[{r:S/2-SW/2-1,c:'#00A0D8',soft:'#cfe6f1',p:1},{r:S/2-SW/2-1-SW*1.15,c:'#E5487A',soft:'#f6d3df',p:.7}];
+  if(res!=null)L.forEach(g=>g.r-=6);
+  if(res!=null)L.unshift({r:S/2-1,w:4,c:RC,soft:'#f1dca0',p:res,cls:'rarc'});
+  return `<div style="position:relative;flex:none">${rings(S,SW,L)}<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:15px;font-weight:800;line-height:1.2"><span style="color:#00739c">1h 13m</span><span style="color:#a82b58">21m</span></div></div>`};
+const jvCol=()=>`<div class="rrc jvn"><div class="rmed"><span class="fl" style="color:#E5487A">${FL}</span><span class="rnum">5</span><span class="rlab">japonés<small>mejor 9</small></span></div><div class="rmap">${jvMap()}</div></div>`;
+
+// ---------- chrome de la pantalla de racha ----------
+const chrome=hints=>`<div class="bg"><div class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></div><div class="blob a" style="left:760px;top:380px;width:520px;height:400px"></div></div>
+<div class="glass avatar"><div class="face">${PERSON}</div></div>
+<div class="crumb pill">Inicio <span class="sep">›</span> <span class="cur">Racha de lectura</span></div>
+<div class="clock">20/10 <small>(mar)</small> 22:40 <span class="batt"><b></b><b></b><b></b><b class="off"></b></span></div>
+<div class="hints">${hints.map(([b,t,c])=>`<div class="hint pill"><span class="btn ${c}">${b}</span>${t}</div>`).join('')}</div>`;
+const HINTS=[['LB','Novelas / japonés','sh'],['A','Ver rescate','a'],['B','Volver','b']];
+const tabs=`<span class="tabs pill"><span class="btn sh">LB</span><span class="t on" style="--c:#00A0D8">Novelas visuales</span><span class="t">Novelas japonesas</span><span class="btn sh">RB</span></span>`;
+const mon=['May','Jun','Jul','Ago','Sep','Oct'].map(m=>`<span style="width:${4.33*27}px">${m}</span>`).join('');
+function hoyPanel(extraLeg='',ringsSvg=null,note='✓ Cumplida a las 21:05'){
+  const S=250,SW=24;const svg=ringsSvg||rings(S,SW,[{r:S/2-SW/2-2,c:'#00A0D8',soft:'#cfe6f1',p:1},{r:S/2-SW/2-2-SW*1.15,c:'#E5487A',soft:'#f6d3df',p:.7}]);
+  return `<div class="panel big"><div class="ptitle">Hoy <small>· martes 20 de octubre</small></div>
+    <div class="rings">${svg}<div class="mid"><span style="color:#00739c">1h 13m</span><span style="color:#a82b58">21m</span><small>leídos hoy</small></div></div>
+    <div class="leg">
+      <div class="vn"><i></i>Novelas visuales<span>73 / 60 min</span></div><div class="bar vn"><b style="width:100%"></b></div><small class="vn">${note}</small>
+      <div class="jvn"><i></i>Novelas japonesas<span>21 / 30 min</span></div><div class="bar jvn"><b style="width:70%"></b></div><small>Faltan 9 min para seguir la racha</small>
+      ${extraLeg}
+    </div></div>`}
+const jvMed=`<div class="bmed jvn"><span class="fl" style="color:#E5487A">${FLF}</span><b>5<small>días</small></b><p>Racha de novelas japonesas · mejor 9 días <span style="color:#9aa1ad">(8–16 sep)</span></p></div>`;
+const toast=(t,s)=>`<div class="toast"><span class="fl">${FLF}</span><div><b>${t}</b><span>${s}</span></div></div>`;
+const payBtn='<button class="replay" data-pay>▶ Pagar rescate (miércoles)</button>';
+
+// ---------- tira de semana para los estados ----------
+// cells: [letra, clase] de J15 a X21
+function wk(cells){return `<div class="wk vn">${cells.map(([l,c,p])=>`<span><i class="cell ${c}" style="${p?`--p:${p}%`:''}"></i>${l}</span>`).join('')}</div>`}
+const W={
+  normal:wk([['J','ok st'],['V','ok st'],['S','ok st'],['D','ok st'],['L','ok st'],['M','ok st td'],['X','fu']]),
+  pend:wk([['J','ok st'],['V','ok st'],['S','ok st'],['D','rp',82],['L','ok st'],['M','ok st td'],['X','fu wf']]),
+  paid:wk([['J','ok st'],['V','ok st'],['S','ok st'],['D','rd'],['L','ok st'],['M','ok st'],['X','ok st td']]),
+  broken:wk([['J','ok'],['V','ok'],['S','ok'],['D','rx'],['L','ok st'],['M','ok st'],['X','ok st'],['J','half td']]),
+  na:wk([['J','ok'],['V','ok'],['S','ok'],['D','rx'],['L','ok st'],['M','ok st td'],['X','fu']]),
+  ring:wk([['J','ok st'],['V','ok st'],['S','ok st'],['D','half ro'],['L','ok st'],['M','ok st td'],['X','fu wf']]),
+};
+const card=(name,dot,body,cap)=>`<div class="stc"><div class="sn"><i style="--d:${dot}"></i>${name}</div>${body}<div class="cap">${cap}</div></div>`;
+const medS=(n,lab,sub,cls='',fc='#00A0D8')=>`<div class="rrc vn" style="flex:none"><div class="rmed ${cls}"><span class="fl" style="color:${fc}">${FL}</span><span class="rnum">${n}</span><span class="rlab">${lab}<small>${sub}</small></span></div></div>`;
+
+// ======================================================== 1 · Remiendo
+function build1(){
+  const tip=`<span class="tip dtip">Domingo 18 · 38 de 60 min<small>Recuperado <em>18 de 22 min</em> · hasta el jueves 7:00</small></span>`;
+  return chrome(HINTS)+hoyPanel('',null,'✓ Cumplida · <b style="color:#8a5d00">+6 min al rescate</b>')+`
+  <div class="medals"><div class="bmed vn pend"><span class="fl" style="color:#00A0D8">${FLF}</span>
+    <b><span data-n>12</span><small>días</small><span class="tag" data-tag>pendiente</span></b>
+    <p data-sub>El domingo quedó a medias · recuperado <b style="color:#8a5d00">18 de 22 min</b> · hasta el jueves 7:00</p></div>${jvMed}</div>
+  <div class="panel cal vn"><div class="ptitle"><span style="width:14px;height:14px;border-radius:50%;background:var(--c)"></span>Novelas visuales <small>· 6 meses · meta 1 h</small>
+    <span class="lgd"><span><i class="cell rp" style="--p:40%"></i>por recuperar</span><span><i class="cell rd"></i>recuperado</span><span><i class="cell rx"></i>perdido</span></span></div>
+    <div class="heat">${heat(26,'pend',{tip})}</div><div class="mon">${mon}</div>
+    <div class="tiles"><div><span class="k">Este mes</span><b>15 <small>/ 20 días</small></b></div><div><span class="k">Media diaria</span><b>58 <small>min</small></b></div><div><span class="k">Días cumplidos</span><b>68 <small>%</small></b></div><div class="rt"><span class="k">Rescates · 30 días</span><b>1 <small>de 2</small></b></div></div></div>
+  ${toast('¡Domingo cosido!','22 de 22 min · la racha sigue: 13 días')}
+  <span class="mk" style="left:440px;top:84px">1</span><span class="mk" style="left:1150px;top:410px">2</span><span class="mk" style="left:60px;top:500px">3</span><span class="mk" style="left:1200px;top:570px">4</span>${payBtn}`}
+function pay1(st){const c=st.querySelector('.heat .cell.rp');c.classList.replace('rp','rd');c.querySelector('.tip')?.remove();
+  c.animate([{transform:'scale(2.6)'},{transform:'scale(1)'}],{duration:500,easing:'ease-out'});
+  st.querySelector('.bmed.pend').classList.remove('pend');st.querySelector('[data-n]').textContent='13';
+  const t=st.querySelector('[data-tag]');t.textContent='salvada';t.classList.add('ok');
+  st.querySelector('[data-sub]').innerHTML='Domingo recuperado el miércoles · mejor 21 días';}
+function home1(){return `<div class="hcard"><div class="face">${homeRings()}<div style="flex:1;display:flex;gap:10px;min-width:0">
+  <div class="rrc vn"><div class="rmed pend"><span class="fl" style="color:#00A0D8">${FL}</span><span class="rnum">12</span><span class="rlab">novelas<small style="color:#8a5d00">en vilo 18/22</small></span></div><div class="rmap">${miniMap('pend')}</div></div>${jvCol()}</div></div></div>
+  <div class="lbl"><b>Tarjeta de Inicio</b>Misma medalla con borde de puntadas y «en vilo 18/22» en lugar de «mejor 21». El domingo se ve rayado en el mapa pequeño y el miércoles marcado con un punto ámbar.</div>`}
+function states1(){return [
+  card('Normal','#3BB54A',medS(12,'novelas','mejor 21')+W.normal,'Sin cambios: <b>12 días</b>.'),
+  card('Pendiente','#E9A100',medS(12,'novelas','en vilo 18/22','pend')+W.pend,'Casilla rayada y medio llena: <b>recuperado 18 de 22 min</b> · hasta el jueves 7:00.'),
+  card('Pagado','#3BB54A',medS(13,'novelas','salvada')+W.paid,'La casilla cae en grande y queda con puntada; aviso <b>«¡Domingo cosido!»</b> y la racha sube a 13.'),
+  card('Rota','#E8384F',medS(3,'novelas','mejor 21')+W.broken,'El plazo acabó con 18 de 22: el rayado se vacía y queda la cruz. <b>Faltaron 4 min</b> · racha de 3 días.'),
+  card('No disponible','#9aa1ad',medS(2,'novelas','sin rescate')+W.na,'Cruz directa y aviso al abrir: <b>ya usaste 2 rescates (3 y 12 oct). Vuelve el 2 nov.</b>'),
+].join('')}
+
+// ======================================================== 2 · Hucha
+function build2(){
+  const jar=Array.from({length:22},(_,i)=>`<i class="${i<12?'d1':i<18?'d2':''}"></i>`).join('');
+  return chrome(HINTS)+hoyPanel('',null,'✓ Cumplida · +6 a la hucha')+`
+  <div class="medals"><div class="bmed vn"><span class="fl" style="color:#00A0D8">${FLF}</span>
+    <b><span data-n>12</span><small>días</small><span class="tag" data-tag>pendiente</span></b><p>Racha de novelas visuales · mejor 21 días <span style="color:#9aa1ad">(2–22 ago)</span></p></div>${jvMed}</div>
+  <div class="panel resc vn"><div class="ptitle"><span style="width:14px;height:14px;border-radius:50%;background:${RC}"></span>Rescate del domingo 18 <small>· leíste 38 de 60 min</small>
+    <span style="margin-left:auto;font-size:15px;color:#8a5d00">cierra en <b style="font-size:20px">32 h</b> · jueves 7:00</span></div>
+    <div class="jar">${jar}</div>
+    <div class="jarl"><span>Cada casilla, un minuto que faltó</span><b data-jl>18 de 22 min</b></div>
+    <div class="dcols">
+      <div class="dcol"><h4>Lun 19 <em>+12</em></h4>72 min · meta ✓<br>Steins;Gate 0 · 48 min<br>Ever17 · 24 min</div>
+      <div class="dcol today"><h4>Mar 20 · hoy <em>+6</em></h4>73 min · meta ✓<br>Steins;Gate 0 · 52 min<br>Ever17 · 14 min<br><span class="no">Ever17 · 7 min</span> <span style="color:#a3abb8">no cuenta (menos de 10)</span></div>
+      <div class="dcol" data-wed><h4>Mié 21 <em>+4</em></h4>Lee <b style="color:#3a414e">64 min</b> en partidas de 10 min o más y la hucha se llena.</div>
+    </div>
+    <div class="foot"><div>Rescates en 30 días<b>1 de 2</b></div><div>El siguiente pedirá<b>×1,5 de lo que falte</b></div><div>Mapa y estadísticas<b>↓ más abajo</b></div></div></div>
+  ${toast('¡Hucha llena!','El domingo cuenta · racha de 13 días')}
+  <span class="mk" style="left:1200px;top:84px">1</span><span class="mk" style="left:1200px;top:300px">2</span><span class="mk" style="left:880px;top:405px">3</span><span class="mk" style="left:1200px;top:560px">4</span>${payBtn}`}
+function pay2(st){st.querySelectorAll('.jar i:not(.d1):not(.d2)').forEach((e,i)=>{e.classList.add('d3');e.animate([{transform:'scaleY(0)'},{transform:'scaleY(1.4)'},{transform:'none'}],{duration:400,delay:i*90})});
+  st.querySelector('[data-jl]').textContent='22 de 22 min';st.querySelector('[data-n]').textContent='13';
+  const t=st.querySelector('[data-tag]');t.textContent='salvada';t.classList.add('ok');
+  st.querySelector('[data-wed]').innerHTML='<h4>Mié 21 <em>+4 ✓</em></h4>64 min · meta ✓<br>Steins;Gate 0 · 64 min';}
+const mjar=(a,b)=>`<div class="mjar">${Array.from({length:22},(_,i)=>`<i class="${i<a?'d1':i<b?'d2':''}"></i>`).join('')}</div>`;
+function home2(){return `<div class="hcard"><div class="face">${homeRings()}<div style="flex:1;display:flex;gap:10px;min-width:0">
+  <div class="rrc vn"><div class="rmed"><span class="fl" style="color:#00A0D8">${FL}</span><span class="rnum">12</span><span class="rlab">novelas<small style="color:#8a5d00">pendiente</small></span></div>
+  <div class="p2" style="display:flex;flex-direction:column;gap:3px;padding-top:4px">${mjar(12,18)}<div class="mjl"><span>rescate</span><span>18/22 min</span></div></div></div>${jvCol()}</div></div></div>
+  <div class="lbl"><b>Tarjeta de Inicio</b>Mientras haya rescate, el mapa pequeño de esa categoría se cambia por la hucha en miniatura. A sobre la tarjeta abre la pantalla de racha con el panel.</div>`}
+function states2(){const m=(a,b,t)=>`<div class="p2" style="display:flex;flex-direction:column;gap:3px">${mjar(a,b)}<div class="mjl"><span>hucha</span><span>${t}</span></div></div>`;return [
+  card('Normal','#3BB54A',medS(12,'novelas','mejor 21')+W.normal,'No hay hucha; la pantalla es la de siempre.'),
+  card('Pendiente','#E9A100',medS(12,'novelas','pendiente')+m(12,18,'18/22'),'<b>Recuperado 18 de 22 min</b> · cierra en 32 h. Un tono por día.'),
+  card('Pagado','#3BB54A',medS(13,'novelas','salvada')+m(22,22,'22/22'),'Las últimas casillas caen una a una, suena el «blip» y <b>«¡Hucha llena!»</b>; el panel se recoge.'),
+  card('Rota','#E8384F',medS(3,'novelas','mejor 21')+`<div class="p2" style="display:flex;flex-direction:column;gap:3px;filter:grayscale(1);opacity:.6">${mjar(12,18)}<div class="mjl" style="color:#E8384F"><span>se cerró</span><span>18/22</span></div></div>`,'Hucha gris un día: <b>faltaron 4 min</b>, la racha queda en 3 días.'),
+  card('No disponible','#9aa1ad',medS(2,'novelas','sin rescate')+`<div class="p2"><div class="mjar" style="opacity:.35">${'<i></i>'.repeat(22)}</div><div class="mjl" style="color:#7a8291"><span>hucha cerrada</span><span>2 de 2</span></div></div>`,'<b>Has usado 2 rescates en 30 días.</b> Vuelve el 2 nov.'),
+].join('')}
+
+// ======================================================== 3 · Anillo de rescate
+function build3(){
+  const S=250,SW=22,C=2*Math.PI*(S/2+4);
+  const svg=rings(S,SW,[{r:S/2+4,w:8,c:RC,soft:'#f6e3a8',p:.82,cls:'rarc glow',dash:'3 5'},{r:S/2-SW/2-8,c:'#00A0D8',soft:'#cfe6f1',p:1},{r:S/2-SW/2-8-SW*1.15,c:'#E5487A',soft:'#f6d3df',p:.7}],
+    '');
+  const leg=`<div style="--c:${RC};--soft:${RSOFT};--ink:#8a5d00"><i></i>Rescate del domingo<span data-rl>18 / 22 min extra</span></div><div class="bar" style="--c:${RC};--soft:${RSOFT}"><b data-rb style="width:82%"></b></div><small class="r" data-rs>Cierra el jueves a las 7:00 · mañana bastan 4 min extra</small>`;
+  return chrome(HINTS)+hoyPanel(leg,svg,'✓ Cumplida · 6 de más')+`
+  <div class="medals"><div class="bmed vn pend"><span class="fl" style="color:#00A0D8">${FLF}</span>
+    <b><span data-n>12</span><small>días</small><span class="tag" data-tag>en vilo</span></b>
+    <p data-sub>El domingo te faltaron 22 min · cierra el anillo dorado para salvarlo</p></div>${jvMed}</div>
+  <div class="panel cal vn"><div class="ptitle"><span style="width:14px;height:14px;border-radius:50%;background:var(--c)"></span>Novelas visuales${tabs}</div>
+    <div class="heat">${heat(26,'ring')}</div><div class="mon">${mon}</div>
+    <div class="tiles"><div><span class="k">Este mes</span><b>15 <small>/ 20 días</small></b></div><div><span class="k">Media diaria</span><b>58 <small>min</small></b></div><div><span class="k">Días cumplidos</span><b>68 <small>%</small></b></div><div class="rt"><span class="k">Rescates · 30 días</span><b>1 <small>de 2</small></b></div></div></div>
+  ${toast('Anillo cerrado','El domingo cuenta · 13 días seguidos')}
+  <span class="mk" style="left:330px;top:120px">1</span><span class="mk" style="left:420px;top:520px">2</span><span class="mk" style="left:470px;top:150px">3</span><span class="mk" style="left:1150px;top:410px">4</span>${payBtn}`}
+function pay3(st){const a=st.querySelector('.rings .rarc');a.style.strokeDashoffset='0';
+  st.querySelector('[data-rl]').textContent='22 / 22 min extra';st.querySelector('[data-rb]').style.width='100%';st.querySelector('[data-rs]').textContent='¡Salvado! El anillo desaparece mañana';
+  st.querySelector('.bmed.pend').classList.remove('pend');st.querySelector('[data-n]').textContent='13';
+  const t=st.querySelector('[data-tag]');t.textContent='salvada';t.classList.add('ok');st.querySelector('[data-sub]').textContent='Domingo recuperado · mejor 21 días';
+  const c=st.querySelector('.heat .cell.ro');c.classList.replace('ro','rd');c.animate([{transform:'scale(2.4)'},{transform:'none'}],{duration:500});
+  st.querySelector('.rings svg').animate([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:700,delay:600});}
+function home3(){return `<div class="hcard p3"><div class="face">${homeRings(.82)}<div style="flex:1;display:flex;gap:10px;min-width:0">
+  <div class="rrc vn"><div class="rmed"><span class="fl" style="color:${RC}">${FL}</span><span class="rnum">12</span><span class="rlab">novelas<small style="color:#8a5d00">rescate 18/22</small></span></div><div class="rmap">${miniMap('ring')}</div></div>${jvCol()}</div></div></div>
+  <div class="lbl"><b>Tarjeta de Inicio (protagonista)</b>Los dos anillos se encogen 6 px para dejar sitio al aro fino ámbar del rescate (82 %). La llama de novelas se tiñe de ámbar y su rótulo dice «rescate 18/22». Al cerrarse, el aro destella y se desvanece al día siguiente.</div>`}
+function states3(){const mr=(p,bad)=>`<div style="display:flex;align-items:center;gap:10px">${rings(64,7,[...(p==null?[]:[{r:31,w:3,c:bad?'#E8384F':RC,soft:bad?'#f3c6cd':'#f1dca0',p}]),{r:p==null?28:24,c:'#00A0D8',soft:'#cfe6f1',p:1},{r:p==null?20:16,c:'#E5487A',soft:'#f6d3df',p:.7}])}</div>`;return [
+  card('Normal','#3BB54A',`<div style="display:flex;gap:10px;align-items:center">${mr(null)}${medS(12,'novelas','mejor 21')}</div>`+W.normal,'Dos anillos, como ahora.'),
+  card('Pendiente','#E9A100',`<div style="display:flex;gap:10px;align-items:center">${mr(.82)}${medS(12,'novelas','rescate 18/22','',RC)}</div>`+W.ring,'Aro ámbar al 82 %: <b>recuperado 18 de 22 min</b>.'),
+  card('Pagado','#3BB54A',`<div style="display:flex;gap:10px;align-items:center">${mr(1)}${medS(13,'novelas','salvada')}</div>`+W.paid,'El aro se cierra y destella; la llama vuelve a azul. <b>«Anillo cerrado»</b>.'),
+  card('Rota','#E8384F',`<div style="display:flex;gap:10px;align-items:center">${mr(.82,true)}${medS(3,'novelas','mejor 21')}</div>`+W.broken,'Ese día el aro se ve roto en rojo y desaparece: <b>faltaron 4 min</b>.'),
+  card('No disponible','#9aa1ad',`<div style="display:flex;gap:10px;align-items:center">${mr(null)}${medS(2,'novelas','sin rescate')}</div>`+W.na,'No sale el aro. En la racha: <b>«Rescates agotados hasta el 2 nov»</b>.'),
+].join('')}
+
+// ======================================================== 4 · Misión
+const shield=(n,c=RC)=>`<div class="shield"><svg viewBox="0 0 84 96"><path d="M42 4 L78 16 V46 C78 70 62 86 42 92 C22 86 6 70 6 46 V16 Z" fill="${c}" stroke="#fff" stroke-width="4"/><path d="M42 12 L70 22 V46 C70 64 58 78 42 84" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="3"/></svg><b>${n}</b></div>`;
+function build4(){
+  return chrome(HINTS)+hoyPanel('',null,'✓ Cumplida · etapa 2: +6 min')+`
+  <div class="panel mission">${shield(12)}
+    <div class="mt">Salva tu racha<small>El domingo te faltaron 22 min (38 de 60).<br>Recuperado <b data-mr>18 de 22 min</b></small></div>
+    <div class="track">
+      <div class="node">✓<span>Lun 19<em>+12</em></span></div><div class="link"></div>
+      <div class="node half today">+6<span>Hoy<em>+6</em></span></div><div class="link off" data-l></div>
+      <div class="node off" data-w>+4<span>Mié 21<em>64 min</em></span></div>
+    </div>
+    <div class="cd"><b data-cd>32 h</b><small>hasta el jueves 7:00</small></div></div>
+  <div class="smeds"><div class="bmed vn"><span class="fl" style="color:#00A0D8">${FLF}</span><b><span data-n>12</span><small>días</small><span class="tag" data-tag style="vertical-align:4px">en misión</span></b><p>Novelas visuales · mejor 21</p></div>
+    <div class="bmed jvn"><span class="fl" style="color:#E5487A">${FLF}</span><b>5<small>días</small></b><p>Novelas japonesas · mejor 9</p></div></div>
+  <div class="panel cal vn"><div class="ptitle"><span style="width:14px;height:14px;border-radius:50%;background:var(--c)"></span>Novelas visuales${tabs}</div>
+    <div class="heat">${heat(18,'pend')}</div></div>
+  ${toast('¡Misión cumplida!','Racha salvada · 13 días · rescates: 1 de 2')}
+  <span class="mk" style="left:480px;top:84px">1</span><span class="mk" style="left:880px;top:84px">2</span><span class="mk" style="left:1200px;top:84px">3</span><span class="mk" style="left:1200px;top:360px">4</span>${payBtn}`}
+function pay4(st){const w=st.querySelector('[data-w]');w.classList.remove('off');w.firstChild.textContent='✓';w.animate([{transform:'scale(1.8)'},{transform:'none'}],{duration:500});
+  st.querySelector('.node.today').classList.remove('half');st.querySelector('.node.today').firstChild.textContent='✓';
+  st.querySelector('[data-l]').classList.remove('off');st.querySelector('[data-mr]').textContent='22 de 22 min';st.querySelector('[data-cd]').textContent='✓';
+  st.querySelector('.shield').animate([{transform:'scale(1)',opacity:1},{transform:'scale(1.5) rotate(-8deg)',opacity:.2},{transform:'scale(1)',opacity:1}],{duration:800});
+  st.querySelector('.shield b').textContent='13';st.querySelector('[data-n]').textContent='13';const t=st.querySelector('[data-tag]');t.textContent='salvada';t.classList.add('ok');
+  const c=st.querySelector('.heat .cell.rp');c.classList.replace('rp','rd');}
+const mtrk=(s)=>`<div class="mtrk">${s.map((x,i)=>(i?`<div class="link${x[1]==='off'||x[1]==='half'?' off':x[1]==='bad'?' bad':''}"></div>`:'')+`<div class="node ${x[1]}">${x[0]}</div>`).join('')}</div>`;
+function home4(){return `<div class="hcard tall p4"><div class="face"><div class="strip">⚑ Salvar racha de novelas<i><b style="width:82%"></b></i>18/22 · hasta mié</div>${homeRings()}<div style="flex:1;display:flex;gap:10px;min-width:0">
+  <div class="rrc vn"><div class="rmed"><span class="fl" style="color:#00A0D8">${FL}</span><span class="rnum">12</span><span class="rlab">novelas<small style="color:#8a5d00">en misión</small></span></div><div class="rmap">${miniMap('pend')}</div></div>${jvCol()}</div></div></div>
+  <div class="lbl"><b>Tarjeta de Inicio</b>Una franja ámbar arriba con una sola barra (18/22) y el plazo. La tarjeta crece 32 px solo mientras dura la misión; con misiones en las dos categorías la franja alterna cada 4 s.</div>`}
+function states4(){return [
+  card('Normal','#3BB54A',medS(12,'novelas','mejor 21')+W.normal,'Sin cabecera de misión.'),
+  card('Pendiente','#E9A100',`<div class="p4">${mtrk([['✓','ok'],['+6','half today'],['+4','off']])}</div>`+W.pend,'Etapa 2 de 3 · <b>recuperado 18 de 22 min</b> · 32 h.'),
+  card('Pagado','#3BB54A',`<div class="p4">${mtrk([['✓',''],['✓',''],['✓','']])}</div>`+W.paid,'El escudo estalla y queda la llama: <b>«¡Misión cumplida!» · 13 días</b>.'),
+  card('Rota','#E8384F',`<div class="p4">${mtrk([['✓',''],['✓',''],['✕','bad']])}</div>`+W.broken,'<b>Misión fallida por 4 min.</b> La racha queda en 3 días; la cabecera se va al día siguiente.'),
+  card('No disponible','#9aa1ad',`<div style="display:flex;align-items:center;gap:8px">${shield('2','#c3c9d3').replace('class="shield"','class="shield" style="width:42px;height:48px;font-size:12px"')}<span style="font-size:13px;font-weight:800;color:#7a8291">Sin escudos<br>2 de 2 usados</span></div>`+W.na,'<b>No quedan escudos hasta el 2 nov</b> (usados el 3 y el 12 oct).'),
+].join('')}
+
+// ---------- montaje ----------
+const P={st1:[build1,pay1,'h1',home1,'g1',states1],st2:[build2,pay2,'h2',home2,'g2',states2],st3:[build3,pay3,'h3',home3,'g3',states3],st4:[build4,pay4,'h4',home4,'g4',states4]};
+function mount(id){const st=document.getElementById(id),[b,pay]=P[id];st.classList.remove('paid');st.innerHTML=b();
+  const btn=st.querySelector('[data-pay]');btn.onclick=()=>{
+    if(st.classList.contains('paid')){mount(id);return}
+    st.classList.add('paid');pay(st);btn.textContent='↺ Volver a pendiente';
+    setTimeout(()=>st.querySelector('.toast')?.classList.add('off'),2600)}}
+Object.entries(P).forEach(([id,[, ,h,home,g,states]])=>{mount(id);document.getElementById(h).innerHTML=home();document.getElementById(g).innerHTML=states()});
+function fit(){document.querySelectorAll('.frame').forEach(f=>{f.firstElementChild.style.transform=`scale(${f.clientWidth/1280})`})}
+addEventListener('resize',fit);fit();
+</script>
+</body>
+</html>

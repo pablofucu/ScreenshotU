@@ -18,7 +18,7 @@ import { READING_ROWS, isReadingId, readingAct, type ReadingId } from './reading
 import { checkUpdate, updateAct } from './updater.svelte';
 import { isRemoteId, remoteAct, type RemoteId } from './remote.svelte';
 import { openPhrases, phrasesCmd } from './phrases.svelte';
-import { goalMinLeft, goalTrack, localDay, type GoalKey } from './readgoals';
+import { goalMinLeft, goalTrack, localDay, RESCUE_MIN_PLAY, type GoalKey } from './readgoals';
 import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
 import { libraryCmd, loadLibraryInfo, openLibrary } from './library.svelte';
 import { addCollCmd, collCmd, collFirst, collFormCmd, collKey, collReveal, collTab, collValid, loadCollections, openAddColl, openCollForm, pickerCmd, resetColl, setCollFocus } from './coleccion.svelte';
@@ -600,7 +600,16 @@ function scheduleGoalNotice(gameId: string) {
   if (!k) return;
   const now = Date.now(), goal = goalOf(k);
   const t = goalTrack(k, goal, app.lib.platforms, null, now);
-  if (t.done) return;
+  if (t.done) {
+    // Meta de hoy ya cumplida y un rescate pendiente: el aviso sale al llenarse la hucha. Solo cuentan las partidas de
+    // 10 min o más, así que no antes de esos 10 min; el núcleo admite un único aviso por partida (el de meta, si falta).
+    const r = t.rescue;
+    if (!r) return;
+    const at = now + Math.max(r.need - r.got, RESCUE_MIN_PLAY) * 60000 + 15000;
+    if (localDay(at) !== localDay(now) || (r.last && at > r.closeAt)) return;
+    backend.goalNotice(gameId, at, '¡Racha recuperada!').catch((e) => console.error(e));
+    return;
+  }
   // Con la partida que empieza ya contada: si la anterior de este juego terminó hace menos de 2 min, se unen y el
   // hueco cuenta (como en el anillo); la meta se da por cumplida al llegar a `goal - 0,5` min (minutos redondeados).
   const t2 = goalTrack(k, goal, app.lib.platforms, { id: gameId, since: now }, now);

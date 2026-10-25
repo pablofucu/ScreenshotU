@@ -4,12 +4,14 @@
   // leído este mes, a qué horas y el resumen del año. Si hay una racha cumplida sin «encender», se enciende aquí.
   import { onMount } from 'svelte';
   import { app } from '../lib/store.svelte';
-  import { GOAL_COL, dayDate, readDetail, type GoalKey, type GoalTrack } from '../lib/readgoals';
-  import { createReadRings, fmtMin as fmtMinShared } from '../lib/readrings.svelte';
+  import { GOAL_COL, dayDate, markRescueSeen, readDetail, rescueCls, rescueSeen, type GoalKey, type GoalTrack } from '../lib/readgoals';
+  import { createReadRings, fmtMin as fmtMinShared, rescueClose, rescueDay } from '../lib/readrings.svelte';
+  import { blip } from '../lib/sound';
   import { fmtClock, fmtHM } from '../lib/stats';
   import TopBar from '../components/TopBar.svelte';
   import Hints from '../components/Hints.svelte';
   import MiniCover from '../components/MiniCover.svelte';
+  import HuchaRescate from '../components/HuchaRescate.svelte';
 
   const WEEKS = 26, CELL = 17;
   const MON = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -29,6 +31,32 @@
   const det = $derived(sel ? readDetail(sel.key, sel.goal, app.lib.platforms, app.playing, now) : null);
 
   const shown = rr.shown;
+
+  /* ---------- rescate de racha ---------- */
+  // La hucha ocupa el hueco del mapa SOLO mientras hay un rescate pendiente: entera si es el del anillo que se ve,
+  // partida en dos si lo hay en las dos categorías; sin rescate (o con el rescate en el otro anillo) sigue el mapa.
+  const resc = $derived(tracks.filter((t) => t.rescue));
+  const huch = $derived(resc.length > 1 ? 'duo' : sel?.rescue ? 'wide' : '');
+  // Aviso «¡Hucha llena!» (2,6 s, una vez por rescate pagado): uno tras otro si se pagan dos a la vez.
+  let toast = $state<{ k: GoalKey; text: string } | null>(null);
+  const toastQ: Array<{ k: GoalKey; text: string }> = [];
+  function nextToast() {
+    const n = toastQ.shift();
+    toast = n ?? null;
+    if (!n) return;
+    blip(1320);
+    rr.timers.push(setTimeout(nextToast, 2600));
+  }
+  $effect(() => {
+    let added = false;
+    for (const t of tracks) {
+      if (t.paidDay == null || rescueSeen(t.key, t.paidDay)) continue;
+      markRescueSeen(t.key, t.paidDay);
+      toastQ.push({ k: t.key, text: `${GOAL_COL[t.key].full}: el ${rescueDay(t.paidDay, true)} cuenta · ${t.streak} ${t.streak === 1 ? 'día' : 'días'}` });
+      added = true;
+    }
+    if (added && !toast) nextToast();
+  });
 
   /* ---------- formatos ---------- */
   const fmtMin = (m: number) => fmtMinShared(m, true);
@@ -118,7 +146,7 @@
 <TopBar crumbs={['Inicio', 'Racha de lectura']} />
 
 {#if sel && det}
-  <div class="streak" class:calm={calm()} bind:this={root}>
+  <div class="streak" class:calm={calm()} class:huch={!!huch} bind:this={root}>
     <!-- Hoy -->
     <div class="stpanel shoy in" style="--d:0s">
       <div class="sth">Hoy <small>{todayLabel}</small></div>
@@ -136,11 +164,11 @@
         <div class="sleg">
           {#each tracks as t (t.key)}
             {@const c = GOAL_COL[t.key]}
-            <div class="sli" style="--c:{c.c};--soft:{c.soft};--ink:{c.ink}">
+            <div class="sli {rescueCls(t.key)}" style="--c:{c.c};--soft:{c.soft};--ink:{c.ink}">
               <div class="sln"><i></i>{c.full}</div>
               <div class="slv"><b>{fmtMin(t.today)}</b> / {goalLabel(t.goal)}</div>
               <div class="sgoal"><b style="width:{drawn ? t.frac * 100 : 0}%"></b></div>
-              <div class="sln2" class:ok={t.done}>{todayNote(t)}</div>
+              <div class="sln2" class:ok={t.done}>{todayNote(t)}{#if t.rescue && t.done}<b class="shu"> · +{t.rescue.gotToday} min a la hucha</b>{/if}</div>
             </div>
           {/each}
         </div>
@@ -152,22 +180,31 @@
       {#each tracks as t, i (t.key)}
         {@const c = GOAL_COL[t.key]}
         {@const n = shown(t)}
-        <div class="smed in" data-g={t.key} class:on={t.key === sel.key} style="--c:{c.c};--soft:{c.soft};--ink:{c.ink};--d:{0.12 + i * 0.12}s">
+        <div class="smed in {rescueCls(t.key)}" data-g={t.key} class:on={t.key === sel.key} style="--c:{c.c};--soft:{c.soft};--ink:{c.ink};--d:{0.12 + i * 0.12}s">
           <span class="sflw">
             <svg class="sfl" viewBox="0 0 24 24"><path fill={c.c} fill-opacity=".22" stroke={c.c} stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235" /></svg>
             <span class="sparks">{#each Array(10) as _}<i></i>{/each}</span>
           </span>
           <div class="smt">
-            <div class="snw"><span class="snum">{n}</span><small>{n === 1 ? 'día' : 'días'}</small>{#if n > 0 && n >= t.best}<span class="srec">Récord</span>{/if}</div>
+            <div class="snw"><span class="snum">{n}</span><small>{n === 1 ? 'día' : 'días'}</small>{#if t.rescue}<span class="spend">Pendiente</span>{:else if n > 0 && n >= t.best}<span class="srec">Récord</span>{/if}</div>
             <div class="ssub">{n > 0 ? `Racha de ${c.full.toLowerCase()}` : `Sin racha de ${c.full.toLowerCase()}`}</div>
-            <div class="ssub b">{t.best > 0 ? `Mejor: ${t.best} ${t.best === 1 ? 'día' : 'días'} · ${range(t.bestFrom, t.bestTo)}` : `Cumple ${goalLabel(t.goal)} hoy para empezarla`}</div>
+            <div class="ssub b">{#if t.rescue}Recuperado {t.rescue.got} de {t.rescue.need} min · hasta el {rescueClose(t.rescue, true)}{:else}{t.best > 0 ? `Mejor: ${t.best} ${t.best === 1 ? 'día' : 'días'} · ${range(t.bestFrom, t.bestTo)}` : `Cumple ${goalLabel(t.goal)} hoy para empezarla`}{/if}</div>
           </div>
         </div>
       {/each}
     </div>
 
-    <!-- Mapa de 6 meses del anillo elegido -->
-    <div class="stpanel smap in" style="--c:{C.c};--edge:{C.edge};--d:.3s">
+    <!-- Hucha de rescate (en el hueco del mapa) o mapa de 6 meses del anillo elegido -->
+    {#if huch === 'wide' && sel.rescue}
+      <HuchaRescate r={sel.rescue} now={now} tabs={tracks.map((t) => t.key)} style="left:464px;top:224px;width:768px;height:352px" />
+    {:else if huch === 'duo'}
+      <div class="duo">
+        {#each resc as t (t.key)}
+          <HuchaRescate r={t.rescue!} now={now} wide={false} style="position:relative;left:auto;top:auto;width:auto;height:auto" />
+        {/each}
+      </div>
+    {:else}
+    <div class="stpanel smap in {rescueCls(sel.key)}" style="--c:{C.c};--edge:{C.edge};--d:.3s">
       <div class="sth">
         <span>Últimos 6 meses <small>meta {goalLabel(sel.goal)} al día</small></span>
         {#if tracks.length > 1}
@@ -184,8 +221,8 @@
             {#each sel.weeks as w, wi}
               <div>
                 {#each w as d, di}
-                  <span class="scell" class:st={d.streak && !(d.today && pending(sel))} class:td={d.today} class:fu={d.future}
-                    style="--k:{wi};background:{d.future ? 'transparent' : cellBg(sel, d.v, d.today)}"></span>
+                  <span class="scell" class:st={d.streak && !(d.today && pending(sel))} class:td={d.today} class:fu={d.future} class:rd={d.rescued}
+                    style="--k:{wi};background:{d.future ? 'transparent' : d.rescued ? 'var(--rc)' : cellBg(sel, d.v, d.today)}"></span>
                 {/each}
               </div>
             {/each}
@@ -198,6 +235,7 @@
         </div>
       </div>
     </div>
+    {/if}
 
     <!-- Qué has leído este mes -->
     <div class="stpanel sgames in" style="--c:{C.c};--d:.42s">
@@ -237,6 +275,13 @@
         <div><span>Partidas</span><b>{det.year.sessions}</b></div>
       </div>
     </div>
+
+    {#if toast}
+      <div class="stoast {rescueCls(toast.k)}">
+        <svg class="stfl" viewBox="0 0 24 24"><path fill="currentColor" fill-opacity=".25" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235" /></svg>
+        <div><b>¡Hucha llena!</b><span>{toast.text}</span></div>
+      </div>
+    {/if}
   </div>
   <Hints list={[...(tracks.length > 1 ? [['LB/RB', 'Novelas / japonés', 'lb'] as [string, string, string]] : []), ['B', 'Volver', 'b']]} />
 {:else}
@@ -266,6 +311,7 @@
   .sgoal b{display:block;height:100%;border-radius:4px;background:var(--c);transition:width 1.1s .4s cubic-bezier(.3,.8,.3,1)}
   .sln2{margin-top:5px;font-size:12.5px;font-weight:700;color:#7a8291;line-height:1.25}
   .sln2.ok{color:#2f9e44}
+  .sln2 .shu{color:var(--rink)}
 
   /* medallas */
   .smeds{position:absolute;left:464px;top:88px;width:768px;height:120px;display:grid;gap:16px}
@@ -282,6 +328,7 @@
   .snum{display:inline-block;font-size:50px;font-weight:800;line-height:52px;color:var(--ink)}
   .snw small{font-size:18px;font-weight:800;color:var(--ink)}
   .srec{align-self:center;margin-left:4px;font-size:11px;font-weight:800;color:#fff;background:var(--c);border-radius:999px;padding:2px 9px;text-transform:uppercase;letter-spacing:.05em}
+  .spend{align-self:center;margin-left:4px;font-size:11px;font-weight:800;color:#fff;background:var(--rc);border-radius:999px;padding:2px 9px;text-transform:uppercase;letter-spacing:.05em}
   .ssub{font-size:14px;font-weight:700;color:#5f6776;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ssub.b{font-size:13px;color:#8a92a0}
 
@@ -299,6 +346,8 @@
   .scell.st{box-shadow:0 0 0 1.5px var(--edge)}
   .scell.td{box-shadow:0 0 0 2px #fff,0 0 0 3.5px var(--c)}
   .scell.fu{box-shadow:inset 0 0 0 1px #e3e6eb}
+  /* Día reparado (rescate pagado): parche del color del rescate con puntada */
+  .scell.rd{box-shadow:0 0 0 1.5px var(--edge);outline:1.5px dashed rgba(255,255,255,.9);outline-offset:-4px}
   @keyframes spop{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
   .smon{position:relative;height:16px;margin-top:4px}
   .smon span{position:absolute;top:0;font-size:12px;font-weight:700;color:#8a92a0}
@@ -307,6 +356,19 @@
   .stiles .rbox .k{font-size:12.5px}
   .stiles .rbox .v{font-size:22px}
   .stiles .rbox .v small{font-size:14px}
+
+  /* hucha de rescate: ocupa el hueco del mapa y del resto de paneles de la derecha */
+  .duo{position:absolute;left:464px;top:224px;width:768px;height:352px;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .huch .shours,.huch .syear{display:none}
+  .huch .sgames{width:400px}
+  .huch .sgr{grid-template-columns:28px minmax(0,1fr) 64px 56px}
+  .stoast{position:absolute;z-index:25;left:50%;top:300px;transform:translate(-50%,0);display:flex;align-items:center;gap:16px;padding:18px 28px;border-radius:26px;
+    background:linear-gradient(180deg,#fff,var(--rsoft));animation:stoast .45s cubic-bezier(.3,1.4,.4,1) both;
+    box-shadow:inset 0 1.5px 0 #fff,0 0 0 2px var(--rc),0 0 40px 6px color-mix(in srgb,var(--rc) 45%,transparent),0 30px 50px -20px color-mix(in srgb,var(--rc) 60%,black)}
+  .stoast b{display:block;font-size:30px;font-weight:800;color:var(--rink)}
+  .stoast span{font-size:16px;font-weight:700;color:var(--rink);opacity:.85}
+  .stfl{width:64px;height:64px;color:var(--rc);flex:none}
+  @keyframes stoast{from{opacity:0;transform:translate(-50%,0) scale(.6)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
 
   /* abajo */
   .sgames,.shours,.syear{top:424px;height:226px;padding:14px 20px}

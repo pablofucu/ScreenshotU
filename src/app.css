@@ -787,3 +787,6 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 /* Zona de las estanterías de «Mi lista» y «Colecciones» (recorta lo que se desplaza fuera, a ancho completo para no cortar las sombras). */
 /* Alto justo para que de la tercera estantería solo asome el borde de su pestaña (sin meterse bajo las pistas). */
 .lclip{position:absolute;left:0;top:166px;width:1280px;height:494px;overflow:hidden}
+/* Rescate de racha: color propio por categoría (nunca el de la categoría). */
+.r-vn{--rc:#E9A100;--rsoft:#fcefc7;--rink:#8a5d00;--rmid:#f1dca0}
+.r-jv{--rc:#6E56CF;--rsoft:#e8e3fb;--rink:#4a3aa0;--rmid:#cdc3f2}
