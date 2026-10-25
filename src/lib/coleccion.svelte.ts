@@ -73,17 +73,15 @@ export function formAccent(): Accent {
   return c !== null && RAINBOW[c] ? RAINBOW[c] : app.chrome;
 }
 
-/** Aspecto de la pestaña según el estilo elegido en Ajustes: Aurora (manchas de color dentro) o multicolor (degradado). */
+/** Aspecto del rótulo de la estantería según el estilo elegido en Ajustes: Aurora (manchas de color dentro) o multicolor
+ *  (degradado). La tinta es siempre la del color de la colección (el rótulo encendido), también para los claros (amarillo). */
 export function tabLook(games: Title[], acc: Accent): { style: string; aurora: string[]; ink: string } {
   const ink = inkFor(acc.c);
   if (app.config.collectionsStyle === 'multi') {
     let cols = coverColors(games, 0.6, 0.15, 6);
     if (cols.length === 1) cols = [cols[0], cols[0]];
     if (!cols.length) return { style: '', aurora: [], ink };
-    return {
-      style: `background:linear-gradient(180deg,rgba(255,255,255,.35),transparent 45%,rgba(0,0,0,.18)),linear-gradient(90deg,${cols.join(',')})`,
-      aurora: [], ink: cols.every((c) => inkDark(c)) ? '#3a2f00' : '#fff',
-    };
+    return { style: `background:linear-gradient(90deg,${cols.join(',')})`, aurora: [], ink };
   }
   return { style: '', aurora: coverColors(games, 0.72, 0.16, 5), ink };
 }

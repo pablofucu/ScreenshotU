@@ -50,24 +50,24 @@
       {@const look = tabLook(games, acc)}
       {@const tl = timeline(k)}
       {@const here = app.collAt.c === k}
-      <Shelf acc={acc.c} ink={look.ink} tabStyle={look.style} aurora={look.aurora} title={sh.coll.name}
-        sub="{nGames(sh.items.length)} · {nCapturas(shotsOf(k))}" items={itemsOf(k)}
+      <Shelf acc={acc.c} ink={look.ink} tabStyle={look.style} aurora={look.aurora} title={sh.coll.name} icon={ICON.saga}
+        sub={here ? `${nGames(sh.items.length)} · ${nCapturas(shotsOf(k))}` : nCapturas(shotsOf(k))} chip={nGames(sh.items.length)} items={itemsOf(k)}
         focus={here ? app.collAt.i : -1} from={app.collFrom[sh.coll.id] ?? 0} visible={LIST_VIS}
         top={(k - app.collTop) * SHELF_STEP} dim={!here}>
         {#snippet extra()}
           {#if tl}
-            <div class="ctl">{tl.a}<span class="ctr">{#each tl.dots as d (d.j)}<i class:on={here && app.collAt.i === d.j} style="left:{d.left}%"></i>{/each}</span>{tl.b}</div>
+            <div class="tl">{tl.a}<span class="tr" style="width:{here ? 200 : 150}px">{#each tl.dots as d (d.j)}<i class:on={here && app.collAt.i === d.j} style="left:{d.left}%"></i>{/each}</span>{tl.b}</div>
           {/if}
         {/snippet}
         {#snippet end()}
           {#if here}
             <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-            <span class="hint pill cshots" onclick={(e) => { e.stopPropagation(); openCollShots(k); }}><span class="btn x">X</span><i>{@html ICON.camera}</i>Capturas</span>
+            <span class="hint" onclick={(e) => { e.stopPropagation(); openCollShots(k); }}><span class="btn x">X</span>Capturas</span>
           {/if}
         {/snippet}
       </Shelf>
     {:else}
-      <Shelf acc={app.chrome.c} ink={inkFor(app.chrome.c)} title="Nueva colección" sub={newSub}
+      <Shelf acc={app.chrome.c} ink={inkFor(app.chrome.c)} title="Nueva colección" icon={ICON.plus} sub={newSub}
         items={[{ k: 'cnew', act: 'cnew', path: null, name: 'Nueva colección', icon: ICON.plus }]}
         focus={app.collAt.c >= shelves.length ? 0 : -1} visible={LIST_VIS}
         top={(k - app.collTop) * SHELF_STEP} dim={app.collAt.c < shelves.length} />
@@ -84,15 +84,13 @@
 {/if}
 
 <style>
-  /* Línea de tiempo dentro de la pestaña. */
-  .ctl{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--ink);text-shadow:0 1px 2px rgba(0,0,0,.25)}
-  .ctr{position:relative;width:230px;height:4px;border-radius:4px;background:color-mix(in srgb,var(--ink) 38%,transparent)}
-  .ctr i{position:absolute;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:width .2s,height .2s,margin .2s,box-shadow .2s}
-  :global(.shelf.dk) .ctl{text-shadow:none}
-  :global(.shelf.dk) .ctr i{box-shadow:none}
-  .ctr i.on{width:15px;height:15px;margin:-7.5px 0 0 -7.5px;box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 60%,white),0 0 10px 2px rgba(255,255,255,.9)}
-  /* Pastilla «Capturas» (X) de la estantería enfocada: la pastilla y la pista globales, con el icono sobre un círculo de acento. */
-  .cshots{flex:none;white-space:nowrap}
-  .cshots i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 25%,white),var(--acc) 72%);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
-  .cshots i :global(svg){width:58%;height:58%}
+  /* Línea de tiempo en el rótulo: tinta neutra en reposo y la tinta del rótulo cuando está encendido. */
+  .tl{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700;color:#5f6776;white-space:nowrap}
+  .tr{position:relative;width:200px;height:4px;border-radius:4px;background:rgba(160,168,182,.45)}
+  .tr i{position:absolute;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 2px #fff;transition:width .2s,height .2s,margin .2s,box-shadow .2s}
+  .tr i.on{width:16px;height:16px;margin:-8px 0 0 -8px;box-shadow:0 0 0 3px #fff,0 0 10px 2px color-mix(in srgb,var(--acc) 60%,transparent)}
+  :global(.bsh.lit) .tl{color:var(--ink);text-shadow:var(--tsh)}
+  :global(.bsh.lit) .tr{background:color-mix(in srgb,var(--ink) 38%,transparent)}
+  :global(.bsh.lit) .tr i{background:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.25)}
+  :global(.bsh.lit) .tr i.on{box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 50%,white),0 0 10px 2px rgba(255,255,255,.9)}
 </style>

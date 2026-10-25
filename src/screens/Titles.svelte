@@ -12,6 +12,7 @@
   import CollTab from './CollTab.svelte';
   import { itemLabel, LIST_VIS, SHELF_STEP, shelfSub } from '../lib/milista.svelte';
   import { collFocusAccent } from '../lib/coleccion.svelte';
+  import { inkFor } from '../lib/ops.svelte';
 
   const P = $derived(app.platform);
   const titles = $derived(P?.titles ?? []);
@@ -38,6 +39,15 @@
       const { label, stars } = itemLabel(sh, titles[ti], k);
       return { k: 'tit' + ti, act: 'tit:' + ti, path: coverOf(ti), name: titles[ti].name, label, stars };
     });
+  // Icono de color del rótulo de cada estantería (el del estado).
+  const svg = (d: string) => `<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  const LIST_ICON: Record<ListShelf['kind'], string> = {
+    playing: ICON.play,
+    pending: svg('<circle cx="24" cy="24" r="16"/><path d="M24 15v10l6 4"/>'),
+    finished: ICON.check,
+    dropped: svg('<path d="M11 24h26"/>'),
+    none: svg('<path d="M10 14h28M10 24h28M10 34h28"/>'),
+  };
   const curShelf = $derived(focusShelf >= 0 ? shelves[focusShelf] : null);
   const cur = $derived(titles[app.t]);
   const coverOf = (i: number) => titles[i].cover ?? titles[i].shots[0]?.path ?? null;
@@ -123,6 +133,17 @@
   {#if tab === 'all' && filtered}<span class="tflt tchip" data-hact="nofilter" title="Quitar el filtro">{filterName}<small>{vis.length}</small><b aria-label="Quitar el filtro">✕</b></span>{/if}
 </div>
 
+{#snippet fhead(t: NonNullable<typeof cur>, a: { c: string; dark?: boolean }, chip: string)}
+  <div class="thead">
+    <h3>{t.name}</h3>
+    <span class="chip" style="background:{a.c};color:{a.dark ? '#3a2f00' : '#fff'}">{chip}</span>
+    {#if t.playSeconds >= 60}<span>Jugado <b>{fmtDur(t.playSeconds)}</b></span>{/if}
+    {#if t.lastPlayed}<span>Última partida <b>{fmtAgo(t.lastPlayed).toLowerCase()}</b></span>
+    {:else if t.shots.length}<span>Última captura <b>{fmtShort(t.shots[0].date)}</b></span>{/if}
+    {#if t.shots.length}<span>{nCapturas(t.shots.length)}</span>{/if}
+  </div>
+{/snippet}
+
 {#if tab === 'list'}
   {#if !shelves.length}
     <div class="glass note-card" style="left:300px;top:230px;--acc:{app.chrome.c}">
@@ -132,16 +153,21 @@
       </div>
     </div>
   {:else}
+    {#if cur && curShelf}{@render fhead(cur, listAcc, STATUS_LABEL[cur.status ?? 'none'])}{/if}
     <div class="lclip">
       {#each shelfIdx as k (shelves[k].key)}
         {@const sh = shelves[k]}
-        <Shelf acc={LIST_COLOR[sh.kind].c} title={sh.label} sub={shelfSub(sh, titles)} items={shelfItems(sh)}
+        <Shelf acc={LIST_COLOR[sh.kind].c} ink={inkFor(LIST_COLOR[sh.kind].c)} title={sh.label} icon={LIST_ICON[sh.kind]} sub={shelfSub(sh, titles)} chip={String(sh.items.length)} items={shelfItems(sh)}
           focus={k === focusShelf ? sh.items.indexOf(app.t) : -1} from={app.listFrom[sh.key] ?? 0} visible={LIST_VIS}
           top={(k - app.listTop) * SHELF_STEP} dim={k !== focusShelf} />
       {/each}
     </div>
   {/if}
 {:else if tab === 'coll'}
+  {#if ambTitle && app.collShelves[app.collAt.c]}
+    {@const csh = app.collShelves[app.collAt.c]}
+    {@render fhead(ambTitle, collFocusAccent(), `${csh.coll.name} · ${app.collAt.i + 1} de ${csh.items.length}`)}
+  {/if}
   <CollTab />
 {:else if titles.length === 0}
   <div class="glass note-card" style="left:300px;top:170px;--acc:{app.chrome.c}">
