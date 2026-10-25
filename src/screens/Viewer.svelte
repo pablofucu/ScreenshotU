@@ -39,9 +39,18 @@
         const im = new Image();
         im.src = backend.fullUrl(shots[i].path);
         keep.push(im);
-        if (keep.length > 8) keep.shift();
+        if (keep.length > 8) {
+          const evicted = keep.shift();
+          if (evicted) evicted.src = '';
+        }
       }
     }
+    return () => {
+      while (keep.length) {
+        const evicted = keep.pop();
+        if (evicted) evicted.src = '';
+      }
+    };
   });
 
   // Al cambiar de captura el zoom vuelve al 100 %.

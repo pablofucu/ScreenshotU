@@ -26,9 +26,47 @@ class Queue {
 const IMG_EXT = ['png', 'jpg', 'jpeg', 'webp'];
 
 /* Miniaturas ya resueltas (ruta → URL) y ya decodificadas: lo que ya se cargó una vez se pinta al instante, sin
- * esperar a la promesa ni pasar por el hueco vacío (al cambiar de pestaña, filtro, orden, página o tamaño). */
-const thumbUrls = new Map<string, string>();
-const decoded = new Set<string>();
+ * esperar a la promesa ni pasar por el hueco vacío (al cambiar de pestaña, filtro, orden, página o tamaño).
+ * Se acotan con política LRU (máx. 1500 entradas) para no acumular memoria indefinidamente en sesiones largas. */
+class LruMap<K, V> extends Map<K, V> {
+  constructor(private maxEntries: number) {
+    super();
+  }
+  override get(key: K): V | undefined {
+    if (!super.has(key)) return undefined;
+    const val = super.get(key)!;
+    super.delete(key);
+    super.set(key, val);
+    return val;
+  }
+  override set(key: K, value: V): this {
+    if (super.has(key)) super.delete(key);
+    super.set(key, value);
+    if (this.size > this.maxEntries) {
+      const first = this.keys().next().value;
+      if (first !== undefined) this.delete(first);
+    }
+    return this;
+  }
+}
+
+class LruSet<T> extends Set<T> {
+  constructor(private maxEntries: number) {
+    super();
+  }
+  override add(value: T): this {
+    if (super.has(value)) super.delete(value);
+    super.add(value);
+    if (this.size > this.maxEntries) {
+      const first = this.values().next().value;
+      if (first !== undefined) this.delete(first);
+    }
+    return this;
+  }
+}
+
+const thumbUrls = new LruMap<string, string>(1500);
+const decoded = new LruSet<string>(1500);
 const decoding = new Map<string, Promise<void>>();
 /** URL de la miniatura si ya se conoce (síncrono). */
 export const thumbNow = (path: string) => thumbUrls.get(path);

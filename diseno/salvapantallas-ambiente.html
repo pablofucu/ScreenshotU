@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modo Ambiental / Marco de Salón · Propuesta de diseño</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root {
+  --round: 'M PLUS Rounded 1c', 'Segoe UI', system-ui, sans-serif;
+  --bg-top: #fbfcfd;
+  --bg-mid: #ebf0f7;
+  --bg-bot: #dbe4f0;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 24px 16px 60px;
+  background: radial-gradient(120% 90% at 50% 0%, var(--bg-top) 0%, var(--bg-mid) 55%, var(--bg-bot) 100%) fixed;
+  font-family: var(--round);
+  color: #333a45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+header {
+  max-width: 1280px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+h1 { margin: 0 0 6px; font-size: 26px; font-weight: 800; color: #272d37; }
+p.desc { margin: 0 0 16px; color: #626d7f; font-size: 15px; max-width: 860px; }
+
+/* Escenario 1280x720 fijo estilo Wii U */
+.stage {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  border-radius: 26px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 0 0 1px rgba(90, 110, 140, 0.22), 0 24px 60px -20px rgba(10, 20, 35, 0.6);
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+/* Diapositivas con efecto Ken Burns */
+.slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 2s ease-in-out;
+  transform: scale(1);
+  will-change: transform, opacity;
+}
+.slide.active {
+  opacity: 1;
+  animation: kenBurns 12s infinite alternate ease-in-out;
+}
+
+@keyframes kenBurns {
+  0% { transform: scale(1) translate(0, 0); }
+  100% { transform: scale(1.08) translate(-1.5%, -1.2%); }
+}
+
+/* Viñeta suave para legibilidad del HUD */
+.vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, transparent 50%, rgba(0,0,0,0.55) 100%),
+              linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 25%, transparent 70%, rgba(0,0,0,0.65) 100%);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* HUD Superior: Reloj de cristal */
+.hud-top {
+  position: absolute;
+  top: 32px;
+  right: 36px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.glass-clock {
+  padding: 8px 22px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  color: #fff;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.clock-time {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+.clock-date {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* HUD Inferior: Tarjeta del juego enfocado */
+.hud-bottom {
+  position: absolute;
+  bottom: 36px;
+  left: 36px;
+  z-index: 10;
+}
+.game-card {
+  padding: 14px 22px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.12) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.game-badge {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.game-badge.pc { background: #0078d4; }
+.game-badge.switch { background: #e60012; }
+.game-badge.vn { background: #8e44ad; }
+
+.game-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+.game-meta {
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+/* Indicador de reactivación */
+.wake-hint {
+  position: absolute;
+  bottom: 36px;
+  right: 36px;
+  z-index: 10;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Salvapantallas Ambiental / Marco Digital para TV</h1>
+  <p class="desc">
+    Se activa tras N minutos de inactividad en la pantalla de inicio. Alterna suavemente entre capturas marcadas como favoritas con un movimiento continuo y cinematográfico (Ken Burns), manteniendo el salón decorado con un HUD de cristal translúcido. Pulsar cualquier botón despierta la app al instante.
+  </p>
+</header>
+
+<div class="stage" onclick="nextSlide()">
+  <!-- Fondo y viñeta -->
+  <div class="vignette"></div>
+
+  <!-- Diapositivas simuladas con degradados ricos y texturas -->
+  <div class="slide active" id="slide1" style="background: radial-gradient(circle at 60% 40%, #1a365d, #0f172a 80%);">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0.18; font-size:90px; font-weight:800; color:#fff;">
+      ELDEN RING
+    </div>
+  </div>
+  <div class="slide" id="slide2" style="background: radial-gradient(circle at 40% 60%, #4a235a, #1e1028 80%);">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0.18; font-size:90px; font-weight:800; color:#fff;">
+      STEINS;GATE
+    </div>
+  </div>
+  <div class="slide" id="slide3" style="background: radial-gradient(circle at 50% 50%, #78281f, #2c0b07 80%);">
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0.18; font-size:90px; font-weight:800; color:#fff;">
+      ZELDA: TOTK
+    </div>
+  </div>
+
+  <!-- HUD Superior (Reloj de cristal) -->
+  <div class="hud-top">
+    <div class="glass-clock">
+      <i class="ti ti-clock"></i>
+      <span class="clock-time" id="clockTime">21:42</span>
+      <span class="clock-date" id="clockDate">Sábado, 24 de octubre</span>
+    </div>
+  </div>
+
+  <!-- HUD Inferior (Información del juego) -->
+  <div class="hud-bottom">
+    <div class="game-card">
+      <span class="game-badge pc" id="gameBadge">PC</span>
+      <div>
+        <h2 class="game-title" id="gameTitle">Elden Ring</h2>
+        <p class="game-meta" id="gameMeta">Captura favorita · 18 de octubre de 2026 · 1920×1080</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pista de reactivación -->
+  <div class="wake-hint">
+    <i class="ti ti-device-gamepad"></i> Toca cualquier botón o haz clic para reanudar
+  </div>
+</div>
+
+<script>
+const slides = [
+  { id: 'slide1', badge: 'PC', badgeCls: 'pc', title: 'Elden Ring', meta: 'Captura favorita · 18 de octubre de 2026 · 1920×1080' },
+  { id: 'slide2', badge: 'Novelas visuales', badgeCls: 'vn', title: 'STEINS;GATE', meta: 'Captura favorita · 12 de septiembre de 2026 · 1920×1080' },
+  { id: 'slide3', badge: 'Switch', badgeCls: 'switch', title: 'The Legend of Zelda: Tears of the Kingdom', meta: 'Captura favorita · 04 de agosto de 2026 · 1280×720' }
+];
+let current = 0;
+
+function updateClock() {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const dateStr = now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+  document.getElementById('clockTime').textContent = timeStr;
+  document.getElementById('clockDate').textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function nextSlide() {
+  slides.forEach((s) => document.getElementById(s.id).classList.remove('active'));
+  current = (current + 1) % slides.length;
+  const s = slides[current];
+  document.getElementById(s.id).classList.add('active');
+  const b = document.getElementById('gameBadge');
+  b.textContent = s.badge;
+  b.className = 'game-badge ' + s.badgeCls;
+  document.getElementById('gameTitle').textContent = s.title;
+  document.getElementById('gameMeta').textContent = s.meta;
+}
+
+// Rotación automática cada 6 segundos en la demo
+setInterval(nextSlide, 6000);
+</script>
+</body>
+</html>

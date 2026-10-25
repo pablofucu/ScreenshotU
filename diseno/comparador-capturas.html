@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comparador Gráfico A/B · Propuesta de diseño</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root {
+  --round: 'M PLUS Rounded 1c', 'Segoe UI', system-ui, sans-serif;
+  --bg-top: #fbfcfd;
+  --bg-mid: #ebf0f7;
+  --bg-bot: #dbe4f0;
+  --accent: #0078d4;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 24px 16px 60px;
+  background: radial-gradient(120% 90% at 50% 0%, var(--bg-top) 0%, var(--bg-mid) 55%, var(--bg-bot) 100%) fixed;
+  font-family: var(--round);
+  color: #333a45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+header {
+  max-width: 1280px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+h1 { margin: 0 0 6px; font-size: 26px; font-weight: 800; color: #272d37; }
+p.desc { margin: 0 0 16px; color: #626d7f; font-size: 15px; max-width: 860px; }
+
+/* Escenario 1280x720 fijo estilo Wii U */
+.stage {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  border-radius: 26px;
+  overflow: hidden;
+  background: #111620;
+  box-shadow: 0 0 0 1px rgba(90, 110, 140, 0.22), 0 24px 60px -20px rgba(10, 20, 35, 0.6);
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+
+/* Lienzo de comparación */
+.compare-viewport {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+  background: #000;
+  cursor: ew-resize;
+}
+
+/* Capa de imagen A */
+.layer-a, .layer-b {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Fondos simulados con gráficos de juego */
+.mock-game {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.mock-game.img-a {
+  background: 
+    radial-gradient(circle at 70% 30%, #4a235a 0%, #151828 70%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 2px, transparent 2px, transparent 10px);
+  filter: blur(1.5px); /* Simula nativo con antialiasing borroso */
+}
+.mock-game.img-b {
+  background: 
+    radial-gradient(circle at 70% 30%, #5b2c6f 0%, #151828 70%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 2px, transparent 2px, transparent 10px);
+  filter: contrast(1.1) saturate(1.15); /* Simula nitidez Magpie FSR */
+}
+
+.scene-text {
+  font-size: 42px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 4px 16px rgba(0,0,0,0.8);
+  letter-spacing: 2px;
+}
+
+/* Cortina interactiva (Split slider) */
+.split-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  background: #ffffff;
+  box-shadow: 0 0 16px rgba(0, 120, 212, 0.9), 0 0 0 1px rgba(0, 0, 0, 0.4);
+  z-index: 20;
+  cursor: ew-resize;
+}
+.split-handle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffffff, #dbe4f0);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.5), inset 0 1.5px 0 #fff;
+  display: grid;
+  place-items: center;
+  color: #0078d4;
+  font-size: 20px;
+}
+
+/* Píldoras de etiqueta A y B */
+.badge-label {
+  position: absolute;
+  top: 24px;
+  z-index: 25;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+  backdrop-filter: blur(8px);
+}
+.badge-label.lbl-a {
+  left: 28px;
+  background: rgba(0, 120, 212, 0.85);
+  border: 1px solid rgba(255,255,255,0.4);
+}
+.badge-label.lbl-b {
+  right: 28px;
+  background: rgba(230, 0, 18, 0.85);
+  border: 1px solid rgba(255,255,255,0.4);
+}
+
+/* Barra superior translúcida estilo visor */
+.viewer-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 68px;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(180deg, rgba(15, 20, 30, 0.8) 0%, transparent 100%);
+  z-index: 30;
+  color: #fff;
+}
+.mode-chips {
+  display: flex;
+  gap: 10px;
+  background: rgba(0,0,0,0.4);
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+.mode-chip {
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #cbd5e1;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+}
+.mode-chip.active {
+  background: #0078d4;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,120,212,0.5);
+}
+
+/* Barra inferior con pistas de mando */
+.dock-hint {
+  position: relative;
+  z-index: 30;
+  height: 54px;
+  background: rgba(15, 20, 30, 0.85);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+.badge-btn {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #334155;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 7px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.badge-btn.trigger { background: #0078d4; }
+.badge-btn.red { background: #e60012; }
+.badge-btn.green { background: #3bb54a; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Comparador Gráfico A/B de Capturas</h1>
+  <p class="desc">
+    Herramienta pensada para comparar directamente configuraciones gráficas, reescalado de Magpie/FSR, shaders de emuladores o diferencias de fidelidad. Permite alternar en vivo con los gatillos <span class="badge-btn trigger">LT</span> / <span class="badge-btn trigger">RT</span> o deslizar la cortina divisoria con el stick analógico.
+  </p>
+</header>
+
+<div class="stage" id="stage">
+  <!-- Barra superior -->
+  <div class="viewer-top">
+    <div style="font-size: 15px; font-weight: 700;">
+      <i class="ti ti-layers-intersect"></i> Modo Comparador · <b>Elden Ring</b>
+    </div>
+    <div class="mode-chips">
+      <button class="mode-chip active" id="btnCortina" onclick="setMode('split')">Cortina (Split)</button>
+      <button class="mode-chip" id="btnFlicker" onclick="setMode('flicker')">Alternancia (Gatillos)</button>
+    </div>
+    <div style="font-size: 13px; color: #94a3b8;">
+      Zoom: <b>100%</b> (Stick derecho)
+    </div>
+  </div>
+
+  <!-- Contenedor de comparación interactivo -->
+  <div class="compare-viewport" id="viewport">
+    <!-- Capa A (Fondo completo) -->
+    <div class="layer-a">
+      <div class="mock-game img-a">
+        <div class="scene-text">ORIGINAL (NATIVO 1080p)</div>
+      </div>
+      <div class="badge-label lbl-a">
+        <i class="ti ti-letter-a"></i> Original (Nativo) · 2026-10-18 21:15
+      </div>
+    </div>
+
+    <!-- Capa B (Recortada por la cortina) -->
+    <div class="layer-b" id="layerB" style="clip-path: inset(0 0 0 50%);">
+      <div class="mock-game img-b">
+        <div class="scene-text">MAGPIE FSR + SHARPEN</div>
+      </div>
+      <div class="badge-label lbl-b">
+        <i class="ti ti-letter-b"></i> Magpie FSR · 2026-10-18 21:16
+      </div>
+    </div>
+
+    <!-- Línea divisoria de la cortina -->
+    <div class="split-divider" id="divider" style="left: 50%;">
+      <div class="split-handle"><i class="ti ti-arrows-left-right"></i></div>
+    </div>
+  </div>
+
+  <!-- Barra de mandos inferior -->
+  <div class="dock-hint">
+    <div style="display:flex; gap:20px;">
+      <span><span class="badge-btn trigger">LT</span> Mantener Captura A</span>
+      <span><span class="badge-btn trigger">RT</span> Mantener Captura B</span>
+      <span><span class="badge-btn">Stick Izq.</span> Mover cortina</span>
+      <span><span class="badge-btn">Stick Der.</span> Zoom sincronizado</span>
+    </div>
+    <div>
+      <span><span class="badge-btn red">B</span> Volver a capturas</span>
+    </div>
+  </div>
+</div>
+
+<script>
+let mode = 'split';
+const vp = document.getElementById('viewport');
+const layerB = document.getElementById('layerB');
+const divider = document.getElementById('divider');
+
+function updateSplit(pct) {
+  if (mode !== 'split') return;
+  const clamped = Math.max(5, Math.min(95, pct));
+  divider.style.left = clamped + '%';
+  layerB.style.clipPath = `inset(0 0 0 ${clamped}%)`;
+}
+
+vp.addEventListener('mousemove', (e) => {
+  if (mode !== 'split') return;
+  const rect = vp.getBoundingClientRect();
+  const pct = ((e.clientX - rect.left) / rect.width) * 100;
+  updateSplit(pct);
+});
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnCortina').classList.toggle('active', m === 'split');
+  document.getElementById('btnFlicker').classList.toggle('active', m === 'flicker');
+  if (m === 'flicker') {
+    divider.style.display = 'none';
+    layerB.style.clipPath = 'inset(0 0 0 100%)';
+  } else {
+    divider.style.display = 'block';
+    updateSplit(50);
+  }
+}
+
+// Atajos simulados de teclado: Q para A, W para B
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'q' || e.key === 'Q') {
+    layerB.style.clipPath = 'inset(0 0 0 100%)';
+  } else if (e.key === 'w' || e.key === 'W') {
+    layerB.style.clipPath = 'inset(0 0 0 0%)';
+  }
+});
+window.addEventListener('keyup', (e) => {
+  if (mode === 'split') updateSplit(50);
+});
+</script>
+</body>
+</html>

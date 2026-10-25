@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buscador por Categorías · Propuesta de diseño</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root {
+  --round: 'M PLUS Rounded 1c', 'Segoe UI', system-ui, sans-serif;
+  --bg-top: #fbfcfd;
+  --bg-mid: #ebf0f7;
+  --bg-bot: #dbe4f0;
+  --pc: #0078d4;
+  --switch: #e60012;
+  --vn: #8e44ad;
+  --jvn: #d35400;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 24px 16px 60px;
+  background: radial-gradient(120% 90% at 50% 0%, var(--bg-top) 0%, var(--bg-mid) 55%, var(--bg-bot) 100%) fixed;
+  font-family: var(--round);
+  color: #333a45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+header {
+  max-width: 1280px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+h1 {
+  margin: 0 0 6px;
+  font-size: 26px;
+  font-weight: 800;
+  color: #272d37;
+}
+p.desc {
+  margin: 0 0 16px;
+  color: #626d7f;
+  font-size: 15px;
+  max-width: 860px;
+}
+.rule-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #3bb54a;
+  color: #fff;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  vertical-align: 2px;
+}
+
+/* Escenario 1280x720 fijo estilo Wii U */
+.stage {
+  position: relative;
+  width: 1280px;
+  height: 720px;
+  border-radius: 26px;
+  overflow: hidden;
+  background: radial-gradient(130% 100% at 50% -10%, #ffffff 0%, #edf2f9 48%, #d8e3f2 100%);
+  box-shadow: 0 0 0 1px rgba(90, 110, 140, 0.22), 0 24px 60px -20px rgba(30, 45, 70, 0.45);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Burbujas y fondo ambiental */
+.stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.8) 0%, transparent 45%),
+    radial-gradient(circle at 85% 75%, rgba(180, 210, 245, 0.45) 0%, transparent 40%),
+    radial-gradient(circle at 50% 120%, rgba(140, 185, 235, 0.35) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Barra superior de cristal */
+.topbar {
+  position: relative;
+  z-index: 10;
+  height: 72px;
+  padding: 12px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(12px);
+}
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #657184;
+}
+.crumbs b { color: #2a313d; }
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1.5px solid rgba(130, 160, 200, 0.45);
+  border-radius: 999px;
+  padding: 6px 18px;
+  width: 520px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(40, 60, 90, 0.08);
+}
+.search-box i { font-size: 20px; color: #0078d4; }
+.search-box input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  color: #272d37;
+  outline: none;
+}
+.search-box .clear-btn {
+  background: #e2e8f0;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* Área central de resultados */
+.content {
+  position: relative;
+  z-index: 5;
+  flex: 1;
+  padding: 20px 32px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* Sección por categoría (Regla de oro: NO se mezclan) */
+.cat-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cat-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  width: fit-content;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+.cat-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.cat-badge.pc { background: var(--pc); }
+.cat-badge.switch { background: var(--switch); }
+.cat-badge.vn { background: var(--vn); }
+.cat-badge.jvn { background: var(--jvn); }
+
+.cat-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: #677589;
+}
+.cat-hint {
+  font-size: 12px;
+  color: #8b99ac;
+  margin-left: 6px;
+}
+
+/* Fila de juegos */
+.cards-row {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 6px 4px 12px;
+}
+.game-card {
+  position: relative;
+  width: 140px;
+  flex: none;
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.3, 1), box-shadow 0.15s ease;
+}
+.game-card .glass-box {
+  width: 140px;
+  height: 190px;
+  border-radius: 16px;
+  padding: 6px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.4) 45%, rgba(220,230,245,0.3) 100%);
+  box-shadow: inset 0 1.5px 0 #fff, inset 0 0 0 1px rgba(255,255,255,0.6), 0 6px 14px rgba(30, 45, 70, 0.12);
+  display: flex;
+  flex-direction: column;
+}
+.game-card .poster {
+  flex: 1;
+  border-radius: 11px;
+  overflow: hidden;
+  position: relative;
+  background: #cbd5e1;
+  display: flex;
+  align-items: flex-end;
+  padding: 8px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+}
+.game-card .poster::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.65) 100%);
+}
+.game-card .poster span { position: relative; z-index: 2; line-height: 1.15; }
+.game-card .title {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #2c3442;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.game-card .meta {
+  font-size: 11px;
+  font-weight: 600;
+  color: #7b889b;
+}
+
+/* Foco estilo Wii U */
+.game-card:hover, .game-card.focused {
+  transform: translateY(-4px) scale(1.05);
+  z-index: 10;
+}
+.game-card:hover .glass-box, .game-card.focused .glass-box {
+  background: linear-gradient(180deg, #ffffff 0%, rgba(255,255,255,0.85) 100%);
+  box-shadow: 0 0 0 3px #0078d4, 0 12px 26px -6px rgba(0, 120, 212, 0.45);
+}
+
+/* Pistas de botones inferiores */
+.dock-hint {
+  position: relative;
+  z-index: 10;
+  height: 52px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255, 255, 255, 0.7);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: #556275;
+}
+.hints-left, .hints-right { display: flex; align-items: center; gap: 18px; }
+.badge-btn {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #475569;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 7px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+.badge-btn.green { background: #3bb54a; }
+.badge-btn.red { background: #e60012; }
+.badge-btn.blue { background: #0078d4; }
+.badge-btn.yellow { background: #d97706; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Buscador Global por Categorías <span class="rule-tag"><i class="ti ti-shield-check"></i> Las categorías NO se mezclan</span></h1>
+  <p class="desc">
+    El buscador reemplaza la píldora «Buscar» del dock de Inicio. Al escribir, los resultados aparecen ordenados en bloques limpios por cada plataforma (PC, Switch, Novelas visuales, Novelas japonesas). Pulsar <span class="badge-btn green">A</span> selecciona el juego en su categoría natural y abre su ficha.
+  </p>
+</header>
+
+<div class="stage">
+  <!-- Barra superior con input -->
+  <div class="topbar">
+    <div class="crumbs">
+      <i class="ti ti-home"></i> Inicio › <b>Buscar juegos</b>
+    </div>
+    <div class="search-box">
+      <i class="ti ti-search"></i>
+      <input type="text" id="searchInput" placeholder="Escribe para buscar (ej. Steins, Zelda, Elden...)" value="stein">
+      <button class="clear-btn" onclick="clearSearch()"><i class="ti ti-x"></i></button>
+    </div>
+    <div style="font-size: 13px; font-weight: 700; color: #556275;">
+      <b>3</b> coincidencias
+    </div>
+  </div>
+
+  <!-- Resultados agrupados por plataformas -->
+  <div class="content" id="resultsArea">
+    
+    <!-- Bloque Novelas visuales -->
+    <div class="cat-section">
+      <div class="cat-header">
+        <span class="cat-badge vn"><i class="ti ti-book"></i> Novelas visuales</span>
+        <span class="cat-count">2 títulos encontrados</span>
+        <span class="cat-hint">· LB / RB para saltar de bloque</span>
+      </div>
+      <div class="cards-row">
+        <div class="game-card focused">
+          <div class="glass-box">
+            <div class="poster" style="background: linear-gradient(135deg, #4a235a, #8e44ad);">
+              <span>STEINS;GATE</span>
+            </div>
+            <div class="title">STEINS;GATE</div>
+            <div class="meta">48 h · 182 capturas</div>
+          </div>
+        </div>
+        <div class="game-card">
+          <div class="glass-box">
+            <div class="poster" style="background: linear-gradient(135deg, #1b2631, #5b2c6f);">
+              <span>STEINS;GATE 0</span>
+            </div>
+            <div class="title">STEINS;GATE 0</div>
+            <div class="meta">31 h · 94 capturas</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bloque Novelas japonesas (Texthook) -->
+    <div class="cat-section">
+      <div class="cat-header">
+        <span class="cat-badge jvn"><i class="ti ti-language"></i> Novelas japonesas</span>
+        <span class="cat-count">1 título encontrado</span>
+      </div>
+      <div class="cards-row">
+        <div class="game-card">
+          <div class="glass-box">
+            <div class="poster" style="background: linear-gradient(135deg, #78281f, #d35400);">
+              <span>STEINS;GATE ELITE</span>
+            </div>
+            <div class="title">STEINS;GATE ELITE</div>
+            <div class="meta">Texthook activo · 12 h</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bloque Juegos PC (Vacío de ejemplo) -->
+    <div class="cat-section" style="opacity: 0.45;">
+      <div class="cat-header">
+        <span class="cat-badge pc"><i class="ti ti-device-gamepad-2"></i> Juegos PC</span>
+        <span class="cat-count">0 coincidencias</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Barra inferior con pistas de mando -->
+  <div class="dock-hint">
+    <div class="hints-left">
+      <span><span class="badge-btn green">A</span> Abrir ficha de juego</span>
+      <span><span class="badge-btn yellow">X</span> Lanzar directo</span>
+      <span><span class="badge-btn blue">LB</span> / <span class="badge-btn blue">RB</span> Saltar categoría</span>
+    </div>
+    <div class="hints-right">
+      <span><span class="badge-btn red">B</span> Volver a Inicio</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function clearSearch() {
+  const inp = document.getElementById('searchInput');
+  inp.value = '';
+  inp.focus();
+}
+</script>
+</body>
+</html>

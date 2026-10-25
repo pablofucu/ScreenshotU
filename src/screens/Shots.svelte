@@ -14,11 +14,46 @@
   const lo = $derived(app.goff - L.h - 60);
   const hi = $derived(app.goff + GRID_VIEW_H + 60);
   const idx = $derived.by(() => {
-    const out: number[] = [];
-    for (let i = 0; i < L.y.length; i++) if (L.y[i] > lo && L.y[i] < hi) out.push(i);
+    const y = L.y;
+    const n = y.length;
+    if (!n) return [];
+    let l = 0, r = n;
+    while (l < r) {
+      const m = (l + r) >> 1;
+      if (y[m] <= lo) l = m + 1;
+      else r = m;
+    }
+    const start = l;
+    l = start; r = n;
+    while (l < r) {
+      const m = (l + r) >> 1;
+      if (y[m] < hi) l = m + 1;
+      else r = m;
+    }
+    const end = l;
+    const out: number[] = new Array(end - start);
+    for (let i = start; i < end; i++) out[i - start] = i;
     return out;
   });
-  const heads = $derived(L.heads.filter((h) => h.y > lo && h.y < hi));
+  const heads = $derived.by(() => {
+    const h = L.heads;
+    const n = h.length;
+    if (!n) return [];
+    let l = 0, r = n;
+    while (l < r) {
+      const m = (l + r) >> 1;
+      if (h[m].y <= lo) l = m + 1;
+      else r = m;
+    }
+    const start = l;
+    l = start; r = n;
+    while (l < r) {
+      const m = (l + r) >> 1;
+      if (h[m].y < hi) l = m + 1;
+      else r = m;
+    }
+    return h.slice(start, l);
+  });
   const ratio = $derived(Math.min(1, GRID_VIEW_H / L.total));
   const cur = $derived(shots[app.s]);
   const crumbs = $derived(app.favView ? ['Inicio', 'Favoritas'] : ['Inicio', app.platform?.name ?? '', T.name]);

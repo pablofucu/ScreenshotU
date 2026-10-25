@@ -189,6 +189,26 @@ function pos(e: HTMLElement, root: HTMLElement) {
   return { x: x + e.offsetWidth / 2, y: y + e.offsetHeight / 2 };
 }
 
+/** Pulso háptico suave en el mando para feedback físico en la interfaz (topes, favorita, reset). */
+export function rumbleUi(duration = 20, weak = 0.15, strong = 0.0) {
+  if (!app.config.captureRumble) return;
+  try {
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    for (const p of pads) {
+      if (!p || !p.connected) continue;
+      const act = (p as any).vibrationActuator;
+      if (act && typeof act.playEffect === 'function') {
+        act.playEffect('dual-rumble', {
+          startDelay: 0,
+          duration,
+          weakMagnitude: weak,
+          strongMagnitude: strong,
+        }).catch(() => {});
+      }
+    }
+  } catch {}
+}
+
 export function bump(e: Element | null | undefined, dx: number, dy: number) {
   if (!e) return;
   try {
@@ -200,6 +220,7 @@ export function bump(e: Element | null | undefined, dx: number, dy: number) {
     /* sin animaciones web */
   }
   blip(220);
+  rumbleUi(22, 0.18, 0.0);
 }
 
 export function move(dx: number, dy: number) {
@@ -908,6 +929,7 @@ export function toggleFav() {
   void backend.setFavorite(shot.path, on);
   toast(on ? 'Añadida a favoritas' : 'Quitada de favoritas');
   blip(1100);
+  rumbleUi(30, 0.22, 0.0);
 }
 
 function cycleSort() {
@@ -949,7 +971,10 @@ export function stepViewer(d: number) {
 /* Zoom del visor: `app.vz` = aumento y desplazamiento (px del escenario) de la imagen respecto al centro del marco. */
 const ZOOM_MAX = 8;
 export function resetZoom() {
-  if (app.vz.k !== 1 || app.vz.x || app.vz.y) app.vz = { k: 1, x: 0, y: 0 };
+  if (app.vz.k !== 1 || app.vz.x || app.vz.y) {
+    app.vz = { k: 1, x: 0, y: 0 };
+    rumbleUi(20, 0.15, 0.0);
+  }
 }
 /** Mantiene la imagen ampliada dentro del marco (sin enseñar fondo si ya lo cubre). */
 function clampPan() {
@@ -973,6 +998,14 @@ export function zoomView(f: number, px = 0, py = 0) {
   z.y = py - (py - z.y) * r;
   z.k = k;
   if (k < 1.005) { resetZoom(); return; }
+  clampPan();
+}
+/** Mueve la imagen ampliada de forma continua y suave según la inclinación analógica del stick y dt. */
+export function panViewContinuous(sx: number, sy: number, dt: number) {
+  const z = app.vz;
+  const speed = 700;
+  z.x -= sx * speed * (dt * 0.001);
+  z.y -= sy * speed * (dt * 0.001);
   clampPan();
 }
 /** Mueve la imagen ampliada; la dirección es hacia dónde se «mira». */
@@ -1677,18 +1710,63 @@ const repeatEvery = (heldMs: number) => Math.max(30, 85 - Math.max(0, heldMs - 3
 
 const PAD_KEYS = ['a', 'b', 'x', 'y', 'lb', 'rb', 'lt', 'rt', 'view', 'menu', 'up', 'down', 'left', 'right'] as const;
 
+/** Histéresis de gatillos LT / RT para evitar pulsaciones fantasma por desgaste mecánico. */
+const triggerState = { lt: false, rt: false };
+
 /** Estado combinado de todos los mandos conectados: vale cualquiera, aunque se desconecte uno o entre otro. */
 function padState(pads: Gamepad[]): Record<string, boolean> {
   const st: Record<string, boolean> = {};
+  let maxLtVal = 0, maxRtVal = 0;
+  for (const p of pads) {
+    const vLt = p.buttons[6]?.value ?? (p.buttons[6]?.pressed ? 1 : 0);
+    const vRt = p.buttons[7]?.value ?? (p.buttons[7]?.pressed ? 1 : 0);
+    if (vLt > maxLtVal) maxLtVal = vLt;
+    if (vRt > maxRtVal) maxRtVal = vRt;
+  }
+  // Histéresis: se activa al superar 0.50 y se desarma solo al bajar de 0.20
+  if (maxLtVal >= 0.50) triggerState.lt = true;
+  else if (maxLtVal < 0.20) triggerState.lt = false;
+
+  if (maxRtVal >= 0.50) triggerState.rt = true;
+  else if (maxRtVal < 0.20) triggerState.rt = false;
+
+  // En el visor con zoom, el stick izquierdo se usa para panorámica analógica continua,
+  // por lo que las direcciones digitales de cruceta quedan reservadas a los botones físicos (12-15).
+  const inViewerZoom = app.view === 'viewer' && app.vz.k > 1 && !app.overlay && !app.osk.open && !app.learn && !app.audioMenu;
+
   for (const p of pads) {
     const B = (i: number) => !!p.buttons[i]?.pressed, ax = p.axes || [];
+    const stickUp = !inViewerZoom && ax[1] < -0.55;
+    const stickDown = !inViewerZoom && ax[1] > 0.55;
+    const stickLeft = !inViewerZoom && ax[0] < -0.55;
+    const stickRight = !inViewerZoom && ax[0] > 0.55;
     const s: Record<string, boolean> = {
-      a: B(0), b: B(1), x: B(2), y: B(3), lb: B(4), rb: B(5), lt: B(6), rt: B(7), view: B(8), menu: B(9),
-      up: B(12) || ax[1] < -0.55, down: B(13) || ax[1] > 0.55, left: B(14) || ax[0] < -0.55, right: B(15) || ax[0] > 0.55,
+      a: B(0), b: B(1), x: B(2), y: B(3), lb: B(4), rb: B(5),
+      lt: triggerState.lt, rt: triggerState.rt,
+      view: B(8), menu: B(9),
+      up: B(12) || stickUp,
+      down: B(13) || stickDown,
+      left: B(14) || stickLeft,
+      right: B(15) || stickRight,
     };
     for (const k of PAD_KEYS) st[k] = st[k] || s[k];
   }
   return st;
+}
+
+/** Desplazamiento analógico del stick izquierdo con zona muerta radial (0.18). */
+function leftStick(pads: Gamepad[]): { x: number; y: number } {
+  let vx = 0, vy = 0;
+  for (const p of pads) {
+    const x = p.axes?.[0] ?? 0;
+    const y = p.axes?.[1] ?? 0;
+    if (x * x + y * y > vx * vx + vy * vy) { vx = x; vy = y; }
+  }
+  const mag = Math.hypot(vx, vy);
+  const DEAD = 0.18;
+  if (mag < DEAD) return { x: 0, y: 0 };
+  const scale = (mag - DEAD) / (1 - DEAD) / mag;
+  return { x: vx * scale, y: vy * scale };
 }
 
 /** Eje vertical del stick derecho de los mandos conectados (el de mayor recorrido), con zona muerta; -1 = arriba. */
@@ -1698,7 +1776,7 @@ function rightStickY(pads: Gamepad[]): number {
     const a = p.axes?.[3] ?? 0;
     if (Math.abs(a) > Math.abs(v)) v = a;
   }
-  const DEAD = 0.3;
+  const DEAD = 0.25;
   return Math.abs(v) < DEAD ? 0 : Math.sign(v) * ((Math.abs(v) - DEAD) / (1 - DEAD));
 }
 
@@ -1718,6 +1796,8 @@ function poll(t: number) {
   if (!pads.length) {
     // Sin mandos se olvida lo pulsado: al volver uno, sus botones cuentan como pulsaciones nuevas.
     for (const k in held) delete held[k];
+    triggerState.lt = false;
+    triggerState.rt = false;
     return;
   }
   const st = padState(pads);
@@ -1725,6 +1805,10 @@ function poll(t: number) {
   if (app.view === 'viewer' && !app.overlay && !app.osk.open && !app.learn && !app.audioMenu) {
     const ay = rightStickY(pads);
     if (ay) zoomView(Math.exp(-ay * dt * 0.0022));
+    if (app.vz.k > 1) {
+      const ls = leftStick(pads);
+      if (ls.x || ls.y) panViewContinuous(ls.x, ls.y, dt);
+    }
   }
   // Lista de juegos: el stick derecho cambia el tamaño de las portadas por pasos (arriba = más grandes), con repetición lenta.
   if (app.view === 'titles' && !app.overlay && !app.osk.open && !app.learn && !app.audioMenu) {
