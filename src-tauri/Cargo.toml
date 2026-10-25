@@ -1,6 +1,6 @@
 [package]
 name = "visor-capturas"
-version = "1.4.4"
+version = "1.4.5"
 description = "Visor de capturas de juegos para pantalla grande y mando, estilo menu Wii U"
 edition = "2021"
 rust-version = "1.77"

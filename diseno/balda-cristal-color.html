@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Balda de cristal con color</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   Página (fuera de las maquetas)
+   ===================================================================== */
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;--ink:#3a414e;--mut:#657083;--line:rgba(95,110,135,.18);--acc:#00A0D8}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--round);color:var(--ink);background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%) fixed}
+main{max-width:1240px;margin:0 auto;padding:28px 16px 90px}
+h1{font-size:30px;font-weight:800;margin:0 0 6px;color:#2f3540}
+.lead{margin:0 0 16px;color:var(--mut);font-size:16px;max-width:940px;line-height:1.45}
+.pg-nav{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 0 12px;margin-bottom:6px;
+  background:linear-gradient(180deg,rgba(236,238,242,.96) 70%,rgba(236,238,242,0))}
+.pg-nav button{appearance:none;border:0;font:700 15px var(--round);color:#4a5260;height:36px;padding:0 14px;border-radius:999px;cursor:pointer;
+  background:rgba(255,255,255,.8);box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.22)}
+.pg-nav button.on{background:var(--acc);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 6px 14px -8px var(--acc)}
+.pg-nav button.rec::after{content:'★';margin-left:6px;color:#F2B807}
+.pg-nav button.on.rec::after{color:#FFE27A}
+.pg-nav .kb{margin-left:auto;font-size:13px;font-weight:700;color:var(--mut);white-space:nowrap}
+.pg-sec{display:none}
+.pg-sec.on{display:block}
+.pg-sec>h2{font-size:26px;font-weight:800;margin:6px 0 4px;color:#2f3540}
+.pg-sec>h2 small{font-size:13px;font-weight:800;color:#fff;background:#3BB54A;border-radius:999px;padding:3px 10px;margin-left:8px;vertical-align:4px}
+.pg-sec>.idea{margin:0 0 14px;color:#4f5766;font-size:16px;max-width:1000px;line-height:1.45}
+.pg-quad{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.pg-th{cursor:pointer;border-radius:16px;padding:7px;background:rgba(255,255,255,.55);box-shadow:0 0 0 1px var(--line);transition:box-shadow .15s,transform .15s}
+.pg-th.sel{box-shadow:0 0 0 3px var(--acc),0 10px 20px -12px var(--acc);transform:translateY(-2px)}
+.pg-th .lab{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:14px;font-weight:800;color:#4a5260;margin:2px 4px 7px;white-space:nowrap;overflow:hidden}
+.pg-th .lab span{font-size:12px;font-weight:700;color:var(--mut);overflow:hidden;text-overflow:ellipsis}
+.frame{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:10px;background:#eceef2;box-shadow:0 0 0 1px rgba(95,110,135,.2)}
+.frame>.st{position:absolute;left:0;top:0;transform-origin:0 0;transform:scale(var(--k,.3))}
+.pg-big{margin-bottom:18px}
+.pg-big .frame{border-radius:18px;box-shadow:0 0 0 1px rgba(95,110,135,.22),0 24px 44px -26px rgba(40,50,70,.55)}
+.pg-big .cap{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;font-weight:700;color:var(--mut);margin:8px 4px 0}
+.pg-big .cap b{color:#3a414e}
+.pg-big .cap button{appearance:none;border:0;font:800 13px var(--round);color:#fff;background:#4a5260;border-radius:999px;height:28px;padding:0 12px;cursor:pointer}
+.pg-info{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:14px}
+.pg-card{border-radius:18px;padding:16px 18px;background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 #fff,0 0 0 1px var(--line),0 12px 24px -18px rgba(40,50,70,.45)}
+.pg-card h3{margin:0 0 8px;font-size:16px;font-weight:800;color:#2f3540}
+.pg-card h3+ul{margin-bottom:12px}
+.pg-card ul{margin:0;padding-left:18px;font-size:14.5px;line-height:1.5;color:#4a5260}
+.pg-card li{margin-bottom:3px}
+.pg-card p{margin:0 0 8px;font-size:14.5px;line-height:1.5;color:#4a5260}
+.pg-card code{font:700 12.5px ui-monospace,Consolas,monospace;background:rgba(95,110,135,.12);padding:1px 5px;border-radius:5px;color:#3a414e}
+.pg-card .keep{color:#00799f}.pg-card.pro h3{color:#2f8a3a}.pg-card .con{color:#c8283e}
+.meter{display:flex;gap:4px;margin:2px 0 10px}.meter i{width:26px;height:8px;border-radius:4px;background:#d5dae2}.meter i.on{background:#F27A1A}
+table.cmp{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:14px;margin-top:6px}
+table.cmp th{text-align:left;font-size:13px;font-weight:800;color:var(--mut);padding:0 12px}
+table.cmp td{vertical-align:top;background:rgba(255,255,255,.75);padding:10px 12px;line-height:1.45;color:#4a5260}
+table.cmp td:first-child{border-radius:12px 0 0 12px;font-weight:800;color:#2f3540;width:170px}
+table.cmp td:last-child{border-radius:0 12px 12px 0;white-space:nowrap}
+.dots{display:inline-flex;gap:3px;vertical-align:-1px}.dots i{width:10px;height:10px;border-radius:50%;background:#d5dae2}.dots i.on{background:#00A0D8}
+.pg-ov{position:fixed;inset:0;z-index:50;display:none;place-items:center;background:rgba(15,18,24,.86)}
+.pg-ov.on{display:grid}
+.pg-ov .frame{width:min(96vw,calc(96vh * 16 / 9));border-radius:12px}
+.pg-ov .pg-x{position:fixed;right:16px;top:12px;font:800 14px var(--round);color:#fff;opacity:.85}
+@media (max-width:900px){.pg-quad{grid-template-columns:1fr 1fr}.pg-info{grid-template-columns:1fr}.pg-nav .kb{display:none}table.cmp td:first-child{width:auto}table.cmp td:last-child{white-space:normal}}
+
+/* =====================================================================
+   Maquetas: tokens copiados de src/app.css (escenario 1280×720, mundo claro)
+   ===================================================================== */
+.st{position:relative;width:1280px;height:720px;overflow:hidden;font-family:var(--round);color:#3a414e;background:#eceef2;--acc:#00A0D8;--acc-ink:#fff;user-select:none}
+.st .bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.st .blob{position:absolute;border-radius:50%;filter:blur(34px);opacity:.9}
+.st .blob.w{background:radial-gradient(circle,rgba(255,255,255,1),rgba(255,255,255,0) 70%)}
+.st .blob.a{background:radial-gradient(circle,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%);opacity:.55}
+.st .amb{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.st .amblayer{position:absolute;inset:-70px;filter:blur(44px) saturate(1.4);opacity:.5}
+.st .amb::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(236,238,242,.1) 0%,rgba(236,238,242,.55) 45%,rgba(236,238,242,.88) 100%)}
+.st .glass{position:absolute;--r:28px;--bw:10px;border-radius:var(--r);padding:var(--bw);box-sizing:border-box;isolation:isolate;
+  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,1),inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.95),inset 0 -1.5px 0 rgba(110,125,150,.30),0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42)}
+.st .glass::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.62) 0%,rgba(255,255,255,.20) 55%,rgba(255,255,255,0) 100%);
+  -webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.85}
+.st .glass::after{content:'';position:absolute;z-index:3;left:12%;top:3px;width:34%;height:5px;border-radius:5px;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,1) 40%,rgba(255,255,255,0));filter:blur(.6px);opacity:.9}
+.st .glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:#dfe3e9}
+.st .glass .face::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(20,30,50,.20),inset 0 3px 6px -2px rgba(0,0,0,.35),inset 0 -2px 4px -2px rgba(255,255,255,.5)}
+.st .glass.f{transform:scale(1.06);z-index:3;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)) 0%,color-mix(in srgb,var(--acc) 72%,transparent) 55%,color-mix(in srgb,var(--acc) 92%,black) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),inset 0 -10px 14px -8px color-mix(in srgb,var(--acc) 30%,white),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 0 26px 2px color-mix(in srgb,var(--acc) 50%,transparent),0 22px 34px -16px color-mix(in srgb,var(--acc) 70%,black)}
+.st .glass.static.f{transform:none}
+.st .pill{background:linear-gradient(180deg,rgba(255,255,255,.80),rgba(255,255,255,.52));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+.st .art{position:absolute;inset:0;display:block}
+.st .ct{position:absolute;left:8%;right:8%;bottom:7%;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.65);line-height:1.1;z-index:1}
+/* barra superior */
+.st .top{position:absolute;left:0;right:0;top:0;height:76px;z-index:5}
+.st .avatar{left:22px;top:12px;width:60px;height:60px;--r:16px;--bw:5px}
+.st .avatar .face{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white),var(--acc));display:grid;place-items:center}
+.st .avatar svg{width:60%;height:60%}
+.st .crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:20px;font-weight:700;color:#4a5260;white-space:nowrap}
+.st .crumb .sep{color:#a3abb8;font-weight:500}
+.st .crumb .cur{color:var(--acc)}
+.st .clock{position:absolute;right:24px;top:24px;display:flex;gap:14px;align-items:center;font-size:20px;font-weight:700;color:#4a5260}
+.st .clock small{font-size:15px;font-weight:500;color:#657083}
+.st .pagep{position:absolute;left:50%;top:22px;transform:translateX(-50%);height:36px;padding:0 16px;border-radius:999px;display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:#4a5260;white-space:nowrap}
+.st .pagep i{position:relative;display:block;width:52px;height:6px;border-radius:3px;background:rgba(160,168,182,.45);overflow:hidden}
+.st .pagep i b{position:absolute;top:0;bottom:0;left:0;width:25%;border-radius:3px;background:var(--acc)}
+/* pistas */
+.st .hints{position:absolute;right:22px;bottom:16px;display:flex;gap:10px;z-index:5}
+.st .hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:999px;font-size:16px;font-weight:700;color:#4a5260;white-space:nowrap}
+.st .btn{min-width:28px;height:28px;border-radius:14px;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;--b:#4a5260;padding:0 6px;box-sizing:border-box;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--b) 70%,black),0 1px 2px rgba(0,0,0,.2);text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.st .btn.a{--b:#3BB54A}.st .btn.b{--b:#E8384F}.st .btn.x{--b:#3F63E0}.st .btn.y{--b:#F2B807;color:#3a2f00;text-shadow:none}
+.st .btn.sh{border-radius:8px;--b:#6b7383}
+/* pestañas de categoría y cabecera de «Todos» */
+.st .ttabs{position:absolute;left:96px;top:124px;display:flex;gap:8px;align-items:center;z-index:4}
+.st .ttabs .btn.x{margin-left:14px}
+.st .tflt{height:32px;padding:0 14px;border-radius:999px;display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;color:#4a5260;white-space:nowrap;
+  background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.22)}
+.st .tflt.on{background:var(--acc);color:var(--acc-ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 6px 14px -8px var(--acc)}
+.st .ttabs .tord{color:#3F63E0}
+.st .thead{position:absolute;left:96px;top:82px;right:96px;display:flex;align-items:baseline;gap:14px;white-space:nowrap;overflow:hidden}
+.st .thead h3{margin:0;font-size:32px;font-weight:800;color:#3a414e;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.st .thead>span{font-size:17px;font-weight:600;color:#4f5766}
+.st .thead>span b{color:#3a414e;font-weight:800}
+.st .thead .chip{font-size:15px;font-weight:700;color:var(--acc-ink);background:var(--acc);padding:3px 12px;border-radius:999px;align-self:center}
+.st .side{position:absolute;top:300px;width:56px;height:110px;z-index:4;filter:drop-shadow(0 8px 10px rgba(40,50,70,.25))}
+.st .side.off{opacity:0}
+.st .sbadge{position:absolute;right:8px;top:8px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;z-index:2;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--c) 70%,white),var(--c));box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 3px 8px -2px rgba(0,0,0,.5);color:#fff}
+.st .sbadge svg{width:62%;height:62%}
+.st .mic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;flex:none;color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--c,var(--acc)) 30%,white),var(--c,var(--acc)));box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--c,var(--acc)) 70%,black)}
+.st .mic svg{width:62%;height:62%}
+.st .addface{position:absolute;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.62);box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--acc) 55%,transparent)}
+.st .addface::after{content:"";position:absolute;inset:8px;border-radius:10px;border:3px dashed color-mix(in srgb,var(--acc) 55%,transparent)}
+.st .addface span{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,white),var(--acc))}
+.st .addface span svg{width:58%;height:58%}
+.st .lclip{position:absolute;left:0;top:166px;width:1280px;height:494px;overflow:hidden}
+
+/* ---------- HOY: estantería actual (copiado de Shelf.svelte y CollTab.svelte) ---------- */
+.st .shelf{position:absolute;left:56px;width:1168px;--hi:color-mix(in srgb,var(--acc) 35%,white);--lo:color-mix(in srgb,var(--acc) 70%,black)}
+.st .shelf.dim{opacity:.72}
+.st .stab{display:inline-flex;align-items:center;gap:22px;max-width:100%;padding:8px 10px 8px 22px;border-radius:20px 20px 6px 20px;margin-bottom:-6px;position:relative;z-index:3;min-height:50px;
+  background:linear-gradient(180deg,var(--hi),var(--acc) 62%,var(--lo));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),inset 0 -2px 6px -2px rgba(0,0,0,.25),0 0 0 1px var(--lo),0 10px 20px -10px var(--acc)}
+.st .stab h3{margin:0;font-size:27px;font-weight:800;color:var(--ink);text-shadow:0 1px 3px rgba(0,0,0,.4);white-space:nowrap;line-height:1.1}
+.st .shelf.dk .stab h3,.st .shelf.dk .smeta{text-shadow:none}
+.st .sinfo{display:flex;flex-direction:column;gap:5px;padding-right:12px}
+.st .smeta{font-size:15px;font-weight:600;color:var(--ink);white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.st .stab.hasaur{overflow:hidden}
+.st .aur{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:inherit}
+.st .aur b{position:absolute;top:-30%;width:34%;height:160%;border-radius:50%;filter:blur(22px);opacity:.55}
+.st .stab>*:not(.aur){position:relative}
+.st .sboard{position:relative;height:179px;border-radius:6px 22px 22px 22px;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.26));
+  box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.2),0 14px 22px -16px rgba(40,50,70,.45)}
+.st .sview{position:absolute;left:18px;right:18px;top:16px;height:139px}
+.st .slip{position:absolute;left:0;right:0;bottom:0;height:24px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 22%,white),color-mix(in srgb,var(--acc) 48%,#dfe3e9));box-shadow:inset 0 2px 0 rgba(255,255,255,.9),0 -8px 14px -10px rgba(40,50,70,.4);overflow:hidden}
+.st .slab{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;font-size:12px;font-weight:800;letter-spacing:.03em;color:color-mix(in srgb,var(--acc) 55%,#3a414e)}
+.st .slab em{font-style:normal;font-size:10px;letter-spacing:-.5px;color:color-mix(in srgb,var(--acc) 80%,#8a5a00)}
+.st .slab s{text-decoration:none;display:flex;align-items:center;gap:5px;padding:1px 8px;border-radius:999px}
+.st .slab.on s{background:var(--lo);color:#fff}
+.st .slab.on em{color:#FFD84A}
+.st .sm{position:absolute;top:56px;z-index:4;font-style:normal;font-size:15px;font-weight:800;color:#5f6776;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.7);box-shadow:0 0 0 1px rgba(95,110,135,.2)}
+.st .sm.r{right:4px}
+.st .ctl{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--ink);text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.st .ctr{position:relative;width:230px;height:4px;border-radius:4px;background:color-mix(in srgb,var(--ink) 38%,transparent)}
+.st .ctr i{position:absolute;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.st .ctr i.on{width:15px;height:15px;margin:-7.5px 0 0 -7.5px;box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 60%,white),0 0 10px 2px rgba(255,255,255,.9)}
+.st .cshots i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 25%,white),var(--acc) 72%);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
+.st .cshots i svg{width:58%;height:58%}
+
+/* ---------- Línea de tiempo (tinta neutra o la tinta de la píldora) ---------- */
+.st .tl{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700;color:#5f6776;white-space:nowrap}
+.st .tl .tr{position:relative;width:220px;height:4px;border-radius:4px;background:rgba(160,168,182,.45)}
+.st .tl .tr i{position:absolute;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 2px #fff}
+.st .tl .tr i.on{width:16px;height:16px;margin:-8px 0 0 -8px;box-shadow:0 0 0 3px #fff,0 0 10px 2px color-mix(in srgb,var(--acc) 60%,transparent)}
+.st .lbl{position:absolute;z-index:4;text-align:center;font-size:13px;font-weight:700;color:#5f6776;white-space:nowrap}
+.st .lbl em{font-style:normal;font-size:13px;color:#d9a520;letter-spacing:-.5px;margin-left:4px}
+.st .more{position:absolute;font-size:15px;font-weight:800;color:#5f6776;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 0 0 1px rgba(95,110,135,.2);z-index:5}
+
+/* ---------- P2 original (referencia) ---------- */
+.st .p2{position:absolute;left:64px;width:1152px}
+.st .p2h{display:inline-flex;align-items:center;gap:14px;height:46px;padding:0 8px;border-radius:999px;margin:0 0 8px 6px;white-space:nowrap;position:relative;z-index:3}
+.st .p2h h3{margin:0;font-size:22px;font-weight:800;color:#3a414e}
+.st .p2h .m{font-size:15px;font-weight:600;color:#5f6776}
+.st .p2h .hint{height:34px;font-size:15px;box-shadow:none;background:rgba(255,255,255,.85)}
+.st .p2h>*:last-child{margin-right:10px}
+.st .p2h.on{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 84%,white),var(--acc));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 8px 16px -8px color-mix(in srgb,var(--acc) 70%,black)}
+.st .p2h.on h3,.st .p2h.on .m{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.28)}
+.st .p2h.on .mic{background:rgba(255,255,255,.92);color:var(--acc);box-shadow:none}
+.st .p2h.on .tl{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.st .p2h.on .tl .tr{background:rgba(255,255,255,.4)}
+.st .p2h.on .tl .tr i{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.st .p2b{position:relative !important;width:1152px;height:186px;--r:26px;--bw:7px}
+.st .p2b>.face{background:linear-gradient(180deg,rgba(250,251,253,.75),rgba(236,240,245,.6))}
+.st .p2b>.face::after{box-shadow:inset 0 0 0 1px rgba(20,30,50,.12),inset 0 2px 5px -2px rgba(0,0,0,.18)}
+.st .p2tint{position:absolute;inset:-20px;filter:blur(30px);opacity:.28}
+.st .p2lip{position:absolute;left:0;right:0;bottom:0;height:28px;z-index:4;background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(222,227,235,.85));box-shadow:inset 0 1px 0 #fff,0 -6px 12px -10px rgba(40,50,70,.4)}
+.st .p2lip .lbl{top:0;height:28px;line-height:28px;font-size:13px}
+.st .p2lip .lbl.on span{background:var(--acc);color:#fff;padding:2px 10px;border-radius:999px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
+.st .p2.dim .glass.c{opacity:.88}
+
+/* =====================================================================
+   Balda de cristal con color: base común a las cinco variantes
+   Línea de 96 px: el icono del rótulo, la primera portada, .thead y .ttabs empiezan en x=96.
+   ===================================================================== */
+.st .bs{position:absolute;left:80px;width:1120px;--hi:color-mix(in srgb,var(--acc) 35%,white);--lo:color-mix(in srgb,var(--acc) 70%,black);--tsh:0 1px 2px rgba(0,0,0,.28)}
+.st .bs.dk{--tsh:none}
+.st .bs.dim .glass.c{opacity:.86}
+.st .bsh{position:relative;display:inline-flex;align-items:center;gap:14px;height:40px;padding:0 6px 0 8px;margin:0 0 6px 8px;border-radius:999px;white-space:nowrap;z-index:3;isolation:isolate}
+.st .bsh>*:not(.aur){position:relative}
+.st .bsh h3{margin:0;font-size:22px;font-weight:800;color:#3a414e;line-height:1}
+.st .bsh .m{font-size:15px;font-weight:600;color:#5f6776}
+.st .bsh .hint{height:32px;font-size:15px;background:rgba(255,255,255,.9);box-shadow:none;text-shadow:none;color:#4a5260}
+.st .bsh>.last{margin-right:8px}
+.st .bsh .chip{font-size:14px;font-weight:800;padding:3px 11px;border-radius:999px;color:var(--ink);background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
+.st .bsh .aur b{filter:blur(16px)}
+/* rótulo «encendido» (receta .srow.f / .dpill.f) */
+.st .bsh.lit{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 84%,white),var(--acc) 70%,color-mix(in srgb,var(--acc) 88%,black));
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),inset 0 -2px 5px -2px rgba(0,0,0,.18),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 8px 16px -8px color-mix(in srgb,var(--acc) 70%,black)}
+.st .bsh.lit h3,.st .bsh.lit .m{color:var(--ink);text-shadow:var(--tsh)}
+.st .bsh.lit .mic{background:rgba(255,255,255,.92);color:color-mix(in srgb,var(--acc) 80%,black);box-shadow:none}
+.st .bsh.lit .tl{color:var(--ink);text-shadow:var(--tsh)}
+.st .bsh.lit .tl .tr{background:color-mix(in srgb,var(--ink) 38%,transparent)}
+.st .bsh.lit .tl .tr i{background:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.st .bsh.lit .tl .tr i.on{box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 50%,white),0 0 10px 2px rgba(255,255,255,.9)}
+.st .bsh.lit .chip{background:rgba(255,255,255,.92);color:color-mix(in srgb,var(--acc) 75%,black);box-shadow:none}
+.st .bs.on .bsh.glow{box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),inset 0 -2px 5px -2px rgba(0,0,0,.18),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 0 20px 3px color-mix(in srgb,var(--acc) 50%,transparent),0 10px 18px -8px color-mix(in srgb,var(--acc) 70%,black)}
+.st .bsb{position:relative !important;width:1120px;height:190px;--r:26px;--bw:7px}
+.st .bsb::before{opacity:.4}
+.st .bsb>.face{background:linear-gradient(180deg,rgba(250,251,253,.75),rgba(236,240,245,.6))}
+.st .bsb>.face::after{box-shadow:inset 0 0 0 1px rgba(20,30,50,.12),inset 0 2px 5px -2px rgba(0,0,0,.18);z-index:5}
+.st .bslip{position:absolute;left:0;right:0;bottom:0;height:26px;z-index:4;background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(222,227,235,.88));box-shadow:inset 0 1px 0 #fff,0 -6px 12px -10px rgba(40,50,70,.4)}
+.st .bslip .lbl{top:0;height:26px;line-height:26px}
+.st .bslip .lbl span{padding:2px 9px;border-radius:999px}
+.st .bslip .lbl.on span{background:var(--acc);color:var(--ink);text-shadow:var(--tsh);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
+.st .bs.dk .bslip .lbl.on em{color:#7a5a00}
+.st .bslip .lbl.on em{color:#FFE27A}
+.st .bsb .more{right:8px;top:54px}
+.st .btint{position:absolute;inset:-24px;filter:blur(28px);pointer-events:none}
+
+/* ---------- V1 · Aurora de siempre ---------- */
+.st .v1 .bsh .aur b{opacity:.6}
+.st .v1 .bsb{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.9)) 0%,color-mix(in srgb,var(--acc) 55%,rgba(255,255,255,.35)) 55%,color-mix(in srgb,var(--acc) 75%,rgba(225,234,246,.4)) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(255,255,255,.5),inset 0 -8px 12px -8px rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--acc) 65%,black),0 2px 3px rgba(40,50,70,.1),0 18px 30px -16px color-mix(in srgb,var(--acc) 60%,black)}
+.st .v1 .bslip{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 22%,white),color-mix(in srgb,var(--acc) 48%,#dfe3e9))}
+.st .v1 .bslip .lbl{color:color-mix(in srgb,var(--acc) 55%,#3a414e)}
+.st .v1 .bslip .lbl.on span{background:var(--lo);color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.3)}
+.st .v1.dk .bslip .lbl.on em,.st .v1 .bslip .lbl.on em{color:#FFE27A}
+
+/* ---------- V2 · Rótulo teñido + chip ---------- */
+.st .v2 .bsh.soft{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 22%,white),color-mix(in srgb,var(--acc) 38%,#eef1f5));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.75),0 0 0 1px color-mix(in srgb,var(--acc) 50%,rgba(95,110,135,.3)),0 10px 20px -12px color-mix(in srgb,var(--acc) 55%,rgba(40,50,70,.5))}
+.st .v2 .bsh.soft h3{color:color-mix(in srgb,var(--acc) 50%,#2f3540)}
+.st .v2 .bsh.soft .aur b{opacity:.38}
+.st .v2 .bsh.lit .aur b{opacity:.5}
+.st .v2 .bsb::after{background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,1) 40%,rgba(255,255,255,0))}
+
+/* ---------- V3 · Lomo de color ---------- */
+.st .v3 .spine{position:absolute;left:-18px;top:0;width:13px;height:236px;border-radius:7px;z-index:2;
+  background:var(--sp,linear-gradient(180deg,var(--hi),var(--acc) 55%,var(--lo)));
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),inset 2px 0 3px -1px rgba(255,255,255,.55),inset -2px 0 4px -2px rgba(0,0,0,.3),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 8px 14px -8px color-mix(in srgb,var(--acc) 70%,black)}
+.st .v3.on .spine{box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),inset 2px 0 3px -1px rgba(255,255,255,.55),inset -2px 0 4px -2px rgba(0,0,0,.3),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 0 18px 3px color-mix(in srgb,var(--acc) 50%,transparent)}
+.st .v3 .bsb>.face{background:linear-gradient(90deg,color-mix(in srgb,var(--acc) 34%,rgba(250,251,253,.8)) 0,color-mix(in srgb,var(--acc) 12%,rgba(250,251,253,.75)) 160px,rgba(250,251,253,.72) 360px),linear-gradient(180deg,rgba(250,251,253,.75),rgba(236,240,245,.6))}
+.st .v3 .bslip{background:linear-gradient(90deg,color-mix(in srgb,var(--acc) 32%,rgba(255,255,255,.9)),rgba(255,255,255,0) 260px),linear-gradient(180deg,rgba(255,255,255,.88),rgba(222,227,235,.88))}
+.st .v3 .bsh:not(.lit){box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+
+/* ---------- V4 · Balda teñida ---------- */
+.st .v4 .bsb{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 24%,rgba(255,255,255,.85)) 0%,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.3)) 50%,color-mix(in srgb,var(--acc) 42%,rgba(225,234,246,.35)) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,1),inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.85),0 0 0 1px color-mix(in srgb,var(--acc) 50%,rgba(95,110,135,.3)),0 2px 3px rgba(40,50,70,.1),0 18px 30px -16px color-mix(in srgb,var(--acc) 45%,rgba(40,50,70,.5))}
+.st .v4.on .bsb{box-shadow:inset 0 1.5px 0 rgba(255,255,255,1),inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.85),0 0 0 1px color-mix(in srgb,var(--acc) 72%,black),0 0 24px 2px color-mix(in srgb,var(--acc) 32%,transparent),0 18px 30px -16px color-mix(in srgb,var(--acc) 60%,black)}
+.st .v4 .bsb>.face{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 10%,rgba(250,251,253,.8)),color-mix(in srgb,var(--acc) 22%,rgba(236,240,245,.72)))}
+.st .v4 .btint{opacity:.34}
+.st .v4 .bslip{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 14%,white),color-mix(in srgb,var(--acc) 32%,#e3e7ee))}
+.st .v4 .bslip .lbl{color:color-mix(in srgb,var(--acc) 50%,#3a414e)}
+.st .v4 .bsh:not(.lit) h3{color:color-mix(in srgb,var(--acc) 55%,#2f3540)}
+
+/* ---------- V5 · Píldora de color y halo ---------- */
+.st .v5 .bsh .aur b{opacity:.45}
+.st .v5 .bsb .glass.c{box-shadow:inset 0 1.5px 0 rgba(255,255,255,1),inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.95),0 0 0 1px color-mix(in srgb,var(--acc) 45%,rgba(95,110,135,.3)),0 2px 3px rgba(40,50,70,.1),0 12px 20px -8px color-mix(in srgb,var(--acc) 75%,transparent)}
+.st .v5 .bsb .glass.c.f{box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),inset 0 -10px 14px -8px color-mix(in srgb,var(--acc) 30%,white),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 0 26px 2px color-mix(in srgb,var(--acc) 50%,transparent),0 22px 34px -16px color-mix(in srgb,var(--acc) 70%,black)}
+.st .v5 .halo{position:absolute;top:-4px;width:150px;height:172px;pointer-events:none;border-radius:40%;background:radial-gradient(closest-side,var(--hl) 55%,transparent);filter:blur(9px);opacity:.7}
+.st .v5 .bslip{box-shadow:inset 0 3px 0 color-mix(in srgb,var(--acc) 85%,white),inset 0 4px 0 rgba(255,255,255,.7),0 -6px 12px -10px rgba(40,50,70,.4)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Balda de cristal con el color de siempre</h1>
+  <p class="lead">Cinco variantes de la P2 «Balda de cristal» (rótulo .pill + balda .glass + borde con etiquetas, piezas y foco comunes) que <b>conservan el color propio de cada estantería siempre encendido</b>, como hoy en <code>Shelf.svelte</code> y <code>tabLook</code>. Todas comparten la cabecera .thead con el juego enfocado, textos de 13 px o más, radios simétricos y una línea de 96 px (icono del rótulo, primera portada, .thead y .ttabs). Cada una enseña la pantalla de referencia, Mi lista y Colecciones con varias baldas a la vez, incluida una colección amarilla con tinta oscura. Las categorías no cambian: todo pasa dentro de «Juegos». <b>Mando:</b> LB/RB cambian de variante, ←/→ eligen la pantalla, A la abre a pantalla completa y B la cierra.</p>
+  <nav class="pg-nav" id="nav"></nav>
+  <div id="secs"></div>
+</main>
+<div class="pg-ov" id="ov"><span class="pg-x">B / Esc para cerrar</span><div class="frame" id="ovf"></div></div>
+
+<script>
+/* =====================================================================
+   Datos de ejemplo (categoría «Juegos»)
+   ===================================================================== */
+const CHROME = '#00A0D8';
+const COL = { playing: '#00A0D8', pending: '#F27A1A', finished: '#3BB54A', dropped: '#E8384F', none: '#8a93a3' };
+const g = (n, c1, c2, l = '', s = 0) => ({ n, c1, c2, l, s });
+const LIST = [
+  { k: 'playing', t: 'Jugando', sub: '4 juegos · 123 h jugadas', items: [
+    g('Persona 5 Royal', '#E8384F', '#3a0a12', '62 h'), g('Elden Ring', '#c9a227', '#2b2208', '41 h'), g('Hades II', '#9A4BD8', '#22103a', '12 h'), g('Metaphor: ReFantazio', '#00A0D8', '#062b40', '8 h')] },
+  { k: 'pending', t: 'Pendientes', sub: '11 juegos · en tu orden', items: [
+    g('Clair Obscur', '#d9b38c', '#3b2a1a'), g('Silksong', '#b23a48', '#1e0a10'), g('Death Stranding 2', '#5a7f95', '#101820'), g('Ys X Nordics', '#2f7fd8', '#0b2246'),
+    g('Trails Beyond the Horizon', '#3F63E0', '#121c4a'), g('Kingdom Come II', '#8a6a3a', '#21180a'), g('Lies of P', '#6b5a8a', '#17122a'), g('Octopath Traveler 0', '#F27A1A', '#3a1a05'),
+    g('Dragon Quest III HD-2D', '#3BB54A', '#0d3314'), g('Like a Dragon: Pirate', '#F2B807', '#3a2c00'), g('Xenoblade X', '#00A0D8', '#04253a')].map((x, i) => ({ ...x, l: '#' + (i + 1) })) },
+  { k: 'finished', t: 'Terminados en 2026', sub: '6 juegos · nota media 4,2', items: [
+    g('Astro Bot', '#00A0D8', '#063a55', '12 feb', 5), g('FF VII Rebirth', '#3F63E0', '#121c4a', '3 mar', 5), g('Unicorn Overlord', '#9A4BD8', '#22103a', '28 abr', 4),
+    g('Prince of Persia', '#F2B807', '#3a2c00', '9 may', 4), g('Balatro', '#E8384F', '#3a0a12', '21 jun', 3), g('Animal Well', '#3BB54A', '#0d3314', '2 ago', 4)] },
+];
+const LF = { s: 1, i: 2 }; // foco en Mi lista: Pendientes, «Death Stranding 2»
+const COLLS = [
+  { n: 'Trails', c: '#3F63E0', shots: '2.341', items: [
+    g('Trails in the Sky', '#F27A1A', '#7a3b12', '2004'), g('Trails in the Sky SC', '#3F63E0', '#1d2b6b', '2006'), g('Trails in the Sky 3rd', '#9A4BD8', '#3b1966', '2007'),
+    g('Trails from Zero', '#00A0D8', '#0a3e5c', '2010'), g('Trails to Azure', '#2f7fd8', '#14305e', '2011'), g('Cold Steel', '#E8384F', '#5c1020', '2013'),
+    g('Cold Steel II', '#c2334a', '#3d0c18', '2014'), g('Cold Steel III', '#3BB54A', '#14451b', '2017'), g('Cold Steel IV', '#5a5f8a', '#1e2140', '2018'), g('Reverie', '#F2B807', '#6b4e00', '2020')] },
+  { n: 'Kingdom Hearts', c: '#00A0D8', shots: '612', items: [g('KH 1.5+2.5', '#F2B807', '#6b4e00', '2013'), g('KH 2.8', '#00A0D8', '#063a55', '2017'), g('Kingdom Hearts III', '#3F63E0', '#18245c', '2019')] },
+  { n: 'FromSoftware', c: '#9A4BD8', shots: '1.087', items: [g('Dark Souls III', '#5a6f80', '#121820', '2016'), g('Sekiro', '#E8384F', '#3a0a12', '2019'), g('Elden Ring', '#c9a227', '#2b2208', '2022'), g('Armored Core VI', '#F27A1A', '#3a1a05', '2023')] },
+  { n: 'Ys', c: '#F2B807', shots: '845', items: [g('Ys Origin', '#c94a2a', '#3a1208', '2006'), g('Ys Seven', '#3BB54A', '#0d3314', '2009'), g('Ys VIII Lacrimosa', '#00A0D8', '#063a55', '2016'), g('Ys IX Monstrum Nox', '#9A4BD8', '#22103a', '2019'), g('Ys X Nordics', '#2f7fd8', '#0b2246', '2023')] },
+];
+const TODOS = [
+  g('Persona 5 Royal', '#E8384F', '#3a0a12'), g('Elden Ring', '#c9a227', '#2b2208'), g('Hades II', '#9A4BD8', '#22103a'), g('Astro Bot', '#00A0D8', '#063a55'), g('Clair Obscur', '#d9b38c', '#3b2a1a'), g('Balatro', '#E8384F', '#3a0a12'),
+  g('Silksong', '#b23a48', '#1e0a10'), g('Sekiro', '#E8384F', '#3a0a12'), g('Unicorn Overlord', '#9A4BD8', '#22103a'), g('Lies of P', '#6b5a8a', '#17122a'), g('Trails from Zero', '#00A0D8', '#0a3e5c'), g('Animal Well', '#3BB54A', '#0d3314'),
+];
+const TODOS_ST = { 3: 'finished', 5: 'finished', 8: 'finished' };
+
+/** Tinta del texto sobre un color (como inkFor/inkDark: amarillos y claros llevan tinta oscura). */
+function inkOf(hex) {
+  const v = [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16) / 255).map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2] > 0.45 ? '#3a2f00' : '#fff';
+}
+
+/* =====================================================================
+   Iconos (currentColor)
+   ===================================================================== */
+const I = {
+  person: '<svg viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="8.5" r="4.2"/><path d="M4 20.5c.8-4.3 4-6.6 8-6.6s7.2 2.3 8 6.6z"/></svg>',
+  play: '<svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4.3l3 2"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  minus: '<svg viewBox="0 0 24 24"><rect x="5" y="10.4" width="14" height="3.4" rx="1.7" fill="currentColor"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  cam: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  saga: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><rect x="3.5" y="5" width="4.5" height="14" rx="1"/><rect x="9.8" y="5" width="4.5" height="14" rx="1"/><path d="M16.3 6.4l3.8-1 3 13.2-3.8 1z" transform="translate(-1.6 0)"/></svg>',
+  arrowL: '<svg viewBox="0 0 56 110"><path d="M40 14L12 55l28 41" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  arrowR: '<svg viewBox="0 0 56 110"><path d="M16 14l28 41-28 41" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+const SG = { playing: I.play, pending: I.clock, finished: I.check, dropped: I.minus };
+
+/* =====================================================================
+   Piezas comunes
+   ===================================================================== */
+const art = (x) => `radial-gradient(120% 85% at 30% 15%,${x.c1},${x.c2})`;
+function bg(focusG, acc = CHROME) {
+  return `<div class="bg"><div class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></div><div class="blob a" style="--acc:${acc};right:-120px;top:120px;width:620px;height:520px"></div><div class="blob w" style="left:420px;bottom:-200px;width:600px;height:420px"></div></div>`
+    + (focusG ? `<div class="amb"><div class="amblayer" style="background:radial-gradient(60% 70% at 30% 40%,${focusG.c1},transparent),radial-gradient(60% 70% at 75% 50%,${focusG.c2},transparent)"></div></div>` : '');
+}
+function topBar(crumbs, page) {
+  const cr = crumbs.map((x, i) => i === crumbs.length - 1 ? `<span class="cur">${x}</span>` : `<span>${x}</span><span class="sep">›</span>`).join('');
+  return `<div class="top"><div class="glass avatar"><div class="face">${I.person}</div></div><div class="crumb pill">${cr}</div>`
+    + (page ? `<div class="pagep pill">${page}<i><b></b></i></div>` : '')
+    + `<div class="clock"><span>25/10 <small>(dom)</small></span><span>21:40</span><svg width="30" height="20" viewBox="0 0 30 20"><rect x="1" y="3" width="28" height="14" rx="7" fill="${CHROME}"/><circle cx="8" cy="10" r="3" fill="#fff"/><circle cx="22" cy="10" r="2" fill="#fff"/></svg></div></div>`;
+}
+function hints(list) {
+  return `<div class="hints">${list.map(([b, l]) => `<div class="hint pill"><span class="btn ${b.length > 1 ? 'sh' : b.toLowerCase()}">${b}</span>${l}</div>`).join('')}</div>`;
+}
+/** Barra de pestañas: como en «Todos», toma el color de lo enfocado (tabsAcc de Titles.svelte). */
+function ttabs(active, { acc = CHROME, order = false } = {}) {
+  const T = [['all', 'Todos'], ['list', 'Mi lista'], ['coll', 'Colecciones']];
+  return `<div class="ttabs" style="--acc:${acc};--acc-ink:${inkOf(acc)}"><span class="btn sh">LT</span>${T.map(([k, l]) => `<span class="tflt${k === active ? ' on' : ''}">${l}</span>`).join('')}<span class="btn sh">RT</span>${order ? '<span class="btn x">X</span><span class="tflt tord">Última partida</span>' : ''}</div>`;
+}
+function thead(name, acc, chip, rest) {
+  return `<div class="thead" style="--acc:${acc};--acc-ink:${inkOf(acc)}"><h3>${name}</h3><span class="chip">${chip}</span>${rest}</div>`;
+}
+function cov(x, o) {
+  const { left, top: t, w, h, r = 16, bw = 6, fr = 11, f = false, acc = CHROME, cls = '', extra = '', name = true } = o;
+  return `<div class="glass ${cls}${f ? ' f' : ''}" style="left:${left}px;top:${t}px;width:${w}px;height:${h}px;--r:${r}px;--bw:${bw}px;--acc:${acc}"><div class="face" style="border-radius:${fr}px"><i class="art" style="background:${art(x)}"></i>${name ? `<b class="ct" style="font-size:${Math.max(13, Math.round(w * 0.1))}px">${x.n}</b>` : ''}${extra}</div></div>`;
+}
+const stars = (n) => n ? `<em>${'★'.repeat(n)}</em>` : '';
+function tline(items, focus, w = 220) {
+  const ys = items.map((x) => +x.l); const a = Math.min(...ys), b = Math.max(...ys);
+  return `<div class="tl">${a}<span class="tr" style="width:${w}px">${ys.map((y, i) => `<i class="${i === focus ? 'on' : ''}" style="left:${((y - a) / Math.max(1, b - a)) * 100}%"></i>`).join('')}</span>${b}</div>`;
+}
+const S = (inner) => `<div class="st">${inner}</div>`;
+const listHints = [['A', 'Abrir'], ['Y', 'Estado'], ['LB/RB', 'Mover'], ['LT/RT', 'Pestaña'], ['B', 'Volver']];
+const collHints = [['A', 'Abrir'], ['X', 'Capturas'], ['Y', 'Editar'], ['LT/RT', 'Pestaña'], ['B', 'Volver']];
+const auroraOf = (c) => c.items.slice(0, 5).map((x) => x.c1);
+
+/* =====================================================================
+   Referencia: «Todos» (Titles.svelte)
+   ===================================================================== */
+function refTodos() {
+  const cw = 132, ch = 177, gap = 34, rg = 14, gx = (1280 - 6 * cw - 5 * gap) / 2, fi = 1, s = cw / 160;
+  let h = bg(TODOS[fi]) + topBar(['Inicio', 'Juegos'], 'Página 1 de 4');
+  h += thead('Elden Ring', '#c9a227', '1.204 capturas', '<span>Jugado <b>41 h</b></span><span>Última partida <b>hace 2 días</b></span>');
+  h += ttabs('all', { acc: '#c9a227', order: true });
+  TODOS.forEach((x, j) => {
+    const badge = TODOS_ST[j] ? `<span class="sbadge" style="--c:${COL.finished}">${I.check}</span>` : '';
+    h += cov(x, { left: gx + (j % 6) * (cw + gap), top: 204 + Math.floor(j / 6) * (ch + rg), w: cw, h: ch, r: 22 * s, bw: 8 * s, fr: 15 * s, f: j === fi, acc: x.c1, extra: badge });
+  });
+  h += `<div class="side off" style="left:12px">${I.arrowL}</div><div class="side" style="right:12px">${I.arrowR}</div>`;
+  h += hints([['A', 'Abrir'], ['X', 'Orden'], ['Y', 'Carrusel'], ['LT/RT', 'Pestaña'], ['Start', 'Menú'], ['B', 'Volver']]);
+  return S(h);
+}
+
+/* =====================================================================
+   Hoy (Shelf.svelte + CollTab.svelte) y P2 original
+   ===================================================================== */
+function shelfNow(title, sub, items, { acc, topY, focus = -1, dim = false, aurora = null, extra = '', end = '' }) {
+  const ink = inkOf(acc), shown = items.slice(0, 11);
+  const covs = shown.map((x, p) => cov(x, { left: p * 120, top: 0, w: 104, h: 139, f: p === focus, acc })).join('');
+  const labs = shown.map((x, p) => `<span class="slab${p === focus ? ' on' : ''}" style="left:${18 + p * 120}px;width:104px">${x.l || x.s ? `<s>${x.l ? `<b>${x.l}</b>` : ''}${stars(x.s)}</s>` : ''}</span>`).join('');
+  const more = items.length > 9 ? `<i class="sm r">+${items.length - 9} ›</i>` : '';
+  return `<div class="shelf${dim ? ' dim' : ''}${ink !== '#fff' ? ' dk' : ''}" style="top:${topY}px;--acc:${acc};--ink:${ink}"><div class="stab${aurora ? ' hasaur' : ''}">${aurora ? `<div class="aur">${aurora.map((c, k) => `<b style="left:${8 + k * 21}%;background:${c}"></b>`).join('')}</div>` : ''}<h3>${title}</h3><div class="sinfo"><span class="smeta">${sub}</span>${extra}</div>${end}</div>`
+    + `<div class="sboard"><div class="sview">${covs}</div><div class="slip">${labs}</div>${more}</div></div>`;
+}
+function ctlNow(c, focus) {
+  const ys = c.items.map((x) => +x.l); const a = Math.min(...ys), b = Math.max(...ys);
+  return `<div class="ctl">${a}<span class="ctr">${ys.map((y, i) => `<i class="${i === focus ? 'on' : ''}" style="left:${((y - a) / Math.max(1, b - a)) * 100}%"></i>`).join('')}</span>${b}</div>`;
+}
+function nowColl() {
+  let h = bg(COLLS[0].items[3]) + topBar(['Inicio', 'Juegos']);
+  h += ttabs('coll', { acc: COLLS[0].c });
+  h += '<div class="lclip">';
+  COLLS.slice(0, 3).forEach((c, k) => {
+    const here = k === 0;
+    const end = here ? `<span class="hint pill cshots"><span class="btn x">X</span><i>${I.cam}</i>Capturas</span>` : '';
+    h += shelfNow(c.n, `${c.items.length} juegos · ${c.shots} capturas`, c.items, { acc: c.c, topY: k * 241, focus: here ? 3 : -1, dim: !here, aurora: auroraOf(c), extra: ctlNow(c, here ? 3 : -1), end });
+  });
+  return S(h + '</div>' + hints(collHints));
+}
+function nowList() {
+  let h = bg(LIST[1].items[2]) + topBar(['Inicio', 'Juegos']);
+  h += ttabs('list', { acc: COL.pending });
+  h += '<div class="lclip">';
+  LIST.forEach((s, k) => { h += shelfNow(s.t, s.sub, s.items, { acc: COL[s.k], topY: k * 241, focus: k === 1 ? 2 : -1, dim: k !== 1 }); });
+  return S(h + '</div>' + hints(listHints));
+}
+function p2Shelf({ y, icon, c, title, sub, items, focus = -1, on = false, extra = '', end = '', tint = null }) {
+  let covs = '', labs = '';
+  items.slice(0, 10).forEach((x, p) => {
+    covs += cov(x, { left: 17 + p * 120, top: 12, w: 104, h: 139, f: p === focus, acc: c, cls: 'c' });
+    labs += `<div class="lbl${p === focus ? ' on' : ''}" style="left:${17 + p * 120}px;width:104px"><span>${x.l}${stars(x.s)}</span></div>`;
+  });
+  const more = items.length > 9 ? `<div class="more" style="right:10px;top:58px">+${items.length - 9} ›</div>` : '';
+  return `<div class="p2${on ? '' : ' dim'}" style="top:${y}px;--acc:${c}"><div class="p2h pill${on ? ' on' : ''}"><span class="mic" style="--c:${c}">${icon}</span><h3>${title}</h3><span class="m">${sub}</span>${extra}${end}</div>`
+    + `<div class="glass static p2b"><div class="face">${tint ? `<div class="p2tint" style="background:${tint}"></div>` : ''}${covs}<div class="p2lip">${labs}</div>${more}</div></div></div>`;
+}
+function p2Coll() {
+  let h = bg(COLLS[0].items[3]) + topBar(['Inicio', 'Juegos']);
+  h += ttabs('coll');
+  h += '<div class="lclip">';
+  COLLS.slice(0, 3).forEach((c, k) => {
+    const here = k === 0;
+    h += p2Shelf({ y: k * 241, icon: I.saga, c: c.c, title: c.n, sub: `${c.items.length} juegos · ${c.shots} capturas`, items: c.items, focus: here ? 3 : -1, on: here,
+      extra: tline(c.items, here ? 3 : -1, here ? 200 : 140), end: here ? `<span class="hint"><span class="btn x">X</span>Capturas</span>` : '', tint: `linear-gradient(90deg,${auroraOf(c).join(',')})` });
+  });
+  return S(h + '</div>' + hints(collHints));
+}
+
+/* =====================================================================
+   Balda de cristal con color: una función para las cinco variantes
+   ===================================================================== */
+const HEAD = {
+  // Cómo se ve el rótulo: siempre encendido (lit), teñido suave (soft) o blanco (pill); y si brilla al enfocar (glow).
+  v1: () => ({ cls: 'lit glow', aur: true }),
+  v2: (on) => (on ? { cls: 'lit', aur: true } : { cls: 'soft', aur: true, chip: true }),
+  v3: (on) => (on ? { cls: 'lit' } : { cls: 'pill' }),
+  v4: (on) => (on ? { cls: 'lit' } : { cls: 'pill' }),
+  v5: () => ({ cls: 'lit glow', aur: false }),
+};
+function bShelf(v, { y, icon, c, title, sub, items, focus = -1, on = false, aur = null, tl = '', end = '', count = '', add = false }) {
+  const ink = inkOf(c), hd = HEAD[v](on);
+  let covs = '', labs = '';
+  if (add) covs = `<div class="glass c${on ? ' f' : ''}" style="left:9px;top:10px;width:104px;height:139px;--r:16px;--bw:6px;--acc:${c}"><div class="face" style="border-radius:11px"><div class="addface"><span>${I.plus}</span></div></div></div>`;
+  items.slice(0, 10).forEach((x, p) => {
+    covs += cov(x, { left: 9 + p * 120, top: 10, w: 104, h: 139, f: p === focus, acc: c, cls: 'c' });
+    labs += `<div class="lbl${p === focus ? ' on' : ''}" style="left:${9 + p * 120}px;width:104px"><span>${x.l}${stars(x.s)}</span></div>`;
+  });
+  const more = items.length > 9 ? `<div class="more">+${items.length - 9} ›</div>` : '';
+  const aurCols = aur || [c, c];
+  const aurHtml = hd.aur && aur ? `<div class="aur">${aur.map((col, k) => `<b style="left:${4 + k * 20}%;background:${col}"></b>`).join('')}</div>` : '';
+  const chip = hd.chip && count ? `<span class="chip">${count}</span>` : '';
+  const parts = [`<span class="mic" style="--c:${c}">${icon}</span>`, `<h3>${title}</h3>`, chip, `<span class="m">${sub}</span>`, tl, end].filter(Boolean);
+  parts[parts.length - 1] = parts[parts.length - 1].replace(/^<(\w+) class="/, '<$1 class="last ');
+  const head = `<div class="bsh ${hd.cls}">${aurHtml}${parts.join('')}</div>`;
+  // Capas de color dentro de la balda según la variante.
+  let inner = '';
+  if (v === 'v4') inner = `<div class="btint" style="background:${aur ? `linear-gradient(90deg,${aurCols.join(',')})` : `radial-gradient(60% 80% at 20% 60%,${c},transparent),radial-gradient(50% 70% at 85% 40%,${c},transparent)`}"></div>`;
+  // V5: un halo bajo cada portada, del color de la colección mezclado con el de la portada (los tonos de la aurora).
+  if (v === 'v5') inner = (add ? [{ c1: c }] : items.slice(0, 10)).map((x, p) => `<i class="halo" style="left:${p * 120 - 14}px;--hl:color-mix(in srgb,${c} ${aur ? 60 : 85}%,${x.c1})"></i>`).join('');
+  const spine = v === 'v3' ? `<i class="spine" style="${aur ? `--sp:linear-gradient(180deg,${aurCols.map((col) => `color-mix(in srgb,${col} 55%,${c})`).join(',')})` : ''}"></i>` : '';
+  return `<div class="bs ${v}${on ? ' on' : ' dim'}${ink !== '#fff' ? ' dk' : ''}" style="top:${y}px;--acc:${c};--ink:${ink}">${spine}${head}`
+    + `<div class="glass static bsb"><div class="face">${inner}${covs}<div class="bslip">${labs}</div>${more}</div></div></div>`;
+}
+const hintX = '<span class="hint"><span class="btn x">X</span>Capturas</span>';
+function vList(v) {
+  const x = LIST[1].items[2];
+  let h = bg(x) + topBar(['Inicio', 'Juegos']);
+  h += thead(x.n, COL.pending, 'Pendiente · #3', '<span>Sin partidas todavía</span><span>Añadido <b>hace 3 semanas</b></span>');
+  h += ttabs('list', { acc: COL.pending });
+  h += '<div class="lclip">';
+  LIST.forEach((s, k) => { h += bShelf(v, { y: k * 241, icon: SG[s.k], c: COL[s.k], title: s.t, sub: s.sub, items: s.items, focus: k === 1 ? 2 : -1, on: k === 1, count: String(s.items.length) }); });
+  return S(h + '</div>' + hints(listHints));
+}
+function collShelf(v, c, y, focus) {
+  const on = focus >= 0;
+  return bShelf(v, { y, icon: I.saga, c: c.c, title: c.n, sub: on ? `${c.items.length} juegos · ${c.shots} capturas` : `${c.shots} capturas`, items: c.items, focus, on, aur: auroraOf(c),
+    tl: tline(c.items, focus, on ? 200 : 150), end: on ? hintX : '', count: `${c.items.length} juegos` });
+}
+function vColl(v) {
+  const c = COLLS[0], x = c.items[3];
+  let h = bg(x) + topBar(['Inicio', 'Juegos']);
+  h += thead(x.n, c.c, 'Trails · 4 de 10', '<span>Salió en <b>2010</b></span><span><b>312</b> capturas</span>');
+  h += ttabs('coll', { acc: c.c });
+  h += '<div class="lclip">';
+  COLLS.slice(0, 3).forEach((k, j) => { h += collShelf(v, k, j * 241, j === 0 ? 3 : -1); });
+  return S(h + '</div>' + hints(collHints));
+}
+function vColl2(v) {
+  const c = COLLS[3], x = c.items[2];
+  let h = bg(x) + topBar(['Inicio', 'Juegos']);
+  h += thead(x.n, c.c, 'Ys · 3 de 5', '<span>Salió en <b>2016</b></span><span><b>207</b> capturas</span>');
+  h += ttabs('coll', { acc: c.c });
+  h += '<div class="lclip">';
+  h += collShelf(v, COLLS[2], 0, -1);
+  h += collShelf(v, c, 241, 2);
+  h += bShelf(v, { y: 482, icon: I.plus, c: CHROME, title: 'Nueva colección', sub: 'Agrupa más juegos de esta categoría', items: [], add: true });
+  return S(h + '</div>' + hints(collHints));
+}
+
+/* =====================================================================
+   Variantes
+   ===================================================================== */
+const shots = (v) => [['Referencia · Todos', 'Titles.svelte', refTodos], ['Mi lista', 'foco en Pendientes', () => vList(v)], ['Colecciones', '3 baldas, foco en Trails', () => vColl(v)], ['Colecciones · bajando', 'foco en Ys (amarillo)', () => vColl2(v)]];
+const PROPS = [
+  { id: 'hoy', nav: 'Punto de partida', t: 'Punto de partida', idea: 'Lo que hay hoy (pestaña sobre balda con su color fuerte y aurora) frente a la P2 «Balda de cristal» tal como se propuso, que apagaba el color de las baldas no enfocadas. Las cinco variantes siguientes buscan quedarse a medio camino: las piezas de la P2 y el color de hoy.',
+    shots: [['Referencia · Todos', 'Titles.svelte', refTodos], ['Colecciones (hoy)', 'Shelf.svelte + CollTab', nowColl], ['Mi lista (hoy)', 'Shelf.svelte', nowList], ['P2 original', 'armonizar…html', p2Coll]] },
+  { id: 'v1', nav: 'V1 · Aurora de siempre', t: 'V1 · Aurora de siempre', shots: shots('v1'),
+    idea: 'La estantería de hoy, pieza por pieza, pero con las recetas comunes: el rótulo es una píldora siempre encendida con el degradado de la colección y su aurora dentro; la balda es el .glass de las portadas con el canto teñido del color; el borde de etiquetas conserva el tinte de .slip. Solo la estantería enfocada brilla (halo como .dpill.f).',
+    keep: ['Rótulo de color fuerte siempre encendido, con aurora (o multicolor) dentro.', 'Borde de etiquetas teñido (.slip, 22 % → 48 %).', 'Canto de la balda teñido, como el borde de color de hoy.'],
+    cambia: ['Pestaña asimétrica 20/20/6/20 → píldora .pill de 40 px (radio 999) con el .mic blanco del menú enfocado.', 'Balda: receta .glass (canto, brillo, destello) con radio 26 simétrico.', 'Título 27 → 22 px, etiquetas 12 → 13 px, línea de tiempo 12 → 14 px.', 'Foco: halo exterior del rótulo y portada .glass.f; las baldas no enfocadas solo bajan las portadas a .86.'],
+    pro: ['Es la que menos cambia la identidad: cualquiera reconoce sus colecciones.', 'Se resuelven los radios asimétricos y la tercera receta de cristal.', 'Muy barata: casi todo es CSS de Shelf.svelte.'],
+    con: ['Con tres baldas a la vista hay tres bloques fuertes: sigue siendo la más estridente.', 'El foco de estantería se distingue solo por el halo; cuesta un poco más de lejos.', 'El amarillo en píldora y canto pesa mucho al lado del azul y el morado.'],
+    esf: 1, files: ['<code>src/components/Shelf.svelte</code>: .stab → píldora, .sboard → .glass, radios y tamaños; nueva prop <code>icon</code> para el .mic.', '<code>src/screens/CollTab.svelte</code>: .ctl/.ctr a 14 px; «X Capturas» como .hint normal.', '<code>src/lib/coleccion.svelte.ts</code>: <code>tabLook</code> sin cambios (sigue dando estilo y aurora).', '<code>src/screens/Titles.svelte</code>: .thead en «Mi lista» y «Colecciones».'] },
+  { id: 'v2', nav: 'V2 · Rótulo teñido', t: 'V2 · Rótulo teñido y chip', shots: shots('v2'),
+    idea: 'El color vive en la cabecera de cada balda: un rótulo .pill teñido suave (22-38 % del color, con la aurora a .38) y el título escrito en el tono de la colección, más un chip fuerte con el número de juegos y el .mic de color. La balda y el borde son neutros. Al enfocar, el rótulo pasa a encendido (receta .srow.f) con la aurora a .5.',
+    keep: ['Cada estantería se reconoce por su color en el rótulo, el icono y el chip, también sin foco.', 'La aurora (o el multicolor) sigue dentro del rótulo, más suave.', 'Rótulo encendido con el degradado de la colección en la balda enfocada.'],
+    cambia: ['Balda y borde de etiquetas neutros, como la P2.', 'Chip .thead .chip con «N juegos» en el color; desaparece en la enfocada (ya lo dice el texto).', 'Dos estados del rótulo: teñido (reposo) y encendido (foco): el foco se lee muy claro.'],
+    pro: ['Muy buen equilibrio: el color se ve siempre pero ocupa poco; con tres baldas no chilla.', 'El foco de estantería es el más claro de las cinco (teñido → encendido).', 'Las portadas destacan más al ir sobre cristal neutro.'],
+    con: ['El color queda arriba a la izquierda; la balda en sí parece «la misma» en todas.', 'El texto teñido en amarillo se oscurece hacia el ocre para leerse.', 'Hay que cuidar que el chip no se confunda con un botón.'],
+    esf: 1, files: ['<code>src/components/Shelf.svelte</code>: rótulo con dos estados (prop <code>dim</code> ya existe), chip y .mic; balda .glass neutra.', '<code>src/lib/coleccion.svelte.ts</code>: <code>tabLook</code> devuelve la aurora con opacidad para el rótulo.', '<code>src/screens/CollTab.svelte</code> y <code>src/screens/Titles.svelte</code>: pasar el recuento y el icono; .thead.'] },
+  { id: 'v3', nav: 'V3 · Lomo de color', t: 'V3 · Lomo de color (franja lateral)', shots: shots('v3'),
+    idea: 'Cada estantería lleva a su izquierda un lomo vertical de cristal de color (como el canto de un libro o la columna de Ajustes) que une rótulo y balda; en las colecciones el lomo recorre los colores de la aurora mezclados con el de la colección. Desde el lomo, un lavado suave entra en la balda y en el borde. El rótulo es una .pill blanca con el .mic de color y se enciende al enfocar.',
+    keep: ['Un elemento de color fuerte y fijo por estantería (el lomo), siempre a la vista.', 'Los colores de la aurora viven en el lomo, de arriba abajo.', 'Rótulo encendido en la balda enfocada.'],
+    cambia: ['Elemento nuevo: lomo 13×236 en x=62, fuera de la balda (la línea de 96 px no se mueve).', 'Balda .glass con un lavado de color de 140 px desde la izquierda; borde con el mismo lavado.', 'Rótulo blanco en reposo; el lomo brilla al enfocar.'],
+    pro: ['Las baldas se distinguen de un vistazo al bajar, como lomos en una estantería real.', 'Muy tranquila con tres baldas: el color es estrecho y está alineado.', 'Encaja con el lenguaje de Ajustes (cuadrado de color a la izquierda de cada fila).'],
+    con: ['Pieza nueva que no existe en el resto de la app.', 'El lomo queda muy pegado al borde (x=62); con sobrebarrido de la tele podría recortarse.', 'Con la balda vacía o pocas portadas, el lavado se nota menos.'],
+    esf: 2, files: ['<code>src/components/Shelf.svelte</code>: elemento .spine, lavado de la balda y del borde, rótulo con dos estados.', '<code>src/lib/coleccion.svelte.ts</code>: <code>tabLook</code> devuelve el degradado vertical del lomo (aurora y multicolor).', '<code>src/screens/CollTab.svelte</code>, <code>src/screens/Titles.svelte</code>: icono, .thead.', '<code>src/app.css</code>: comprobar el margen seguro de .lclip.'] },
+  { id: 'v4', nav: 'V4 · Balda teñida', rec: true, t: 'V4 · Balda teñida', shots: shots('v4'),
+    idea: 'La balda entera es del color de la colección, pero en suave: el canto de cristal teñido (24-42 %), la cara con un degradado vertical del 10 al 22 % y la aurora difuminada al .34 detrás de las portadas; el borde conserva el tinte de .slip algo más claro. El rótulo es la .pill común con el .mic y el título en el tono de la colección, y se enciende al enfocar. La balda enfocada gana el halo exterior.',
+    keep: ['Toda la estantería lleva su color siempre, como hoy, también las no enfocadas.', 'La aurora (o el multicolor) se ve, detrás de las portadas.', 'Borde de etiquetas teñido y etiqueta enfocada en el color.'],
+    cambia: ['El color fuerte pasa del bloque de la pestaña a una capa translúcida: misma identidad, la mitad de saturación.', 'Rótulo .pill blanca con título teñido; encendido (.srow.f) solo en la enfocada.', 'Foco de estantería: rótulo encendido + halo del canto (como .glass.f, sin escalar).'],
+    pro: ['La que mejor conserva «cada estantería con su color» sin bloques chillones: con tres baldas se lee como una estantería de colores pastel.', 'Usa solo recetas existentes (.glass, .pill, .mic, .srow.f) con mezclas de color.', 'El amarillo funciona bien porque se usa diluido.', 'Barata: CSS de Shelf.svelte y la aurora que ya calcula <code>tabLook</code>.'],
+    con: ['El color fuerte puro solo aparece en el .mic y al enfocar.', 'Portadas oscuras sobre balda teñida contrastan algo menos que sobre cristal neutro.', 'La capa de aurora borrosa en cada balda tiene un pequeño coste de pintado (ya existe hoy en la pestaña).'],
+    esf: 1, files: ['<code>src/components/Shelf.svelte</code>: .sboard → .glass teñida (--acc), capa .btint con la aurora, .slip más claro, rótulo .pill con .mic (prop <code>icon</code>).', '<code>src/lib/coleccion.svelte.ts</code>: <code>tabLook</code> devuelve el degradado para la balda en vez de para la pestaña.', '<code>src/screens/CollTab.svelte</code>: línea de tiempo y «X Capturas» en el rótulo con piezas comunes.', '<code>src/screens/Titles.svelte</code>: .thead en «Mi lista» y «Colecciones».'] },
+  { id: 'v5', nav: 'V5 · Píldora y halo', t: 'V5 · Píldora de color y portadas con halo', shots: shots('v5'),
+    idea: 'El color de la estantería está en dos sitios: el rótulo es una píldora sólida (como .dpill.f del dock) siempre encendida y las portadas proyectan un halo de color sobre la balda neutra, con un reflejo de los colores de la aurora en el suelo y una línea de color en el borde. La enfocada añade el brillo exterior del rótulo.',
+    keep: ['Rótulo de color fuerte en todas las estanterías.', 'Los colores de la aurora, como reflejo bajo las portadas.', 'Línea de color en el borde de etiquetas.'],
+    cambia: ['Balda .glass neutra; el color sale de las portadas (sombra teñida) y no del cristal.', 'Rótulo sin aurora dentro: color plano, más limpio.', 'Foco: halo del rótulo + portada .glass.f.'],
+    pro: ['Las portadas parecen iluminadas por su colección: muy «Wii U».', 'El rótulo sólido se lee muy bien de lejos.', 'El cristal sigue siendo el común, sin teñir.'],
+    con: ['Tres píldoras sólidas a la vista: más ruido que V2 o V4.', 'El halo bajo portadas claras o amarillas se ensucia un poco.', 'Sombras teñidas en cada portada: algo más de coste al desplazar por muchas.'],
+    esf: 2, files: ['<code>src/components/Shelf.svelte</code>: rótulo sólido con .mic, sombra teñida en .scov, capa .halo y línea del borde.', '<code>src/lib/coleccion.svelte.ts</code>: <code>tabLook</code> devuelve el degradado del reflejo.', '<code>src/screens/CollTab.svelte</code>, <code>src/screens/Titles.svelte</code>: icono, .thead.'] },
+  { id: 'rec', nav: 'Recomendación', t: 'Recomendación', rec2: true },
+];
+
+const CMP = [
+  ['V1 · Aurora de siempre', 'Rótulo sólido + aurora, canto y borde teñidos', 'Tres bloques fuertes: lo más parecido a hoy', 'Halo del rótulo', 3, 'Bajo'],
+  ['V2 · Rótulo teñido', 'Rótulo teñido + chip + .mic; balda neutra', 'Tranquila; el color se queda arriba', 'Teñido → encendido (muy claro)', 2, 'Bajo'],
+  ['V3 · Lomo de color', 'Lomo vertical + lavado lateral', 'La más tranquila; color estrecho', 'Rótulo encendido + lomo con brillo', 2, 'Medio'],
+  ['V4 · Balda teñida', 'Toda la balda en pastel + aurora detrás', 'Estantería de colores suaves, sin chillar', 'Rótulo encendido + halo del canto', 3, 'Bajo'],
+  ['V5 · Píldora y halo', 'Rótulo sólido + halo de portadas', 'Tres píldoras sólidas: algo ruidosa', 'Halo del rótulo + portada', 2, 'Medio'],
+];
+
+/* =====================================================================
+   Página: navegación, escalado y mando
+   ===================================================================== */
+let cur = 0, pick = 2;
+const nav = document.getElementById('nav'), secs = document.getElementById('secs');
+nav.innerHTML = PROPS.map((p, i) => `<button data-i="${i}" class="${p.rec ? 'rec' : ''}">${p.nav}</button>`).join('') + '<span class="kb">LB/RB o Q/E · ←→ · A/Intro · B/Esc</span>';
+const meter = (n) => `<div class="meter">${[1, 2, 3].map((k) => `<i class="${k <= n ? 'on' : ''}"></i>`).join('')}</div>`;
+const dots = (n) => `<span class="dots">${[1, 2, 3].map((k) => `<i class="${k <= n ? 'on' : ''}"></i>`).join('')}</span>`;
+const ESF = ['', 'Bajo', 'Medio', 'Alto'];
+const li = (a) => a.map((x) => `<li>${x}</li>`).join('');
+secs.innerHTML = PROPS.map((p, i) => {
+  if (p.rec2) return `<section class="pg-sec" data-i="${i}"><h2>${p.t}</h2><div class="pg-info" style="grid-template-columns:1.4fr 1fr">
+    <div class="pg-card"><h3>V4 · Balda teñida (y, si se quiere, el chip de V2)</h3>
+      <p>Es la que mejor cumple las dos condiciones a la vez: <b>cada estantería sigue siendo de su color, siempre</b> (canto, cara, aurora y borde), y a la vez está hecha con las piezas comunes (.glass, .pill, .mic, .srow.f, .tflt.on) sin bloques saturados. Con tres baldas a la vista se lee como una estantería de colores suaves; el color fuerte se reserva para el foco, como en el resto del visor.</p>
+      <p>De V2 tomaría el chip «N juegos» en el rótulo de las baldas no enfocadas si se quiere un toque de color puro más. V1 queda como plan B si se echa de menos la pestaña sólida; V3 es la más tranquila pero añade una pieza que no existe en ningún otro sitio; V5 es vistosa pero hace más ruido con tres píldoras sólidas.</p>
+      <p>Funciona igual con el estilo «Multicolor armonizada» de Ajustes: el degradado de <code>tabLook</code> pasa a la capa de la balda en vez de a la pestaña.</p></div>
+    <div class="pg-card"><h3>Orden sugerido</h3><ul><li>1. Shelf.svelte: .sboard → .glass teñida, capa de aurora, .slip claro.</li><li>2. Rótulo .pill con .mic (prop <code>icon</code>) y estado encendido en la enfocada.</li><li>3. <code>tabLook</code> devuelve el tinte de la balda.</li><li>4. .thead del juego enfocado y línea de 96 px.</li><li>5. Textos a 13-14 px (etiquetas, línea de tiempo).</li></ul><p style="margin-top:10px">Nada de esto toca las categorías ni cómo se detectan: todo sigue dentro de cada una.</p></div></div>
+    <table class="cmp"><thead><tr><th>Variante</th><th>Dónde vive el color</th><th>Con 2-3 baldas a la vista</th><th>Foco de estantería</th><th>Color en reposo</th><th>Esfuerzo</th></tr></thead><tbody>${CMP.map((r) => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${dots(r[4])}</td><td>${r[5]}</td></tr>`).join('')}</tbody></table></section>`;
+  const info = p.cambia ? `<div class="pg-info"><div class="pg-card"><h3 class="keep">Qué conserva del color antiguo</h3><ul>${li(p.keep)}</ul><h3>Qué cambia</h3><ul>${li(p.cambia)}</ul></div>
+    <div class="pg-card pro"><h3>Pros</h3><ul>${li(p.pro)}</ul><h3 class="con">Contras</h3><ul>${li(p.con)}</ul></div>
+    <div class="pg-card"><h3>Esfuerzo: ${ESF[p.esf]}</h3>${meter(p.esf)}<ul>${li(p.files)}</ul></div></div>` : '';
+  return `<section class="pg-sec" data-i="${i}"><h2>${p.t}${p.rec ? '<small>Recomendada</small>' : ''}</h2><p class="idea">${p.idea}</p>
+    <div class="pg-quad">${p.shots.map(([l, s], k) => `<div class="pg-th" data-k="${k}"><div class="lab">${l}<span>${s}</span></div><div class="frame">${p.shots[k][2]()}</div></div>`).join('')}</div>
+    <div class="pg-big"><div class="frame" data-big></div><div class="cap"><span data-cap></span><button data-full>Pantalla completa (A)</button></div></div>${info}</section>`;
+}).join('');
+
+function fit(root = document) {
+  root.querySelectorAll('.frame').forEach((f) => { const w = f.clientWidth; if (w) f.style.setProperty('--k', (w / 1280).toFixed(4)); });
+}
+new ResizeObserver(() => fit()).observe(document.body);
+const sec = () => secs.querySelector(`.pg-sec[data-i="${cur}"]`);
+function render() {
+  nav.querySelectorAll('button').forEach((b) => b.classList.toggle('on', +b.dataset.i === cur));
+  secs.querySelectorAll('.pg-sec').forEach((s) => s.classList.toggle('on', +s.dataset.i === cur));
+  const p = PROPS[cur], s = sec();
+  if (p.shots) {
+    s.querySelectorAll('.pg-th').forEach((t) => t.classList.toggle('sel', +t.dataset.k === pick));
+    s.querySelector('[data-big]').innerHTML = p.shots[pick][2]();
+    s.querySelector('[data-cap]').innerHTML = `<b>${p.shots[pick][0]}</b> · ${p.shots[pick][1]} · 1280×720`;
+  }
+  requestAnimationFrame(() => fit());
+}
+function go(i) { cur = (i + PROPS.length) % PROPS.length; if (PROPS[cur].shots) pick = Math.min(pick, PROPS[cur].shots.length - 1); render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function sel(d) { const p = PROPS[cur]; if (!p.shots) return; pick = (pick + d + p.shots.length) % p.shots.length; render(); }
+const ov = document.getElementById('ov'), ovf = document.getElementById('ovf');
+function openFull() { const p = PROPS[cur]; if (!p.shots) return; ovf.innerHTML = p.shots[pick][2](); ov.classList.add('on'); requestAnimationFrame(() => fit(ov)); }
+function closeFull() { ov.classList.remove('on'); }
+nav.addEventListener('click', (e) => { const b = e.target.closest('button[data-i]'); if (b) go(+b.dataset.i); });
+secs.addEventListener('click', (e) => {
+  const t = e.target.closest('.pg-th'); if (t) { pick = +t.dataset.k; render(); return; }
+  if (e.target.closest('[data-full]') || e.target.closest('[data-big]')) openFull();
+});
+ov.addEventListener('click', closeFull);
+window.addEventListener('resize', () => fit(ov));
+document.addEventListener('keydown', (e) => {
+  const k = e.key;
+  if (ov.classList.contains('on')) { if (k === 'Escape' || k === 'Backspace') closeFull(); else if (k === 'ArrowRight') { sel(1); openFull(); } else if (k === 'ArrowLeft') { sel(-1); openFull(); } return; }
+  if (k === 'q' || k === 'Q' || k === 'PageUp') go(cur - 1);
+  else if (k === 'e' || k === 'E' || k === 'PageDown') go(cur + 1);
+  else if (k === 'ArrowRight') sel(1);
+  else if (k === 'ArrowLeft') sel(-1);
+  else if (k === 'Enter') openFull();
+  else return;
+  e.preventDefault();
+});
+// Mando (API Gamepad): LB/RB variante, cruceta ←→ pantalla, ↑↓ desplazar, A pantalla completa, B cerrar.
+const prev = {};
+function poll() {
+  for (const pad of navigator.getGamepads ? navigator.getGamepads() : []) {
+    if (!pad) continue;
+    const press = (i) => { const v = !!pad.buttons[i]?.pressed; const was = prev[pad.index + ':' + i]; prev[pad.index + ':' + i] = v; return v && !was; };
+    const inFull = ov.classList.contains('on');
+    if (press(4)) go(cur - 1);
+    if (press(5)) go(cur + 1);
+    if (press(14)) { sel(-1); if (inFull) openFull(); }
+    if (press(15)) { sel(1); if (inFull) openFull(); }
+    if (press(0)) openFull();
+    if (press(1)) closeFull();
+    if (pad.buttons[12]?.pressed) window.scrollBy(0, -18);
+    if (pad.buttons[13]?.pressed) window.scrollBy(0, 18);
+    const ay = pad.axes[1] || 0; if (Math.abs(ay) > 0.3) window.scrollBy(0, ay * 22);
+  }
+  requestAnimationFrame(poll);
+}
+requestAnimationFrame(poll);
+go(1);
+</script>
+</body>
+</html>

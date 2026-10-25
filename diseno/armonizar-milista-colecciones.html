@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Armonizar Mi lista y Colecciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   Página (fuera de las maquetas)
+   ===================================================================== */
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;--ink:#3a414e;--mut:#657083;--line:rgba(95,110,135,.18);--acc:#00A0D8}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--round);color:var(--ink);background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%) fixed}
+main{max-width:1240px;margin:0 auto;padding:28px 16px 90px}
+h1{font-size:30px;font-weight:800;margin:0 0 6px;color:#2f3540}
+.lead{margin:0 0 16px;color:var(--mut);font-size:16px;max-width:900px;line-height:1.45}
+.pg-nav{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 0 12px;margin-bottom:6px;
+  background:linear-gradient(180deg,rgba(236,238,242,.96) 70%,rgba(236,238,242,0))}
+.pg-nav button{appearance:none;border:0;font:700 15px var(--round);color:#4a5260;height:36px;padding:0 14px;border-radius:999px;cursor:pointer;
+  background:rgba(255,255,255,.8);box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.22)}
+.pg-nav button.on{background:var(--acc);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 6px 14px -8px var(--acc)}
+.pg-nav button.rec::after{content:'★';margin-left:6px;color:#F2B807}
+.pg-nav button.on.rec::after{color:#FFE27A}
+.pg-nav .kb{margin-left:auto;font-size:13px;font-weight:700;color:var(--mut);white-space:nowrap}
+.pg-sec{display:none}
+.pg-sec.on{display:block}
+.pg-sec>h2{font-size:26px;font-weight:800;margin:6px 0 4px;color:#2f3540}
+.pg-sec>h2 small{font-size:13px;font-weight:800;color:#fff;background:#3BB54A;border-radius:999px;padding:3px 10px;margin-left:8px;vertical-align:4px}
+.pg-sec>.idea{margin:0 0 14px;color:#4f5766;font-size:16px;max-width:980px;line-height:1.45}
+.pg-trio{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
+.pg-th{cursor:pointer;border-radius:16px;padding:8px;background:rgba(255,255,255,.55);box-shadow:0 0 0 1px var(--line);transition:box-shadow .15s,transform .15s}
+.pg-th.sel{box-shadow:0 0 0 3px var(--acc),0 10px 20px -12px var(--acc);transform:translateY(-2px)}
+.pg-th .lab{display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:800;color:#4a5260;margin:2px 4px 7px}
+.pg-th .lab span{font-size:12px;font-weight:700;color:var(--mut)}
+.frame{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:10px;background:#eceef2;box-shadow:0 0 0 1px rgba(95,110,135,.2)}
+.frame>.st{position:absolute;left:0;top:0;transform-origin:0 0;transform:scale(var(--k,.3))}
+.pg-big{margin-bottom:18px}
+.pg-big .frame{border-radius:18px;box-shadow:0 0 0 1px rgba(95,110,135,.22),0 24px 44px -26px rgba(40,50,70,.55)}
+.pg-big .cap{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;font-weight:700;color:var(--mut);margin:8px 4px 0}
+.pg-big .cap b{color:#3a414e}
+.pg-big .cap button{appearance:none;border:0;font:800 13px var(--round);color:#fff;background:#4a5260;border-radius:999px;height:28px;padding:0 12px;cursor:pointer}
+.pg-info{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px}
+.pg-card{border-radius:18px;padding:16px 18px;background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 #fff,0 0 0 1px var(--line),0 12px 24px -18px rgba(40,50,70,.45)}
+.pg-card h3{margin:0 0 8px;font-size:16px;font-weight:800;color:#2f3540}
+.pg-card ul{margin:0;padding-left:18px;font-size:14.5px;line-height:1.5;color:#4a5260}
+.pg-card li{margin-bottom:3px}
+.pg-card p{margin:0 0 6px;font-size:14.5px;line-height:1.5;color:#4a5260}
+.pg-card code{font:700 12.5px ui-monospace,Consolas,monospace;background:rgba(95,110,135,.12);padding:1px 5px;border-radius:5px;color:#3a414e}
+.pg-card.pro h3{color:#2f8a3a}.pg-card.con h3{color:#c8283e}
+.meter{display:flex;gap:4px;margin:2px 0 10px}.meter i{width:26px;height:8px;border-radius:4px;background:#d5dae2}.meter i.on{background:#F27A1A}
+table.diff{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:14px}
+table.diff th{text-align:left;font-size:13px;font-weight:800;color:var(--mut);padding:0 12px}
+table.diff td{vertical-align:top;background:rgba(255,255,255,.75);padding:10px 12px;line-height:1.45;color:#4a5260;box-shadow:0 -1px 0 var(--line) inset}
+table.diff td:first-child{border-radius:12px 0 0 12px;font-weight:800;color:#2f3540;width:150px}
+table.diff td:last-child{border-radius:0 12px 12px 0}
+table.diff code{font:700 12px ui-monospace,Consolas,monospace;background:rgba(95,110,135,.12);padding:1px 5px;border-radius:5px;color:#3a414e;white-space:nowrap}
+.pg-ov{position:fixed;inset:0;z-index:50;display:none;place-items:center;background:rgba(15,18,24,.86)}
+.pg-ov.on{display:grid}
+.pg-ov .frame{width:min(96vw,calc(96vh * 16 / 9));border-radius:12px}
+.pg-ov .pg-x{position:fixed;right:16px;top:12px;font:800 14px var(--round);color:#fff;opacity:.85}
+@media (max-width:900px){.pg-trio,.pg-info{grid-template-columns:1fr}.pg-nav .kb{display:none}table.diff td:first-child{width:auto}}
+
+/* =====================================================================
+   Maquetas: tokens copiados de src/app.css (escenario 1280×720, mundo claro)
+   ===================================================================== */
+.st{position:relative;width:1280px;height:720px;overflow:hidden;font-family:var(--round);color:#3a414e;background:#eceef2;--acc:#00A0D8;--acc-ink:#fff;user-select:none}
+.st .bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.st .blob{position:absolute;border-radius:50%;filter:blur(34px);opacity:.9}
+.st .blob.w{background:radial-gradient(circle,rgba(255,255,255,1),rgba(255,255,255,0) 70%)}
+.st .blob.a{background:radial-gradient(circle,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%);opacity:.55}
+.st .amb{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.st .amblayer{position:absolute;inset:-70px;filter:blur(44px) saturate(1.4);opacity:.5}
+.st .amb::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(236,238,242,.1) 0%,rgba(236,238,242,.55) 45%,rgba(236,238,242,.88) 100%)}
+.st .glass{position:absolute;--r:28px;--bw:10px;border-radius:var(--r);padding:var(--bw);box-sizing:border-box;isolation:isolate;
+  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,1),inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.95),inset 0 -1.5px 0 rgba(110,125,150,.30),0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42)}
+.st .glass::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.62) 0%,rgba(255,255,255,.20) 55%,rgba(255,255,255,0) 100%);
+  -webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.85}
+.st .glass::after{content:'';position:absolute;z-index:3;left:12%;top:3px;width:34%;height:5px;border-radius:5px;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,1) 40%,rgba(255,255,255,0));filter:blur(.6px);opacity:.9}
+.st .glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:#dfe3e9}
+.st .glass .face::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(20,30,50,.20),inset 0 3px 6px -2px rgba(0,0,0,.35),inset 0 -2px 4px -2px rgba(255,255,255,.5)}
+.st .glass.f{transform:scale(1.06);z-index:3;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)) 0%,color-mix(in srgb,var(--acc) 72%,transparent) 55%,color-mix(in srgb,var(--acc) 92%,black) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),inset 0 -10px 14px -8px color-mix(in srgb,var(--acc) 30%,white),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 0 26px 2px color-mix(in srgb,var(--acc) 50%,transparent),0 22px 34px -16px color-mix(in srgb,var(--acc) 70%,black)}
+.st .glass.static.f{transform:none}
+.st .pill{background:linear-gradient(180deg,rgba(255,255,255,.80),rgba(255,255,255,.52));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+.st .art{position:absolute;inset:0;display:block}
+.st .ct{position:absolute;left:8%;right:8%;bottom:7%;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.65);line-height:1.1;z-index:1}
+/* barra superior */
+.st .top{position:absolute;left:0;right:0;top:0;height:76px;z-index:5}
+.st .avatar{left:22px;top:12px;width:60px;height:60px;--r:16px;--bw:5px}
+.st .avatar .face{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white),var(--acc));display:grid;place-items:center}
+.st .avatar svg{width:60%;height:60%}
+.st .crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:20px;font-weight:700;color:#4a5260;white-space:nowrap}
+.st .crumb .sep{color:#a3abb8;font-weight:500}
+.st .crumb .cur{color:var(--acc)}
+.st .clock{position:absolute;right:24px;top:24px;display:flex;gap:14px;align-items:center;font-size:20px;font-weight:700;color:#4a5260}
+.st .clock small{font-size:15px;font-weight:500;color:#657083}
+.st .pagep{position:absolute;left:50%;top:22px;transform:translateX(-50%);height:36px;padding:0 16px;border-radius:999px;display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;color:#4a5260;white-space:nowrap}
+.st .pagep i{position:relative;display:block;width:52px;height:6px;border-radius:3px;background:rgba(160,168,182,.45);overflow:hidden}
+.st .pagep i b{position:absolute;top:0;bottom:0;left:0;width:25%;border-radius:3px;background:var(--acc)}
+/* pistas */
+.st .hints{position:absolute;right:22px;bottom:16px;display:flex;gap:10px;z-index:5}
+.st .hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:999px;font-size:16px;font-weight:700;color:#4a5260;white-space:nowrap}
+.st .btn{min-width:28px;height:28px;border-radius:14px;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;--b:#4a5260;padding:0 6px;box-sizing:border-box;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--b) 70%,black),0 1px 2px rgba(0,0,0,.2);text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.st .btn.a{--b:#3BB54A}.st .btn.b{--b:#E8384F}.st .btn.x{--b:#3F63E0}.st .btn.y{--b:#F2B807;color:#3a2f00;text-shadow:none}
+.st .btn.sh{border-radius:8px;--b:#6b7383}
+/* pestañas de categoría y cabecera de «Todos» */
+.st .ttabs{position:absolute;left:96px;top:124px;display:flex;gap:8px;align-items:center;z-index:4}
+.st .ttabs.car{left:50%;transform:translateX(-50%)}
+.st .ttabs .btn.x{margin-left:14px}
+.st .tflt{height:32px;padding:0 14px;border-radius:999px;display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;color:#4a5260;white-space:nowrap;
+  background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.22)}
+.st .tflt small{font-size:13px;font-weight:700;opacity:.65}
+.st .tflt.on{background:var(--acc);color:var(--acc-ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 6px 14px -8px var(--acc)}
+.st .ttabs .tord{color:#3F63E0}
+.st .thead{position:absolute;left:96px;top:82px;right:96px;display:flex;align-items:baseline;gap:14px;white-space:nowrap;overflow:hidden}
+.st .thead h3{margin:0;font-size:32px;font-weight:800;color:#3a414e;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.st .thead>span{font-size:17px;font-weight:600;color:#4f5766}
+.st .thead>span b{color:#3a414e;font-weight:800}
+.st .thead .chip{font-size:15px;font-weight:700;color:var(--acc-ink);background:var(--acc);padding:3px 12px;border-radius:999px;align-self:center}
+.st .side{position:absolute;top:300px;width:56px;height:110px;z-index:4;filter:drop-shadow(0 8px 10px rgba(40,50,70,.25))}
+.st .side.off{opacity:0}
+.st .noart{position:absolute;inset:0}
+/* carrusel */
+.st .cinfo{position:absolute;left:0;right:0;top:566px;text-align:center}
+.st .cinfo h3{margin:0;font-size:34px;font-weight:800;color:#3a414e}
+.st .cinfo p{margin:4px 0 0;font-size:18px;color:#6f7787;font-weight:500}
+/* insignia de estado y pastilla de estado (ficha) */
+.st .sbadge{position:absolute;right:8px;top:8px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;z-index:2;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--c) 70%,white),var(--c));box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 3px 8px -2px rgba(0,0,0,.5);color:#fff}
+.st .sbadge svg{width:62%;height:62%}
+.st .stpill{display:inline-flex;height:36px;padding:0 16px;border-radius:999px;align-items:center;gap:8px;font-size:17px;font-weight:800;color:#fff;box-sizing:border-box;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--c) 70%,white),var(--c));box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 14px -6px rgba(0,0,0,.5);white-space:nowrap}
+.st .stpill svg{width:18px;height:18px}
+.st .stpill small{font-size:14px;font-weight:700;opacity:.9}
+/* ficha */
+.st .banner{left:64px;top:88px;width:922px;height:280px;--r:32px;--bw:10px}
+.st .bshade{position:absolute;inset:0;background:linear-gradient(0deg,rgba(8,10,18,.38),rgba(8,10,18,0) 48%)}
+.st .dlogo{position:absolute;left:100px;top:262px;font-size:54px;font-weight:800;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.6),0 1px 2px rgba(0,0,0,.5);z-index:5;white-space:nowrap}
+.st .dcover{left:1016px;top:88px;width:200px;height:280px;--r:26px;--bw:9px;z-index:4}
+.st .play{--r:30px;--bw:8px;left:64px;top:388px;width:290px;height:112px}
+.st .play .face{display:flex;align-items:center;gap:18px;padding:0 24px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white) 0%,var(--acc) 62%,color-mix(in srgb,var(--acc) 85%,black) 100%);color:#fff}
+.st .play .pi{flex:none;width:50px;height:50px;border-radius:50%;background:linear-gradient(180deg,#fff,#e8edf3);display:grid;place-items:center;box-shadow:inset 0 -2px 3px rgba(0,0,0,.12),0 3px 8px rgba(0,0,0,.25);color:var(--acc)}
+.st .play .pi svg{width:22px;height:22px;margin-left:3px}
+.st .play b{font-size:34px;font-weight:800;display:block;line-height:1.05;text-shadow:0 1px 2px rgba(0,0,0,.2)}
+.st .play small{font-size:15px;font-weight:600;opacity:.92}
+.st .dpanel{position:absolute;top:388px;height:112px;border-radius:26px;padding:12px 22px 18px;display:flex;flex-direction:column;justify-content:center}
+.st .hsub{font-size:15px;line-height:18px;font-weight:600;color:#5f6776;white-space:nowrap;margin:0 0 8px}
+.st .odo{display:flex;align-items:center;gap:6px}
+.st .odo .c{width:42px;height:52px;border-radius:10px;display:grid;place-items:center;font-size:38px;font-weight:800;color:var(--acc);background:linear-gradient(180deg,#fff,#eef2f7);box-shadow:inset 0 2px 4px rgba(0,0,0,.18),inset 0 -2px 0 rgba(255,255,255,.8),0 0 0 1px rgba(110,125,150,.25)}
+.st .odo .u{font-size:22px;font-weight:800;color:#5a6270;margin:0 8px 0 2px;align-self:flex-end;padding-bottom:6px}
+.st .weekbars{display:flex;gap:22px;align-items:flex-end;height:46px}
+.st .weekbars i{display:block;width:30px;border-radius:5px 5px 3px 3px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 40%,white),var(--acc));box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
+.st .weekbars i.z{background:rgba(160,168,182,.35);box-shadow:none}
+.st .dsect{position:absolute;left:64px;top:514px;font-size:18px;font-weight:800;color:#5a6270}
+.st .dsect span{font-weight:600;color:#6a7282;margin-left:8px}
+.st .relpill{display:inline-flex;height:36px;padding:0 16px 0 14px;border-radius:999px;align-items:center;gap:8px;font-size:16px;font-weight:800;color:#fff;
+  background:linear-gradient(180deg,rgba(60,68,84,.78),rgba(30,36,48,.82));box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 14px -6px rgba(0,0,0,.5);white-space:nowrap}
+.st .relpill small{font-size:15px;font-weight:700;opacity:.92}
+/* paneles (ajustes, menús) */
+.st .scrim{position:absolute;inset:0;z-index:20;background:rgba(236,238,242,.55);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.st .panel{--r:40px;--bw:14px}
+.st .panel .face{background:rgba(247,249,252,.94);color:#3a414e}
+.st .panel::before{opacity:.3}.st .panel::after{opacity:.5}
+.st .srow{display:flex;align-items:center;gap:14px;height:52px;padding:0 22px;border-radius:18px;font-size:18px;font-weight:700;color:#4a5260;margin-bottom:4px;white-space:nowrap}
+.st .srow .sl{flex:1}
+.st .srow .sv{font-weight:600;color:#5f6776}
+.st .srow.f{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 84%,white),var(--acc));color:var(--acc-ink);text-shadow:0 1px 2px rgba(0,0,0,.28);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 6px 12px -8px color-mix(in srgb,var(--acc) 70%,black)}
+.st .srow.f .sv{color:inherit;opacity:.92}
+.st .mic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;flex:none;color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--c,var(--acc)) 30%,white),var(--c,var(--acc)));box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--c,var(--acc)) 70%,black)}
+.st .mic svg{width:62%;height:62%}
+.st .srow.f .mic{background:rgba(255,255,255,.92);box-shadow:none;color:var(--c,var(--acc))}
+.st .msub{margin:0 0 8px;font-size:15px;font-weight:600;color:#5f6776}
+.st .scat{height:48px;border-radius:15px;display:flex;align-items:center;gap:12px;padding:0 12px;font-size:17px;font-weight:700;color:#4a5260;white-space:nowrap;margin-bottom:6px}
+.st .scat i{flex:none;width:32px;height:32px;border-radius:10px;display:grid;place-items:center;color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 30%,white),var(--c));box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--c) 70%,black)}
+.st .scat i svg{width:62%;height:62%}
+.st .scat.on{background:#fff;color:color-mix(in srgb,var(--c) 80%,black);box-shadow:0 0 0 1px rgba(95,110,135,.18),0 6px 14px -8px rgba(40,50,70,.4)}
+.st .scat em{margin-left:auto;font-style:normal;font-size:14px;font-weight:700;color:#7a8496}
+.st .scat.f{background:linear-gradient(180deg,color-mix(in srgb,var(--c) 84%,white),var(--c));color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.28);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--c) 75%,black)}
+.st .scat.f i{background:rgba(255,255,255,.92);color:var(--c);box-shadow:none}
+.st .scat.f em{color:#fff;opacity:.9}
+.st .sdesc{border-radius:16px;padding:12px 18px;background:rgba(214,220,230,.45);font-size:14px;font-weight:500;line-height:1.4;color:#4f5766}
+/* dock de Inicio (para las pastillas de P5) */
+.st .dpill{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 5px;border-radius:999px;font-size:16px;font-weight:700;color:#4a5260;white-space:nowrap}
+.st .dpill i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--dc) 25%,white),var(--dc) 72%);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--dc) 70%,black)}
+.st .dpill i svg{width:58%;height:58%}
+.st .dpill small{font-size:13px;font-weight:700;opacity:.65}
+.st .dpill.f{transform:scale(1.08);background:linear-gradient(180deg,var(--dc),color-mix(in srgb,var(--dc) 78%,black));color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.45);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--dc) 70%,black),0 0 18px 2px color-mix(in srgb,var(--dc) 45%,transparent),0 10px 18px -10px rgba(40,50,70,.5)}
+.st .dpill.f i{background:rgba(255,255,255,.28);box-shadow:none}
+.st .dpill.f small{opacity:.9}
+/* baldosa «Añadir» */
+.st .addface{position:absolute;inset:0;display:grid;place-items:center;background:rgba(255,255,255,.62);box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--acc) 55%,transparent)}
+.st .addface::after{content:"";position:absolute;inset:8px;border-radius:10px;border:3px dashed color-mix(in srgb,var(--acc) 55%,transparent)}
+.st .addface span{width:44px;height:44px;border-radius:15px;display:grid;place-items:center;color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,white),var(--acc))}
+.st .addface span svg{width:58%;height:58%}
+
+/* ---------- HOY: estantería actual (copiado de Shelf.svelte y CollTab.svelte) ---------- */
+.st .lclip{position:absolute;left:0;top:166px;width:1280px;height:494px;overflow:hidden}
+.st .shelf{position:absolute;left:56px;width:1168px;--hi:color-mix(in srgb,var(--acc) 35%,white);--lo:color-mix(in srgb,var(--acc) 70%,black)}
+.st .shelf.dim{opacity:.72}
+.st .stab{display:inline-flex;align-items:center;gap:22px;max-width:100%;padding:8px 10px 8px 22px;border-radius:20px 20px 6px 20px;margin-bottom:-6px;position:relative;z-index:3;min-height:50px;
+  background:linear-gradient(180deg,var(--hi),var(--acc) 62%,var(--lo));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),inset 0 -2px 6px -2px rgba(0,0,0,.25),0 0 0 1px var(--lo),0 10px 20px -10px var(--acc)}
+.st .stab h3{margin:0;font-size:27px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4);white-space:nowrap;line-height:1.1}
+.st .sinfo{display:flex;flex-direction:column;gap:5px;padding-right:12px}
+.st .smeta{font-size:15px;font-weight:600;color:#fff;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.st .stab.hasaur{overflow:hidden}
+.st .aur{position:absolute;inset:0;pointer-events:none}
+.st .aur b{position:absolute;top:-30%;width:34%;height:160%;border-radius:50%;filter:blur(22px);opacity:.55}
+.st .stab>*:not(.aur){position:relative}
+.st .sboard{position:relative;height:179px;border-radius:6px 22px 22px 22px;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.26));
+  box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.2),0 14px 22px -16px rgba(40,50,70,.45)}
+.st .sview{position:absolute;left:18px;right:18px;top:16px;height:139px}
+.st .slip{position:absolute;left:0;right:0;bottom:0;height:24px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 22%,white),color-mix(in srgb,var(--acc) 48%,#dfe3e9));box-shadow:inset 0 2px 0 rgba(255,255,255,.9),0 -8px 14px -10px rgba(40,50,70,.4);overflow:hidden}
+.st .slab{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;font-size:12px;font-weight:800;letter-spacing:.03em;color:color-mix(in srgb,var(--acc) 55%,#3a414e)}
+.st .slab em{font-style:normal;font-size:10px;letter-spacing:-.5px;color:color-mix(in srgb,var(--acc) 80%,#8a5a00)}
+.st .slab s{text-decoration:none;display:flex;align-items:center;gap:5px;padding:1px 8px;border-radius:999px}
+.st .slab.on s{background:var(--lo);color:#fff}
+.st .slab.on em{color:#FFD84A}
+.st .sm{position:absolute;top:56px;z-index:4;font-style:normal;font-size:15px;font-weight:800;color:#5f6776;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.7);box-shadow:0 0 0 1px rgba(95,110,135,.2)}
+.st .sm.r{right:4px}
+.st .ctl{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.st .ctr{position:relative;width:230px;height:4px;border-radius:4px;background:rgba(255,255,255,.38)}
+.st .ctr i{position:absolute;top:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.st .ctr i.on{width:15px;height:15px;margin:-7.5px 0 0 -7.5px;box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 60%,white),0 0 10px 2px rgba(255,255,255,.9)}
+.st .cshots i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 25%,white),var(--acc) 72%);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
+.st .cshots i svg{width:58%;height:58%}
+
+/* ---------- Línea de tiempo neutra (P1, P2, P4) ---------- */
+.st .tl{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700;color:#6a7282;white-space:nowrap}
+.st .tl .tr{position:relative;width:220px;height:4px;border-radius:4px;background:rgba(160,168,182,.45)}
+.st .tl .tr i{position:absolute;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 2px #fff}
+.st .tl .tr i.on{width:16px;height:16px;margin:-8px 0 0 -8px;box-shadow:0 0 0 3px #fff,0 0 10px 2px color-mix(in srgb,var(--acc) 60%,transparent)}
+.st .tl.wh{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.st .tl.wh .tr{background:rgba(255,255,255,.4)}
+.st .tl.wh .tr i{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.st .tl.wh .tr i.on{box-shadow:0 0 0 3px var(--acc),0 0 12px 3px rgba(255,255,255,.8)}
+.st .lbl{position:absolute;z-index:4;text-align:center;font-size:14px;font-weight:700;color:#5f6776;white-space:nowrap}
+.st .lbl em{font-style:normal;font-size:13px;color:#d9a520;letter-spacing:-.5px;margin-left:4px}
+.st .lbl.on{color:color-mix(in srgb,var(--acc) 82%,black);font-weight:800}
+.st .more{position:absolute;font-size:15px;font-weight:800;color:#5f6776;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.78);box-shadow:0 0 0 1px rgba(95,110,135,.2);z-index:4}
+
+/* ---------- P1 · Secciones de Inicio ---------- */
+.st .p1h{position:absolute;left:96px;display:flex;align-items:center;gap:12px;height:32px;white-space:nowrap}
+.st .p1h i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 25%,white),var(--c) 72%);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--c) 70%,black)}
+.st .p1h i svg{width:58%;height:58%}
+.st .p1h b{font-size:21px;font-weight:800;color:#5a6270}
+.st .p1h.on b{color:#3a414e}
+.st .p1h>span{font-size:15px;font-weight:600;color:#6a7282}
+.st .p1h .hint{height:34px;font-size:15px;margin-left:8px}
+.st .p1row{position:absolute;left:0;right:0;-webkit-mask-image:linear-gradient(90deg,#000 1150px,transparent 1240px);mask-image:linear-gradient(90deg,#000 1150px,transparent 1240px)}
+.st .p1row.dimr .glass:not(.f){opacity:.9}
+
+/* ---------- P2 · Balda de cristal ---------- */
+.st .p2{position:absolute;left:64px;width:1152px}
+.st .p2h{display:inline-flex;align-items:center;gap:14px;height:46px;padding:0 8px 0 8px;border-radius:999px;margin:0 0 8px 6px;white-space:nowrap;position:relative;z-index:3}
+.st .p2h h3{margin:0;font-size:22px;font-weight:800;color:#3a414e}
+.st .p2h .m{font-size:15px;font-weight:600;color:#5f6776}
+.st .p2h .tl{margin-left:4px}
+.st .p2h .hint{height:34px;font-size:15px;box-shadow:none;background:rgba(255,255,255,.85)}
+.st .p2h>*:last-child{margin-right:10px}
+.st .p2h.on{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 84%,white),var(--acc));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 8px 16px -8px color-mix(in srgb,var(--acc) 70%,black)}
+.st .p2h.on h3,.st .p2h.on .m{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.28)}
+.st .p2h.on .mic{background:rgba(255,255,255,.92);color:var(--acc);box-shadow:none}
+.st .p2h.on .tl{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.st .p2h.on .tl .tr{background:rgba(255,255,255,.4)}
+.st .p2h.on .tl .tr i{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.st .p2h.on .tl .tr i.on{box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 50%,white),0 0 10px 2px rgba(255,255,255,.9)}
+.st .p2b{position:relative !important;width:1152px;height:186px;--r:26px;--bw:7px}
+.st .p2b>.face{background:linear-gradient(180deg,rgba(250,251,253,.75),rgba(236,240,245,.6))}
+.st .p2b>.face::after{box-shadow:inset 0 0 0 1px rgba(20,30,50,.12),inset 0 2px 5px -2px rgba(0,0,0,.18)}
+.st .p2tint{position:absolute;inset:-20px;filter:blur(30px);opacity:.28}
+.st .p2lip{position:absolute;left:0;right:0;bottom:0;height:28px;z-index:4;background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(222,227,235,.85));box-shadow:inset 0 1px 0 #fff,0 -6px 12px -10px rgba(40,50,70,.4)}
+.st .p2lip .lbl{top:0;height:28px;line-height:28px;font-size:13px}
+.st .p2lip .lbl.on span{background:var(--acc);color:#fff;padding:2px 10px;border-radius:999px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
+.st .p2lip .lbl.on em{color:#d9a520}
+.st .p2.dim .glass.c{opacity:.88}
+
+/* ---------- P3 · Cabecera de ficha ---------- */
+.st .p3ban{left:64px;top:126px;width:1152px;height:206px;--r:30px;--bw:9px}
+.st .p3tit{position:absolute;left:100px;top:226px;font-size:50px;font-weight:800;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.6),0 1px 2px rgba(0,0,0,.5);z-index:5;white-space:nowrap}
+.st .p3chips{position:absolute;left:100px;top:148px;z-index:5;display:flex;gap:10px}
+.st .p3right{position:absolute;right:100px;top:270px;z-index:5;display:flex;gap:10px;align-items:center}
+.st .p3seg{position:absolute;left:64px;top:348px;display:flex;align-items:center;gap:4px;height:48px;padding:0 8px;border-radius:999px;z-index:4}
+.st .p3seg .t{height:36px;padding:0 14px 0 8px;border-radius:999px;display:flex;align-items:center;gap:8px;font-size:16px;font-weight:800;color:#5f6776;white-space:nowrap}
+.st .p3seg .t i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:#fff;background:var(--c)}
+.st .p3seg .t i svg{width:62%;height:62%}
+.st .p3seg .t small{font-size:13px;opacity:.7}
+.st .p3seg .t.on{background:var(--c);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--c) 70%,black)}
+.st .p3seg .t.on i{background:rgba(255,255,255,.92);color:var(--c)}
+.st .p3seg .btn{margin:0 4px}
+.st .p3pos{position:absolute;right:64px;top:360px;font-size:16px;font-weight:700;color:#5f6776}
+.st .p3pos b{color:#3a414e}
+
+/* ---------- P4 · Panel de dos columnas ---------- */
+.st .p4pan{left:48px;top:126px;width:1184px;height:526px;--r:36px;--bw:12px}
+.st .p4col{position:absolute;left:60px;top:138px;width:282px;height:502px;border-radius:24px 0 0 24px;background:rgba(214,220,230,.5);box-shadow:inset -1px 0 0 rgba(95,110,135,.15);padding:22px 16px;z-index:2}
+.st .p4col h4{margin:0 10px 12px;font-size:15px;font-weight:800;color:#6a7282;letter-spacing:.02em}
+.st .p4col hr{border:0;height:1px;background:rgba(95,110,135,.2);margin:10px 8px}
+.st .p4head{position:absolute;left:372px;top:150px;right:76px;display:flex;align-items:center;gap:16px;z-index:2;white-space:nowrap}
+.st .p4head h3{margin:0;font-size:28px;font-weight:800;color:#3a414e}
+.st .p4head>span{font-size:16px;font-weight:600;color:#5f6776}
+.st .p4head .hint{margin-left:auto}
+
+/* ---------- P5 · Carrusel ---------- */
+.st .p5pills{position:absolute;left:50%;top:132px;transform:translateX(-50%);display:flex;gap:10px;z-index:4}
+.st .p5c:not(.f){opacity:.78}
+.st .p5c.f{transform:scale(1.32)}
+.st .cb{position:absolute;left:8px;top:8px;z-index:2;padding:2px 9px;border-radius:999px;font-size:13px;font-weight:800;color:#fff;background:rgba(40,46,60,.72);white-space:nowrap}
+.st .cb.st{background:linear-gradient(180deg,color-mix(in srgb,var(--c) 70%,white),var(--c))}
+
+/* ---------- Diálogos ---------- */
+.st .schips{display:flex;gap:12px;margin-top:4px}
+.st .schip{flex:1;height:84px;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#4a5260;font-size:18px;font-weight:800;
+  background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(235,239,245,.8));box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.22)}
+.st .schip i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--c);color:#fff}
+.st .schip i svg{width:70%;height:70%}
+.st .schip.cur{box-shadow:inset 0 1px 0 #fff,0 0 0 2px var(--c)}
+.st .schip.f{transform:scale(1.05);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.28);background:linear-gradient(180deg,color-mix(in srgb,var(--c) 70%,white),var(--c) 60%,color-mix(in srgb,var(--c) 82%,black));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--c) 75%,black),0 8px 18px -8px var(--c)}
+.st .schip.f i{background:rgba(255,255,255,.9);color:var(--c)}
+.st .ok{margin-left:auto;font-size:14px;font-weight:800;color:#3BB54A}
+.st .srow.f .ok{color:#fff}
+.st .pksearch{display:flex;align-items:center;gap:10px;width:380px;height:44px;padding:0 8px 0 8px;border-radius:999px;font-size:18px;font-weight:600;color:#8a93a3}
+.st .pkchk{position:absolute;right:6px;top:6px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 2px #fff,0 3px 8px -2px rgba(0,0,0,.5);z-index:3}
+.st .pkchk svg{width:62%;height:62%}
+.st .glass.on .face::after{box-shadow:inset 0 0 0 4px var(--acc),inset 0 3px 6px -2px rgba(0,0,0,.35)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Armonizar «Mi lista» y «Colecciones»</h1>
+  <p class="lead">Cinco propuestas para que las pestañas «Mi lista» y «Colecciones» se parezcan al resto del visor (cuadrícula de juegos, ficha, menús y Ajustes). Cada propuesta enseña, una al lado de otra, la pantalla de referencia de la que toma su lenguaje y las dos pestañas rediseñadas, todo a 1280×720 con los tokens de <code>src/app.css</code>. Las categorías no cambian: todo ocurre dentro de «Juegos». <b>Mando:</b> LB/RB cambian de propuesta, ←/→ eligen la pantalla, A la abre a pantalla completa y B la cierra.</p>
+  <nav class="pg-nav" id="nav"></nav>
+  <div id="secs"></div>
+</main>
+<div class="pg-ov" id="ov"><span class="pg-x">B / Esc para cerrar</span><div class="frame" id="ovf"></div></div>
+
+<script>
+/* =====================================================================
+   Datos de ejemplo (categoría «Juegos»)
+   ===================================================================== */
+const CHROME = '#00A0D8';
+const COL = { playing: '#00A0D8', pending: '#F27A1A', finished: '#3BB54A', dropped: '#E8384F', none: '#8a93a3' };
+const g = (n, c1, c2, l = '', s = 0) => ({ n, c1, c2, l, s });
+const LIST = [
+  { k: 'playing', t: 'Jugando', sub: '4 juegos · 123 h jugadas', items: [
+    g('Persona 5 Royal', '#E8384F', '#3a0a12', '62 h'), g('Elden Ring', '#c9a227', '#2b2208', '41 h'), g('Hades II', '#9A4BD8', '#22103a', '12 h'), g('Metaphor: ReFantazio', '#00A0D8', '#062b40', '8 h')] },
+  { k: 'pending', t: 'Pendientes', sub: '11 juegos · en tu orden', items: [
+    g('Clair Obscur', '#d9b38c', '#3b2a1a'), g('Silksong', '#b23a48', '#1e0a10'), g('Death Stranding 2', '#5a7f95', '#101820'), g('Ys X Nordics', '#2f7fd8', '#0b2246'),
+    g('Trails Beyond the Horizon', '#3F63E0', '#121c4a'), g('Kingdom Come II', '#8a6a3a', '#21180a'), g('Lies of P', '#6b5a8a', '#17122a'), g('Octopath Traveler 0', '#F27A1A', '#3a1a05'),
+    g('Dragon Quest III HD-2D', '#3BB54A', '#0d3314'), g('Like a Dragon: Pirate', '#F2B807', '#3a2c00'), g('Xenoblade X', '#00A0D8', '#04253a')].map((x, i) => ({ ...x, l: '#' + (i + 1) })) },
+  { k: 'finished', t: 'Terminados en 2026', sub: '6 juegos · nota media 4,2', items: [
+    g('Astro Bot', '#00A0D8', '#063a55', '12 feb', 5), g('FF VII Rebirth', '#3F63E0', '#121c4a', '3 mar', 5), g('Unicorn Overlord', '#9A4BD8', '#22103a', '28 abr', 4),
+    g('Prince of Persia', '#F2B807', '#3a2c00', '9 may', 4), g('Balatro', '#E8384F', '#3a0a12', '21 jun', 3), g('Animal Well', '#3BB54A', '#0d3314', '2 ago', 4)] },
+  { k: 'dropped', t: 'Abandonados', sub: '3 juegos', items: [g('Starfield', '#5a6f80', '#121820', 'ene 25'), g('Forspoken', '#F27A1A', '#3a1a05', 'mar 24'), g('Skull and Bones', '#8a6a3a', '#21180a', 'nov 24')] },
+];
+const LF = { s: 1, i: 2 }; // foco en Mi lista: Pendientes, «Death Stranding 2»
+const COLLS = [
+  { n: 'Trails', c: '#3F63E0', shots: '2.341', items: [
+    g('Trails in the Sky', '#F27A1A', '#7a3b12', '2004'), g('Trails in the Sky SC', '#3F63E0', '#1d2b6b', '2006'), g('Trails in the Sky 3rd', '#9A4BD8', '#3b1966', '2007'),
+    g('Trails from Zero', '#00A0D8', '#0a3e5c', '2010'), g('Trails to Azure', '#2f7fd8', '#14305e', '2011'), g('Cold Steel', '#E8384F', '#5c1020', '2013'),
+    g('Cold Steel II', '#c2334a', '#3d0c18', '2014'), g('Cold Steel III', '#3BB54A', '#14451b', '2017'), g('Cold Steel IV', '#5a5f8a', '#1e2140', '2018'), g('Reverie', '#F2B807', '#6b4e00', '2020')] },
+  { n: 'Kingdom Hearts', c: '#00A0D8', shots: '612', items: [g('KH 1.5+2.5', '#F2B807', '#6b4e00', '2013'), g('KH 2.8', '#00A0D8', '#063a55', '2017'), g('Kingdom Hearts III', '#3F63E0', '#18245c', '2019')] },
+  { n: 'FromSoftware', c: '#9A4BD8', shots: '1.087', items: [g('Dark Souls III', '#5a6f80', '#121820', '2016'), g('Sekiro', '#E8384F', '#3a0a12', '2019'), g('Elden Ring', '#c9a227', '#2b2208', '2022'), g('Armored Core VI', '#F27A1A', '#3a1a05', '2023')] },
+];
+const CF = { c: 0, i: 3 }; // foco en Colecciones: Trails, «Trails from Zero»
+const TODOS = [
+  g('Persona 5 Royal', '#E8384F', '#3a0a12'), g('Elden Ring', '#c9a227', '#2b2208'), g('Hades II', '#9A4BD8', '#22103a'), g('Astro Bot', '#00A0D8', '#063a55'), g('Clair Obscur', '#d9b38c', '#3b2a1a'), g('Balatro', '#E8384F', '#3a0a12'),
+  g('Silksong', '#b23a48', '#1e0a10'), g('Sekiro', '#E8384F', '#3a0a12'), g('Unicorn Overlord', '#9A4BD8', '#22103a'), g('Lies of P', '#6b5a8a', '#17122a'), g('Trails from Zero', '#00A0D8', '#0a3e5c'), g('Animal Well', '#3BB54A', '#0d3314'),
+];
+const ST = { playing: 'playing', finished: 'finished', dropped: 'dropped' };
+const TODOS_ST = { 2: 'playing', 3: 'finished', 5: 'finished', 8: 'finished' };
+
+/* =====================================================================
+   Iconos (currentColor)
+   ===================================================================== */
+const I = {
+  person: '<svg viewBox="0 0 24 24" fill="#fff"><circle cx="12" cy="8.5" r="4.2"/><path d="M4 20.5c.8-4.3 4-6.6 8-6.6s7.2 2.3 8 6.6z"/></svg>',
+  play: '<svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z" fill="currentColor"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4.3l3 2"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+  minus: '<svg viewBox="0 0 24 24"><rect x="5" y="10.4" width="14" height="3.4" rx="1.7" fill="currentColor"/></svg>',
+  dot: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  cam: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  saga: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><rect x="3.5" y="5" width="4.5" height="14" rx="1"/><rect x="9.8" y="5" width="4.5" height="14" rx="1"/><path d="M16.3 6.4l3.8-1 3 13.2-3.8 1z" transform="translate(-1.6 0)"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg>',
+  arrowL: '<svg viewBox="0 0 56 110"><path d="M40 14L12 55l28 41" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  arrowR: '<svg viewBox="0 0 56 110"><path d="M16 14l28 41-28 41" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  star: '<svg viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.3 9.7l6.1-.6z" fill="#F2B807" stroke="#b88a00" stroke-width="1"/></svg>',
+  chart: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="12" width="4" height="8" rx="1"/><rect x="10" y="7" width="4" height="13" rx="1"/><rect x="16" y="4" width="4" height="16" rx="1"/></svg>',
+  pad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="2.5" y="7" width="19" height="11" rx="5.5"/><path d="M7 11v3M5.5 12.5h3"/><circle cx="16" cy="11.5" r=".6" fill="currentColor"/><circle cx="18" cy="13.5" r=".6" fill="currentColor"/></svg>',
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"><path d="M4 5.5C6.5 4.5 9.5 4.5 12 6c2.5-1.5 5.5-1.5 8-.5V19c-2.5-1-5.5-1-8 .5-2.5-1.5-5.5-1.5-8-.5z"/><path d="M12 6v13.5"/></svg>',
+};
+const SG = { playing: I.play, pending: I.clock, finished: I.check, dropped: I.minus, none: I.dot };
+const SL = { playing: 'Jugando', pending: 'Pendiente', finished: 'Terminado', dropped: 'Abandonado' };
+
+/* =====================================================================
+   Piezas comunes
+   ===================================================================== */
+const art = (x) => `radial-gradient(120% 85% at 30% 15%,${x.c1},${x.c2})`;
+function bg(focusG, acc = CHROME) {
+  return `<div class="bg"><div class="blob w" style="left:-80px;top:-60px;width:520px;height:420px"></div><div class="blob a" style="--acc:${acc};right:-120px;top:120px;width:620px;height:520px"></div><div class="blob w" style="left:420px;bottom:-200px;width:600px;height:420px"></div></div>`
+    + (focusG ? `<div class="amb"><div class="amblayer" style="background:radial-gradient(60% 70% at 30% 40%,${focusG.c1},transparent),radial-gradient(60% 70% at 75% 50%,${focusG.c2},transparent)"></div></div>` : '');
+}
+function topBar(crumbs, page) {
+  const cr = crumbs.map((x, i) => i === crumbs.length - 1 ? `<span class="cur">${x}</span>` : `<span>${x}</span><span class="sep">›</span>`).join('');
+  return `<div class="top"><div class="glass avatar"><div class="face">${I.person}</div></div><div class="crumb pill">${cr}</div>`
+    + (page ? `<div class="pagep pill">${page}<i><b></b></i></div>` : '')
+    + `<div class="clock"><span>25/10 <small>(dom)</small></span><span>21:40</span><svg width="30" height="20" viewBox="0 0 30 20"><rect x="1" y="3" width="28" height="14" rx="7" fill="${CHROME}"/><circle cx="8" cy="10" r="3" fill="#fff"/><circle cx="22" cy="10" r="2" fill="#fff"/></svg></div></div>`;
+}
+function hints(list) {
+  return `<div class="hints">${list.map(([b, l]) => `<div class="hint pill"><span class="btn ${b.length > 1 ? 'sh' : b.toLowerCase()}">${b}</span>${l}</div>`).join('')}</div>`;
+}
+function ttabs(active, { acc = CHROME, car = false, topY = 124, left = null, order = false } = {}) {
+  const T = [['all', 'Todos'], ['list', 'Mi lista'], ['coll', 'Colecciones']];
+  return `<div class="ttabs${car ? ' car' : ''}" style="--acc:${acc};top:${topY}px;${left !== null ? `left:${left}px;` : ''}"><span class="btn sh">LT</span>${T.map(([k, l]) => `<span class="tflt${k === active ? ' on' : ''}">${l}</span>`).join('')}<span class="btn sh">RT</span>${order ? '<span class="btn x">X</span><span class="tflt tord">Última partida</span>' : ''}</div>`;
+}
+/** Portada de cristal. */
+function cov(x, o) {
+  const { left, top: t, w, h, r = 16, bw = 6, fr = 11, f = false, acc = CHROME, cls = '', extra = '', name = true, style = '' } = o;
+  return `<div class="glass ${cls}${f ? ' f' : ''}" style="left:${left}px;top:${t}px;width:${w}px;height:${h}px;--r:${r}px;--bw:${bw}px;--acc:${acc};${style}"><div class="face" style="border-radius:${fr}px"><i class="art" style="background:${art(x)}"></i>${name ? `<b class="ct" style="font-size:${Math.max(11, Math.round(w * 0.1))}px">${x.n}</b>` : ''}${extra}</div></div>`;
+}
+const addCov = (o) => `<div class="glass ${o.f ? 'f' : ''}" style="left:${o.left}px;top:${o.top}px;width:${o.w}px;height:${o.h}px;--r:${o.r || 16}px;--bw:${o.bw || 6}px;--acc:${o.acc || CHROME}"><div class="face" style="border-radius:${o.fr || 11}px"><div class="addface"><span>${I.plus}</span></div></div></div>`;
+const stars = (n) => n ? `<em>${'★'.repeat(n)}</em>` : '';
+function tline(items, focus, { wh = false, w = 220 } = {}) {
+  const ys = items.map((x) => +x.l); const a = Math.min(...ys), b = Math.max(...ys);
+  return `<div class="tl${wh ? ' wh' : ''}">${a}<span class="tr" style="width:${w}px">${ys.map((y, i) => `<i class="${i === focus ? 'on' : ''}" style="left:${((y - a) / Math.max(1, b - a)) * 100}%"></i>`).join('')}</span>${b}</div>`;
+}
+const S = (inner) => `<div class="st">${inner}</div>`;
+const listHints = [['A', 'Abrir'], ['Y', 'Estado'], ['LB/RB', 'Mover'], ['LT/RT', 'Pestaña'], ['B', 'Volver']];
+const collHints = [['A', 'Abrir'], ['X', 'Capturas'], ['Y', 'Editar'], ['LT/RT', 'Pestaña'], ['B', 'Volver']];
+const focusList = LIST[LF.s].items[LF.i];
+const focusColl = COLLS[CF.c].items[CF.i];
+
+/* =====================================================================
+   Pantallas de referencia (lo que ya existe)
+   ===================================================================== */
+function refTodos() {
+  // Titles.svelte en cuadrícula de 6 por fila (tgrid.ts nivel 1: 132×177, hueco 34/14, y=204).
+  const cw = 132, ch = 177, gap = 34, rg = 14, gx = (1280 - 6 * cw - 5 * gap) / 2, fi = 1;
+  const s = cw / 160;
+  let h = bg(TODOS[fi]) + topBar(['Inicio', 'Juegos'], 'Página 1 de 4');
+  h += `<div class="thead" style="--acc:#c9a227"><h3>Elden Ring</h3><span class="chip">1.204 capturas</span><span>Jugado <b>41 h</b></span><span>Última partida <b>hace 2 días</b></span></div>`;
+  h += ttabs('all', { acc: '#c9a227', order: true });
+  TODOS.forEach((x, j) => {
+    const st = TODOS_ST[j];
+    const badge = st === 'finished' ? `<span class="sbadge" style="--c:${COL.finished}">${I.check}</span>` : '';
+    h += cov(x, { left: gx + (j % 6) * (cw + gap), top: 204 + Math.floor(j / 6) * (ch + rg), w: cw, h: ch, r: 22 * s, bw: 8 * s, fr: 15 * s, f: j === fi, acc: x.c1, extra: badge });
+  });
+  h += `<div class="side off" style="left:12px">${I.arrowL}</div><div class="side" style="right:12px">${I.arrowR}</div>`;
+  h += hints([['A', 'Abrir'], ['X', 'Orden'], ['Y', 'Carrusel'], ['LT/RT', 'Pestaña'], ['Start', 'Menú'], ['B', 'Volver']]);
+  return S(h);
+}
+function refDetail() {
+  const x = TODOS[1];
+  let h = bg(x, '#c9a227') + topBar(['Inicio', 'Juegos', 'Elden Ring']);
+  h += `<div class="glass banner static"><div class="face"><i class="art" style="background:radial-gradient(70% 90% at 30% 30%,#e8c867,#2b2208 80%)"></i><div class="bshade"></div></div></div>`;
+  h += `<div class="dlogo">Elden Ring</div>`;
+  h += `<div style="position:absolute;left:100px;top:108px;z-index:6;display:flex;gap:10px"><span class="stpill" style="--c:${COL.playing}">${I.play}<b>Jugando</b></span><span class="relpill"><b>Salió en</b><small>2022</small></span></div>`;
+  h += cov(x, { left: 1016, top: 88, w: 200, h: 280, r: 26, bw: 9, fr: 19, cls: 'static', acc: '#c9a227' });
+  h += `<div class="glass play f" style="--acc:#c9a227"><div class="face"><span class="pi">${I.play}</span><span><b>Jugar</b><small>Con Steam</small></span></div></div>`;
+  h += `<div class="dpanel pill" style="left:378px;width:400px;--acc:#c9a227"><div class="hsub">Horas jugadas · 58 sesiones</div><div class="odo"><span class="c">0</span><span class="c">4</span><span class="c">1</span><span class="u">h</span><span class="c">2</span><span class="c">2</span><span class="u">min</span></div></div>`;
+  h += `<div class="dpanel pill" style="left:802px;width:414px;--acc:#c9a227"><div class="hsub">Esta semana · 3 h 40 min</div><div class="weekbars"><i style="height:20px"></i><i class="z" style="height:4px"></i><i style="height:34px"></i><i style="height:12px"></i><i class="z" style="height:4px"></i><i style="height:40px"></i><i style="height:26px"></i></div></div>`;
+  h += `<div class="dsect">Capturas<span>1.204</span></div>`;
+  for (let i = 0; i < 5; i++) h += cov({ c1: ['#e8c867', '#8a6a3a', '#c9a227', '#5a6f80', '#b88a00'][i], c2: '#1b160a' }, { left: 64 + i * 192, top: 548, w: 176, h: 99, r: 16, bw: 5, fr: 12, name: false });
+  h += `<div class="glass" style="left:1024px;top:548px;width:141px;height:99px;--r:16px;--bw:5px"><div class="face" style="border-radius:12px;display:grid;place-items:center;text-align:center;font-size:17px;font-weight:800;color:#c9a227;background:linear-gradient(180deg,#fff,#faf3dc)"><div>Ver todas<span style="display:block;font-size:13px;font-weight:600;color:#5f6776">1.204 capturas</span></div></div></div>`;
+  h += hints([['A', 'Seleccionar'], ['B', 'Volver'], ['Y', 'Opciones']]);
+  return S(h);
+}
+function refSettings() {
+  let h = bg(null) + topBar(['Inicio']);
+  h += `<div class="scrim"></div>`;
+  h += `<div class="glass panel static" style="left:130px;top:46px;width:1020px;height:600px;z-index:21"><div class="face" style="display:flex"></div></div>`;
+  const cats = [['General', '#00A0D8', I.gear], ['Biblioteca', '#3BB54A', I.book], ['Mi lista', '#F27A1A', I.check], ['Colecciones', '#9A4BD8', I.saga], ['Mando', '#3F63E0', I.pad], ['Estadísticas', '#E8384F', I.chart]];
+  h += `<div style="position:absolute;left:144px;top:60px;width:250px;height:572px;border-radius:26px 0 0 26px;background:rgba(214,220,230,.5);padding:24px 14px;z-index:22;box-shadow:inset -1px 0 0 rgba(95,110,135,.15)"><h2 style="margin:0 10px 14px;font-size:28px;font-weight:800">Ajustes</h2>${cats.map(([n, c, ic], i) => `<div class="scat${i === 2 ? ' on' : ''}" style="--c:${c}"><i>${ic}</i>${n}</div>`).join('')}</div>`;
+  const rows = [['Avisar de juegos parados', 'Sí'], ['Días sin jugar', '30 días'], ['Al detectarlos', 'Preguntar'], ['Terminados por año', 'Sí'], ['Mostrar «Sin estado»', 'No']];
+  h += `<div style="position:absolute;left:420px;top:86px;width:700px;z-index:22;--acc:#F27A1A"><h3 style="margin:0 0 10px;font-size:20px;font-weight:800;color:#6a7282">Mi lista</h3>${rows.map(([l, v], i) => `<div class="srow${i === 1 ? ' f' : ''}"><span class="sl">${l}</span><span class="sv">${v}</span></div>`).join('')}<div class="sdesc" style="margin-top:90px;height:120px"><b>Días sin jugar.</b> Un juego en «Jugando» que lleve más de estos días sin abrirse aparece en el aviso de juegos parados al entrar en Mi lista.</div></div>`;
+  h += `<div class="hints" style="z-index:30">${hints([['A', 'Cambiar'], ['←→', 'Valor'], ['B', 'Volver']]).replace(/^<div class="hints">|<\/div>$/g, '')}</div>`;
+  return S(h);
+}
+function refCarousel() {
+  const q = 1, x = TODOS[q];
+  let h = bg(x, '#c9a227') + topBar(['Inicio', 'Juegos']);
+  h += ttabs('all', { acc: '#c9a227', car: true, topY: 140, order: true });
+  for (let i = Math.max(0, q - 3); i < Math.min(TODOS.length, q + 5); i++) {
+    h += cov(TODOS[i], { left: 640 - 100 + (i - q) * 240, top: 220, w: 200, h: 266, r: 26, bw: 10, fr: 18, f: i === q, cls: 'p5c', acc: TODOS[i].c1 });
+  }
+  h += `<div class="cinfo"><h3>Elden Ring</h3><p>1.204 capturas · última el 23 oct · jugado 41 h · 2 de 128</p></div>`;
+  h += hints([['A', 'Abrir'], ['X', 'Orden'], ['Y', 'Cuadrícula'], ['LT/RT', 'Pestaña'], ['Start', 'Menú'], ['B', 'Volver']]);
+  return S(h);
+}
+
+/* =====================================================================
+   HOY: Mi lista y Colecciones tal como están (Shelf.svelte + CollTab.svelte)
+   ===================================================================== */
+function shelfNow(title, sub, items, { acc, topY, focus = -1, dim = false, aurora = null, extra = '', end = '', labels = true }) {
+  const shown = items.slice(0, 11);
+  const covs = shown.map((x, p) => cov(x, { left: p * 120, top: 0, w: 104, h: 139, r: 16, bw: 6, fr: 11, f: p === focus, acc })).join('');
+  const labs = shown.map((x, p) => `<span class="slab${p === focus ? ' on' : ''}" style="left:${18 + p * 120}px;width:104px">${x.l || x.s ? `<s>${x.l ? `<b>${x.l}</b>` : ''}${stars(x.s)}</s>` : ''}</span>`).join('');
+  const more = items.length > 9 ? `<i class="sm r">+${items.length - 9} ›</i>` : '';
+  return `<div class="shelf${dim ? ' dim' : ''}" style="top:${topY}px;--acc:${acc}"><div class="stab${aurora ? ' hasaur' : ''}">${aurora ? `<div class="aur">${aurora.map((c, k) => `<b style="left:${8 + k * 21}%;background:${c}"></b>`).join('')}</div>` : ''}<h3>${title}</h3><div class="sinfo"><span class="smeta">${sub}</span>${extra}</div>${end}</div>`
+    + `<div class="sboard"><div class="sview">${covs}</div><div class="slip">${labels ? labs : ''}</div>${more}</div></div>`;
+}
+function nowList() {
+  let h = bg(focusList) + topBar(['Inicio', 'Juegos']);
+  h += ttabs('list', { acc: COL.pending });
+  h += '<div class="lclip">';
+  h += shelfNow(LIST[0].t, LIST[0].sub, LIST[0].items, { acc: COL.playing, topY: 0, dim: true });
+  h += shelfNow(LIST[1].t, LIST[1].sub, LIST[1].items, { acc: COL.pending, topY: 241, focus: LF.i });
+  h += shelfNow(LIST[2].t, LIST[2].sub, LIST[2].items, { acc: COL.finished, topY: 482, dim: true });
+  h += '</div>' + hints(listHints);
+  return S(h);
+}
+function ctlNow(c, focus) {
+  const ys = c.items.map((x) => +x.l); const a = Math.min(...ys), b = Math.max(...ys);
+  return `<div class="ctl">${a}<span class="ctr">${ys.map((y, i) => `<i class="${i === focus ? 'on' : ''}" style="left:${((y - a) / Math.max(1, b - a)) * 100}%"></i>`).join('')}</span>${b}</div>`;
+}
+function nowColl() {
+  let h = bg(focusColl) + topBar(['Inicio', 'Juegos']);
+  h += ttabs('coll', { acc: COLLS[0].c });
+  h += '<div class="lclip">';
+  COLLS.forEach((c, k) => {
+    const here = k === CF.c;
+    const end = here ? `<span class="hint pill cshots"><span class="btn x">X</span><i>${I.cam}</i>Capturas</span>` : '';
+    h += shelfNow(c.n, `${c.items.length} juegos · ${c.shots} capturas`, c.items, { acc: c.c, topY: k * 241, focus: here ? CF.i : -1, dim: !here, aurora: c.items.slice(0, 5).map((x) => x.c1), extra: ctlNow(c, here ? CF.i : -1), end });
+  });
+  h += '</div>' + hints(collHints);
+  return S(h);
+}
+
+/* =====================================================================
+   P1 · Secciones de Inicio
+   ===================================================================== */
+function p1Section({ y, icon, c, title, sub, items, focus = -1, acc, extraHead = '', on = false, add = false }) {
+  const W = 120, H = 160, P = 150, X = 96;
+  let h = `<div class="p1h${on ? ' on' : ''}" style="top:${y}px;--c:${c}"><i>${icon}</i><b>${title}</b><span>${sub}</span>${extraHead}</div>`;
+  h += `<div class="p1row" style="top:${y + 38}px;height:${H + 30}px">`;
+  items.slice(0, 8).forEach((x, p) => {
+    h += cov(x, { left: X + p * P, top: 6, w: W, h: H, r: 18, bw: 6.5, fr: 12.5, f: p === focus, acc });
+    h += `<div class="lbl${p === focus ? ' on' : ''}" style="left:${X + p * P}px;top:${H + 12}px;width:${W}px;--acc:${acc}">${x.l}${stars(x.s)}</div>`;
+  });
+  if (add) h += addCov({ left: X + items.length * P, top: 6, w: W, h: H, r: 18, bw: 6.5, fr: 12.5 });
+  h += '</div>';
+  if (items.length > 8) h += `<div class="more" style="right:40px;top:${y + 38 + 66}px">+${items.length - 7} ›</div>`;
+  return h;
+}
+function p1List() {
+  let h = bg(focusList) + topBar(['Inicio', 'Juegos']);
+  h += `<div class="thead" style="--acc:${COL.pending}"><h3>${focusList.n}</h3><span class="chip">Pendiente · #3</span><span>Sin partidas todavía</span><span>Añadido <b>hace 3 semanas</b></span></div>`;
+  h += ttabs('list');
+  h += p1Section({ y: 172, icon: SG.playing, c: COL.playing, title: 'Jugando', sub: LIST[0].sub, items: LIST[0].items, acc: COL.playing });
+  h += p1Section({ y: 410, icon: SG.pending, c: COL.pending, title: 'Pendientes', sub: LIST[1].sub, items: LIST[1].items, focus: LF.i, acc: COL.pending, on: true });
+  h += hints(listHints);
+  return S(h);
+}
+function p1Coll() {
+  let h = bg(focusColl) + topBar(['Inicio', 'Juegos']);
+  h += `<div class="thead" style="--acc:${COLLS[0].c}"><h3>${focusColl.n}</h3><span class="chip">Trails · 4 de 10</span><span>Salió en <b>2010</b></span><span><b>312</b> capturas</span></div>`;
+  h += ttabs('coll');
+  const c0 = COLLS[0], c1 = COLLS[1];
+  h += p1Section({ y: 172, icon: I.saga, c: c0.c, title: c0.n, sub: `${c0.items.length} juegos · ${c0.shots} capturas`, items: c0.items, focus: CF.i, acc: c0.c, on: true,
+    extraHead: `<span style="margin-left:10px;--acc:${c0.c}">${tline(c0.items, CF.i, { w: 200 })}</span><span class="hint pill"><span class="btn x">X</span>Capturas</span>` });
+  h += p1Section({ y: 410, icon: I.saga, c: c1.c, title: c1.n, sub: `${c1.items.length} juegos · ${c1.shots} capturas`, items: c1.items, acc: c1.c,
+    extraHead: `<span style="margin-left:10px;--acc:${c1.c}">${tline(c1.items, -1, { w: 120 })}</span>` });
+  h += hints(collHints);
+  return S(h);
+}
+
+/* =====================================================================
+   P2 · Balda de cristal
+   ===================================================================== */
+function p2Shelf({ y, icon, c, title, sub, items, focus = -1, on = false, extra = '', end = '', tint = null }) {
+  const shown = items.slice(0, 10);
+  let covs = '', labs = '';
+  shown.forEach((x, p) => {
+    covs += cov(x, { left: 17 + p * 120, top: 12, w: 104, h: 139, r: 16, bw: 6, fr: 11, f: p === focus, acc: c, cls: 'c' });
+    labs += `<div class="lbl${p === focus ? ' on' : ''}" style="left:${17 + p * 120}px;width:104px"><span>${x.l}${stars(x.s)}</span></div>`;
+  });
+  const more = items.length > 9 ? `<div class="more" style="right:10px;top:58px">+${items.length - 9} ›</div>` : '';
+  return `<div class="p2${on ? '' : ' dim'}" style="top:${y}px;--acc:${c}"><div class="p2h pill${on ? ' on' : ''}"><span class="mic" style="--c:${c}">${icon}</span><h3>${title}</h3><span class="m">${sub}</span>${extra}${end}</div>`
+    + `<div class="glass static p2b"><div class="face">${tint ? `<div class="p2tint" style="background:${tint}"></div>` : ''}${covs}<div class="p2lip">${labs}</div>${more}</div></div></div>`;
+}
+function p2List() {
+  let h = bg(focusList) + topBar(['Inicio', 'Juegos']);
+  h += ttabs('list');
+  h += '<div class="lclip">';
+  h += p2Shelf({ y: 0, icon: SG.playing, c: COL.playing, title: 'Jugando', sub: LIST[0].sub, items: LIST[0].items });
+  h += p2Shelf({ y: 241, icon: SG.pending, c: COL.pending, title: 'Pendientes', sub: LIST[1].sub, items: LIST[1].items, focus: LF.i, on: true });
+  h += p2Shelf({ y: 482, icon: SG.finished, c: COL.finished, title: LIST[2].t, sub: LIST[2].sub, items: LIST[2].items });
+  h += '</div>' + hints(listHints);
+  return S(h);
+}
+function p2Coll() {
+  let h = bg(focusColl) + topBar(['Inicio', 'Juegos']);
+  h += ttabs('coll');
+  h += '<div class="lclip">';
+  COLLS.forEach((c, k) => {
+    const here = k === CF.c;
+    const tint = `linear-gradient(90deg,${c.items.slice(0, 5).map((x) => x.c1).join(',')})`;
+    h += p2Shelf({ y: k * 241, icon: I.saga, c: c.c, title: c.n, sub: `${c.items.length} juegos · ${c.shots} capturas`, items: c.items, focus: here ? CF.i : -1, on: here,
+      extra: tline(c.items, here ? CF.i : -1, { w: here ? 200 : 140 }), end: here ? `<span class="hint"><span class="btn x">X</span>Capturas</span>` : '', tint });
+  });
+  h += '</div>' + hints(collHints);
+  return S(h);
+}
+
+/* =====================================================================
+   P3 · Cabecera de ficha + un estante cada vez
+   ===================================================================== */
+function p3Row(items, focus, acc, y = 412) {
+  let h = '<div class="p1row" style="top:' + y + 'px;height:220px">';
+  items.slice(0, 8).forEach((x, p) => {
+    h += cov(x, { left: 64 + p * 160, top: 0, w: 132, h: 177, r: 18, bw: 6.6, fr: 12.4, f: p === focus, acc });
+    h += `<div class="lbl${p === focus ? ' on' : ''}" style="left:${64 + p * 160}px;top:188px;width:132px;--acc:${acc}">${x.l}${stars(x.s)}</div>`;
+  });
+  return h + '</div>';
+}
+function p3List() {
+  const x = focusList;
+  let h = bg(x) + topBar(['Inicio', 'Juegos']);
+  h += ttabs('list', { topY: 84, left: 64 });
+  h += `<div class="glass p3ban static"><div class="face"><i class="art" style="background:radial-gradient(70% 120% at 30% 20%,#8fb3c7,${x.c2} 80%)"></i><div class="bshade"></div></div></div>`;
+  h += `<div class="p3chips"><span class="stpill" style="--c:${COL.pending}">${I.clock}<b>Pendiente</b><small>#3 de 11</small></span><span class="relpill"><b>Salió en</b><small>2025</small></span></div>`;
+  h += `<div class="p3tit">${x.n}</div>`;
+  h += `<div class="p3right"><span class="relpill"><small>Sin partidas todavía</small></span><span class="relpill"><small>48 capturas</small></span></div>`;
+  h += `<div class="p3seg pill"><span class="btn sh">LB</span>${LIST.map((s, i) => `<span class="t${i === LF.s ? ' on' : ''}" style="--c:${COL[s.k]}"><i>${SG[s.k]}</i>${s.t}<small>${s.items.length}</small></span>`).join('')}<span class="btn sh">RB</span></div>`;
+  h += `<div class="p3pos"><b>3</b> de 11</div>`;
+  h += p3Row(LIST[1].items, LF.i, COL.pending);
+  h += hints([['A', 'Abrir'], ['Y', 'Estado'], ['LB/RB', 'Estante'], ['LT/RT', 'Pestaña'], ['B', 'Volver']]);
+  return S(h);
+}
+function p3Coll() {
+  const c = COLLS[0], x = focusColl;
+  let h = bg(x) + topBar(['Inicio', 'Juegos']);
+  h += ttabs('coll', { topY: 84, left: 64 });
+  h += `<div class="glass p3ban static" style="--acc:${c.c}"><div class="face"><i class="art" style="background:radial-gradient(60% 120% at 25% 20%,#4fb7e0,#0a2e4a 70%),${c.c}"></i><i class="art" style="background:radial-gradient(40% 90% at 85% 60%,${c.c}aa,transparent)"></i><div class="bshade"></div></div></div>`;
+  h += `<div class="p3chips"><span class="stpill" style="--c:${c.c}">${I.saga}<b>Colección</b><small>${c.items.length} juegos · ${c.shots} capturas</small></span></div>`;
+  h += `<div class="p3tit">${c.n}</div>`;
+  h += `<div class="p3right" style="--acc:${c.c}">${tline(c.items, CF.i, { wh: true, w: 260 })}<span class="hint pill" style="margin-left:14px"><span class="btn x">X</span>Capturas</span></div>`;
+  h += `<div class="p3seg pill"><span class="btn sh">LB</span>${COLLS.map((k, i) => `<span class="t${i === CF.c ? ' on' : ''}" style="--c:${k.c}"><i>${I.saga}</i>${k.n}<small>${k.items.length}</small></span>`).join('')}<span class="t" style="--c:#8a93a3"><i>${I.plus}</i>Nueva</span><span class="btn sh">RB</span></div>`;
+  h += `<div class="p3pos"><b>${x.n}</b> · 2010</div>`;
+  h += p3Row(c.items, CF.i, c.c);
+  h += hints([['A', 'Abrir'], ['X', 'Capturas'], ['Y', 'Editar'], ['LB/RB', 'Colección'], ['B', 'Volver']]);
+  return S(h);
+}
+
+/* =====================================================================
+   P4 · Panel de dos columnas (como Ajustes)
+   ===================================================================== */
+function p4Grid(items, focus, acc, add = false) {
+  let h = '';
+  const X = 386, Y = 214, W = 106, H = 142, PX = 134, PY = 196;
+  items.slice(0, 12).forEach((x, j) => {
+    const l = X + (j % 6) * PX, t = Y + Math.floor(j / 6) * PY;
+    h += cov(x, { left: l, top: t, w: W, h: H, r: 15, bw: 5.5, fr: 10, f: j === focus, acc });
+    h += `<div class="lbl${j === focus ? ' on' : ''}" style="left:${l}px;top:${t + H + 10}px;width:${W}px;--acc:${acc}">${x.l}${stars(x.s)}</div>`;
+  });
+  if (add) { const j = items.length; h += addCov({ left: X + (j % 6) * PX, top: Y + Math.floor(j / 6) * PY, w: W, h: H, r: 15, bw: 5.5, fr: 10 }); }
+  return h;
+}
+function p4List() {
+  let h = bg(focusList) + topBar(['Inicio', 'Juegos']);
+  h += ttabs('list', { topY: 84, left: 64 });
+  h += `<div class="glass panel static p4pan"><div class="face"></div></div>`;
+  const rows = [...LIST.map((s) => [s.t, COL[s.k], SG[s.k], s.items.length]), ['Terminados antes', COL.finished, I.check, 23], ['Sin estado', COL.none, I.dot, 41]];
+  h += `<div class="p4col"><h4>MI LISTA</h4>${rows.map(([n, c, ic, k], i) => `<div class="scat${i === LF.s ? ' on' : ''}" style="--c:${c}"><i>${ic}</i>${n}<em>${k}</em></div>`).join('')}</div>`;
+  h += `<div class="p4head" style="--acc:${COL.pending}"><h3>Pendientes</h3><span>11 juegos · en tu orden</span><span style="margin-left:auto;font-weight:700"><b style="color:#3a414e">${focusList.n}</b> · #3</span></div>`;
+  h += p4Grid(LIST[1].items, LF.i, COL.pending);
+  h += hints([['A', 'Abrir'], ['Y', 'Estado'], ['←', 'Lista'], ['LT/RT', 'Pestaña'], ['B', 'Volver']]);
+  return S(h);
+}
+function p4Coll() {
+  const c = COLLS[0];
+  let h = bg(focusColl) + topBar(['Inicio', 'Juegos']);
+  h += ttabs('coll', { topY: 84, left: 64 });
+  h += `<div class="glass panel static p4pan"><div class="face"></div></div>`;
+  h += `<div class="p4col"><h4>COLECCIONES</h4>${COLLS.map((k, i) => `<div class="scat${i === CF.c ? ' on' : ''}" style="--c:${k.c}"><i>${I.saga}</i>${k.n}<em>${k.items.length}</em></div>`).join('')}<hr><div class="scat" style="--c:#8a93a3"><i>${I.plus}</i>Nueva colección</div></div>`;
+  h += `<div class="p4head" style="--acc:${c.c}"><h3>${c.n}</h3><span>${c.items.length} juegos · ${c.shots} capturas</span>${tline(c.items, CF.i, { w: 200 })}<span class="hint pill"><span class="btn x">X</span>Capturas</span></div>`;
+  h += p4Grid(c.items, CF.i, c.c, true);
+  h += hints([['A', 'Abrir'], ['Y', 'Editar'], ['←', 'Lista'], ['LT/RT', 'Pestaña'], ['B', 'Volver']]);
+  return S(h);
+}
+
+/* =====================================================================
+   P5 · Carrusel (como el modo carrusel de «Todos»)
+   ===================================================================== */
+function p5Track(items, q, acc, chip) {
+  let h = '';
+  for (let i = Math.max(0, q - 3); i < Math.min(items.length, q + 4); i++) {
+    h += cov(items[i], { left: 640 - 100 + (i - q) * 240, top: 228, w: 200, h: 266, r: 26, bw: 10, fr: 18, f: i === q, cls: 'p5c', acc, extra: chip(items[i], i) });
+  }
+  return h;
+}
+function p5List() {
+  const x = focusList;
+  let h = bg(x) + topBar(['Inicio', 'Juegos']);
+  h += ttabs('list', { car: true, topY: 84 });
+  h += `<div class="p5pills">${LIST.map((s, i) => `<div class="dpill pill${i === LF.s ? ' f' : ''}" style="--dc:${COL[s.k]}"><i>${SG[s.k]}</i>${s.t}<small>${s.items.length}</small></div>`).join('')}</div>`;
+  h += p5Track(LIST[1].items, LF.i, COL.pending, (it) => `<span class="cb">${it.l}</span>`);
+  h += `<div class="cinfo"><h3>${x.n}</h3><p>Pendiente #3 de 11 · sin partidas todavía · 48 capturas</p></div>`;
+  h += hints([['A', 'Abrir'], ['Y', 'Estado'], ['↑↓', 'Estante'], ['LB/RB', 'Mover'], ['LT/RT', 'Pestaña'], ['B', 'Volver']]);
+  return S(h);
+}
+function p5Coll() {
+  const c = COLLS[0], x = focusColl;
+  let h = bg(x) + topBar(['Inicio', 'Juegos']);
+  h += ttabs('coll', { car: true, topY: 84 });
+  h += `<div class="p5pills">${COLLS.map((k, i) => `<div class="dpill pill${i === CF.c ? ' f' : ''}" style="--dc:${k.c}"><i>${I.saga}</i>${k.n}<small>${k.items.length}</small></div>`).join('')}<div class="dpill pill" style="--dc:#8a93a3"><i>${I.plus}</i>Nueva</div></div>`;
+  h += p5Track(c.items, CF.i, c.c, (it) => `<span class="cb">${it.l}</span>`);
+  h += `<div class="cinfo" style="--acc:${c.c}"><h3>${x.n}</h3><div style="display:flex;justify-content:center;gap:18px;align-items:center;margin-top:8px">${tline(c.items, CF.i, { w: 300 })}<span style="font-size:17px;font-weight:600;color:#6f7787">312 capturas · 4 de 10</span></div></div>`;
+  h += hints([['A', 'Abrir'], ['X', 'Capturas'], ['Y', 'Editar'], ['↑↓', 'Colección'], ['LT/RT', 'Pestaña'], ['B', 'Volver']]);
+  return S(h);
+}
+
+/* =====================================================================
+   Diálogos (comunes a todas las propuestas)
+   ===================================================================== */
+function dlgStatusNow() {
+  let h = bg(focusList) + topBar(['Inicio', 'Juegos']) + `<div class="scrim"></div>`;
+  h += `<div class="glass panel static" style="left:170px;top:190px;width:940px;height:250px;--r:36px;z-index:21"><div class="face" style="padding:20px 30px 16px"><h2 style="margin:0;font-size:26px;font-weight:800">Estado del juego</h2><p class="msub">${focusList.n}</p><div class="schips">${['none', 'pending', 'playing', 'finished', 'dropped'].map((s, i) => `<div class="schip${i === 3 ? ' f' : ''}${s === 'pending' ? ' cur' : ''}" style="--c:${COL[s]}"><i>${s === 'finished' ? I.check : ''}</i><b>${SL[s] || 'Sin estado'}</b></div>`).join('')}</div><p style="margin:8px 4px 0;font-size:16px;font-weight:600;color:#5f6776">A para guardar. Después eliges la fecha y la nota.</p></div></div>`;
+  h += `<div class="hints" style="z-index:30">${hints([['←→', 'Elegir'], ['A', 'Confirmar'], ['B', 'Cerrar']]).replace(/^<div class="hints">|<\/div>$/g, '')}</div>`;
+  return S(h);
+}
+function dlgStatusNew() {
+  let h = bg(focusList) + topBar(['Inicio', 'Juegos']) + `<div class="scrim"></div>`;
+  const rows = ['none', 'pending', 'playing', 'finished', 'dropped'];
+  h += `<div class="glass panel static" style="left:430px;top:131px;width:420px;height:458px;--r:36px;z-index:21;--acc:${COL.finished}"><div class="face" style="padding:22px 30px 18px"><h2 style="margin:0;font-size:26px;font-weight:800">Estado del juego</h2><p class="msub">${focusList.n}</p>${rows.map((s, i) => `<div class="srow${i === 3 ? ' f' : ''}" style="height:54px;--c:${COL[s]};--acc:${COL[s]}"><span class="mic">${SG[s]}</span><span class="sl">${SL[s] || 'Sin estado'}</span>${s === 'pending' ? '<span class="ok">Actual</span>' : ''}</div>`).join('')}</div></div>`;
+  h += `<div class="hints" style="z-index:30">${hints([['A', 'Elegir'], ['B', 'Cerrar']]).replace(/^<div class="hints">|<\/div>$/g, '')}</div>`;
+  return S(h);
+}
+function dlgPickerNew() {
+  const c = COLLS[0];
+  let h = bg(null, c.c) + topBar(['Juegos', 'Trails', 'Elegir juegos']);
+  h += `<div class="thead" style="--acc:${c.c}"><h3>Trails from Zero</h3><span class="chip">En la colección</span><span>Salió en <b>2010</b></span></div>`;
+  h += `<div class="ttabs" style="--acc:${c.c}"><div class="pksearch pill" style="margin-right:10px"><span class="mic" style="--c:${c.c};width:28px;height:28px">${I.search}</span>Buscar juego…<span class="btn y" style="margin-left:auto">Y</span></div><span class="btn sh">LT</span><span class="tflt">Todos<small>128</small></span><span class="tflt on">Seleccionados<small>10</small></span><span class="btn sh">RT</span></div>`;
+  const pool = [...c.items, ...TODOS.slice(0, 4)];
+  const cw = 106, ch = 142, gap = 32, gx = (1280 - 7 * cw - 6 * gap) / 2, s = cw / 160;
+  pool.slice(0, 14).forEach((x, j) => {
+    const sel = j < 10;
+    h += cov(x, { left: gx + (j % 7) * (cw + gap), top: 204 + Math.floor(j / 7) * (ch + 22), w: cw, h: ch, r: 22 * s, bw: 8 * s, fr: 15 * s, f: j === 3, acc: c.c, cls: sel ? 'on' : '', extra: sel ? `<span class="pkchk" style="--acc:${c.c}">${I.check}</span>` : '' });
+  });
+  h += hints([['A', 'Marcar'], ['X', 'Marcar todos'], ['Y', 'Buscar'], ['LT/RT', 'Filtro'], ['Start', 'Guardar'], ['B', 'Atrás']]);
+  return S(h);
+}
+
+/* =====================================================================
+   Propuestas
+   ===================================================================== */
+const PROPS = [
+  { id: 'hoy', nav: 'Hoy', t: 'Hoy · cómo se ve ahora', idea: 'Punto de partida para comparar: «Todos» (cuadrícula) frente a «Mi lista» y «Colecciones» con la estantería «pestaña sobre balda» (Shelf.svelte). Fíjate en los bloques de color saturado siempre encendidos, las etiquetas de 12 px, el margen de 56 px que no casa con la barra de pestañas y que no se ve el nombre del juego enfocado.',
+    shots: [['Referencia · Todos', 'Titles.svelte', refTodos], ['Mi lista (actual)', 'Shelf.svelte', nowList], ['Colecciones (actual)', 'CollTab.svelte', nowColl]] },
+  { id: 'p1', nav: 'P1 · Secciones', t: 'P1 · Secciones de Inicio', idea: 'Cada estante se convierte en una sección como «Seguir jugando» de Inicio: rótulo sencillo con el icono de color del dock, portadas de cristal del tamaño de «Todos» y debajo un texto como el de las tarjetas recientes. Arriba vuelve la cabecera de «Todos» con el juego enfocado. El color del estado solo aparece en el icono, en el foco y en la etiqueta enfocada.',
+    shots: [['Referencia · Todos', 'Titles.svelte', refTodos], ['Mi lista', 'propuesta', p1List], ['Colecciones', 'propuesta', p1Coll]],
+    cambia: ['Fuera la pestaña de color y la balda: rótulo de sección (icono 28 px con el círculo del dock + título 21 px + datos 15 px).', 'Portadas 120×160 con los radios de .tcov (antes 104×139); 8 por fila con fundido a la derecha y «+N ›».', 'Cabecera .thead (x=96, 32 px) con el juego enfocado, su estado y sus datos.', 'Etiquetas bajo la portada a 14 px en gris; la enfocada, en el color del estado.', 'La barra de pestañas deja de cambiar de color (siempre el acento de la interfaz).', 'Colecciones: línea de tiempo neutra (pista gris, puntos del color) y la pista «X Capturas» al final del rótulo.'],
+    pro: ['Es literalmente el mismo lenguaje que Inicio y «Todos»: márgenes x=96, .thead, cristal y foco idénticos.', 'Portadas un 33 % más grandes y textos ≥ 14 px: se lee mejor en la tele.', 'Se ve el nombre del juego enfocado sin abrirlo.', 'Mucho menos ruido de color con dos o tres estantes a la vista.'],
+    con: ['Pierde la personalidad de «estantería»; los estados se distinguen menos de un vistazo.', 'Caben 8 portadas por fila en vez de 9 y las secciones ocupan más alto.', 'El color propio de cada colección (aurora o multicolor) desaparece casi del todo.'],
+    esf: 2, files: ['<code>src/components/Shelf.svelte</code>: marcado del rótulo y estilos (sin .stab/.sboard/.slip).', '<code>src/lib/milista.svelte.ts</code>: SHELF_CW/CH/PITCH/STEP y LIST_VIS.', '<code>src/screens/Titles.svelte</code>: .thead también en «Mi lista»; quitar tabsAcc (líneas 51 y 116).', '<code>src/screens/CollTab.svelte</code>: línea de tiempo neutra y pista X.', '<code>src/app.css</code>: .lclip.'] },
+  { id: 'p2', nav: 'P2 · Balda de cristal', rec: true, t: 'P2 · Balda de cristal', idea: 'Se queda la estantería (rótulo + balda + borde con etiquetas), pero hecha con las mismas piezas que el resto: el rótulo es una píldora .pill con el icono cuadrado .mic de los menús, la balda es el .glass de las portadas y el borde es neutro. El color de estado o de colección solo se enciende en la estantería enfocada, igual que una fila .srow.f de un menú.',
+    shots: [['Referencia · Todos', 'Titles.svelte', refTodos], ['Mi lista', 'propuesta', p2List], ['Colecciones', 'propuesta', p2Coll]],
+    cambia: ['Rótulo: .pill blanca (46 px) con .mic del color del estado, título 22 px gris oscuro y datos 15 px. En la estantería enfocada pasa al degradado de .srow.f.', 'Balda: receta .glass (canto, brillo y destello) con radio 26 simétrico; ya no hay radios 6/20/22.', 'Borde: gris neutro, etiquetas a 13 px; la enfocada, en chip de color como .tflt.on.', 'Márgenes: x=64 / ancho 1152 (como la ficha), alineado con la barra de pestañas.', 'Colecciones: la aurora o el multicolor pasa a ser un tinte muy suave dentro de la balda; la línea de tiempo y la pista X van en el rótulo.', 'Barra de pestañas con el acento de la interfaz (sin recolorear).'],
+    pro: ['Mantiene lo que ya funciona: estanterías, 9 portadas, navegación, SHELF_STEP = 241 y el código de controlador intacto.', 'Usa recetas que ya existen (.pill, .glass, .mic, .srow.f, .tflt.on): una sola forma de «cristal» y una sola forma de «foco».', 'Solo hay un bloque de color a la vez: el del estante en el que estás.', 'Es el cambio más barato y el más fácil de deshacer.'],
+    con: ['Las portadas siguen siendo pequeñas (104×139).', 'Los estantes no enfocados quedan más «grises»: se pierde algo de alegría.', 'No enseña el nombre del juego enfocado (se puede sumar la .thead de P1).'],
+    esf: 1, files: ['<code>src/components/Shelf.svelte</code>: estilos (unas 40 líneas) y el .mic del rótulo (nueva prop <code>icon</code>).', '<code>src/screens/CollTab.svelte</code>: línea de tiempo neutra (.ctl/.ctr) y la pista X como .hint normal.', '<code>src/lib/coleccion.svelte.ts</code>: <code>tabLook</code> devuelve el tinte de la balda en vez del de la pestaña.', '<code>src/screens/Titles.svelte</code>: pasar el icono de estado y quitar tabsAcc (51, 116).'] },
+  { id: 'p3', nav: 'P3 · Cabecera de ficha', t: 'P3 · Cabecera de ficha', idea: 'Toma la ficha del juego (Detail) como modelo: arriba un banner de cristal con el arte del juego enfocado, su nombre grande y su estado; debajo, una barra segmentada como la de Estadísticas para elegir estante, y una sola fila de portadas grandes. En Colecciones el banner es el de la colección con su línea de tiempo.',
+    shots: [['Referencia · Ficha', 'Detail.svelte', refDetail], ['Mi lista', 'propuesta', p3List], ['Colecciones', 'propuesta', p3Coll]],
+    cambia: ['Banner .glass 1152×206 (receta .banner) con el hero difuminado, nombre a 50 px y pastillas .stpill/.relpill de la ficha.', 'Selector de estante: barra segmentada tipo .stabs de Estadísticas (LB/RB), con el color de cada estado o colección.', 'Una sola fila de portadas 132×177 (el tamaño de «Todos» a 6 por fila).', 'La barra de pestañas sube a y=84.'],
+    pro: ['Pantalla muy «de consola»: la más vistosa y la más parecida a la ficha.', 'Ves todo sobre el juego enfocado sin entrar.', 'Escala igual con 3 o con 30 colecciones (los segmentos se desplazan).'],
+    con: ['Se pierde la vista de conjunto: solo un estante a la vez.', 'Cambia la navegación: ↑↓ ya no salta de estante (LB/RB lo hace y «Mover» en Pendientes necesita otro botón).', 'Carga un hero por foco; con el HDD lento puede notarse.'],
+    esf: 3, files: ['<code>src/screens/Titles.svelte</code>: cabecera nueva y modo de un solo estante.', '<code>src/components/Shelf.svelte</code>: variante de una fila grande.', '<code>src/lib/milista.svelte.ts</code> y <code>src/lib/coleccion.svelte.ts</code>: navegación (listMove/collMove) y botón de «Mover».', '<code>src/lib/controller.svelte.ts</code>: LB/RB en estas pestañas.', '<code>src/screens/CollTab.svelte</code>: banner de colección.'] },
+  { id: 'p4', nav: 'P4 · Dos columnas', t: 'P4 · Panel de dos columnas', idea: 'Inspirado en Ajustes: un gran panel de cristal con la lista de estados o colecciones a la izquierda (filas .scat con su cuadrado de color y el número) y a la derecha la cuadrícula del estante elegido. Es la forma más ordenada de ver muchos juegos de golpe.',
+    shots: [['Referencia · Ajustes', 'Settings.svelte', refSettings], ['Mi lista', 'propuesta', p4List], ['Colecciones', 'propuesta', p4Coll]],
+    cambia: ['Panel .glass 1184×526 (radio 36) con la columna .scats de Ajustes (270 px) y el cuerpo con cabecera y cuadrícula.', 'Cuadrícula de 6×2 portadas 106×142 con etiqueta debajo; «Terminados antes» y «Sin estado» también aparecen en la lista.', 'Colecciones: cabecera con línea de tiempo y «X Capturas»; «Nueva colección» al final de la lista y como baldosa.'],
+    pro: ['Cuadra con Ajustes y Estadísticas, las pantallas más «limpias».', 'Muestra 12 juegos del estante a la vez y la lista entera de estados.', 'Va muy bien con muchas colecciones o con Pendientes largos.'],
+    con: ['Parece más un menú que una biblioteca: se pierde el carácter de estantería.', 'Dos zonas de foco (lista y cuadrícula): más pulsaciones para cambiar de estante.', 'El trabajo más grande: componente nuevo y navegación nueva.'],
+    esf: 3, files: ['Componente nuevo (p. ej. <code>src/components/ShelfPanel.svelte</code>) en lugar de Shelf.', '<code>src/screens/Titles.svelte</code> y <code>src/screens/CollTab.svelte</code>.', '<code>src/lib/milista.svelte.ts</code>, <code>src/lib/coleccion.svelte.ts</code>: foco en dos zonas.', '<code>src/app.css</code>: reutiliza .secpanel/.scats.'] },
+  { id: 'p5', nav: 'P5 · Carrusel', t: 'P5 · Carrusel por estante', idea: 'El modo carrusel de «Todos» aplicado a cada estante: portada central grande, las demás atenuadas a .78 y el nombre debajo (.cinfo). Encima, los estados o colecciones son pastillas como las del dock de Inicio, cada una con su color.',
+    shots: [['Referencia · Todos (carrusel)', 'Titles.svelte', refCarousel], ['Mi lista', 'propuesta', p5List], ['Colecciones', 'propuesta', p5Coll]],
+    cambia: ['Carrusel .ctrack/.ccover (200×266, foco ×1,32) en vez de la balda.', 'Pastillas .dpill del dock (círculo de color + nombre + número) para elegir estante con ↑↓.', 'Etiqueta de cada portada (posición, horas, año) como chip oscuro .gbadge.', 'Colecciones: línea de tiempo bajo el nombre, en .cinfo.'],
+    pro: ['Idéntico al carrusel de «Todos» y al dock de Inicio: cero piezas nuevas.', 'Portadas enormes, ideal para la tele y para el fondo ambiental.', 'Muy fácil de entender con mando.'],
+    con: ['Solo un estante y unas 5 portadas a la vista; poca visión de conjunto.', 'Ordenar Pendientes (LB/RB «Mover») se lee peor en un carrusel.', 'Muchas colecciones no caben en la fila de pastillas (habría que desplazarlas).'],
+    esf: 2, files: ['<code>src/screens/Titles.svelte</code>: reutilizar el bloque de carrusel para list/coll.', '<code>src/components/Shelf.svelte</code>: variante carrusel o componente nuevo.', '<code>src/lib/milista.svelte.ts</code>, <code>src/lib/coleccion.svelte.ts</code>: ↑↓ cambia de estante; ventana virtual del carrusel.', '<code>src/screens/CollTab.svelte</code>.'] },
+  { id: 'dlg', nav: 'Diálogos', t: 'Diálogos de Mi lista y Colecciones (valen para cualquier propuesta)', idea: 'Los diálogos propios de estas pestañas también se salen del resto. Propuesta común: «Estado del juego» como un menú normal (filas .srow con icono .mic, como el menú de opciones), y el selector de juegos con la barra superior, la cabecera .thead y la barra de pestañas de «Todos», en vez de una pantalla con cabecera propia.',
+    shots: [['Estado del juego (actual)', 'StatusBar.svelte', dlgStatusNow], ['Estado del juego (armonizado)', 'propuesta', dlgStatusNew], ['Elegir juegos (armonizado)', 'GamePicker.svelte', dlgPickerNew]],
+    cambia: ['StatusBar: .menupanel a su ancho de diseño (420 px) y filas .srow.mrow con .mic del color de cada estado; «Actual» a la derecha. El paso «Terminado» (fecha y nota) puede quedarse igual.', 'StalledCard: el panel vuelve a 420-680 px; las tres opciones como .tflt fuera de la fila enfocada para no poner color sobre color.', 'GamePicker: TopBar con migas «Juegos › Trails › Elegir juegos», .thead con el juego enfocado, buscador como .pill con .mic, filtros .tflt en la posición de .ttabs y la cuadrícula de «Todos» (7 por fila).', 'CollForm/AddColl ya usan .setpanel y Picker: solo cambiar el selector de color a la fila .accrow del selector de acento.'],
+    pro: ['Todos los diálogos usan la misma fila, el mismo icono y el mismo foco.', 'El selector de juegos deja de parecer otra aplicación.'],
+    con: ['Las baldosas grandes de estado eran muy rápidas de leer; en filas se ve menos «botón».'],
+    esf: 1, files: ['<code>src/screens/StatusBar.svelte</code>', '<code>src/screens/StalledCard.svelte</code>', '<code>src/screens/GamePicker.svelte</code>', '<code>src/screens/CollForm.svelte</code> (detalle del color)'] },
+  { id: 'diff', nav: 'Diferencias', t: 'Diferencias detectadas', diff: true },
+  { id: 'rec', nav: 'Recomendación', t: 'Recomendación', rec2: true },
+];
+
+const DIFF = [
+  ['Cabecera', 'No hay cabecera: el título vive en la pestaña de cada estantería (<code>Shelf.svelte:60-68</code>) y el nombre del juego enfocado no aparece en ninguna parte, solo su etiqueta del borde (<code>Shelf.svelte:88</code>).', '«Todos» tiene .thead con el juego enfocado, sus capturas y horas (<code>Titles.svelte:160-167</code>, <code>app.css:106,460</code>); la ficha, banner y logo.'],
+  ['Color', 'Cada estantería es un bloque saturado siempre encendido (<code>Shelf.svelte:103-104</code>) más un borde teñido (<code>Shelf.svelte:131-133</code>), auroras (<code>Shelf.svelte:113-114</code>) o degradado multicolor (<code>coleccion.svelte.ts:84</code>). Con 2-3 estantes a la vista salen 2-3 colores fuertes a la vez, y la barra de pestañas se tiñe con el estado (<code>Titles.svelte:51,116</code>).', 'El color solo marca el foco y chips pequeños: <code>.glass.f</code> (<code>app.css:50</code>), <code>.srow.f</code> (<code>app.css:213</code>), <code>.tflt.on</code> (<code>app.css:478</code>), <code>.thead .chip</code> (<code>app.css:108</code>).'],
+  ['Radios', 'Únicos radios asimétricos de la app: pestaña 20/20/6/20 y balda 6/22/22/22 (<code>Shelf.svelte:102,116</code>).', 'Radios simétricos: portadas 16-26 (<code>app.css:104,479</code>), paneles 36-40 (<code>app.css:204,234</code>), píldoras 999.'],
+  ['Cristal', 'La balda es una tercera receta de cristal sin canto, brillo ni destello (<code>Shelf.svelte:116-119</code>).', 'Dos recetas: <code>.glass</code> (<code>app.css:26-48</code>) y <code>.pill</code> (<code>app.css:62-64</code>).'],
+  ['Tamaños y texto', 'Portadas 104×139 (<code>milista.svelte.ts:13-14</code>); etiquetas 12 px y estrellas 10 px (<code>Shelf.svelte:136-137</code>), texto sin portada 12 px (<code>Shelf.svelte:130</code>), línea de tiempo 12 px (<code>CollTab.svelte:88</code>). Título 27 px (<code>Shelf.svelte:105</code>).', '«Todos» 160×214 o 132×177 (<code>tgrid.ts:5-6</code>). Texto mínimo 13-15 px: <code>.msub</code> 15 (<code>app.css:237</code>), <code>.rbox .k</code> 14 (<code>app.css:543</code>), <code>.xl</code> 13 (<code>app.css:638</code>). Títulos 32 (<code>.thead h3</code>), 28 (<code>.ghead h3</code>), 18 (<code>.hsect</code>, <code>app.css:421</code>).'],
+  ['Márgenes', 'Estanterías en x=56, ancho 1168 (<code>Shelf.svelte:99</code>): no se alinean con la barra de pestañas de encima (x=96).', '.thead y .ttabs en x=96 (<code>app.css:106,466</code>), ficha en x=64 (<code>app.css:264</code>), Estadísticas en x=48 (<code>app.css:531</code>).'],
+  ['Atenuado', 'Estantería no enfocada a opacidad .72 (<code>Shelf.svelte:101</code>).', 'Carrusel .78 (<code>app.css:116</code>); ocultos .42 + desaturado (<code>app.css:340</code>). Tres valores distintos para «no activo».'],
+  ['Estados', 'El mismo estado se dibuja de cinco maneras: pestaña de estantería, <code>.schip</code> en baldosas de 84 px (<code>StatusBar.svelte:81-89</code>), <code>.tflt</code> con acento de estado dentro de una fila que ya se tiñe al enfocarse (<code>StalledCard.svelte:39</code>).', '<code>.sbadge</code> en la cuadrícula (<code>app.css:783</code>), <code>.stpill</code> en la ficha (<code>app.css:778</code>); los menús son filas <code>.srow</code> con <code>.mic</code> (<code>ActionMenu.svelte:89-90</code>).'],
+  ['Iconos', 'Círculo del dock copiado en «Capturas» (<code>CollTab.svelte:96</code>), cuadradito de radio 7 en el buscador (<code>GamePicker.svelte:90</code>), círculo de 22 px en <code>.schip i</code> (<code>StatusBar.svelte:83</code>).', 'Menús: <code>.mic</code> 30 px radio 10 (<code>app.css:239</code>); Ajustes: <code>.scat i</code> 32 px radio 10 (<code>app.css:513</code>); dock: <code>.dpill i</code> (<code>app.css:444</code>).'],
+  ['Pistas de mando', '«X Capturas» va dentro de la pestaña de la estantería (<code>CollTab.svelte:65</code>): la única pista fuera de la barra inferior.', 'Todas las pistas en <code>.hints</code> abajo a la derecha (<code>app.css:86</code>) o en .ttabs.'],
+  ['Selector de juegos', 'Pantalla sin TopBar ni migas, cabecera h2 30 px en x=69 (<code>GamePicker.svelte:82-84</code>), buscador con su propia receta de píldora (<code>GamePicker.svelte:86-87</code>) y fondo casi opaco .95 (<code>GamePicker.svelte:81</code>).', 'Overlays sobre <code>.scrim</code> .55 (<code>app.css:203</code>) con .setpanel/.menupanel; pantallas con TopBar.'],
+  ['Paneles', 'StatusBar y StalledCard estiran .menupanel a 940 y 840 px (<code>StatusBar.svelte:77</code>, <code>StalledCard.svelte:54</code>).', '.menupanel diseñado a 420 px (<code>app.css:234</code>); paneles anchos usan .setpanel/.formpanel (<code>app.css:204,245</code>).'],
+];
+
+/* =====================================================================
+   Página: navegación, escalado y mando
+   ===================================================================== */
+let cur = 0, pick = 1;
+const nav = document.getElementById('nav'), secs = document.getElementById('secs');
+nav.innerHTML = PROPS.map((p, i) => `<button data-i="${i}" class="${p.rec ? 'rec' : ''}">${p.nav}</button>`).join('') + '<span class="kb">LB/RB o Q/E · ←→ · A/Intro · B/Esc</span>';
+const meter = (n) => `<div class="meter">${[1, 2, 3].map((k) => `<i class="${k <= n ? 'on' : ''}"></i>`).join('')}</div>`;
+const ESF = ['', 'Bajo', 'Medio', 'Alto'];
+secs.innerHTML = PROPS.map((p, i) => {
+  if (p.diff) return `<section class="pg-sec" data-i="${i}"><h2>${p.t}</h2><p class="idea">Dónde se separan hoy «Mi lista» y «Colecciones» del resto de la interfaz, con su sitio exacto en el código.</p><table class="diff"><thead><tr><th>Aspecto</th><th>Mi lista / Colecciones</th><th>Resto de la interfaz</th></tr></thead><tbody>${DIFF.map((r) => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</tbody></table></section>`;
+  if (p.rec2) return `<section class="pg-sec" data-i="${i}"><h2>${p.t}</h2><div class="pg-info" style="grid-template-columns:1.4fr 1fr">
+    <div class="pg-card"><h3>P2 · Balda de cristal, con la cabecera de P1</h3>
+      <p>Es la que más armoniza por menos coste: deja la estantería (lo que da carácter a estas pestañas y lo que ya está programado y probado) pero la construye con las piezas que usa todo lo demás: <code>.pill</code>, <code>.glass</code>, <code>.mic</code>, <code>.srow.f</code> y <code>.tflt.on</code>. Con eso desaparecen los radios asimétricos, la tercera receta de cristal y los tres bloques de color a la vez.</p>
+      <p>Sumaría dos cosas de P1: la cabecera <code>.thead</code> con el juego enfocado (resuelve que hoy no se vea su nombre) y subir las etiquetas a 13-14 px. Y aplicaría ya los diálogos armonizados (Estado como menú y el selector de juegos con TopBar), que son independientes.</p>
+      <p>P3 y P5 son más vistosas pero cambian la navegación y esconden la visión de conjunto; P4 es la mejor si las colecciones crecen a decenas, pero parece un menú. Quedan como alternativas para más adelante.</p></div>
+    <div class="pg-card"><h3>Orden sugerido</h3><ul><li>1. Shelf.svelte con las recetas comunes (P2).</li><li>2. Barra de pestañas sin recolorear.</li><li>3. .thead del juego enfocado en «Mi lista» y «Colecciones».</li><li>4. Estado del juego como menú .srow.</li><li>5. Selector de juegos con TopBar y .thead.</li></ul><p style="margin-top:10px">Nada de esto toca las categorías ni cómo se detectan: todo sigue dentro de cada una.</p></div></div></section>`;
+  const info = p.cambia ? `<div class="pg-info"><div class="pg-card"><h3>Qué cambia</h3><ul>${p.cambia.map((x) => `<li>${x}</li>`).join('')}</ul></div>
+    <div class="pg-card pro"><h3>Pros</h3><ul>${p.pro.map((x) => `<li>${x}</li>`).join('')}</ul><h3 style="margin-top:12px;color:#c8283e">Contras</h3><ul>${p.con.map((x) => `<li>${x}</li>`).join('')}</ul></div>
+    <div class="pg-card"><h3>Esfuerzo: ${ESF[p.esf]}</h3>${meter(p.esf)}<ul>${p.files.map((x) => `<li>${x}</li>`).join('')}</ul></div></div>` : '';
+  return `<section class="pg-sec" data-i="${i}"><h2>${p.t}${p.rec ? '<small>Recomendada</small>' : ''}</h2><p class="idea">${p.idea}</p>
+    <div class="pg-trio">${p.shots.map(([l, s], k) => `<div class="pg-th" data-k="${k}"><div class="lab">${l}<span>${s}</span></div><div class="frame">${p.shots[k][2]()}</div></div>`).join('')}</div>
+    <div class="pg-big"><div class="frame" data-big></div><div class="cap"><span data-cap></span><button data-full>Pantalla completa (A)</button></div></div>${info}</section>`;
+}).join('');
+
+function fit(root = document) {
+  root.querySelectorAll('.frame').forEach((f) => { const w = f.clientWidth; if (w) f.style.setProperty('--k', (w / 1280).toFixed(4)); });
+}
+new ResizeObserver(() => fit()).observe(document.body);
+function sec() { return secs.querySelector(`.pg-sec[data-i="${cur}"]`); }
+function render() {
+  nav.querySelectorAll('button').forEach((b) => b.classList.toggle('on', +b.dataset.i === cur));
+  secs.querySelectorAll('.pg-sec').forEach((s) => s.classList.toggle('on', +s.dataset.i === cur));
+  const p = PROPS[cur], s = sec();
+  if (p.shots) {
+    s.querySelectorAll('.pg-th').forEach((t) => t.classList.toggle('sel', +t.dataset.k === pick));
+    s.querySelector('[data-big]').innerHTML = p.shots[pick][2]();
+    s.querySelector('[data-cap]').innerHTML = `<b>${p.shots[pick][0]}</b> · ${p.shots[pick][1]} · 1280×720`;
+  }
+  requestAnimationFrame(() => fit());
+}
+function go(i) { cur = (i + PROPS.length) % PROPS.length; pick = PROPS[cur].shots ? Math.min(pick, 2) : pick; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function sel(d) { if (!PROPS[cur].shots) return; pick = (pick + d + 3) % 3; render(); }
+const ov = document.getElementById('ov'), ovf = document.getElementById('ovf');
+function openFull() { const p = PROPS[cur]; if (!p.shots) return; ovf.innerHTML = p.shots[pick][2](); ov.classList.add('on'); requestAnimationFrame(() => fit(ov)); }
+function closeFull() { ov.classList.remove('on'); }
+nav.addEventListener('click', (e) => { const b = e.target.closest('button[data-i]'); if (b) go(+b.dataset.i); });
+secs.addEventListener('click', (e) => {
+  const t = e.target.closest('.pg-th'); if (t) { pick = +t.dataset.k; render(); return; }
+  if (e.target.closest('[data-full]') || e.target.closest('[data-big]')) openFull();
+});
+ov.addEventListener('click', closeFull);
+window.addEventListener('resize', () => fit(ov));
+document.addEventListener('keydown', (e) => {
+  const k = e.key;
+  if (ov.classList.contains('on')) { if (k === 'Escape' || k === 'Backspace') closeFull(); else if (k === 'ArrowRight') { sel(1); openFull(); } else if (k === 'ArrowLeft') { sel(-1); openFull(); } return; }
+  if (k === 'q' || k === 'Q' || k === 'PageUp') go(cur - 1);
+  else if (k === 'e' || k === 'E' || k === 'PageDown') go(cur + 1);
+  else if (k === 'ArrowRight') sel(1);
+  else if (k === 'ArrowLeft') sel(-1);
+  else if (k === 'Enter') openFull();
+  else return;
+  e.preventDefault();
+});
+// Mando (API Gamepad): LB/RB propuesta, cruceta ←→ pantalla, ↑↓ desplazar, A pantalla completa, B cerrar.
+const prev = {};
+function poll() {
+  for (const pad of navigator.getGamepads ? navigator.getGamepads() : []) {
+    if (!pad) continue;
+    const press = (i) => { const v = !!pad.buttons[i]?.pressed; const was = prev[pad.index + ':' + i]; prev[pad.index + ':' + i] = v; return v && !was; };
+    const inFull = ov.classList.contains('on');
+    if (press(4)) go(cur - 1);
+    if (press(5)) go(cur + 1);
+    if (press(14)) { sel(-1); if (inFull) openFull(); }
+    if (press(15)) { sel(1); if (inFull) openFull(); }
+    if (press(0)) openFull();
+    if (press(1)) closeFull();
+    if (pad.buttons[12]?.pressed) window.scrollBy(0, -18);
+    if (pad.buttons[13]?.pressed) window.scrollBy(0, 18);
+    const ay = pad.axes[1] || 0; if (Math.abs(ay) > 0.3) window.scrollBy(0, ay * 22);
+  }
+  requestAnimationFrame(poll);
+}
+requestAnimationFrame(poll);
+go(PROPS.findIndex((p) => p.rec));
+</script>
+</body>
+</html>
