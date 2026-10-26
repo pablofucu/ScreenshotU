@@ -2,7 +2,7 @@
 import { SvelteSet } from 'svelte/reactivity';
 import { RAINBOW, type Accent } from '@shared/icons';
 import { inkDark } from '@shared/oklch';
-import { withSagas } from '@shared/sagas';
+import type { Saga } from '@shared/types';
 import type { Library, Shot, Title } from '@shared/types';
 import type { EvoKind, PeriodKind } from '@shared/stats';
 import { AuthError, demoSource, RemoteSource, type Playing, type RemoteConfig, type ServerCfg, type Snapshot, type Source } from './source';
@@ -29,6 +29,42 @@ export const accentOf = (c: string, dark: boolean, n = 'Personalizado'): Accent 
 
 const EMPTY_LIB: Library = { platforms: [], hidden: [] };
 const DEFAULT_CFG: RemoteConfig = { goalVn: 60, goalJvn: 30, accentMode: 'art', accentFixed: 4 };
+
+const EMPTY_SAGA: Omit<Title, 'name' | 'cover' | 'shots' | 'id' | 'members'> = {
+  hero: null, logo: null, folder: '', dir: '', hasFolder: false, gameId: null, source: null, launchable: false,
+  removable: false, lastPlayed: null, playSeconds: 0, launcher: null, sessions: 0, firstPlayed: null,
+  week: [0, 0, 0, 0, 0, 0, 0], plays: [], hidden: false, accent: null, accentOverride: null, sortMode: null,
+};
+
+function withSagas(lib: Library, sagas: Saga[]): Library {
+  return {
+    ...lib,
+    platforms: lib.platforms.map((p) => {
+      const match = sagas.filter((s) => s.platform === p.id);
+      if (!match.length) return p;
+      const byId = new Map<string, Title>();
+      for (const t of p.titles) if (!t.hidden) byId.set(t.id, t);
+      const sagaTitles: Title[] = match.map((s) => {
+        const members = s.members.map((id) => byId.get(id)).filter((t): t is Title => !!t);
+        const shots: Shot[] = members
+          .flatMap((t) => t.shots.map((x) => ({ ...x, game: t.name, gid: t.id })))
+          .sort((a, b) => b.date - a.date);
+        const covers = members.map((t) => t.cover ?? t.shots[0]?.path ?? null);
+        const accHex = s.color != null && s.color >= 0 && s.color < RAINBOW.length ? RAINBOW[s.color].c : null;
+        return {
+          ...EMPTY_SAGA,
+          id: s.id.startsWith('saga:') ? s.id : `saga:${s.id}`,
+          name: s.name,
+          cover: covers.find(Boolean) ?? null,
+          shots,
+          accentOverride: accHex,
+          members: members.map((t, i) => ({ id: t.id, name: t.name, cover: covers[i] })),
+        };
+      });
+      return { ...p, titles: [...p.titles, ...sagaTitles] };
+    }),
+  };
+}
 
 class Store {
   /* ---------- conexión ---------- */

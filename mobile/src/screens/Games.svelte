@@ -7,13 +7,11 @@
 
   const FILTERS = [['all', 'Todos'], ['played', 'Jugados'], ['shots', 'Con capturas'], ['favs', 'Con favoritas'], ['az', 'A–Z']] as const;
   const P = $derived(app.lib.platforms[app.gamesPlat]);
-  const isSaga = $derived(P?.id === 'sagas');
   const list = $derived.by(() => {
     if (!P) return [];
     let all = P.titles.map((t, ti) => ({ t, ti }));
     const q = app.gamesQuery.trim().toLowerCase();
     if (q) all = all.filter(({ t }) => t.name.toLowerCase().includes(q));
-    if (isSaga) return all;
     switch (app.gamesFilter) {
       case 'played': return all.filter(({ t }) => (t.plays?.length ?? 0) > 0 || t.playSeconds > 0);
       case 'shots': return all.filter(({ t }) => t.shots.length > 0);
@@ -39,16 +37,14 @@
 {#if P}
   <div class="thead">
     <h2>{P.name}</h2>
-    <span>{isSaga ? `${P.titles.length} sagas` : nTitulos(P.titles.length)} · {nCapturas(shots)}{hours > 3600 ? ` · ${fmtDur(hours)}` : ''}</span>
+    <span>{nTitulos(P.titles.length)} · {nCapturas(shots)}{hours > 3600 ? ` · ${fmtDur(hours)}` : ''}</span>
   </div>
   <div class="tools">
     <label class="search pill"><i>{@html ICON.search}</i><input placeholder="Buscar en {P.name}" bind:value={app.gamesQuery} enterkeyhint="search" /></label>
   </div>
-  {#if !isSaga}
-    <div class="chips">
-      {#each FILTERS as [k, n] (k)}<button class="chip pill" class:on={app.gamesFilter === k} onclick={() => (app.gamesFilter = k)}>{n}</button>{/each}
-    </div>
-  {/if}
+  <div class="chips">
+    {#each FILTERS as [k, n] (k)}<button class="chip pill" class:on={app.gamesFilter === k} onclick={() => (app.gamesFilter = k)}>{n}</button>{/each}
+  </div>
   <div class="grid">
     {#each list as { t, ti } (t.id)}
       {@const a = app.titleAcc(app.gamesPlat, ti)}

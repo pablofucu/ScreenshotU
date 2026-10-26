@@ -106,7 +106,7 @@ export interface Shot {
   gid?: string;
 }
 /** Saga antigua (la usa la app del móvil); en el escritorio son `Collection`. */
-export interface Saga { id: string; name: string; members: string[] }
+export interface Saga { id: string; name: string; members: string[]; platform?: string | null; color?: number | null }
 /** Colección: agrupación virtual de juegos de una sola categoría (no mueve ni copia capturas). `platform` null = saga
  *  antigua aún sin convertir; `color` null = automático, si no el índice en `RAINBOW`. */
 export interface Collection { id: string; name: string; members: string[]; platform: string | null; color: number | null }

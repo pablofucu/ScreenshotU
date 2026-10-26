@@ -43,7 +43,7 @@ Todo lo que necesita la app móvil, de una vez:
   "config": { "goalVn": 60, "goalJvn": 30, "accentMode": "art", "accentFixed": 4 },
   "library": { "platforms": [ /* Platform[] con sus Title[] y Shot[] */ ], "hidden": [] },
   "favorites": [ "D:\\Capturas\\PC\\Elden Ring\\2024-03-09 21-05-44.png" ],
-  "sagas": [ { "id": "s1", "name": "Zelda", "members": ["switch/Zelda TOTK"] } ],
+  "sagas": [ { "id": "s1", "name": "Zelda", "members": ["switch/Zelda TOTK"], "platform": "switch", "color": 2 } ],
   "playing": { "id": "manual:18a", "name": "Elden Ring", "since": 1760979000000 }
 }
 ```
@@ -51,7 +51,12 @@ Todo lo que necesita la app móvil, de una vez:
 - `library` es exactamente lo que devuelve `scan_library` en el escritorio, **sin los juegos ocultos**
   (`Title.plays` trae las partidas `[inicio, fin]` en ms, que es de donde salen todas las estadísticas y las
   metas diarias).
-- `sagas` son las agrupaciones del usuario (el móvil construye la categoría «Sagas» igual que el escritorio).
+- `sagas` son las agrupaciones del usuario (colecciones dentro de su categoría, nunca mezclan títulos entre plataformas). Cada objeto `Saga` incluye:
+  - `id`: identificador de la saga.
+  - `name`: nombre visible.
+  - `members`: lista de identificadores de títulos pertenecientes a la saga.
+  - `platform`: id de la plataforma/categoría a la que pertenece la saga (`null` si es una saga antigua sin migrar).
+  - `color`: índice manual del color (número `0..6`, correspondiente a la paleta de acentos) o `null` si es automático (sacado de las portadas).
 - `playing` es la partida en curso lanzada desde el visor, o `null`.
 - Las rutas (`Shot.path`, `Title.cover`, `hero`, `logo`) son **identificadores opacos**: el móvil nunca las
   interpreta salvo para mostrar el nombre del archivo; solo las devuelve en `p=` para pedir la imagen.

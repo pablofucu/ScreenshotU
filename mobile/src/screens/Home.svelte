@@ -13,7 +13,6 @@
   const recent = $derived.by(() => {
     const out: Array<{ pi: number; ti: number; k: number }> = [];
     app.lib.platforms.forEach((p, pi) => {
-      if (p.id === 'sagas') return;
       p.titles.forEach((t, ti) => {
         const k = Math.max(t.lastPlayed ?? 0, t.shots[0]?.date ?? 0);
         if (k > 0) out.push({ pi, ti, k });
@@ -30,7 +29,6 @@
     // Fechas de capturas: hora local codificada como UTC.
     const off = (ms: number) => ms - new Date(ms).getTimezoneOffset() * 60000;
     for (const p of app.lib.platforms) {
-      if (p.id === 'sagas') continue;
       for (const t of p.titles) {
         for (const [s, e] of t.plays ?? []) {
           if (e <= a || s >= b) continue;
@@ -103,7 +101,7 @@
     {@const a = app.platAcc(pi)}
     <button class="plat" onclick={() => openPlat(pi)} style="--pc:{a.c};--acc:{a.c}">
       <span class="glass tap icon"><span class="face">{@html ICON[p.icon] ?? ICON.pc}</span></span>
-      <span class="pl">{p.name}<small>{p.id === 'sagas' ? `${p.titles.length} ${p.titles.length === 1 ? 'saga' : 'sagas'}` : `${nTitulos(p.titles.length)} · ${nCapturas(count(pi))}`}</small></span>
+      <span class="pl">{p.name}<small>{nTitulos(p.titles.length)} · {nCapturas(count(pi))}</small></span>
     </button>
   {/each}
 </div>
