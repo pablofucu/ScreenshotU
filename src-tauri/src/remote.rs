@@ -41,8 +41,8 @@ impl Provider for AppProvider {
     }
 }
 
-/// El acceso desde el movil queda fuera de la 1.0: mientras sea `false` el servidor nunca arranca.
-const REMOTE_AVAILABLE: bool = false;
+/// El acceso desde el móvil está activo; el guard de apply() sirve como interruptor de desarrollo.
+const REMOTE_AVAILABLE: bool = true;
 
 /// Pone el servidor como dice la configuracion: lo arranca, lo para, lo reinicia si cambio el puerto o le
 /// pasa el codigo nuevo. Si esta activado y no hay codigo, genera uno y lo guarda.

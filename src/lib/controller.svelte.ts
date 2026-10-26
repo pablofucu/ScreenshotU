@@ -1090,7 +1090,7 @@ export const SETTING_SECTIONS: Array<{ name: string; icon: string; color: number
   { name: 'Magpie', icon: 'image', color: 6, rows: ['magpieexe', 'magpie'] },
   { name: 'Copias', icon: 'import', color: 0, rows: ['backup', 'backupmedia', 'restore', 'autobackup'] },
   { name: 'Partidas', icon: 'pad', color: 1, rows: ['savesauto', 'ludusavi'] },
-  // Móvil: fuera de la 1.0 (código en remote.svelte.ts; ver REMOTE_AVAILABLE en src-tauri/src/remote.rs).
+  { name: 'Móvil', icon: 'phone', color: 4, rows: ['remoteon', 'remoteaddr', 'remotecode', 'remotehelp'] },
   { name: 'Sistema', icon: 'gear', color: 2, rows: ['sound', 'fullscreen', 'monitor', 'oncursor', 'update', 'quit'] },
 ];
 const secRows = () => SETTING_SECTIONS[app.setSec]?.rows ?? [];
