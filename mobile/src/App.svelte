@@ -12,6 +12,8 @@
   import Detail from './screens/Detail.svelte';
   import Shots from './screens/Shots.svelte';
   import Viewer from './screens/Viewer.svelte';
+  import Connect from './screens/Connect.svelte';
+  import Settings from './screens/Settings.svelte';
 
   const bg = buildBackground();
 
@@ -91,14 +93,7 @@
 
 <div id="scroller" style={app.route.v === 'viewer' ? 'padding:0;overflow:hidden;z-index:30;' : undefined}>
   {#if !app.server}
-    <div class="screen pad" style="display:flex;align-items:center;justify-content:center;min-height:50vh;">
-      <div class="glass panel" style="width:100%;max-width:320px;text-align:center;">
-        <span class="face" style="padding:28px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;">
-          <h2 style="margin:0;font-size:22px;font-weight:800;">Conectar</h2>
-          <p class="muted" style="margin:0;font-size:14px;">Conéctate a tu visor de escritorio para ver tus juegos y capturas.</p>
-        </span>
-      </div>
-    </div>
+    <Connect />
   {:else}
     {#key app.navKey}
       <div class="screen {app.dir}" style={app.route.v === 'viewer' ? 'animation:none;height:100%;' : undefined}>
@@ -111,14 +106,7 @@
         {:else if app.route.v === 'favs'}
           <Favs />
         {:else if app.route.v === 'settings'}
-          <div class="pad" style="padding-top:14px;">
-            <div class="glass panel">
-              <span class="face" style="padding:24px 20px;text-align:center;">
-                <h2 style="margin:0 0 8px;font-size:20px;font-weight:800;">Ajustes</h2>
-                <p class="muted" style="margin:0;font-size:14px;">Próximamente disponible en el móvil.</p>
-              </span>
-            </div>
-          </div>
+          <Settings />
         {:else if app.route.v === 'detail'}
           <Detail id={app.route.id} />
         {:else if app.route.v === 'shots'}

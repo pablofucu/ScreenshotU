@@ -73,6 +73,7 @@ export async function hello(host: string, port: number): Promise<{ name: string;
   if (!r.ok) throw new NetError(`Respuesta inesperada (${r.status})`);
   const j = await r.json().catch(() => null);
   if (!j || j.app !== 'visor-capturas') throw new NetError('En esa dirección no hay un visor de capturas');
+  if (j.api !== 1) throw new Error('El servidor usa una versión de API no compatible');
   return { name: String(j.name ?? 'PC'), api: Number(j.api ?? 1) };
 }
 
