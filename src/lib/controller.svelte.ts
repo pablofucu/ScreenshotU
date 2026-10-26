@@ -341,6 +341,8 @@ export function menuItemsFor(t: Title): MenuItem[] {
   items.push('accent');
   if (!t.members && t.id) items.push('status', 'release', 'addcoll');
   if (t.gameId && !t.members) items.push('saves');
+  // Ejecutable y carpeta de trabajo: solo juegos .exe añadidos a mano (no emuladores). Se cambian cuando se quiera.
+  if (t.launchable && t.source === 'manual' && t.gameId) items.push('setexe', 'setdir');
   // Escalado con Magpie: solo juegos .exe (no emuladores).
   if (t.launchable && t.source === 'manual' && t.gameId) items.push('magpie');
   if (t.gameId && t.removable && !t.members && app.config.platforms.length > 1) items.push('category');
@@ -410,6 +412,7 @@ export async function menuAct(item: MenuItem) {
   if (item === 'hide' || item === 'unhide') { await toggleHideTitle(t, item === 'hide'); return; }
   if (item === 'accent') { openAccentPicker(); return; }
   if (item === 'magpie') { void cycleMagpie(t); return; }
+  if (item === 'setexe' || item === 'setdir') { void changeGamePath(t, item); return; }
   if (item === 'status') { openStatusBar(app.menu.title); return; }
   if (item === 'release') { openRelease(app.menu.title); return; }
   if (item === 'addcoll') { const ti = app.menu.title; closeOverlay(); openAddColl(ti); return; }
@@ -462,6 +465,25 @@ export async function menuAct(item: MenuItem) {
     catch (e) { toast(String(e), 3200); }
   }
   blip(1320);
+}
+
+/** Cambia el ejecutable o la carpeta de trabajo de un juego .exe; se aplica en el próximo lanzamiento. */
+async function changeGamePath(t: Title, item: 'setexe' | 'setdir') {
+  closeOverlay();
+  try {
+    if (item === 'setexe') {
+      const exe = await backend.pickFile('exe');
+      if (!exe) return;
+      await backend.setGamePaths(t.gameId!, exe);
+      toast(`Ejecutable de «${t.name}» cambiado`);
+    } else {
+      const dir = await backend.pickFolder('Carpeta de trabajo del juego');
+      if (!dir) return;
+      await backend.setGamePaths(t.gameId!, undefined, dir);
+      toast(`Carpeta de trabajo de «${t.name}» cambiada`);
+    }
+    await softRefresh();
+  } catch (e) { toast(String(e), 3200); }
 }
 
 export const MAGPIE_LABEL: Record<MagpieMode, string> = { off: 'Desactivado', auto: 'Automático', '2x': 'Forzar 2x', '4x': 'Forzar 4x' };

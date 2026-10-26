@@ -208,6 +208,10 @@ pub const MIGRATIONS: &[&str] = &[
         auto     INTEGER NOT NULL DEFAULT 0
     );
     "#,
+    // 10: carpeta de trabajo de un juego .exe (vacia = la de su ejecutable). Se cambia desde la ficha.
+    r#"
+    ALTER TABLE games ADD COLUMN workdir TEXT NOT NULL DEFAULT '';
+    "#,
 ];
 
 /// Version del esquema que entiende esta compilacion.

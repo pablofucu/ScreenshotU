@@ -18,7 +18,13 @@ pub enum Source {
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum Launch {
     /// Un ejecutable con argumentos opcionales (cadena tal y como la escribe el usuario).
-    Exe { exe: String, args: String },
+    /// `workdir` vacio = la carpeta del ejecutable.
+    Exe {
+        exe: String,
+        args: String,
+        #[serde(default)]
+        workdir: String,
+    },
     /// Emulador + plantilla de argumentos con `{rom}` + ruta de la ROM.
     Emulator { exe: String, args: String, rom: String },
     /// Sin lanzador: solo una carpeta de capturas que se quiere tener en la lista.
@@ -30,8 +36,16 @@ impl Launch {
     pub fn command(&self) -> Option<(String, Vec<String>)> {
         match self {
             Launch::None => None,
-            Launch::Exe { exe, args } => Some((exe.clone(), split_args(args))),
+            Launch::Exe { exe, args, .. } => Some((exe.clone(), split_args(args))),
             Launch::Emulator { exe, args, rom } => Some((exe.clone(), build_emulator_args(args, rom))),
+        }
+    }
+
+    /// Carpeta en la que arranca el programa, si se eligió una distinta a la de su ejecutable.
+    pub fn workdir(&self) -> Option<&str> {
+        match self {
+            Launch::Exe { workdir, .. } if !workdir.is_empty() => Some(workdir),
+            _ => None,
         }
     }
 }
@@ -257,6 +271,9 @@ pub struct ManualGame {
     pub platform: String,
     #[serde(default)]
     pub folder: Option<String>,
+    /// Carpeta de trabajo del `exe` (vacia = la de su ejecutable).
+    #[serde(default)]
+    pub workdir: String,
 }
 
 /// Formato del antiguo `games.json` (solo lo lee la importacion y los tests).
@@ -280,6 +297,8 @@ pub const MANUAL_KINDS: &[&str] = &["exe", "emulator", "captures"];
 pub fn manual_to_game(m: &ManualGame) -> Option<Game> {
     let emu = m.kind == "emulator";
     let exe_dir = Path::new(&m.exe).parent().map(|p| p.to_string_lossy().into_owned()).filter(|p| !p.is_empty());
+    let workdir = m.workdir.trim().to_string();
+    let exe_dir = if workdir.is_empty() || m.kind != "exe" { exe_dir } else { Some(workdir.clone()) };
     let folder = m.folder.clone().filter(|f| !f.trim().is_empty()).unwrap_or_else(|| sanitize_folder_name(&m.name));
     let base = |source: Source, launch: Launch, install_dir: Option<String>| Game {
         id: m.id.clone(),
@@ -297,7 +316,7 @@ pub fn manual_to_game(m: &ManualGame) -> Option<Game> {
     Some(match m.kind.as_str() {
         "captures" => base(Source::Manual, Launch::None, None),
         "emulator" if emu => base(Source::Emulator, Launch::Emulator { exe: m.exe.clone(), args: m.args.clone(), rom: m.rom.clone() }, exe_dir),
-        "exe" => base(Source::Manual, Launch::Exe { exe: m.exe.clone(), args: m.args.clone() }, exe_dir),
+        "exe" => base(Source::Manual, Launch::Exe { exe: m.exe.clone(), args: m.args.clone(), workdir }, exe_dir),
         _ => return None,
     })
 }

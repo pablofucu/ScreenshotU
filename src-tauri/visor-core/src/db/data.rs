@@ -88,10 +88,10 @@ pub fn favorites_relativize(c: &Connection, root: &std::path::Path) -> Result<us
 /* ------------------------------------------------------------------ */
 
 pub fn manual_load(c: &Connection) -> Result<Vec<ManualGame>> {
-    let mut st = c.prepare("SELECT id, name, kind, exe, args, rom, platform, folder FROM games ORDER BY rowid")?;
+    let mut st = c.prepare("SELECT id, name, kind, exe, args, rom, platform, folder, workdir FROM games ORDER BY rowid")?;
     let v = st
         .query_map([], |r| {
-            Ok(ManualGame { id: r.get(0)?, name: r.get(1)?, kind: r.get(2)?, exe: r.get(3)?, args: r.get(4)?, rom: r.get(5)?, platform: r.get(6)?, folder: r.get(7)? })
+            Ok(ManualGame { id: r.get(0)?, name: r.get(1)?, kind: r.get(2)?, exe: r.get(3)?, args: r.get(4)?, rom: r.get(5)?, platform: r.get(6)?, folder: r.get(7)?, workdir: r.get(8)? })
         })?
         .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(v)
@@ -100,9 +100,21 @@ pub fn manual_load(c: &Connection) -> Result<Vec<ManualGame>> {
 /// Anade un juego; si el id ya existe se ignora (devuelve `false`).
 pub fn manual_add(c: &Connection, g: &ManualGame) -> Result<bool> {
     let n = c.execute(
-        "INSERT OR IGNORE INTO games(id, name, kind, exe, args, rom, platform, folder) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-        params![g.id, g.name, g.kind, g.exe, g.args, g.rom, g.platform, g.folder],
+        "INSERT OR IGNORE INTO games(id, name, kind, exe, args, rom, platform, folder, workdir) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+        params![g.id, g.name, g.kind, g.exe, g.args, g.rom, g.platform, g.folder, g.workdir],
     )?;
+    Ok(n > 0)
+}
+
+/// Cambia el ejecutable y/o la carpeta de trabajo de un juego añadido a mano (`None` = no se toca). `false` si no existe.
+pub fn manual_set_paths(c: &Connection, id: &str, exe: Option<&str>, workdir: Option<&str>) -> Result<bool> {
+    let mut n = 0;
+    if let Some(exe) = exe {
+        n += c.execute("UPDATE games SET exe = ?2 WHERE id = ?1", [id, exe])?;
+    }
+    if let Some(workdir) = workdir {
+        n += c.execute("UPDATE games SET workdir = ?2 WHERE id = ?1", [id, workdir])?;
+    }
     Ok(n > 0)
 }
 

@@ -733,6 +733,43 @@ fn remove_game(state: State<'_, AppState>, id: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Cambia el ejecutable y/o la carpeta de trabajo de un juego .exe anadido a mano, cuando se quiera (`None` = no se
+/// toca; `workdir` vacio = volver a la carpeta del ejecutable). Solo escribe en la base y en la lista en memoria.
+#[tauri::command]
+fn set_game_paths(state: State<'_, AppState>, id: String, exe: Option<String>, workdir: Option<String>) -> Result<(), String> {
+    let exe = exe.map(|e| e.trim().to_string());
+    let workdir = workdir.map(|w| w.trim().to_string());
+    if let Some(e) = &exe {
+        if !Path::new(e).is_file() {
+            return Err("El ejecutable no existe".into());
+        }
+    }
+    if let Some(w) = workdir.as_deref().filter(|w| !w.is_empty()) {
+        if !Path::new(w).is_dir() {
+            return Err("La carpeta no existe".into());
+        }
+    }
+    let list = state.db.with(dbd::manual_load).map_err(|e| e.to_string())?;
+    let g = list.iter().find(|g| g.id == id).ok_or("Solo se pueden cambiar los juegos .exe anadidos a mano")?;
+    if g.kind != "exe" {
+        return Err("Solo se pueden cambiar los juegos .exe".into());
+    }
+    state.db.with(|c| dbd::manual_set_paths(c, &id, exe.as_deref(), workdir.as_deref())).map_err(|e| e.to_string())?;
+    let mut updated = g.clone();
+    if let Some(e) = exe {
+        updated.exe = e;
+    }
+    if let Some(w) = workdir {
+        updated.workdir = w;
+    }
+    let fresh = games::manual_to_game(&updated).ok_or("Juego no válido")?;
+    if let Some(cached) = state.games.lock().unwrap().iter_mut().find(|x| x.id == id) {
+        cached.launch = fresh.launch;
+        cached.install_dir = fresh.install_dir;
+    }
+    Ok(())
+}
+
 /// Pasa un juego anadido a mano a otra categoria: mueve su carpeta de capturas (si existe) y cambia su
 /// plataforma. El id no cambia, asi que horas, estado, sagas y frases lo siguen solos.
 #[tauri::command]
@@ -1104,6 +1141,7 @@ pub fn run() {
             reveal_in_explorer,
             remove_game,
             move_game_platform,
+            set_game_paths,
             capture_now,
             sgdb::sgdb_auto,
             sgdb::sgdb_search,

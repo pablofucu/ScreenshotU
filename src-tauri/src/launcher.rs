@@ -42,12 +42,16 @@ pub fn reveal(path: &std::path::Path) -> Result<(), String> {
     }
 }
 
-fn spawn_exe(exe: &str, args: &[String]) -> Result<Child, String> {
+fn spawn_exe(exe: &str, args: &[String], workdir: Option<&str>) -> Result<Child, String> {
     let mut c = Command::new(exe);
     c.args(args);
-    if let Some(dir) = std::path::Path::new(exe).parent().filter(|d| d.is_dir()) {
-        c.current_dir(dir);
-    }
+    match workdir.map(std::path::Path::new).filter(|d| d.is_dir()) {
+        Some(dir) => c.current_dir(dir),
+        None => match std::path::Path::new(exe).parent().filter(|d| d.is_dir()) {
+            Some(dir) => c.current_dir(dir),
+            None => &mut c,
+        },
+    };
     c.spawn().map_err(|e| format!("No se pudo iniciar {exe}: {e}"))
 }
 
@@ -98,7 +102,7 @@ pub fn start(app: &AppHandle, game: Game) -> Result<(), String> {
         }
     }
     allow_foreground();
-    let child: Option<Child> = match spawn_exe(&exe, &args) {
+    let child: Option<Child> = match spawn_exe(&exe, &args, game.launch.workdir()) {
         Ok(c) => Some(c),
         Err(e) => {
             crate::display::restore_primary(&st.config_dir);

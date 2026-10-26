@@ -190,6 +190,7 @@ async function tauriBackend(): Promise<Backend> {
     },
     removeGame: (id) => invoke('remove_game', { id }),
     moveGamePlatform: (id, platform) => invoke('move_game_platform', { id, platform }),
+    setGamePaths: (id, exe, workdir) => invoke('set_game_paths', { id, exe: exe ?? null, workdir: workdir ?? null }),
     async pickFile(kind) {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const r = await open({

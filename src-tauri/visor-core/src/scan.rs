@@ -550,7 +550,7 @@ mod tests {
         use crate::games::Launch;
         Game {
             id: id.into(), name: name.into(), source: Source::Manual, platform: platform.into(), folder: folder.into(),
-            launch: Launch::Exe { exe: "a.exe".into(), args: String::new() }, install_dir: None, cover: Some("/cache/1.jpg".into()),
+            launch: Launch::Exe { exe: "a.exe".into(), args: String::new(), workdir: String::new() }, install_dir: None, cover: Some("/cache/1.jpg".into()),
             hero: Some("/cache/1_hero.jpg".into()), logo: Some("/cache/1_logo.png".into()), removable: false,
         }
     }

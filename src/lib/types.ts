@@ -301,6 +301,8 @@ export interface Backend {
   removeGame(gameId: string): Promise<void>;
   /** Pasa un juego añadido a mano a otra categoría (mueve su carpeta de capturas). */
   moveGamePlatform(gameId: string, platform: string): Promise<void>;
+  /** Cambia el ejecutable y/o la carpeta de trabajo de un juego .exe añadido a mano (`undefined` = no se toca; "" = la del ejecutable). */
+  setGamePaths(gameId: string, exe?: string, workdir?: string): Promise<void>;
   pickFile(kind: 'exe' | 'rom' | 'image'): Promise<string | null>;
   /** Diálogo de guardar: devuelve la ruta elegida o null. */
   pickSaveZip(defaultName: string): Promise<string | null>;

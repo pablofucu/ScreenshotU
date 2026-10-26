@@ -68,7 +68,7 @@ export const DEFAULT_CONFIG: Config = {
 
 export type MenuItem =
   | 'folder' | 'reload' | 'remove' | 'hide' | 'unhide' | 'addshots' | 'accent'
-  | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'addcoll' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'release' | 'saves' | 'category' | 'delshot' | 'delsel' | `cat:${string}`
+  | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'addcoll' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'release' | 'saves' | 'category' | 'delshot' | 'delsel' | 'setexe' | 'setdir' | `cat:${string}`
   /* Menú de Start de la lista de juegos (y «Salida de audio», también en el de capturas). */
   | 'filter' | `flt:${string}` | 'tsize' | 'audio' | 'settings';
 export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'collform' | 'picker' | 'addcoll' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library' | 'status' | 'release' | 'stalled';

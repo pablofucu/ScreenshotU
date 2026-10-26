@@ -47,6 +47,8 @@
       case 'sgdb': return 'Grafismos (SteamGridDB o del PC)…';
       case 'phrases': return 'Frases y repaso…';
       case 'saves': return 'Partidas guardadas…';
+      case 'setexe': return 'Cambiar ejecutable…';
+      case 'setdir': return 'Cambiar carpeta de trabajo…';
       case 'magpie': return magpie.label;
       case 'status': return `Estado: ${STATUS_LABEL[t?.status ?? 'none']}`;
       case 'release': return t?.release ? `Fecha de lanzamiento: ${fmtRelease(t.release)}` : 'Fecha de lanzamiento…';
@@ -67,7 +69,7 @@
   });
   const icon = (it: MenuItem) => it.startsWith('flt:') ? (app.titleFilter === it.slice(4) ? ICON.check : '') : it === 'category' || it.startsWith('cat:') ? ICON.move : ({
     folder: ICON.folder, reload: ICON.reload, remove: ICON.power, addshots: ICON.image, accent: ICON.palette, hide: ICON.eyeOff,
-    unhide: ICON.eye, magpie: ICON.image, select: ICON.check, unselect: ICON.check, selall: ICON.checks, move: ICON.move, reveal: ICON.folder, delshot: ICON.trash, delsel: ICON.trash, addcoll: ICON.saga, sgdb: ICON.search, phrases: ICON.jvn, status: ICON.checks, release: ICON.calendar, saves: ICON.import, filter: ICON.search, tsize: ICON.image, audio: ICON.speaker, settings: ICON.gear,
+    unhide: ICON.eye, setexe: ICON.folder, setdir: ICON.folder, magpie: ICON.image, select: ICON.check, unselect: ICON.check, selall: ICON.checks, move: ICON.move, reveal: ICON.folder, delshot: ICON.trash, delsel: ICON.trash, addcoll: ICON.saga, sgdb: ICON.search, phrases: ICON.jvn, status: ICON.checks, release: ICON.calendar, saves: ICON.import, filter: ICON.search, tsize: ICON.image, audio: ICON.speaker, settings: ICON.gear,
   } as Record<string, string>)[it];
   const sub = $derived(
     list ? (app.menu.items[0]?.startsWith('flt:') ? 'Qué juegos se ven en «Todos»' : [app.platform?.name, t?.name].filter(Boolean).join(' · '))

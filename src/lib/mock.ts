@@ -584,6 +584,7 @@ export async function mockBackend(): Promise<Backend> {
     async removeGame(id) {
       for (const p of lib.platforms) p.titles = p.titles.filter((t) => t.gameId !== id);
     },
+    async setGamePaths() {},
     async moveGamePlatform(id, platform) {
       const to = lib.platforms.find((p) => p.id === platform);
       for (const p of lib.platforms) {
