@@ -333,12 +333,12 @@
   .ssub.b{font-size:13px;color:#8a92a0}
 
   /* mapa */
-  .smap{left:464px;top:224px;width:768px;height:184px;padding:14px 20px}
+  .smap{left:464px;top:224px;width:768px;height:184px;padding:14px 20px 8px}
   .stabs{display:flex;align-items:center;gap:3px;height:28px;margin:-4px 0;padding:0 3px;border-radius:999px}
   .stabs .t{height:22px;padding:0 11px;border-radius:999px;display:grid;place-items:center;font-size:14px;font-weight:800;color:#5f6776;cursor:pointer}
   .stabs .t.on{background:var(--c);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--c) 70%,black);cursor:default}
   .stabs .btn{cursor:pointer;transform:scale(.78);margin:0 -3px}
-  .smrow{display:flex;gap:18px;margin-top:10px}
+  .smrow{display:flex;gap:18px;margin-top:6px}
   .sheat{flex:none}
   .scols{display:flex;gap:3px}
   .scols>div{display:flex;flex-direction:column;gap:3px}
@@ -349,7 +349,7 @@
   /* Día reparado (rescate pagado): parche del color del rescate con puntada */
   .scell.rd{box-shadow:0 0 0 1.5px var(--edge);outline:1.5px dashed rgba(255,255,255,.9);outline-offset:-4px}
   @keyframes spop{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
-  .smon{position:relative;height:16px;margin-top:4px}
+  .smon{position:relative;height:14px;margin-top:3px;line-height:14px}
   .smon span{position:absolute;top:0;font-size:12px;font-weight:700;color:#8a92a0}
   .stiles{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
   .stiles .rbox{height:58px;padding:6px 14px;box-shadow:inset 0 0 0 1px rgba(95,110,135,.14);background:#f3f5f8}
@@ -371,16 +371,16 @@
   @keyframes stoast{from{opacity:0;transform:translate(-50%,0) scale(.6)}to{opacity:1;transform:translate(-50%,0) scale(1)}}
 
   /* abajo */
-  .sgames,.shours,.syear{top:424px;height:226px;padding:14px 20px}
+  .sgames,.shours,.syear{top:424px;height:226px;padding:14px 20px 10px}
   .sgames{left:48px;width:470px}
   .shours{left:534px;width:380px}
   .syear{left:930px;width:302px}
-  .sgr{display:grid;grid-template-columns:28px minmax(0,1fr) 120px 64px;align-items:center;gap:10px;height:44px}
+  .sgr{display:grid;grid-template-columns:28px minmax(0,1fr) 120px 64px;align-items:center;gap:10px;height:37px}
   .sgr .nm{font-size:15px;font-weight:800;color:#4a5260;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sgr .gb{height:9px;border-radius:5px;background:#eef1f5;overflow:hidden}
   .sgr .gb b{display:block;height:100%;border-radius:5px;background:var(--c);transition:width 1s .6s cubic-bezier(.3,.8,.3,1)}
   .sgr .tm{font-size:14px;font-weight:800;color:#5f6776;text-align:right;white-space:nowrap}
-  .smore{font-size:13px;font-weight:700;color:#8a92a0;margin-top:2px}
+  .smore{font-size:13px;font-weight:700;color:#8a92a0;margin-top:0;line-height:15px}
   .snone{margin-top:40px;font-size:15px;font-weight:700;color:#8a92a0;text-align:center}
   .shb{display:flex;align-items:flex-end;gap:3px;height:120px;margin-top:12px;border-bottom:2px solid #eef0f3}
   .shb i{flex:1;border-radius:3px 3px 1px 1px;background:color-mix(in srgb,var(--c) 45%,white);transition:height .7s cubic-bezier(.3,.8,.3,1)}
