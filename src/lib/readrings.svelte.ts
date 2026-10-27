@@ -82,15 +82,12 @@ export function createReadRings(o: ReadRingsOpts) {
   const pending = (t: GoalTrack) => t.done && lit[t.key] !== today && !goalLit(t.key, today);
   const shown = (t: GoalTrack) => (pending(t) ? t.streak - 1 : t.streak);
 
-  /** Cumplir la meta es un tono medio; por debajo, más pálido; por encima (1,5× / 2,5× la meta), cada vez más oscuro. */
+  /** Degradado continuo: de muy pálido (poco leído) a tono medio al cumplir la meta (60 %), y de ahí a color pleno a 3× la meta. */
   function cellBg(t: GoalTrack, r: number, isToday: boolean) {
     if (isToday && pending(t)) r = Math.min(r, 0.6);
-    const c = GOAL_COL[t.key].c;
-    if (r >= 2.5) return c;
-    if (r >= 1.5) return c + 'dd';
-    if (r >= 1) return c + 'a0';
-    if (r >= 0.5) return c + '66';
-    return r > 0 ? c + '38' : o.empty;
+    if (!(r > 0)) return o.empty;
+    const p = r < 1 ? 15 + 45 * r : 60 + 40 * Math.min(1, (r - 1) / 2);
+    return `color-mix(in srgb, ${GOAL_COL[t.key].c} ${p.toFixed(1)}%, transparent)`;
   }
 
   // Entrada: los anillos se dibujan al montar (dos fotogramas después, para que la transición arranque).
