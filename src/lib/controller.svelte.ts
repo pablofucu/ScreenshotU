@@ -11,7 +11,7 @@ import {
 } from './ops.svelte';
 import { shotLayout, type ShotLayout } from './shotlayout';
 import { tgrid, TZOOM_MAX } from './tgrid';
-import { EVO_KINDS, PERIOD_KINDS } from './stats';
+import { EVO_KINDS, GMETRICS, PERIOD_KINDS } from './stats';
 import { editSgdbKey, openSgdbPicker, openSgdbTitles, sgdbAuto, sgdbCmd, sgdbTitlesCmd, toggleSgdbAuto } from './sgdb.svelte';
 import { AUDIO_COMBO_PRESETS, AUDIO_HOTKEY_PRESETS, COMBO_PRESETS, HOTKEY_PRESETS, MOUSE_PRESETS, learnKeydown, learnMouse, onLearnPad, startLearn } from './learn.svelte';
 import { READING_ROWS, isReadingId, readingAct, type ReadingId } from './reading.svelte';
@@ -117,6 +117,8 @@ function validKey(view: View, key: string | undefined): string | undefined {
     if (app.statsTab === 'cal' && /^cd\d+$/.test(key)) return app.cal.days[n] && !app.cal.days[n].future ? key : undefined;
   } else if (view === 'evo') {
     if (/^eb\d+$/.test(key)) return n < app.evo.length ? key : undefined;
+  } else if (view === 'gstats') {
+    if (app.gsScope === 'cat' && /^gs\d+$/.test(key)) return n < Math.min(GS_ROWS, app.gsCat.rows.length) ? key : undefined;
   }
   return undefined;
 }
@@ -138,6 +140,7 @@ function defaultKey(view: View): string {
     return 'cd' + (c.today >= 0 ? c.today : c.days.length - 1);
   }
   if (view === 'evo') return app.evo.length ? 'eb' + (app.evo.length - 1) : '';
+  if (view === 'gstats') return app.gsScope === 'cat' && app.gsCat.rows.length ? 'gs0' : '';
   return '';
 }
 
@@ -603,6 +606,11 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
     app.p = +b; app.titleFilter = 'all'; app.titlesTab = 'all'; resetList(); resetColl();
     openTitle(+c);
     app.detailFrom = 'stats';
+  } else if (a === 'gs') {
+    // Juego de la clasificación de la categoría: su ficha (B vuelve a las estadísticas de juego).
+    app.p = +b; app.titleFilter = 'all'; app.titlesTab = 'all'; resetList(); resetColl();
+    openTitle(+c);
+    app.detailFrom = 'gstats';
   } else if (a === 'evo') {
     delete app.fk.evo;
     go('evo', 'fwd');
@@ -682,6 +690,17 @@ function scheduleGoalNotice(gameId: string) {
   backend.goalNotice(gameId, at, text).catch((e) => console.error(e));
 }
 
+/** Cuántas filas de la clasificación de categoría caben sin desplazar. */
+const GS_ROWS = 5;
+
+/** Estadísticas de juego: de un título (Y en Evolución) o de la categoría abierta (Start en la lista). */
+function openGameStats(scope: 'title' | 'cat') {
+  app.gsScope = scope;
+  app.gsFrom = scope === 'title' ? 'evo' : 'titles';
+  delete app.fk.gstats;
+  go('gstats', 'fwd');
+}
+
 export function openStats() {
   app.statsOff = 0; app.calOff = 0; app.yearSel = null; app.yearCard = 0;
   delete app.fk.stats;
@@ -712,6 +731,26 @@ function toggleStatsTab() {
   if (app.statsTab === 'year') { app.yearCard = 0; app.yearSel = null; }
   app.goff = 0;
   delete app.fk.stats;
+  setFocus(defaultKey('stats'));
+  blip(700);
+}
+
+/** LB/RB en las estadísticas de categoría: otra métrica de la clasificación. */
+function gsMetric(d: number) {
+  if (app.gsScope !== 'cat') { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+  const i = GMETRICS.findIndex(([k]) => k === app.gsMetric) + d;
+  if (i < 0 || i >= GMETRICS.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+  app.gsMetric = GMETRICS[i][0];
+  setFocus(defaultKey('gstats'));
+  blip(700);
+}
+
+/** X en la clasificación: siguiente categoría con partidas (la clasificación nunca mezcla categorías). */
+function cycleStatsPlat() {
+  const ps = app.statsPlats;
+  if (ps.length < 2) { bump(screenEl()?.querySelector('.fx.f'), 1, 0); return; }
+  app.statsPlatSel = ps[(ps.indexOf(app.statsPlat) + 1) % ps.length];
+  app.goff = 0;
   setFocus(defaultKey('stats'));
   blip(700);
 }
@@ -808,11 +847,15 @@ export function back() {
     }
   } else if (app.view === 'detail') {
     if (app.detailFrom === 'stats') { go('stats', 'back'); blip(520); return; }
+    if (app.detailFrom === 'gstats') { go('gstats', 'back'); blip(520); return; }
     if (app.titlesTab !== 'coll') app.fk.titles = 'tit' + app.t;
     go('titles', 'back');
   } else if (app.view === 'evo') {
     app.fk.detail = 'dhrs';
     go('detail', 'back');
+  } else if (app.view === 'gstats') {
+    if (app.gsFrom === 'evo') go('evo', 'back');
+    else go('titles', 'back');
   } else if (app.view === 'stats') {
     app.fk.home = 'dock2';
     go('home', 'back');
@@ -833,6 +876,7 @@ export function page(d: number) {
   if (app.view === 'viewer') { stepViewer(d * 10); return; }
   if (app.view === 'streak') { streakSwitch(d); return; }
   if (app.view === 'stats' || app.view === 'evo') { statsKind(d); return; }
+  if (app.view === 'gstats') { gsMetric(d); return; }
   if (app.view === 'titles') {
     const n = app.tview.length;
     if (!n || !onAllTab()) return;
@@ -928,6 +972,7 @@ export function openTitlesMenu() {
     if (app.config.titlesView === 'grid') items.push('tsize');
     if (t?.id && !t.members) items.push('status');
   }
+  if (onAllTab() && app.platform?.titles.some((x) => x.plays?.length || x.playSeconds > 0)) items.push('gstats');
   if (app.audioOutputs.length) items.push('audio');
   items.push('settings');
   app.menu = { kind: 'titles', title: app.t, row: 0, items, confirm: false };
@@ -951,6 +996,9 @@ function titlesMenuAct(item: MenuItem) {
     blip(880);
   } else if (item === 'status') {
     openStatusBar(app.menu.title);
+  } else if (item === 'gstats') {
+    closeOverlay();
+    openGameStats('cat');
   } else if (item === 'settings') {
     closeOverlay();
     openSettings();
@@ -1585,6 +1633,7 @@ export function cmd(c: string) {
         const t = r && app.lib.platforms[r.pi]?.titles[r.ti];
         if (t?.launchable) void playTitle(t); else bump(screenEl()?.querySelector('.fx.f'), 0, 0);
       } else if (app.view === 'titles') cycleTitleOrder();
+      else if (app.view === 'stats' && app.statsTab === 'rank') cycleStatsPlat();
       else toggleFav();
       break;
     case 'lt': trigger(-1); break;
@@ -1601,6 +1650,7 @@ export function cmd(c: string) {
       else if (app.view === 'detail') openDetailMenu();
       else if (app.view === 'shots') cycleSort();
       else if (app.view === 'stats') toggleStatsTab();
+      else if (app.view === 'evo') openGameStats('title');
       break;
     case 'menu':
       if (app.view === 'shots' || app.view === 'viewer') openShotMenu();
@@ -1744,6 +1794,7 @@ function onWheel(e: WheelEvent) {
   wake();
   switch (app.view) {
     case 'home': case 'detail': case 'evo': move(d, 0); break;
+    case 'gstats': move(0, d); break;
     case 'stats': if (app.statsTab === 'rank') move(0, d); else move(d, 0); break;
     case 'titles': {
       if (listTab()) { listCmd(d > 0 ? 'down' : 'up'); break; }

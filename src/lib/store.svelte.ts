@@ -5,9 +5,9 @@ import type { AudioOutput, Config, GameStatus, Library, MagpieStatus, Collection
 import { hexToRgb, inkDark, rgbToLch } from './oklch';
 import { collItems, collectionTitle } from './collections';
 import { GOAL_COL, type GoalKey } from './readgoals';
-import { calendar, evoBuckets, playYears, rankPeriod, yearReview, type EvoKind, type PeriodKind } from './stats';
+import { calendar, categoryStats, evoBuckets, playedPlatforms, playYears, rankPeriod, titleStats, yearReview, type EvoKind, type GMetric, type PeriodKind } from './stats';
 
-export type View = 'home' | 'titles' | 'detail' | 'shots' | 'viewer' | 'stats' | 'evo' | 'streak';
+export type View = 'home' | 'titles' | 'detail' | 'shots' | 'viewer' | 'stats' | 'evo' | 'streak' | 'gstats';
 export type SortMode = SortModeT;
 
 export const DEFAULT_CONFIG: Config = {
@@ -70,7 +70,7 @@ export type MenuItem =
   | 'folder' | 'reload' | 'remove' | 'hide' | 'unhide' | 'addshots' | 'accent'
   | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'addcoll' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'release' | 'saves' | 'category' | 'delshot' | 'delsel' | 'setexe' | 'setdir' | `cat:${string}`
   /* Menú de Start de la lista de juegos (y «Salida de audio», también en el de capturas). */
-  | 'filter' | `flt:${string}` | 'tsize' | 'audio' | 'settings';
+  | 'filter' | `flt:${string}` | 'tsize' | 'audio' | 'settings' | 'gstats';
 export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'collform' | 'picker' | 'addcoll' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library' | 'status' | 'release' | 'stalled';
 /** «Nueva colección» / «Editar colección». */
 export interface CollFormState {
@@ -398,9 +398,20 @@ class Store {
   streakKey = $state<GoalKey>('vn');
   streakFrom = $state<View>('home');
   /** Desde dónde se abrió la ficha (B vuelve allí). */
-  detailFrom = $state<'titles' | 'stats'>('titles');
-  rank = $derived(rankPeriod(this.lib, this.statsKind, this.statsOff, this.now.getTime()));
+  detailFrom = $state<'titles' | 'stats' | 'gstats'>('titles');
+  /** Estadísticas de juego: de un título (desde Evolución) o de la categoría abierta (desde Start en la lista), métrica elegida y pantalla de origen. */
+  gsScope = $state<'title' | 'cat'>('title');
+  gsMetric = $state<GMetric>('time');
+  gsFrom = $state<'evo' | 'titles'>('evo');
+  /** Categoría de la clasificación (índice en `lib.platforms`; si ya no tiene partidas, la primera que las tenga). */
+  statsPlatSel = $state(-1);
+  statsPlats = $derived(playedPlatforms(this.lib));
+  statsPlat = $derived(this.statsPlats.includes(this.statsPlatSel) ? this.statsPlatSel : (this.statsPlats[0] ?? -1));
+  rank = $derived(rankPeriod(this.lib, this.statsKind, this.statsOff, this.now.getTime(), this.statsPlat));
   cal = $derived(calendar(this.lib, this.calOff, this.now.getTime()));
+  /** Estadísticas de juego del título abierto y de la categoría abierta. */
+  gsTitle = $derived.by(() => { const t = this.lib.platforms[this.p]?.titles[this.t]; return t ? titleStats(t) : null; });
+  gsCat = $derived(categoryStats(this.lib, this.p, this.gsMetric));
   years = $derived(playYears(this.lib));
   /** Año mostrado en el resumen anual. */
   yearNow = $derived(this.yearSel !== null && this.years.includes(this.yearSel) ? this.yearSel : (this.years.at(-1) ?? new Date().getFullYear()));

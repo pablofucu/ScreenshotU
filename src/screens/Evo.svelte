@@ -104,5 +104,5 @@
     </div>
   {/if}
 
-  <Hints list={[['LB/RB', 'Escala', 'rb'], ['B', 'Volver', 'b']]} />
+  <Hints list={[['LB/RB', 'Escala', 'rb'], ['Y', 'Estadísticas de juego', 'y'], ['B', 'Volver', 'b']]} />
 {/if}

@@ -74,6 +74,10 @@
       {#each PERIOD_KINDS as [k, l]}<span class="t" class:on={app.statsKind === k}>{l}</span>{/each}
       <span class="btn sh" data-hact="rb">RB</span>
     </div>
+    <div class="stper pill" data-hact="x">
+      <span class="btn sh">X</span>
+      <b>{pname(app.statsPlat) || 'Sin partidas'}</b>
+    </div>
     {#if !all}
       <div class="stper pill">
         <span class="btn sh" class:off={!canOlder} data-hact="lt">LT</span>
@@ -168,7 +172,7 @@
     {/if}
   {/if}
 
-  <Hints list={[['A', 'Ver juego', 'a'], ['Y', 'Calendario', 'y'], ['B', 'Volver', 'b']]} />
+  <Hints list={[['A', 'Ver juego', 'a'], ['X', 'Categoría', 'x'], ['Y', 'Calendario', 'y'], ['B', 'Volver', 'b']]} />
 {:else}
   <div class="stsum">
     <div class="rbox"><div class="k">Días con partida</div><div class="v acc">{C.played} <small>de {C.elapsed}</small></div></div>

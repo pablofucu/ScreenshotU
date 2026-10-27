@@ -94,13 +94,20 @@ export interface PeriodStats {
   older: boolean;
 }
 
-export function rankPeriod(lib: Library, kind: PeriodKind, off: number, now = Date.now()): PeriodStats {
+/** Índices de las categorías con algún juego jugado (las únicas entre las que se reparte la clasificación). */
+export function playedPlatforms(lib: Library): number[] {
+  return [...new Set(games(lib).map((g) => g.pi))].sort((a, b) => a - b);
+}
+
+/** Clasificación de UNA categoría (`pi`): nunca mezcla títulos de plataformas distintas. */
+export function rankPeriod(lib: Library, kind: PeriodKind, off: number, now = Date.now(), pi = -1): PeriodStats {
   const range = periodRange(kind, off, now);
   const prev = kind === 'all' ? null : periodRange(kind, off - 1, now);
   const days = new Set<number>();
   const rows: RankRow[] = [];
   let first = Infinity, prevAll = 0, prevN = 0;
   for (const g of games(lib)) {
+    if (g.pi !== pi) continue;
     const plays = (g.t.plays ?? []) as Play[];
     let ms = 0, n = 0, prevMs = 0;
     for (const p of plays) {
@@ -125,6 +132,55 @@ export function rankPeriod(lib: Library, kind: PeriodKind, off: number, now = Da
     prevMs: prevAll, prevN,
     older: first < range.from && kind !== 'all',
   };
+}
+
+/* ---------- estadísticas de juego (por título y por categoría) ---------- */
+export interface TitleStats {
+  ms: number; sessions: number; avg: number; days: number;
+  longest: { ms: number; at: number } | null;
+  last: { ms: number; at: number } | null;
+  first: number | null;
+}
+
+/** Cifras de un juego a partir de sus partidas (el tiempo del formato antiguo, sin partidas, también cuenta). */
+export function titleStats(t: Title): TitleStats {
+  const plays = (t.plays ?? []) as Play[];
+  const days = new Set<number>();
+  let sum = 0, longest: TitleStats['longest'] = null;
+  for (const p of plays) {
+    const ms = p[1] - p[0];
+    sum += ms;
+    if (!longest || ms > longest.ms) longest = { ms, at: p[0] };
+    eachDay(p, -Infinity, Infinity, (d) => days.add(d));
+  }
+  const ms = Math.max(sum, t.playSeconds * 1000), sessions = Math.max(plays.length, t.sessions);
+  const l = plays.at(-1);
+  return {
+    ms, sessions, avg: sessions ? ms / sessions : 0, days: days.size, longest,
+    last: l ? { ms: l[1] - l[0], at: l[0] } : null,
+    first: plays[0]?.[0] ?? t.firstPlayed ?? null,
+  };
+}
+
+export type GMetric = 'time' | 'sessions' | 'longest' | 'avg';
+export const GMETRICS: Array<[GMetric, string]> = [['time', 'Más jugados'], ['sessions', 'Más partidas'], ['longest', 'Sesión récord'], ['avg', 'Partida media']];
+export interface GRow extends GameRef { v: number; ts: TitleStats }
+export interface CategoryStats { rows: GRow[]; ms: number; sessions: number; games: number; longest: { ms: number; t: Title } | null }
+
+/** Clasificación de UNA categoría por la métrica elegida: nunca mezcla títulos de categorías distintas. */
+export function categoryStats(lib: Library, pi: number, metric: GMetric): CategoryStats {
+  const rows: GRow[] = [];
+  let ms = 0, sessions = 0, longest: CategoryStats['longest'] = null;
+  for (const g of games(lib)) {
+    if (g.pi !== pi) continue;
+    const ts = titleStats(g.t);
+    ms += ts.ms; sessions += ts.sessions;
+    if (ts.longest && (!longest || ts.longest.ms > longest.ms)) longest = { ms: ts.longest.ms, t: g.t };
+    const v = metric === 'time' ? ts.ms : metric === 'sessions' ? ts.sessions : metric === 'longest' ? (ts.longest?.ms ?? 0) : ts.avg;
+    if (v > 0) rows.push({ ...g, v, ts });
+  }
+  rows.sort((a, b) => b.v - a.v || b.ts.ms - a.ts.ms || a.t.name.localeCompare(b.t.name));
+  return { rows, ms, sessions, games: games(lib).filter((g) => g.pi === pi).length, longest };
 }
 
 /* ---------- calendario ---------- */
