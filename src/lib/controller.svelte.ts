@@ -348,7 +348,33 @@ export function menuItemsFor(t: Title): MenuItem[] {
   if (t.gameId && t.removable && !t.members && app.config.platforms.length > 1) items.push('category');
   items.push(t.hidden ? 'unhide' : 'hide');
   if (t.removable) items.push('remove');
-  return items;
+  // Orden por secciones: el que se ve en pantalla (de arriba abajo, columna izquierda y luego derecha).
+  const pos = (i: MenuItem) => MENU_GROUPS.findIndex(([, ids]) => ids.includes(i));
+  return items.map((it, n) => [it, n] as const).sort((a, b) => pos(a[0]) - pos(b[0]) || a[1] - b[1]).map(([it]) => it);
+}
+
+/** Secciones de la ficha del juego («Grafismos y opciones»). */
+const MENU_GROUPS: Array<[string, MenuItem[]]> = [
+  ['Grafismos', ['reload', 'sgdb', 'accent']],
+  ['Archivos y lanzamiento', ['folder', 'addshots', 'saves', 'setexe', 'setdir', 'magpie']],
+  ['Seguimiento', ['status', 'release', 'addcoll', 'phrases']],
+  ['Gestión', ['category', 'hide', 'unhide', 'remove']],
+];
+export type MenuGroup = { title: string; items: MenuItem[] };
+
+/** Columnas -> secciones del menu abierto. Fuera de la ficha (o en sus submenus) es una lista plana de una columna. */
+export function menuLayout(): MenuGroup[][] {
+  const its = app.menu.items;
+  const groups = MENU_GROUPS.map(([title, ids]) => ({ title, items: its.filter((i) => ids.includes(i)) })).filter((g) => g.items.length);
+  if (app.menu.kind !== 'detail' || groups.reduce((n, g) => n + g.items.length, 0) !== its.length) return [[{ title: '', items: its }]];
+  if (its.length <= 8) return [groups];
+  const h = (gs: MenuGroup[]) => gs.reduce((n, g) => n + g.items.length + 0.6, 0);
+  let best = 1, bestH = Infinity;
+  for (let k = 1; k < groups.length; k++) {
+    const m = Math.max(h(groups.slice(0, k)), h(groups.slice(k)));
+    if (m < bestH) { bestH = m; best = k; }
+  }
+  return [groups.slice(0, best), groups.slice(best)];
 }
 
 /** Abre la ficha del título i de la plataforma actual. */
@@ -501,17 +527,14 @@ async function cycleMagpie(t: Title) {
   } catch (e) { toast(String(e), 3200); }
 }
 
-/** Columnas del menu: la ficha del juego, con muchas acciones, se reparte en dos (primero la columna izquierda). */
-export function menuCols(): number {
-  return app.menu.kind === 'detail' && app.menu.items.length > 8 ? 2 : 1;
-}
-
 function menuCmd(c: string) {
   const n = app.menu.items.length;
-  const per = Math.ceil(n / menuCols());
-  if ((c === 'left' || c === 'right') && menuCols() > 1) {
+  const lay = menuLayout();
+  if ((c === 'left' || c === 'right') && lay.length > 1) {
+    // Salta a la otra columna, a la fila de la misma posicion (o a la ultima si es mas corta).
+    const n0 = lay[0].reduce((s, g) => s + g.items.length, 0);
     const r = app.menu.row;
-    const to = c === 'left' ? (r >= per ? r - per : r) : (r < per ? Math.min(n - 1, r + per) : r);
+    const to = c === 'left' ? (r >= n0 ? Math.min(n0 - 1, r - n0) : r) : (r < n0 ? Math.min(n - 1, n0 + r) : r);
     if (to !== r) { app.menu.row = to; app.menu.confirm = false; blip(880); }
     return;
   }
