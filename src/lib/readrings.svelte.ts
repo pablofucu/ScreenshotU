@@ -82,13 +82,13 @@ export function createReadRings(o: ReadRingsOpts) {
   const pending = (t: GoalTrack) => t.done && lit[t.key] !== today && !goalLit(t.key, today);
   const shown = (t: GoalTrack) => (pending(t) ? t.streak - 1 : t.streak);
 
-  /** Degradado continuo: de muy pálido (poco leído) a tono medio al cumplir la meta (60 %), y de ahí a color pleno a 3× la meta; más allá se oscurece hacia el negro (hasta 8× la meta). */
+  /** Degradado continuo: de muy pálido (poco leído) a tono medio al cumplir la meta (60 %), y de ahí a color pleno a 2× la meta; más allá se oscurece hacia el negro (hasta 8× la meta). */
   function cellBg(t: GoalTrack, r: number, isToday: boolean) {
     if (isToday && pending(t)) r = Math.min(r, 0.6);
     if (!(r > 0)) return o.empty;
     const c = GOAL_COL[t.key].c;
-    if (r > 3) return `color-mix(in srgb, ${c} ${(100 - 50 * Math.min(1, (r - 3) / 5)).toFixed(1)}%, black)`;
-    const p = r < 1 ? 15 + 45 * r : 60 + 40 * Math.min(1, (r - 1) / 2);
+    if (r > 2) return `color-mix(in srgb, ${c} ${(100 - 50 * Math.min(1, (r - 2) / 6)).toFixed(1)}%, black)`;
+    const p = r < 1 ? 15 + 45 * r : 60 + 40 * (r - 1);
     return `color-mix(in srgb, ${c} ${p.toFixed(1)}%, transparent)`;
   }
 
