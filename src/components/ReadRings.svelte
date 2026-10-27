@@ -81,7 +81,7 @@
               <div>
                 {#each w as d, di}
                   <span class="cell" class:st={d.streak && !(d.today && pending(t))} class:td={d.today} class:fu={d.future} class:rd={d.rescued}
-                    style="--k:{wi + di};background:{d.future ? 'transparent' : d.rescued ? 'var(--rc)' : cellBg(t, d.v, d.today)}"></span>
+                    style="--k:{wi + di};background:{d.future ? 'transparent' : d.rescued ? 'var(--rc)' : cellBg(t, d.r, d.today)}"></span>
                 {/each}
               </div>
             {/each}

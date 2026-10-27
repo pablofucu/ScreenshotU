@@ -20,6 +20,8 @@ export const MAP_WEEKS = 10;
 export interface MapCell {
   /** Parte de la meta cumplida ese día (0..1). */
   v: number;
+  /** Minutos leídos / meta, sin tope (1 = meta justa, 2 = el doble…): gradúa el color por encima de la meta. */
+  r: number;
   /** El día forma parte de la racha actual. */
   streak: boolean;
   today: boolean;
@@ -254,7 +256,7 @@ export function goalTrack(key: GoalKey, goal: number, platforms: Platform[], liv
     const col: MapCell[] = [];
     for (let i = 0; i < 7; i++) {
       const d = first + w * 7 + i;
-      col.push({ v: goalFrac(mins.get(d) ?? 0, goal), streak: streak > 0 && d >= streakFrom && d <= streakFrom + streak - 1, today: d === today, future: d > today, rescued: repaired.has(d) });
+      col.push({ v: goalFrac(mins.get(d) ?? 0, goal), r: goal > 0 ? (mins.get(d) ?? 0) / goal : 0, streak: streak > 0 && d >= streakFrom && d <= streakFrom + streak - 1, today: d === today, future: d > today, rescued: repaired.has(d) });
     }
     weeks.push(col);
   }

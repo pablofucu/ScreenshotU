@@ -222,7 +222,7 @@
               <div>
                 {#each w as d, di}
                   <span class="scell" class:st={d.streak && !(d.today && pending(sel))} class:td={d.today} class:fu={d.future} class:rd={d.rescued}
-                    style="--k:{wi};background:{d.future ? 'transparent' : d.rescued ? 'var(--rc)' : cellBg(sel, d.v, d.today)}"></span>
+                    style="--k:{wi};background:{d.future ? 'transparent' : d.rescued ? 'var(--rc)' : cellBg(sel, d.r, d.today)}"></span>
                 {/each}
               </div>
             {/each}
