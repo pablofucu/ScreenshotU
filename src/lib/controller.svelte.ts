@@ -501,8 +501,20 @@ async function cycleMagpie(t: Title) {
   } catch (e) { toast(String(e), 3200); }
 }
 
+/** Columnas del menu: la ficha del juego, con muchas acciones, se reparte en dos (primero la columna izquierda). */
+export function menuCols(): number {
+  return app.menu.kind === 'detail' && app.menu.items.length > 8 ? 2 : 1;
+}
+
 function menuCmd(c: string) {
   const n = app.menu.items.length;
+  const per = Math.ceil(n / menuCols());
+  if ((c === 'left' || c === 'right') && menuCols() > 1) {
+    const r = app.menu.row;
+    const to = c === 'left' ? (r >= per ? r - per : r) : (r < per ? Math.min(n - 1, r + per) : r);
+    if (to !== r) { app.menu.row = to; app.menu.confirm = false; blip(880); }
+    return;
+  }
   if (c === 'up') { app.menu.row = Math.max(0, app.menu.row - 1); app.menu.confirm = false; blip(880); }
   else if (c === 'down') { app.menu.row = Math.min(n - 1, app.menu.row + 1); app.menu.confirm = false; blip(880); }
   else if (c === 'a') void menuAct(app.menu.items[app.menu.row]);

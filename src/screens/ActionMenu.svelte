@@ -1,7 +1,7 @@
 <script lang="ts">
   import { app, STATUS_LABEL, TITLE_FILTERS, type MenuItem, type TitleFilter } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
-  import { closeOverlay, MAGPIE_LABEL, menuAct } from '../lib/controller.svelte';
+  import { closeOverlay, MAGPIE_LABEL, menuAct, menuCols } from '../lib/controller.svelte';
   import { fmtRelease } from '../lib/release.svelte';
   import Hints from '../components/Hints.svelte';
   import { tgrid } from '../lib/tgrid';
@@ -23,9 +23,11 @@
   const audioOut = $derived(app.audioOutputs.find((o) => o.default)?.short ?? '');
   // Alto del panel según las acciones; centrado en el escenario.
   // Con 14 o más acciones el paso se reduce para que el panel (máx. ~704 px) quepa en los 720 px del escenario.
-  const pitch = $derived(Math.min(items.length > 11 ? 44 : items.length > 9 ? 50 : 58, Math.floor(558 / items.length)));
+  const cols = $derived(menuCols());
+  const per = $derived(Math.ceil(items.length / cols));
+  const pitch = $derived(Math.min(per > 11 ? 44 : per > 9 ? 50 : 58, Math.floor(558 / per)));
   const squeeze = $derived(pitch < 44);
-  const H = $derived(28 + 100 + items.length * pitch + 18);
+  const H = $derived(28 + 100 + per * pitch + 18);
   const sel = $derived(app.sel.size);
   const label = (it: MenuItem) => {
     switch (it) {
@@ -83,10 +85,11 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closeOverlay(); }}>
-  <div class="glass menupanel" class:tight={items.length > 9} class:tighter={items.length > 11} class:squeeze style="--acc:{app.chrome.c};--mrh:{pitch - 4}px;top:{(720 - H) / 2}px;height:{H}px">
+  <div class="glass menupanel" class:tight={per > 9} class:tighter={per > 11} class:squeeze class:two={cols > 1} style="--acc:{app.chrome.c};--mrh:{pitch - 4}px;top:{(720 - H) / 2}px;height:{H}px">
     <div class="face">
       <h2>{list ? (app.menu.items[0]?.startsWith('flt:') ? 'Filtrar' : 'Lista de juegos') : shots ? 'Capturas' : 'Grafismos y opciones'}</h2>
       <p class="msub">{sub}</p>
+      <div class="mgrid" style={cols > 1 ? `grid-template-rows:repeat(${per},auto)` : ''}>
       {#each items as it, i}
         <button type="button" class="srow mrow" class:f={app.menu.row === i} class:danger={it === 'remove' || it === 'delshot' || it === 'delsel'} class:addrow={it === 'magpie' && !!magpie.detail} data-item={it} onmousemove={(e) => hover(e, i)} onclick={() => { app.menu.row = i; void menuAct(it); }}>
           <span class="mic">{@html icon(it)}</span>
@@ -94,6 +97,7 @@
           {#if it.startsWith('flt:')}<span class="mcount">{fltCount(it.slice(4) as TitleFilter)}</span>{/if}
         </button>
       {/each}
+      </div>
     </div>
   </div>
   <Hints list={[['A', 'Seleccionar', 'a'], ['B', 'Cerrar', 'b']]} />
@@ -105,6 +109,12 @@
   .menupanel.tighter .mrow.addrow{height:48px}
   .menupanel.squeeze .mrow{height:var(--mrh)}
   .menupanel.squeeze .mrow.addrow{height:calc(var(--mrh) + 8px)}
+  .mgrid { display: flex; flex-direction: column; gap: 4px; }
+  /* Dos columnas (ficha del juego): se rellenan de arriba abajo, primero la izquierda. */
+  .menupanel.two { left: 210px; width: 860px; }
+  .menupanel.two .mgrid { display: grid; grid-auto-flow: column; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 14px; }
+  .menupanel.two .mrow { height: 54px; }
+  .menupanel.two .mrow.addrow { height: 62px; }
   .mcount { margin-left: auto; font-size: 15px; font-weight: 700; color: #7a8496; }
   .f .mcount { color: inherit; opacity: 0.85; }
   /* Textos largos (p. ej. el nombre de una salida de audio) se cortan con puntos suspensivos. */
