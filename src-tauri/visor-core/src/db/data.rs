@@ -180,21 +180,70 @@ pub fn stats_load(c: &Connection) -> Result<Stats> {
     Ok(out)
 }
 
-/// Marca el inicio de una partida (actualiza `last_played`).
+/// Marca el inicio de una partida (actualiza `last_played`, cuenta un lanzamiento y fija el primer inicio).
 pub fn stat_mark_started(c: &Connection, id: &str, now_ms: i64) -> Result<()> {
     c.execute(
-        "INSERT INTO play_stats(game_id, last_played_ms, seconds) VALUES (?1, ?2, 0)
-         ON CONFLICT(game_id) DO UPDATE SET last_played_ms = excluded.last_played_ms",
+        "INSERT INTO play_stats(game_id, last_played_ms, seconds, first_played_ms, run_count) VALUES (?1, ?2, 0, ?2, 1)
+         ON CONFLICT(game_id) DO UPDATE SET last_played_ms = excluded.last_played_ms,
+             run_count = run_count + 1, first_played_ms = COALESCE(first_played_ms, excluded.first_played_ms)",
         params![id, now_ms],
     )?;
     Ok(())
 }
 
+/// Cifras de un juego que no viajan con la biblioteca: se piden al abrir sus estadisticas.
+#[derive(Debug, Default, PartialEq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GameStatsDb {
+    /// Veces que se lanzo el juego.
+    pub run_count: i64,
+    /// Primer inicio historico (ms desde epoch).
+    pub first_played_ms: Option<i64>,
+    /// Tiempo interactivo y duracion de las partidas en las que se midio (para el % activo).
+    pub active_ms: i64,
+    pub measured_ms: i64,
+    /// Partida con mas tiempo interactivo.
+    pub longest_active_ms: i64,
+    pub longest_active_at: Option<i64>,
+}
+
+pub fn game_stats(c: &Connection, id: &str) -> Result<GameStatsDb> {
+    let mut out = GameStatsDb::default();
+    if let Some((rc, first)) = c
+        .query_row("SELECT run_count, first_played_ms FROM play_stats WHERE game_id = ?1", [id], |r| Ok((r.get(0)?, r.get(1)?)))
+        .optional()?
+    {
+        out.run_count = rc;
+        out.first_played_ms = first;
+    }
+    let (active, measured): (i64, i64) = c.query_row(
+        "SELECT COALESCE(SUM(active_ms), 0), COALESCE(SUM(end_ms - start_ms), 0) FROM sessions WHERE game_id = ?1 AND active_ms IS NOT NULL",
+        [id],
+        |r| Ok((r.get(0)?, r.get(1)?)),
+    )?;
+    out.active_ms = active;
+    out.measured_ms = measured;
+    if let Some((ms, at)) = c
+        .query_row(
+            "SELECT active_ms, start_ms FROM sessions WHERE game_id = ?1 AND active_ms IS NOT NULL ORDER BY active_ms DESC, start_ms DESC LIMIT 1",
+            [id],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .optional()?
+    {
+        out.longest_active_ms = ms;
+        out.longest_active_at = Some(at);
+    }
+    Ok(out)
+}
+
 /// Registra una partida terminada: suma su duracion al total y guarda la partida. Si empieza menos de
 /// `MERGE_GAP_MS` despues del fin de la ultima de ese juego (o dentro de ella), la amplia (el hueco cuenta).
-pub fn stat_add_session(c: &Connection, id: &str, start_ms: i64, end_ms: i64) -> Result<()> {
+/// `active_ms` = tiempo interactivo medido; en una fusion se suma al de la partida ampliada.
+pub fn stat_add_session(c: &Connection, id: &str, start_ms: i64, end_ms: i64, active_ms: i64) -> Result<()> {
     let end = end_ms.max(start_ms);
     let secs = (end - start_ms) / 1000;
+    let active = active_ms.clamp(0, end - start_ms);
     let last: Option<(i64, i64, i64)> = c
         .query_row("SELECT id, start_ms, end_ms FROM sessions WHERE game_id = ?1 ORDER BY id DESC LIMIT 1", [id], |r| {
             Ok((r.get(0)?, r.get(1)?, r.get(2)?))
@@ -207,6 +256,7 @@ pub fn stat_add_session(c: &Connection, id: &str, start_ms: i64, end_ms: i64) ->
                 if end > e {
                     c.execute("UPDATE sessions SET end_ms = ?1 WHERE id = ?2", params![end, sid])?;
                 }
+                c.execute("UPDATE sessions SET active_ms = COALESCE(active_ms, 0) + ?1 WHERE id = ?2", params![active, sid])?;
                 c.execute(
                     "INSERT INTO play_stats(game_id, last_played_ms, seconds) VALUES (?1, 0, ?2)
                      ON CONFLICT(game_id) DO UPDATE SET seconds = seconds + excluded.seconds",
@@ -222,7 +272,7 @@ pub fn stat_add_session(c: &Connection, id: &str, start_ms: i64, end_ms: i64) ->
              ON CONFLICT(game_id) DO UPDATE SET seconds = seconds + excluded.seconds",
             params![id, secs],
         )?;
-        c.execute("INSERT INTO sessions(game_id, start_ms, end_ms) VALUES (?1, ?2, ?3)", params![id, start_ms, end])?;
+        c.execute("INSERT INTO sessions(game_id, start_ms, end_ms, active_ms) VALUES (?1, ?2, ?3, ?4)", params![id, start_ms, end, active])?;
         Ok(())
     })
 }
@@ -239,6 +289,12 @@ pub fn stat_import(c: &Connection, id: &str, s: &PlayStat) -> Result<()> {
         let mut ins = c.prepare("INSERT INTO sessions(game_id, start_ms, end_ms) VALUES (?1, ?2, ?3)")?;
         for x in &s.sessions {
             ins.execute(params![id, x.start, x.end])?;
+        }
+        if let Some(first) = s.first_played() {
+            c.execute(
+                "UPDATE play_stats SET run_count = MAX(run_count, ?2), first_played_ms = MIN(COALESCE(first_played_ms, ?3), ?3) WHERE game_id = ?1",
+                params![id, s.sessions.len() as i64, first],
+            )?;
         }
         Ok(())
     })

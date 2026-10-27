@@ -466,6 +466,9 @@ export async function mockBackend(): Promise<Backend> {
       if (!p.accent && !p.sort && !p.status && !p.release) delete prefs[id];
       save('visor.mock.prefs', prefs);
     },
+    async gameStats() {
+      return { runCount: 0, firstPlayedMs: null, activeMs: 0, measuredMs: 0, longestActiveMs: 0, longestActiveAt: null };
+    },
     async setReleaseDate(id, d) {
       const p = (prefs[id] ??= {});
       if (d) {

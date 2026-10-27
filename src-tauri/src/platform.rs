@@ -424,6 +424,19 @@ mod imp {
         Grabbed { width: img.w, height: img.h, rgba: img.px, method, fg_pid }
     }
 
+    /// Milisegundos desde la ultima entrada de teclado o raton en todo el sistema (no cuenta el mando).
+    pub fn idle_ms() -> Option<u64> {
+        use windows::Win32::System::SystemInformation::GetTickCount;
+        use windows::Win32::UI::Input::KeyboardAndMouse::{GetLastInputInfo, LASTINPUTINFO};
+        let mut li = LASTINPUTINFO { cbSize: std::mem::size_of::<LASTINPUTINFO>() as u32, dwTime: 0 };
+        unsafe {
+            if !GetLastInputInfo(&mut li).as_bool() {
+                return None;
+            }
+            Some(GetTickCount().wrapping_sub(li.dwTime) as u64)
+        }
+    }
+
     /// Ventana en primer plano «util» (ni el visor ni Magpie) y si ocupa su monitor entero. Devuelve el pid
     /// de esa ventana y sus datos; si la ventana es del visor, `own` y pid propio.
     pub fn foreground_info() -> Option<(u32, visor_core::capture::ForegroundInfo)> {
@@ -552,7 +565,7 @@ mod imp {
 }
 
 #[cfg(windows)]
-pub use imp::{foreground_info, grab, own_window_focused, play_shutter};
+pub use imp::{foreground_info, grab, idle_ms, own_window_focused, play_shutter};
 
 #[cfg(not(windows))]
 pub fn grab(_target_pids: &[u32], _magpie_scaled: bool) -> Result<Grabbed, String> {
@@ -566,5 +579,9 @@ pub fn own_window_focused() -> bool {
 }
 #[cfg(not(windows))]
 pub fn foreground_info() -> Option<(u32, visor_core::capture::ForegroundInfo)> {
+    None
+}
+#[cfg(not(windows))]
+pub fn idle_ms() -> Option<u64> {
     None
 }

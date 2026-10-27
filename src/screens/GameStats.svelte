@@ -19,6 +19,11 @@
   const maxV = $derived(Math.max(1, ...rows.map((r) => r.v)));
   const fmtV = (m: GMetric, v: number) => (m === 'sessions' ? `${v}` : fmtHM(v));
   const unit = (m: GMetric, v: number) => (m === 'sessions' ? (v === 1 ? 'partida' : 'partidas') : '');
+  // Cifras de la base: el tiempo interactivo solo existe en las partidas jugadas desde que se mide.
+  const D = $derived(app.gsDb);
+  const first = $derived(D?.firstPlayedMs ?? S?.first ?? null);
+  const pct = $derived(D && D.measuredMs > 0 ? Math.round((D.activeMs / D.measuredMs) * 100) : null);
+  const runs = $derived(Math.max(D?.runCount ?? 0, S?.sessions ?? 0));
 </script>
 
 {#if cat && P}
@@ -92,7 +97,29 @@
     </div>
     <div class="rbox">
       <div class="k">Primera vez</div>
-      <div class="v">{S.first ? fmtDate(S.first) : '—'}</div>
+      <div class="v">{first ? fmtDate(first) : '—'}</div>
+    </div>
+  </div>
+
+  <div class="stsum" style="top:492px;grid-template-columns:repeat(3,1fr)">
+    <div class="rbox">
+      <div class="k">Tiempo interactivo</div>
+      {#if D && pct !== null}
+        <div class="v acc">{fmtHM(D.activeMs)} <small>{pct}%</small></div>
+        <div class="s eq">{fmtHM(D.measuredMs - D.activeMs)} pasivo o en segundo plano</div>
+      {:else}
+        <div class="v">—</div>
+        <div class="s eq">Se mide en las partidas nuevas</div>
+      {/if}
+    </div>
+    <div class="rbox">
+      <div class="k">Ejecuciones</div>
+      <div class="v">{runs}</div>
+    </div>
+    <div class="rbox">
+      <div class="k">Mayor sesión interactiva</div>
+      <div class="v">{D && D.longestActiveAt ? fmtHM(D.longestActiveMs) : '—'}</div>
+      {#if D?.longestActiveAt}<div class="s eq">{fmtLongDay(D.longestActiveAt, now)}, {fmtClock(D.longestActiveAt)}</div>{/if}
     </div>
   </div>
 

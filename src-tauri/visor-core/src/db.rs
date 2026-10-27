@@ -212,6 +212,17 @@ pub const MIGRATIONS: &[&str] = &[
     r#"
     ALTER TABLE games ADD COLUMN workdir TEXT NOT NULL DEFAULT '';
     "#,
+    // 11: estadisticas de juego. `first_played_ms` = primer inicio historico (sobrevive al recorte de partidas);
+    // `run_count` = veces que se lanzo (las partidas se funden si hay menos de 2 min entre ellas); `sessions.active_ms`
+    // = tiempo interactivo de la partida (NULL = anterior a medirlo).
+    r#"
+    ALTER TABLE play_stats ADD COLUMN first_played_ms INTEGER;
+    ALTER TABLE play_stats ADD COLUMN run_count INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE sessions ADD COLUMN active_ms INTEGER;
+    UPDATE play_stats SET
+        first_played_ms = (SELECT MIN(start_ms) FROM sessions s WHERE s.game_id = play_stats.game_id),
+        run_count = (SELECT COUNT(*) FROM sessions s WHERE s.game_id = play_stats.game_id);
+    "#,
 ];
 
 /// Version del esquema que entiende esta compilacion.
@@ -444,7 +455,7 @@ mod tests {
         let db = Db::open_path(&d.path().join("visor.db")).unwrap();
         db.with(|c| {
             favorite_set(c, "x.png", true).unwrap();
-            stat_add_session(c, "manual:1", 1000, 61_000).unwrap();
+            stat_add_session(c, "manual:1", 1000, 61_000, 0).unwrap();
         });
         let dest = d.path().join("copias/visor-copia.db");
         db.backup_to(&dest).unwrap();
@@ -458,6 +469,48 @@ mod tests {
         let copy = Db::open_path(&dest).unwrap();
         assert_eq!(copy.with(favorites_load).unwrap(), vec!["x.png", "y.png"]);
         assert_eq!(copy.with(stats_load).unwrap()["manual:1"].seconds, 60);
+    }
+
+    #[test]
+    fn migration_11_backfills_runs_and_first_play() {
+        let d = tempfile::tempdir().unwrap();
+        let p = d.path().join("visor.db");
+        {
+            let mut c = Connection::open(&p).unwrap();
+            migrate(&mut c, &MIGRATIONS[..10]).unwrap();
+            c.execute_batch(
+                "INSERT INTO play_stats(game_id, last_played_ms, seconds) VALUES ('g', 9000, 30);
+                 INSERT INTO sessions(game_id, start_ms, end_ms) VALUES ('g', 5000, 6000), ('g', 8000, 9000);",
+            )
+            .unwrap();
+        }
+        let db = Db::open_path(&p).unwrap();
+        let g = db.with(|c| game_stats(c, "g")).unwrap();
+        assert_eq!((g.run_count, g.first_played_ms), (2, Some(5000)));
+        // Las partidas anteriores no tienen tiempo interactivo medido.
+        assert_eq!((g.active_ms, g.measured_ms, g.longest_active_at), (0, 0, None));
+    }
+
+    #[test]
+    fn game_stats_count_runs_and_active_time() {
+        let d = tempfile::tempdir().unwrap();
+        let db = Db::open_path(&d.path().join("visor.db")).unwrap();
+        db.with(|c| {
+            stat_mark_started(c, "g", 1_000).unwrap();
+            stat_add_session(c, "g", 1_000, 11_000, 4_000).unwrap();
+            // Menos de 2 min despues: se funde con la anterior (suma el tiempo activo) pero cuenta otro lanzamiento.
+            stat_mark_started(c, "g", 20_000).unwrap();
+            stat_add_session(c, "g", 20_000, 30_000, 5_000).unwrap();
+            // Mucho despues: partida nueva; no puede declararse mas activa que su duracion.
+            stat_mark_started(c, "g", 900_000).unwrap();
+            stat_add_session(c, "g", 900_000, 910_000, 99_000).unwrap();
+        });
+        let g = db.with(|c| game_stats(c, "g")).unwrap();
+        assert_eq!(g.run_count, 3);
+        assert_eq!(g.first_played_ms, Some(1_000));
+        assert_eq!(g.active_ms, 9_000 + 10_000);
+        assert_eq!(g.measured_ms, 29_000 + 10_000);
+        assert_eq!((g.longest_active_ms, g.longest_active_at), (10_000, Some(900_000)));
     }
 
     #[test]

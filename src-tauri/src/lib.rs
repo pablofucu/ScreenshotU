@@ -543,6 +543,12 @@ fn snooze_stalled(state: State<'_, AppState>, ids: Vec<String>) -> Result<(), St
     state.db.with(|c| dbd::snooze_save(c, &done, now)).map_err(|e| e.to_string())
 }
 
+/// Cifras de un juego que no viajan con la biblioteca (lanzamientos, primer inicio, tiempo interactivo).
+#[tauri::command]
+fn game_stats(state: State<'_, AppState>, id: String) -> Result<dbd::GameStatsDb, String> {
+    state.db.with(|c| dbd::game_stats(c, &id)).map_err(|e| e.to_string())
+}
+
 /// Fecha de lanzamiento puesta a mano (año; mes y dia opcionales). `year` sin valor la quita.
 #[tauri::command]
 fn set_release_date(state: State<'_, AppState>, id: String, year: Option<i32>, month: Option<u32>, day: Option<u32>) -> Result<(), String> {
@@ -1102,6 +1108,7 @@ pub fn run() {
             set_magpie_mode,
             set_title_status,
             set_release_date,
+            game_stats,
             set_pending_order,
             snooze_stalled,
             backup::backup_create,

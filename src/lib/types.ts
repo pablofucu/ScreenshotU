@@ -120,6 +120,15 @@ export type GameSource = 'manual' | 'emulator';
 export type GameStatus = 'none' | 'pending' | 'playing' | 'finished' | 'dropped';
 export type MagpieMode = 'off' | 'auto' | '2x' | '4x';
 export interface MagpieStatus { exe: string; running: boolean; cunny: boolean }
+/** Cifras de un juego guardadas en la base (no viajan con la biblioteca). `activeMs` solo cuenta las partidas en las que se midió (`measuredMs`). */
+export interface GameStatsDb {
+  runCount: number;
+  firstPlayedMs: number | null;
+  activeMs: number;
+  measuredMs: number;
+  longestActiveMs: number;
+  longestActiveAt: number | null;
+}
 /** Estado del acceso desde el móvil. `error`: último fallo al abrir el puerto (p. ej. en uso). */
 export interface RemoteInfo { enabled: boolean; running: boolean; port: number; addresses: string[]; code: string; error: string | null }
 export interface Title {
@@ -272,6 +281,8 @@ export interface Backend {
   setTitleStatus(id: string, status: GameStatus, finishedMs?: number | null, rating?: number | null): Promise<void>;
   /** Fecha de lanzamiento puesta a mano (null la quita). */
   setReleaseDate(id: string, date: { year: number; month: number | null; day: number | null } | null): Promise<void>;
+  /** Cifras del juego que no viajan con la biblioteca: lanzamientos, primer inicio y tiempo interactivo. */
+  gameStats(id: string): Promise<GameStatsDb>;
   /** Orden manual de «Mi lista › Pendientes»: los ids de izquierda a derecha. */
   setPendingOrder(ids: string[]): Promise<void>;
   /** «Dejarlo» ante el aviso de juegos parados: no se vuelve a preguntar hasta que se jueguen otra vez. */

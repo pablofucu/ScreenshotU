@@ -697,6 +697,12 @@ const GS_ROWS = 5;
 function openGameStats(scope: 'title' | 'cat') {
   app.gsScope = scope;
   app.gsFrom = scope === 'title' ? 'evo' : 'titles';
+  app.gsDb = null;
+  const id = app.platform?.titles[app.t]?.gameId;
+  if (scope === 'title' && id) {
+    // Lanzamientos, primer inicio y tiempo interactivo viven en la base: se piden al abrir.
+    backend.gameStats(id).then((d) => { if (app.view === 'gstats') app.gsDb = d; }).catch((e) => console.error(e));
+  }
   delete app.fk.gstats;
   go('gstats', 'fwd');
 }

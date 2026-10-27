@@ -555,7 +555,7 @@ mod tests {
         // Separadas por mas de 2 minutos: son dos partidas.
         for (a, b) in [(1000, 61_000), (300_000, 330_000)] {
             add_session(&mut st, "steam:1", a, b);
-            db.with(|c| stat_add_session(c, "steam:1", a, b)).unwrap();
+            db.with(|c| stat_add_session(c, "steam:1", a, b, 0)).unwrap();
         }
         let st2 = db.with(stats_load).unwrap();
         assert_eq!(st2, st);
@@ -564,7 +564,7 @@ mod tests {
         assert_eq!(e.first_played(), Some(1000));
         assert_eq!(e.sessions[1], Session { start: 300_000, end: 330_000 });
         // Una partida con fin anterior al inicio dura cero y no rompe nada.
-        db.with(|c| stat_add_session(c, "steam:1", 500_000, 400_000)).unwrap();
+        db.with(|c| stat_add_session(c, "steam:1", 500_000, 400_000, 0)).unwrap();
         assert_eq!(db.with(stats_load).unwrap()["steam:1"].sessions[2], Session { start: 500_000, end: 500_000 });
     }
 
@@ -579,7 +579,7 @@ mod tests {
         let steps = [("g", a1, b1), ("otro", a2, b2), ("g", a2, b2), ("g", b2 + 10_000_000, b2 + 10_060_000)];
         for (id, a, b) in steps {
             add_session(&mut st, id, a, b);
-            db.with(|c| stat_add_session(c, id, a, b)).unwrap();
+            db.with(|c| stat_add_session(c, id, a, b, 0)).unwrap();
         }
         let e = &st["g"];
         assert_eq!(e.sessions, vec![Session { start: a1, end: b2 }, Session { start: b2 + 10_000_000, end: b2 + 10_060_000 }]);
@@ -600,7 +600,7 @@ mod tests {
         assert_eq!((e.last_played, e.seconds, e.session_count(), e.first_played()), (5000, 7200, 0, None));
         // Una partida nueva se suma al total antiguo.
         add_session(&mut st, "steam:7", 10_000, 70_000);
-        db.with(|c| stat_add_session(c, "steam:7", 10_000, 70_000)).unwrap();
+        db.with(|c| stat_add_session(c, "steam:7", 10_000, 70_000, 0)).unwrap();
         assert_eq!(db.with(stats_load).unwrap(), st);
         assert_eq!((st["steam:7"].seconds, st["steam:7"].session_count()), (7260, 1));
         // Iniciar un juego nuevo sin partidas no escribe la lista vacia en JSON.

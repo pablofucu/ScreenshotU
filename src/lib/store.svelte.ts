@@ -1,7 +1,7 @@
 import { SvelteSet } from 'svelte/reactivity';
 import { untrack } from 'svelte';
 import { RAINBOW, type Accent } from './icons';
-import type { AudioOutput, Config, GameStatus, Library, MagpieStatus, Collection, Shot, SortMode as SortModeT, Swatch, Title, TitleOrder } from './types';
+import type { AudioOutput, Config, GameStatsDb, GameStatus, Library, MagpieStatus, Collection, Shot, SortMode as SortModeT, Swatch, Title, TitleOrder } from './types';
 import { hexToRgb, inkDark, rgbToLch } from './oklch';
 import { collItems, collectionTitle } from './collections';
 import { GOAL_COL, type GoalKey } from './readgoals';
@@ -403,6 +403,8 @@ class Store {
   gsScope = $state<'title' | 'cat'>('title');
   gsMetric = $state<GMetric>('time');
   gsFrom = $state<'evo' | 'titles'>('evo');
+  /** Cifras de la base del juego abierto en las estadísticas de juego (null mientras llegan). */
+  gsDb = $state<GameStatsDb | null>(null);
   /** Categoría de la clasificación (índice en `lib.platforms`; si ya no tiene partidas, la primera que las tenga). */
   statsPlatSel = $state(-1);
   statsPlats = $derived(playedPlatforms(this.lib));

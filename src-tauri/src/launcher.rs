@@ -146,6 +146,20 @@ pub fn start(app: &AppHandle, game: Game) -> Result<(), String> {
     Ok(())
 }
 
+/// Sin entrada durante este tiempo, el juego deja de contar como interactivo (5 min).
+const AFK_MS: u64 = 300_000;
+
+/// El juego (uno de `pids`) esta delante y alguien ha tocado teclado, raton o mando hace menos de `AFK_MS`.
+fn interactive(pids: &[u32], last_pad: Option<Instant>) -> bool {
+    let Some((pid, info)) = crate::platform::foreground_info() else { return false };
+    if info.own || !pids.contains(&pid) {
+        return false;
+    }
+    let kb = crate::platform::idle_ms().unwrap_or(u64::MAX);
+    let pad = last_pad.map(|t| t.elapsed().as_millis() as u64).unwrap_or(u64::MAX);
+    kb.min(pad) < AFK_MS
+}
+
 /// Vigila el juego cada pocos segundos: cuenta el tiempo, mantiene los PIDs y avisa al terminar.
 fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<Vec<u32>>>) {
     let own = std::process::id();
@@ -155,6 +169,12 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
     let mut first_seen: Option<Instant> = None;
     let mut first_seen_ms: i64 = 0;
     let mut misses = 0u32;
+    // Tiempo interactivo: cada segundo cuenta si el juego esta delante y ha habido entrada (teclado, raton o mando)
+    // hace menos de `AFK_MS`. Lo demas (ventana en segundo plano, modo automatico, nadie delante) es pasivo.
+    let mut pad = crate::pad::Activity::new();
+    let mut last_pad: Option<Instant> = None;
+    let mut last_tick = Instant::now();
+    let mut active_ms: i64 = 0;
     loop {
         std::thread::sleep(Duration::from_millis(250));
         sys.refresh_processes_specifics(
@@ -193,6 +213,16 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
                 first_seen = Some(Instant::now());
                 first_seen_ms = now_ms();
             }
+            if pad.poll() {
+                last_pad = Some(Instant::now());
+            }
+            if last_tick.elapsed() >= Duration::from_secs(1) {
+                let dt = last_tick.elapsed().as_millis() as i64;
+                last_tick = Instant::now();
+                if interactive(&found, last_pad) {
+                    active_ms += dt;
+                }
+            }
             *pids.lock().unwrap() = found;
         }
     }
@@ -202,7 +232,8 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
         let mut stats = st.stats.lock().unwrap();
         let end = first_seen_ms + seconds as i64 * 1000;
         games::add_session(&mut stats, &game.id, first_seen_ms, end);
-        crate::state::log_db_err("partida", st.db.with(|c| visor_core::db::data::stat_add_session(c, &game.id, first_seen_ms, end)));
+        let active = active_ms.min(seconds as i64 * 1000);
+        crate::state::log_db_err("partida", st.db.with(|c| visor_core::db::data::stat_add_session(c, &game.id, first_seen_ms, end, active)));
     }
     {
         let mut a = st.active.lock().unwrap();

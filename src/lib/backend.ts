@@ -1,4 +1,4 @@
-import type { AddReport, AudioOutput, Backend, BackupResult, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, MoveReport, TrashReport, RemoteInfo, NewGame, Collection, SortMode } from './types';
+import type { AddReport, AudioOutput, Backend, BackupResult, GameStatsDb, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, MoveReport, TrashReport, RemoteInfo, NewGame, Collection, SortMode } from './types';
 
 export const IS_TAURI = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
@@ -151,6 +151,7 @@ async function tauriBackend(): Promise<Backend> {
     setTitleStatus: (id: string, status: GameStatus, finishedMs?: number | null, rating?: number | null) => invoke('set_title_status', { id, status, finishedMs: finishedMs ?? null, rating: rating ?? null }),
     setReleaseDate: (id: string, d: { year: number; month: number | null; day: number | null } | null) =>
       invoke('set_release_date', { id, year: d?.year ?? null, month: d?.month ?? null, day: d?.day ?? null }),
+    gameStats: (id: string) => invoke<GameStatsDb>('game_stats', { id }),
     setPendingOrder: (ids: string[]) => invoke('set_pending_order', { ids }),
     snoozeStalled: (ids: string[]) => invoke('snooze_stalled', { ids }),
     magpieStatus: () => invoke<MagpieStatus>('magpie_status'),

@@ -56,6 +56,25 @@ mod xinput {
             Reader { ex }
         }
 
+        /// Botones, gatillos y ejes de los dos sticks (para saber si alguien esta tocando el mando).
+        pub fn read_all(&self, i: u32) -> Option<[i32; 7]> {
+            unsafe {
+                let mut st = StateEx::default();
+                let ok = match self.ex {
+                    Some(f) => f(i, &mut st) == 0,
+                    None => XInputGetState(i, &mut st.st) == 0,
+                };
+                if !ok {
+                    return None;
+                }
+                let g = st.st.Gamepad;
+                Some([
+                    g.wButtons.0 as i32, g.bLeftTrigger as i32, g.bRightTrigger as i32,
+                    g.sThumbLX as i32, g.sThumbLY as i32, g.sThumbRX as i32, g.sThumbRY as i32,
+                ])
+            }
+        }
+
         /// (wButtons, gatillo izq., gatillo der.) o `None` si no hay mando en ese puerto.
         pub fn read(&self, i: u32) -> Option<(u16, u8, u8)> {
             unsafe {
@@ -75,6 +94,66 @@ mod xinput {
                 None
             }
         }
+    }
+}
+
+/// Detecta si alguien toca algun mando XInput (botones, gatillos o sticks fuera de la zona muerta). Lo usa el
+/// vigilante de la partida para el tiempo interactivo: XInput no reinicia el contador de inactividad de Windows.
+#[cfg(windows)]
+pub struct Activity {
+    reader: xinput::Reader,
+    prev: [Option<[i32; 7]>; 4],
+    connected: [bool; 4],
+    last_rescan: Option<std::time::Instant>,
+}
+
+#[cfg(windows)]
+impl Activity {
+    pub fn new() -> Self {
+        Activity { reader: xinput::Reader::new(), prev: [None; 4], connected: [false; 4], last_rescan: None }
+    }
+
+    /// `true` si ahora hay algo pulsado o movido, o si cambio algo desde la consulta anterior. Los puertos sin
+    /// mando solo se reintentan cada 5 s (preguntar por ellos es lento).
+    pub fn poll(&mut self) -> bool {
+        const DEAD: i32 = 9000;
+        let rescan = self.last_rescan.map(|t| t.elapsed().as_secs() >= 5).unwrap_or(true);
+        if rescan {
+            self.last_rescan = Some(std::time::Instant::now());
+        }
+        let mut active = false;
+        for i in 0..4 {
+            if !self.connected[i] && !rescan {
+                continue;
+            }
+            match self.reader.read_all(i as u32) {
+                Some(s) => {
+                    self.connected[i] = true;
+                    let held = s[0] != 0 || s[1] > 30 || s[2] > 30 || s[3..].iter().any(|v| v.abs() > DEAD);
+                    let changed = self.prev[i].map(|p| p[..3] != s[..3]).unwrap_or(false);
+                    active |= held || changed;
+                    self.prev[i] = Some(s);
+                }
+                None => {
+                    self.connected[i] = false;
+                    self.prev[i] = None;
+                }
+            }
+        }
+        active
+    }
+}
+
+#[cfg(not(windows))]
+pub struct Activity;
+
+#[cfg(not(windows))]
+impl Activity {
+    pub fn new() -> Self {
+        Activity
+    }
+    pub fn poll(&mut self) -> bool {
+        false
     }
 }
 
