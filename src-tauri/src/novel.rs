@@ -219,6 +219,15 @@ pub fn on_launch(app: AppHandle, game: Game, pids: Arc<Mutex<Vec<u32>>>) {
     } else {
         open_hook_window(&app, (r.x, r.y, r.w, r.h));
     }
+    // La ventana de lectura roba el foco al abrirse: se devuelve al juego para que no salga la barra de tareas.
+    let ours = crate::launcher::main_hwnd(&app);
+    for _ in 0..4 {
+        std::thread::sleep(Duration::from_millis(1500));
+        if !session_is(&game.id) {
+            return;
+        }
+        crate::display::refocus_game(ours, &pids);
+    }
 }
 
 /// Se llama cuando termina la partida de una novela japonesa.

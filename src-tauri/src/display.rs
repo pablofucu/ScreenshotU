@@ -100,6 +100,15 @@ pub fn follow_game(ours: isize, target: Option<String>, pids: std::sync::Arc<std
     }
 }
 
+/// Devuelve el foco al juego (y el visor detras): las ventanas auxiliares (pagina de lectura, texthook) se lo
+/// roban al abrirse y, sin el foco, Windows enseña la barra de tareas encima del juego.
+pub fn refocus_game(ours: isize, pids: &std::sync::Arc<std::sync::Mutex<Vec<u32>>>) {
+    let list = pids.lock().unwrap().clone();
+    if let Some(game) = imp::main_window(&list) {
+        imp::front_and_behind(game, ours);
+    }
+}
+
 #[cfg(windows)]
 mod imp {
     use super::Monitor;
@@ -268,12 +277,16 @@ mod imp {
             return;
         }
         let (w, hh) = (r.right - r.left, r.bottom - r.top);
-        if w > t.w as i32 || hh > t.h as i32 {
-            return; // no cabe: mejor no tocarla
-        }
-        let (x, y) = (t.x + (t.w as i32 - w) / 2, t.y + (t.h as i32 - hh) / 2);
+        // Ventana que ocupaba su monitor entero (sin bordes a pantalla completa): se ajusta al monitor bueno.
+        let covered = w >= cur.w as i32 && hh >= cur.h as i32;
         unsafe {
-            let _ = SetWindowPos(h, None, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+            if covered || w > t.w as i32 || hh > t.h as i32 {
+                let (nw, nh) = if covered { (t.w as i32, t.h as i32) } else { (w.min(t.w as i32), hh.min(t.h as i32)) };
+                let _ = SetWindowPos(h, None, t.x, t.y, nw, nh, SWP_NOZORDER | SWP_NOACTIVATE);
+            } else {
+                let (x, y) = (t.x + (t.w as i32 - w) / 2, t.y + (t.h as i32 - hh) / 2);
+                let _ = SetWindowPos(h, None, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+            }
         }
     }
 
