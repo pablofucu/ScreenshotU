@@ -58,7 +58,7 @@
   });
 </script>
 
-<TopBar crumbs={['Inicio']} />
+<TopBar crumbs={['Inicio']} pad />
 
 {#if !app.config.root}
   <div class="glass welcome fx" class:f={app.focus === 'welcome'} data-k="welcome" data-act="welcome" style="left:240px;top:130px;--acc:{wacc.c}">

@@ -4,7 +4,8 @@
   import { ICON, audioKind, audioSvg } from '../lib/icons';
   import { closeAudioMenu, openAudioMenu } from '../lib/controller.svelte';
 
-  let { crumbs, dots = 0, dot = 0 }: { crumbs: string[]; dots?: number; dot?: number } = $props();
+  // `pad`: el botón de audio entra en la navegación del mando (arriba desde el contenido de la pantalla).
+  let { crumbs, dots = 0, dot = 0, pad = false }: { crumbs: string[]; dots?: number; dot?: number; pad?: boolean } = $props();
 
   const curOut = $derived(app.audioOutputs.find((o) => o.default));
 
@@ -35,7 +36,10 @@
   <div class="clock">
     {#if app.audioOutputs.length}
       <div class="aud">
-        <button type="button" class="audbtn" class:open={app.audioMenu} title={curOut ? `Salida de audio: ${curOut.short}` : 'Salida de audio'} aria-label="Cambiar la salida de audio" aria-expanded={app.audioMenu} onclick={toggleMenu}>
+        <!-- Con `pad` el clic lo recoge el controlador (.fx › data-act); abierto, el clic lo cierra aquí. -->
+        <button type="button" class="audbtn" class:fx={pad} class:f={pad && app.focus === 'audio'} data-k={pad ? 'audio' : undefined} data-act={pad ? 'audio' : undefined}
+          class:open={app.audioMenu} title={curOut ? `Salida de audio: ${curOut.short}` : 'Salida de audio'} aria-label="Cambiar la salida de audio" aria-expanded={app.audioMenu}
+          onclick={() => { if (!pad || app.audioMenu) toggleMenu(); }}>
           {@html audioSvg(audioKind(curOut?.name ?? ''), 'currentColor', 4)}
         </button>
       </div>
@@ -54,6 +58,7 @@
     background: transparent; border: 0; border-radius: 10px; color: #7a8496; opacity: 0.75;
     transition: opacity 0.15s, color 0.15s, background 0.15s;
   }
+  .audbtn.f { box-shadow: inset 0 0 0 2px var(--acc); }
   .audbtn :global(svg) { width: 22px; height: 22px; }
-  .audbtn:hover, .audbtn.open { opacity: 1; color: var(--acc); background: rgba(255, 255, 255, 0.55); }
+  .audbtn:hover, .audbtn.open, .audbtn.f { opacity: 1; color: var(--acc); background: rgba(255, 255, 255, 0.55); }
 </style>

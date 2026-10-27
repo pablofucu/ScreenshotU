@@ -93,6 +93,7 @@ function validKey(view: View, key: string | undefined): string | undefined {
     if (/^dock\d+$/.test(key)) return n < DOCK_N ? key : undefined;
     if (/^rec\d+$/.test(key)) return app.config.root && n < app.recent.length ? key : undefined;
     if (key === 'read') return app.readCard ? key : undefined;
+    if (key === 'audio') return app.audioOutputs.length ? key : undefined;
   } else if (view === 'titles') {
     // La baldosa «Añadir juego» es la posición `titles.length`.
     if (/^tit\d+$/.test(key)) {
@@ -588,6 +589,9 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
     morph(el, () => go('viewer', ''), () => screenEl()?.querySelector('.vframe'));
   } else if (a === 'welcome') {
     void openLibrary();
+  } else if (a === 'audio') {
+    void openAudioMenu();
+    return;
   } else if (a === 'dock') {
     dock(+b);
   } else if (a === 'rec') {
