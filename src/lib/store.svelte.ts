@@ -72,7 +72,7 @@ export type MenuItem =
   | 'folder' | 'reload' | 'remove' | 'hide' | 'unhide' | 'addshots' | 'accent'
   | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'addcoll' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'release' | 'saves' | 'category' | 'delshot' | 'delsel' | 'setexe' | 'setdir' | `cat:${string}`
   /* Menú de Start de la lista de juegos (y «Salida de audio», también en el de capturas). */
-  | 'filter' | `flt:${string}` | 'tsize' | 'audio' | 'settings' | 'gstats';
+  | 'filter' | `flt:${string}` | 'tsize' | 'audio' | 'settings' | 'gstats' | 'play' | 'listopts' | 'copy';
 export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'collform' | 'picker' | 'addcoll' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library' | 'status' | 'release' | 'stalled';
 /** «Nueva colección» / «Editar colección». */
 export interface CollFormState {
@@ -204,8 +204,8 @@ export const TITLE_ORDERS: TitleOrder[] = ['last', 'az', 'color'];
 export const TITLE_ORDER_LABEL: Record<TitleOrder, string> = { last: 'Última partida', az: 'A–Z', color: 'Por color' };
 
 /** Pestañas dentro de cada categoría (botón View): Todos · Mi lista · Colecciones. */
-export type TitlesTab = 'all' | 'list' | 'fin' | 'coll';
-export const TITLES_TABS: Array<[TitlesTab, string]> = [['all', 'Todos'], ['list', 'Mi lista'], ['fin', 'Terminados'], ['coll', 'Colecciones']];
+export type TitlesTab = 'list' | 'coll' | 'all' | 'fin';
+export const TITLES_TABS: Array<[TitlesTab, string]> = [['list', 'Mi lista'], ['coll', 'Colecciones'], ['all', 'Catálogo']];
 
 /** Estados de un juego, en el orden en que los recorre el selector. */
 export const STATUS_ORDER: GameStatus[] = ['none', 'pending', 'playing', 'finished', 'dropped'];
@@ -385,7 +385,7 @@ class Store {
   platform = $derived(this.lib.platforms[this.p]);
 
   /* Estadísticas: clasificación por periodo o calendario; evolución de un juego. */
-  statsTab = $state<'rank' | 'cal' | 'year'>('rank');
+  statsTab = $state<'rank' | 'fin' | 'cal' | 'year'>('rank');
   /** Resumen anual: año elegido (null = el último con partidas), tarjeta actual y sentido de la última animación. */
   yearSel = $state<number | null>(null);
   yearCard = $state(0);
@@ -429,8 +429,10 @@ class Store {
 
   /** Filtro de la lista de títulos y orden visible resultante (índices reales en `platform.titles`). */
   titleFilter = $state<TitleFilter>('all');
+  catalogSearch = $state('');
+  catalogLetter = $state('');
   /** Pestaña de la lista de juegos (solo «Todos» tiene contenido por ahora). */
-  titlesTab = $state<TitlesTab>('all');
+  titlesTab = $state<TitlesTab>('list');
   /** «Mi lista»: primera portada visible de cada estantería, primera estantería visible, barra de estado y aviso de parados. */
   listFrom = $state<Record<string, number>>({});
   listTop = $state(0);
@@ -474,18 +476,29 @@ class Store {
     }
     const add = (kind: ListKind, label: string, items: number[], year = 0, key: string = kind) => { if (items.length) out.push({ key, kind, label, year, items }); };
     add('playing', 'Jugando ahora', sortTitles(titles, of('playing'), 'last'));
+    add('dropped', 'En pausa / Abandonados', sortTitles(titles, of('dropped'), 'last'));
     const pend = of('pending').sort((a, b) => (titles[a].listPos ?? 1e9) - (titles[b].listPos ?? 1e9) || byName.compare(titles[a].name, titles[b].name) || a - b);
     add('pending', 'Pendientes', pend);
-    const fin = of('finished').sort((a, b) => (titles[b].finishedMs ?? 0) - (titles[a].finishedMs ?? 0) || a - b);
+    return out;
+  });
+  finShelves = $derived.by((): ListShelf[] => {
+    const p = this.lib.platforms[this.p];
+    if (!p) return [];
+    const titles = p.titles;
+    const idx = titles.map((_, i) => i).filter((i) => !titles[i].hidden && !titles[i].members && (titles[i].status ?? 'none') === 'finished');
     const years = new Map<number, number[]>();
-    for (const i of fin) {
+    for (const i of idx) {
       const ms = titles[i].finishedMs;
       const y = ms ? new Date(ms).getFullYear() : 0;
       (years.get(y) ?? years.set(y, []).get(y)!).push(i);
     }
-    for (const y of [...years.keys()].sort((a, b) => (a || -1) < (b || -1) ? 1 : -1)) add('finished', y ? `Terminados ${y}` : 'Terminados', years.get(y)!, y, 'finished-' + y);
-    add('dropped', 'Abandonados', sortTitles(titles, of('dropped'), 'last'));
-    add('none', 'Sin estado', sortTitles(titles, of('none'), this.titleOrder));
+    const sortedYears = [...years.keys()].filter((y) => y > 0).sort((a, b) => b - a);
+    if (years.has(0)) sortedYears.push(0);
+    const out: ListShelf[] = [];
+    for (const y of sortedYears) {
+      const items = years.get(y)!.sort((a, b) => (titles[b].finishedMs ?? 0) - (titles[a].finishedMs ?? 0) || a - b);
+      if (items.length) out.push({ key: 'fin-' + y, kind: 'finished', label: y ? String(y) : 'Sin fecha', year: y, items });
+    }
     return out;
   });
   /** Orden activo de la categoría abierta. */
@@ -499,6 +512,13 @@ class Store {
       case 'shots': v = all.filter((i) => !titles[i].launchable); break;
       case 'favs': v = all.filter((i) => titles[i].shots.some((s) => this.favs.has(s.path))); break;
       default: v = all;
+    }
+    if (this.catalogSearch.trim()) {
+      const q = this.catalogSearch.toLowerCase().trim();
+      v = v.filter((i) => titles[i].name.toLowerCase().includes(q));
+    }
+    if (this.catalogLetter) {
+      v = v.filter((i) => titles[i].name.toUpperCase().startsWith(this.catalogLetter));
     }
     return sortTitles(titles, v, this.titleOrder);
   });

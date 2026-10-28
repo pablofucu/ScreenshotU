@@ -9,6 +9,7 @@
   import HeroStrip from '../components/HeroStrip.svelte';
   import MiniCover from '../components/MiniCover.svelte';
   import Year from './Year.svelte';
+  import FinStats from './FinStats.svelte';
 
   const R = $derived(app.rank);
   const rows = $derived(R.rows);
@@ -65,7 +66,7 @@
   const SHOW = 4;
 </script>
 
-<TopBar crumbs={['Inicio', 'Estadísticas', app.statsTab === 'rank' ? 'Clasificación' : app.statsTab === 'cal' ? 'Calendario' : 'Resumen anual']} />
+<TopBar crumbs={['Inicio', 'Estadísticas', app.statsTab === 'rank' ? 'Clasificación' : app.statsTab === 'fin' ? 'Terminados' : app.statsTab === 'cal' ? 'Calendario' : 'Resumen anual']} />
 
 <div class="sttop">
   {#if app.statsTab === 'rank'}
@@ -102,6 +103,7 @@
   <div class="stview pill" data-hact="y">
     <span class="btn y">Y</span>
     <span class="t" class:on={app.statsTab === 'rank'}>Clasificación</span>
+    <span class="t" class:on={app.statsTab === 'fin'}>Terminados</span>
     <span class="t" class:on={app.statsTab === 'cal'}>Calendario</span>
     <span class="t" class:on={app.statsTab === 'year'}>Resumen anual</span>
   </div>
@@ -110,6 +112,9 @@
 {#if app.statsTab === 'year'}
   <Year />
   <Hints list={[['A', 'Siguiente', 'a'], ['LT', 'Año anterior', 'lt'], ['RT', 'Año siguiente', 'rt'], ['Y', 'Clasificación', 'y'], ['B', 'Volver', 'b']]} />
+{:else if app.statsTab === 'fin'}
+  <FinStats />
+  <Hints list={[['A', 'Abrir ficha', 'a'], ['Y', 'Siguiente vista', 'y'], ['B', 'Volver', 'b']]} />
 {:else if app.statsTab === 'rank'}
   <div class="stsum">
     <div class="rbox">

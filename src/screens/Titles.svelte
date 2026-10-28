@@ -10,6 +10,7 @@
   import Thumb from '../components/Thumb.svelte';
   import Shelf, { type ShelfItem } from '../components/Shelf.svelte';
   import CollTab from './CollTab.svelte';
+  import MiListaDual from './MiListaDual.svelte';
   import { computeMonthPositions, finShelfSub, itemLabel, LIST_VIS, SHELF_STEP, shelfSub } from '../lib/milista.svelte';
   import { collFocusAccent } from '../lib/coleccion.svelte';
   import { inkFor } from '../lib/ops.svelte';
@@ -133,7 +134,7 @@
 </div>
 <TopBar crumbs={['Inicio', P?.name ?? '']} dots={grid && tab === 'all' ? pages : 0} dot={pg} />
 
-<div class="ttabs" class:car={!grid && tab === 'all'} style={tabsAcc ? `--acc:${tabsAcc.c};--acc-ink:${tabsAcc.dark ? '#3a2f00' : '#fff'}` : ''}>
+<div class="ttabs" class:car={!grid && tab === 'all'} class:list-tabs={tab === 'list'} style={tabsAcc ? `--acc:${tabsAcc.c};--acc-ink:${tabsAcc.dark ? '#3a2f00' : '#fff'}` : ''}>
   <span class="btn sh" data-hact="lt">LT</span>
   {#each TITLES_TABS as [f, label]}
     <span class="tflt" class:on={tab === f}>{label}</span>
@@ -141,6 +142,15 @@
   <span class="btn sh" data-hact="rt">RT</span>
   {#if tab === 'all' && titles.length > 1}<span class="btn x" data-hact="x">X</span><span class="tflt tord">{TITLE_ORDER_LABEL[app.titleOrder]}</span>{/if}
   {#if tab === 'all' && filtered}<span class="tflt tchip" data-hact="nofilter" title="Quitar el filtro">{filterName}<small>{vis.length}</small><b aria-label="Quitar el filtro">✕</b></span>{/if}
+  {#if tab === 'all'}
+    <div class="tsearch pill">
+      <span class="ts-ic">{@html ICON.search}</span>
+      <input type="text" placeholder="Buscar juego..." bind:value={app.catalogSearch} />
+      {#if app.catalogSearch}
+        <button type="button" class="ts-x" onclick={() => (app.catalogSearch = '')}>✕</button>
+      {/if}
+    </div>
+  {/if}
 </div>
 
 {#snippet fhead(t: NonNullable<typeof cur>, a: { c: string; dark?: boolean }, chip: string)}
@@ -154,48 +164,8 @@
   </div>
 {/snippet}
 
-{#if tab === 'list' || tab === 'fin'}
-  {#if !shelves.length}
-    <div class="glass note-card" style="left:300px;top:230px;--acc:{app.chrome.c}">
-      <div class="face">
-        {#if tab === 'fin'}
-          <h2>Aún no has terminado nada en {P?.name}</h2>
-          <p>Marca un juego como Terminado con Y.</p>
-        {:else}
-          <h2>Aún no hay juegos en {P?.name}</h2>
-          <p>Cuando haya juegos aparecerán aquí ordenados por estado. Con Y marcas si lo estás jugando, lo tienes pendiente, lo terminaste o lo abandonaste.</p>
-        {/if}
-      </div>
-    </div>
-  {:else}
-    {#if cur && curShelf}{@render fhead(cur, listAcc, STATUS_LABEL[cur.status ?? 'none'])}{/if}
-    <div class="lclip">
-      {#each shelfIdx as k (shelves[k].key)}
-        {@const sh = shelves[k]}
-        {#if tab === 'fin'}
-          {@const isFoc = k === focusShelf}
-          {@const pos = sh.year > 0 ? computeMonthPositions(sh.items, titles, isFoc ? sh.items.indexOf(app.t) : -1) : null}
-          <Shelf acc={LIST_COLOR.finished.c} ink={inkFor(LIST_COLOR.finished.c)} title={sh.label} icon={ICON.check}
-            sub={finShelfSub(sh, isFoc, isFoc ? cur : null, titles)} chip={String(sh.items.length)} items={finShelfItems(sh)}
-            positions={pos?.xs} dividers={pos?.dividers} monthGroups={pos?.groups}
-            focus={isFoc ? sh.items.indexOf(app.t) : -1} from={app.listFrom[sh.key] ?? 0} visible={LIST_VIS}
-            top={(k - app.listTop) * SHELF_STEP} dim={!isFoc}>
-            {#snippet extra()}
-              {#if sh.year > 0}
-                {@const mc = monthCounts(sh)}
-                {@const fm = isFoc && cur?.finishedMs ? new Date(cur.finishedMs).getMonth() : -1}
-                <span class="mbars" title="Terminados por mes">{#each mc as c, m}<i class:on={m === fm} class:z={!c} style="height:{c ? 6 + Math.round((c / Math.max(...mc)) * 16) : 3}px"></i>{/each}</span>
-              {/if}
-            {/snippet}
-          </Shelf>
-        {:else}
-          <Shelf acc={LIST_COLOR[sh.kind].c} ink={inkFor(LIST_COLOR[sh.kind].c)} title={sh.label} icon={LIST_ICON[sh.kind]} sub={shelfSub(sh, titles)} chip={String(sh.items.length)} items={shelfItems(sh)}
-            focus={k === focusShelf ? sh.items.indexOf(app.t) : -1} from={app.listFrom[sh.key] ?? 0} visible={LIST_VIS}
-            top={(k - app.listTop) * SHELF_STEP} dim={k !== focusShelf} />
-        {/if}
-      {/each}
-    </div>
-  {/if}
+{#if tab === 'list'}
+  <MiListaDual />
 {:else if tab === 'coll'}
   {#if ambTitle && app.collShelves[app.collAt.c]}
     {@const csh = app.collShelves[app.collAt.c]}
@@ -267,27 +237,42 @@
 {/if}
 
 <!-- Pistas: solo lo principal de cada pestaña; el resto (filtro, tamaño, audio, Ajustes) está en Start. -->
-{#if (tab === 'list' || tab === 'fin') && shelves.length}
+{#if tab === 'list'}
   <Hints list={[
     ['A', 'Abrir', 'a'],
     ...(cur?.launchable ? [['X', 'Jugar', 'x'] as H] : []),
-    ['Y', 'Estado', 'y'],
-    ['LB/RB', curShelf?.kind === 'pending' ? 'Mover' : 'Saltar', 'rb'],
-    ['LT/RT', 'Pestaña', 'rt'], ['B', 'Volver', 'b'],
+    ['Y', 'Opciones', 'y'],
+    ['LB/RB', 'Pestaña', 'rb'],
+    ['Start', 'Menú', 'menu'],
+    ['B', 'Volver', 'b'],
   ]} />
-{:else if tab === 'list' || tab === 'fin'}
-  <Hints list={[['LT/RT', 'Pestaña', 'rt'], ['B', 'Volver', 'b']]} />
 {:else if tab === 'coll'}
   <Hints list={[
     ['A', app.collAt.c >= app.collShelves.length ? 'Nueva colección' : 'Abrir', 'a'],
-    ...(app.collAt.c < app.collShelves.length ? [['X', 'Capturas', 'x'] as H, ['Y', 'Editar', 'y'] as H] : []),
-    ['LT/RT', 'Pestaña', 'rt'], ['B', 'Volver', 'b'],
+    ...(app.collAt.c < app.collShelves.length ? [['X', 'Jugar / Capturas', 'x'] as H, ['Y', 'Editar', 'y'] as H] : []),
+    ['LB/RB', 'Pestaña', 'rb'],
+    ['Start', 'Menú', 'menu'],
+    ['B', 'Volver', 'b'],
   ]} />
 {:else if titles.length === 0}
-  <Hints list={[['A', 'Añadir juego', 'a'], ['LT/RT', 'Pestaña', 'rt'], ['B', 'Volver', 'b']]} />
+  <Hints list={[['A', 'Añadir juego', 'a'], ['LB/RB', 'Pestaña', 'rb'], ['B', 'Volver', 'b']]} />
 {:else}
   <Hints list={[
-    ['A', 'Abrir', 'a'], ['X', 'Orden', 'x'], ['Y', grid ? 'Carrusel' : 'Cuadrícula', 'y'],
-    ['LT/RT', 'Pestaña', 'rt'], ['Start', 'Menú', 'menu'], ['B', 'Volver', 'b'],
+    ['A', 'Abrir', 'a'],
+    ...(cur?.launchable ? [['X', 'Jugar', 'x'] as H] : []),
+    ['Y', 'Buscar / Vista', 'y'],
+    ['LB/RB', 'Pestaña', 'rb'],
+    ['LT/RT', 'Página', 'rt'],
+    ['Start', 'Menú', 'menu'],
+    ['B', 'Volver', 'b'],
   ]} />
 {/if}
+  <style>
+  .ttabs.list-tabs { top: 72px; }
+  .tsearch { height: 34px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; margin-left: 12px; background: rgba(255, 255, 255, 0.85); }
+  .tsearch input { border: none; background: transparent; font-family: inherit; font-size: 14px; font-weight: 700; color: #334155; width: 140px; outline: none; }
+  .tsearch .ts-x { border: none; background: #cbd5e1; color: #475569; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; cursor: pointer; display: grid; place-items: center; padding: 0; }
+  .tsearch .ts-ic { display: grid; place-items: center; }
+  .tsearch .ts-ic :global(svg) { width: 16px; height: 16px; color: var(--acc); }
+
+</style>

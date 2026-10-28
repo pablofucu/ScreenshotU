@@ -70,6 +70,9 @@
       case 'audio': return audioOut ? `Salida de audio: ${audioOut}` : 'Salida de audio…';
       case 'settings': return 'Ajustes';
       case 'gstats': return 'Estadísticas de la categoría';
+      case 'play': return 'Iniciar juego';
+      case 'listopts': return 'Opciones de la lista…';
+      case 'copy': return 'Copiar captura';
       case 'tsize': return `Portadas: ${tgrid(app.config.titlesZoom).cols} por fila`;
       default:
         if (it.startsWith('flt:')) return fltName(it.slice(4)); return `Mover a ${app.config.platforms.find((p) => p.id === it.slice(4))?.name ?? it.slice(4)}`;
@@ -83,7 +86,7 @@
   });
   const icon = (it: MenuItem) => it.startsWith('flt:') ? (app.titleFilter === it.slice(4) ? ICON.check : '') : it === 'category' || it.startsWith('cat:') ? ICON.move : ({
     folder: ICON.folder, reload: ICON.reload, remove: ICON.power, addshots: ICON.image, accent: ICON.palette, hide: ICON.eyeOff,
-    unhide: ICON.eye, setexe: ICON.folder, setdir: ICON.folder, magpie: ICON.image, select: ICON.check, unselect: ICON.check, selall: ICON.checks, move: ICON.move, reveal: ICON.folder, delshot: ICON.trash, delsel: ICON.trash, addcoll: ICON.saga, sgdb: ICON.search, phrases: ICON.jvn, status: ICON.checks, release: ICON.calendar, saves: ICON.import, filter: ICON.search, tsize: ICON.image, audio: ICON.speaker, settings: ICON.gear, gstats: ICON.checks,
+    unhide: ICON.eye, setexe: ICON.folder, setdir: ICON.folder, magpie: ICON.image, select: ICON.check, unselect: ICON.check, selall: ICON.checks, move: ICON.move, reveal: ICON.folder, delshot: ICON.trash, delsel: ICON.trash, addcoll: ICON.saga, sgdb: ICON.search, phrases: ICON.jvn, status: ICON.checks, release: ICON.calendar, saves: ICON.import, filter: ICON.search, tsize: ICON.image, audio: ICON.speaker, settings: ICON.gear, gstats: ICON.checks, play: ICON.play, listopts: ICON.gear, copy: ICON.camera,
   } as Record<string, string>)[it];
   const sub = $derived(
     list ? (app.menu.items[0]?.startsWith('flt:') ? 'Qué juegos se ven en «Todos»' : [app.platform?.name, t?.name].filter(Boolean).join(' · '))
@@ -99,7 +102,7 @@
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closeOverlay(); }}>
   <div class="glass menupanel" class:tight={!grouped && per > 9} class:tighter={!grouped && per > 11} class:squeeze={squeeze || grouped} class:two={cols > 1} style="--acc:{app.chrome.c};--mrh:{pitch - 4}px;top:{(720 - H) / 2}px;height:{H}px">
     <div class="face">
-      <h2>{list ? (app.menu.items[0]?.startsWith('flt:') ? 'Filtrar' : 'Lista de juegos') : shots ? 'Capturas' : 'Grafismos y opciones'}</h2>
+      <h2>{list ? (app.menu.items[0]?.startsWith('flt:') ? 'Filtrar' : (t ? t.name : 'Lista de juegos')) : shots ? 'Capturas' : 'Grafismos y opciones'}</h2>
       <p class="msub">{sub}</p>
       <div class="mgrid" style="grid-template-columns:repeat({cols},minmax(0,1fr))">
       {#each lay as col, ci}

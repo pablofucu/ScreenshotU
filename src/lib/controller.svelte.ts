@@ -337,10 +337,11 @@ export function go(v: View, anim: 'fwd' | 'back' | '' = '') {
 /* ---------- ficha del juego y su menu «Grafismos y opciones» ---------- */
 export function menuItemsFor(t: Title): MenuItem[] {
   const items: MenuItem[] = [];
+  if (t.launchable && !app.playing) items.push('play');
   if (t.hasFolder) items.push('folder');
   items.push('reload');
   items.push('sgdb');
-  if (t.gameId && app.platform?.id === 'jvn') items.push('phrases');
+  if (t.gameId && (app.platform?.id === 'jvn' || app.platform?.id === 'vn' || app.platform?.icon === 'vn')) items.push('phrases');
   if (app.config.root && t.dir) items.push('addshots');
   items.push('accent');
   if (!t.members && t.id) items.push('status', 'release', 'addcoll');
@@ -357,12 +358,11 @@ export function menuItemsFor(t: Title): MenuItem[] {
   return items.map((it, n) => [it, n] as const).sort((a, b) => pos(a[0]) - pos(b[0]) || a[1] - b[1]).map(([it]) => it);
 }
 
-/** Secciones de la ficha del juego («Grafismos y opciones»). */
+/** Secciones de la ficha del juego: 3 grupos limpios (Juego y Lanzamiento, Presentación, Biblioteca y Estado). */
 const MENU_GROUPS: Array<[string, MenuItem[]]> = [
-  ['Grafismos', ['reload', 'sgdb', 'accent']],
-  ['Archivos y lanzamiento', ['folder', 'addshots', 'saves', 'setexe', 'setdir', 'magpie']],
-  ['Seguimiento', ['status', 'release', 'addcoll', 'phrases']],
-  ['Gestión', ['category', 'hide', 'unhide', 'remove']],
+  ['Juego y Lanzamiento', ['play', 'magpie', 'setexe', 'setdir', 'folder', 'addshots', 'saves']],
+  ['Presentación', ['sgdb', 'accent', 'reload']],
+  ['Biblioteca y Estado', ['status', 'release', 'addcoll', 'phrases', 'category', 'hide', 'unhide', 'remove']],
 ];
 export type MenuGroup = { title: string; items: MenuItem[] };
 
@@ -435,7 +435,16 @@ export async function playTitle(t: Title) {
 
 export async function menuAct(item: MenuItem) {
   if (item === 'audio') { closeOverlay(); void openAudioMenu(); return; }
-  if (app.menu.kind === 'titles') { titlesMenuAct(item); return; }
+  if (item === 'play') {
+    closeOverlay();
+    const t = app.platform?.titles[app.menu.title];
+    if (t) void playTitle(t);
+    return;
+  }
+  if (item === 'listopts' || item === 'filter' || item.startsWith('flt:') || item === 'tsize' || item === 'gstats' || item === 'settings') {
+    titlesMenuAct(item);
+    return;
+  }
   if (app.menu.kind === 'shots') { await shotMenuAct(item); return; }
   const t = app.platform?.titles[app.menu.title];
   if (!t) { closeOverlay(); return; }
@@ -562,7 +571,7 @@ export function activate(act: string | undefined) {
 function runAct(act: string, el: HTMLElement | null | undefined) {
   const [a, b, c] = act.split(':');
   if (a === 'plat') {
-    app.p = +b; app.hp = +b; app.t = 0; app.fk.titles = 'tit0'; app.titleFilter = 'all'; app.titlesTab = 'all'; resetList(); resetColl();
+    app.p = +b; app.hp = +b; app.t = 0; app.fk.titles = 'tit0'; app.titleFilter = 'all'; app.titlesTab = 'list'; resetList(); resetColl();
     go('titles', 'fwd');
   } else if (a === 'tit') {
     if (+b >= (app.platform?.titles.length ?? 0)) openAdd(app.platform?.id);
@@ -611,6 +620,15 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
     app.p = +b; app.titleFilter = 'all'; app.titlesTab = 'all'; resetList(); resetColl();
     openTitle(+c);
     app.detailFrom = 'gstats';
+  } else if (a === 'status') {
+    openStatusBar(app.t);
+  } else if (a === 'release') {
+    openRelease(app.t);
+  } else if (a === 'options') {
+    openDetailMenu();
+  } else if (a === 'phrases') {
+    const t = app.platform?.titles[app.t];
+    if (t?.gameId) void openPhrases(t.gameId, t.name);
   } else if (a === 'evo') {
     delete app.fk.evo;
     go('evo', 'fwd');
@@ -732,14 +750,21 @@ function yearShift(d: number) {
   blip(700);
 }
 
-/** Y recorre Clasificación > Calendario > Resumen anual. */
+/** Y recorre Clasificación > Terminados > Calendario > Resumen anual. */
 function toggleStatsTab() {
-  app.statsTab = app.statsTab === 'rank' ? 'cal' : app.statsTab === 'cal' ? 'year' : 'rank';
+  app.statsTab = app.statsTab === 'rank' ? 'fin' : app.statsTab === 'fin' ? 'cal' : app.statsTab === 'cal' ? 'year' : 'rank';
   if (app.statsTab === 'year') { app.yearCard = 0; app.yearSel = null; }
   app.goff = 0;
   delete app.fk.stats;
   setFocus(defaultKey('stats'));
   blip(700);
+}
+
+export function openFinStats() {
+  app.statsTab = 'fin';
+  delete app.fk.stats;
+  go('stats', 'fwd');
+  blip(1320);
 }
 
 /** LB/RB en las estadísticas de categoría: otra métrica de la clasificación. */
@@ -970,23 +995,39 @@ export function setTitleFilter(f: TitleFilter) {
   blip(700);
 }
 
-/** Start en la lista de juegos: filtrar, estado del juego enfocado, salida de audio y Ajustes. */
+/** Start en la lista de juegos: menú contextual del juego enfocado + «Opciones de la lista…». */
 export function openTitlesMenu() {
   const items: MenuItem[] = [];
   const t = app.platform?.titles[app.t];
-  if (onAllTab() && app.platform?.titles.length) {
-    items.push('filter');
-    if (app.config.titlesView === 'grid') items.push('tsize');
-    if (t?.id && !t.members) items.push('status');
+  items.push('listopts');
+  if (t) {
+    if (t.launchable && !app.playing) items.push('play');
+    if (!t.members && t.id) items.push('status');
+    items.push('sgdb', 'addcoll', 'accent');
+    if (t.gameId && !t.members) items.push('saves');
+    items.push(t.hidden ? 'unhide' : 'hide');
+    if (t.removable) items.push('remove');
+    if (t.hasFolder) items.push('folder');
   }
-  if (onAllTab() && app.platform?.titles.some((x) => x.plays?.length || x.playSeconds > 0)) items.push('gstats');
-  if (app.audioOutputs.length) items.push('audio');
-  items.push('settings');
   app.menu = { kind: 'titles', title: app.t, row: 0, items, confirm: false };
   pushOverlay('menu');
   blip(1320);
 }
 function titlesMenuAct(item: MenuItem) {
+  if (item === 'listopts') {
+    const opts: MenuItem[] = [];
+    if (onAllTab() && app.platform?.titles.length) {
+      opts.push('filter');
+      if (app.config.titlesView === 'grid') opts.push('tsize');
+    }
+    if (app.platform?.titles.some((x) => x.plays?.length || x.playSeconds > 0)) opts.push('gstats');
+    if (app.audioOutputs.length) opts.push('audio');
+    opts.push('settings');
+    app.menu.items = opts;
+    app.menu.row = 0;
+    blip(1320);
+    return;
+  }
   if (item === 'filter') {
     // El menú pasa a listar los filtros, con el activo enfocado.
     app.menu.items = TITLE_FILTERS.map(([f]): MenuItem => `flt:${f}`);
@@ -1001,8 +1042,6 @@ function titlesMenuAct(item: MenuItem) {
     const keep = app.t;
     setFocus('tit' + (app.tview.includes(keep) ? keep : atPos(0)));
     blip(880);
-  } else if (item === 'status') {
-    openStatusBar(app.menu.title);
   } else if (item === 'gstats') {
     closeOverlay();
     openGameStats('cat');
@@ -1172,20 +1211,55 @@ export type SettingId =
   | 'savesauto' | 'ludusavi' | 'inputmouse' | 'inputkeys' | 'update'
   | 'liststalled' | 'liststalleddays' | 'liststalledact' | 'listautoplay'
   | ReadingId | RemoteId;
-/** Secciones de Ajustes (LB/RB las recorren). `color` es el índice del arcoíris. */
+/** Secciones de Ajustes (LB/RB las recorren). `color` es el índice del arcoíris. Consolidado en 5 grupos limpios. */
 export const SETTING_SECTIONS: Array<{ name: string; icon: string; color: number; rows: SettingId[] }> = [
-  { name: 'Biblioteca', icon: 'folder', color: 0, rows: ['root', 'rescan', 'addgame', 'hidden', 'showhidden'] },
-  { name: 'Apariencia', icon: 'palette', color: 1, rows: ['accent', 'view', 'shotsview', 'shotsorder', 'collstyle'] },
-  { name: 'SteamGridDB', icon: 'image', color: 2, rows: ['sgdbkey', 'sgdbauto', 'sgdbnow', 'sgdbgame'] },
-  { name: 'Capturas propias', icon: 'camera', color: 3, rows: ['combo', 'mouse', 'hotkey', 'capsound', 'cappeek', 'caprumble', 'caponly'] },
-  { name: 'Audio', icon: 'speaker', color: 4, rows: ['audioout', 'audiocombo', 'audiohotkey'] },
-  { name: 'Mi lista', icon: 'checks', color: 3, rows: ['liststalled', 'liststalleddays', 'liststalledact', 'listautoplay'] },
-  { name: 'Lectura', icon: 'jvn', color: 5, rows: READING_ROWS },
-  { name: 'Magpie', icon: 'image', color: 6, rows: ['magpieexe', 'magpie'] },
-  { name: 'Copias', icon: 'import', color: 0, rows: ['backup', 'backupmedia', 'restore', 'autobackup'] },
-  { name: 'Partidas', icon: 'pad', color: 1, rows: ['savesauto', 'ludusavi', 'inputmouse', 'inputkeys'] },
-  { name: 'Móvil', icon: 'phone', color: 4, rows: ['remoteon', 'remoteaddr', 'remotecode', 'remotehelp'] },
-  { name: 'Sistema', icon: 'gear', color: 2, rows: ['sound', 'fullscreen', 'monitor', 'oncursor', 'update', 'quit'] },
+  {
+    name: 'Biblioteca y Juegos',
+    icon: 'folder',
+    color: 0,
+    rows: [
+      'root', 'rescan', 'addgame', 'hidden', 'showhidden',
+      'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay',
+      'magpieexe', 'magpie',
+      'savesauto', 'ludusavi', 'inputmouse', 'inputkeys',
+    ],
+  },
+  {
+    name: 'Capturas y Grabación',
+    icon: 'camera',
+    color: 3,
+    rows: [
+      'combo', 'mouse', 'hotkey',
+      'capsound', 'cappeek', 'caprumble', 'caponly',
+      'audioout', 'audiocombo', 'audiohotkey',
+    ],
+  },
+  {
+    name: 'Apariencia',
+    icon: 'palette',
+    color: 1,
+    rows: [
+      'accent', 'view', 'shotsview', 'shotsorder', 'collstyle',
+      'sgdbkey', 'sgdbauto', 'sgdbnow', 'sgdbgame',
+    ],
+  },
+  {
+    name: 'Lectura y Japonés',
+    icon: 'jvn',
+    color: 5,
+    rows: READING_ROWS,
+  },
+  {
+    name: 'Sistema y Copias',
+    icon: 'gear',
+    color: 2,
+    rows: [
+      'backup', 'backupmedia', 'restore', 'autobackup',
+      'remoteon', 'remoteaddr', 'remotecode', 'remotehelp',
+      'sound', 'fullscreen', 'monitor', 'oncursor',
+      'update', 'quit',
+    ],
+  },
 ];
 const secRows = () => SETTING_SECTIONS[app.setSec]?.rows ?? [];
 
@@ -1655,7 +1729,9 @@ export function cmd(c: string) {
       else if (app.view === 'titles') cycleTitlesTab();
       break;
     case 'y':
-      if (app.view === 'titles') toggleTitlesView();
+      if (app.view === 'titles') {
+        if (app.titlesTab === 'all') toggleTitlesView(); else openTitlesMenu();
+      }
       else if (app.view === 'detail') openDetailMenu();
       else if (app.view === 'shots') cycleSort();
       else if (app.view === 'stats') toggleStatsTab();
@@ -1665,6 +1741,7 @@ export function cmd(c: string) {
     case 'menu':
       if (app.view === 'shots' || app.view === 'viewer') openShotMenu();
       else if (app.view === 'titles') openTitlesMenu();
+      else if (app.view === 'detail') openDetailMenu();
       else openSettings();
       break;
   }

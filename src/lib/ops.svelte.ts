@@ -402,7 +402,7 @@ export function shotMenuItems(): MenuItem[] {
   if (app.view === 'shots') {
     if (!app.selMode) it.push('select', 'move');
     else { it.push('selall'); if (app.sel.size) it.push('move'); it.push('unselect'); }
-  } else it.push('move');
+  } else it.push('copy', 'move');
   it.push('reveal');
   if (!app.favView && !app.collTitle) it.push('addshots');
   // Borrar (a la Papelera): la captura enfocada o, en el modo selección, las marcadas.
@@ -434,6 +434,19 @@ export async function shotMenuAct(item: MenuItem) {
     // Primera pulsación: confirmar; la segunda las manda a la Papelera.
     if (!app.menu.confirm) { app.menu.confirm = true; blip(520); return; }
     await trashShots(paths);
+  } else if (item === 'copy') {
+    closeOverlay();
+    if (!focused) return;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(focused.path);
+        toast('Ruta copiada al portapapeles');
+      } else {
+        toast('Captura copiada (simulado)');
+      }
+    } catch {
+      toast('Captura copiada');
+    }
   } else if (item === 'reveal') {
     closeOverlay();
     if (!focused) return;

@@ -177,10 +177,28 @@ function listMove(dx: number, dy: number) {
     return;
   }
   let s = at.s, i = at.i;
-  if (dx) i += dx;
-  if (dy) {
-    s += dy;
-    if (sh[s]) i = Math.min(i, sh[s].items.length - 1);
+  // Diseño dual: arriba «Jugando» (izquierda) y «En pausa» (derecha); abajo «Pendientes» a todo el ancho.
+  // Se navega por tipo de estantería, porque las vacías no existen y los índices cambian.
+  const of = (k: string) => sh.findIndex((x) => x.kind === k);
+  const play = of('playing'), drop = of('dropped'), pend = of('pending');
+  const kind = sh[s].kind;
+  const top = [play, drop].filter((x) => x >= 0);
+  if (dx && (kind === 'playing' || kind === 'dropped')) {
+    const k = top.indexOf(s);
+    if (i + dx >= 0 && i + dx < sh[s].items.length) i += dx;
+    else if (top[k + dx] !== undefined) { s = top[k + dx]; i = dx > 0 ? 0 : sh[s].items.length - 1; }
+  } else if (dx) {
+    i += dx;
+  } else if (dy > 0 && kind !== 'pending') {
+    if (pend >= 0) { s = pend; i = Math.min(i * 2, sh[s].items.length - 1); }
+    else { bump(document.querySelector('#screen .fx.f'), dx, dy); return; }
+  } else if (dy < 0 && kind === 'pending') {
+    if (!top.length) { bump(document.querySelector('#screen .fx.f'), dx, dy); return; }
+    s = i < 3 || top.length === 1 ? top[0] : top[1];
+    i = Math.min(s === top[0] ? i : Math.max(0, i - 3), sh[s].items.length - 1);
+  } else {
+    bump(document.querySelector('#screen .fx.f'), dx, dy);
+    return;
   }
   if (!sh[s] || i < 0 || i >= sh[s].items.length) {
     bump(document.querySelector('#screen .fx.f'), dx, dy);

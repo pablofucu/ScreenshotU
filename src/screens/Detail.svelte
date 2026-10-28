@@ -4,6 +4,8 @@
   import { ICON } from '../lib/icons';
   import { fmtDur, nCapturas, z } from '../lib/format';
   import { DETAIL_SHOTS } from '../lib/controller.svelte';
+  import { openStatusBar } from '../lib/milista.svelte';
+  import { openPhrases } from '../lib/phrases.svelte';
   import { fmtRelease, openRelease } from '../lib/release.svelte';
   import TopBar from '../components/TopBar.svelte';
   import Hints from '../components/Hints.svelte';
@@ -114,6 +116,7 @@
     return `${z(Math.floor(s / 3600))}:${z(Math.floor(s / 60) % 60)}:${z(s % 60)}`;
   });
   const longName = $derived((T?.name.length ?? 0) > 22);
+  const isJvn = $derived(!!T?.gameId && (P?.id === 'jvn' || P?.id === 'vn' || P?.icon === 'vn'));
 </script>
 
 {#if T}
@@ -143,13 +146,49 @@
   </div>
 
   <div class="dchips">
-  {#if T.status}
-    <div class="stpill pill st-{T.status}" style="--c:{LIST_COLOR[T.status].c}">{@html T.status === 'finished' ? ICON.check : ''}<b>{STATUS_LABEL[T.status]}</b>{#if T.status === 'finished' && T.finishedMs}<small>{new Date(T.finishedMs).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</small>{/if}{#if T.status === 'finished' && T.rating}<small>{'★'.repeat(T.rating)}</small>{/if}</div>
-  {/if}
-  {#if T.release && !T.members}
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-    <div class="relpill pill" title="Cambiar la fecha de lanzamiento (Y › Fecha de lanzamiento)" onclick={() => openRelease(app.t)}>{@html ICON.calendar}<b>{T.release.month ? 'Salió el' : 'Salió en'}</b><small>{fmtRelease(T.release)}</small></div>
-  {/if}
+    <div
+      class="stpill pill fx {T.status ? `st-${T.status}` : 'st-none'}"
+      class:f={app.focus === 'dst'}
+      data-k="dst"
+      data-act="status"
+      role="button"
+      tabindex="-1"
+      onclick={() => openStatusBar(app.t)}
+      style={T.status ? `--c:${LIST_COLOR[T.status].c}` : ''}
+      title="Cambiar estado del juego"
+    >
+      {@html T.status === 'finished' ? ICON.check : ICON.checks}
+      <b>{T.status ? STATUS_LABEL[T.status] : 'Sin estado'}</b>
+      {#if T.status === 'finished' && T.finishedMs}
+        <small>{new Date(T.finishedMs).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</small>
+      {/if}
+      {#if T.status === 'finished' && T.rating}
+        <small>{'★'.repeat(T.rating)}</small>
+      {/if}
+    </div>
+
+    {#if !T.members}
+      <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+      <div
+        class="relpill pill fx"
+        class:f={app.focus === 'drel'}
+        data-k="drel"
+        data-act="release"
+        role="button"
+        tabindex="-1"
+        title="Cambiar fecha de lanzamiento"
+        onclick={() => openRelease(app.t)}
+      >
+        {@html ICON.calendar}
+        {#if T.release}
+          <b>{T.release.month ? 'Salió el' : 'Salió en'}</b>
+          <small>{fmtRelease(T.release)}</small>
+        {:else}
+          <b>Fecha de lanzamiento…</b>
+        {/if}
+      </div>
+    {/if}
   </div>
 
   {#if T.launchable}
@@ -163,7 +202,7 @@
     <div class="nolaunch pill"><b>Sin lanzador</b><small>Usa «Añadir juego» en Inicio</small></div>
   {/if}
 
-  <div class="dpanel dhours pill" class:fx={hasPlays} class:f={app.focus === 'dhrs'} data-k="dhrs" data-act="evo">
+  <div class="dpanel dhours pill" class:fx={hasPlays} class:f={app.focus === 'dhrs'} data-k="dhrs" data-act="evo" class:jvn={isJvn}>
     <div class="hsub">Horas jugadas{nSes > 0 ? ` · ${nSes} ${nSes === 1 ? 'sesión' : 'sesiones'}` : ''}</div>
     {#snippet cell(d: number, i: number)}
       {@const st = strip(d, i)}
@@ -179,7 +218,7 @@
   </div>
 
   {#if T.launchable}
-    <div class="dpanel dweek pill" class:fx={hasPlays} class:f={app.focus === 'dwk'} data-k="dwk" data-act="evo">
+    <div class="dpanel dweek pill" class:fx={hasPlays} class:f={app.focus === 'dwk'} data-k="dwk" data-act="evo" class:jvn={isJvn}>
       <div class="chart">
         {#if gx}{#key gx}<span class="gainchip wk">{gx.label}</span>{/key}{/if}
         <div class="hsub" style="margin:0">Esta semana · <span class:wcount={wshow !== null}>{weekText}</span></div>
@@ -191,6 +230,29 @@
             {/each}
           </div>
         {/key}
+      </div>
+    </div>
+  {/if}
+
+  {#if isJvn}
+    <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+    <div
+      class="dpanel dvocab pill fx"
+      class:f={app.focus === 'dvoc'}
+      data-k="dvoc"
+      data-act="phrases"
+      role="button"
+      tabindex="-1"
+      onclick={() => openPhrases(T.gameId, T.name)}
+      title="Repaso y vocabulario de la novela"
+    >
+      <div class="hsub">Vocabulario y frases</div>
+      <div class="vocab-body">
+        <span class="vico">{@html ICON.jvn}</span>
+        <div class="vinfo">
+          <b>Repaso / Glosario</b>
+          <small>Ver tarjetas guardadas →</small>
+        </div>
       </div>
     </div>
   {/if}
@@ -209,15 +271,32 @@
     <div class="dnone">Todavía no hay capturas de este juego</div>
   {/if}
 
-  <Hints list={[['A', app.focus === 'dhrs' || app.focus === 'dwk' ? 'Estadísticas' : 'Seleccionar', 'a'], ['B', 'Volver', 'b'], ['Y', 'Opciones', 'y']]} />
+  <Hints list={[
+    ['A', app.focus === 'play' ? (playing ? 'En marcha' : 'Jugar') : app.focus === 'dst' ? 'Cambiar estado' : app.focus === 'drel' ? 'Cambiar fecha' : app.focus === 'dvoc' ? 'Vocabulario' : app.focus === 'dhrs' || app.focus === 'dwk' ? 'Estadísticas' : 'Seleccionar', 'a'],
+    ...(T.launchable && !playing ? [['X', 'Jugar', 'x'] as [string, string, string]] : []),
+    ['B', 'Volver', 'b'],
+    ['Start', 'Opciones', 'menu'],
+  ]} />
 {/if}
 
 <style>
-  /* Estado y fecha de lanzamiento, uno tras otro sobre el hero. */
+  /* Estado y fecha de lanzamiento, uno tras otro sobre el hero */
   .dchips{position:absolute;left:100px;top:108px;z-index:6;display:flex;gap:10px}
-  .dchips :global(.stpill){position:static}
+  .dchips :global(.stpill){position:static;cursor:pointer}
+  .dchips :global(.stpill.st-none){background:rgba(40,48,64,.82);color:#94a3b8;border:1px dashed rgba(255,255,255,.25)}
   .relpill{height:36px;padding:0 16px 0 12px;border-radius:999px;display:flex;align-items:center;gap:8px;font-size:17px;font-weight:800;color:#fff;box-sizing:border-box;cursor:pointer;
     background:linear-gradient(180deg,rgba(60,68,84,.78),rgba(30,36,48,.82));box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 14px -6px rgba(0,0,0,.5)}
   .relpill :global(svg){width:18px;height:18px}
   .relpill small{font-size:15px;font-weight:700;opacity:.92}
+
+
+  /* Ajuste de anchos si es JVN/Novela con widget de vocabulario */
+  .dhours.jvn{width:310px}
+  .dweek.jvn{left:710px;width:250px}
+  .dvocab{left:980px;width:236px;cursor:pointer;background:linear-gradient(180deg,rgba(40,48,64,.78),rgba(24,28,40,.88))}
+  .vocab-body{display:flex;align-items:center;gap:10px}
+  .vico{width:38px;height:38px;border-radius:12px;background:rgba(168,85,247,.22);color:#c084fc;display:grid;place-items:center;flex:none}
+  .vico :global(svg){width:20px;height:20px}
+  .vinfo b{display:block;font-size:14px;font-weight:800;color:#fff}
+  .vinfo small{display:block;font-size:11px;font-weight:600;color:#94a3b8;margin-top:2px}
 </style>

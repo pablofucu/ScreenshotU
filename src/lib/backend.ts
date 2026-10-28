@@ -1,6 +1,10 @@
 import type { AddReport, AudioOutput, Backend, BackupResult, GameStatsDb, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, MoveReport, TrashReport, RemoteInfo, NewGame, Collection, SortMode } from './types';
 
 export const IS_TAURI = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+export const FORCE_MOCK = typeof window !== 'undefined' && (
+  new URLSearchParams(window.location.search).has('mock') ||
+  localStorage.getItem('visor_force_mock') === 'true'
+);
 
 /** Cola con concurrencia limitada para pedir miniaturas sin saturar el IPC. */
 class Queue {
@@ -216,7 +220,7 @@ async function tauriBackend(): Promise<Backend> {
 }
 
 export async function createBackend(): Promise<Backend> {
-  if (IS_TAURI) return tauriBackend();
+  if (IS_TAURI && !FORCE_MOCK) return tauriBackend();
   const { mockBackend } = await import('./mock');
   return mockBackend();
 }
