@@ -64,6 +64,8 @@ export const DEFAULT_CONFIG: Config = {
   listStalledDays: 30,
   listStalledAction: 'ask',
   listAutoPlay: true,
+  inputMouse: true,
+  inputKeys: false,
 };
 
 export type MenuItem =

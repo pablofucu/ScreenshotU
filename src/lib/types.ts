@@ -89,6 +89,10 @@ export interface Config {
   listStalledAction: 'ask' | 'pending' | 'dropped';
   /** Al lanzar un pendiente desde el visor, pasa a «Jugando». */
   listAutoPlay: boolean;
+  /** Estadísticas de juego: contar clics, rueda y distancia del cursor (solo contadores). */
+  inputMouse: boolean;
+  /** Contar pulsaciones de teclado (solo cuántas, nunca cuáles). Desactivado por defecto. */
+  inputKeys: boolean;
 }
 /** Orden de la lista de juegos: última partida, A–Z o por color de la portada. */
 export type TitleOrder = 'last' | 'az' | 'color';

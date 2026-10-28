@@ -134,6 +134,10 @@ pub struct Config {
     pub list_stalled_action: String,
     /// Al lanzar un pendiente desde el visor, pasa a «Jugando».
     pub list_auto_play: bool,
+    /// Estadisticas de juego: contar clics, rueda y distancia del cursor durante las partidas (solo contadores).
+    pub input_mouse: bool,
+    /// Lo mismo con las pulsaciones de teclado. Solo se cuentan, nunca se guarda que tecla; desactivado por defecto.
+    pub input_keys: bool,
 }
 
 pub fn default_platforms() -> Vec<PlatformCfg> {
@@ -217,6 +221,8 @@ impl Default for Config {
             list_stalled_days: 30,
             list_stalled_action: "ask".into(),
             list_auto_play: true,
+            input_mouse: true,
+            input_keys: false,
         }
     }
 }
