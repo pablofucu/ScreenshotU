@@ -145,6 +145,13 @@ pub fn start(app: &AppHandle, game: Game) -> Result<(), String> {
     let app2 = app.clone();
     let tele = Arc::new(Telemetry::default());
     {
+        let (mouse, keys) = {
+            let c = st.config.lock().unwrap();
+            (c.input_mouse, c.input_keys)
+        };
+        *tele.input.lock().unwrap() = crate::input::start(mouse, keys, tele.game_fg.clone());
+    }
+    {
         let t2 = tele.clone();
         std::thread::spawn(move || pad_counter(t2));
     }
@@ -159,7 +166,9 @@ const AFK_MS: u64 = 300_000;
 #[derive(Default)]
 struct Telemetry {
     /// El juego esta delante (lo fija el vigilante cada segundo): solo entonces se cuentan pulsaciones.
-    game_fg: AtomicBool,
+    game_fg: Arc<AtomicBool>,
+    /// Captura de raton y teclado (Raw Input), si esta activada en Ajustes.
+    input: Mutex<Option<crate::input::Handle>>,
     stop: AtomicBool,
     /// Ultima vez que se toco un mando (ms desde epoch; 0 = nunca).
     last_pad_ms: AtomicI64,
@@ -271,6 +280,14 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
     }
     tele.stop.store(true, Ordering::Relaxed);
     tele.game_fg.store(false, Ordering::Relaxed);
+    let captured = match tele.input.lock().unwrap().take() {
+        Some(h) => {
+            let c = h.counts();
+            h.stop();
+            c
+        }
+        None => Default::default(),
+    };
     let seconds = first_seen.map(|t| t.elapsed().as_secs().saturating_sub(1)).unwrap_or(0);
     let st = app.state::<AppState>();
     if seconds > 0 {
@@ -281,7 +298,7 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
         let input = visor_core::db::data::InputCounts {
             pad: tele.pad.load(Ordering::Relaxed) as i64,
             peak_ppm: tele.peak_ppm.load(Ordering::Relaxed) as i64,
-            ..Default::default()
+            ..captured
         };
         crate::state::log_db_err("partida", st.db.with(|c| visor_core::db::data::stat_add_session(c, &game.id, first_seen_ms, end, active, &input)));
     }

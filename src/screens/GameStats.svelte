@@ -23,6 +23,9 @@
   const D = $derived(app.gsDb);
   const first = $derived(D?.firstPlayedMs ?? S?.first ?? null);
   const pct = $derived(D && D.measuredMs > 0 ? Math.round((D.activeMs / D.measuredMs) * 100) : null);
+  const fmtN = (n: number) => n.toLocaleString('es');
+  /** 12 400 000 -> «12,4 M»; 8 300 -> «8,3 k». */
+  const fmtBig = (n: number) => (n >= 1e6 ? `${(n / 1e6).toFixed(1).replace('.', ',')} M` : n >= 1e4 ? `${(n / 1e3).toFixed(1).replace('.', ',')} k` : fmtN(n));
   const runs = $derived(Math.max(D?.runCount ?? 0, S?.sessions ?? 0));
 </script>
 
@@ -76,7 +79,15 @@
   <div class="glass rcard evhead" style="--acc:{app.chrome.c}">
     <RecentCard t={T} />
   </div>
+  <div class="sttop" style="top:98px;left:auto;right:64px">
+    <div class="stview pill" data-hact="y">
+      <span class="btn y">Y</span>
+      <span class="t" class:on={app.gsPage === 'sum'}>Resumen</span>
+      <span class="t" class:on={app.gsPage === 'io'}>Periféricos</span>
+    </div>
+  </div>
 
+  {#if app.gsPage === 'sum'}
   <div class="stsum" style="top:260px">
     <div class="rbox"><div class="k">Tiempo total</div><div class="v acc">{fmtHM(S.ms)}</div></div>
     <div class="rbox"><div class="k">Partidas</div><div class="v">{S.sessions}</div></div>
@@ -128,5 +139,39 @@
     </div>
   </div>
 
-  <Hints list={[['B', 'Volver', 'b']]} />
+  <Hints list={[['Y', 'Periféricos', 'y'], ['B', 'Volver', 'b']]} />
+  {:else}
+  <div class="stsum" style="top:260px;grid-template-columns:repeat(3,1fr)">
+    <div class="rbox">
+      <div class="k">Clics de ratón</div>
+      <div class="v">{D && D.clicks > 0 ? fmtN(D.clicks) : '—'}</div>
+      <div class="s eq">{#if D && D.peakCpm > 0}Pico: {D.peakCpm} por minuto{:else if !app.config.inputMouse}Desactivado en Ajustes{/if}</div>
+    </div>
+    <div class="rbox">
+      <div class="k">Rueda del ratón</div>
+      <div class="v">{D && D.wheel > 0 ? fmtN(D.wheel) : '—'}</div>
+      <div class="s eq">{#if D && D.wheel > 0}muescas{:else if !app.config.inputMouse}Desactivado en Ajustes{/if}</div>
+    </div>
+    <div class="rbox">
+      <div class="k">Distancia del cursor</div>
+      <div class="v">{D && D.mouseDist > 0 ? fmtBig(D.mouseDist) : '—'}</div>
+      <div class="s eq">{#if D && D.mouseDist > 0}unidades del ratón, aprox. píxeles{:else if !app.config.inputMouse}Desactivado en Ajustes{/if}</div>
+    </div>
+  </div>
+  <div class="stsum" style="top:376px;grid-template-columns:repeat(3,1fr)">
+    <div class="rbox">
+      <div class="k">Pulsaciones de teclado</div>
+      <div class="v">{D && D.keys > 0 ? fmtN(D.keys) : '—'}</div>
+      <div class="s eq">{#if D && D.peakKpm > 0}Pico: {D.peakKpm} por minuto{:else if !app.config.inputKeys}Desactivado en Ajustes{/if}</div>
+    </div>
+    <div class="rbox">
+      <div class="k">Pulsaciones de mando</div>
+      <div class="v">{D && D.pad > 0 ? fmtN(D.pad) : '—'}</div>
+      <div class="s eq">{#if D && D.peakPpm > 0}Pico: {D.peakPpm} por minuto{/if}</div>
+    </div>
+  </div>
+  <div class="stnone" style="top:520px;font-size:15px;font-weight:600">Solo se cuentan las pulsaciones, nunca qué tecla es. Se mide desde que se instaló esta versión.</div>
+
+  <Hints list={[['Y', 'Resumen', 'y'], ['B', 'Volver', 'b']]} />
+  {/if}
 {/if}

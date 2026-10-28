@@ -467,7 +467,7 @@ export async function mockBackend(): Promise<Backend> {
       save('visor.mock.prefs', prefs);
     },
     async gameStats() {
-      return { runCount: 0, firstPlayedMs: null, activeMs: 0, measuredMs: 0, longestActiveMs: 0, longestActiveAt: null, clicks: 0, wheel: 0, mouseDist: 0, keys: 0, pad: 0, peakCpm: 0, peakKpm: 0, peakPpm: 0 };
+      return { runCount: 0, firstPlayedMs: null, activeMs: 0, measuredMs: 0, longestActiveMs: 0, longestActiveAt: null, clicks: 8420, wheel: 312, mouseDist: 12_400_000, keys: 5230, pad: 0, peakCpm: 140, peakKpm: 310, peakPpm: 0 };
     },
     async setReleaseDate(id, d) {
       const p = (prefs[id] ??= {});

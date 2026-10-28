@@ -698,6 +698,7 @@ function openGameStats(scope: 'title' | 'cat') {
   app.gsScope = scope;
   app.gsFrom = scope === 'title' ? 'evo' : 'titles';
   app.gsDb = null;
+  app.gsPage = 'sum';
   const id = app.platform?.titles[app.t]?.gameId;
   if (scope === 'title' && id) {
     // Lanzamientos, primer inicio y tiempo interactivo viven en la base: se piden al abrir.
@@ -1168,7 +1169,7 @@ export type SettingId =
   | 'audioout' | 'audiocombo' | 'audiohotkey' | 'hotkey' | 'combo' | 'mouse' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caponly' | 'caprumble' | 'quit'
   | 'sgdbkey' | 'sgdbauto' | 'sgdbnow' | 'sgdbgame'
   | 'backup' | 'backupmedia' | 'restore' | 'autobackup'
-  | 'savesauto' | 'ludusavi' | 'update'
+  | 'savesauto' | 'ludusavi' | 'inputmouse' | 'inputkeys' | 'update'
   | 'liststalled' | 'liststalleddays' | 'liststalledact' | 'listautoplay'
   | ReadingId | RemoteId;
 /** Secciones de Ajustes (LB/RB las recorren). `color` es el índice del arcoíris. */
@@ -1182,7 +1183,7 @@ export const SETTING_SECTIONS: Array<{ name: string; icon: string; color: number
   { name: 'Lectura', icon: 'jvn', color: 5, rows: READING_ROWS },
   { name: 'Magpie', icon: 'image', color: 6, rows: ['magpieexe', 'magpie'] },
   { name: 'Copias', icon: 'import', color: 0, rows: ['backup', 'backupmedia', 'restore', 'autobackup'] },
-  { name: 'Partidas', icon: 'pad', color: 1, rows: ['savesauto', 'ludusavi'] },
+  { name: 'Partidas', icon: 'pad', color: 1, rows: ['savesauto', 'ludusavi', 'inputmouse', 'inputkeys'] },
   { name: 'Móvil', icon: 'phone', color: 4, rows: ['remoteon', 'remoteaddr', 'remotecode', 'remotehelp'] },
   { name: 'Sistema', icon: 'gear', color: 2, rows: ['sound', 'fullscreen', 'monitor', 'oncursor', 'update', 'quit'] },
 ];
@@ -1408,6 +1409,8 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'backupmedia') { app.backupMedia = !app.backupMedia; blip(1320); }
   else if (id === 'restore' && dir === 0) void restoreBackup();
   else if (id === 'autobackup') { void patchConfig({ autoBackup: !app.config.autoBackup }); blip(1320); }
+  else if (id === 'inputmouse') { void patchConfig({ inputMouse: !app.config.inputMouse }); blip(1320); }
+  else if (id === 'inputkeys') { void patchConfig({ inputKeys: !app.config.inputKeys }); blip(1320); }
   else if (id === 'savesauto') { void patchConfig({ savesAuto: !app.config.savesAuto }); blip(1320); }
   else if (id === 'liststalled') { void patchConfig({ listStalled: !app.config.listStalled }); blip(1320); }
   else if (id === 'liststalleddays') {
@@ -1657,6 +1660,7 @@ export function cmd(c: string) {
       else if (app.view === 'shots') cycleSort();
       else if (app.view === 'stats') toggleStatsTab();
       else if (app.view === 'evo') openGameStats('title');
+      else if (app.view === 'gstats' && app.gsScope === 'title') { app.gsPage = app.gsPage === 'sum' ? 'io' : 'sum'; blip(700); }
       break;
     case 'menu':
       if (app.view === 'shots' || app.view === 'viewer') openShotMenu();

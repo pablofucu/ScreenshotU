@@ -407,6 +407,8 @@ class Store {
   gsFrom = $state<'evo' | 'titles'>('evo');
   /** Cifras de la base del juego abierto en las estadísticas de juego (null mientras llegan). */
   gsDb = $state<GameStatsDb | null>(null);
+  /** Página de las estadísticas de un título: resumen o periféricos (clics, rueda, teclas, mando). */
+  gsPage = $state<'sum' | 'io'>('sum');
   /** Categoría de la clasificación (índice en `lib.platforms`; si ya no tiene partidas, la primera que las tenga). */
   statsPlatSel = $state(-1);
   statsPlats = $derived(playedPlatforms(this.lib));

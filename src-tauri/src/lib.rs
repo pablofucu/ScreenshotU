@@ -5,6 +5,7 @@ mod audio;
 mod backup;
 mod display;
 mod glossary;
+mod input;
 mod launcher;
 mod library;
 mod magpie;
