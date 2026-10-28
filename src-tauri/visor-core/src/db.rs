@@ -223,6 +223,21 @@ pub const MIGRATIONS: &[&str] = &[
         first_played_ms = (SELECT MIN(start_ms) FROM sessions s WHERE s.game_id = play_stats.game_id),
         run_count = (SELECT COUNT(*) FROM sessions s WHERE s.game_id = play_stats.game_id);
     "#,
+    // 12: entrada del jugador por partida (clics, rueda, distancia del cursor, teclas, botones de mando) y picos por
+    // minuto. Solo se escribe lo medido; una partida sin fila no tiene telemetria. Las teclas son solo un contador.
+    r#"
+    CREATE TABLE session_input (
+        session_id INTEGER PRIMARY KEY REFERENCES sessions(id) ON DELETE CASCADE,
+        clicks     INTEGER NOT NULL DEFAULT 0,
+        wheel      INTEGER NOT NULL DEFAULT 0,
+        mouse_dist INTEGER NOT NULL DEFAULT 0,
+        keys       INTEGER NOT NULL DEFAULT 0,
+        pad        INTEGER NOT NULL DEFAULT 0,
+        peak_cpm   INTEGER NOT NULL DEFAULT 0,
+        peak_kpm   INTEGER NOT NULL DEFAULT 0,
+        peak_ppm   INTEGER NOT NULL DEFAULT 0
+    );
+    "#,
 ];
 
 /// Version del esquema que entiende esta compilacion.
@@ -455,7 +470,7 @@ mod tests {
         let db = Db::open_path(&d.path().join("visor.db")).unwrap();
         db.with(|c| {
             favorite_set(c, "x.png", true).unwrap();
-            stat_add_session(c, "manual:1", 1000, 61_000, 0).unwrap();
+            stat_add_session(c, "manual:1", 1000, 61_000, 0, &InputCounts::default()).unwrap();
         });
         let dest = d.path().join("copias/visor-copia.db");
         db.backup_to(&dest).unwrap();
@@ -497,13 +512,13 @@ mod tests {
         let db = Db::open_path(&d.path().join("visor.db")).unwrap();
         db.with(|c| {
             stat_mark_started(c, "g", 1_000).unwrap();
-            stat_add_session(c, "g", 1_000, 11_000, 4_000).unwrap();
+            stat_add_session(c, "g", 1_000, 11_000, 4_000, &InputCounts { pad: 10, peak_ppm: 3, ..Default::default() }).unwrap();
             // Menos de 2 min despues: se funde con la anterior (suma el tiempo activo) pero cuenta otro lanzamiento.
             stat_mark_started(c, "g", 20_000).unwrap();
-            stat_add_session(c, "g", 20_000, 30_000, 5_000).unwrap();
+            stat_add_session(c, "g", 20_000, 30_000, 5_000, &InputCounts { pad: 5, peak_ppm: 7, ..Default::default() }).unwrap();
             // Mucho despues: partida nueva; no puede declararse mas activa que su duracion.
             stat_mark_started(c, "g", 900_000).unwrap();
-            stat_add_session(c, "g", 900_000, 910_000, 99_000).unwrap();
+            stat_add_session(c, "g", 900_000, 910_000, 99_000, &InputCounts::default()).unwrap();
         });
         let g = db.with(|c| game_stats(c, "g")).unwrap();
         assert_eq!(g.run_count, 3);
@@ -511,6 +526,8 @@ mod tests {
         assert_eq!(g.active_ms, 9_000 + 10_000);
         assert_eq!(g.measured_ms, 29_000 + 10_000);
         assert_eq!((g.longest_active_ms, g.longest_active_at), (10_000, Some(900_000)));
+        // La entrada de las partidas fundidas se suma y los picos por minuto se quedan con el maximo.
+        assert_eq!((g.pad, g.peak_ppm, g.clicks, g.keys), (15, 7, 0, 0));
     }
 
     #[test]

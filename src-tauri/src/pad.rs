@@ -97,8 +97,17 @@ mod xinput {
     }
 }
 
-/// Detecta si alguien toca algun mando XInput (botones, gatillos o sticks fuera de la zona muerta). Lo usa el
-/// vigilante de la partida para el tiempo interactivo: XInput no reinicia el contador de inactividad de Windows.
+/// Lo que paso en los mandos XInput desde la consulta anterior.
+#[derive(Clone, Copy, Default)]
+pub struct PadPoll {
+    /// Hay algo pulsado o movido (botones, gatillos o sticks fuera de la zona muerta) o algo cambio.
+    pub active: bool,
+    /// Pulsaciones nuevas: botones que pasan de sueltos a pulsados y gatillos que cruzan el umbral.
+    pub presses: u32,
+}
+
+/// Lee los mandos XInput para el vigilante de la partida: tiempo interactivo (XInput no reinicia el contador de
+/// inactividad de Windows) y pulsaciones. Solo lee: el juego sigue recibiendo el mando igual.
 #[cfg(windows)]
 pub struct Activity {
     reader: xinput::Reader,
@@ -113,15 +122,15 @@ impl Activity {
         Activity { reader: xinput::Reader::new(), prev: [None; 4], connected: [false; 4], last_rescan: None }
     }
 
-    /// `true` si ahora hay algo pulsado o movido, o si cambio algo desde la consulta anterior. Los puertos sin
-    /// mando solo se reintentan cada 5 s (preguntar por ellos es lento).
-    pub fn poll(&mut self) -> bool {
+    /// Los puertos sin mando solo se reintentan cada 5 s (preguntar por ellos es lento).
+    pub fn poll(&mut self) -> PadPoll {
         const DEAD: i32 = 9000;
+        const TRIGGER: i32 = 30;
         let rescan = self.last_rescan.map(|t| t.elapsed().as_secs() >= 5).unwrap_or(true);
         if rescan {
             self.last_rescan = Some(std::time::Instant::now());
         }
-        let mut active = false;
+        let mut out = PadPoll::default();
         for i in 0..4 {
             if !self.connected[i] && !rescan {
                 continue;
@@ -129,9 +138,13 @@ impl Activity {
             match self.reader.read_all(i as u32) {
                 Some(s) => {
                     self.connected[i] = true;
-                    let held = s[0] != 0 || s[1] > 30 || s[2] > 30 || s[3..].iter().any(|v| v.abs() > DEAD);
-                    let changed = self.prev[i].map(|p| p[..3] != s[..3]).unwrap_or(false);
-                    active |= held || changed;
+                    let held = s[0] != 0 || s[1] > TRIGGER || s[2] > TRIGGER || s[3..].iter().any(|v| v.abs() > DEAD);
+                    out.active |= held;
+                    if let Some(p) = self.prev[i] {
+                        out.active |= p[..3] != s[..3];
+                        out.presses += ((s[0] & !p[0]) as u32).count_ones();
+                        out.presses += (p[1] <= TRIGGER && s[1] > TRIGGER) as u32 + (p[2] <= TRIGGER && s[2] > TRIGGER) as u32;
+                    }
                     self.prev[i] = Some(s);
                 }
                 None => {
@@ -140,7 +153,7 @@ impl Activity {
                 }
             }
         }
-        active
+        out
     }
 }
 
@@ -152,8 +165,8 @@ impl Activity {
     pub fn new() -> Self {
         Activity
     }
-    pub fn poll(&mut self) -> bool {
-        false
+    pub fn poll(&mut self) -> PadPoll {
+        PadPoll::default()
     }
 }
 

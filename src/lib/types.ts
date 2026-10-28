@@ -128,6 +128,15 @@ export interface GameStatsDb {
   measuredMs: number;
   longestActiveMs: number;
   longestActiveAt: number | null;
+  /** Entrada de las partidas medidas: totales y picos por minuto (0 = nada medido). */
+  clicks: number;
+  wheel: number;
+  mouseDist: number;
+  keys: number;
+  pad: number;
+  peakCpm: number;
+  peakKpm: number;
+  peakPpm: number;
 }
 /** Estado del acceso desde el móvil. `error`: último fallo al abrir el puerto (p. ej. en uso). */
 export interface RemoteInfo { enabled: boolean; running: boolean; port: number; addresses: string[]; code: string; error: string | null }

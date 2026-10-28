@@ -101,7 +101,7 @@
     </div>
   </div>
 
-  <div class="stsum" style="top:492px;grid-template-columns:repeat(3,1fr)">
+  <div class="stsum" style="top:492px">
     <div class="rbox">
       <div class="k">Tiempo interactivo</div>
       {#if D && pct !== null}
@@ -120,6 +120,11 @@
       <div class="k">Mayor sesión interactiva</div>
       <div class="v">{D && D.longestActiveAt ? fmtHM(D.longestActiveMs) : '—'}</div>
       {#if D?.longestActiveAt}<div class="s eq">{fmtLongDay(D.longestActiveAt, now)}, {fmtClock(D.longestActiveAt)}</div>{/if}
+    </div>
+    <div class="rbox">
+      <div class="k">Pulsaciones de mando</div>
+      <div class="v">{D && D.pad > 0 ? D.pad.toLocaleString('es') : '—'}</div>
+      {#if D && D.peakPpm > 0}<div class="s eq">Pico: {D.peakPpm} por minuto</div>{/if}
     </div>
   </div>
 

@@ -191,6 +191,25 @@ pub fn stat_mark_started(c: &Connection, id: &str, now_ms: i64) -> Result<()> {
     Ok(())
 }
 
+/// Entrada del jugador durante una partida (telemetria de perifericos). Los picos son por minuto.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct InputCounts {
+    pub clicks: i64,
+    pub wheel: i64,
+    pub mouse_dist: i64,
+    pub keys: i64,
+    pub pad: i64,
+    pub peak_cpm: i64,
+    pub peak_kpm: i64,
+    pub peak_ppm: i64,
+}
+
+impl InputCounts {
+    pub fn is_empty(&self) -> bool {
+        *self == InputCounts::default()
+    }
+}
+
 /// Cifras de un juego que no viajan con la biblioteca: se piden al abrir sus estadisticas.
 #[derive(Debug, Default, PartialEq, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -205,6 +224,15 @@ pub struct GameStatsDb {
     /// Partida con mas tiempo interactivo.
     pub longest_active_ms: i64,
     pub longest_active_at: Option<i64>,
+    /// Totales de entrada de todas las partidas medidas y picos por minuto (maximo de las partidas).
+    pub clicks: i64,
+    pub wheel: i64,
+    pub mouse_dist: i64,
+    pub keys: i64,
+    pub pad: i64,
+    pub peak_cpm: i64,
+    pub peak_kpm: i64,
+    pub peak_ppm: i64,
 }
 
 pub fn game_stats(c: &Connection, id: &str) -> Result<GameStatsDb> {
@@ -234,13 +262,21 @@ pub fn game_stats(c: &Connection, id: &str) -> Result<GameStatsDb> {
         out.longest_active_ms = ms;
         out.longest_active_at = Some(at);
     }
+    (out.clicks, out.wheel, out.mouse_dist, out.keys, out.pad, out.peak_cpm, out.peak_kpm, out.peak_ppm) = c.query_row(
+        "SELECT COALESCE(SUM(i.clicks), 0), COALESCE(SUM(i.wheel), 0), COALESCE(SUM(i.mouse_dist), 0), COALESCE(SUM(i.keys), 0),
+                COALESCE(SUM(i.pad), 0), COALESCE(MAX(i.peak_cpm), 0), COALESCE(MAX(i.peak_kpm), 0), COALESCE(MAX(i.peak_ppm), 0)
+         FROM session_input i JOIN sessions s ON s.id = i.session_id WHERE s.game_id = ?1",
+        [id],
+        |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?, r.get(6)?, r.get(7)?)),
+    )?;
     Ok(out)
 }
 
 /// Registra una partida terminada: suma su duracion al total y guarda la partida. Si empieza menos de
 /// `MERGE_GAP_MS` despues del fin de la ultima de ese juego (o dentro de ella), la amplia (el hueco cuenta).
-/// `active_ms` = tiempo interactivo medido; en una fusion se suma al de la partida ampliada.
-pub fn stat_add_session(c: &Connection, id: &str, start_ms: i64, end_ms: i64, active_ms: i64) -> Result<()> {
+/// `active_ms` = tiempo interactivo medido; en una fusion se suma al de la partida ampliada (igual que `input`,
+/// cuyos picos por minuto se quedan con el maximo).
+pub fn stat_add_session(c: &Connection, id: &str, start_ms: i64, end_ms: i64, active_ms: i64, input: &InputCounts) -> Result<()> {
     let end = end_ms.max(start_ms);
     let secs = (end - start_ms) / 1000;
     let active = active_ms.clamp(0, end - start_ms);
@@ -257,6 +293,7 @@ pub fn stat_add_session(c: &Connection, id: &str, start_ms: i64, end_ms: i64, ac
                     c.execute("UPDATE sessions SET end_ms = ?1 WHERE id = ?2", params![end, sid])?;
                 }
                 c.execute("UPDATE sessions SET active_ms = COALESCE(active_ms, 0) + ?1 WHERE id = ?2", params![active, sid])?;
+                input_add(c, sid, input)?;
                 c.execute(
                     "INSERT INTO play_stats(game_id, last_played_ms, seconds) VALUES (?1, 0, ?2)
                      ON CONFLICT(game_id) DO UPDATE SET seconds = seconds + excluded.seconds",
@@ -273,8 +310,26 @@ pub fn stat_add_session(c: &Connection, id: &str, start_ms: i64, end_ms: i64, ac
             params![id, secs],
         )?;
         c.execute("INSERT INTO sessions(game_id, start_ms, end_ms, active_ms) VALUES (?1, ?2, ?3, ?4)", params![id, start_ms, end, active])?;
+        input_add(c, c.last_insert_rowid(), input)?;
         Ok(())
     })
+}
+
+/// Suma la entrada medida a la fila de la partida (la crea si hace falta). Sin nada medido no escribe.
+fn input_add(c: &Connection, session_id: i64, i: &InputCounts) -> Result<()> {
+    if i.is_empty() {
+        return Ok(());
+    }
+    c.execute(
+        "INSERT INTO session_input(session_id, clicks, wheel, mouse_dist, keys, pad, peak_cpm, peak_kpm, peak_ppm)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+         ON CONFLICT(session_id) DO UPDATE SET clicks = clicks + excluded.clicks, wheel = wheel + excluded.wheel,
+             mouse_dist = mouse_dist + excluded.mouse_dist, keys = keys + excluded.keys, pad = pad + excluded.pad,
+             peak_cpm = MAX(peak_cpm, excluded.peak_cpm), peak_kpm = MAX(peak_kpm, excluded.peak_kpm),
+             peak_ppm = MAX(peak_ppm, excluded.peak_ppm)",
+        params![session_id, i.clicks, i.wheel, i.mouse_dist, i.keys, i.pad, i.peak_cpm, i.peak_kpm, i.peak_ppm],
+    )?;
+    Ok(())
 }
 
 /// Inserta las estadisticas completas de un juego (importacion).

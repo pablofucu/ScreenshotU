@@ -1,6 +1,7 @@
 //! Lanzamiento de juegos y vigilancia del proceso (tiempo de juego y juego «activo» para las capturas).
 use crate::state::{Active, AppState};
 use std::process::{Child, Command};
+use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System, UpdateKind};
@@ -142,26 +143,71 @@ pub fn start(app: &AppHandle, game: Game) -> Result<(), String> {
         std::thread::spawn(move || crate::novel::on_launch(app2, game2, pids2));
     }
     let app2 = app.clone();
-    std::thread::spawn(move || watch(app2, game, child, pids));
+    let tele = Arc::new(Telemetry::default());
+    {
+        let t2 = tele.clone();
+        std::thread::spawn(move || pad_counter(t2));
+    }
+    std::thread::spawn(move || watch(app2, game, child, pids, tele));
     Ok(())
 }
 
 /// Sin entrada durante este tiempo, el juego deja de contar como interactivo (5 min).
 const AFK_MS: u64 = 300_000;
 
-/// El juego (uno de `pids`) esta delante y alguien ha tocado teclado, raton o mando hace menos de `AFK_MS`.
-fn interactive(pids: &[u32], last_pad: Option<Instant>) -> bool {
-    let Some((pid, info)) = crate::platform::foreground_info() else { return false };
-    if info.own || !pids.contains(&pid) {
-        return false;
+/// Lo que miden los hilos de la partida y recoge el vigilante al terminar.
+#[derive(Default)]
+struct Telemetry {
+    /// El juego esta delante (lo fija el vigilante cada segundo): solo entonces se cuentan pulsaciones.
+    game_fg: AtomicBool,
+    stop: AtomicBool,
+    /// Ultima vez que se toco un mando (ms desde epoch; 0 = nunca).
+    last_pad_ms: AtomicI64,
+    /// Pulsaciones de mando con el juego delante y pico por minuto (mas pulsaciones en una ventana de 60 s).
+    pad: AtomicU64,
+    peak_ppm: AtomicU64,
+}
+
+/// Lee el mando cada pocos ms (una pulsacion rapida dura menos que el ciclo del vigilante): cuenta pulsaciones y
+/// anota cuando se toco por ultima vez. Termina cuando el vigilante da la partida por acabada.
+fn pad_counter(t: Arc<Telemetry>) {
+    let mut pad = crate::pad::Activity::new();
+    let mut recent: std::collections::VecDeque<Instant> = std::collections::VecDeque::new();
+    while !t.stop.load(Ordering::Relaxed) {
+        std::thread::sleep(Duration::from_millis(15));
+        let p = pad.poll();
+        if p.active {
+            t.last_pad_ms.store(now_ms(), Ordering::Relaxed);
+        }
+        if p.presses > 0 && t.game_fg.load(Ordering::Relaxed) {
+            t.pad.fetch_add(p.presses as u64, Ordering::Relaxed);
+            let now = Instant::now();
+            recent.extend(std::iter::repeat(now).take(p.presses as usize));
+            while recent.front().map(|x| now.duration_since(*x) > Duration::from_secs(60)).unwrap_or(false) {
+                recent.pop_front();
+            }
+            t.peak_ppm.fetch_max(recent.len() as u64, Ordering::Relaxed);
+        }
     }
+}
+
+/// El juego (uno de `pids`) esta delante (ni el visor ni otra aplicacion).
+fn game_in_front(pids: &[u32]) -> bool {
+    crate::platform::foreground_info().map(|(pid, info)| !info.own && pids.contains(&pid)).unwrap_or(false)
+}
+
+/// Alguien ha tocado teclado, raton o mando hace menos de `AFK_MS`.
+fn recent_input(t: &Telemetry) -> bool {
     let kb = crate::platform::idle_ms().unwrap_or(u64::MAX);
-    let pad = last_pad.map(|t| t.elapsed().as_millis() as u64).unwrap_or(u64::MAX);
+    let pad = match t.last_pad_ms.load(Ordering::Relaxed) {
+        0 => u64::MAX,
+        at => (now_ms() - at).max(0) as u64,
+    };
     kb.min(pad) < AFK_MS
 }
 
 /// Vigila el juego cada pocos segundos: cuenta el tiempo, mantiene los PIDs y avisa al terminar.
-fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<Vec<u32>>>) {
+fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<Vec<u32>>>, tele: Arc<Telemetry>) {
     let own = std::process::id();
     let dir = game.install_dir.clone();
     let mut sys = System::new();
@@ -171,8 +217,6 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
     let mut misses = 0u32;
     // Tiempo interactivo: cada segundo cuenta si el juego esta delante y ha habido entrada (teclado, raton o mando)
     // hace menos de `AFK_MS`. Lo demas (ventana en segundo plano, modo automatico, nadie delante) es pasivo.
-    let mut pad = crate::pad::Activity::new();
-    let mut last_pad: Option<Instant> = None;
     let mut last_tick = Instant::now();
     let mut active_ms: i64 = 0;
     loop {
@@ -213,19 +257,20 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
                 first_seen = Some(Instant::now());
                 first_seen_ms = now_ms();
             }
-            if pad.poll() {
-                last_pad = Some(Instant::now());
-            }
             if last_tick.elapsed() >= Duration::from_secs(1) {
                 let dt = last_tick.elapsed().as_millis() as i64;
                 last_tick = Instant::now();
-                if interactive(&found, last_pad) {
+                let front = game_in_front(&found);
+                tele.game_fg.store(front, Ordering::Relaxed);
+                if front && recent_input(&tele) {
                     active_ms += dt;
                 }
             }
             *pids.lock().unwrap() = found;
         }
     }
+    tele.stop.store(true, Ordering::Relaxed);
+    tele.game_fg.store(false, Ordering::Relaxed);
     let seconds = first_seen.map(|t| t.elapsed().as_secs().saturating_sub(1)).unwrap_or(0);
     let st = app.state::<AppState>();
     if seconds > 0 {
@@ -233,7 +278,12 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
         let end = first_seen_ms + seconds as i64 * 1000;
         games::add_session(&mut stats, &game.id, first_seen_ms, end);
         let active = active_ms.min(seconds as i64 * 1000);
-        crate::state::log_db_err("partida", st.db.with(|c| visor_core::db::data::stat_add_session(c, &game.id, first_seen_ms, end, active)));
+        let input = visor_core::db::data::InputCounts {
+            pad: tele.pad.load(Ordering::Relaxed) as i64,
+            peak_ppm: tele.peak_ppm.load(Ordering::Relaxed) as i64,
+            ..Default::default()
+        };
+        crate::state::log_db_err("partida", st.db.with(|c| visor_core::db::data::stat_add_session(c, &game.id, first_seen_ms, end, active, &input)));
     }
     {
         let mut a = st.active.lock().unwrap();
