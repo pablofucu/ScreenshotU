@@ -255,10 +255,14 @@ function mockStates(lib: Library): Record<string, { status: string; finishedMs?:
   put('pc', 'Balatro', { status: 'finished', finishedMs: d(2026, 9, 30), rating: 3 });
   put('pc', 'The Witcher 3', { status: 'finished', finishedMs: d(2025, 11, 20), rating: 5 });
   put('pc', 'Red Dead Redemption 2', { status: 'finished', finishedMs: d(2025, 6, 1) });
+  put('pc', 'Hi-Fi Rush', { status: 'finished', finishedMs: d(2024, 6, 21), rating: 4 });
+  put('pc', 'Dave the Diver', { status: 'finished' });
   put('pc', 'Cyberpunk 2077', { status: 'dropped' });
   put('switch', 'Zelda: Tears of the Kingdom', { status: 'playing' });
   put('switch', 'Xenoblade Chronicles 3', { status: 'pending', listPos: 5 });
-  put('switch', 'Metroid Dread', { status: 'pending', listPos: 6 });
+  put('switch', 'Metroid Dread', { status: 'finished', finishedMs: d(2024, 10, 15), rating: 5 });
+  put('switch', 'Animal Crossing', { status: 'finished', finishedMs: d(2024, 3, 20), rating: 3 });
+  put('switch', 'Kirby y la tierra olvidada', { status: 'finished', finishedMs: d(2025, 4, 12), rating: 4 });
   put('switch', 'Super Mario Odyssey', { status: 'finished', finishedMs: d(2026, 5, 9), rating: 4 });
   return out;
 }

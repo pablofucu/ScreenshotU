@@ -11,13 +11,15 @@
     hidden?: boolean;
     /** Glifo SVG (blanco) en vez de portada: baldosas de acción como «Nueva colección» (llevan el nombre debajo). */
     icon?: string;
+    /** Número de orden del juego dentro del año (1..N). */
+    n?: number;
   }
 </script>
 
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import Thumb from './Thumb.svelte';
-  import { SHELF_CH, SHELF_CW, SHELF_PITCH } from '../lib/milista.svelte';
+  import { SHELF_CH, SHELF_CW, SHELF_PITCH, SHELF_VIEW_W } from '../lib/milista.svelte';
 
   // «Balda de cristal» (variante V2 · Rótulo teñido): un rótulo en píldora con el icono de menú, el título, un chip y los
   // datos, y debajo la balda de cristal (neutra) con las portadas y un borde de etiquetas. El color de la estantería vive
@@ -27,6 +29,7 @@
   // del texto (`ink`, para colores claros como el amarillo).
   let {
     acc, title, sub = '', items, focus = -1, from = 0, visible = 9, top = 0, dim = false, ink = '#fff', tabStyle = '', aurora = [], icon = '', chip = '', extra, end,
+    positions, dividers = [], monthGroups,
   }: {
     acc: string;
     title: string;
@@ -34,7 +37,7 @@
     items: ShelfItem[];
     /** Posición de la portada enfocada en `items` (-1 = ninguna). */
     focus?: number;
-    /** Primera portada visible. */
+    /** Primera portada visible (o desplazamiento en píxeles si se usan `positions`). */
     from?: number;
     visible?: number;
     top?: number;
@@ -49,16 +52,37 @@
     chip?: string;
     extra?: Snippet;
     end?: Snippet;
+    /** Posiciones horizontales calculadas para cada portada (pestaña «Terminados»). */
+    positions?: number[];
+    /** Divisores verticales centrados entre meses. */
+    dividers?: number[];
+    /** Grupos de meses para la tira inferior de etiquetas («slip»). */
+    monthGroups?: Array<{ label: string; x0: number; x1: number; has: boolean }>;
   } = $props();
+
+  const scrollX = $derived(positions ? from : from * SHELF_PITCH);
 
   // Ventana virtual: solo se pintan las portadas visibles y un par de vecinas a cada lado.
   const lo = $derived(Math.max(0, from - 2));
   const hi = $derived(Math.min(items.length, from + visible + 2));
-  const win = $derived(Array.from({ length: Math.max(0, hi - lo) }, (_, k) => lo + k));
-  const more = $derived(Math.max(0, items.length - (from + visible)));
+  const win = $derived.by(() => {
+    if (positions) {
+      return items
+        .map((_, p) => p)
+        .filter((p) => positions[p] + SHELF_CW >= scrollX - 250 && positions[p] <= scrollX + SHELF_VIEW_W + 250);
+    }
+    return Array.from({ length: Math.max(0, hi - lo) }, (_, k) => lo + k);
+  });
+  const more = $derived(
+    positions
+      ? items.filter((_, p) => positions[p] + SHELF_CW > scrollX + SHELF_VIEW_W).length
+      : Math.max(0, items.length - (from + visible)),
+  );
+  const hasLeft = $derived(positions ? scrollX > 5 : from > 0);
+  const hasOrd = $derived(items.some((it) => it.n !== undefined));
 </script>
 
-<div class="shelf" class:dim class:dk={ink !== '#fff'} style="top:{top}px;--acc:{acc};--ink:{ink}">
+<div class="shelf" class:dim class:dk={ink !== '#fff'} class:with-ord={hasOrd} style="top:{top}px;--acc:{acc};--ink:{ink}">
   <div class="bsh" class:lit={!dim} class:soft={dim} class:hasaur={aurora.length > 0 || !!tabStyle}>
     {#if aurora.length}
       <div class="aur">{#each aurora as c, k}<b style="left:{4 + k * 20}%;background:{c}"></b>{/each}</div>
@@ -74,11 +98,17 @@
   </div>
   <div class="glass bsb">
     <div class="face">
-      <div class="rtrack view" style="transform:translateX({-from * SHELF_PITCH}px)">
+      <div class="rtrack view" style="transform:translateX({-scrollX}px)">
+        {#if dividers.length}
+          {#each dividers as dx}
+            <span class="mdiv" style="left:{dx}px"></span>
+          {/each}
+        {/if}
         {#each win as p (items[p].k)}
           {@const it = items[p]}
           <div class="glass scov fx" class:addtile={!it.path && !!it.icon} class:f={focus === p} class:hid={it.hidden} data-k={it.k} data-act={it.act}
-            style="left:{p * SHELF_PITCH}px;width:{SHELF_CW}px;height:{SHELF_CH}px">
+            style="left:{positions ? positions[p] : p * SHELF_PITCH}px;width:{SHELF_CW}px;height:{SHELF_CH}px">
+            {#if it.n !== undefined}<span class="ord">{it.n}</span>{/if}
             <div class="face">
               {#if it.path}<Thumb path={it.path} />{:else if it.icon}<div class="addin"><span>{@html it.icon}</span><b>{it.name}</b></div>{:else}<div class="noart"><b>{it.name}</b></div>{/if}
             </div>
@@ -86,16 +116,24 @@
         {/each}
       </div>
       <div class="slip">
-        <div class="rtrack" style="transform:translateX({-from * SHELF_PITCH}px)">
-          {#each win as p (items[p].k)}
-            {@const it = items[p]}
-            <span class="slab" class:on={focus === p} style="left:{p * SHELF_PITCH}px;width:{SHELF_CW}px">
-              {#if it.label || it.stars}<s>{#if it.label}<b>{it.label}</b>{/if}{#if it.stars}<em>{'★'.repeat(it.stars)}</em>{/if}</s>{/if}
-            </span>
-          {/each}
+        <div class="rtrack" style="transform:translateX({-scrollX}px)">
+          {#if monthGroups}
+            {#each monthGroups as g}
+              <span class="slab mlab" class:on={g.has} style="left:{g.x0}px;width:{g.x1 - g.x0}px">
+                <s>{g.label}</s>
+              </span>
+            {/each}
+          {:else}
+            {#each win as p (items[p].k)}
+              {@const it = items[p]}
+              <span class="slab" class:on={focus === p} style="left:{positions ? positions[p] : p * SHELF_PITCH}px;width:{SHELF_CW}px">
+                {#if it.label || it.stars}<s>{#if it.label}<b>{it.label}</b>{/if}{#if it.stars}<em>{'★'.repeat(it.stars)}</em>{/if}</s>{/if}
+              </span>
+            {/each}
+          {/if}
         </div>
       </div>
-      {#if from > 0}<i class="sm l">‹</i>{/if}
+      {#if hasLeft}<i class="sm l">‹</i>{/if}
       {#if more > 0}<i class="sm r">+{more} ›</i>{/if}
     </div>
   </div>
@@ -169,5 +207,14 @@
     padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 0 0 1px rgba(95,110,135,.2)}
   .sm.l{left:8px}
   .sm.r{right:8px}
+  /* Nº de orden sobre la portada */
+  .ord{position:absolute;z-index:4;left:-7px;top:-7px;min-width:28px;height:28px;box-sizing:border-box;padding:0 6px;border-radius:999px;display:grid;place-items:center;font-size:14px;font-weight:800;color:#4a5260;
+    background:linear-gradient(180deg,#fff,#e9edf2);box-shadow:0 0 0 1px rgba(95,110,135,.3),0 3px 6px -2px rgba(40,50,70,.35)}
+  .scov.f .ord{background:var(--acc);color:var(--ink);box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 3px 6px -2px rgba(40,50,70,.35)}
+  .shelf.with-ord .rtrack.view{top:11px}
+  /* Separadores y etiquetas de mes */
+  .mdiv{position:absolute;top:6px;bottom:6px;width:0;border-left:1.5px dashed rgba(95,110,135,.35);pointer-events:none}
+  .slab.mlab{letter-spacing:.3px}
+  .slab.mlab s{text-transform:lowercase}
   @media (prefers-reduced-motion: reduce){.shelf,.rtrack{transition:none}}
 </style>

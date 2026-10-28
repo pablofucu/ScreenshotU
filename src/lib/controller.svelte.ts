@@ -153,8 +153,8 @@ export function setFocus(k: string, mouse = false) {
   } else if (app.view === 'titles') {
     if (k.startsWith('tit')) {
       app.t = +k.slice(3);
-      // «Mi lista»: la estantería y la balda se desplazan para que el juego enfocado se vea (con el ratón no, para no mover lo que hay bajo el cursor).
-      if (!mouse && app.titlesTab === 'list') listReveal();
+      // «Mi lista» y «Terminados»: la estantería y la balda se desplazan para que el juego enfocado se vea (con el ratón no, para no mover lo que hay bajo el cursor).
+      if (!mouse && listTab()) listReveal();
     } else if (k.startsWith('cl') || k === 'cnew') {
       setCollFocus(k);
       if (!mouse) collReveal();
@@ -1024,8 +1024,8 @@ function cycleTitlesTab(d = 1) {
     if (!collValid(k)) resetColl();
     setFocus(validKey('titles', k) ?? defaultKey('titles'));
   } else {
-    // «Mi lista» conserva el juego enfocado si está en alguna estantería.
-    if (tab === 'list') resetList();
+    // «Mi lista» y «Terminados» conservan el juego enfocado si está en alguna estantería.
+    if (tab === 'list' || tab === 'fin') resetList();
     setFocus(validKey('titles', 'tit' + app.t) ?? defaultKey('titles'));
   }
   // Sin aviso: la barra de pestañas ya enseña dónde se está.
@@ -1403,7 +1403,7 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'cappeek') { void patchConfig({ capturePeek: !app.config.capturePeek }); blip(1320); }
   else if (id === 'caponly') { void patchConfig({ captureOnlyGames: !app.config.captureOnlyGames }); blip(1320); }
   else if (id === 'caprumble') { void patchConfig({ captureRumble: !app.config.captureRumble }); blip(1320); }
-  else if (id === 'update') updateAct(dir);
+  else if (id === 'update') void updateAct(dir);
   else if (id === 'quit' && dir === 0) void quit();
   else if (id === 'backup' && dir === 0) void createBackup();
   else if (id === 'backupmedia') { app.backupMedia = !app.backupMedia; blip(1320); }

@@ -790,3 +790,10 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 /* Rescate de racha: color propio por categoría (nunca el de la categoría). */
 .r-vn{--rc:#E9A100;--rsoft:#fcefc7;--rink:#8a5d00;--rmid:#f1dca0}
 .r-jv{--rc:#6E56CF;--rsoft:#e8e3fb;--rink:#4a3aa0;--rmid:#cdc3f2}
+/* «Terminados»: barritas de los 12 meses en el rótulo de cada año (alto = juegos terminados ese mes). */
+.mbars{display:inline-flex;align-items:flex-end;gap:3px;height:22px}
+.mbars i{width:8px;border-radius:3px;background:color-mix(in srgb,var(--acc) 55%,rgba(95,110,135,.3))}
+.mbars i.z{background:rgba(95,110,135,.22)}
+.bsh.lit .mbars i{background:rgba(255,255,255,.55)}
+.bsh.lit .mbars i.z{background:rgba(255,255,255,.28)}
+.bsh.lit .mbars i.on{background:#fff;box-shadow:0 0 6px rgba(255,255,255,.8)}

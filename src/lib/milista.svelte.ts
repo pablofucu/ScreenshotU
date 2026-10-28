@@ -24,8 +24,97 @@ const DAY = 864e5;
 /* Navegación por las estanterías                                       */
 /* ------------------------------------------------------------------ */
 
-/** La pestaña «Mi lista» de una categoría normal está a la vista (sin paneles encima). */
-export const listTab = () => app.view === 'titles' && app.titlesTab === 'list';
+export interface MonthGroup {
+  m: number;
+  label: string;
+  x0: number;
+  x1: number;
+  has: boolean;
+}
+
+export interface ShelfPositions {
+  xs: number[];
+  groups: MonthGroup[];
+  dividers: number[];
+  totalW: number;
+}
+
+export const MONTH_NAMES = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+];
+const GAP_MONTH = 28;
+export const SHELF_VIEW_W = 1097;
+
+/** Calcula la posición horizontal de cada portada con separación extra de ~28px al cambiar de mes y los divisores centrados. */
+export function computeMonthPositions(items: number[], titles: Title[], focusIdx = -1): ShelfPositions {
+  const xs: number[] = [];
+  const groups: MonthGroup[] = [];
+  const dividers: number[] = [];
+  let x = 0;
+  let prevM = -1;
+
+  for (let k = 0; k < items.length; k++) {
+    const t = titles[items[k]];
+    const m = t?.finishedMs ? new Date(t.finishedMs).getMonth() : 0;
+    if (k > 0 && m !== prevM) {
+      x += GAP_MONTH;
+      const prevRight = xs[k - 1] + SHELF_CW;
+      const nextLeft = x;
+      dividers.push((prevRight + nextLeft) / 2);
+    }
+    if (k === 0 || m !== prevM) {
+      groups.push({
+        m,
+        label: MONTH_NAMES[m],
+        x0: x,
+        x1: x + SHELF_CW,
+        has: k === focusIdx,
+      });
+    } else {
+      groups[groups.length - 1].x1 = x + SHELF_CW;
+      if (k === focusIdx) groups[groups.length - 1].has = true;
+    }
+    xs.push(x);
+    x += SHELF_PITCH;
+    prevM = m;
+  }
+
+  const totalW = xs.length ? xs[xs.length - 1] + SHELF_CW : 0;
+  return { xs, groups, dividers, totalW };
+}
+
+/** Desplazamiento horizontal en píxeles para estanterías con huecos variables (pestaña «Terminados»). */
+export function revealShelfPx(
+  i: number,
+  xs: number[],
+  from: number,
+  s: number,
+  top: number,
+): { from: number; top: number } {
+  const totalW = xs.length ? xs[xs.length - 1] + SHELF_CW : 0;
+  const maxScroll = Math.max(0, totalW - SHELF_VIEW_W);
+  let sx = from;
+  if (i > 0) {
+    if (xs[i - 1] < sx) sx = xs[i - 1];
+  } else if (i === 0) {
+    if (xs[0] < sx) sx = 0;
+  }
+  if (i < xs.length - 1) {
+    if (xs[i + 1] + SHELF_CW > sx + SHELF_VIEW_W) sx = xs[i + 1] + SHELF_CW - SHELF_VIEW_W;
+  } else if (i === xs.length - 1) {
+    if (xs[i] + SHELF_CW > sx + SHELF_VIEW_W) sx = xs[i] + SHELF_CW - SHELF_VIEW_W;
+  }
+  sx = Math.max(0, Math.min(sx, maxScroll));
+
+  let t = top;
+  if (s < t) t = s;
+  else if (s > t + SHELF_ROWS - 1) t = s - SHELF_ROWS + 1;
+  return { from: sx, top: t };
+}
+
+/** La pestaña «Mi lista» o «Terminados» de una categoría normal está a la vista (sin paneles encima). */
+export const listTab = () => app.view === 'titles' && (app.titlesTab === 'list' || app.titlesTab === 'fin');
 /** Algún estante tiene este título (el foco de «Mi lista» solo cae en juegos que se ven). */
 export const listHas = (ti: number) => app.shelves.some((s) => s.items.includes(ti));
 /** Primer juego de «Mi lista» (foco por defecto). */
@@ -59,8 +148,16 @@ export function listReveal() {
   const at = place();
   if (!at) return;
   const sh = app.shelves[at.s];
+  if (!sh) return;
   const f0 = app.listFrom[sh.key] ?? 0;
-  const r = revealShelf(at.i, sh.items.length, f0, at.s, app.listTop);
+  let r: { from: number; top: number };
+  if (app.titlesTab === 'fin' && sh.year > 0) {
+    const titles = app.platform?.titles ?? [];
+    const pos = computeMonthPositions(sh.items, titles, at.i);
+    r = revealShelfPx(at.i, pos.xs, f0, at.s, app.listTop);
+  } else {
+    r = revealShelf(at.i, sh.items.length, f0, at.s, app.listTop);
+  }
   if (r.from !== f0) app.listFrom = { ...app.listFrom, [sh.key]: r.from };
   if (r.top !== app.listTop) app.listTop = r.top;
 }
@@ -166,6 +263,21 @@ export function shelfSub(sh: ListShelf, titles: Title[]): string {
     if (rated.length) return `${base} · nota media ${(rated.reduce((a, r) => a + r, 0) / rated.length).toFixed(1).replace('.', ',')}`;
   }
   return base;
+}
+
+/** Rótulo de una estantería de «Terminados»: juego enfocado o resumen de juegos y horas (sin notas). */
+export function finShelfSub(sh: ListShelf, isFocused: boolean, curTitle: Title | null | undefined, titles: Title[]): string {
+  if (isFocused && curTitle) {
+    if (curTitle.finishedMs) {
+      const d = new Date(curTitle.finishedMs);
+      return `${curTitle.name} · ${d.getDate()} de ${MONTH_NAMES[d.getMonth()]}`;
+    }
+    return curTitle.name;
+  }
+  const base = nGames(sh.items.length);
+  const totalSec = sh.items.reduce((a, i) => a + (titles[i]?.playSeconds ?? 0), 0);
+  const h = fmtHours(totalSec);
+  return h ? `${base} · ${h} jugadas` : base;
 }
 
 /** Etiqueta bajo la portada: horas (jugando), posición (pendientes), fecha y estrellas (terminados) o la última actividad. */

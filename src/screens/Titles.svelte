@@ -10,7 +10,7 @@
   import Thumb from '../components/Thumb.svelte';
   import Shelf, { type ShelfItem } from '../components/Shelf.svelte';
   import CollTab from './CollTab.svelte';
-  import { itemLabel, LIST_VIS, SHELF_STEP, shelfSub } from '../lib/milista.svelte';
+  import { computeMonthPositions, finShelfSub, itemLabel, LIST_VIS, SHELF_STEP, shelfSub } from '../lib/milista.svelte';
   import { collFocusAccent } from '../lib/coleccion.svelte';
   import { inkFor } from '../lib/ops.svelte';
 
@@ -39,6 +39,16 @@
       const { label, stars } = itemLabel(sh, titles[ti], k);
       return { k: 'tit' + ti, act: 'tit:' + ti, path: coverOf(ti), name: titles[ti].name, label, stars };
     });
+  const finShelfItems = (sh: ListShelf): ShelfItem[] =>
+    sh.items.map((ti, k) => ({
+      k: 'tit' + ti, act: 'tit:' + ti, path: coverOf(ti), name: titles[ti].name, n: k + 1, stars: 0,
+    }));
+  // «Terminados»: cuántos juegos se terminaron cada mes del año (barritas del rótulo).
+  const monthCounts = (sh: ListShelf) => {
+    const c = Array<number>(12).fill(0);
+    for (const ti of sh.items) if (titles[ti].finishedMs) c[new Date(titles[ti].finishedMs!).getMonth()]++;
+    return c;
+  };
   // Icono de color del rótulo de cada estantería (el del estado).
   const svg = (d: string) => `<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
   const LIST_ICON: Record<ListShelf['kind'], string> = {
@@ -58,7 +68,7 @@
   const filterName = $derived(TITLE_FILTERS.find(([f]) => f === app.titleFilter)?.[1] ?? '');
   // Acento de la barra de pestañas: el del estado (Mi lista), el de la colección enfocada (Colecciones) o el del juego enfocado (cuadrícula de «Todos»).
   type H = [string, string, string];
-  const tabsAcc = $derived(tab === 'list' ? listAcc : tab === 'coll' ? collFocusAccent() : tab === 'all' && grid && cur ? app.titleAcc(app.p, app.t) : null);
+  const tabsAcc = $derived((tab === 'list' || tab === 'fin') ? listAcc : tab === 'coll' ? collFocusAccent() : tab === 'all' && grid && cur ? app.titleAcc(app.p, app.t) : null);
 
   // Ventana virtual: solo se pintan la página actual y las vecinas (cuadrícula) o ±9 (carrusel).
   const range = $derived(
@@ -144,12 +154,17 @@
   </div>
 {/snippet}
 
-{#if tab === 'list'}
+{#if tab === 'list' || tab === 'fin'}
   {#if !shelves.length}
     <div class="glass note-card" style="left:300px;top:230px;--acc:{app.chrome.c}">
       <div class="face">
-        <h2>Aún no hay juegos en {P?.name}</h2>
-        <p>Cuando haya juegos aparecerán aquí ordenados por estado. Con Y marcas si lo estás jugando, lo tienes pendiente, lo terminaste o lo abandonaste.</p>
+        {#if tab === 'fin'}
+          <h2>Aún no has terminado nada en {P?.name}</h2>
+          <p>Marca un juego como Terminado con Y.</p>
+        {:else}
+          <h2>Aún no hay juegos en {P?.name}</h2>
+          <p>Cuando haya juegos aparecerán aquí ordenados por estado. Con Y marcas si lo estás jugando, lo tienes pendiente, lo terminaste o lo abandonaste.</p>
+        {/if}
       </div>
     </div>
   {:else}
@@ -157,9 +172,27 @@
     <div class="lclip">
       {#each shelfIdx as k (shelves[k].key)}
         {@const sh = shelves[k]}
-        <Shelf acc={LIST_COLOR[sh.kind].c} ink={inkFor(LIST_COLOR[sh.kind].c)} title={sh.label} icon={LIST_ICON[sh.kind]} sub={shelfSub(sh, titles)} chip={String(sh.items.length)} items={shelfItems(sh)}
-          focus={k === focusShelf ? sh.items.indexOf(app.t) : -1} from={app.listFrom[sh.key] ?? 0} visible={LIST_VIS}
-          top={(k - app.listTop) * SHELF_STEP} dim={k !== focusShelf} />
+        {#if tab === 'fin'}
+          {@const isFoc = k === focusShelf}
+          {@const pos = sh.year > 0 ? computeMonthPositions(sh.items, titles, isFoc ? sh.items.indexOf(app.t) : -1) : null}
+          <Shelf acc={LIST_COLOR.finished.c} ink={inkFor(LIST_COLOR.finished.c)} title={sh.label} icon={ICON.check}
+            sub={finShelfSub(sh, isFoc, isFoc ? cur : null, titles)} chip={String(sh.items.length)} items={finShelfItems(sh)}
+            positions={pos?.xs} dividers={pos?.dividers} monthGroups={pos?.groups}
+            focus={isFoc ? sh.items.indexOf(app.t) : -1} from={app.listFrom[sh.key] ?? 0} visible={LIST_VIS}
+            top={(k - app.listTop) * SHELF_STEP} dim={!isFoc}>
+            {#snippet extra()}
+              {#if sh.year > 0}
+                {@const mc = monthCounts(sh)}
+                {@const fm = isFoc && cur?.finishedMs ? new Date(cur.finishedMs).getMonth() : -1}
+                <span class="mbars" title="Terminados por mes">{#each mc as c, m}<i class:on={m === fm} class:z={!c} style="height:{c ? 6 + Math.round((c / Math.max(...mc)) * 16) : 3}px"></i>{/each}</span>
+              {/if}
+            {/snippet}
+          </Shelf>
+        {:else}
+          <Shelf acc={LIST_COLOR[sh.kind].c} ink={inkFor(LIST_COLOR[sh.kind].c)} title={sh.label} icon={LIST_ICON[sh.kind]} sub={shelfSub(sh, titles)} chip={String(sh.items.length)} items={shelfItems(sh)}
+            focus={k === focusShelf ? sh.items.indexOf(app.t) : -1} from={app.listFrom[sh.key] ?? 0} visible={LIST_VIS}
+            top={(k - app.listTop) * SHELF_STEP} dim={k !== focusShelf} />
+        {/if}
       {/each}
     </div>
   {/if}
@@ -234,7 +267,7 @@
 {/if}
 
 <!-- Pistas: solo lo principal de cada pestaña; el resto (filtro, tamaño, audio, Ajustes) está en Start. -->
-{#if tab === 'list' && shelves.length}
+{#if (tab === 'list' || tab === 'fin') && shelves.length}
   <Hints list={[
     ['A', 'Abrir', 'a'],
     ...(cur?.launchable ? [['X', 'Jugar', 'x'] as H] : []),
@@ -242,7 +275,7 @@
     ['LB/RB', curShelf?.kind === 'pending' ? 'Mover' : 'Saltar', 'rb'],
     ['LT/RT', 'Pestaña', 'rt'], ['B', 'Volver', 'b'],
   ]} />
-{:else if tab === 'list'}
+{:else if tab === 'list' || tab === 'fin'}
   <Hints list={[['LT/RT', 'Pestaña', 'rt'], ['B', 'Volver', 'b']]} />
 {:else if tab === 'coll'}
   <Hints list={[

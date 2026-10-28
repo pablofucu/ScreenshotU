@@ -16,7 +16,8 @@ export async function checkUpdate(silent = false) {
   up.phase = 'checking';
   try {
     const { check } = await import('@tauri-apps/plugin-updater');
-    const u = (await check()) as Found | null;
+    // Siempre se consulta al servidor (sin cache): cada pulsacion de «Buscar ahora» mira de verdad.
+    const u = (await check({ headers: { 'Cache-Control': 'no-cache' }, timeout: 20000 })) as Found | null;
     if (u) {
       found = u;
       up.version = u.version;
@@ -54,7 +55,7 @@ export async function installUpdate() {
 }
 
 export function updateRow(): { l: string; v: string; d: string } {
-  const d = 'Busca versiones nuevas en GitHub al arrancar. Pulsa A para buscar ahora; si hay una, pulsa A otra vez para instalarla (el visor se cierra y se vuelve a abrir solo). Tus datos no se tocan.';
+  const d = 'Busca versiones nuevas en GitHub al arrancar. Pulsa A para buscar ahora (mira cada vez que lo pulsas); si hay una, pulsa A otra vez para instalarla (el visor se cierra y se vuelve a abrir solo). Tus datos no se tocan.';
   switch (up.phase) {
     case 'checking': return { l: 'Actualizaciones', v: 'Buscando…', d };
     case 'none': return { l: 'Actualizaciones', v: 'Estás al día', d };
@@ -65,9 +66,11 @@ export function updateRow(): { l: string; v: string; d: string } {
   }
 }
 
-export function updateAct(dir: number) {
+/** A: busca de nuevo cada vez; si ya habia una versión nueva a la vista, se vuelve a comprobar antes de instalarla. */
+export async function updateAct(dir: number) {
   if (dir !== 0) return;
   blip(1320);
-  if (up.phase === 'available') void installUpdate();
-  else void checkUpdate(false);
+  const wasAvailable = up.phase === 'available';
+  await checkUpdate(false);
+  if (wasAvailable && up.phase === 'available') void installUpdate();
 }

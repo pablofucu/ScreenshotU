@@ -204,8 +204,8 @@ export const TITLE_ORDERS: TitleOrder[] = ['last', 'az', 'color'];
 export const TITLE_ORDER_LABEL: Record<TitleOrder, string> = { last: 'Última partida', az: 'A–Z', color: 'Por color' };
 
 /** Pestañas dentro de cada categoría (botón View): Todos · Mi lista · Colecciones. */
-export type TitlesTab = 'all' | 'list' | 'coll';
-export const TITLES_TABS: Array<[TitlesTab, string]> = [['all', 'Todos'], ['list', 'Mi lista'], ['coll', 'Colecciones']];
+export type TitlesTab = 'all' | 'list' | 'fin' | 'coll';
+export const TITLES_TABS: Array<[TitlesTab, string]> = [['all', 'Todos'], ['list', 'Mi lista'], ['fin', 'Terminados'], ['coll', 'Colecciones']];
 
 /** Estados de un juego, en el orden en que los recorre el selector. */
 export const STATUS_ORDER: GameStatus[] = ['none', 'pending', 'playing', 'finished', 'dropped'];
@@ -456,6 +456,22 @@ class Store {
     const idx = titles.map((_, i) => i).filter((i) => !titles[i].hidden && !titles[i].members);
     const of = (s: string) => idx.filter((i) => (titles[i].status ?? 'none') === s);
     const out: ListShelf[] = [];
+    if (this.titlesTab === 'fin') {
+      const fin = of('finished');
+      const years = new Map<number, number[]>();
+      for (const i of fin) {
+        const ms = titles[i].finishedMs;
+        const y = ms ? new Date(ms).getFullYear() : 0;
+        (years.get(y) ?? years.set(y, []).get(y)!).push(i);
+      }
+      const sortedYears = [...years.keys()].filter((y) => y > 0).sort((a, b) => b - a);
+      if (years.has(0)) sortedYears.push(0);
+      for (const y of sortedYears) {
+        const items = years.get(y)!.sort((a, b) => (titles[a].finishedMs ?? 0) - (titles[b].finishedMs ?? 0) || a - b);
+        if (items.length) out.push({ key: 'fin-' + y, kind: 'finished', label: y ? String(y) : 'Sin fecha', year: y, items });
+      }
+      return out;
+    }
     const add = (kind: ListKind, label: string, items: number[], year = 0, key: string = kind) => { if (items.length) out.push({ key, kind, label, year, items }); };
     add('playing', 'Jugando ahora', sortTitles(titles, of('playing'), 'last'));
     const pend = of('pending').sort((a, b) => (titles[a].listPos ?? 1e9) - (titles[b].listPos ?? 1e9) || byName.compare(titles[a].name, titles[b].name) || a - b);
