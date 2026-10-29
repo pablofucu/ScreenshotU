@@ -58,21 +58,27 @@ export function getFilteredAchievements(): Achievement[] {
 
 export async function loadGameAchievements(gameId: string, appId?: string) {
   achState.gameId = gameId;
+  achState.summary = null;
+  achState.list = [];
   achState.loading = true;
   try {
     const [summary, list] = await Promise.all([
       backend.getAchievementsSummary(gameId, appId),
       backend.getGameAchievements(gameId, appId),
     ]);
-    achState.summary = summary;
-    achState.list = list;
-    if (achState.selectedIdx >= list.length) {
-      achState.selectedIdx = 0;
+    if (achState.gameId === gameId) {
+      achState.summary = summary;
+      achState.list = list;
+      if (achState.selectedIdx >= list.length) {
+        achState.selectedIdx = 0;
+      }
     }
   } catch (err) {
     console.error('Error al cargar logros:', err);
   } finally {
-    achState.loading = false;
+    if (achState.gameId === gameId) {
+      achState.loading = false;
+    }
   }
 }
 

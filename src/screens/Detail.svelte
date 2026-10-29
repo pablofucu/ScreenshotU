@@ -119,7 +119,12 @@
   });
   const longName = $derived((T?.name.length ?? 0) > 22);
   const isJvn = $derived(!!T?.gameId && (P?.id === 'jvn' || P?.id === 'vn' || P?.icon === 'vn'));
-  $effect(() => { if (T) { void loadGameAchievements(T.gameId ?? T.dir); } });
+  $effect(() => {
+    if (T) {
+      const gid = T.id ?? T.gameId ?? T.dir;
+      void loadGameAchievements(gid);
+    }
+  });
 </script>
 
 {#if T}
@@ -140,13 +145,14 @@
   {:else}
     <div class="dlogo txt" class:sm={longName}>{T.name}</div>
   {/if}
-  <div class="glass dcover static">
-    <div class="face">
-      {#key app.artVer}
-        {#if coverPath}<Thumb path={coverPath} />{:else}<div class="noart"><b>{T.name}</b></div>{/if}
-      {/key}
-    </div>
-  </div>
+
+  <AchievementCard
+    gameId={T.id ?? T.gameId ?? T.dir}
+    title={T.name}
+    coverPath={coverPath}
+    summary={achState.summary}
+    focused={app.focus === 'dach'}
+  />
 
   <div class="dchips">
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->

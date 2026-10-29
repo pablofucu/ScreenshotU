@@ -82,16 +82,18 @@
   title="Ver lista de logros (A) · Cambiar diseño (Y)"
 >
   <div class="face">
-    <!-- Píldora selector de variante en la esquina superior derecha -->
-    <button
-      class="var-pill"
-      type="button"
-      onclick={onVariantCycle}
-      title="Cambiar diseño de tarjeta (Y)"
-    >
-      <span>{variant} · {VARIANT_SHORT_NAMES[variant] ?? 'Variante'}</span>
-      <small>▾</small>
-    </button>
+    {#if summary && total > 0}
+      <!-- Píldora selector de variante en la esquina superior derecha -->
+      <button
+        class="var-pill"
+        type="button"
+        onclick={onVariantCycle}
+        title="Cambiar diseño de tarjeta (Y)"
+      >
+        <span>{variant} · {VARIANT_SHORT_NAMES[variant] ?? 'Variante'}</span>
+        <small>▾</small>
+      </button>
+    {/if}
 
     {#if !summary || total === 0}
       <!-- Sin logros: Portada normal -->

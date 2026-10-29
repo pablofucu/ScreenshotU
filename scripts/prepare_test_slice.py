@@ -19,6 +19,7 @@ DST_DB = os.path.join(TEST_LIB_DIR, "visor.db")
 SHOWCASE_GAMES = [
     {
         "id": "manual:18e09f1291ae916d",
+        "app_id": "1245620",
         "name": "ELDEN RING",
         "variant": 1,
         "achievements": [
@@ -41,6 +42,7 @@ SHOWCASE_GAMES = [
     },
     {
         "id": "manual:18e09f12910e9163",
+        "app_id": "1091500",
         "name": "Cyberpunk 2077",
         "variant": 2,
         "achievements": [
@@ -60,6 +62,7 @@ SHOWCASE_GAMES = [
     },
     {
         "id": "manual:18e09f128fae914d",
+        "app_id": "1086940",
         "name": "Alan Wake 2",
         "variant": 4,
         "achievements": [
@@ -77,6 +80,7 @@ SHOWCASE_GAMES = [
     },
     {
         "id": "manual:18e09f12914e9167",
+        "app_id": "1693980",
         "name": "Dead Space (2023)",
         "variant": 7,
         "achievements": [
@@ -94,6 +98,7 @@ SHOWCASE_GAMES = [
     },
     {
         "id": "manual:18e09f128e4e9137",
+        "app_id": "1158850",
         "name": "The Great Ace Attorney Chronicles",
         "variant": 8,
         "achievements": [
@@ -303,25 +308,27 @@ def build_test_database():
         gid = game["id"]
         variant = game["variant"]
         achs = game["achievements"]
+        target_ids = [gid]
+        if game.get("app_id"):
+            target_ids.append(game["app_id"])
 
-        # Set preference
-        dst_cur.execute("INSERT OR REPLACE INTO title_achievements_pref (title_id, variant) VALUES (?, ?)", (gid, variant))
+        for target_id in target_ids:
+            dst_cur.execute("INSERT OR REPLACE INTO title_achievements_pref (title_id, variant) VALUES (?, ?)", (target_id, variant))
 
-        for idx, (api_name, display_name, desc, hidden, unlocked) in enumerate(achs):
-            hidden_val = 1 if hidden else 0
-            dst_cur.execute("""
-                INSERT OR REPLACE INTO achievements (app_id, api_name, display_name, description, hidden, icon, icon_gray, source)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'gse')
-            """, (gid, api_name, display_name, desc, hidden_val, None, None))
-
-            if unlocked:
-                # Distribute unlock dates over the last 7 days so weekly activity charts look great
-                days_ago = idx % 6
-                unlock_time = now_ts - (days_ago * one_day) - (idx * 3600)
+            for idx, (api_name, display_name, desc, hidden, unlocked) in enumerate(achs):
+                hidden_val = 1 if hidden else 0
                 dst_cur.execute("""
-                    INSERT OR REPLACE INTO achievement_unlocks (app_id, api_name, unlocked_at, source, evidence, notified)
-                    VALUES (?, ?, ?, 'gse', 'test_sample', 1)
-                """, (gid, api_name, unlock_time))
+                    INSERT OR REPLACE INTO achievements (app_id, api_name, display_name, description, hidden, icon, icon_gray, source)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'gse')
+                """, (target_id, api_name, display_name, desc, hidden_val, None, None))
+
+                if unlocked:
+                    days_ago = idx % 6
+                    unlock_time = now_ts - (days_ago * one_day) - (idx * 3600)
+                    dst_cur.execute("""
+                        INSERT OR REPLACE INTO achievement_unlocks (app_id, api_name, unlocked_at, source, evidence, notified)
+                        VALUES (?, ?, ?, 'gse', 'test_sample', 1)
+                    """, (target_id, api_name, unlock_time))
 
     dst_conn.commit()
     dst_conn.close()

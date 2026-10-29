@@ -107,10 +107,19 @@ pub fn sync_achievements_from_disk(
     }
 
     // 3. Cargar lista actualizada de la base SQLite
-    let list = state
+    let mut list = state
         .db
         .with(|c| core::achievements_load(c, &app_id))
-        .map_err(|e| e.to_string())?;
+        .unwrap_or_default();
+
+    // Fallback: si no habia con app_id y app_id != game_id, intentar por game_id
+    if list.is_empty() && app_id != game_id {
+        if let Ok(l2) = state.db.with(|c| core::achievements_load(c, game_id)) {
+            if !l2.is_empty() {
+                list = l2;
+            }
+        }
+    }
 
     Ok((app_id, list))
 }
@@ -144,7 +153,10 @@ pub fn get_achievements_summary(
 
     let variant = state
         .db
-        .with(|c| core::card_pref_get(c, &game_id))
+        .with(|c| {
+            core::card_pref_get(c, &game_id)
+                .or_else(|_| core::card_pref_get(c, &resolved_id))
+        })
         .unwrap_or(1);
 
     let summary = calculate_summary(&resolved_id, &list, variant, chrono::Local::now());
@@ -158,10 +170,17 @@ pub fn set_achievements_card_variant(
     variant: u8,
 ) -> Result<(), String> {
     let state = app.state::<AppState>();
-    state
-        .db
-        .with(|c| core::card_pref_set(c, &game_id, variant))
-        .map_err(|e| e.to_string())
+    let (app_id, _) = resolve_game_info(&state, &game_id, None);
+    let _: anyhow::Result<()> = state.db.with(|c| {
+        core::card_pref_set(c, &game_id, variant)?;
+        if let Some(ref aid) = app_id {
+            if aid != &game_id {
+                let _ = core::card_pref_set(c, aid, variant);
+            }
+        }
+        Ok(())
+    });
+    Ok(())
 }
 
 #[tauri::command]
