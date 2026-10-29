@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prueba interactiva · Sistema de logros</title>
+<style>
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:400;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-400-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:500;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-500-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:700;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-700-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:800;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-800-latin.woff2') format('woff2')}
+:root{
+  --round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;
+  --acc:#00A0D8;
+  --acc-ink:#fff;
+  --gold:#F2B807;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#181c26;font-family:var(--round);color:#3a414e;user-select:none;overflow-x:hidden}
+.top-nav{
+  background:#111520;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  padding:14px 28px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+  color:#fff;
+}
+.top-nav h1{
+  margin:0;
+  font-size:20px;
+  font-weight:800;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.top-nav h1 span{
+  background:linear-gradient(180deg,#ffe27a,var(--gold));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.nav-controls{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.lbl{
+  font-size:12px;
+  font-weight:800;
+  color:#8a94a6;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
+.btn-group{
+  display:flex;
+  gap:4px;
+  background:#1e2434;
+  padding:3px;
+  border-radius:999px;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.3);
+}
+.btn-tab{
+  height:32px;
+  padding:0 14px;
+  border-radius:999px;
+  border:0;
+  background:transparent;
+  color:#94a0b5;
+  font:800 12.5px var(--round);
+  cursor:pointer;
+  transition:all .15s;
+}
+.btn-tab:hover{
+  color:#fff;
+}
+.btn-tab.active{
+  background:var(--acc);
+  color:#fff;
+  box-shadow:0 2px 8px rgba(0,160,216,.4);
+}
+.btn-toggle{
+  height:34px;
+  padding:0 14px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.15);
+  background:#1e2434;
+  color:#fff;
+  font:700 12.5px var(--round);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  transition:all .15s;
+}
+.btn-toggle.on{
+  background:#2e3c54;
+  border-color:var(--acc);
+  color:#38bdf8;
+}
+
+/* Lienzo 16:9 que escala fielmente a 1280x720 */
+.canvas-wrapper{
+  max-width:1280px;
+  margin:24px auto;
+  padding:0 20px;
+}
+.frame{
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 24px 60px -20px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.1);
+  background:#0c0f17;
+}
+.stage{
+  position:absolute;
+  left:0;
+  top:0;
+  width:1280px;
+  height:720px;
+  transform-origin:0 0;
+  overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%);
+  color:#3a414e;
+}
+.blob{position:absolute;border-radius:50%;filter:blur(34px)}
+.blob.w{background:radial-gradient(circle,#fff,rgba(255,255,255,0) 70%)}
+.blob.a{background:radial-gradient(circle,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%);opacity:.55}
+
+/* Estilos de cristal Wii U */
+.glass{
+  position:absolute;
+  --r:28px;
+  --bw:10px;
+  border-radius:var(--r);
+  padding:var(--bw);
+  isolation:isolate;
+  transition:transform .15s, box-shadow .15s;
+  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  -webkit-backdrop-filter:blur(14px) saturate(1.7);
+  backdrop-filter:blur(14px) saturate(1.7);
+  box-shadow:inset 0 1.5px 0 #fff,inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.95),inset 0 -1.5px 0 rgba(110,125,150,.30),0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42);
+}
+.glass::before{
+  content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.62) 0%,rgba(255,255,255,.20) 55%,rgba(255,255,255,0) 100%);
+  -webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);
+  mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);
+  opacity:.85;
+}
+.glass::after{
+  content:'';position:absolute;z-index:3;left:12%;top:3px;width:34%;height:5px;border-radius:5px;pointer-events:none;
+  background:linear-gradient(90deg,rgba(255,255,255,0),#fff 40%,rgba(255,255,255,0));filter:blur(.6px);opacity:.9;
+}
+.glass .face{
+  position:relative;
+  z-index:1;
+  width:100%;
+  height:100%;
+  border-radius:calc(var(--r) - var(--bw) + 2px);
+  overflow:hidden;
+  background:#dfe3e9;
+}
+.glass .face::after{
+  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(20,30,50,.20),inset 0 3px 6px -2px rgba(0,0,0,.35),inset 0 -2px 4px -2px rgba(255,255,255,.5);
+}
+.glass.f{
+  transform:scale(1.06);
+  z-index:10;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)) 0%,color-mix(in srgb,var(--acc) 72%,transparent) 55%,color-mix(in srgb,var(--acc) 92%,black) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),inset 0 -10px 14px -8px color-mix(in srgb,var(--acc) 30%,white),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 0 26px 2px color-mix(in srgb,var(--acc) 50%,transparent),0 22px 34px -16px color-mix(in srgb,var(--acc) 70%,black);
+}
+.pill{
+  -webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);background:linear-gradient(180deg,rgba(255,255,255,.80),rgba(255,255,255,.52));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4);
+}
+
+/* Ficha del juego */
+.avatar{left:22px;top:12px;width:60px;height:60px;--r:16px;--bw:5px}
+.avatar .face{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white),var(--acc));display:grid;place-items:center}
+.crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:20px;font-weight:700;color:#4a5260}
+.crumb i{font-style:normal;color:#a3abb8}.crumb b{color:var(--acc);font-weight:700}
+.banner{left:64px;top:88px;width:922px;height:280px;--r:32px;--bw:10px}
+.sc{position:absolute;inset:0;background-size:cover;background-position:center}
+.dlogo{position:absolute;left:100px;top:270px;z-index:5;font-size:54px;font-weight:800;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.6)}
+
+/* Hueco de la tarjeta de logros */
+.dcover{left:1016px;top:88px;width:200px;height:280px;--r:26px;--bw:9px;z-index:6;cursor:pointer}
+.play{--r:30px;--bw:8px;left:64px;top:388px;width:290px;height:112px}
+.play .face{display:flex;align-items:center;gap:18px;padding:0 24px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white) 0%,var(--acc) 62%,color-mix(in srgb,var(--acc) 85%,black) 100%);color:#fff}
+.play .pi{width:50px;height:50px;border-radius:50%;background:linear-gradient(180deg,#fff,#e8edf3);display:grid;place-items:center;color:var(--acc)}
+.play b{font-size:34px;font-weight:800;display:block;line-height:1.05}.play small{font-size:15px;font-weight:600}
+.dpanel{position:absolute;top:388px;height:112px;border-radius:26px;padding:12px 22px 18px;display:flex;flex-direction:column;justify-content:center}
+.hsub{font-size:15px;font-weight:600;color:#5f6776;margin:0 0 8px;white-space:nowrap}
+.odo{display:flex;align-items:center;gap:6px}
+.odo .c{width:42px;height:52px;border-radius:10px;display:grid;place-items:center;font-size:38px;font-weight:800;color:var(--acc);background:linear-gradient(180deg,#fff,#eef2f7);box-shadow:inset 0 2px 4px rgba(0,0,0,.18),0 0 0 1px rgba(110,125,150,.25)}
+.odo .u{font-size:22px;font-weight:800;color:#5a6270;margin:0 8px 0 2px;align-self:flex-end;padding-bottom:6px}
+.wk{display:flex;gap:22px;align-items:flex-end;height:46px}
+.wk i{width:30px;border-radius:5px 5px 3px 3px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 40%,white),var(--acc))}
+.wk i.z{background:rgba(160,168,182,.35)}
+.dsect{position:absolute;left:64px;top:514px;font-size:18px;font-weight:800;color:#5a6270}
+.dshot{top:548px;width:176px;height:99px;--r:16px;--bw:5px}
+
+/* Tarjeta interactiva y variantes */
+.fc{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}
+.fc>*{position:relative;z-index:1}
+.blurc{position:absolute;inset:-20px;background-size:cover;background-position:center;filter:blur(14px) brightness(.65) saturate(1.3);z-index:0!important}
+.blurc::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(16,20,34,.45),rgba(16,20,34,.85) 75%)}
+
+.var-pill{
+  position:absolute;right:8px;top:8px;z-index:10;height:22px;padding:0 8px;border-radius:999px;border:0;
+  background:rgba(20,26,40,.75);color:#fff;font:800 10.5px var(--round);display:flex;align-items:center;gap:4px;
+  cursor:pointer;backdrop-filter:blur(8px);box-shadow:0 2px 6px rgba(0,0,0,.35),inset 0 .5px 0 rgba(255,255,255,.3);transition:all .15s;
+}
+.var-pill:hover{background:rgba(0,160,216,.9);transform:scale(1.04)}
+
+.ai{
+  position:relative;flex:none;border-radius:22%;display:grid;place-items:center;color:#fff;
+  background:linear-gradient(150deg,hsl(var(--h,45) 88% 70%),hsl(var(--h,45) 70% 44%) 68%,hsl(calc(var(--h,45) + 24) 72% 28%));
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.55),inset 0 -3px 6px rgba(0,0,0,.25),0 0 0 1px rgba(0,0,0,.18),0 3px 8px -4px rgba(0,0,0,.5);
+}
+.ai svg{width:56%;height:56%;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+.ai.off{filter:grayscale(1) brightness(1.1);opacity:.38}
+.ai.hid{background:linear-gradient(150deg,#687083,#3a404d);opacity:.55}
+.gb{height:6px;border-radius:3px;background:rgba(120,130,150,.25);overflow:hidden}.gb i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#ffd75a,var(--gold))}
+.rg{position:relative;flex:none;margin:4px auto 0}.rg svg{width:100%;height:100%}
+.rg .in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.lab{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#ffe08a}
+.lab svg{width:14px;height:14px}
+.lab em{margin-left:auto;font-style:normal;letter-spacing:0;text-transform:none;color:rgba(255,255,255,.65);font-size:10.5px}
+
+/* Variante 1 · Anillo */
+.v1{color:#fff;padding:12px 12px 10px;align-items:center}
+.v1 .rg b{font-size:32px;font-weight:800}.v1 .rg b small{font-size:15px;opacity:.7}.v1 .rg i{font-style:normal;font-size:12px;font-weight:800;color:#ffe08a;margin-top:3px}
+.v1 .last{align-self:stretch;margin-top:auto;display:flex;align-items:center;gap:8px;padding:7px;border-radius:13px;background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
+.v1 .last div{min-width:0}.v1 .last b{display:block;font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v1 .last small{display:block;font-size:10.5px;font-weight:700;color:rgba(255,255,255,.75)}
+
+/* Variante 2 · Portada + banda */
+.v2 .cov{position:absolute;inset:0;background-size:cover;background-position:center}
+.v2 .pct-chip{position:absolute;left:8px;top:8px;z-index:2;height:22px;padding:0 8px;border-radius:999px;background:linear-gradient(180deg,#ffe58a,var(--gold));color:#3a2f00;font-size:11px;font-weight:800;display:flex;align-items:center;gap:4px;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.v2 .pct-chip svg{width:12px;height:12px}
+.v2 .band{position:absolute;left:6px;right:6px;bottom:6px;height:82px;border-radius:14px;padding:9px 10px;color:#fff;background:rgba(14,18,30,.65);backdrop-filter:blur(10px);box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.v2 .band .r{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.v2 .band b{font-size:20px;font-weight:800}.v2 .band b small{font-size:12px;opacity:.7;font-weight:700}
+.v2 .band .ics{display:flex;gap:4px;margin-top:8px}
+
+/* Variante 4 · Medalla */
+.v4{background:radial-gradient(120% 70% at 50% 20%,#fff,#e6eaf0);align-items:center;padding:8px 10px 10px;color:#3a414e;text-align:center}
+.v4 .t{font-size:20px;font-weight:800;margin-top:-2px}
+.v4 .s{font-size:12px;font-weight:700;color:#7a8291}
+.v4 .nx{align-self:stretch;margin-top:auto;padding:7px 9px;border-radius:12px;background:rgba(255,255,255,.85);box-shadow:inset 0 0 0 1px rgba(95,110,135,.18);text-align:left}
+.v4 .nx small{display:flex;justify-content:space-between;font-size:11px;font-weight:800;color:#6a7282;margin-bottom:5px}
+.v4 .nx small b{color:#a67c00}
+
+/* Variante 7 · Odómetro / Contador */
+.v7{background:linear-gradient(180deg,rgba(255,255,255,.96),#eef1f5);align-items:center;padding:12px 10px 10px;color:#3a414e}
+.v7 .hs{font-size:12.5px;font-weight:700;color:#5f6776;align-self:stretch;text-align:center}
+.v7 .odo{display:flex;align-items:center;gap:5px;margin-top:8px}
+.v7 .odo .c{width:44px;height:56px;border-radius:10px;display:grid;place-items:center;font-size:40px;font-weight:800;color:#c49400;background:linear-gradient(180deg,#fffdf3,#f4efdc);box-shadow:inset 0 2px 4px rgba(0,0,0,.18),0 0 0 1px rgba(110,125,150,.25)}
+.v7 .odo .u{font-size:16px;font-weight:800;color:#5a6270;margin:0 0 0 3px;align-self:flex-end;padding-bottom:8px}
+.v7 .pc{font-size:11.5px;font-weight:800;color:#a67c00;margin-top:6px}
+.v7 .wkb{align-self:stretch;margin-top:auto;padding:8px 8px 6px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px rgba(95,110,135,.15)}
+.v7 .wkb .r{display:flex;justify-content:space-between;font-size:11px;font-weight:800;color:#6a7282;margin-bottom:6px}
+.v7 .wkb .r b{color:#a67c00}
+.v7 .bars{display:flex;justify-content:space-between;align-items:flex-end;height:28px}
+.v7 .bars span{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:9px;font-weight:800;color:#9aa1ad}
+.v7 .bars i{width:14px;border-radius:4px 4px 2px 2px;background:linear-gradient(180deg,#ffe27a,#e3a400)}
+.v7 .bars i.z{background:rgba(160,168,182,.3)}
+
+/* Variante 8 · Rareza */
+.v8{color:#fff;padding:11px 11px 10px;align-items:center}
+.v8 .rg b{font-size:28px;font-weight:800}.v8 .rg b small{font-size:14px;opacity:.7}
+.v8 .lg{align-self:stretch;margin-top:auto;display:flex;flex-direction:column;gap:3px}
+.v8 .lg div{display:flex;align-items:center;gap:7px;height:20px;padding:0 8px;border-radius:8px;background:rgba(255,255,255,.08);font-size:11px;font-weight:700}
+.v8 .lg i{width:8px;height:8px;border-radius:50%}
+.v8 .lg b{margin-left:auto;font-weight:800}
+
+/* Barra inferior de pistas */
+.hints-bar{
+  position:absolute;left:64px;bottom:20px;z-index:8;display:flex;gap:14px;align-items:center;
+}
+.hint-pill{
+  display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;background:rgba(255,255,255,.8);color:#4a5260;font-size:13px;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.1);
+}
+.hint-key{
+  width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff;background:#00A0D8;
+}
+.hint-key.y{background:#F2B807}
+.hint-key.b{background:#E8384F}
+
+/* Modal interactivo overlay */
+.modal-overlay{
+  position:absolute;inset:0;z-index:100;display:grid;place-items:center;background:rgba(10,14,24,.72);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal-box{width:1140px;height:640px;--r:28px;--bw:10px;transform:none!important}
+.modal-content{display:flex;flex-direction:column;padding:22px 28px 16px;background:radial-gradient(120% 90% at 50% 0%,#fbfcfe 0%,#edf0f5 55%,#e2e6ed 100%);color:#3a414e}
+.modal-header{display:flex;align-items:center;gap:18px;margin-bottom:14px;flex:none}
+.btn-back{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.85);border:0;border-radius:999px;height:42px;padding:0 18px 0 10px;font:800 15px var(--round);color:#4a5260;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.12);transition:all .15s}
+.btn-back:hover{background:#fff;transform:scale(1.03)}
+.btn-circle{width:26px;height:26px;border-radius:50%;background:var(--acc);color:#fff;display:grid;place-items:center;font-size:20px;line-height:1}
+.header-info{flex:1;min-width:0}
+.header-info h2{margin:0 0 4px;font-size:24px;font-weight:800;color:#2a313d}
+.header-chips{display:flex;gap:8px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:700;background:rgba(255,255,255,.7);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.chip.rank{background:#fff;border:1px solid rgba(0,160,216,.3)}
+.chip.rank svg{width:14px;height:14px;color:var(--acc)}
+.chip.pct{background:var(--acc);color:#fff}
+.tabs-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex:none;border-bottom:1px solid rgba(120,130,150,.2);padding-bottom:8px}
+.tab-scroller{display:flex;gap:8px}
+.tab-m-btn{display:flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-radius:999px;border:0;background:transparent;color:#657082;font:800 13.5px var(--round);cursor:pointer;transition:all .15s}
+.tab-m-btn:hover{background:rgba(255,255,255,.6);color:#2a313d}
+.tab-m-btn.active{background:var(--acc);color:#fff;box-shadow:0 2px 6px rgba(0,160,216,.35)}
+.tab-m-btn small{padding:2px 6px;border-radius:999px;background:rgba(0,0,0,.1);font-size:11px}
+.tab-m-btn.active small{background:rgba(255,255,255,.25)}
+.bumper{padding:2px 7px;border-radius:6px;background:rgba(255,255,255,.8);font-size:11px;font-weight:800;color:#6a7282}
+.modal-body{flex:1;display:grid;grid-template-columns:580px 1fr;gap:20px;min-height:0}
+.ach-list{overflow-y:auto;padding-right:8px;display:flex;flex-direction:column;gap:8px}
+.ach-item{display:flex;align-items:center;gap:14px;padding:10px 14px;border-radius:16px;background:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.8);cursor:pointer;transition:all .15s;text-align:left;width:100%}
+.ach-item:hover{background:#fff;transform:translateY(-1px);box-shadow:0 4px 10px rgba(0,0,0,.08)}
+.ach-item.selected{background:#fff;box-shadow:0 0 0 2.5px var(--acc),0 6px 14px rgba(0,160,216,.2)}
+.ach-ico{width:44px;height:44px;border-radius:12px;flex:none;display:grid;place-items:center;background:#dfe4ec;color:#7a8291}
+.ach-ico.earned{background:linear-gradient(150deg,#f59e0b,#d97706);color:#fff;box-shadow:0 2px 6px rgba(217,119,6,.35)}
+.ach-ico.secret{background:#475569;color:#fff}
+.ach-ico svg{width:22px;height:22px}
+.ach-meta{flex:1;min-width:0}
+.ach-name-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.ach-name-row b{font-size:14.5px;font-weight:800;color:#2a313d}
+.badge-done{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:800;color:#10b981}
+.badge-done svg{width:12px;height:12px}
+.ach-desc{margin:0 0 4px;font-size:12px;font-weight:600;color:#6a7282;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ach-foot small{font-size:11px;font-weight:700;color:#94a3b8}
+.ach-date{color:#059669!important}
+.ach-detail{background:rgba(255,255,255,.85);border-radius:20px;padding:20px;display:flex;flex-direction:column;box-shadow:0 4px 14px rgba(0,0,0,.05);overflow-y:auto}
+.detail-card{display:flex;flex-direction:column;gap:16px}
+.detail-header{display:flex;gap:16px;align-items:center}
+.detail-ico{width:64px;height:64px;border-radius:16px;display:grid;place-items:center;background:#cbd5e1;color:#64748b;flex:none}
+.detail-ico.earned{background:linear-gradient(150deg,#f59e0b,#d97706);color:#fff;box-shadow:0 4px 12px rgba(217,119,6,.4)}
+.detail-ico.secret{background:#334155;color:#fff}
+.detail-ico svg{width:34px;height:34px}
+.detail-titles h3{margin:0 0 6px;font-size:20px;font-weight:800;color:#1e293b}
+.detail-tags{display:flex;gap:6px}
+.tag-unlocked,.tag-locked,.tag-secret{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:800}
+.tag-unlocked{background:#d1fae5;color:#065f46}
+.tag-locked{background:#f1f5f9;color:#475569}
+.tag-secret{background:#fef3c7;color:#92400e}
+.detail-desc-box{background:#f8fafc;border-radius:14px;padding:14px;border:1px solid rgba(0,0,0,.05)}
+.detail-desc-box p{margin:0;font-size:13.5px;line-height:1.5;color:#475569;font-weight:600}
+.btn-reveal{margin-top:10px;height:30px;padding:0 12px;border-radius:999px;border:0;background:var(--acc);color:#fff;font:800 12px var(--round);cursor:pointer}
+.detail-evidence-box{border-radius:14px;background:#f8fafc;border:1px solid rgba(0,0,0,.05);padding:12px}
+.evidence-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.evidence-title b{font-size:13px;font-weight:800;color:#334155}
+.evidence-title small{font-size:11px;font-weight:700;color:#64748b}
+.evidence-preview{height:120px;border-radius:10px;overflow:hidden;position:relative;background:#0f172a;display:grid;place-items:center}
+.shot-mock{position:absolute;inset:0;background-size:cover;background-position:center;display:flex;align-items:flex-end;padding:10px}
+.hud-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:rgba(15,23,42,.75);color:#fbbf24;font-size:11px;font-weight:800;backdrop-filter:blur(6px)}
+.hud-chip svg{width:13px;height:13px}
+.detail-meta-list{display:flex;flex-direction:column;gap:6px;font-size:12px}
+.meta-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px dashed rgba(0,0,0,.08)}
+.meta-row span{color:#64748b;font-weight:600}
+.meta-row b{color:#1e293b;font-weight:800}
+.meta-row code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:11px;color:#0f172a}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe27a"/><stop offset="1" stop-color="#e3a400"/></linearGradient>
+  <linearGradient id="silver" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#d5dbe4"/><stop offset="1" stop-color="#8f9aab"/></linearGradient>
+</defs></svg>
+
+<div class="top-nav">
+  <h1><span>🏆 Sistema de logros</span> · Prueba de interfaz</h1>
+  <div class="nav-controls">
+    <span class="lbl">Variante activa:</span>
+    <div class="btn-group" id="var-btns">
+      <button class="btn-tab active" data-v="1">1 · Anillo</button>
+      <button class="btn-tab" data-v="2">2 · Banda</button>
+      <button class="btn-tab" data-v="4">4 · Medalla</button>
+      <button class="btn-tab" data-v="7">7 · Contador</button>
+      <button class="btn-tab" data-v="8">8 · Rareza</button>
+    </div>
+    <button class="btn-toggle" id="btn-focus">
+      <span>Foco de mando</span>
+    </button>
+    <button class="btn-toggle" id="btn-open-modal" style="background:var(--acc);color:#fff;border-color:transparent">
+      <span>Abrir modal (A)</span>
+    </button>
+  </div>
+</div>
+
+<div class="canvas-wrapper">
+  <div class="frame">
+    <div class="stage" id="stage">
+      <!-- Fondo y luces -->
+      <div class="blob w" style="left:-120px;top:-160px;width:620px;height:520px"></div>
+      <div class="blob a" style="right:-160px;top:140px;width:640px;height:560px"></div>
+
+      <!-- Barra superior / migas -->
+      <div class="glass avatar"><div class="face"><svg viewBox="0 0 40 40" width="34" height="34"><circle cx="20" cy="15" r="8" fill="#fff"/><path d="M5 37c2-9 8-13 15-13s13 4 15 13z" fill="#fff"/></svg></div></div>
+      <div class="crumb pill">Inicio <i>›</i> Juegos PC <i>›</i> <b>Lumen Drift</b></div>
+
+      <!-- Banner hero y logo -->
+      <div class="glass banner"><div class="face"><div class="sc" id="hero-img"></div></div></div>
+      <div class="dlogo">Lumen Drift</div>
+
+      <!-- Tarjeta interactiva de logros (Hueco portada: 200x280) -->
+      <div class="glass dcover" id="ach-card" title="Clic o [A] para abrir lista completa · [Y] para cambiar diseño">
+        <div class="face" id="card-face"></div>
+      </div>
+
+      <!-- Botón jugar -->
+      <div class="glass play"><div class="face"><span class="pi"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M7 4l12 8-12 8z" fill="currentColor"/></svg></span><span><b>Jugar</b><small>Ejecutable propio</small></span></div></div>
+
+      <!-- Paneles horas y semana -->
+      <div class="dpanel pill" style="left:378px;width:400px">
+        <div class="hsub">Horas jugadas · 31 sesiones</div>
+        <div class="odo"><span class="c">0</span><span class="c">4</span><span class="c">2</span><span class="u">h</span><span class="c">1</span><span class="c">7</span><span class="u">min</span></div>
+      </div>
+      <div class="dpanel pill" style="left:802px;width:414px">
+        <div class="hsub" style="margin-bottom:6px">Esta semana · 6 h 15 min</div>
+        <div class="wk" id="week-bars"></div>
+      </div>
+
+      <!-- Fila de capturas -->
+      <div class="dsect">Capturas <span style="font-weight:600;color:#6a7282">128</span></div>
+      <div id="shots-strip"></div>
+
+      <!-- Barra inferior de pistas con mando -->
+      <div class="hints-bar">
+        <div class="hint-pill"><span class="hint-key">A</span><span>Ver logros</span></div>
+        <div class="hint-pill"><span class="hint-key y">Y</span><span id="hint-y-label">Cambiar diseño (1 · Anillo)</span></div>
+        <div class="hint-pill"><span class="hint-key">X</span><span>Jugar</span></div>
+        <div class="hint-pill"><span class="hint-key b">B</span><span>Volver</span></div>
+      </div>
+
+      <!-- Modal de logros completo -->
+      <div class="modal-overlay" id="modal">
+        <div class="glass modal-box">
+          <div class="face modal-content" id="modal-content"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const sv=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const I={
+  trophy:sv('<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8M9 17h6"/>'),
+  lock:sv('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),
+  check:sv('<polyline points="20 6 9 17 4 12"/>'),
+};
+
+const ACHIEVEMENTS = [
+  { apiName:'ACH_HEART', displayName:'Corazón de lumen', description:'Restaura el núcleo del antiguo faro.', earned:true, unlockedAt: Date.now()/1000 - 3600, h:45, source:'gse' },
+  { apiName:'ACH_EYE', displayName:'Ojo de halcón', description:'Encuentra todas las atalayas de la costa.', earned:true, unlockedAt: Date.now()/1000 - 86400, h:175, source:'gse' },
+  { apiName:'ACH_LEAF', displayName:'Vida tranquila', description:'Descansa en una aldea pesquera al atardecer.', earned:true, unlockedAt: Date.now()/1000 - 100000, h:110, source:'gse' },
+  { apiName:'ACH_MOON', displayName:'Noche en vela', description:'Sobrevive a la tempestad en alta mar.', earned:true, unlockedAt: Date.now()/1000 - 172800, h:240, source:'gse' },
+  { apiName:'ACH_CROWN', displayName:'Leyenda del sur', description:'Derrota al coloso sumergido.', earned:true, unlockedAt: Date.now()/1000 - 200000, h:50, source:'gse' },
+  { apiName:'ACH_BELL', displayName:'Melodía olvidada', description:'Toca las tres campanas sumergidas.', earned:true, unlockedAt: Date.now()/1000 - 260000, h:340, source:'gse' },
+  { apiName:'ACH_SHIELD', displayName:'Guardiana del faro', description:'Protege las ascuas durante una noche.', earned:true, unlockedAt: Date.now()/1000 - 300000, h:190, source:'gse' },
+  { apiName:'ACH_BOLT', displayName:'Tormenta perfecta', description:'Navega en plena tormenta eléctrica sin daños.', earned:true, unlockedAt: Date.now()/1000 - 350000, h:220, source:'gse' },
+  { apiName:'ACH_GEM', displayName:'Coleccionista', description:'Consigue 50 esquirlas de ámbar marino.', earned:true, unlockedAt: Date.now()/1000 - 400000, h:300, source:'gse' },
+  { apiName:'ACH_FEATHER', displayName:'Sin rumbo', description:'Sigue el vuelo de una gaviota solitaria.', earned:true, unlockedAt: Date.now()/1000 - 500000, h:260, source:'gse' },
+  { apiName:'ACH_FISH', displayName:'Pesca milagrosa', description:'Atrapa una especie legendaria del abismo.', earned:true, unlockedAt: Date.now()/1000 - 600000, h:45, source:'gse' },
+  { apiName:'ACH_MAP', displayName:'Cartógrafa', description:'Dibuja el mapa de cinco archipiélagos.', earned:true, unlockedAt: Date.now()/1000 - 700000, h:150, source:'gse' },
+  { apiName:'ACH_COMPASS', displayName:'Marinera de agua dulce', description:'Zarpa por primera vez desde el puerto base.', earned:true, unlockedAt: Date.now()/1000 - 800000, h:200, source:'gse' },
+  { apiName:'ACH_FLAME', displayName:'Primera luz', description:'Enciende tu primer candil al inicio del viaje.', earned:true, unlockedAt: Date.now()/1000 - 900000, h:28, source:'gse' },
+  { apiName:'ACH_ARCH', displayName:'Archipiélago completo', description:'Descubre las 40 islas del gran mar.', earned:false, h:150 },
+  { apiName:'ACH_DEEP', displayName:'Buceo abisal', description:'Desciende a la fosa más profunda.', earned:false, h:210 },
+  { apiName:'ACH_ANCIENT', displayName:'Ecos del pasado', description:'Descifra todas las inscripciones en piedra.', earned:false, h:30 },
+  { apiName:'ACH_SPEED', displayName:'Viento en popa', description:'Alcanza la velocidad máxima con viento de cola.', earned:false, h:60 },
+  { apiName:'ACH_TREASURE', displayName:'Cofre del rey', description:'Abre el cofre cerrado con tres llaves de plata.', earned:false, h:45 },
+  { apiName:'ACH_STARS', displayName:'Guía estelar', description:'Oriéntate de noche únicamente con las constelaciones.', earned:false, h:180 },
+  { apiName:'ACH_SECRET1', displayName:'El secreto de las profundidades', description:'Encuentra la entrada oculta al templo sumergido.', earned:false, hidden:true, h:270 },
+  { apiName:'ACH_SECRET2', displayName:'Vínculo ancestral', description:'Devuelve la gema perdida al santuario.', earned:false, hidden:true, h:330 },
+  { apiName:'ACH_SECRET3', displayName:'El guardián dormido', description:'Despierta a la criatura de las simas.', earned:false, hidden:true, h:0 },
+  { apiName:'ACH_MASTER', displayName:'Dueño del horizonte', description:'Desbloquea todos los logros del juego.', earned:false, hidden:true, h:50 },
+];
+
+const VARIANTS = [1, 2, 4, 7, 8];
+const VAR_NAMES = {
+  1: '1 · Anillo + último',
+  2: '2 · Portada + banda',
+  4: '4 · Medalla de rango',
+  7: '7 · Contador de horas',
+  8: '8 · Por rareza',
+};
+
+let currentVariant = 1;
+let isFocused = false;
+let modalOpen = false;
+let currentTab = 'all';
+let selectedIdx = 0;
+let revealedSecrets = new Set();
+
+const TOTAL = ACHIEVEMENTS.length;
+const UNLOCKED = ACHIEVEMENTS.filter(a => a.earned).length;
+const PCT = Math.round(UNLOCKED / TOTAL * 100);
+
+/* Generación procedural de miniaturas de escena */
+function genScene(w,h,seed,hue,night){
+  const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');
+  let s=seed*9301+49297;const r=()=>{s=(s*16807)%2147483647;return s/2147483647};
+  const g=x.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,night?`hsl(${hue+220},50%,12%)`:`hsl(${hue+190},60%,${58+r()*12}%)`);g.addColorStop(.7,night?`hsl(${hue+250},45%,30%)`:`hsl(${hue+20},85%,82%)`);
+  x.fillStyle=g;x.fillRect(0,0,w,h);
+  x.fillStyle='rgba(255,248,210,.92)';x.beginPath();x.arc(w*(.2+r()*.6),h*(.18+r()*.12),h*.06,0,7);x.fill();
+  for(let L=0;L<3;L++){const base=h*(.5+.06*L);x.fillStyle=night?`hsl(${hue+230},25%,${22-L*5}%)`:`hsl(${hue+150+L*12},${25+L*10}%,${55-L*12}%)`;
+    x.beginPath();x.moveTo(0,h*.66);const st=4+Math.floor(r()*5);for(let i=0;i<=st;i++)x.lineTo(w*i/st,base-r()*h*(.14+.06*(2-L)));x.lineTo(w,h*.66);x.closePath();x.fill();}
+  const sea=x.createLinearGradient(0,h*.62,0,h);sea.addColorStop(0,night?`hsl(${hue+210},40%,22%)`:`hsl(${hue+195},55%,45%)`);sea.addColorStop(1,night?`hsl(${hue+220},50%,10%)`:`hsl(${hue+205},60%,28%)`);
+  x.fillStyle=sea;x.fillRect(0,h*.64,w,h*.36);
+  const fx=w*(.15+r()*.7),fb=h*.66,fw=Math.max(4,h*.05),fh=h*.3;x.fillStyle=night?'#d9d2c8':'#fff';x.fillRect(fx-fw/2,fb-fh,fw,fh);
+  x.fillStyle='#c0392b';for(let i=0;i<3;i++)x.fillRect(fx-fw/2,fb-fh+fh*(.15+i*.3),fw,fh*.1);
+  x.fillStyle=night?'rgba(255,240,170,.95)':'#f6d365';x.fillRect(fx-fw*.6,fb-fh-fw,fw*1.2,fw);
+  return c.toDataURL('image/jpeg',.86);
+}
+const COVER_URL = genScene(364,524,95,0,1);
+const HERO_URL = genScene(922,280,7,10,0);
+const SHOT_URLS = [101,102,103,104,105].map(s=>genScene(352,198,s,40,0));
+
+document.getElementById('hero-img').style.backgroundImage = `url(${HERO_URL})`;
+document.getElementById('week-bars').innerHTML = [35,0,80,120,45,0,95].map(v=>`<i class="${v?'':'z'}" style="height:${v?Math.max(6,v/120*40):4}px"></i>`).join('');
+document.getElementById('shots-strip').innerHTML = [0,1,2,3,4].map(i=>`<div class="glass dshot" style="left:${64+i*192}px"><div class="face"><div class="sc" style="background-image:url(${SHOT_URLS[i]})"></div></div></div>`).join('');
+
+/* Renderizado de la tarjeta en la ficha */
+function renderCard(){
+  const cardEl = document.getElementById('ach-card');
+  cardEl.classList.toggle('f', isFocused);
+  document.getElementById('hint-y-label').textContent = `Cambiar diseño (${VAR_NAMES[currentVariant]})`;
+
+  const last = ACHIEVEMENTS[0];
+  let html = `<button class="var-pill" id="card-pill"><span>${currentVariant} · ${VAR_NAMES[currentVariant].split(' · ')[1]}</span><small>▾</small></button>`;
+
+  if(currentVariant === 1){
+    html += `
+      <div class="fc v1">
+        <div class="blurc" style="background-image:url(${COVER_URL})"></div>
+        <div class="lab">${I.trophy}<span>Logros</span><em>Y · cambiar</em></div>
+        <div class="rg" style="width:112px;height:112px">
+          <svg viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="9"/>
+            <circle cx="50" cy="50" r="45" fill="none" stroke="url(#gold)" stroke-width="9" stroke-linecap="round" pathLength="100" stroke-dasharray="${PCT} 100" transform="rotate(-90 50 50)"/>
+          </svg>
+          <div class="in"><b>${UNLOCKED}<small>/${TOTAL}</small></b><i>${PCT} %</i></div>
+        </div>
+        <div class="last">
+          <div class="ai" style="--h:45;width:34px;height:34px">${I.trophy}</div>
+          <div style="min-width:0"><b>${last.displayName}</b><small>¡Conseguido hoy!</small></div>
+        </div>
+      </div>`;
+  } else if(currentVariant === 2){
+    html += `
+      <div class="fc v2">
+        <div class="cov" style="background-image:url(${COVER_URL})"></div>
+        <span class="pct-chip">${I.trophy}<span>${PCT} %</span></span>
+        <div class="band dk">
+          <div class="r"><b>${UNLOCKED} <small>/ ${TOTAL} logros</small></b></div>
+          <div class="gb"><i style="width:${PCT}%"></i></div>
+          <div class="ics">
+            ${ACHIEVEMENTS.slice(0,5).map((a,i)=>`<div class="ai" style="--h:${i*60+20};width:20px;height:20px">${I.trophy}</div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+  } else if(currentVariant === 4){
+    html += `
+      <div class="fc v4">
+        <svg viewBox="0 0 120 128" width="112" height="120">
+          <path d="M36 0h20l14 42H50z" fill="#3F63E0"/>
+          <path d="M84 0H64L50 42h20z" fill="#E8384F"/>
+          <circle cx="60" cy="80" r="44" fill="url(#silver)" stroke="#fff" stroke-width="3"/>
+          <circle cx="60" cy="80" r="35" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="2" stroke-dasharray="3 4"/>
+          <text x="60" y="88" text-anchor="middle" font-family="M PLUS Rounded 1c,sans-serif" font-size="24" font-weight="800" fill="#4a5260">${PCT}%</text>
+        </svg>
+        <div class="t">Plata</div>
+        <div class="s">${UNLOCKED} de ${TOTAL} logros</div>
+        <div class="nx">
+          <small><span>Siguiente: <b>Oro</b></span><span>faltan ${TOTAL-UNLOCKED}</span></small>
+          <div class="gb"><i style="width:${PCT}%"></i></div>
+        </div>
+      </div>`;
+  } else if(currentVariant === 7){
+    html += `
+      <div class="fc v7">
+        <div class="hs">Logros conseguidos</div>
+        <div class="odo"><span class="c">${Math.floor(UNLOCKED/10)}</span><span class="c">${UNLOCKED%10}</span><span class="u">/ ${TOTAL}</span></div>
+        <div class="pc">${PCT} % completado</div>
+        <div class="wkb">
+          <div class="r"><span>Esta semana</span><b>+6</b></div>
+          <div class="bars">
+            ${[[0,'V'],[1,'S'],[0,'D'],[0,'L'],[2,'M'],[2,'X'],[1,'J']].map(([v,l])=>`<span><i class="${v?'':'z'}" style="height:${v?v*8+4:3}px"></i><small>${l}</small></span>`).join('')}
+          </div>
+        </div>
+      </div>`;
+  } else if(currentVariant === 8){
+    html += `
+      <div class="fc v8">
+        <div class="blurc" style="background-image:url(${COVER_URL})"></div>
+        <div class="lab">${I.trophy}<span>Por rareza</span></div>
+        <div class="rg" style="width:110px;height:110px">
+          <svg viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="10"/>
+            <circle cx="50" cy="50" r="44" fill="none" stroke="#9fc0dc" stroke-width="10" pathLength="24" stroke-dasharray="10 24" transform="rotate(-90 50 50)"/>
+            <circle cx="50" cy="50" r="44" fill="none" stroke="#b67cf0" stroke-width="10" pathLength="24" stroke-dasharray="2 24" stroke-dashoffset="-10" transform="rotate(-90 50 50)"/>
+            <circle cx="50" cy="50" r="44" fill="none" stroke="url(#gold)" stroke-width="10" pathLength="24" stroke-dasharray="2 24" stroke-dashoffset="-12" transform="rotate(-90 50 50)"/>
+          </svg>
+          <div class="in"><b>${UNLOCKED}<small>/${TOTAL}</small></b></div>
+        </div>
+        <div class="lg">
+          <div><i style="background:#9fc0dc"></i>Comunes<b>10</b></div>
+          <div><i style="background:#b67cf0"></i>Raros<b>2</b></div>
+          <div><i style="background:var(--gold)"></i>Ultra raros<b>2</b></div>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('card-face').innerHTML = html;
+  document.getElementById('card-pill').onclick = (e)=>{ e.stopPropagation(); cycleVariant(); };
+}
+
+function cycleVariant(){
+  const idx = VARIANTS.indexOf(currentVariant);
+  currentVariant = VARIANTS[(idx + 1) % VARIANTS.length];
+  updateTabsUi();
+  renderCard();
+}
+
+function setVariant(v){
+  currentVariant = v;
+  updateTabsUi();
+  renderCard();
+}
+
+function updateTabsUi(){
+  document.querySelectorAll('#var-btns button').forEach(b => {
+    b.classList.toggle('active', +b.dataset.v === currentVariant);
+  });
+}
+
+document.querySelectorAll('#var-btns button').forEach(b => {
+  b.onclick = () => setVariant(+b.dataset.v);
+});
+
+document.getElementById('btn-focus').onclick = () => {
+  isFocused = !isFocused;
+  document.getElementById('btn-focus').classList.toggle('on', isFocused);
+  renderCard();
+};
+
+/* Modal de Logros */
+function getFiltered(){
+  if(currentTab === 'unlocked') return ACHIEVEMENTS.filter(a => a.earned);
+  if(currentTab === 'locked') return ACHIEVEMENTS.filter(a => !a.earned);
+  return ACHIEVEMENTS;
+}
+
+function openModal(){
+  modalOpen = true;
+  document.getElementById('modal').classList.add('open');
+  renderModal();
+}
+
+function closeModal(){
+  modalOpen = false;
+  document.getElementById('modal').classList.remove('open');
+}
+
+function toggleReveal(apiName){
+  if(revealedSecrets.has(apiName)) revealedSecrets.delete(apiName);
+  else revealedSecrets.add(apiName);
+  renderModal();
+}
+
+function renderModal(){
+  const filtered = getFiltered();
+  if(selectedIdx >= filtered.length) selectedIdx = 0;
+  const sel = filtered[selectedIdx] || filtered[0];
+
+  const html = `
+    <header class="modal-header">
+      <button class="btn-back" id="m-btn-back"><span class="btn-circle">‹</span><b>Volver</b></button>
+      <div class="header-info">
+        <h2>Logros · Lumen Drift</h2>
+        <div class="header-chips">
+          <span class="chip rank">${I.trophy}<b>Plata</b></span>
+          <span class="chip"><b>${UNLOCKED}</b> / ${TOTAL} completados</span>
+          <span class="chip pct"><b>${PCT}%</b></span>
+        </div>
+      </div>
+      <button class="btn-back" id="m-btn-var" style="height:40px;font-size:13px">
+        <small style="color:#6a7282">Tarjeta:</small><b>${VAR_NAMES[currentVariant]}</b>
+        <span style="background:var(--gold);color:#fff;border-radius:50%;width:20px;height:20px;display:grid;place-items:center;font-size:11px">Y</span>
+      </button>
+    </header>
+
+    <nav class="tabs-bar">
+      <div class="tab-scroller">
+        <button class="tab-m-btn ${currentTab==='all'?'active':''}" data-tab="all">Todos <small>${TOTAL}</small></button>
+        <button class="tab-m-btn ${currentTab==='unlocked'?'active':''}" data-tab="unlocked">Conseguidos <small>${UNLOCKED}</small></button>
+        <button class="tab-m-btn ${currentTab==='locked'?'active':''}" data-tab="locked">Pendientes <small>${TOTAL-UNLOCKED}</small></button>
+      </div>
+      <div><span class="bumper">LB</span> <span class="bumper">RB</span></div>
+    </nav>
+
+    <div class="modal-body">
+      <div class="ach-list" id="m-list">
+        ${filtered.map((a, i) => {
+          const isSecret = a.hidden && !a.earned && !revealedSecrets.has(a.apiName);
+          return `
+            <div class="ach-item ${i===selectedIdx?'selected':''}" data-idx="${i}">
+              <div class="ach-ico ${a.earned?'earned':isSecret?'secret':''}">
+                ${isSecret ? '<b style="font-size:22px">?</b>' : a.earned ? I.trophy : I.lock}
+              </div>
+              <div class="ach-meta">
+                <div class="ach-name-row">
+                  <b>${isSecret ? 'Logro secreto' : a.displayName}</b>
+                  ${a.earned ? `<span class="badge-done">${I.check} Conseguido</span>` : ''}
+                </div>
+                <p class="ach-desc">${isSecret ? 'Continúa jugando para desvelar este logro' : a.description}</p>
+                <div class="ach-foot">
+                  ${a.earned ? '<small class="ach-date">Conseguido hoy a las 22:03</small>' : '<small>Pendiente de desbloquear</small>'}
+                </div>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+
+      <div class="ach-detail">
+        ${sel ? renderDetailCard(sel) : '<div style="display:grid;place-items:center;height:100%">Elige un logro</div>'}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('modal-content').innerHTML = html;
+
+  document.getElementById('m-btn-back').onclick = closeModal;
+  document.getElementById('m-btn-var').onclick = () => { cycleVariant(); renderModal(); };
+  document.querySelectorAll('.tab-m-btn').forEach(b => {
+    b.onclick = () => { currentTab = b.dataset.tab; selectedIdx = 0; renderModal(); };
+  });
+  document.querySelectorAll('#m-list .ach-item').forEach(el => {
+    el.onclick = () => { selectedIdx = +el.dataset.idx; renderModal(); };
+  });
+  const revBtn = document.getElementById('btn-rev');
+  if(revBtn) revBtn.onclick = () => toggleReveal(sel.apiName);
+}
+
+function renderDetailCard(a){
+  const isSecret = a.hidden && !a.earned && !revealedSecrets.has(a.apiName);
+  return `
+    <div class="detail-card">
+      <div class="detail-header">
+        <div class="detail-ico ${a.earned?'earned':isSecret?'secret':''}">
+          ${isSecret ? '<b style="font-size:32px">?</b>' : a.earned ? I.trophy : I.lock}
+        </div>
+        <div class="detail-titles">
+          <h3>${isSecret ? 'Logro secreto' : a.displayName}</h3>
+          <div class="detail-tags">
+            ${a.earned ? `<span class="tag-unlocked">${I.check} Desbloqueado</span>` : `<span class="tag-locked">${I.lock} Bloqueado</span>`}
+            ${a.hidden ? '<span class="tag-secret">Secreto</span>' : ''}
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-desc-box">
+        <p>${isSecret ? 'Los detalles de este logro están ocultos para no desvelar la trama.' : a.description}</p>
+        ${a.hidden && !a.earned ? `<button class="btn-reveal" id="btn-rev"><b>${isSecret ? 'Revelar logro secreto (X)' : 'Ocultar spoiler'}</b></button>` : ''}
+      </div>
+
+      <div class="detail-evidence-box">
+        <div class="evidence-title"><b>Captura del momento</b><small>${a.earned ? 'Guardada automáticamente' : 'Se capturará al desbloquear'}</small></div>
+        <div class="evidence-preview">
+          ${a.earned ? `
+            <div class="shot-mock" style="background-image:url(${COVER_URL})">
+              <span class="hud-chip">${I.trophy} ${a.displayName}</span>
+            </div>` : `
+            <div style="color:#64748b;display:flex;flex-direction:column;align-items:center;gap:6px">
+              ${I.lock}<span>Juega para conseguir este momento</span>
+            </div>`}
+        </div>
+      </div>
+
+      <div class="detail-meta-list">
+        <div class="meta-row"><span>Fecha de obtención:</span><b>${a.earned ? 'Hoy a las 22:03' : 'Bloqueado'}</b></div>
+        <div class="meta-row"><span>Identificador API:</span><code>${a.apiName}</code></div>
+        <div class="meta-row"><span>Origen de datos:</span><b>GSE / Goldberg Saves (Lector local)</b></div>
+      </div>
+    </div>`;
+}
+
+document.getElementById('ach-card').onclick = openModal;
+document.getElementById('btn-open-modal').onclick = openModal;
+document.getElementById('modal').onclick = e => { if(e.target.id === 'modal') closeModal(); };
+
+/* Atajos de teclado y mando */
+window.addEventListener('keydown', e => {
+  if(e.key === 'y' || e.key === 'Y'){
+    cycleVariant();
+    if(modalOpen) renderModal();
+  } else if(e.key === 'Escape' || e.key === 'Backspace'){
+    if(modalOpen) closeModal();
+  } else if(e.key === 'Enter' || e.key === ' '){
+    if(!modalOpen) openModal();
+  } else if(e.key === 'x' || e.key === 'X'){
+    if(modalOpen){
+      const filtered = getFiltered();
+      const sel = filtered[selectedIdx];
+      if(sel && sel.hidden && !sel.earned) toggleReveal(sel.apiName);
+    }
+  } else if(e.key === 'ArrowUp' && modalOpen){
+    if(selectedIdx > 0){ selectedIdx--; renderModal(); }
+  } else if(e.key === 'ArrowDown' && modalOpen){
+    const filtered = getFiltered();
+    if(selectedIdx < filtered.length - 1){ selectedIdx++; renderModal(); }
+  }
+});
+
+/* Ajuste proporcional de la pantalla al tamaño de ventana */
+function fit(){
+  const f = document.querySelector('.frame');
+  f.firstElementChild.style.transform = `scale(${f.clientWidth / 1280})`;
+}
+window.addEventListener('resize', fit);
+renderCard();
+fit();
+</script>
+</body>
+</html>

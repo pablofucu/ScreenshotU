@@ -1,0 +1,1340 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Propuesta 1: Nueva Arquitectura de Categorías y Menús</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+/* =====================================================================
+   Variables y Estilos de Base (Tokens idénticos a src/app.css)
+   ===================================================================== */
+:root {
+  --round: 'M PLUS Rounded 1c', 'Segoe UI', system-ui, sans-serif;
+  --bg-top: #fbfcfd;
+  --bg-mid: #ebf0f7;
+  --bg-bot: #dbe4f0;
+  --acc: #00A0D8;
+  --acc-ink: #ffffff;
+  --st-playing: #3BB54A;
+  --st-pending: #F27A1A;
+  --st-finished: #2488E5;
+  --st-dropped: #8a93a3;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 16px 16px 40px;
+  background: radial-gradient(120% 90% at 50% 0%, var(--bg-top) 0%, var(--bg-mid) 55%, var(--bg-bot) 100%) fixed;
+  font-family: var(--round);
+  color: #333a45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+}
+
+/* =====================================================================
+   Cabecera de Control Exterior (Para que el usuario pruebe los modos)
+   ===================================================================== */
+header.demo-bar {
+  max-width: 1280px;
+  width: 100%;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.demo-title h1 {
+  margin: 0 0 2px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #272d37;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.demo-title h1 span.tag {
+  font-size: 12px;
+  font-weight: 800;
+  background: #3bb54a;
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+.demo-title p {
+  margin: 0;
+  font-size: 13.5px;
+  color: #64748b;
+}
+
+/* Selector de vistas del prototipo */
+.view-switch {
+  display: flex;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 999px;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(95,110,135,0.18);
+  gap: 4px;
+}
+.view-btn {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  color: #4a5260;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.view-btn i { font-size: 16px; }
+.view-btn:hover { background: rgba(0, 160, 216, 0.1); color: var(--acc); }
+.view-btn.on {
+  background: var(--acc);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 160, 216, 0.35);
+}
+.view-btn .badge-pill {
+  font-size: 11px;
+  background: rgba(0,0,0,0.15);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+/* =====================================================================
+   Escenario 1280x720 fijo (Idéntico a App.svelte y src/app.css)
+   ===================================================================== */
+.stage-wrap {
+  width: 1280px;
+  height: 720px;
+  position: relative;
+  border-radius: 26px;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(90, 110, 140, 0.22), 0 24px 60px -20px rgba(30, 45, 70, 0.45);
+  background: #eceef2;
+}
+#stage {
+  position: absolute;
+  inset: 0;
+  width: 1280px;
+  height: 720px;
+  overflow: hidden;
+  font-family: var(--round);
+  color: #3a414e;
+  background: radial-gradient(120% 90% at 50% 0%, #f8f9fb 0%, #eceef2 55%, #e2e5ea 100%);
+}
+
+/* Capas de ambiente de fondo */
+.bg-ambient {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(48px) saturate(1.4);
+  opacity: 0.35;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+/* Glass & Pills (Tokens del visor) */
+.glass {
+  position: relative;
+  border-radius: 24px;
+  padding: 8px;
+  isolation: isolate;
+  background: linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.30) 46%, rgba(225,234,246,0.22) 100%);
+  backdrop-filter: blur(14px) saturate(1.7);
+  box-shadow: inset 0 1.5px 0 #fff, inset 0 0 0 1px rgba(255,255,255,0.55), inset 0 -10px 14px -8px rgba(255,255,255,0.95), 0 0 0 1px rgba(95,110,135,0.24), 0 12px 24px -12px rgba(40,50,70,0.3);
+  transition: transform 0.2s cubic-bezier(.34,1.32,.64,1), box-shadow 0.2s;
+}
+.glass.f, .glass:hover {
+  transform: scale(1.05);
+  z-index: 5;
+  box-shadow: inset 0 1.5px 0 #fff, 0 0 0 2px var(--acc), 0 0 24px rgba(0, 160, 216, 0.45);
+}
+.glass .face {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #dfe3e9;
+}
+.pill {
+  backdrop-filter: blur(16px) saturate(1.7);
+  background: linear-gradient(180deg, rgba(255,255,255,0.85), rgba(255,255,255,0.58));
+  box-shadow: inset 0 1px 0 #fff, inset 0 -4px 8px -4px rgba(255,255,255,0.9), 0 0 0 1px rgba(95,110,135,0.22), 0 6px 14px -8px rgba(40,50,70,0.35);
+  border-radius: 999px;
+}
+
+/* =====================================================================
+   Barra Superior (TopBar)
+   ===================================================================== */
+.topbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 64px;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 20;
+}
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  padding: 4px;
+  display: grid;
+  place-items: center;
+}
+.avatar .face {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 40%, white), var(--acc));
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: 22px;
+}
+.crumbs {
+  height: 38px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #4a5260;
+}
+.crumbs .sep { color: #94a3b8; }
+.crumbs .cur { color: var(--acc); font-weight: 800; }
+.clock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #4a5260;
+}
+.batt {
+  width: 28px;
+  height: 14px;
+  border-radius: 6px;
+  border: 2px solid #64748b;
+  padding: 1.5px;
+  display: flex;
+  align-items: center;
+}
+.batt-inner {
+  height: 100%;
+  width: 85%;
+  background: var(--acc);
+  border-radius: 2px;
+}
+
+/* =====================================================================
+   Barra de Pestañas (Pestañas 1, 2 y 3)
+   ===================================================================== */
+.category-tabs {
+  position: absolute;
+  left: 96px;
+  top: 72px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 15;
+}
+.sh-btn {
+  min-width: 28px;
+  height: 24px;
+  border-radius: 7px;
+  background: #64748b;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+  padding: 0 5px;
+}
+.cat-tab {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  color: #64748b;
+  padding: 6px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.cat-tab:hover { color: #272d37; background: rgba(255, 255, 255, 0.4); }
+.cat-tab.on {
+  color: #fff;
+  background: var(--acc);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 0 0 1px color-mix(in srgb, var(--acc) 70%, black), 0 6px 16px -6px var(--acc);
+}
+.cat-tab .tcount {
+  font-size: 13px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.12);
+}
+.cat-tab.on .tcount {
+  background: rgba(255,255,255,0.25);
+  color: #fff;
+}
+
+/* =====================================================================
+   VISTA 1: MI LISTA (En curso: Jugando, Pendientes, Abandonados)
+   ===================================================================== */
+.view-milista {
+  position: absolute;
+  left: 70px;
+  right: 70px;
+  top: 126px;
+  bottom: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  padding-bottom: 20px;
+}
+.shelf-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.shelf-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-left: 6px;
+}
+.shelf-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 14px 0 10px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+}
+.shelf-tag.playing { background: var(--st-playing); }
+.shelf-tag.pending { background: var(--st-pending); }
+.shelf-tag.dropped { background: var(--st-dropped); }
+.shelf-tag i { font-size: 16px; }
+.shelf-meta {
+  font-size: 13px;
+  font-weight: 700;
+  color: #718096;
+}
+
+/* Tira de portadas de la estantería */
+.shelf-track {
+  display: flex;
+  gap: 16px;
+  padding: 6px 4px 12px;
+  overflow-x: auto;
+}
+.thumb-card {
+  width: 110px;
+  height: 154px;
+  flex: none;
+  cursor: pointer;
+  position: relative;
+}
+.thumb-card .face {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 8px;
+  color: #fff;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+.thumb-card .face::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(10, 15, 25, 0.75) 100%);
+}
+.thumb-card .game-name {
+  position: relative;
+  z-index: 2;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.thumb-card .play-hours {
+  position: relative;
+  z-index: 2;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #a3e635;
+  margin-top: 2px;
+}
+.thumb-card .order-badge {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--st-pending);
+  font-weight: 800;
+  font-size: 12px;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  z-index: 6;
+}
+
+/* Banner enlace directo a Terminados */
+.finished-banner {
+  margin-top: 4px;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  border: 1px dashed rgba(36, 136, 229, 0.4);
+  background: linear-gradient(90deg, rgba(36, 136, 229, 0.08), rgba(255, 255, 255, 0.6));
+  transition: all 0.2s;
+}
+.finished-banner:hover {
+  background: linear-gradient(90deg, rgba(36, 136, 229, 0.16), rgba(255, 255, 255, 0.85));
+  transform: translateX(4px);
+}
+.finished-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #1e40af;
+}
+.finished-banner-left i { font-size: 20px; color: var(--st-finished); }
+.finished-banner-right {
+  font-size: 13px;
+  font-weight: 700;
+  color: #3b82f6;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* =====================================================================
+   VISTA 2: COLECCIONES / SAGAS (A un solo toque de RB)
+   ===================================================================== */
+.view-coll {
+  position: absolute;
+  left: 70px;
+  right: 70px;
+  top: 126px;
+  bottom: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+.coll-shelf {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.coll-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 16px 0 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+}
+.coll-tag.nier { background: linear-gradient(135deg, #0284c7, #0d9488); }
+.coll-tag.ff { background: linear-gradient(135deg, #ea580c, #c026d3); }
+
+/* =====================================================================
+   VISTA 3: CATÁLOGO CON BUSCADOR Y SALTO A-Z (Solución Menú Infinito)
+   ===================================================================== */
+.view-catalog {
+  position: absolute;
+  left: 70px;
+  right: 70px;
+  top: 124px;
+  bottom: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Fila de Búsqueda y Filtros Rápidos */
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.search-input-box {
+  flex: 1;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1.5px solid rgba(0, 160, 216, 0.35);
+  border-radius: 999px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.03), 0 4px 10px rgba(0,0,0,0.04);
+}
+.search-input-box i { font-size: 20px; color: var(--acc); }
+.search-input-box input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+  outline: none;
+}
+.search-clear {
+  border: none;
+  background: #e2e8f0;
+  color: #64748b;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+.quick-filter {
+  display: flex;
+  gap: 6px;
+}
+.qchip {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(95, 110, 135, 0.2);
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+.qchip:hover { background: #fff; color: var(--acc); border-color: var(--acc); }
+.qchip.on {
+  background: #334155;
+  color: #fff;
+  border-color: #1e293b;
+}
+
+/* Tira de Salto Alfabético (A-Z Jump) */
+.az-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 12px;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+.az-letter {
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.az-letter:hover, .az-letter.on {
+  background: var(--acc);
+  color: #fff;
+  transform: scale(1.15);
+}
+.az-hint {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Cuadrícula del Catálogo */
+.catalog-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+  overflow-y: auto;
+  padding: 6px 4px 16px;
+}
+.cat-card {
+  height: 180px;
+  cursor: pointer;
+}
+.cat-card .face {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 10px;
+  color: #fff;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+.cat-card .face::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(10, 15, 25, 0.8) 100%);
+}
+.cat-card .cname {
+  position: relative;
+  z-index: 2;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+.cat-card .badge-state {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  color: #fff;
+  z-index: 4;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.badge-state.playing { background: var(--st-playing); }
+.badge-state.pending { background: var(--st-pending); }
+.badge-state.finished { background: var(--st-finished); }
+
+/* Baldosa Añadir juego */
+.add-tile {
+  border: 2px dashed rgba(100, 116, 139, 0.4);
+  background: rgba(255, 255, 255, 0.35);
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  font-weight: 800;
+  font-size: 13px;
+  border-radius: 18px;
+  text-align: center;
+  gap: 6px;
+}
+.add-tile i { font-size: 28px; color: var(--acc); }
+
+/* =====================================================================
+   VISTA 4: TERMINADOS (En Estadísticas / Salón de la Fama)
+   ===================================================================== */
+.view-stats-fin {
+  position: absolute;
+  left: 70px;
+  right: 70px;
+  top: 110px;
+  bottom: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+.stats-header-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.s-tab {
+  font-size: 15px;
+  font-weight: 800;
+  padding: 6px 16px;
+  border-radius: 999px;
+  color: #64748b;
+  cursor: pointer;
+}
+.s-tab.on {
+  background: #3b82f6;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.fin-year-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fin-year-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  height: 38px;
+  padding: 0 18px 0 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}
+.fin-year-tag .stars-pill {
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #fef08a;
+  letter-spacing: 1px;
+}
+.fin-track {
+  display: flex;
+  gap: 16px;
+  padding: 6px 4px 12px;
+  overflow-x: auto;
+}
+.fin-card {
+  width: 120px;
+  height: 168px;
+  flex: none;
+  cursor: pointer;
+  position: relative;
+}
+.fin-card .stars-bot {
+  position: relative;
+  z-index: 2;
+  font-size: 12px;
+  color: #fbbf24;
+  letter-spacing: 1px;
+  margin-top: 3px;
+}
+.fin-card .date-sub {
+  position: relative;
+  z-index: 2;
+  font-size: 10px;
+  color: #93c5fd;
+  font-weight: 700;
+}
+
+/* =====================================================================
+   BARRAS DE PISTAS (Hints inferiores)
+   ===================================================================== */
+.hints {
+  position: absolute;
+  right: 28px;
+  bottom: 16px;
+  display: flex;
+  gap: 10px;
+  z-index: 25;
+}
+.hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 14px 0 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #4a5260;
+}
+.btn {
+  min-width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  padding: 0 5px;
+}
+.btn.a { background: #3BB54A; }
+.btn.b { background: #E8384F; }
+.btn.x { background: #3F63E0; }
+.btn.y { background: #F2B807; color: #3a2f00; }
+.btn.menu { background: #475569; }
+
+/* Explicación al pie exterior */
+footer.demo-notes {
+  max-width: 1280px;
+  width: 100%;
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.note-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05), 0 0 0 1px rgba(95,110,135,0.15);
+}
+.note-card h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1e293b;
+}
+.note-card h3 i { font-size: 18px; color: var(--acc); }
+.note-card p {
+  margin: 0;
+  font-size: 13.5px;
+  color: #475569;
+  line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<!-- Cabecera exterior interactiva -->
+<header class="demo-bar">
+  <div class="demo-title">
+    <h1>
+      Propuesta 1: Nueva Arquitectura de Categorías
+      <span class="tag">Interactiva</span>
+    </h1>
+    <p>Haz clic en las pestañas o pulsa <b>LB/RB</b> (teclas Q/E) para cambiar de vista. Puedes buscar y filtrar juegos.</p>
+  </div>
+  
+  <div class="view-switch">
+    <button class="view-btn on" id="btn-v1" onclick="switchView('milista')">
+      <i class="ti ti-layout-list"></i> 1. Mi lista (En curso)
+      <span class="badge-pill">Por defecto</span>
+    </button>
+    <button class="view-btn" id="btn-v2" onclick="switchView('coll')">
+      <i class="ti ti-folders"></i> 2. Colecciones / Sagas
+    </button>
+    <button class="view-btn" id="btn-v3" onclick="switchView('catalog')">
+      <i class="ti ti-layout-grid"></i> 3. Catálogo (+ Buscador)
+    </button>
+    <button class="view-btn" id="btn-v4" onclick="switchView('stats-fin')">
+      <i class="ti ti-trophy"></i> Terminados (en Estadísticas)
+    </button>
+  </div>
+</header>
+
+<!-- Escenario 1280x720 del Visor -->
+<div class="stage-wrap">
+  <div id="stage">
+    
+    <!-- Fondo ambiental desenfocado -->
+    <div class="bg-ambient" id="ambient" style="background-image: url('https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80')"></div>
+
+    <!-- Barra Superior (TopBar) -->
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="glass avatar"><div class="face"><i class="ti ti-user"></i></div></div>
+        <div class="crumb pill crumbs">
+          <span>Inicio</span><span class="sep">›</span>
+          <span id="crumb-platform">Juegos PC</span><span class="sep">›</span>
+          <span class="cur" id="crumb-tab">Mi lista</span>
+        </div>
+      </div>
+      <div class="clock">
+        <i class="ti ti-volume" style="font-size:20px;color:var(--acc);cursor:pointer"></i>
+        <span>28/10 <small style="font-size:12px;color:#94a3b8">(mié)</small></span>
+        <span>14:30</span>
+        <div class="batt" title="Mando conectado"><div class="batt-inner"></div></div>
+      </div>
+    </div>
+
+    <!-- Pestañas de la Categoría (Solo visibles en vista de categoría, no en estadísticas) -->
+    <div class="category-tabs" id="cat-tabs-bar">
+      <span class="sh-btn">LT</span>
+      <button class="cat-tab on" id="tab-milista" onclick="switchView('milista')">
+        Mi lista <span class="tcount">7</span>
+      </button>
+      <button class="cat-tab" id="tab-coll" onclick="switchView('coll')">
+        Colecciones <span class="tcount">3</span>
+      </button>
+      <button class="cat-tab" id="tab-catalog" onclick="switchView('catalog')">
+        Catálogo <span class="tcount" id="total-count">24</span>
+      </button>
+      <span class="sh-btn">RT</span>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- VISTA 1: MI LISTA (En curso: Jugando, Pendientes, Abandonados) -->
+    <!-- ============================================================== -->
+    <div class="view-milista" id="view-milista">
+      
+      <!-- Balda 1: JUGANDO AHORA -->
+      <div class="shelf-block">
+        <div class="shelf-header">
+          <div class="shelf-tag playing"><i class="ti ti-player-play"></i> Jugando ahora</div>
+          <span class="shelf-meta">2 títulos activos · 68 h jugadas en total</span>
+        </div>
+        <div class="shelf-track" id="shelf-playing"></div>
+      </div>
+
+      <!-- Balda 2: PENDIENTES / BACKLOG -->
+      <div class="shelf-block">
+        <div class="shelf-header">
+          <div class="shelf-tag pending"><i class="ti ti-clock"></i> Pendientes (Prioridad)</div>
+          <span class="shelf-meta">Reordena tu cola con LB / RB · 4 títulos</span>
+        </div>
+        <div class="shelf-track" id="shelf-pending"></div>
+      </div>
+
+      <!-- Balda 3: EN PAUSA / ABANDONADOS -->
+      <div class="shelf-block">
+        <div class="shelf-header">
+          <div class="shelf-tag dropped"><i class="ti ti-player-pause"></i> En pausa / Abandonados</div>
+          <span class="shelf-meta">1 título</span>
+        </div>
+        <div class="shelf-track" id="shelf-dropped"></div>
+      </div>
+
+      <!-- Banner de Salto a Terminados (Salón de la Fama) -->
+      <div class="pill finished-banner" onclick="switchView('stats-fin')">
+        <div class="finished-banner-left">
+          <i class="ti ti-trophy"></i>
+          <span>¿Buscas tus juegos terminados?</span>
+          <span style="font-size:13px;font-weight:600;color:#64748b">Están en tu Salón de la Fama con notas, fechas y meses</span>
+        </div>
+        <div class="finished-banner-right">
+          <span>Ver 18 terminados en Estadísticas</span>
+          <i class="ti ti-arrow-right"></i>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- VISTA 2: COLECCIONES / SAGAS                                   -->
+    <!-- ============================================================== -->
+    <div class="view-coll" id="view-coll" style="display:none">
+      
+      <!-- Colección 1 -->
+      <div class="coll-shelf">
+        <div class="shelf-header">
+          <div class="coll-tag"><i class="ti ti-bookmark"></i> Saga Trails (Kiseki)</div>
+          <span class="shelf-meta">10 juegos · 2.340 capturas · Orden cronológico</span>
+        </div>
+        <div class="shelf-track" id="shelf-coll-1"></div>
+      </div>
+
+      <!-- Colección 2 -->
+      <div class="coll-shelf">
+        <div class="shelf-header">
+          <div class="coll-tag nier"><i class="ti ti-bookmark"></i> Universo NieR</div>
+          <span class="shelf-meta">2 juegos · 450 capturas</span>
+        </div>
+        <div class="shelf-track" id="shelf-coll-2"></div>
+      </div>
+
+      <!-- Colección 3 -->
+      <div class="coll-shelf">
+        <div class="shelf-header">
+          <div class="coll-tag ff"><i class="ti ti-bookmark"></i> Final Fantasy VII Series</div>
+          <span class="shelf-meta">2 juegos · 890 capturas</span>
+        </div>
+        <div class="shelf-track" id="shelf-coll-3"></div>
+      </div>
+
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- VISTA 3: CATÁLOGO (+ BUSCADOR Y SALTO A-Z)                     -->
+    <!-- ============================================================== -->
+    <div class="view-catalog" id="view-catalog" style="display:none">
+      
+      <!-- Fila de Búsqueda y Filtros Rápidos -->
+      <div class="search-row">
+        <div class="search-input-box">
+          <i class="ti ti-search"></i>
+          <input type="text" id="catalog-search" placeholder="Buscar juego por nombre... (escribe para filtrar)" oninput="filterGames()">
+          <button class="search-clear" onclick="clearSearch()" title="Limpiar búsqueda">✕</button>
+        </div>
+        <div class="quick-filter">
+          <button class="qchip on" id="qf-all" onclick="setQuickFilter('all')">Todos <small id="qf-count-all">(24)</small></button>
+          <button class="qchip" id="qf-launch" onclick="setQuickFilter('launch')"><i class="ti ti-player-play"></i> Con lanzador</button>
+          <button class="qchip" id="qf-favs" onclick="setQuickFilter('favs')"><i class="ti ti-star"></i> Con favoritas</button>
+        </div>
+      </div>
+
+      <!-- Barra de Salto Alfabético (A–Z Jump) -->
+      <div class="az-strip">
+        <span class="az-hint"><span class="sh-btn" style="min-width:20px;height:18px;font-size:9px">LT/RT</span> Salto alfabético:</span>
+        <span class="az-letter on" onclick="jumpLetter('')">#</span>
+        <span class="az-letter" onclick="jumpLetter('A')">A</span>
+        <span class="az-letter" onclick="jumpLetter('B')">B</span>
+        <span class="az-letter" onclick="jumpLetter('C')">C</span>
+        <span class="az-letter" onclick="jumpLetter('D')">D</span>
+        <span class="az-letter" onclick="jumpLetter('E')">E</span>
+        <span class="az-letter" onclick="jumpLetter('F')">F</span>
+        <span class="az-letter" onclick="jumpLetter('G')">G</span>
+        <span class="az-letter" onclick="jumpLetter('H')">H</span>
+        <span class="az-letter" onclick="jumpLetter('I')">I</span>
+        <span class="az-letter" onclick="jumpLetter('J')">J</span>
+        <span class="az-letter" onclick="jumpLetter('K')">K</span>
+        <span class="az-letter" onclick="jumpLetter('L')">L</span>
+        <span class="az-letter" onclick="jumpLetter('M')">M</span>
+        <span class="az-letter" onclick="jumpLetter('N')">N</span>
+        <span class="az-letter" onclick="jumpLetter('P')">P</span>
+        <span class="az-letter" onclick="jumpLetter('R')">R</span>
+        <span class="az-letter" onclick="jumpLetter('S')">S</span>
+        <span class="az-letter" onclick="jumpLetter('T')">T</span>
+        <span class="az-letter" onclick="jumpLetter('W')">W</span>
+        <span class="az-letter" onclick="jumpLetter('Y')">Y</span>
+        <span class="az-letter" onclick="jumpLetter('Z')">Z</span>
+      </div>
+
+      <!-- Cuadrícula de Juegos -->
+      <div class="catalog-grid" id="catalog-grid"></div>
+
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- VISTA 4: TERMINADOS (En Estadísticas / Salón de la Fama)        -->
+    <!-- ============================================================== -->
+    <div class="view-stats-fin" id="view-stats-fin" style="display:none">
+      
+      <div class="stats-header-tabs">
+        <span class="s-tab" onclick="alert('Aquí iría la clasificación por horas de juego')">Clasificación de horas</span>
+        <span class="s-tab on"><i class="ti ti-trophy"></i> Salón de la Fama (Terminados)</span>
+        <span class="s-tab" onclick="alert('Aquí iría el mapa de actividad de 6 meses')">Calendario de actividad</span>
+        <span class="s-tab" onclick="alert('Aquí iría el resumen anual del año actual')">Resumen anual</span>
+      </div>
+
+      <!-- Año 2026 -->
+      <div class="fin-year-block">
+        <div class="shelf-header">
+          <div class="fin-year-tag">
+            <i class="ti ti-calendar-check"></i> Año 2026
+            <span class="stars-pill">★ 4.9 media</span>
+          </div>
+          <span class="shelf-meta">8 juegos completados este año</span>
+        </div>
+        <div class="fin-track" id="shelf-fin-2026"></div>
+      </div>
+
+      <!-- Año 2025 -->
+      <div class="fin-year-block">
+        <div class="shelf-header">
+          <div class="fin-year-tag" style="background:linear-gradient(135deg, #475569, #334155)">
+            <i class="ti ti-calendar"></i> Año 2025
+            <span class="stars-pill">★ 4.6 media</span>
+          </div>
+          <span class="shelf-meta">10 juegos completados</span>
+        </div>
+        <div class="fin-track" id="shelf-fin-2025"></div>
+      </div>
+
+    </div>
+
+    <!-- Barra de Pistas (Hints inferiores de mando) -->
+    <div class="hints" id="bottom-hints">
+      <div class="pill hint"><span class="btn a">A</span> <span>Abrir ficha</span></div>
+      <div class="pill hint"><span class="btn x">X</span> <span>Jugar directo</span></div>
+      <div class="pill hint" id="hint-y"><span class="btn y">Y</span> <span>Buscar</span></div>
+      <div class="pill hint"><span class="btn menu">Start</span> <span>Opciones</span></div>
+      <div class="pill hint"><span class="btn b">B</span> <span>Volver a Inicio</span></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Notas explicativas del diseño -->
+<footer class="demo-notes">
+  <div class="note-card">
+    <h3><i class="ti ti-home-check"></i> 1. Aterrizaje en lo Activo</h3>
+    <p>Al entrar en PC o Novelas ya no te abruma una lista de 150 juegos. Ves tus 2 juegos en curso y tus 4 pendientes inmediatos. Es directo, accionable y te ayuda a decidir a qué jugar en 3 segundos.</p>
+  </div>
+  <div class="note-card">
+    <h3><i class="ti ti-folders"></i> 2. Sagas en 2ª Posición</h3>
+    <p>Colecciones ya no está perdida en el cuarto puesto. Con solo pulsar <b>RB</b> entras a tus sagas. Tienen identidad visual propia y no quedan ocultas tras capas de menús.</p>
+  </div>
+  <div class="note-card">
+    <h3><i class="ti ti-search"></i> 3. Catálogo sin Menú Infinito</h3>
+    <p>La pestaña Catálogo cuenta con <b>barra de búsqueda en vivo</b> y <b>salto alfabético rápido con gatillos (A–Z)</b>. Encontrar cualquier juego entre cientos requiere pulsar 2 teclas o saltar a la letra inicial.</p>
+  </div>
+</footer>
+
+<script>
+/* =====================================================================
+   Base de Datos de Ejemplo (Juegos reales simulando el store)
+   ===================================================================== */
+const GAMES = [
+  { id: 'elden', name: 'Elden Ring', status: 'playing', hours: 84, lastPlayed: 'Hoy', launchable: true, fav: true, img: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&q=80', gradient: 'linear-gradient(135deg,#b45309,#78350f)' },
+  { id: 'cyberpunk', name: 'Cyberpunk 2077', status: 'playing', hours: 42, lastPlayed: 'Ayer', launchable: true, fav: true, img: '', gradient: 'linear-gradient(135deg,#0284c7,#0369a1)' },
+  { id: 'hollow', name: 'Hollow Knight: Silksong', status: 'pending', pos: 1, launchable: true, fav: false, img: '', gradient: 'linear-gradient(135deg,#475569,#334155)' },
+  { id: 'p5r', name: 'Persona 5 Royal', status: 'pending', pos: 2, launchable: true, fav: true, img: '', gradient: 'linear-gradient(135deg,#dc2626,#991b1b)' },
+  { id: 'hades2', name: 'Hades II', status: 'pending', pos: 3, launchable: true, fav: false, img: '', gradient: 'linear-gradient(135deg,#059669,#065f46)' },
+  { id: 'alan2', name: 'Alan Wake 2', status: 'pending', pos: 4, launchable: true, fav: false, img: '', gradient: 'linear-gradient(135deg,#0f172a,#1e293b)' },
+  { id: 'starfield', name: 'Starfield', status: 'dropped', hours: 16, launchable: true, fav: false, img: '', gradient: 'linear-gradient(135deg,#64748b,#475569)' },
+  
+  // Terminados en 2026
+  { id: 'baldur3', name: "Baldur's Gate 3", status: 'finished', finYear: 2026, finMonth: 'Marzo', rating: 5, hours: 140, launchable: true, fav: true, gradient: 'linear-gradient(135deg,#7c2d12,#431407)' },
+  { id: 'clannad', name: 'Clannad', status: 'finished', finYear: 2026, finMonth: 'Febrero', rating: 5, hours: 75, launchable: true, fav: true, gradient: 'linear-gradient(135deg,#38bdf8,#0284c7)' },
+  { id: 'metaphor', name: 'Metaphor: ReFantazio', status: 'finished', finYear: 2026, finMonth: 'Enero', rating: 5, hours: 92, launchable: true, fav: false, gradient: 'linear-gradient(135deg,#d97706,#b45309)' },
+  { id: 're4r', name: 'Resident Evil 4', status: 'finished', finYear: 2026, finMonth: 'Enero', rating: 4, hours: 22, launchable: true, fav: false, gradient: 'linear-gradient(135deg,#991b1b,#7f1d1d)' },
+
+  // Terminados en 2025
+  { id: 'nier-a', name: 'NieR:Automata', status: 'finished', finYear: 2025, finMonth: 'Noviembre', rating: 5, hours: 48, launchable: true, fav: true, gradient: 'linear-gradient(135deg,#52525b,#27272a)' },
+  { id: 'nier-r', name: 'NieR Replicant', status: 'finished', finYear: 2025, finMonth: 'Agosto', rating: 5, hours: 38, launchable: true, fav: true, gradient: 'linear-gradient(135deg,#3f3f46,#18181b)' },
+  { id: 'ff7r', name: 'Final Fantasy VII Remake', status: 'finished', finYear: 2025, finMonth: 'Junio', rating: 4, hours: 54, launchable: true, fav: false, gradient: 'linear-gradient(135deg,#0d9488,#115e59)' },
+  { id: 'ff7rb', name: 'Final Fantasy VII Rebirth', status: 'finished', finYear: 2025, finMonth: 'Mayo', rating: 5, hours: 98, launchable: true, fav: true, gradient: 'linear-gradient(135deg,#0284c7,#075985)' },
+
+  // Otros para catálogo
+  { id: 'steins', name: 'Steins;Gate', status: 'finished', finYear: 2024, finMonth: 'Diciembre', rating: 5, hours: 45, launchable: true, fav: true, gradient: 'linear-gradient(135deg,#ea580c,#c2410c)' },
+  { id: 'trails1', name: 'Trails in the Sky FC', status: 'finished', finYear: 2024, finMonth: 'Octubre', rating: 4, hours: 50, launchable: true, fav: false, gradient: 'linear-gradient(135deg,#6366f1,#4338ca)' },
+  { id: 'trails2', name: 'Trails in the Sky SC', status: 'finished', finYear: 2024, finMonth: 'Agosto', rating: 5, hours: 78, launchable: true, fav: true, gradient: 'linear-gradient(135deg,#4f46e5,#3730a3)' },
+  { id: 'trails3', name: 'Trails in the Sky the 3rd', status: 'finished', finYear: 2024, finMonth: 'Mayo', rating: 4, hours: 45, launchable: true, fav: false, gradient: 'linear-gradient(135deg,#4338ca,#312e81)' },
+  { id: 'trails-zero', name: 'Trails from Zero', status: 'finished', finYear: 2024, finMonth: 'Febrero', rating: 5, hours: 60, launchable: true, fav: true, gradient: 'linear-gradient(135deg,#2563eb,#1d4ed8)' },
+  { id: 'witcher3', name: 'The Witcher 3: Wild Hunt', status: 'none', launchable: true, fav: false, gradient: 'linear-gradient(135deg,#b91c1c,#991b1b)' },
+  { id: 'doom', name: 'DOOM Eternal', status: 'none', launchable: true, fav: false, gradient: 'linear-gradient(135deg,#ea580c,#9a3412)' },
+  { id: 'sekiro', name: 'Sekiro: Shadows Die Twice', status: 'none', launchable: true, fav: false, gradient: 'linear-gradient(135deg,#78350f,#451a03)' },
+  { id: 'celeste', name: 'Celeste', status: 'none', launchable: true, fav: false, gradient: 'linear-gradient(135deg,#ec4899,#be185d)' }
+];
+
+let curView = 'milista';
+let quickFilter = 'all';
+let searchKeyword = '';
+let selectedLetter = '';
+
+// Renderizar tarjetas de juego
+function renderThumb(g, isPending = false) {
+  return `
+    <div class="glass thumb-card" onclick="alert('Abriendo ficha de: ' + '${g.name}')">
+      <div class="face" style="background:${g.gradient}">
+        ${isPending ? `<div class="order-badge">${g.pos}</div>` : ''}
+        <div class="game-name">${g.name}</div>
+        ${g.hours ? `<div class="play-hours">${g.hours} h jugadas</div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function renderFinCard(g) {
+  return `
+    <div class="glass thumb-card fin-card" onclick="alert('Abriendo ficha histórica de: ' + '${g.name}')">
+      <div class="face" style="background:${g.gradient}">
+        <div class="game-name">${g.name}</div>
+        <div class="stars-bot">${'★'.repeat(g.rating)}</div>
+        <div class="date-sub">${g.finMonth} · ${g.hours} h</div>
+      </div>
+    </div>
+  `;
+}
+
+// Pintar estanterías
+function populateShelves() {
+  // Mi lista
+  const playing = GAMES.filter(g => g.status === 'playing');
+  const pending = GAMES.filter(g => g.status === 'pending').sort((a,b) => a.pos - b.pos);
+  const dropped = GAMES.filter(g => g.status === 'dropped');
+
+  document.getElementById('shelf-playing').innerHTML = playing.map(g => renderThumb(g)).join('');
+  document.getElementById('shelf-pending').innerHTML = pending.map(g => renderThumb(g, true)).join('');
+  document.getElementById('shelf-dropped').innerHTML = dropped.map(g => renderThumb(g)).join('');
+
+  // Colecciones
+  const trails = GAMES.filter(g => g.id.startsWith('trails'));
+  const nier = GAMES.filter(g => g.id.startsWith('nier'));
+  const ff = GAMES.filter(g => g.id.startsWith('ff7'));
+
+  document.getElementById('shelf-coll-1').innerHTML = trails.map(g => renderThumb(g)).join('');
+  document.getElementById('shelf-coll-2').innerHTML = nier.map(g => renderThumb(g)).join('');
+  document.getElementById('shelf-coll-3').innerHTML = ff.map(g => renderThumb(g)).join('');
+
+  // Terminados (Estadísticas)
+  const fin2026 = GAMES.filter(g => g.status === 'finished' && g.finYear === 2026);
+  const fin2025 = GAMES.filter(g => g.status === 'finished' && g.finYear === 2025);
+  document.getElementById('shelf-fin-2026').innerHTML = fin2026.map(g => renderFinCard(g)).join('');
+  document.getElementById('shelf-fin-2025').innerHTML = fin2025.map(g => renderFinCard(g)).join('');
+
+  // Catálogo completo
+  renderCatalog();
+}
+
+// Pintar Catálogo con filtrado
+function renderCatalog() {
+  let list = [...GAMES];
+
+  // Filtro de texto
+  if (searchKeyword.trim()) {
+    const q = searchKeyword.toLowerCase();
+    list = list.filter(g => g.name.toLowerCase().includes(q));
+  }
+
+  // Filtro de letra
+  if (selectedLetter) {
+    list = list.filter(g => g.name.toUpperCase().startsWith(selectedLetter));
+  }
+
+  // Filtro rápido
+  if (quickFilter === 'launch') list = list.filter(g => g.launchable);
+  if (quickFilter === 'favs') list = list.filter(g => g.fav);
+
+  // Ordenar alfabéticamente
+  list.sort((a, b) => a.name.localeCompare(b.name));
+
+  const grid = document.getElementById('catalog-grid');
+  let html = list.map(g => {
+    let stateBadge = '';
+    if (g.status === 'playing') stateBadge = '<span class="badge-state playing" title="Jugando"><i class="ti ti-player-play"></i></span>';
+    else if (g.status === 'pending') stateBadge = '<span class="badge-state pending" title="Pendiente"><i class="ti ti-clock"></i></span>';
+    else if (g.status === 'finished') stateBadge = '<span class="badge-state finished" title="Terminado"><i class="ti ti-check"></i></span>';
+
+    return `
+      <div class="glass cat-card" onclick="alert('Abriendo: ' + '${g.name}')">
+        <div class="face" style="background:${g.gradient}">
+          ${stateBadge}
+          <div class="cname">${g.name}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  html += `
+    <div class="add-tile" onclick="alert('Asistente de añadir juego')">
+      <i class="ti ti-plus"></i>
+      <span>Añadir juego</span>
+    </div>
+  `;
+
+  grid.innerHTML = html;
+  document.getElementById('total-count').textContent = GAMES.length;
+}
+
+// Cambio de vista
+function switchView(v) {
+  curView = v;
+
+  // Actualizar botones exteriores
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('on'));
+  const activeBtn = document.getElementById(
+    v === 'milista' ? 'btn-v1' :
+    v === 'coll' ? 'btn-v2' :
+    v === 'catalog' ? 'btn-v3' : 'btn-v4'
+  );
+  if (activeBtn) activeBtn.classList.add('on');
+
+  // Visibilidad de contenedores
+  document.getElementById('view-milista').style.display = v === 'milista' ? 'flex' : 'none';
+  document.getElementById('view-coll').style.display = v === 'coll' ? 'flex' : 'none';
+  document.getElementById('view-catalog').style.display = v === 'catalog' ? 'flex' : 'none';
+  document.getElementById('view-stats-fin').style.display = v === 'stats-fin' ? 'flex' : 'none';
+
+  // Mostrar / Ocultar barra de pestañas de categoría
+  const isCategory = v !== 'stats-fin';
+  document.getElementById('cat-tabs-bar').style.display = isCategory ? 'flex' : 'none';
+
+  // Actualizar estado de las pestañas internas
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('on'));
+  const tabEl = document.getElementById('tab-' + v);
+  if (tabEl) tabEl.classList.add('on');
+
+  // Breadcrumbs
+  const crumbPlatform = document.getElementById('crumb-platform');
+  const crumbTab = document.getElementById('crumb-tab');
+  if (v === 'stats-fin') {
+    crumbPlatform.textContent = 'Estadísticas';
+    crumbTab.textContent = 'Salón de la Fama';
+  } else {
+    crumbPlatform.textContent = 'Juegos PC';
+    crumbTab.textContent = v === 'milista' ? 'Mi lista' : v === 'coll' ? 'Colecciones' : 'Catálogo';
+  }
+
+  // Foco en buscador si entra a catálogo
+  if (v === 'catalog') {
+    setTimeout(() => document.getElementById('catalog-search')?.focus(), 80);
+  }
+}
+
+function filterGames() {
+  searchKeyword = document.getElementById('catalog-search').value;
+  renderCatalog();
+}
+
+function clearSearch() {
+  document.getElementById('catalog-search').value = '';
+  searchKeyword = '';
+  renderCatalog();
+}
+
+function setQuickFilter(f) {
+  quickFilter = f;
+  document.querySelectorAll('.qchip').forEach(c => c.classList.remove('on'));
+  document.getElementById('qf-' + f)?.classList.add('on');
+  renderCatalog();
+}
+
+function jumpLetter(letter) {
+  selectedLetter = letter;
+  document.querySelectorAll('.az-letter').forEach(l => l.classList.remove('on'));
+  if (!letter) {
+    document.querySelector('.az-letter').classList.add('on');
+  } else {
+    Array.from(document.querySelectorAll('.az-letter')).find(l => l.textContent === letter)?.classList.add('on');
+  }
+  renderCatalog();
+}
+
+// Navegación por teclado (simulación de mando)
+window.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'q' || e.key === 'Q') {
+    // LB
+    if (curView === 'coll') switchView('milista');
+    else if (curView === 'catalog') switchView('coll');
+    else if (curView === 'stats-fin') switchView('catalog');
+  } else if (e.key === 'e' || e.key === 'E') {
+    // RB
+    if (curView === 'milista') switchView('coll');
+    else if (curView === 'coll') switchView('catalog');
+    else if (curView === 'catalog') switchView('stats-fin');
+  } else if (e.key === 'y' || e.key === 'Y') {
+    // Y abre buscador
+    switchView('catalog');
+  }
+});
+
+// Inicializar
+populateShelves();
+</script>
+</body>
+</html>

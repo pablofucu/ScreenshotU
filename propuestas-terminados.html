@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Terminados por año</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap">
+<style>
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:#0f1218;font-family:var(--round);color:#e6e9ef}
+.top{max-width:1280px;margin:0 auto;padding:18px 16px 10px}
+.top h1{font-size:20px;margin:0 0 4px;font-weight:800}
+.top p{margin:0 0 12px;color:#9aa3b2;font-size:14px}
+.vs{display:flex;gap:8px;flex-wrap:wrap}
+.vs button{font:inherit;font-size:14px;font-weight:700;border:0;border-radius:999px;padding:7px 14px;background:#232833;color:#c9ced8;cursor:pointer}
+.vs button.on{background:#00A0D8;color:#fff}
+.desc{margin:10px 0 0;color:#c9ced8;font-size:14px;min-height:20px}
+.wrap{max-width:1280px;margin:0 auto;padding:0 16px 24px}
+.box{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:14px}
+
+#stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;
+  color:#3a414e;background:#eceef2;--acc:#00A0D8;--ink:#fff;user-select:none}
+.bg{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(34px)}
+
+.glass{position:absolute;--r:28px;--bw:10px;border-radius:var(--r);padding:var(--bw);isolation:isolate;
+  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  backdrop-filter:blur(14px) saturate(1.7);
+  box-shadow:inset 0 1.5px 0 #fff,inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.95),inset 0 -1.5px 0 rgba(110,125,150,.30),0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42);
+  transition:transform .24s cubic-bezier(.34,1.32,.64,1),box-shadow .24s,background .24s,left .3s cubic-bezier(.25,1,.4,1)}
+.glass::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.2) 55%,rgba(255,255,255,0));
+  -webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.85}
+.glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:#dfe3e9}
+.glass .face::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(20,30,50,.2),inset 0 3px 6px -2px rgba(0,0,0,.35)}
+.glass.f{transform:scale(1.06);z-index:3;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)),color-mix(in srgb,var(--acc) 72%,transparent) 55%,color-mix(in srgb,var(--acc) 92%,black));
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 0 26px 2px color-mix(in srgb,var(--acc) 50%,transparent),0 22px 34px -16px color-mix(in srgb,var(--acc) 70%,black)}
+.pill{backdrop-filter:blur(16px) saturate(1.7);background:linear-gradient(180deg,rgba(255,255,255,.8),rgba(255,255,255,.52));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+.noart{position:absolute;inset:0;display:grid;place-items:center;padding:6px;text-align:center;color:#fff;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--c) 30%,white),color-mix(in srgb,var(--c) 80%,#4a5260))}
+.noart b{font-size:13px;font-weight:800;line-height:1.15;text-shadow:0 2px 6px rgba(0,0,0,.35);overflow-wrap:anywhere}
+
+.crumb{position:absolute;left:96px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:20px;font-weight:700;color:#4a5260}
+.crumb .sep{color:#a3abb8;font-weight:500}.crumb .cur{color:var(--acc)}
+.lbrb{position:absolute;right:24px;top:24px;display:flex;gap:8px;align-items:center;height:36px;padding:0 6px;border-radius:999px;font-size:15px;font-weight:700;color:#4a5260}
+.sh{min-width:30px;height:24px;border-radius:8px;background:#6b7383;color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center;padding:0 6px}
+.hints{position:absolute;right:22px;bottom:16px;display:flex;gap:10px;z-index:9}
+.hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:999px;font-size:16px;font-weight:700;color:#4a5260}
+.btn{width:28px;height:28px;border-radius:14px;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;background:#4a5260}
+.btn.a{background:#3BB54A}.btn.b{background:#E8384F}.btn.y{background:#F2B807;color:#3a2f00}.btn.x{background:#3F63E0}
+
+/* Estantería (copia de Shelf.svelte) */
+.shelf{position:absolute;left:80px;width:1120px;transition:top .3s cubic-bezier(.25,1,.4,1);
+  --tsh:0 1px 2px rgba(0,0,0,.28)}
+.shelf.dim .scov{opacity:.86}
+.bsh{position:relative;display:inline-flex;align-items:center;gap:14px;height:40px;padding:0 14px 0 16px;margin:0 0 6px 8px;border-radius:999px;white-space:nowrap;z-index:3}
+.bsh h3{margin:0;font-size:22px;font-weight:800;line-height:1}
+.bsh .m{font-size:15px;font-weight:700;color:#5f6776}
+.chip{font-size:14px;font-weight:800;padding:3px 11px;border-radius:999px;color:#fff;background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
+.soft{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 22%,white),color-mix(in srgb,var(--acc) 38%,#eef1f5));
+  box-shadow:inset 0 1px 0 #fff,0 0 0 1px color-mix(in srgb,var(--acc) 50%,rgba(95,110,135,.3)),0 10px 20px -12px color-mix(in srgb,var(--acc) 55%,rgba(40,50,70,.5))}
+.soft h3{color:color-mix(in srgb,var(--acc) 50%,#2f3540)}
+.lit{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 84%,white),var(--acc) 70%,color-mix(in srgb,var(--acc) 88%,black));
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 8px 16px -8px color-mix(in srgb,var(--acc) 70%,black)}
+.lit h3,.lit .m{color:#fff;text-shadow:var(--tsh)}
+.lit .chip{background:rgba(255,255,255,.92);color:color-mix(in srgb,var(--acc) 80%,black);box-shadow:none}
+.bsb{position:relative;width:100%;height:190px;--r:26px;--bw:7px}
+.bsb::before{opacity:.4}
+.bsb>.face{background:linear-gradient(180deg,rgba(250,251,253,.75),rgba(236,240,245,.6))}
+.bsb>.face::after{box-shadow:inset 0 0 0 1px rgba(20,30,50,.12),inset 0 2px 5px -2px rgba(0,0,0,.18);z-index:5}
+.track{position:absolute;left:9px;top:10px;height:139px;transition:transform .3s cubic-bezier(.25,1,.4,1)}
+.scov{--r:16px;--bw:6px;top:0;width:104px;height:139px}
+.scov .face{border-radius:11px}
+.slip{position:absolute;left:0;right:0;bottom:0;height:26px;z-index:4;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(222,227,235,.88));box-shadow:inset 0 1px 0 #fff,0 -6px 12px -10px rgba(40,50,70,.4)}
+.slip .track{top:0;height:100%}
+.slab{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;font-size:13px;font-weight:700;color:#5f6776}
+.slab s{text-decoration:none;display:flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px}
+.slab em{font-style:normal;letter-spacing:-.5px;color:#d9a520}
+.slab.on s{background:var(--acc);color:#fff;text-shadow:var(--tsh);font-weight:800;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
+.slab.on em{color:#FFE27A}
+.sm{position:absolute;top:54px;z-index:6;font-style:normal;font-size:15px;font-weight:800;color:#5f6776;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.85);box-shadow:0 0 0 1px rgba(95,110,135,.2)}
+.sm.r{right:8px}.sm.l{left:8px}
+
+/* Nº de orden sobre la portada */
+.ord{position:absolute;z-index:4;left:-7px;top:-7px;min-width:28px;height:28px;padding:0 6px;border-radius:999px;display:grid;place-items:center;font-size:14px;font-weight:800;color:#4a5260;
+  background:linear-gradient(180deg,#fff,#e9edf2);box-shadow:0 0 0 1px rgba(95,110,135,.3),0 3px 6px -2px rgba(40,50,70,.35)}
+.glass.f .ord{background:var(--acc);color:#fff;box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 3px 6px -2px rgba(40,50,70,.35)}
+.ord.gold{background:linear-gradient(180deg,#ffe58a,#e0ad1f);color:#5a4100}
+
+/* Separadores de mes (variante 2) */
+.mdiv{position:absolute;top:6px;bottom:6px;width:0;border-left:1.5px dashed rgba(95,110,135,.35)}
+.mlab{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#5f6776;letter-spacing:.3px}
+.mlab.on{color:var(--acc)}
+.mlab i{font-style:normal;flex:1;height:2px;margin:0 8px;border-radius:2px;background:rgba(95,110,135,.25)}
+.mlab.on i{background:color-mix(in srgb,var(--acc) 50%,transparent)}
+
+/* Ficha (variante 3) */
+.card{left:80px;width:1120px;--r:30px;--bw:9px}
+.card>.face{background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(246,248,251,.82));display:flex;gap:26px;padding:18px 24px;align-items:center}
+.card .cv{position:relative;width:118px;height:158px;border-radius:14px;overflow:hidden;flex:none;box-shadow:0 0 0 1px rgba(20,30,50,.2),0 10px 18px -10px rgba(40,50,70,.5)}
+.card h2{margin:0 0 4px;font-size:30px;font-weight:800;color:#3a414e}
+.card .when{font-size:17px;font-weight:700;color:#5f6776}
+.card .stars{font-size:22px;color:#d9a520;letter-spacing:1px;margin:6px 0 0}
+.rbs{display:flex;gap:12px;margin-left:auto}
+.rbox{width:150px;height:96px;border-radius:18px;padding:12px 16px;background:rgba(255,255,255,.75);box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.18)}
+.rbox .k{font-size:13px;font-weight:700;color:#7a8291}
+.rbox .v{font-size:28px;font-weight:800;color:#3a414e;margin-top:2px}
+.rbox .s{font-size:12px;font-weight:700;color:#7a8291}
+.yrail{position:absolute;left:88px;display:flex;gap:10px}
+.yp{height:36px;padding:0 14px;border-radius:999px;display:flex;align-items:center;gap:8px;font-size:17px;font-weight:800;color:#5f6776}
+.yp b{font-size:13px;padding:1px 8px;border-radius:999px;background:rgba(95,110,135,.15)}
+.yp.on{color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 84%,white),var(--acc) 70%,color-mix(in srgb,var(--acc) 88%,black));box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 75%,black)}
+.yp.on b{background:rgba(255,255,255,.9);color:color-mix(in srgb,var(--acc) 80%,black)}
+
+/* Baldas compactas (variante 4) */
+.mini .bsh{height:32px;margin-bottom:5px}
+.mini .bsh h3{font-size:18px}
+.mini .bsh .m{font-size:13px}
+.mini .chip{font-size:12px;padding:2px 9px}
+.mini .bsb{height:86px;--r:20px;--bw:6px}
+.mini .track{left:8px;top:7px;height:62px}
+.mini .scov{width:46px;height:62px;--r:10px;--bw:3px}
+.mini .scov .face{border-radius:7px}
+.mini .noart b{font-size:0}
+.mini .tip{position:absolute;right:14px;top:22px;font-size:14px;font-weight:700;color:#7a8291}
+.rail{position:absolute;left:30px;top:100px;bottom:80px;width:30px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.rail i{width:10px;height:10px;border-radius:50%;background:rgba(95,110,135,.3)}
+.rail i.on{height:34px;border-radius:6px;background:var(--acc)}
+.rail span{font-size:12px;font-weight:800;color:#7a8291;writing-mode:vertical-rl;transform:rotate(180deg);margin-bottom:6px}
+
+/* Línea de meses (variante 5, en el rótulo) */
+.tl{display:flex;gap:3px;align-items:flex-end;height:22px}
+.tl i{width:9px;border-radius:3px;background:rgba(255,255,255,.45)}
+.soft .tl i{background:color-mix(in srgb,var(--acc) 35%,rgba(95,110,135,.25))}
+.tl i.x{background:#fff}
+.soft .tl i.x{background:var(--acc)}
+.best{position:absolute;right:16px;top:6px;z-index:7;display:flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:800;color:#5a4100;background:linear-gradient(180deg,#ffe58a,#e0ad1f)}
+.empty{position:absolute;left:0;top:0;width:104px;height:139px;border-radius:16px;border:2px dashed rgba(95,110,135,.3);display:grid;place-items:center;text-align:center;font-size:13px;font-weight:700;color:#8a92a0;padding:8px}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>Terminados por año · variantes de estanterías</h1>
+  <p>Teclas: ← → recorren un año, ↑ ↓ cambian de año, 1–5 cambian de variante. También puedes pulsar los botones o las portadas.</p>
+  <div class="vs" id="vs"></div>
+  <div class="desc" id="desc"></div>
+</div>
+<div class="wrap"><div class="box" id="box"><div id="stage"></div></div></div>
+
+<script>
+const YEARS = [
+  { y: 2026, list: [
+    ['Stardew Valley', '2026-03-02', 4, 61, 212, '#3BB54A'], ['Hollow Knight', '2026-04-19', 5, 38, 140, '#3F63E0'],
+    ['Celeste', '2026-05-09', 5, 14, 86, '#E8384F'], ['Hades', '2026-05-27', 3, 22, 54, '#E07A1F'],
+    ['Super Mario Odyssey', '2026-08-14', 4, 19, 77, '#D4537E'], ['Balatro', '2026-09-30', 3, 31, 12, '#7F57D6'],
+    ['Outer Wilds', '2026-10-21', 5, 18, 133, '#1D9E95'] ] },
+  { y: 2025, list: [
+    ['Persona 5 Royal', '2025-01-28', 5, 104, 310, '#E8384F'], ['Red Dead Redemption 2', '2025-06-01', 0, 72, 401, '#B5651D'],
+    ['Inside', '2025-07-12', 4, 4, 22, '#6b7383'], ['Tunic', '2025-09-03', 4, 16, 64, '#1D9E75'], ['The Witcher 3', '2025-11-20', 5, 120, 520, '#7a8a3a'] ] },
+  { y: 2024, list: [
+    ['Disco Elysium', '2024-01-15', 5, 33, 98, '#C0392B'], ['Portal 2', '2024-02-04', 4, 9, 40, '#00A0D8'], ['Cuphead', '2024-03-30', 3, 12, 31, '#E0A21F'],
+    ['Ori', '2024-05-02', 4, 11, 55, '#3F63E0'], ['Hi-Fi Rush', '2024-06-21', 4, 10, 47, '#D4537E'], ['Pentiment', '2024-08-11', 4, 19, 66, '#9a6b3a'],
+    ['Sea of Stars', '2024-10-01', 3, 30, 88, '#7F57D6'], ['Inscryption', '2024-12-27', 5, 15, 39, '#5a4a3a'] ] },
+  { y: 2023, list: [['Elden Ring', '2023-04-10', 5, 140, 610, '#B59A3A'], ['Gris', '2023-06-18', 4, 4, 70, '#D4537E'], ['Spiritfarer', '2023-11-05', 4, 28, 102, '#1D9E95']] },
+];
+const MES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const MESL = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const DIAS = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+for (const Y of YEARS) {
+  Y.items = Y.list.map(([name, d, stars, h, shots, c], i) => ({ name, d: new Date(d + 'T12:00'), stars, h, shots, c, n: i + 1 }));
+  Y.hours = Y.items.reduce((s, t) => s + t.h, 0);
+  const r = Y.items.filter((t) => t.stars);
+  Y.avg = r.length ? (r.reduce((s, t) => s + t.stars, 0) / r.length).toFixed(1).replace('.', ',') : '';
+}
+const short = (d) => `${d.getDate()} ${MES[d.getMonth()]}`;
+const star = (n) => '★'.repeat(n);
+const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+const VARIANTS = [
+  { k: 'Clásica', d: 'Una balda por año, como «Mi lista». Cada portada lleva su número de orden y, en el borde, la fecha y la nota. El rótulo muestra el año, cuántos terminaste, las horas y la nota media.' },
+  { k: 'Por meses', d: 'Igual, pero la balda se divide por meses: el borde de etiquetas pone el mes bajo cada grupo y una línea discontinua los separa. La fecha exacta del juego enfocado sale en el rótulo.' },
+  { k: 'Balda + ficha', d: 'El año enfocado arriba y, debajo, una ficha del juego seleccionado: fecha completa, puesto en el año, nota, horas, capturas y días desde el anterior. Abajo, los años como píldoras para saltar entre ellos.' },
+  { k: 'Años compactos', d: 'El año enfocado a tamaño normal y los demás en baldas mini de portadas pequeñas, para ver varios años de un vistazo. Una barra lateral marca en qué año estás.' },
+  { k: 'Con resumen', d: 'La clásica con extras en el rótulo: una minilínea de los 12 meses (cuántos terminaste cada mes), una insignia dorada para el mejor del año y, en el año actual, un hueco al final de «¿El siguiente?».' },
+];
+
+let V = 0, yi = 0, fi = 2;
+const stage = document.getElementById('stage');
+
+function cover(t, x, cls = '', extra = '') {
+  return `<div class="glass scov ${cls}" style="left:${x}px;--c:${t.c}" data-n="${t.n}">${extra}<div class="face"><div class="noart"><b>${esc(t.name)}</b></div></div></div>`;
+}
+function ord(t, Y) {
+  const best = Math.max(...Y.items.map((x) => x.stars));
+  return `<span class="ord">${t.n}</span>`;
+}
+function scroll(Y, focus, vis = 9) { return focus < 0 ? 0 : Math.max(0, Math.min(focus - 3, Y.items.length - vis)); }
+
+function shelf(Y, top, focus, opts = {}) {
+  const dim = focus < 0, from = scroll(Y, focus), P = 120;
+  const xs = Y.items.map((_, i) => i * P);
+  const covers = Y.items.map((t, i) => cover(t, xs[i], i === focus ? 'f' : '', `<span class="ord">${t.n}</span>`)).join('');
+  const slabs = Y.items.map((t, i) => `<span class="slab ${i === focus ? 'on' : ''}" style="left:${xs[i]}px;width:104px"><s><b>${short(t.d)}</b>${t.stars ? `<em>${star(t.stars)}</em>` : ''}</s></span>`).join('');
+  const more = Y.items.length - (from + 9);
+  return `<div class="shelf ${dim ? 'dim' : ''}" style="top:${top}px">
+    <div class="bsh ${dim ? 'soft' : 'lit'}"><h3>${Y.y}</h3><span class="chip">${Y.items.length} terminados</span><span class="m">${Y.hours} h${Y.avg ? ' · media ★' + Y.avg : ''}</span>${opts.head || ''}</div>
+    <div class="glass bsb"><div class="face">
+      ${opts.badge || ''}
+      <div class="track" style="transform:translateX(${-from * P}px)">${covers}${opts.tail ? opts.tail(Y.items.length * P) : ''}</div>
+      <div class="slip"><div class="track" style="transform:translateX(${-from * P}px)">${slabs}</div></div>
+      ${from > 0 ? '<i class="sm l">‹</i>' : ''}${more > 0 ? `<i class="sm r">+${more} ›</i>` : ''}
+    </div></div></div>`;
+}
+
+function shelfMonths(Y, top, focus) {
+  const dim = focus < 0, GAP = 30, P = 120;
+  let x = 0, prev = -1;
+  const xs = [], groups = [];
+  Y.items.forEach((t, i) => {
+    const m = t.d.getMonth();
+    if (m !== prev) { if (prev >= 0) x += GAP; groups.push({ m, x0: x, x1: x, has: false }); prev = m; }
+    xs.push(x); groups[groups.length - 1].x1 = x + 104;
+    if (i === focus) groups[groups.length - 1].has = true;
+    x += P;
+  });
+  const fx = focus >= 0 ? xs[focus] : 0;
+  const sx = Math.max(0, Math.min(fx - 360, x - 1100));
+  const covers = Y.items.map((t, i) => cover(t, xs[i], i === focus ? 'f' : '', `<span class="ord">${t.n}</span>`)).join('');
+  const divs = groups.slice(1).map((g) => `<span class="mdiv" style="left:${g.x0 - GAP / 2}px"></span>`).join('');
+  const labs = groups.map((g) => `<span class="mlab ${g.has ? 'on' : ''}" style="left:${g.x0}px;width:${g.x1 - g.x0}px">${g.x1 - g.x0 > 200 ? '<i></i>' : ''}${MESL[g.m]}${g.x1 - g.x0 > 200 ? '<i></i>' : ''}</span>`).join('');
+  const t = Y.items[focus];
+  return `<div class="shelf ${dim ? 'dim' : ''}" style="top:${top}px">
+    <div class="bsh ${dim ? 'soft' : 'lit'}"><h3>${Y.y}</h3><span class="chip">${Y.items.length}</span>${t ? `<span class="m">${esc(t.name)} · ${t.d.getDate()} de ${MESL[t.d.getMonth()]}${t.stars ? ' · ' + star(t.stars) : ''}</span>` : `<span class="m">${Y.hours} h · ${new Set(Y.items.map((i) => i.d.getMonth())).size} meses con algún final</span>`}</div>
+    <div class="glass bsb"><div class="face">
+      <div class="track" style="transform:translateX(${-sx}px);height:150px;top:0">${divs}<div style="position:absolute;left:0;top:10px">${covers}</div></div>
+      <div class="slip"><div class="track" style="transform:translateX(${-sx}px)">${labs}</div></div>
+    </div></div></div>`;
+}
+
+function shelfMini(Y, top) {
+  const covers = Y.items.map((t, i) => cover(t, i * 54)).join('');
+  return `<div class="shelf mini dim" style="top:${top}px">
+    <div class="bsh soft"><h3>${Y.y}</h3><span class="chip">${Y.items.length}</span><span class="m">${Y.hours} h${Y.avg ? ' · ★' + Y.avg : ''}</span></div>
+    <div class="glass bsb"><div class="face"><div class="track">${covers}</div>
+      <span class="tip">${esc(Y.items[0].name)} … ${esc(Y.items[Y.items.length - 1].name)}</span></div></div></div>`;
+}
+
+function chrome(hintsExtra = '') {
+  return `<div class="bg"></div>
+    <div class="blob" style="left:-120px;top:-140px;width:520px;height:420px;background:radial-gradient(circle,#fff,transparent 70%)"></div>
+    <div class="blob" style="right:-160px;top:120px;width:560px;height:460px;background:radial-gradient(circle,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%);opacity:.55"></div>
+    <div class="crumb pill"><span>Juegos</span><span class="sep">›</span><span class="cur">Terminados</span></div>
+    <div class="lbrb pill"><span class="sh">LB</span>Novelas visuales · Switch<span class="sh">RB</span></div>
+    <div class="hints"><div class="hint pill"><span class="btn a">A</span>Ver juego</div><div class="hint pill"><span class="btn y">Y</span>Cambiar fecha</div>${hintsExtra}<div class="hint pill"><span class="btn b">B</span>Volver</div></div>`;
+}
+
+function render() {
+  const Y = YEARS[yi];
+  fi = Math.min(fi, Y.items.length - 1);
+  let h = '';
+  if (V === 0 || V === 4) {
+    const PITCH = 252, base = 92 - Math.max(0, yi - 0) * PITCH;
+    YEARS.forEach((Yr, k) => {
+      const top = 92 + (k - yi) * PITCH;
+      if (top < -260 || top > 720) return;
+      let opts = {};
+      if (V === 4) {
+        const cnt = Array(12).fill(0); Yr.items.forEach((t) => cnt[t.d.getMonth()]++);
+        const fm = k === yi ? Yr.items[fi].d.getMonth() : -1;
+        opts.head = `<span class="tl">${cnt.map((c, m) => `<i class="${m === fm ? 'x' : ''}" style="height:${4 + c * 8}px" title="${MESL[m]}"></i>`).join('')}</span>`;
+        const best = Yr.items.reduce((a, b) => (b.stars > a.stars ? b : a));
+        opts.badge = `<span class="best">★ El mejor: ${esc(best.name)}</span>`;
+        if (k === 0) opts.tail = (x) => `<div class="empty" style="left:${x}px">¿El siguiente?</div>`;
+      }
+      h += shelf(Yr, top, k === yi ? fi : -1, opts);
+    });
+  } else if (V === 1) {
+    YEARS.forEach((Yr, k) => {
+      const top = 92 + (k - yi) * 252;
+      if (top < -260 || top > 720) return;
+      h += shelfMonths(Yr, top, k === yi ? fi : -1);
+    });
+  } else if (V === 2) {
+    const t = Y.items[fi], p = Y.items[fi - 1];
+    const gap = p ? Math.round((t.d - p.d) / 864e5) : null;
+    h += shelf(Y, 86, fi);
+    h += `<div class="glass card" style="top:340px;height:196px"><div class="face">
+      <div class="cv" style="--c:${t.c}"><div class="noart"><b style="font-size:17px">${esc(t.name)}</b></div></div>
+      <div><h2>${esc(t.name)}</h2>
+        <div class="when">Terminado el ${DIAS[t.d.getDay()]} ${t.d.getDate()} de ${MESL[t.d.getMonth()]} de ${t.d.getFullYear()}</div>
+        <div class="when" style="color:var(--acc)">Nº ${t.n} de ${Y.items.length} en ${Y.y}</div>
+        <div class="stars">${t.stars ? star(t.stars) + '<span style="color:#d6dae1">' + star(5 - t.stars) + '</span>' : '<span style="font-size:15px;color:#8a92a0;font-weight:700">Sin nota</span>'}</div></div>
+      <div class="rbs">
+        <div class="rbox"><div class="k">Tiempo jugado</div><div class="v">${t.h} h</div></div>
+        <div class="rbox"><div class="k">Capturas</div><div class="v">${t.shots}</div></div>
+        <div class="rbox"><div class="k">Desde el anterior</div><div class="v">${gap === null ? '—' : gap + ' d'}</div><div class="s">${p ? esc(p.name) : 'el primero del año'}</div></div>
+      </div></div></div>`;
+    h += `<div class="yrail" style="top:566px">${YEARS.map((Yr, k) => `<span class="yp pill ${k === yi ? 'on' : ''}" data-y="${k}">${Yr.y}<b>${Yr.items.length}</b></span>`).join('')}</div>`;
+  } else if (V === 3) {
+    h += `<div class="rail">${YEARS.map((Yr, k) => `<i class="${k === yi ? 'on' : ''}"></i>`).join('')}<span>${Y.y}</span></div>`;
+    h += shelf(Y, 92, fi);
+    let top = 340;
+    YEARS.forEach((Yr, k) => { if (k === yi || top > 600) return; h += shelfMini(Yr, top); top += 128; });
+  }
+  stage.innerHTML = chrome(V === 2 ? '' : '') + h;
+  document.getElementById('desc').textContent = VARIANTS[V].d;
+  document.querySelectorAll('#vs button').forEach((b, k) => b.classList.toggle('on', k === V));
+}
+
+document.getElementById('vs').innerHTML = VARIANTS.map((v, k) => `<button data-v="${k}">${k + 1} · ${v.k}</button>`).join('');
+document.getElementById('vs').onclick = (e) => { const b = e.target.closest('button'); if (b) { V = +b.dataset.v; render(); } };
+stage.onclick = (e) => {
+  const y = e.target.closest('[data-y]');
+  if (y) { yi = +y.dataset.y; fi = 0; render(); return; }
+  const c = e.target.closest('.scov[data-n]'), sh = e.target.closest('.shelf');
+  if (!c || !sh || sh.classList.contains('mini')) return;
+  const yr = +sh.querySelector('h3').textContent, k = YEARS.findIndex((Y) => Y.y === yr);
+  if (k >= 0) { yi = k; fi = +c.dataset.n - 1; render(); }
+};
+addEventListener('keydown', (e) => {
+  const Y = YEARS[yi];
+  if (e.key >= '1' && e.key <= '5') V = +e.key - 1;
+  else if (e.key === 'ArrowRight') fi = Math.min(Y.items.length - 1, fi + 1);
+  else if (e.key === 'ArrowLeft') fi = Math.max(0, fi - 1);
+  else if (e.key === 'ArrowDown') { yi = Math.min(YEARS.length - 1, yi + 1); fi = Math.min(fi, YEARS[yi].items.length - 1); }
+  else if (e.key === 'ArrowUp') { yi = Math.max(0, yi - 1); fi = Math.min(fi, YEARS[yi].items.length - 1); }
+  else return;
+  e.preventDefault(); render();
+});
+function fit() { const w = document.getElementById('box').clientWidth; stage.style.transform = `scale(${w / 1280})`; }
+addEventListener('resize', fit); fit(); render();
+</script>
+</body>
+</html>

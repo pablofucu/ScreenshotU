@@ -1,4 +1,5 @@
 //! Capa Tauri: solo traduce comandos de la interfaz a llamadas a `visor-core`.
+mod achievements;
 mod ai;
 mod anki;
 mod audio;
@@ -1191,7 +1192,12 @@ pub fn run() {
             novel::novel_reader_url,
             novel::novel_yomitan_css,
             novel::readstats::readstats_get,
-            novel::readstats::readstats_live
+            novel::readstats::readstats_live,
+            achievements::get_game_achievements,
+            achievements::get_achievements_summary,
+            achievements::set_achievements_card_variant,
+            achievements::get_achievements_card_variant,
+            achievements::detect_game_steamworks
         ])
         .run(tauri::generate_context!())
         .expect("error al ejecutar la aplicacion");

@@ -238,6 +238,8 @@ pub const MIGRATIONS: &[&str] = &[
         peak_ppm   INTEGER NOT NULL DEFAULT 0
     );
     "#,
+    // 13: sistema de logros (definicion del schema, estado de desbloqueo y preferencia de tarjeta en la ficha).
+    crate::achievements::SCHEMA,
 ];
 
 /// Version del esquema que entiende esta compilacion.
@@ -418,7 +420,7 @@ mod tests {
         let d = tempfile::tempdir().unwrap();
         let c = open_connection(&d.path().join("sub/visor.db")).unwrap();
         let t = tables(&c);
-        for want in ["favorites", "games", "play_stats", "sessions", "hidden", "title_prefs", "title_magpie", "sagas", "saga_members", "sgdb", "novel_prefs", "known_words", "phrases", "phrase_tags", "title_status", "save_paths", "meta"] {
+        for want in ["favorites", "games", "play_stats", "sessions", "hidden", "title_prefs", "title_magpie", "sagas", "saga_members", "sgdb", "novel_prefs", "known_words", "phrases", "phrase_tags", "title_status", "save_paths", "meta", "achievements", "achievement_unlocks", "title_achievements_pref"] {
             assert!(t.iter().any(|x| x == want), "falta la tabla {want}: {t:?}");
         }
         let v: i64 = c.query_row("PRAGMA user_version", [], |r| r.get(0)).unwrap();

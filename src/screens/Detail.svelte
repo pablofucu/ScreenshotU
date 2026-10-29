@@ -10,6 +10,8 @@
   import TopBar from '../components/TopBar.svelte';
   import Hints from '../components/Hints.svelte';
   import Thumb from '../components/Thumb.svelte';
+  import AchievementCard from '../components/AchievementCard.svelte';
+  import { achState, loadGameAchievements, VARIANT_NAMES } from '../lib/achievements.svelte';
 
   const P = $derived(app.platform);
   const T = $derived(P?.titles[app.t]);
@@ -117,6 +119,7 @@
   });
   const longName = $derived((T?.name.length ?? 0) > 22);
   const isJvn = $derived(!!T?.gameId && (P?.id === 'jvn' || P?.id === 'vn' || P?.icon === 'vn'));
+  $effect(() => { if (T) { void loadGameAchievements(T.gameId ?? T.dir); } });
 </script>
 
 {#if T}
@@ -272,7 +275,8 @@
   {/if}
 
   <Hints list={[
-    ['A', app.focus === 'play' ? (playing ? 'En marcha' : 'Jugar') : app.focus === 'dst' ? 'Cambiar estado' : app.focus === 'drel' ? 'Cambiar fecha' : app.focus === 'dvoc' ? 'Vocabulario' : app.focus === 'dhrs' || app.focus === 'dwk' ? 'Estadísticas' : 'Seleccionar', 'a'],
+    ['A', app.focus === 'play' ? (playing ? 'En marcha' : 'Jugar') : app.focus === 'dach' ? 'Ver logros' : app.focus === 'dst' ? 'Cambiar estado' : app.focus === 'drel' ? 'Cambiar fecha' : app.focus === 'dvoc' ? 'Vocabulario' : app.focus === 'dhrs' || app.focus === 'dwk' ? 'Estadísticas' : 'Seleccionar', 'a'],
+    ...(app.focus === 'dach' ? [['Y', 'Cambiar diseño (' + (VARIANT_NAMES[achState.summary?.variant ?? 1] ?? '') + ')', 'y'] as [string, string, string]] : []),
     ...(T.launchable && !playing ? [['X', 'Jugar', 'x'] as [string, string, string]] : []),
     ['B', 'Volver', 'b'],
     ['Start', 'Opciones', 'menu'],

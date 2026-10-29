@@ -32,6 +32,7 @@
   import StatusBar from './screens/StatusBar.svelte';
   import ReleasePicker from './screens/ReleasePicker.svelte';
   import StalledCard from './screens/StalledCard.svelte';
+  import AchievementsModal from './screens/AchievementsModal.svelte';
   import Osk from './components/Osk.svelte';
   import AudioMenu from './components/AudioMenu.svelte';
 
@@ -122,6 +123,7 @@
     {#if app.overlay === 'status'}<StatusBar />{/if}
     {#if app.overlay === 'release'}<ReleasePicker />{/if}
     {#if app.overlay === 'stalled'}<StalledCard />{/if}
+    {#if app.overlay === 'achievements'}<AchievementsModal />{/if}
     {#if app.audioMenu}<AudioMenu />{/if}
     {#if app.osk.open}<Osk />{/if}
   {/if}

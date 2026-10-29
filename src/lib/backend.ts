@@ -1,4 +1,4 @@
-import type { AddReport, AudioOutput, Backend, BackupResult, GameStatsDb, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, MoveReport, TrashReport, RemoteInfo, NewGame, Collection, SortMode } from './types';
+import type { Achievement, AchievementSummary, GameDetection, AddReport, AudioOutput, Backend, BackupResult, GameStatsDb, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, MoveReport, TrashReport, RemoteInfo, NewGame, Collection, SortMode } from './types';
 
 export const IS_TAURI = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 export const FORCE_MOCK = typeof window !== 'undefined' && (
@@ -206,6 +206,11 @@ async function tauriBackend(): Promise<Backend> {
       });
       return typeof r === 'string' ? r : null;
     },
+    getGameAchievements: (gameId, appId) => invoke<Achievement[]>('get_game_achievements', { gameId, appId: appId ?? null }),
+    getAchievementsSummary: (gameId, appId) => invoke<AchievementSummary | null>('get_achievements_summary', { gameId, appId: appId ?? null }),
+    setAchievementsCardVariant: (gameId, variant) => invoke('set_achievements_card_variant', { gameId, variant }),
+    getAchievementsCardVariant: (gameId) => invoke<number>('get_achievements_card_variant', { gameId }),
+    detectGameSteamworks: (gameDir, exePath) => invoke<GameDetection>('detect_game_steamworks', { gameDir, exePath: exePath ?? null }),
     onEvent(cb) {
       void listen<{ path: string; name: string }>('capture-saved', (e) => cb({ type: 'capture-saved', name: e.payload.name }));
       void listen<string>('capture-error', (e) => cb({ type: 'capture-error', message: String(e.payload) }));
@@ -215,6 +220,9 @@ async function tauriBackend(): Promise<Backend> {
       void listen<{ id: string; name: string; seconds: number }>('game-exited', (e) =>
         cb({ type: 'game-exited', id: e.payload.id, name: e.payload.name, seconds: e.payload.seconds }));
       void listen<{ id: string; message: string; error: boolean }>('magpie-status', (e) => cb({ type: 'magpie-status', ...e.payload }));
+      void listen<{ gameId: string; appId: string; achievement: Achievement }>('achievement-unlocked', (e) =>
+        cb({ type: 'achievement-unlocked', gameId: e.payload.gameId, appId: e.payload.appId, achievement: e.payload.achievement }));
+
     },
   };
 }

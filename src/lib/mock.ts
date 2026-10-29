@@ -1,7 +1,7 @@
 // Biblioteca simulada para desarrollo en navegador (sin Tauri). El arte procede del mockup aprobado.
 import { hash, rng } from './rng';
 import type {
-  AccentInfo, AudioOutput, Backend, BackendEvent, Config, GameSource, HiddenEntry, Library, Platform, Collection, ReleaseDate, Shot, SortMode, Swatch, Title,
+  Achievement, AchievementSummary, GameDetection, AccentInfo, AudioOutput, Backend, BackendEvent, Config, GameSource, HiddenEntry, Library, Platform, Collection, ReleaseDate, Shot, SortMode, Swatch, Title,
 } from './types';
 import { normalizeHex } from './oklch';
 
@@ -349,8 +349,61 @@ export async function mockBackend(): Promise<Backend> {
     }
     return u;
   };
+
+  const mockCardVariants = new Map<string, number>();
+
+  const MOCK_ACHIEVEMENTS: Achievement[] = [
+    { appId: 'mock_game', apiName: 'ACH_HEART', displayName: 'Corazón de lumen', description: 'Restaura el núcleo del antiguo faro.', hidden: false, earned: true, unlockedAt: Math.floor(Date.now() / 1000 - 3600), source: 'gse' },
+    { appId: 'mock_game', apiName: 'ACH_EYE', displayName: 'Ojo de halcón', description: 'Encuentra todas las atalayas de la costa.', hidden: false, earned: true, unlockedAt: Math.floor(Date.now() / 1000 - 86400), source: 'gse' },
+    { appId: 'mock_game', apiName: 'ACH_LEAF', displayName: 'Vida tranquila', description: 'Descansa en una aldea pesquera al atardecer.', hidden: false, earned: true, unlockedAt: Math.floor(Date.now() / 1000 - 100000), source: 'gse' },
+    { appId: 'mock_game', apiName: 'ACH_MOON', displayName: 'Noche en vela', description: 'Sobrevive a la tempestad en alta mar.', hidden: false, earned: true, unlockedAt: Math.floor(Date.now() / 1000 - 172800), source: 'gse' },
+    { appId: 'mock_game', apiName: 'ACH_CROWN', displayName: 'Leyenda del sur', description: 'Derrota al coloso sumergido.', hidden: false, earned: true, unlockedAt: Math.floor(Date.now() / 1000 - 200000), source: 'gse' },
+    { appId: 'mock_game', apiName: 'ACH_BELL', displayName: 'Melodía olvidada', description: 'Toca las tres campanas sumergidas.', hidden: false, earned: true, unlockedAt: Math.floor(Date.now() / 1000 - 260000), source: 'gse' },
+    { appId: 'mock_game', apiName: 'ACH_SHIELD', displayName: 'Guardiana del faro', description: 'Protege las ascuas durante una noche.', hidden: false, earned: true, unlockedAt: Math.floor(Date.now() / 1000 - 300000), source: 'gse' },
+    { appId: 'mock_game', apiName: 'ACH_BOLT', displayName: 'Tormenta perfecta', description: 'Navega en plena tormenta eléctrica sin daños.', hidden: false, earned: true, unlockedAt: Math.floor(Date.now() / 1000 - 350000), source: 'gse' },
+    { appId: 'mock_game', apiName: 'ACH_GEM', displayName: 'Coleccionista', description: 'Consigue 50 esquirlas de ámbar marino.', hidden: false, earned: true, unlockedAt: Math.floor(Date.now() / 1000 - 400000), source: 'gse' },
+    { appId: 'mock_game', apiName: 'ACH_FEATHER', displayName: 'Sin rumbo', description: 'Sigue el vuelo de una gaviota solitaria.', hidden: false, earned: true, unlockedAt: Math.floor(Date.now() / 1000 - 500000), source: 'gse' },
+    { appId: 'mock_game', apiName: 'ACH_FISH', displayName: 'Pesca milagrosa', description: 'Atrapa una especie legendaria del abismo.', hidden: false, earned: true, unlockedAt: Math.floor(Date.now() / 1000 - 600000), source: 'gse' },
+    { appId: 'mock_game', apiName: 'ACH_MAP', displayName: 'Cartógrafa', description: 'Dibuja el mapa de cinco archipiélagos.', hidden: false, earned: true, unlockedAt: Math.floor(Date.now() / 1000 - 700000), source: 'gse' },
+    { appId: 'mock_game', apiName: 'ACH_COMPASS', displayName: 'Marinera de agua dulce', description: 'Zarpa por primera vez desde el puerto base.', hidden: false, earned: true, unlockedAt: Math.floor(Date.now() / 1000 - 800000), source: 'gse' },
+    { appId: 'mock_game', apiName: 'ACH_FLAME', displayName: 'Primera luz', description: 'Enciende tu primer candil al inicio del viaje.', hidden: false, earned: true, unlockedAt: Math.floor(Date.now() / 1000 - 900000), source: 'gse' },
+    { appId: 'mock_game', apiName: 'ACH_ARCH', displayName: 'Archipiélago completo', description: 'Descubre las 40 islas del gran mar.', hidden: false, earned: false },
+    { appId: 'mock_game', apiName: 'ACH_DEEP', displayName: 'Buceo abisal', description: 'Desciende a la fosa más profunda.', hidden: false, earned: false },
+    { appId: 'mock_game', apiName: 'ACH_ANCIENT', displayName: 'Ecos del pasado', description: 'Descifra todas las inscripciones en piedra.', hidden: false, earned: false },
+    { appId: 'mock_game', apiName: 'ACH_SPEED', displayName: 'Viento en popa', description: 'Alcanza la velocidad máxima con viento de cola.', hidden: false, earned: false },
+    { appId: 'mock_game', apiName: 'ACH_TREASURE', displayName: 'Cofre del rey', description: 'Abre el cofre cerrado con tres llaves de plata.', hidden: false, earned: false },
+    { appId: 'mock_game', apiName: 'ACH_STARS', displayName: 'Guía estelar', description: 'Oriéntate de noche únicamente con las constelaciones.', hidden: false, earned: false },
+    { appId: 'mock_game', apiName: 'ACH_SECRET1', displayName: 'Logro secreto', description: 'Continúa jugando para desvelar este logro.', hidden: true, earned: false },
+    { appId: 'mock_game', apiName: 'ACH_SECRET2', displayName: 'Logro secreto', description: 'Continúa jugando para desvelar este logro.', hidden: true, earned: false },
+    { appId: 'mock_game', apiName: 'ACH_SECRET3', displayName: 'Logro secreto', description: 'Continúa jugando para desvelar este logro.', hidden: true, earned: false },
+    { appId: 'mock_game', apiName: 'ACH_MASTER', displayName: 'Dueño del horizonte', description: 'Desbloquea todos los logros del juego.', hidden: true, earned: false },
+  ];
+
+  function getMockSummary(gameId: string): AchievementSummary {
+    const variant = mockCardVariants.get(gameId) ?? 1;
+    const unlocked = MOCK_ACHIEVEMENTS.filter((a) => a.earned).length;
+    const total = MOCK_ACHIEVEMENTS.length;
+    return {
+      appId: 'mock_app_123',
+      total,
+      unlocked,
+      percentage: Math.round((unlocked / total) * 100),
+      variant,
+      lastUnlocked: MOCK_ACHIEVEMENTS[0],
+      nextTarget: MOCK_ACHIEVEMENTS[14],
+      weekDistribution: [0, 1, 0, 0, 2, 2, 1],
+      rarityCommon: 10,
+      rarityRare: 2,
+      rarityUltra: 2,
+    };
+  }
   return {
     isTauri: false,
+    async getGameAchievements(gameId: string) { return MOCK_ACHIEVEMENTS; },
+    async getAchievementsSummary(gameId: string) { return getMockSummary(gameId); },
+    async setAchievementsCardVariant(gameId: string, variant: number) { mockCardVariants.set(gameId, variant); },
+    async getAchievementsCardVariant(gameId: string) { return mockCardVariants.get(gameId) ?? 1; },
+    async detectGameSteamworks() { return { group: 2, dllState: 'emulator', callsSteam: true, steamstub: false, hasSettings: true, appId: 'mock_app_123' }; },
     async loadConfig() { return cfg; },
     async saveConfig(c) { cfg = c; try { store()?.setItem(LS, JSON.stringify(c)); } catch {} },
     async learnPad() {},

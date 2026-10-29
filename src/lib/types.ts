@@ -226,6 +226,40 @@ export interface MoveReport { moved: Array<[string, string]>; failed: string[] }
 export interface TrashReport { trashed: string[]; failed: string[] }
 /** Dispositivo de reproducción de Windows. */
 export interface AudioOutput { id: string; name: string; short: string; default: boolean }
+export interface Achievement {
+  appId: string;
+  apiName: string;
+  displayName: string;
+  description: string;
+  hidden: boolean;
+  icon?: string | null;
+  iconGray?: string | null;
+  earned: boolean;
+  unlockedAt?: number | null;
+  source?: string | null;
+  evidence?: string | null;
+}
+export interface AchievementSummary {
+  appId: string;
+  total: number;
+  unlocked: number;
+  percentage: number;
+  variant: number;
+  lastUnlocked?: Achievement | null;
+  nextTarget?: Achievement | null;
+  weekDistribution: number[];
+  rarityCommon: number;
+  rarityRare: number;
+  rarityUltra: number;
+}
+export interface GameDetection {
+  group: number;
+  dllState: string;
+  callsSteam: boolean;
+  steamstub: boolean;
+  hasSettings: boolean;
+  appId?: string | null;
+}
 export type BackendEvent =
   | { type: 'audio-outputs'; outputs: AudioOutput[] }
   | { type: 'capture-saved'; name: string }
@@ -233,7 +267,8 @@ export type BackendEvent =
   | { type: 'learn-pad'; combo: string; connected: boolean; done: boolean }
   | { type: 'game-started'; id: string; name: string }
   | { type: 'game-exited'; id: string; name: string; seconds: number }
-  | { type: 'magpie-status'; id: string; message: string; error: boolean };
+  | { type: 'magpie-status'; id: string; message: string; error: boolean }
+  | { type: 'achievement-unlocked'; gameId: string; appId: string; achievement: Achievement };
 export interface Platform extends PlatformCfg {
   titles: Title[];
 }
@@ -342,5 +377,10 @@ export interface Backend {
   /** Avisos nacidos al arrancar (p. ej. la base de datos no se pudo abrir). Se entregan una vez. */
   startupNotices(): Promise<StartupNotice[]>;
   /** Eventos del núcleo: capturas guardadas, juegos que terminan... */
+  getGameAchievements(gameId: string, appId?: string): Promise<Achievement[]>;
+  getAchievementsSummary(gameId: string, appId?: string): Promise<AchievementSummary | null>;
+  setAchievementsCardVariant(gameId: string, variant: number): Promise<void>;
+  getAchievementsCardVariant(gameId: string): Promise<number>;
+  detectGameSteamworks(gameDir: string, exePath?: string): Promise<GameDetection>;
   onEvent(cb: (e: BackendEvent) => void): void;
 }

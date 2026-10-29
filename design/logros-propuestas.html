@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Logros · Visor de capturas</title>
+<style>
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:400;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-400-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:500;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-500-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:700;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-700-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:800;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-800-latin.woff2') format('woff2')}
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;color-scheme:light}
+*{box-sizing:border-box}
+
+/* ============ Página de documentación ============ */
+html,body{margin:0;background:#dfe3e9;font-family:var(--round);color:#3a414e}
+.doc{max-width:1360px;margin:0 auto;padding:40px 24px 80px}
+.doc>header h1{font-size:34px;font-weight:800;margin:0 0 6px}
+.doc>header p{font-size:17px;line-height:1.55;margin:0 0 10px;max-width:900px;color:#545c6a}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+.toc a{font-size:15px;font-weight:700;color:#3a414e;text-decoration:none;background:#fff;border-radius:999px;padding:6px 14px;box-shadow:0 0 0 1px rgba(95,110,135,.2)}
+.toc a:hover{background:#00A0D8;color:#fff}
+.toc .lbl{font-size:13px;font-weight:800;color:#8a92a0;text-transform:uppercase;letter-spacing:.06em;align-self:center;margin:0 4px 0 10px}
+h2.part{margin:64px 0 0;font-size:15px;text-transform:uppercase;letter-spacing:.08em;color:#7a8291;border-top:2px solid #cfd4dc;padding-top:14px}
+section.p{margin-top:40px}
+section.p h2{font-size:26px;font-weight:800;margin:0 0 4px;display:flex;align-items:center;gap:12px}
+section.p h2 .n{display:grid;place-items:center;min-width:38px;height:38px;padding:0 8px;border-radius:12px;background:#3a414e;color:#fff;font-size:19px}
+section.p h2 .rec{font-size:13px;font-weight:800;background:#F2B807;color:#3a2f00;border-radius:999px;padding:4px 12px}
+section.p .why{font-size:16px;color:#5f6776;margin:0 0 16px 50px;max-width:980px;line-height:1.5}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:24px;align-items:start}
+@media (max-width:1100px){.row{grid-template-columns:1fr}}
+.frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:18px;overflow:hidden;box-shadow:0 0 0 1px rgba(60,70,90,.25),0 24px 50px -24px rgba(30,40,60,.55);background:#0f1218;outline:none}
+.frame.act{box-shadow:0 0 0 3px #00A0D8,0 24px 50px -24px rgba(30,40,60,.55)}
+.notes{background:#fff;border-radius:18px;padding:18px 20px;box-shadow:0 0 0 1px rgba(95,110,135,.18)}
+.notes h3{margin:0 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:#7a8291}
+.notes ol{margin:0;padding:0;list-style:none;counter-reset:k}
+.notes li{counter-increment:k;position:relative;padding-left:36px;margin-bottom:14px;font-size:15px;line-height:1.5}
+.notes li::before{content:counter(k);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:#ff4f7b;color:#fff;font-weight:800;font-size:14px;display:grid;place-items:center}
+.notes li b{display:block;font-size:16px}
+.pc{margin-top:12px;padding-top:12px;border-top:1px solid #e6e9ee;font-size:14px;line-height:1.55;color:#5f6776}
+.pc p{margin:0 0 6px}.pc .y{color:#24803a;font-weight:800}.pc .n{color:#b3253a;font-weight:800}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid #e6e9ee}
+.ctl button{height:34px;padding:0 14px;border-radius:999px;border:0;font:800 13.5px var(--round);color:#4a5260;background:#eef1f5;cursor:pointer}
+.ctl button.on{background:#00A0D8;color:#fff}
+.keys{margin-top:12px;padding-top:12px;border-top:1px solid #e6e9ee;font-size:13.5px;color:#6a7282;line-height:1.6}
+kbd{font:800 12px var(--round);background:#eef1f5;border-radius:6px;padding:1px 6px;box-shadow:inset 0 -1px 0 #cfd4dc;margin:0 1px}
+code{font-size:.92em;background:#eef1f5;border-radius:6px;padding:1px 6px}
+table.data{width:100%;border-collapse:collapse;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 0 0 1px rgba(95,110,135,.18);font-size:15px}
+table.data th,table.data td{text-align:left;padding:10px 14px;border-top:1px solid #eef0f3;vertical-align:top;line-height:1.45}
+table.data th{background:#f3f5f8;font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:#7a8291;border-top:0}
+table.data td:first-child{font-weight:800;white-space:nowrap}
+.tag{display:inline-block;font-size:12px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.tag.y{background:#dff3e2;color:#24803a}.tag.n{background:#fff1d6;color:#a76a00}.tag.b{background:#e3ecfb;color:#2f56c8}.tag.r{background:#fde0e3;color:#b3253a}
+.reco{margin-top:18px;background:#fff;border-radius:18px;padding:18px 22px;box-shadow:0 0 0 1px rgba(95,110,135,.18);font-size:16px;line-height:1.6}
+.reco b{color:#3a414e}
+
+/* ============ Mundo de la app (copia de src/app.css adaptada a .stage) ============ */
+.stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;
+  font-family:var(--round);color:#3a414e;background:#eceef2;--acc:#00A0D8;--acc-ink:#fff;--gold:#F2B807;user-select:none}
+.bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(34px);opacity:.9}
+.blob.w{background:radial-gradient(circle,#fff,rgba(255,255,255,0) 70%)}
+.blob.a{background:radial-gradient(circle,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%);opacity:.55}
+.glass{position:absolute;--r:28px;--bw:10px;border-radius:var(--r);padding:var(--bw);isolation:isolate;
+  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  -webkit-backdrop-filter:blur(14px) saturate(1.7);backdrop-filter:blur(14px) saturate(1.7);
+  box-shadow:inset 0 1.5px 0 #fff,inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.95),inset 0 -1.5px 0 rgba(110,125,150,.30),0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42);transition:transform .15s}
+.glass::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.62) 0%,rgba(255,255,255,.20) 55%,rgba(255,255,255,0) 100%);
+  -webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.85}
+.glass::after{content:'';position:absolute;z-index:3;left:12%;top:3px;width:34%;height:5px;border-radius:5px;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 40%,rgba(255,255,255,0));filter:blur(.6px);opacity:.9}
+.glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:#dfe3e9}
+.glass .face::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(20,30,50,.20),inset 0 3px 6px -2px rgba(0,0,0,.35),inset 0 -2px 4px -2px rgba(255,255,255,.5)}
+.glass.f{transform:scale(1.06);z-index:3;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)) 0%,color-mix(in srgb,var(--acc) 72%,transparent) 55%,color-mix(in srgb,var(--acc) 92%,black) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),inset 0 -10px 14px -8px color-mix(in srgb,var(--acc) 30%,white),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 0 26px 2px color-mix(in srgb,var(--acc) 50%,transparent),0 22px 34px -16px color-mix(in srgb,var(--acc) 70%,black)}
+.pill{-webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);background:linear-gradient(180deg,rgba(255,255,255,.80),rgba(255,255,255,.52));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+.avatar{left:22px;top:12px;width:60px;height:60px;--r:16px;--bw:5px}
+.avatar .face{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white),var(--acc));display:grid;place-items:center}
+.crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:20px;font-weight:700;color:#4a5260;z-index:5}
+.crumb .sep{color:#a3abb8;font-weight:500}.crumb .cur{color:var(--acc)}
+.clock{position:absolute;right:24px;top:24px;display:flex;gap:14px;align-items:center;font-size:20px;font-weight:700;color:#4a5260;z-index:5}
+.clock small{font-size:15px;font-weight:500;color:#7a8291}
+.batt{display:flex;gap:2px}.batt b{width:6px;height:13px;border-radius:2px;background:var(--acc)}.batt b.off{background:#c3c9d3}
+.hints{position:absolute;right:22px;bottom:16px;display:flex;gap:10px;z-index:6}
+.hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:999px;font-size:16px;font-weight:700;color:#4a5260;white-space:nowrap}
+.btn{min-width:28px;height:28px;border-radius:14px;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;--b:#4a5260;padding:0 6px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--b) 70%,black),0 1px 2px rgba(0,0,0,.2);text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.btn.a{--b:#3BB54A}.btn.b{--b:#E8384F}.btn.x{--b:#3F63E0}.btn.y{--b:#F2B807;color:#3a2f00;text-shadow:none}.btn.sh{border-radius:8px;--b:#6b7383}
+.btn.mini{min-width:20px;height:20px;font-size:11px;border-radius:10px;padding:0 5px}
+.sc{position:absolute;inset:0;background-size:cover;background-position:center;background-color:#c9cfd8}
+.toast{position:absolute;z-index:40;left:50%;bottom:72px;transform:translateX(-50%);padding:12px 22px;border-radius:999px;background:rgba(40,46,58,.92);color:#fff;font-size:16px;font-weight:700;white-space:nowrap;
+  box-shadow:0 14px 30px -10px rgba(0,0,0,.5);animation:tin .25s ease-out}
+@keyframes tin{from{opacity:0;transform:translate(-50%,10px)}}
+svg{display:block}
+.panel{position:absolute;border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(250,251,253,.86));
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px rgba(95,110,135,.20),0 18px 30px -18px rgba(40,50,70,.45)}
+
+/* ---------- ficha del juego (copia de app.css) ---------- */
+.banner{left:64px;top:88px;width:922px;height:280px;--r:32px;--bw:10px}
+.banner .face .bshade{position:absolute;inset:0;background:linear-gradient(0deg,rgba(8,10,18,.38),rgba(8,10,18,0) 48%);pointer-events:none}
+.dlogo{position:absolute;left:100px;bottom:366px;z-index:5;pointer-events:none;font-size:54px;font-weight:800;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.6),0 1px 2px rgba(0,0,0,.5);line-height:1.08}
+.dcover{left:1016px;top:88px;width:200px;height:280px;--r:26px;--bw:9px;z-index:4}
+.cov{position:absolute;inset:0;display:grid;place-items:end center;padding:0 10px 26px;text-align:center;background:linear-gradient(165deg,#ffd27e 0%,#f2833a 36%,#a04a8e 68%,#25335f 100%)}
+.cov::before{content:'';position:absolute;left:50%;top:44px;width:26px;height:110px;margin-left:-13px;border-radius:6px 6px 2px 2px;background:linear-gradient(90deg,#fff 0 50%,#f1e4d8 50%);box-shadow:0 0 0 3px rgba(40,30,60,.25);
+  -webkit-mask:repeating-linear-gradient(180deg,#000 0 18px,rgba(0,0,0,.55) 18px 30px);mask:repeating-linear-gradient(180deg,#000 0 18px,rgba(0,0,0,.55) 18px 30px)}
+.cov::after{content:'';position:absolute;left:50%;top:22px;width:90px;height:44px;margin-left:-45px;border-radius:50%;background:radial-gradient(closest-side,rgba(255,250,200,.95),rgba(255,230,140,0))}
+.cov b{position:relative;font-size:24px;font-weight:800;color:#fff;letter-spacing:.06em;line-height:1;text-shadow:0 2px 8px rgba(40,20,60,.6)}
+.play{--r:30px;--bw:8px;left:64px;top:388px;width:290px;height:112px}
+.play .face{display:flex;align-items:center;gap:18px;padding:0 24px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white) 0%,var(--acc) 62%,color-mix(in srgb,var(--acc) 85%,black) 100%);color:var(--acc-ink)}
+.play .pi{flex:none;width:50px;height:50px;border-radius:50%;background:linear-gradient(180deg,#fff,#e8edf3);display:grid;place-items:center;box-shadow:inset 0 -2px 3px rgba(0,0,0,.12),0 3px 8px rgba(0,0,0,.25);color:var(--acc)}
+.play .pi svg{width:22px;height:22px;margin-left:3px}
+.play b{font-size:34px;font-weight:800;display:block;line-height:1.05;text-shadow:0 1px 2px rgba(0,0,0,.2)}
+.play small{font-size:15px;font-weight:600;opacity:.92;white-space:nowrap}
+.dpanel{position:absolute;top:388px;height:112px;border-radius:26px;padding:12px 22px 18px;display:flex;flex-direction:column;justify-content:center;transition:transform .15s}
+.dpanel.fx{cursor:pointer}
+.dpanel.f{transform:scale(1.04);z-index:3;box-shadow:inset 0 1px 0 #fff,0 0 0 3px var(--acc),0 12px 24px -12px color-mix(in srgb,var(--acc) 70%,black)}
+.hsub{font-size:15px;line-height:18px;font-weight:600;color:#5f6776;white-space:nowrap;margin:0 0 8px}
+.dhours{left:378px;width:400px}
+.dweek{left:802px;width:414px;padding:12px 20px 18px}
+.odo{display:flex;align-items:center;gap:6px;--ch:52px;transform-origin:left center}
+.odo .c{width:42px;height:var(--ch);border-radius:10px;overflow:hidden;position:relative;background:linear-gradient(180deg,#fff,#eef2f7);box-shadow:inset 0 2px 4px rgba(0,0,0,.18),inset 0 -2px 0 rgba(255,255,255,.8),0 0 0 1px rgba(110,125,150,.25)}
+.odo .c::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(0,0,0,.10)}
+.odo .c b{position:absolute;inset:0;display:grid;place-items:center;font-size:38px;font-weight:800;line-height:var(--ch);color:var(--acc)}
+.odo .u{font-size:22px;font-weight:800;color:#5a6270;margin:0 8px 0 2px;align-self:flex-end;padding-bottom:6px}
+.weekbars{display:flex;gap:22px;align-items:flex-end;height:46px}
+.weekbars i{display:block;width:30px;border-radius:5px 5px 3px 3px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 40%,white),var(--acc));box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
+.weekbars i.z{background:rgba(160,168,182,.35);box-shadow:none}
+.dsect{position:absolute;left:64px;top:514px;font-size:18px;font-weight:800;color:#5a6270}
+.dsect span{font-weight:600;color:#6a7282;margin-left:8px}
+.dshot{top:548px;width:176px;height:99px;--r:16px;--bw:5px}
+.dshot .face{border-radius:12px}
+.dall{top:548px;height:99px;width:141px;--r:16px;--bw:5px}
+.dall .face{display:grid;place-items:center;text-align:center;font-size:17px;font-weight:800;color:var(--acc);background:linear-gradient(180deg,#fff,color-mix(in srgb,var(--acc) 12%,white))}
+.dall .face span{display:block;font-size:13px;font-weight:600;color:#5f6776}
+.dchips{position:absolute;left:100px;top:108px;z-index:6;display:flex;gap:10px}
+.chipx{height:36px;padding:0 16px 0 12px;border-radius:999px;display:flex;align-items:center;gap:8px;font-size:17px;font-weight:800;color:#fff;white-space:nowrap;
+  background:linear-gradient(180deg,rgba(60,68,84,.78),rgba(30,36,48,.82));box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 14px -6px rgba(0,0,0,.5)}
+.chipx svg{width:18px;height:18px}.chipx small{font-size:15px;font-weight:700;opacity:.92}
+.chipx.st{--c:#3F63E0;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 70%,white),var(--c));box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 14px -6px rgba(0,0,0,.5)}
+
+/* ---------- Logros: piezas comunes ---------- */
+.ai{position:relative;flex:none;border-radius:22%;display:grid;place-items:center;color:#fff;
+  background:linear-gradient(150deg,hsl(var(--h) 88% 70%),hsl(var(--h) 70% 44%) 68%,hsl(calc(var(--h) + 24) 72% 28%));
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.55),inset 0 -3px 6px rgba(0,0,0,.25),0 0 0 1px rgba(0,0,0,.18),0 4px 10px -5px rgba(0,0,0,.5)}
+.ai svg{width:56%;height:56%;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+.ai.off{filter:grayscale(1) contrast(.85) brightness(1.05);opacity:.5}
+.ai.hid{filter:none;opacity:.9;background:linear-gradient(150deg,#687083,#3a404d)}
+.ai.hid b{color:rgba(255,255,255,.75);font-weight:800;line-height:1}
+.ai.rare{box-shadow:inset 0 1.5px 0 rgba(255,255,255,.55),inset 0 -3px 6px rgba(0,0,0,.25),0 0 0 2px #fff,0 0 0 4px var(--gold),0 4px 12px -4px rgba(180,130,0,.8)}
+.ai .lk{position:absolute;right:-4px;bottom:-4px;width:40%;height:40%;border-radius:50%;background:#5f6776;display:grid;place-items:center;box-shadow:0 0 0 2px #fff}
+.ai .lk svg{width:58%;height:58%}
+.rg{position:relative;flex:none}.rg svg{width:100%;height:100%}
+.rg .in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1}
+.camb{position:absolute;z-index:4;width:24px;height:24px;border-radius:50%;background:var(--gold);color:#3a2f00;display:grid;place-items:center;box-shadow:0 0 0 2px #fff,0 2px 6px rgba(0,0,0,.4)}
+.camb svg{width:14px;height:14px}
+.medb{position:absolute;z-index:4;right:6px;top:6px}
+.gbar{height:6px;border-radius:3px;background:rgba(120,130,150,.22);overflow:hidden}.gbar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#ffd75a,var(--gold))}
+.tier{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 10px;border-radius:999px;font-size:12.5px;font-weight:800;white-space:nowrap}
+.tier.t0{background:#eef1f5;color:#6a7282}.tier.t1{background:#efe3fb;color:#7a3fb8}.tier.t2{background:#fff3cc;color:#8a6400}
+.tag2{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:999px;font-size:13.5px;font-weight:800;white-space:nowrap;background:#eef1f5;color:#5f6776}
+.tag2 svg{width:15px;height:15px}
+.tag2.ok{background:#dff3e2;color:#24803a}.tag2.src{background:#e3ecfb;color:#2f56c8}
+.seg{display:flex;gap:4px;padding:4px;border-radius:999px}
+.seg span{height:36px;padding:0 14px;border-radius:999px;display:flex;align-items:center;gap:7px;font-size:15px;font-weight:800;color:#5f6776;cursor:pointer;white-space:nowrap}
+.seg span:hover{background:rgba(255,255,255,.7)}
+.seg span.on{background:var(--acc);color:#fff;box-shadow:0 6px 12px -6px var(--acc)}
+.seg span small{font-size:12.5px;font-weight:800;opacity:.75}
+
+/* A · Medallero en el hueco de la portada */
+.mcard{position:absolute;inset:0;color:#fff;padding:14px 14px 12px;display:flex;flex-direction:column;align-items:center}
+.mcard .bgc{position:absolute;inset:-20px;background:linear-gradient(165deg,#ffd27e 0%,#f2833a 36%,#a04a8e 68%,#25335f 100%);filter:blur(10px) saturate(1.2)}
+.mcard .bgc::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(16,20,34,.55),rgba(16,20,34,.86) 70%)}
+.mcard>*{position:relative}
+.mcard .lbl{align-self:stretch;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#ffe08a}
+.mcard .lbl svg{width:16px;height:16px}
+.mcard .lbl em{margin-left:auto;font-style:normal;letter-spacing:0;text-transform:none;color:rgba(255,255,255,.65);font-size:12px}
+.mcard .rg{margin-top:8px}
+.mcard .rg b{font-size:34px;font-weight:800}.mcard .rg b small{font-size:17px;opacity:.75}
+.mcard .rg i{font-style:normal;font-size:13px;font-weight:800;color:#ffe08a;margin-top:3px}
+.mcard .last{align-self:stretch;margin-top:auto;display:flex;align-items:center;gap:9px;padding:8px;border-radius:14px;background:rgba(255,255,255,.12);box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
+.mcard .last div{min-width:0}
+.mcard .last b{display:block;font-size:13.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mcard .last small{display:block;font-size:11.5px;font-weight:700;color:rgba(255,255,255,.7)}
+.mcard .row3{display:flex;gap:6px;margin-top:8px}
+.flipin{animation:flip .35s ease-out}
+@keyframes flip{from{transform:rotateY(80deg);opacity:.3}}
+
+/* B · Cuarto panel */
+.four .dhours{width:310px}.four .dhours .odo{transform:scale(.82)}
+.four .dweek{left:710px;width:250px}.four .weekbars{gap:9px}.four .weekbars i{width:20px}
+.dach{left:980px;width:236px;background:linear-gradient(180deg,rgba(40,48,64,.80),rgba(24,28,40,.90))!important;color:#fff}
+.dach .hsub{color:#cbd2dc}
+.dach .body{display:flex;align-items:center;gap:12px}
+.dach .rg b{font-size:15px;font-weight:800;color:#ffe08a}
+.dach .inf b{display:block;font-size:20px;font-weight:800}.dach .inf b small{font-size:14px;color:#aab3c0}
+.dach .inf .ic{display:flex;gap:5px;margin-top:5px}
+
+/* C · Pestañas en la fila de abajo */
+.tabs3{position:absolute;left:58px;top:504px;z-index:4}
+.tabs3 .btn{margin-left:2px}
+.tabs3 span:not(.on) .btn.mini{display:none}
+.lbrb{position:absolute;top:512px;font-size:12px;font-weight:800;color:#8a92a0;display:flex;gap:6px;align-items:center}
+.prog3{position:absolute;right:64px;top:516px;width:300px;font-size:13.5px;font-weight:800;color:#5f6776;display:flex;align-items:center;gap:10px;white-space:nowrap}
+.prog3 .gbar{flex:1}
+.dmed{top:548px;width:113px;height:99px;--r:16px;--bw:5px}
+.dmed .face{display:grid;place-items:center;background:linear-gradient(180deg,#fff,#eef1f5)}
+.dmed .face small{position:absolute;left:0;right:0;bottom:3px;text-align:center;font-size:11px;font-weight:800;color:#6a7282}
+.dmed .ai{margin-top:-12px}
+
+/* D · Cinta en el hero */
+.band{position:absolute;right:16px;bottom:14px;z-index:3;display:flex;align-items:center;gap:10px;padding:8px 14px 8px 10px;border-radius:20px;cursor:pointer;
+  background:rgba(14,18,30,.55);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 0 0 1px rgba(255,255,255,.12)}
+.band.f{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 0 0 3px var(--acc),0 0 22px 2px color-mix(in srgb,var(--acc) 50%,transparent)}
+.band .ics{display:flex;gap:6px}
+.band .txt{color:#fff;min-width:110px}
+.band .txt b{display:block;font-size:17px;font-weight:800}.band .txt b small{font-size:13px;opacity:.7}
+.band .txt .gbar{margin-top:6px;background:rgba(255,255,255,.2)}
+.chipx.gold{color:#3a2f00;background:linear-gradient(180deg,#ffe58a,var(--gold));box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 6px 14px -6px rgba(120,80,0,.6);cursor:pointer}
+.chipx.gold.f{box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 3px var(--acc),0 0 18px color-mix(in srgb,var(--acc) 60%,transparent)}
+
+/* 1 · Lista y detalle */
+.l1h{position:absolute;left:40px;right:40px;top:88px;height:52px;display:flex;align-items:center;gap:14px;z-index:4}
+.l1h .tot{display:flex;align-items:center;gap:12px;height:52px;padding:0 18px 0 6px;border-radius:999px}
+.l1h .tot b{font-size:20px;font-weight:800}.l1h .tot small{font-size:14px;font-weight:700;color:#8a92a0;margin-left:4px}
+.l1h .rg b{font-size:12px;font-weight:800;color:#8a6400}
+.l1h .r{margin-left:auto;display:flex;gap:8px}
+.lst1{left:40px;top:152px;width:520px;height:500px;padding:10px;overflow:hidden}
+.arow{display:flex;align-items:center;gap:14px;height:60px;padding:0 12px 0 8px;border-radius:16px;cursor:pointer;margin-bottom:0}
+.arow:hover{background:#eef1f5}
+.arow .tx{flex:1;min-width:0}
+.arow .tx b{display:block;font-size:15.5px;font-weight:800;color:#3a414e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.arow .tx small{display:block;font-size:13px;font-weight:700;color:#8a92a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.arow .tx .gbar{margin-top:5px;width:70%}
+.arow .rt{flex:none;text-align:right;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:#6a7282}
+.arow .rt svg{width:16px;height:16px;color:#c49400}
+.arow.lock .tx b{color:#7a8291}
+.arow.s{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)),var(--acc));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 8px 16px -8px color-mix(in srgb,var(--acc) 70%,black)}
+.arow.s .tx b,.arow.s .tx small,.arow.s .rt,.arow.s .rt svg{color:#fff}
+.lgh{height:26px;padding:6px 12px 0;font-size:12px;font-weight:800;color:#a3abb8;text-transform:uppercase;letter-spacing:.06em}
+.det1{left:576px;top:152px;width:664px;height:500px;padding:22px 24px}
+.det1 .hd{display:flex;gap:18px;align-items:flex-start}
+.det1 h3{margin:2px 0 4px;font-size:26px;font-weight:800;color:#3a414e}
+.det1 p{margin:0 0 10px;font-size:15.5px;font-weight:600;color:#5f6776;line-height:1.4}
+.det1 .chips{display:flex;flex-wrap:wrap;gap:6px}
+.cap1{position:absolute;left:24px;right:24px;bottom:22px;height:300px;border-radius:18px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(20,30,50,.18)}
+.cap1::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(0,0,0,.55));pointer-events:none}
+.cap1 .ov{position:absolute;z-index:2;left:16px;right:16px;bottom:14px;display:flex;align-items:center;gap:10px;color:#fff;font-size:14px;font-weight:800}
+.cap1 .ov .bt{margin-left:auto;height:36px;padding:0 14px;border-radius:999px;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.92);color:#3a414e;font-size:14px}
+.cap1.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border:2.5px dashed rgba(95,110,135,.3);box-shadow:none;background:rgba(238,241,245,.6);color:#6a7282;font-size:16px;font-weight:800;text-align:center;padding:0 60px}
+.cap1.empty::after{display:none}
+.cap1.empty svg{width:40px;height:40px;color:#a3abb8}
+.cap1.empty small{font-size:13.5px;font-weight:700;color:#8a92a0;line-height:1.45}
+.cap1.empty .gbar{width:260px;height:10px;border-radius:5px}
+
+/* 2 · Vitrina */
+.v2h{position:absolute;left:56px;top:86px;width:1168px;height:136px;display:flex;align-items:center;gap:26px}
+.v2h .rg b{font-size:36px;font-weight:800;color:#3a414e}.v2h .rg b small{font-size:18px;color:#8a92a0}
+.v2h .rg i{font-style:normal;font-size:14px;font-weight:800;color:#8a6400;margin-top:4px}
+.v2h .foc{flex:1;min-width:0;height:118px;padding:16px 22px;border-radius:24px;display:flex;flex-direction:column;justify-content:center}
+.v2h .foc h3{margin:0;font-size:24px;font-weight:800;display:flex;align-items:center;gap:10px;white-space:nowrap}
+.v2h .foc p{margin:4px 0 8px;font-size:15px;font-weight:600;color:#5f6776;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v2h .foc .chips{display:flex;gap:6px}
+.v2h .sts{width:230px;display:flex;flex-direction:column;gap:6px}
+.v2h .sts div{height:35px;border-radius:999px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:13.5px;font-weight:700;color:#6a7282}
+.v2h .sts b{font-size:16px;font-weight:800;color:#3a414e}
+.vt{width:126px;height:126px;--r:24px;--bw:7px;cursor:pointer}
+.vt .face{display:grid;place-items:center;background:linear-gradient(180deg,#fff,#e9edf2)}
+.vt .camb{right:4px;bottom:4px}
+
+/* 3 · Diario */
+.d3h{position:absolute;left:40px;right:40px;top:88px;height:48px;display:flex;align-items:center;gap:14px;z-index:4}
+.d3h h3{margin:0;font-size:22px;font-weight:800}
+.d3h small{font-size:15px;font-weight:700;color:#7a8291}
+.d3h .seg{margin-left:auto}
+.card3{position:absolute;top:156px;width:250px;height:316px;border-radius:22px;padding:8px;cursor:pointer;transition:left .25s cubic-bezier(.3,1.2,.5,1),transform .2s;
+  background:rgba(255,255,255,.92);box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px rgba(95,110,135,.2),0 14px 24px -16px rgba(40,50,70,.5)}
+.card3.s{transform:scale(1.06);z-index:3;box-shadow:inset 0 1.5px 0 #fff,0 0 0 3px var(--acc),0 0 22px 2px color-mix(in srgb,var(--acc) 45%,transparent),0 18px 30px -14px color-mix(in srgb,var(--acc) 70%,black)}
+.card3 .th{position:relative;height:132px;border-radius:15px;overflow:hidden;background-size:cover;background-position:center}
+.card3 .th.none{background:repeating-linear-gradient(135deg,#eef1f5 0 10px,#e6e9ee 10px 20px);display:grid;place-items:center;font-size:12.5px;font-weight:800;color:#9aa1ad}
+.card3 .ai{position:absolute;left:18px;top:108px;z-index:2}
+.card3 .nm{margin:34px 10px 0;font-size:17px;font-weight:800;color:#3a414e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card3 .ds{margin:3px 10px 0;font-size:13px;font-weight:700;color:#7a8291;line-height:1.35;height:36px;overflow:hidden}
+.card3 .wh{position:absolute;left:18px;right:18px;bottom:14px;display:flex;justify-content:space-between;font-size:12.5px;font-weight:800;color:#6a7282}
+.card3 .tr{position:absolute;right:16px;top:142px}
+.trk{position:absolute;left:64px;width:1152px;top:520px;height:110px}
+.trk .ln{position:absolute;left:0;right:0;top:66px;height:4px;border-radius:2px;background:rgba(95,110,135,.25)}
+.trk .bar{position:absolute;bottom:44px;width:22px;margin-left:-11px;border-radius:5px 5px 2px 2px;background:color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.6));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--acc) 30%,transparent)}
+.trk .dot{position:absolute;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 2.5px #fff,0 2px 6px rgba(0,0,0,.3);cursor:pointer;z-index:2}
+.trk .dot.s{width:24px;height:24px;margin:-12px 0 0 -12px;box-shadow:0 0 0 3px #fff,0 0 0 6px var(--acc),0 4px 10px rgba(0,0,0,.3)}
+.trk .tk{position:absolute;top:80px;font-size:12px;font-weight:800;color:#8a92a0;transform:translateX(-50%);white-space:nowrap}
+.trk .lg{position:absolute;left:0;top:-6px;font-size:12.5px;font-weight:800;color:#8a92a0;display:flex;gap:14px}
+.trk .lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.pend3{position:absolute;left:40px;right:40px;top:156px;height:470px;padding:22px 24px}
+.pend3 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;margin-top:12px}
+.pend3 .it{display:flex;align-items:center;gap:12px;height:62px;padding:0 12px;border-radius:16px;background:#f3f5f8}
+.pend3 .it div{flex:1;min-width:0}
+.pend3 .it b{display:block;font-size:15px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pend3 .it small{display:block;font-size:12.5px;font-weight:700;color:#8a92a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pend3 .it .gbar{margin-top:5px}
+
+/* Aviso en el juego */
+.game{position:absolute;inset:0;background-size:cover;background-position:center}
+.hud{position:absolute;left:28px;bottom:26px;display:flex;gap:10px}
+.hud i{width:54px;height:54px;border-radius:14px;background:rgba(0,0,0,.35);box-shadow:inset 0 0 0 2px rgba(255,255,255,.35)}
+.atoast{position:absolute;right:24px;top:24px;width:420px;height:92px;border-radius:24px;padding:12px 16px 12px 12px;display:flex;align-items:center;gap:14px;overflow:hidden;z-index:5;
+  background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(244,246,250,.9));box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px rgba(95,110,135,.25),0 18px 34px -12px rgba(0,0,0,.55);
+  animation:tsl .5s cubic-bezier(.3,1.4,.5,1) both,tout .4s ease-in 5.2s forwards}
+.atoast::after{content:'';position:absolute;top:0;bottom:0;width:120px;left:-140px;background:linear-gradient(100deg,transparent,rgba(255,230,140,.7),transparent);animation:shine 1.1s ease-out .45s both}
+.atoast .tx{flex:1;min-width:0}
+.atoast .tx em{display:block;font-style:normal;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#a67c00}
+.atoast .tx b{display:block;font-size:20px;font-weight:800;color:#3a414e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.atoast .tx small{display:block;font-size:13px;font-weight:700;color:#7a8291}
+.atoast .cm{flex:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:800;color:#24803a}
+.atoast .cm span{width:34px;height:34px;border-radius:50%;background:#dff3e2;display:grid;place-items:center}
+.atoast .cm svg{width:18px;height:18px}
+.peek{position:absolute;right:24px;top:128px;width:240px;height:135px;border-radius:14px;background-size:cover;background-position:center;z-index:4;
+  box-shadow:0 0 0 3px #fff,0 14px 28px -10px rgba(0,0,0,.6);animation:tsl .4s cubic-bezier(.3,1.4,.5,1) .9s both,tout .4s ease-in 5.4s forwards}
+.peek span{position:absolute;left:8px;bottom:6px;font-size:12px;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+.flash{position:absolute;inset:0;background:#fff;z-index:3;pointer-events:none;animation:fl .5s ease-out .7s both}
+@keyframes tsl{from{transform:translateX(120%);opacity:0}}
+@keyframes tout{to{transform:translateX(120%);opacity:0}}
+@keyframes shine{to{left:440px}}
+@keyframes fl{0%{opacity:0}15%{opacity:.55}100%{opacity:0}}
+.excl{position:absolute;left:24px;top:24px;z-index:6;max-width:520px;padding:10px 16px;border-radius:16px;background:rgba(20,24,34,.72);color:#fff;font-size:14px;font-weight:700;line-height:1.45}
+.excl b{color:#ffe08a}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe27a"/><stop offset="1" stop-color="#e3a400"/></linearGradient>
+</defs></svg>
+<div class="doc">
+<header>
+  <h1>Logros: dónde ponerlos y cómo enseñarlos</h1>
+  <p>Juego de ejemplo: <b>Lumen Drift</b>, 24 logros, 14 conseguidos (2 de ellos ocultos), 3 ocultos sin conseguir y 4 con contador (<code>stats.json</code>). Los iconos son inventados; los reales son <b>JPG cuadrados</b> de 64×64 o 256×256 que vienen en el <i>schema</i>, y los bloqueados usan su versión gris (<code>icongray</code>).</p>
+  <p>Dos decisiones distintas: <b>A–D</b> es <b>la puerta de entrada</b> en la ficha del juego y <b>1–3</b> es <b>la pantalla de Logros</b> a la que lleva esa puerta. Se pueden combinar como quieras. Al final, el aviso dentro del juego con la captura automática.</p>
+  <p>Son interactivos: haz clic en un diseño y muévete con <b>las flechas</b>, <b>Intro</b> (= A), <b>Esc</b> (= B). Los botones grises bajo las notas cambian el estado del ejemplo.</p>
+  <nav class="toc">
+    <span class="lbl">Ficha</span><a href="#sec-fA">A · Medallero en la portada</a><a href="#sec-fB">B · Cuarto panel</a><a href="#sec-fC">C · Pestañas Capturas/Logros</a><a href="#sec-fD">D · Cinta sobre el hero</a>
+    <span class="lbl">Pantalla</span><a href="#sec-s1">1 · Lista + captura</a><a href="#sec-s2">2 · Vitrina</a><a href="#sec-s3">3 · Diario</a>
+    <span class="lbl">Extra</span><a href="#sec-t1">Aviso en el juego</a><a href="#cmp">Comparación</a>
+  </nav>
+</header>
+
+<h2 class="part">La puerta de entrada (ficha del juego)</h2>
+
+<section class="p" id="sec-fA">
+  <h2><span class="n">A</span>Medallero en el hueco de la portada <span class="rec">Recomendado</span></h2>
+  <p class="why">Tu idea. La portada de 200×280 de la derecha repite lo que ya cuentan el hero y el logo, así que ese hueco pasa a ser una tarjeta de logros. Para no perder la portada, queda como <b>fondo difuminado</b> de la tarjeta y con <b>Y</b> la tarjeta gira y la enseña. Si el juego no tiene logros (Switch, novelas sin Steamworks…) se ve la portada de siempre: la ficha no cambia para nadie más.</p>
+  <div class="row">
+    <div class="frame" tabindex="0"><div class="stage" id="fA"></div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Anillo de progreso</b>14/24 y el porcentaje, en dorado: el dorado se reserva para los logros en toda la app y no cambia con el color de acento.</li>
+      <li><b>Último logro</b>Icono, nombre y cuándo. Si es de hoy se nota (el anillo hace la animación de «+1», igual que el contador de horas al volver de jugar).</li>
+      <li><b>Encaja en el mando</b>Es un elemento con foco más, a la derecha del hero: <kbd>A</kbd> abre Logros y <kbd>Y</kbd> gira la tarjeta.</li>
+    </ol>
+    <div class="pc"><p><span class="y">A favor:</span> no mueve nada de sitio, cabe un anillo grande y no estorba a las novelas con «Vocabulario».</p><p><span class="n">En contra:</span> la portada solo se ve al girar (sigue estando en la biblioteca).</p></div>
+    <div class="ctl" data-st="fA"><button data-k="mode" data-v="ach">Con logros</button><button data-k="mode" data-v="flip">Girada (Y)</button><button data-k="mode" data-v="none">Juego sin logros</button><button data-k="today" data-v="1">Logro de hoy</button></div>
+    </aside>
+  </div>
+</section>
+
+<section class="p" id="sec-fB">
+  <h2><span class="n">B</span>Cuarto panel en la fila de estadísticas</h2>
+  <p class="why">El mismo truco que ya usa la ficha de las novelas japonesas con «Vocabulario y frases»: Horas y Semana se estrechan y aparece un panel oscuro a la derecha. La portada no se toca.</p>
+  <div class="row">
+    <div class="frame" tabindex="0"><div class="stage" id="fB"></div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Mismo patrón que «Vocabulario»</b>310 + 250 + 236 px, ya probado en la app.</li>
+      <li><b>Compacto</b>Anillo pequeño, «14 de 24» y los tres últimos iconos.</li>
+    </ol>
+    <div class="pc"><p><span class="y">A favor:</span> cero cambios en la parte de arriba; coherente con lo que ya existe.</p><p><span class="n">En contra:</span> el contador de horas y las barras se aprietan, y una novela en Steam con logros <i>y</i> vocabulario necesitaría cinco paneles.</p></div>
+    </aside>
+  </div>
+</section>
+
+<section class="p" id="sec-fC">
+  <h2><span class="n">C</span>Pestañas «Capturas · Logros» en la fila de abajo</h2>
+  <p class="why">La fila de capturas tiene dos pestañas que se cambian con <kbd>LB</kbd>/<kbd>RB</kbd>. En «Logros» la tira enseña los últimos conseguidos y los siguientes por conseguir, con la barra de progreso a la derecha.</p>
+  <div class="row">
+    <div class="frame" tabindex="0"><div class="stage" id="fC"></div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Mucho sitio</b>Ocho iconos a la vista sin abrir otra pantalla.</li>
+      <li><b>LB / RB</b>Cambian de pestaña sin mover el foco de fila.</li>
+    </ol>
+    <div class="pc"><p><span class="y">A favor:</span> es la que más logros enseña en la propia ficha.</p><p><span class="n">En contra:</span> esconde las capturas tras una pestaña, y las capturas son el corazón de la app. Es otro gesto que aprender.</p></div>
+    <div class="ctl" data-st="fC"><button data-k="tab" data-v="shots">Pestaña Capturas</button><button data-k="tab" data-v="ach">Pestaña Logros</button></div>
+    </aside>
+  </div>
+</section>
+
+<section class="p" id="sec-fD">
+  <h2><span class="n">D</span>Chip dorado + cinta sobre el hero</h2>
+  <p class="why">Lo mínimo: un chip «14 / 24» junto al estado y la fecha de lanzamiento, y una cinta translúcida en la esquina del hero con los cinco últimos iconos y la barra. Nada se mueve de sitio.</p>
+  <div class="row">
+    <div class="frame" tabindex="0"><div class="stage" id="fD"></div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Chip</b>Va con los otros dos chips de arriba; con <kbd>A</kbd> abre Logros.</li>
+      <li><b>Cinta</b>Solo decorativa y clicable con el ratón; con el mando se entra por el chip.</li>
+    </ol>
+    <div class="pc"><p><span class="y">A favor:</span> el cambio más pequeño.</p><p><span class="n">En contra:</span> tapa parte del hero y puede chocar con logos anchos; la información es poca.</p></div>
+    </aside>
+  </div>
+</section>
+
+<h2 class="part">La pantalla de Logros</h2>
+
+<section class="p" id="sec-s1">
+  <h2><span class="n">1</span>Lista + detalle con su captura <span class="rec">Recomendado</span></h2>
+  <p class="why">Lo propio de esta app: cada logro conseguido tiene <b>la captura que se hizo sola en ese momento</b>. A la izquierda la lista (recientes primero, luego los pendientes ordenados de más fácil a más difícil), a la derecha el logro con su foto en grande.</p>
+  <div class="row">
+    <div class="frame" tabindex="0"><div class="stage" id="s1"></div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Filtros</b>Todos, Conseguidos, Pendientes. Al lado, de dónde salen los datos («Locales · GSE Saves») para dejar claro que no llegan al perfil de Steam.</li>
+      <li><b>Pendientes con contador</b>Si el emulador guarda <code>stats.json</code>, barra «23 / 40».</li>
+      <li><b>Ocultos sin spoilers</b>«Logro oculto» hasta que lo consigues; <kbd>X</kbd> revela la descripción si quieres.</li>
+      <li><b>La captura</b><kbd>A</kbd> la abre en el visor normal. Si no hubo captura (logro anterior a esta función) se ofrece la más cercana en el tiempo.</li>
+    </ol>
+    <div class="keys"><b>Mando:</b> <kbd>↑</kbd><kbd>↓</kbd> logro · <kbd>LB</kbd><kbd>RB</kbd> filtro · <kbd>A</kbd> ver captura · <kbd>X</kbd> revelar oculto · <kbd>B</kbd> volver</div>
+    </aside>
+  </div>
+</section>
+
+<section class="p" id="sec-s2">
+  <h2><span class="n">2</span>Vitrina</h2>
+  <p class="why">Todos los logros a la vez como fichas de cristal, al estilo de la balda de la biblioteca. Arriba, el anillo grande y la ficha del logro con foco. Muy visual, muy «Wii U», pero la captura no se ve hasta pulsar <kbd>A</kbd>.</p>
+  <div class="row">
+    <div class="frame" tabindex="0"><div class="stage" id="s2"></div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Cuadrícula 8×3</b>Conseguidos primero, en el orden del juego; el aro dorado marca los raros (&lt; 5 % de jugadores).</li>
+      <li><b>Cámara</b>Los que tienen captura llevan el puntito dorado.</li>
+      <li><b>Ficha de arriba</b>Cambia con el foco: nombre, descripción, fecha y rareza.</li>
+    </ol>
+    <div class="keys"><b>Mando:</b> cruceta por la cuadrícula · <kbd>A</kbd> captura · <kbd>X</kbd> revelar oculto · <kbd>B</kbd> volver</div>
+    </aside>
+  </div>
+</section>
+
+<section class="p" id="sec-s3">
+  <h2><span class="n">3</span>Diario de logros</h2>
+  <p class="why">Los logros como recuerdos: tarjetas en orden cronológico con su captura, encima de una línea de tiempo con lo que jugaste cada día (los mismos datos que «Evolución»). La pestaña «Pendientes» enseña lo que falta.</p>
+  <div class="row">
+    <div class="frame" tabindex="0"><div class="stage" id="s3"></div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Tarjetas</b>Captura, icono, nombre, fecha y horas de juego que llevabas en ese momento.</li>
+      <li><b>Línea de tiempo</b>Barras = minutos jugados por día; puntos dorados = logros. Clic en un punto para saltar.</li>
+      <li><b>Pendientes</b>Lista en dos columnas con contadores.</li>
+    </ol>
+    <div class="keys"><b>Mando:</b> <kbd>←</kbd><kbd>→</kbd> logro · <kbd>LB</kbd><kbd>RB</kbd> Diario/Pendientes · <kbd>A</kbd> captura · <kbd>B</kbd> volver</div>
+    <div class="ctl" data-st="s3"><button data-k="tab" data-v="d">Diario</button><button data-k="tab" data-v="p">Pendientes</button></div>
+    </aside>
+  </div>
+</section>
+
+<h2 class="part">Extra</h2>
+
+<section class="p" id="sec-t1">
+  <h2><span class="n">★</span>Aviso en el juego + captura automática</h2>
+  <p class="why">Reutiliza la ventanita de <code>overlay.rs</code>/<code>peek.rs</code> (siempre encima, sin foco y ya <b>excluida de las capturas</b> con <code>WDA_EXCLUDEFROMCAPTURE</code>). Orden: se detecta el logro → se hace la captura → aparece el aviso y la miniatura. Así el aviso nunca sale en la foto.</p>
+  <div class="row">
+    <div class="frame" tabindex="0"><div class="stage" id="t1"></div></div>
+    <aside class="notes"><h3>Cómo funciona</h3><ol>
+      <li><b>Aviso</b>Icono, nombre, rareza y un tic «Captura» cuando la foto se ha guardado.</li>
+      <li><b>Miniatura</b>La de siempre de <code>peek</code>, con el nombre del logro.</li>
+      <li><b>Pantalla completa exclusiva</b>Ahí no se ve la ventana; se usa la notificación de Windows (ya está el plugin).</li>
+    </ol>
+    <div class="ctl" data-st="t1"><button data-k="replay" data-v="1">Repetir animación</button></div>
+    </aside>
+  </div>
+</section>
+
+<section class="p" id="cmp">
+  <h2><span class="n">=</span>Comparación y recomendación</h2>
+  <table class="data">
+    <tr><th>Opción</th><th>Cambio en la ficha</th><th>Info a la vista</th><th>Mando</th><th>Riesgos</th></tr>
+    <tr><td>A · Medallero</td><td><span class="tag y">Mínimo</span> sustituye la portada solo si hay logros</td><td>Anillo + último logro</td><td>1 foco nuevo (A / Y)</td><td>Portada menos visible</td></tr>
+    <tr><td>B · Cuarto panel</td><td><span class="tag n">Medio</span> estrecha Horas y Semana</td><td>Anillo pequeño + 3 iconos</td><td>1 foco nuevo</td><td>Choca con «Vocabulario»</td></tr>
+    <tr><td>C · Pestañas</td><td><span class="tag n">Medio</span> fila de capturas compartida</td><td>8 iconos + barra</td><td>LB/RB nuevos</td><td>Esconde las capturas</td></tr>
+    <tr><td>D · Chip + cinta</td><td><span class="tag y">Mínimo</span></td><td>Número + 5 iconos</td><td>Chip con foco</td><td>Tapa el hero / logo</td></tr>
+    <tr><td>1 · Lista + captura</td><td colspan="2">Lo más útil a diario y lo que diferencia la app de Steam/Playnite: logro ↔ foto</td><td>↑↓, LB/RB</td><td>—</td></tr>
+    <tr><td>2 · Vitrina</td><td colspan="2">La más vistosa para «ver la colección»</td><td>Cuadrícula</td><td>Captura escondida</td></tr>
+    <tr><td>3 · Diario</td><td colspan="2">La más emocional; reutiliza Evolución</td><td>←→</td><td>Floja con muchos logros sin fecha</td></tr>
+  </table>
+  <div class="reco"><b>Mi propuesta:</b> <b>A</b> en la ficha (con la portada como fondo y el giro con Y) + pantalla <b>1</b>, y la <b>Vitrina (2)</b> como segunda vista de esa misma pantalla con <kbd>Y</kbd> «Cambiar vista» si te gusta. El aviso en el juego entra en la fase 2 junto con la captura automática. Además, en las capturas de la ficha y del visor, las que se hicieron por un logro llevan el puntito dorado (se ve en todas las variantes).</div>
+</section>
+</div>
+
+<script>
+
+const sv=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const G={
+  flame:'<path d="M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-3 2-4 2.5-6.5C11 8 11.5 9.5 11.5 11c1.2-2 .9-5 .5-8z"/>',
+  compass:'<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
+  map:'<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>',
+  fish:'<path d="M3 12c3-4 7-5 11-4 2 .5 3.5 2 4.5 4-1 2-2.5 3.5-4.5 4-4 1-8 0-11-4z"/><path d="M18.5 12l2.5-3.5v7z"/>',
+  feather:'<path d="M20 4C12 4 6 10 6 18l-2 2"/><path d="M20 4c0 8-6 13-12 13"/><path d="M10 14h5"/>',
+  gem:'<path d="M6 4h12l3 5-9 11L3 9z"/><path d="M3 9h18M9 4l3 16 3-16"/>',
+  bolt:'<path d="M13 2L5 14h6l-1 8 8-12h-6z"/>',
+  shield:'<path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+  bell:'<path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+  crown:'<path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"/>',
+  moon:'<path d="M20 14A8 8 0 1 1 10 4a6.5 6.5 0 0 0 10 10z"/>',
+  leaf:'<path d="M5 19C5 10 10 5 20 4c-1 10-6 15-15 15z"/><path d="M5 19l8-8"/>',
+  eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  heart:'<path d="M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z"/>',
+  book:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7"/>',
+  key:'<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/>',
+  star:'<path d="M12 2.5l2.9 6 6.6.8-4.9 4.6 1.3 6.5L12 17.2l-5.9 3.2 1.3-6.5L2.5 9.3l6.6-.8z"/>',
+};
+const I={
+  trophy:sv('<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8M9 17h6"/>'),
+  lock:sv('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),
+  cam:sv('<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'),
+  play:'<svg viewBox="0 0 24 24"><path d="M7 4l12 8-12 8z" fill="currentColor"/></svg>',
+  check:sv('<path d="M5 12l5 5L20 7"/>'),
+  cal:sv('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'),
+  clock:sv('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  db:sv('<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3 3 7 3s7-1.3 7-3"/>'),
+  sort:sv('<path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/>'),
+  eye:sv(G.eye),
+};
+const PERSON=`<svg viewBox="0 0 40 40" width="34" height="34"><circle cx="20" cy="15" r="8" fill="#fff"/><path d="M5 37c2-9 8-13 15-13s13 4 15 13z" fill="#fff"/></svg>`;
+
+/* ---------- escenas (sustituyen a las capturas) ---------- */
+function scene(w,h,seed,hue,night){
+  const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');
+  let s=seed*9301+49297;const r=()=>{s=(s*16807)%2147483647;return s/2147483647};
+  const g=x.createLinearGradient(0,0,0,h);
+  g.addColorStop(0,night?`hsl(${hue+220},50%,12%)`:`hsl(${hue+190},60%,${58+r()*12}%)`);g.addColorStop(.7,night?`hsl(${hue+250},45%,30%)`:`hsl(${hue+20},85%,82%)`);
+  x.fillStyle=g;x.fillRect(0,0,w,h);
+  x.fillStyle=night?'rgba(255,250,220,.9)':'rgba(255,245,200,.95)';x.beginPath();x.arc(w*(.2+r()*.6),h*(.18+r()*.15),h*.07,0,7);x.fill();
+  // mar
+  const sea=x.createLinearGradient(0,h*.62,0,h);sea.addColorStop(0,night?`hsl(${hue+210},40%,22%)`:`hsl(${hue+195},55%,45%)`);sea.addColorStop(1,night?`hsl(${hue+220},50%,10%)`:`hsl(${hue+205},60%,28%)`);
+  for(let L=0;L<3;L++){const base=h*(.5+.06*L);x.fillStyle=night?`hsl(${hue+230},25%,${22-L*5}%)`:`hsl(${hue+150+L*12},${25+L*10}%,${55-L*12}%)`;
+    x.beginPath();x.moveTo(0,h*.66);const st=4+Math.floor(r()*5);for(let i=0;i<=st;i++)x.lineTo(w*i/st,base-r()*h*(.14+.06*(2-L)));x.lineTo(w,h*.66);x.closePath();x.fill();}
+  x.fillStyle=sea;x.fillRect(0,h*.64,w,h*.36);
+  x.strokeStyle='rgba(255,255,255,.25)';x.lineWidth=Math.max(1,h*.006);for(let i=0;i<8;i++){const yy=h*(.7+r()*.28),xx=w*r();x.beginPath();x.moveTo(xx,yy);x.lineTo(xx+w*.08,yy);x.stroke();}
+  // faro
+  const fx=w*(.15+r()*.7),fb=h*.66,fw=h*.05,fh=h*.3;x.fillStyle=night?'#d9d2c8':'#fff';x.fillRect(fx-fw/2,fb-fh,fw,fh);
+  x.fillStyle='#c0392b';for(let i=0;i<3;i++)x.fillRect(fx-fw/2,fb-fh+fh*(.15+i*.3),fw,fh*.1);
+  x.fillStyle=night?'rgba(255,240,170,.95)':'#f6d365';x.fillRect(fx-fw*.6,fb-fh-fw,fw*1.2,fw);
+  if(night){x.fillStyle='rgba(255,240,170,.18)';x.beginPath();x.moveTo(fx,fb-fh-fw/2);x.lineTo(fx+w*.5,fb-fh-h*.12);x.lineTo(fx+w*.5,fb-fh+h*.06);x.closePath();x.fill();}
+  return c.toDataURL('image/jpeg',.85);
+}
+const SC={};const img=(w,h,seed,hue,night)=>{const k=[w,h,seed,hue,night].join();return SC[k]||(SC[k]=scene(w,h,seed,hue,night))};
+
+/* ---------- datos ---------- */
+// hoy: jueves 29 de octubre de 2026. u = [días atrás, 'hh:mm'], pr = [actual, total] (stats.json)
+const A=[
+ {n:'Primera luz',d:'Enciende el primer faro de la costa.',g:'flame',h:28,p:81.2,u:[26,'21:14'],s:1},
+ {n:'Marinera de agua dulce',d:'Completa el tutorial de navegación.',g:'compass',h:200,p:76.5,u:[26,'21:52'],s:1},
+ {n:'Cartógrafa',d:'Descubre 10 islas del archipiélago.',g:'map',h:150,p:54.0,u:[22,'23:05'],s:1},
+ {n:'Pesca milagrosa',d:'Pesca un pez dorado.',g:'fish',h:45,p:31.7,u:[19,'00:41'],s:1},
+ {n:'Sin rumbo',d:'Navega 30 minutos sin abrir el mapa.',g:'feather',h:260,p:22.9,u:[15,'22:30'],s:0},
+ {n:'Coleccionista',d:'Reúne 25 fragmentos de lumen.',g:'gem',h:300,p:40.3,u:[12,'20:18'],s:1},
+ {n:'Tormenta perfecta',d:'Sobrevive a una tormenta sin daños en el casco.',g:'bolt',h:220,p:12.4,u:[9,'23:47'],s:1},
+ {n:'Guardiana del faro',d:'Restaura los cinco faros del norte.',g:'shield',h:190,p:18.8,u:[7,'21:02'],s:1},
+ {n:'Melodía olvidada',d:'Toca la canción de la campana hundida.',g:'bell',h:340,p:4.6,u:[5,'22:11'],s:1},
+ {n:'Leyenda del sur',d:'Derrota al Leviatán de las mareas.',g:'crown',h:50,p:4.2,u:[2,'23:38'],s:1,hid:1},
+ {n:'Noche en vela',d:'Juega una sesión de más de 3 horas.',g:'moon',h:240,p:27.5,u:[2,'01:15'],s:0},
+ {n:'Vida tranquila',d:'Decora tu camarote con 10 objetos.',g:'leaf',h:110,p:35.1,u:[1,'19:40'],s:1},
+ {n:'Ojo de halcón',d:'Avista 50 aves marinas con el catalejo.',g:'eye',h:175,p:15.0,u:[1,'21:26'],s:1},
+ {n:'Corazón de lumen',d:'Despierta el núcleo del faro mayor.',g:'heart',h:0,p:7.9,u:[0,'22:03'],s:1,hid:1},
+ {n:'Archipiélago completo',d:'Descubre las 40 islas.',g:'map',h:150,p:6.3,pr:[23,40]},
+ {n:'Maestra pescadora',d:'Pesca todas las especies.',g:'fish',h:45,p:3.1,pr:[17,31]},
+ {n:'Lectora voraz',d:'Encuentra los 30 diarios del capitán.',g:'book',h:30,p:5.4,pr:[12,30]},
+ {n:'Velocista',d:'Cruza el estrecho en menos de 2 minutos.',g:'bolt',h:60,p:8.8},
+ {n:'Sin una gota',d:'Termina el juego sin reparar el barco.',g:'shield',h:0,p:1.2},
+ {n:'Amiga de todos',d:'Completa los encargos de los 12 fareros.',g:'heart',h:330,p:11.6,pr:[7,12]},
+ {n:'Cazatesoros',d:'Abre los 8 cofres sellados.',g:'key',h:45,p:9.9},
+ {n:'El último faro',d:'Llega al final del viaje.',g:'star',h:50,p:21.4,hid:1},
+ {n:'Más allá de la niebla',d:'Descubre el final secreto.',g:'star',h:280,p:2.1,hid:1},
+ {n:'Calma chicha',d:'Pasa un día entero sin levar anclas.',g:'moon',h:200,p:13.0,hid:1},
+];
+A.forEach((a,i)=>{a.i=i;a.seed=i*7+3;a.night=a.u?(+a.u[1].slice(0,2)>=22||+a.u[1].slice(0,2)<6):0});
+const GOT=A.filter(a=>a.u),TOT=A.length;
+const ago=a=>a.u[0]*1440-(+a.u[1].slice(0,2))*60-(+a.u[1].slice(3));
+const RECENT=[...GOT].sort((p,q)=>ago(p)-ago(q));
+const PEND=A.filter(a=>!a.u).sort((p,q)=>(q.pr?q.pr[0]/q.pr[1]:0)-(p.pr?p.pr[0]/p.pr[1]:0)||q.p-p.p);
+const MES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const WD=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+const dOf=n=>new Date(2026,9,29-n);
+const dShort=a=>a.u[0]===0?`Hoy, ${a.u[1]}`:a.u[0]===1?`Ayer, ${a.u[1]}`:`${dOf(a.u[0]).getDate()} ${MES[dOf(a.u[0]).getMonth()]}, ${a.u[1]}`;
+const dDay=a=>a.u[0]===0?'Hoy':a.u[0]===1?'Ayer':`${dOf(a.u[0]).getDate()} ${MES[dOf(a.u[0]).getMonth()]}`;
+const dLong=a=>{const d=dOf(a.u[0]);return `${WD[d.getDay()]} ${d.getDate()} de octubre, ${a.u[1]}`};
+const pct=p=>String(p).replace('.',',');
+const tierN=a=>a.p<5?2:a.p<15?1:0;
+const tier=a=>`<span class="tier t${tierN(a)}">${['Común','Raro','Ultra raro'][tierN(a)]} · ${pct(a.p)} %</span>`;
+const hoursAt=a=>`${Math.max(1,42-Math.round(a.u[0]*1.45))} h ${String((a.i*17)%60).padStart(2,'0')} min de juego`;
+const isHid=(a,rev)=>!a.u&&a.hid&&!rev;
+function ico(a,sz,o={}){
+  const off=!a.u,hid=isHid(a,o.rev);
+  const cls=['ai',off&&!hid?'off':'',hid?'hid':'',!off&&tierN(a)===2&&!o.plain?'rare':''].join(' ');
+  return `<div class="${cls}" style="--h:${a.h};width:${sz}px;height:${sz}px">${hid?`<b style="font-size:${Math.round(sz*.46)}px">?</b>`:sv(G[a.g])}${off&&!hid&&o.lock?`<span class="lk" style="color:#fff">${I.lock}</span>`:''}</div>`;
+}
+function ring(sz,fr,sw,inner,track='rgba(120,130,150,.22)'){
+  const r=50-sw/2;
+  return `<div class="rg" style="width:${sz}px;height:${sz}px"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="${r}" fill="none" stroke="${track}" stroke-width="${sw}"/><circle cx="50" cy="50" r="${r}" fill="none" stroke="url(#gold)" stroke-width="${sw}" stroke-linecap="round" pathLength="100" stroke-dasharray="${(fr*100).toFixed(1)} 100" transform="rotate(-90 50 50)"/></svg><div class="in">${inner}</div></div>`;
+}
+const FR=GOT.length/TOT,PC=Math.round(FR*100);
+
+/* ---------- piezas de pantalla ---------- */
+const BG=`<div class="bg"><div class="blob w" style="left:-120px;top:-160px;width:620px;height:520px"></div><div class="blob a" style="right:-160px;top:140px;width:640px;height:560px"></div><div class="blob w" style="left:380px;bottom:-260px;width:700px;height:520px"></div></div>`;
+const topBar=cr=>`<div class="glass avatar"><div class="face">${PERSON}</div></div><div class="crumb pill">${cr.map((c,i)=>i===cr.length-1?`<span class="cur">${c}</span>`:`<span>${c}</span><span class="sep">›</span>`).join('')}</div><div class="clock">14:32 <small>jue 29 oct</small><span class="batt"><b></b><b></b><b></b><b class="off"></b></span></div>`;
+const hints=l=>`<div class="hints">${l.map(([b,t,c])=>`<div class="hint pill"><span class="btn ${c}">${b}</span>${t}</div>`).join('')}</div>`;
+const cell=d=>`<span class="c"><b>${d}</b></span>`;
+const odo=`<div class="odo">${[...'042'].map(cell).join('')}<span class="u">h</span>${[...'17'].map(cell).join('')}<span class="u">min</span></div>`;
+const WEEK=[35,0,80,120,45,0,95];
+const weekbars=`<div class="weekbars">${WEEK.map(v=>`<i class="${v?'':'z'}" style="height:${v?Math.max(6,v/120*40):4}px"></i>`).join('')}</div>`;
+const SHOTS=[{seed:101,hue:0,n:1,ach:13},{seed:102,hue:40,n:1},{seed:103,hue:170,n:0,ach:12},{seed:104,hue:300,n:0},{seed:105,hue:90,n:0}];
+function shotRow(){
+  return `<div class="dsect">Capturas<span>128</span></div>`+SHOTS.map((s,i)=>`<div class="glass dshot" data-a="shot" style="left:${64+i*192}px"><div class="face"><div class="sc" style="background-image:url(${img(352,198,s.seed,s.hue,s.n)})"></div>${s.ach!=null?`<span class="camb medb" title="Captura de logro">${I.trophy}</span>`:''}</div></div>`).join('')+
+  `<div class="glass dall" data-a="shot" style="left:${64+5*192}px"><div class="face"><div>Ver todas<span>128 capturas</span></div></div></div>`;
+}
+function fichaBase(o){
+  const hero=img(922,280,7,10,0);
+  return BG+topBar(['Inicio','Juegos','Lumen Drift'])+
+  `<div class="glass banner"><div class="face"><div class="sc" style="background-image:url(${hero})"></div><div class="bshade"></div>${o.band||''}</div></div>
+   <div class="dlogo">Lumen Drift</div>
+   <div class="dchips"><div class="chipx st">${I.play.replace('<svg','<svg style="width:15px;height:15px"')}<b>Jugando</b></div><div class="chipx">${I.cal}<b>Salió el</b><small>14 mar 2025</small></div>${o.chip||''}</div>
+   ${o.cover}
+   <div class="glass play ${o.focus==='play'?'f':''}"><div class="face"><span class="pi">${I.play}</span><span><b>Jugar</b><small>Ejecutable propio</small></span></div></div>
+   <div class="dpanel dhours pill"><div class="hsub">Horas jugadas · 31 sesiones</div>${odo}</div>
+   <div class="dpanel dweek pill"><div class="hsub" style="margin-bottom:6px">Esta semana · 6 h 15 min</div>${weekbars}</div>
+   ${o.extra||''}
+   ${o.row3||shotRow()}`+hints(o.hints||[['A','Seleccionar','a'],['X','Jugar','x'],['B','Volver','b'],['Start','Opciones','sh']]);
+}
+const coverPlain=(f)=>`<div class="glass dcover ${f?'f':''}"><div class="face"><div class="cov"><b>LUMEN<br>DRIFT</b></div></div></div>`;
+
+/* ---------- estado ---------- */
+const S={fA:{mode:'ach',today:0,foc:1},fB:{foc:1},fC:{tab:'ach',foc:0},fD:{foc:1},s1:{f:'all',sel:0,rev:0},s2:{sel:13,rev:0},s3:{tab:'d',sel:13},t1:{n:0}};
+const R={};
+
+R.fA=()=>{
+  const s=S.fA,last=RECENT[0];
+  let cover;
+  if(s.mode==='none'||s.mode==='flip')cover=coverPlain(s.foc).replace('class="cov"',`class="cov ${s.mode==='flip'?'flipin':''}"`);
+  else cover=`<div class="glass dcover ${s.foc?'f':''}" data-a="open"><div class="face"><div class="mcard ${s.flipped?'flipin':''}"><div class="bgc"></div>
+    <div class="lbl">${I.trophy}Logros<em>Y · portada</em></div>
+    ${ring(116,FR,9,`<b>${GOT.length}<small>/${TOT}</small></b><i>${PC} %</i>`,'rgba(255,255,255,.18)')}
+    <div class="last">${ico(last,38,{plain:1})}<div><b>${last.n}</b><small>${s.today?'Hoy · ¡nuevo!':dShort(last)}</small></div></div>
+  </div></div></div>`;
+  const h=s.foc?(s.mode==='none'?[['B','Volver','b'],['Start','Opciones','sh']]:[['A','Logros','a'],['Y',s.mode==='flip'?'Ver logros':'Ver portada','y'],['B','Volver','b'],['Start','Opciones','sh']]):null;
+  return fichaBase({cover,hints:h});
+};
+R.fB=()=>{
+  const s=S.fB;
+  const extra=`<div class="dpanel dach pill fx ${s.foc?'f':''}" data-a="open"><div class="hsub">Logros</div><div class="body">${ring(62,FR,11,`<b>${PC}%</b>`,'rgba(255,255,255,.15)')}<div class="inf"><b>${GOT.length} <small>de ${TOT}</small></b><div class="ic">${RECENT.slice(0,3).map(a=>ico(a,30,{plain:1})).join('')}</div></div></div></div>`;
+  return `<div class="four" style="position:absolute;inset:0">`+fichaBase({cover:coverPlain(),extra,hints:s.foc?[['A','Logros','a'],['X','Jugar','x'],['B','Volver','b'],['Start','Opciones','sh']]:null})+`</div>`;
+};
+R.fC=()=>{
+  const s=S.fC;
+  const tabs=`<div class="seg tabs3 pill"><span class="${s.tab==='shots'?'on':''}" data-a="tab:shots">Capturas <small>128</small></span><span class="${s.tab==='ach'?'on':''}" data-a="tab:ach">${I.trophy.replace('<svg','<svg style="width:16px;height:16px"')}Logros <small>${GOT.length}/${TOT}</small></span></div>`;
+  let row;
+  if(s.tab==='shots'){
+    row=tabs+SHOTS.map((sh,i)=>`<div class="glass dshot" style="left:${64+i*192}px"><div class="face"><div class="sc" style="background-image:url(${img(352,198,sh.seed,sh.hue,sh.n)})"></div>${sh.ach!=null?`<span class="camb medb">${I.trophy}</span>`:''}</div></div>`).join('')+`<div class="glass dall" style="left:${64+5*192}px"><div class="face"><div>Ver todas<span>128 capturas</span></div></div></div>`;
+  }else{
+    const L=[...RECENT.slice(0,5),...PEND.slice(0,3)];
+    row=tabs+`<div class="prog3"><div class="gbar"><i style="width:${PC}%"></i></div>${PC} % · ${GOT.length} de ${TOT}</div>`+
+      L.map((a,i)=>`<div class="glass dmed ${s.foc===i+1?'f':''}" data-a="open" style="left:${64+i*125}px"><div class="face">${ico(a,54,{lock:1})}<small>${a.u?dDay(a):a.pr?`${a.pr[0]}/${a.pr[1]}`:'Pendiente'}</small></div></div>`).join('')+
+      `<div class="glass dall" data-a="open" style="left:${64+8*125}px;width:152px"><div class="face"><div>Ver todos<span>${TOT} logros</span></div></div></div>`;
+  }
+  return fichaBase({cover:coverPlain(),row3:row,hints:[['A','Seleccionar','a'],['LB','RB','sh'],['B','Volver','b'],['Start','Opciones','sh']].map(h=>h[0]==='LB'?['LB · RB','Capturas / Logros','sh']:h)});
+};
+R.fD=()=>{
+  const s=S.fD;
+  const chip=`<div class="chipx gold ${s.foc?'f':''}" data-a="open">${I.trophy}<b>${GOT.length} / ${TOT}</b></div>`;
+  const band=`<div class="band" data-a="open"><div class="ics">${RECENT.slice(0,5).map(a=>ico(a,40,{plain:1})).join('')}</div><div class="txt"><b>${PC} % <small>logros</small></b><div class="gbar"><i style="width:${PC}%"></i></div></div></div>`;
+  return fichaBase({cover:coverPlain(),chip,band,hints:s.foc?[['A','Logros','a'],['X','Jugar','x'],['B','Volver','b'],['Start','Opciones','sh']]:null});
+};
+
+/* 1 · Lista + detalle */
+function list1(){const f=S.s1.f;return f==='got'?RECENT:f==='todo'?PEND:[...RECENT,...PEND]}
+R.s1=()=>{
+  const s=S.s1,L=list1();s.sel=Math.min(s.sel,L.length-1);const a=L[s.sel];
+  const VIS=8,start=Math.max(0,Math.min(s.sel-3,L.length-VIS));
+  let rows='';
+  L.slice(start,start+VIS).forEach((x,k)=>{const j=start+k,hid=isHid(x,s.rev&&j===s.sel);
+    if(s.f==='all'&&j===RECENT.length&&k>0)rows+=`<div class="lgh">Pendientes · de más fácil a más difícil</div>`;
+    rows+=`<div class="arow ${x.u?'':'lock'} ${j===s.sel?'s':''}" data-i="${j}">${ico(x,44,{lock:1,rev:s.rev&&j===s.sel})}<div class="tx"><b>${hid?'Logro oculto':x.n}</b><small>${hid?'Sigue jugando para descubrirlo':x.d}</small>${!x.u&&x.pr?`<div class="gbar"><i style="width:${x.pr[0]/x.pr[1]*100}%"></i></div>`:''}</div><div class="rt">${x.u?`${x.s?I.cam:''}${dDay(x)}`:x.pr?`${x.pr[0]} / ${x.pr[1]}`:`${pct(x.p)} %`}</div></div>`;});
+  const hid=isHid(a,s.rev);
+  let chips=a.u?`<span class="tag2 ok">${I.check}Conseguido · ${dLong(a)}</span><span class="tag2">${I.clock}${hoursAt(a)}</span>${tier(a)}`:`<span class="tag2">${I.lock}Pendiente</span>${tier(a)}${a.pr?`<span class="tag2">${a.pr[0]} / ${a.pr[1]}</span>`:''}`;
+  let cap;
+  if(a.u&&a.s)cap=`<div class="cap1"><div class="sc" style="background-image:url(${img(616,300,a.seed,a.h,a.night)})"></div><div class="ov">${I.cam.replace('<svg','<svg style="width:18px;height:18px"')}Captura automática · ${dShort(a)}<span class="bt"><span class="btn a mini">A</span>Ver en el visor</span></div></div>`;
+  else if(a.u)cap=`<div class="cap1 empty">${I.cam}No hay captura de este momento<small>El logro es de antes de activar la captura automática (o estaba desactivada). Con <span class="btn a mini" style="display:inline-grid">A</span> se abre la captura más cercana: 1 de enero, 01:22.</small></div>`;
+  else cap=`<div class="cap1 empty">${I.cam}${hid?'Logro oculto':'Aún no conseguido'}<small>${hid?'Pulsa X si quieres ver de qué se trata (spoiler).':'Cuando lo consigas se hará una captura automática y aparecerá aquí.'}</small>${a.pr?`<div class="gbar"><i style="width:${a.pr[0]/a.pr[1]*100}%"></i></div><small>${a.pr[0]} de ${a.pr[1]} · leído de stats.json</small>`:''}</div>`;
+  return BG+topBar(['Inicio','Juegos','Lumen Drift','Logros'])+
+  `<div class="l1h"><div class="tot pill">${ring(40,FR,14,'')}<b>${GOT.length}<small>de ${TOT} logros · ${PC} %</small></b></div>
+    <div class="seg pill"><span class="${s.f==='all'?'on':''}" data-f="all">Todos <small>${TOT}</small></span><span class="${s.f==='got'?'on':''}" data-f="got">Conseguidos <small>${GOT.length}</small></span><span class="${s.f==='todo'?'on':''}" data-f="todo">Pendientes <small>${TOT-GOT.length}</small></span></div>
+    <div class="r"><span class="tag2 src">${I.db}Locales · GSE Saves</span></div></div>
+   <div class="panel lst1">${rows}</div>
+   <div class="panel det1"><div class="hd">${ico(a,96,{lock:1,rev:s.rev})}<div><h3>${hid?'Logro oculto':a.n}</h3><p>${hid?'Los logros ocultos no enseñan su nombre ni su descripción hasta que los consigues.':a.d}</p><div class="chips">${chips}</div></div></div>${cap}</div>`+
+  hints([['A',a.u?'Ver captura':'Seleccionar','a'],...(isHid(a,0)?[['X',s.rev?'Ocultar':'Revelar','x']]:[]),['LB · RB','Filtro','sh'],['B','Volver','b']]);
+};
+
+/* 2 · Vitrina */
+R.s2=()=>{
+  const s=S.s2,a=A[s.sel],hid=isHid(a,s.rev);
+  const tiles=A.map((x,i)=>{const c=i%8,r=Math.floor(i/8);return `<div class="glass vt ${i===s.sel?'f':''}" data-i="${i}" style="left:${71+c*144}px;top:${242+r*140}px"><div class="face">${ico(x,92,{lock:1,rev:s.rev&&i===s.sel})}${x.u&&x.s?`<span class="camb">${I.cam}</span>`:''}</div></div>`}).join('');
+  const rare=GOT.filter(x=>tierN(x)===2).length;
+  return BG+topBar(['Inicio','Juegos','Lumen Drift','Logros'])+
+  `<div class="v2h">${ring(128,FR,10,`<b>${GOT.length}<small>/${TOT}</small></b><i>${PC} %</i>`)}
+    <div class="foc pill"><h3>${hid?'Logro oculto':a.n} ${a.u?`<span class="tag2 ok">${I.check}${dShort(a)}</span>`:`<span class="tag2">${I.lock}Pendiente</span>`}</h3><p>${hid?'Pulsa X para ver la descripción (spoiler).':a.d}</p><div class="chips">${tier(a)}${a.u&&a.s?`<span class="tag2">${I.cam}Con captura</span>`:''}${a.pr&&!a.u?`<span class="tag2">${a.pr[0]} / ${a.pr[1]}</span>`:''}</div></div>
+    <div class="sts"><div class="pill">Ultra raros<b>${rare}</b></div><div class="pill">Último<b>${dDay(RECENT[0])}</b></div><div class="pill">Con captura<b>${GOT.filter(x=>x.s).length}</b></div></div></div>`+tiles+
+  hints([['A',a.u&&a.s?'Ver captura':'Seleccionar','a'],...(isHid(a,0)?[['X',s.rev?'Ocultar':'Revelar','x']]:[]),['Y','Vista de lista','y'],['B','Volver','b']]);
+};
+
+/* 3 · Diario */
+const CHR=[...GOT].sort((p,q)=>ago(q)-ago(p));
+const PLAY=[95,120,0,45,80,0,35,150,60,0,110,40,0,0,75,130,0,55,0,90,20,0,0,60,0,0,140,85]; // minutos, índice = días atrás
+R.s3=()=>{
+  const s=S.s3;
+  let body;
+  if(s.tab==='p'){
+    body=`<div class="panel pend3"><div style="font-size:18px;font-weight:800">Te faltan ${PEND.length} <small style="font-size:14px;color:#8a92a0;margin-left:6px">ordenados de más fácil a más difícil</small></div><div class="grid">${PEND.map(a=>`<div class="it">${ico(a,42,{lock:1})}<div><b>${isHid(a)?'Logro oculto':a.n}</b><small>${isHid(a)?'Sigue jugando para descubrirlo':a.d}</small>${a.pr?`<div class="gbar"><i style="width:${a.pr[0]/a.pr[1]*100}%"></i></div>`:''}</div>${tier(a)}</div>`).join('')}</div></div>`;
+  }else{
+    const k=CHR.findIndex(a=>a.i===s.sel),sel=k<0?CHR.length-1:k;
+    const cards=CHR.map((a,j)=>{const left=640-125+(j-sel)*274;if(left<-300||left>1300)return '';
+      return `<div class="card3 ${j===sel?'s':''}" data-i="${a.i}" style="left:${left}px"><div class="th ${a.s?'':'none'}" style="${a.s?`background-image:url(${img(468,264,a.seed,a.h,a.night)})`:''}">${a.s?'':'Sin captura'}</div>${ico(a,54)}<span class="tr">${tier(a)}</span><div class="nm">${a.n}</div><div class="ds">${a.d}</div><div class="wh"><span>${dShort(a)}</span><span>${Math.max(1,42-Math.round(a.u[0]*1.45))} h jugadas</span></div></div>`}).join('');
+    const X=d=>1152-d*(1152/27);
+    const bars=PLAY.map((m,d)=>m?`<div class="bar" style="left:${X(d)}px;height:${Math.max(4,m/150*40)}px"></div>`:'').join('');
+    const cnt={};const dots=CHR.map(a=>{const d=a.u[0];cnt[d]=(cnt[d]||0)+1;return `<div class="dot ${a.i===s.sel?'s':''}" data-i="${a.i}" style="left:${X(d)}px;top:${68-(cnt[d]-1)*20}px"></div>`}).join('');
+    const ticks=[27,21,14,7,1,0].map(d=>`<div class="tk" style="left:${X(d)}px">${d===0?'Hoy':d===1?'Ayer':`${dOf(d).getDate()} ${MES[dOf(d).getMonth()]}`}</div>`).join('');
+    body=cards+`<div class="trk"><div class="lg"><span><i style="background:color-mix(in srgb,var(--acc) 35%,white)"></i>Minutos jugados</span><span><i style="background:var(--gold);border-radius:50%"></i>Logro</span></div>${bars}<div class="ln"></div>${dots}${ticks}</div>`;
+  }
+  return BG+topBar(['Inicio','Juegos','Lumen Drift','Logros'])+
+  `<div class="d3h"><h3>${s.tab==='p'?'Pendientes':'Diario de logros'}</h3><small>${GOT.length} logros en 27 días · ${GOT.filter(a=>a.s).length} con captura</small>
+   <div class="seg pill"><span class="${s.tab==='d'?'on':''}" data-a="tab:d">Diario <small>${GOT.length}</small></span><span class="${s.tab==='p'?'on':''}" data-a="tab:p">Pendientes <small>${PEND.length}</small></span></div></div>`+body+
+  hints([['A','Ver captura','a'],['LB · RB','Diario / Pendientes','sh'],['B','Volver','b']]);
+};
+
+/* Aviso en el juego */
+R.t1=()=>{
+  const a=A[13];
+  return `<div class="game" style="background-image:url(${img(1280,720,a.seed,a.h,1)})"></div><div class="hud"><i></i><i></i><i></i></div><div class="flash"></div>
+  <div class="atoast">${ico(a,66,{plain:1})}<div class="tx"><em>Logro desbloqueado</em><b>${a.n}</b><small>Raro · ${pct(a.p)} % de jugadores · 14 de 24</small></div><div class="cm"><span>${I.check}</span>Captura</div></div>
+  <div class="peek" style="background-image:url(${img(480,270,a.seed,a.h,1)})"><span>${I.trophy.replace('<svg','<svg style="width:12px;height:12px;display:inline;vertical-align:-1px"')} ${a.n}</span></div>`;
+};
+
+/* ---------- montaje e interacción ---------- */
+let active=null;
+function toast(id,msg){const st=document.getElementById(id);const t=document.createElement('div');t.className='toast';t.textContent=msg;st.appendChild(t);setTimeout(()=>t.remove(),1800)}
+function render(id){document.getElementById(id).innerHTML=R[id]();syncCtl(id)}
+function syncCtl(id){const c=document.querySelector(`.ctl[data-st="${id}"]`);if(!c)return;c.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.k!=='replay'&&String(S[id][b.dataset.k])===b.dataset.v))}
+const OPEN='Abre la pantalla de Logros (diseños 1, 2 o 3)';
+Object.keys(R).forEach(id=>{
+  const st=document.getElementById(id);render(id);
+  const fr=st.parentElement;
+  fr.addEventListener('mousedown',()=>{active=id;document.querySelectorAll('.frame').forEach(f=>f.classList.toggle('act',f===fr))});
+  st.addEventListener('click',e=>{
+    const s=S[id];const t=e.target.closest('[data-a],[data-i],[data-f]');if(!t)return;
+    const a=t.dataset.a;
+    if(a==='open')return toast(id,OPEN);
+    if(a==='shot')return toast(id,'Abre la captura en el visor');
+    if(a&&a.startsWith('tab:')){s.tab=a.slice(4);return render(id)}
+    if(t.dataset.f){s.f=t.dataset.f;s.sel=0;s.rev=0;return render(id)}
+    if(t.dataset.i!=null){const i=+t.dataset.i;if(s.sel===i&&id!=='s1'){const x=A[i];return toast(id,x.u&&x.s?'Abre la captura de «'+x.n+'» en el visor':'Este logro no tiene captura')}if(id==='s1'&&s.sel===i){const x=list1()[i];return toast(id,x.u&&x.s?'Abre la captura en el visor':'Sin captura')}s.sel=i;s.rev=0;return render(id)}
+  });
+});
+document.querySelectorAll('.ctl').forEach(c=>c.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;const id=c.dataset.st,s=S[id];
+  if(b.dataset.k==='replay')return render(id);
+  if(b.dataset.k==='today'){s.today^=1;if(s.mode!=='ach')s.mode='ach';}else s[b.dataset.k]=b.dataset.v;
+  s.flipped=b.dataset.k==='mode'&&b.dataset.v==='ach';render(id);s.flipped=0;
+}));
+addEventListener('keydown',e=>{
+  if(!active)return;const id=active,s=S[id],k=e.key;
+  if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Enter','Escape','y','Y','x','X'].includes(k))return;
+  e.preventDefault();
+  if(k==='Escape')return toast(id,id.startsWith('f')?'B: volver a la biblioteca':'B: volver a la ficha del juego');
+  if(id==='fA'){if(k==='y'||k==='Y'){if(s.mode==='none')return;s.mode=s.mode==='flip'?'ach':'flip';s.flipped=s.mode==='ach';render(id);s.flipped=0;return}
+    if(k==='Enter')return s.foc&&s.mode!=='none'?toast(id,OPEN):toast(id,'Jugar');
+    if(k==='ArrowRight'||k==='ArrowUp'){s.foc=1}if(k==='ArrowLeft'||k==='ArrowDown'){s.foc=0}return render(id)}
+  if(id==='fB'||id==='fD'){if(k==='Enter')return toast(id,s.foc?OPEN:'Jugar');if(k==='ArrowRight'||k==='ArrowUp')s.foc=1;if(k==='ArrowLeft'||k==='ArrowDown')s.foc=0;return render(id)}
+  if(id==='fC'){if(k==='Enter')return toast(id,s.foc?OPEN:'Seleccionar');if(s.tab!=='ach')return;if(k==='ArrowRight')s.foc=Math.min(8,s.foc+1);if(k==='ArrowLeft')s.foc=Math.max(0,s.foc-1);return render(id)}
+  if(id==='s1'){const L=list1();if(k==='ArrowDown'){s.sel=Math.min(L.length-1,s.sel+1);s.rev=0}if(k==='ArrowUp'){s.sel=Math.max(0,s.sel-1);s.rev=0}
+    if(k==='ArrowRight'||k==='ArrowLeft'){const F=['all','got','todo'];s.f=F[(F.indexOf(s.f)+(k==='ArrowRight'?1:2))%3];s.sel=0;s.rev=0}
+    if(k==='x'||k==='X')s.rev^=1;if(k==='Enter'){const x=L[s.sel];return toast(id,x.u&&x.s?'Abre la captura en el visor':'Sin captura')}return render(id)}
+  if(id==='s2'){const d={ArrowLeft:-1,ArrowRight:1,ArrowUp:-8,ArrowDown:8}[k];if(d){s.sel=Math.max(0,Math.min(A.length-1,s.sel+d));s.rev=0}
+    if(k==='x'||k==='X')s.rev^=1;if(k==='y'||k==='Y')return toast(id,'Cambia a la vista de lista (diseño 1)');if(k==='Enter'){const x=A[s.sel];return toast(id,x.u&&x.s?'Abre la captura en el visor':'Sin captura')}return render(id)}
+  if(id==='s3'){if(s.tab!=='d')return;const j=CHR.findIndex(a=>a.i===s.sel);if(k==='ArrowLeft'&&j>0)s.sel=CHR[j-1].i;if(k==='ArrowRight'&&j<CHR.length-1)s.sel=CHR[j+1].i;if(k==='Enter')return toast(id,'Abre la captura en el visor');return render(id)}
+  if(id==='t1'&&k==='Enter')return render(id);
+});
+function fit(){document.querySelectorAll('.frame').forEach(f=>{f.firstElementChild.style.transform=`scale(${f.clientWidth/1280})`})}
+addEventListener('resize',fit);fit();
+</script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 //! Logica del visor de capturas independiente de Tauri, para poder probarla con `cargo test`.
+pub mod achievements;
 pub mod art;
 pub mod audio;
 pub mod backup;

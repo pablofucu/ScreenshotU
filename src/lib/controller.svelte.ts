@@ -24,6 +24,7 @@ import { libraryCmd, loadLibraryInfo, openLibrary } from './library.svelte';
 import { addCollCmd, collCmd, collFirst, collFormCmd, collKey, collReveal, collTab, collValid, loadCollections, openAddColl, openCollForm, pickerCmd, resetColl, setCollFocus } from './coleccion.svelte';
 import { makeMoved } from './pointer';
 import { openRelease, releaseCmd } from './release.svelte';
+import { achievementsCmd, cycleCardVariant, openAchievementsModal } from './achievements.svelte';
 import { checkStalled, listCmd, listFirst, listHas, listReveal, listTab, onLaunched, openStatusBar, resetList, stalledCmd, statusBarCmd } from './milista.svelte';
 
 export const GRID_VIEW_H = 480;
@@ -107,6 +108,7 @@ function validKey(view: View, key: string | undefined): string | undefined {
     const t = app.platform?.titles[app.t];
     if (!t) return undefined;
     if (key === 'play') return t.launchable ? key : undefined;
+    if (key === 'dach') return key;
     if (/^ds\d+$/.test(key)) return n < Math.min(DETAIL_SHOTS, t.shots.length) ? key : undefined;
     if (key === 'dall') return t.shots.length ? key : undefined;
     if (key === 'dhrs' || (key === 'dwk' && t.launchable)) return t.plays?.length ? key : undefined;
@@ -583,6 +585,9 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
     if (ti !== undefined) openTitle(ti); else if (sh) openCollForm(sh.coll.id);
   } else if (a === 'cnew') {
     openCollForm();
+  } else if (a === 'achievements') {
+    const t = app.platform?.titles[app.t];
+    if (t) openAchievementsModal(t.gameId ?? t.dir, t.name, t.cover ?? t.shots[0]?.path);
   } else if (a === 'play') {
     const t = app.platform?.titles[app.t];
     if (t) void playTitle(t);
@@ -1524,6 +1529,7 @@ function overlayCmd(c: string) {
     case 'status': statusBarCmd(c); return;
     case 'release': releaseCmd(c); return;
     case 'stalled': stalledCmd(c); return;
+    case 'achievements': achievementsCmd(c); return;
   }
   // Arriba/abajo pasan de una sección a la siguiente al llegar al borde; LB/RB (o LT/RT) saltan de sección.
   const rows = secRows();
@@ -1732,7 +1738,14 @@ export function cmd(c: string) {
       if (app.view === 'titles') {
         if (app.titlesTab === 'all') toggleTitlesView(); else openTitlesMenu();
       }
-      else if (app.view === 'detail') openDetailMenu();
+      else if (app.view === 'detail') {
+        if (app.focus === 'dach') {
+          const t = app.platform?.titles[app.t];
+          if (t) void cycleCardVariant(t.gameId ?? t.dir);
+        } else {
+          openDetailMenu();
+        }
+      }
       else if (app.view === 'shots') cycleSort();
       else if (app.view === 'stats') toggleStatsTab();
       else if (app.view === 'evo') openGameStats('title');

@@ -142,6 +142,10 @@ pub fn start(app: &AppHandle, game: Game) -> Result<(), String> {
         let (app2, game2, pids2) = (app.clone(), game.clone(), pids.clone());
         std::thread::spawn(move || crate::novel::on_launch(app2, game2, pids2));
     }
+    {
+        let (app2, game2) = (app.clone(), game.clone());
+        std::thread::spawn(move || crate::achievements::on_launch(app2, game2));
+    }
     let app2 = app.clone();
     let tele = Arc::new(Telemetry::default());
     {
