@@ -52,10 +52,10 @@ fn resolve_game_info(state: &AppState, game_id: &str, app_id_hint: Option<&str>)
             return (Some(rest.to_string()), game_dir);
         }
 
-        return (None, game_dir);
+        return (Some(game_id.to_string()), game_dir);
     }
 
-    (None, None)
+    (Some(game_id.to_string()), None)
 }
 
 /// Sincroniza schema y runtime desde disco hacia la base SQLite y devuelve la lista de logros.

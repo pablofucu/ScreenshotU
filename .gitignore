@@ -6,3 +6,5 @@ src-tauri/gen
 
 .claude/worktrees/
 .claude/settings.local.json
+
+prueba-logros-bin/

@@ -952,8 +952,43 @@ pub fn run() {
                 .build(),
         )
         .setup(|app| {
-            let config_dir = app.path().app_config_dir()?;
-            let cache_dir = app.path().app_cache_dir()?;
+            let exe_dir = std::env::current_exe()
+                .ok()
+                .and_then(|p| p.parent().map(|d| d.to_path_buf()));
+            let is_test_env = exe_dir
+                .as_ref()
+                .map(|d| d.join("test_data").is_dir() || d.join("test_library").is_dir())
+                .unwrap_or(false)
+                || std::env::args().any(|a| a == "--test")
+                || std::env::current_exe()
+                    .ok()
+                    .and_then(|e| e.file_name().and_then(|n| n.to_str()).map(|s| s.to_lowercase().contains("prueba") || s.to_lowercase().contains("test")))
+                    .unwrap_or(false);
+
+            let (config_dir, cache_dir) = if let Ok(custom) = std::env::var("VISOR_CONFIG_DIR") {
+                let p = PathBuf::from(custom);
+                let c = p.join("cache");
+                (p, c)
+            } else if is_test_env {
+                let d = exe_dir.unwrap_or_else(|| PathBuf::from("."));
+                let cfg = d.join("test_data");
+                let cache = cfg.join("cache");
+                let _ = std::fs::create_dir_all(&cfg);
+                let _ = std::fs::create_dir_all(&cache);
+                let test_lib = d.join("test_library");
+                let _ = std::fs::create_dir_all(&test_lib);
+                if !cfg.join("biblioteca.json").is_file() {
+                    let p = visor_core::library::Pointer {
+                        dir: test_lib.to_string_lossy().into_owned(),
+                        previous: String::new(),
+                    };
+                    let _ = visor_core::library::write_pointer(&cfg, &p);
+                }
+                eprintln!("[MODO PRUEBA ACTIVADO] Usando datos aislados en: {}", cfg.display());
+                (cfg, cache)
+            } else {
+                (app.path().app_config_dir()?, app.path().app_cache_dir()?)
+            };
             // Donde estan los datos: la biblioteca, lo de antes (asistente pendiente) o una biblioteca que no se encuentra.
             let (lib_mode, lib_dir) = library::resolve(&config_dir);
             let early = library::early_paths(&lib_mode, &lib_dir, &config_dir, &cache_dir);
@@ -1063,6 +1098,9 @@ pub fn run() {
             display::restore_primary(&st.config_dir);
             // Se abre en el monitor del cursor (si esta activado en Ajustes) o en el de la ultima vez.
             if let Some(w) = app.get_webview_window("main") {
+                if is_test_env {
+                    let _ = w.set_title("Visor de capturas · [PRUEBA DE LOGROS - BASE AISLADA]");
+                }
                 let on_cursor = st.config.lock().unwrap().open_on_cursor;
                 let target = on_cursor.then(display::of_cursor).flatten().or_else(|| {
                     let saved = display::saved_window_monitor(&st.config_dir)?;
