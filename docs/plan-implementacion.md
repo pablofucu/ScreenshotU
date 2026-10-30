@@ -54,3 +54,34 @@ Estado: **nada se programa todavía**. Este documento ordena el trabajo para cua
 3. ❓ Aspecto final del degradado y del foco con los colores del juego (`sistema-v4`).
 4. ❓ ¿Dónde se guarda el «fijar»? (confirmar al empezar la fase 3).
 5. ❓ ¿Los umbrales 14/90 días se ajustan en Ajustes o quedan fijos?
+
+## 5. Traspaso a la siguiente sesión (2026-10-31)
+
+Estado: **planificación terminada a falta de 4 decisiones; no se ha programado nada** (`src/` y `src-tauri/` intactos).
+
+### Qué hay en `mockups/` (todo subido a GitHub)
+- `milista-v3.html` → **elegida la propuesta 3, Tablero de franjas** (resto descartadas).
+- `sistema-v4.html` → 9 vistas (teclas 1-9, `D` cambia claro/oscuro): V1 Cristal teñido, V2 Hilo nácar, V3 Atmósfera, algoritmo de dos tonos (`--g1`, `--g2`, `--grad`), dosis, 12 portadas, **Noche ahumada** (modo oscuro oficial), constitución (10 reglas) y código (`extraerDosTonos`, `tonosDelJuego`, `variablesCSS(h1,h2,modo)`).
+- `sistema-v3.html` → **rechazado** (el degradado solo salía en barras de progreso y el foco usaba el arcoíris global).
+- `logros-1-lista`, `logros-2-mosaico`, `logros-3-rareza` → sin elegir.
+- `propuesta-1..3.html` son ficheros propios del usuario (sin versionar; no tocar).
+- Informe de diagnóstico: `docs/informe-interfaz.md`.
+
+### Decisiones tomadas
+1. Mi lista = Tablero de franjas, portadas del mismo tamaño, modelo automático (En marcha / A medias / Pendiente / Aparcado / Terminado por año; X fija; aviso discreto a ≤10 días).
+2. El foco y los degradados usan los **dos colores del juego**, en toda la interfaz (no solo barras). El arcoíris global solo en pantallas sin juego. Sin borde arcoíris continuo.
+3. El color de la portada solo decide el tono; el sistema fija luminosidad y saturación (OKLCH).
+4. **Noche ahumada** (con neón) = modo oscuro oficial.
+5. Las vistas (mockups de pantallas) se quedan como están.
+6. Las categorías de la biblioteca no se tocan (`CLAUDE.md`).
+
+### Decisiones abiertas (empezar por aquí)
+1. ❓ Dosis del degradado en `sistema-v4`: V1 Cristal teñido, V2 Hilo nácar o V3 Atmósfera (el usuario aún no ha elegido).
+2. ❓ Logros: lista, mosaico o rareza.
+3. ❓ Nombre del cubo «Aparcado»: Aparcados / En el cajón / Archivo.
+4. ❓ Dónde se guarda «fijar» (mirar dónde vive `listPos`) y si los umbrales 14/90 días se ajustan en Ajustes.
+
+### Cómo retomar
+- Con la dosis elegida, pasar a la **Fase 1** (tokens + variante oscura + `--g1/--g2/--grad`). Reutilizar `src/lib/oklch.ts`; la réplica de Rust está en `visor_core::palette`.
+- Verificar con `http://localhost:5173/?mock` (sin `?mock` sale pantalla negra).
+- Cada cambio de código: commit + push (ver `CLAUDE.md`). Cuidado con los finales de línea mixtos (LF/CRLF).
