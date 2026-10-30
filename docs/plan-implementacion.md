@@ -10,6 +10,7 @@ Estado: **nada se programa todavía**. Este documento ordena el trabajo para cua
 | Modelo de estados | En marcha (≤14 d) · A medias (15–90 d) · Pendiente (manual) · Aparcado (>90 d o abandonado) · Terminado (por año). X fija un juego. Aviso discreto «Se aparca en N d» cuando faltan ≤10. |
 | Logros | Se mantienen las propuestas `logros-1/2/3`; ❓ falta elegir. |
 | Color por juego | Se conserva el algoritmo de v3: la portada decide el **tono**, el sistema fija luminosidad y saturación. Falta cerrar el aspecto visual (ver `sistema-v4.html`, en curso). |
+| Modo oscuro | **«Noche ahumada»** (con neón, de `mockups/propuestas-v2.html`) se implementa como el modo oscuro oficial. Los tokens de superficie y texto deben tener variante oscura desde la fase 1. |
 | Categorías | No se tocan (ver `CLAUDE.md`). |
 
 ## 1. Lo que ya existe y se reutiliza
@@ -23,6 +24,7 @@ Estado: **nada se programa todavía**. Este documento ordena el trabajo para cua
 ### Fase 1 · Tokens y base visual (sin cambios de pantalla)
 - Añadir a `src/app.css` los tokens: radios (6/12/18/28/999), tipografía (11/13/15/17/20/28/44), espaciado (múltiplos de 4), superficies y texto (`--ink`, `--ink-2`, `--ink-3`, `--line`, `--face`, `--face-hi`), tres niveles de cristal (`glass`, `glass-in`, `glass-chip`).
 - Variables de color de juego (`--g1`, `--g2`, `--grad`) calculadas en un único sitio del store a partir del tono de la portada; fallback al arcoíris global.
+- Incluir la variante «Noche ahumada» de los tokens (`[data-theme=dark]` o equivalente) y un ajuste para elegir tema.
 - Riesgo bajo: solo se añaden variables, no se cambia ninguna regla existente.
 
 ### Fase 2 · Foco y degradado del sistema
