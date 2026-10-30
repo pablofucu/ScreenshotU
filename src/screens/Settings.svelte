@@ -14,11 +14,12 @@
   import Learn from '../components/Learn.svelte';
   import Hints from '../components/Hints.svelte';
   import { makeMoved } from '../lib/pointer';
+  import { VARIANT_NAMES } from '../lib/achievements.svelte';
 
   const yn = (b: boolean) => (b ? 'Sí' : 'No');
 
   // Filas que cambian de valor con izquierda/derecha (se marcan con ‹ › al enfocarlas).
-  const CYCLE = new Set<SettingId>(['showhidden', 'view', 'shotsview', 'shotsorder', 'collstyle', 'accent', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'inputmouse', 'inputkeys', 'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay']);
+  const CYCLE = new Set<SettingId>(['showhidden', 'view', 'shotsview', 'shotsorder', 'collstyle', 'accent', 'achcardvariant', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'inputmouse', 'inputkeys', 'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay']);
 
   /** Contenido de cada fila (etiqueta, valor y ayuda). Se evalúa al pintar: depende del estado vivo de la app. */
   type Row = { l: string; v: string; d: string };
@@ -29,6 +30,10 @@
     hidden: () => ({ l: 'Juegos ocultos', v: app.lib.hidden.length ? `${app.lib.hidden.length}` : 'Ninguno', d: 'Lista de juegos ocultos desde su ficha (Y → Ocultar juego) para volver a mostrarlos. Sus archivos no se tocan.' }),
     showhidden: () => ({ l: 'Mostrar ocultos (atenuados)', v: yn(app.config.showHidden), d: 'Enseña los juegos ocultos en las listas, atenuados y con una marca, en vez de quitarlos.' }),
     accent: () => ({ l: 'Color de acento', v: accentState() === 0 ? 'Del juego (automático)' : accentState() === 1 ? 'Arcoíris' : RAINBOW[app.config.accentFixed].n, d: '«Del juego» saca el color del hero y la portada de cada juego. También puedes usar el arcoíris o un color fijo. Cada juego puede tener el suyo desde su ficha (Y → Color de acento).' }),
+    achcardvariant: () => {
+      const v = app.config.achievementsCardVariant ?? 1;
+      return { l: 'Diseño de logros en la ficha', v: `${v} · ${VARIANT_NAMES[v] ?? 'Anillo'}`, d: 'Diseño visual con el que se muestra la tarjeta de logros en la ficha de todos tus juegos: 1 · Anillo dorado + último logro, 2 · Portada + banda inferior, 3 · Mosaico de la colección (todos los iconos), 4 · Medalla de rango, 7 · Contador rodillo u 8 · Por rareza. Cambia para todos los juegos a la vez.' };
+    },
     view: () => ({ l: 'Vista de títulos', v: app.config.titlesView === 'grid' ? 'Cuadrícula' : 'Carrusel', d: 'Cuadrícula paginada de 5×2 o carrusel con la portada enfocada en grande. También se cambia con Y en la lista.' }),
     shotsview: () => ({ l: 'Cuadrícula de capturas', v: app.config.shotsView === 'days' ? 'Agrupada por días' : 'Continua', d: 'Agrupada por días pone una cabecera por día (con lo que jugaste ese día) y una línea de tiempo por meses; LT/RT saltan de día. Solo con orden por fecha. También se cambia con el botón View.' }),
     shotsorder: () => ({ l: 'Orden de las capturas', v: app.config.shotsOrder === 'oldest' ? 'Más antiguas primero' : 'Más recientes primero', d: 'Orden con el que se abre cualquier lista de capturas: la de un juego, una saga, las favoritas o las agrupadas por días. Si un juego tiene su propio orden (Y en su lista de capturas), ese manda en ese juego.' }),

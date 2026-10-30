@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { app } from '../lib/store.svelte';
   import { backend, thumbNow, decodeImg } from '../lib/backend';
   import { ICON } from '../lib/icons';
   import {
@@ -21,7 +22,7 @@
 
   const { gameId, title, coverPath, summary, focused }: Props = $props();
 
-  const variant = $derived(summary?.variant ?? 1);
+  const variant = $derived(app.config.achievementsCardVariant ?? summary?.variant ?? 1);
   const total = $derived(summary?.total ?? 0);
   const unlocked = $derived(summary?.unlocked ?? 0);
   const pct = $derived(summary?.percentage ?? 0);

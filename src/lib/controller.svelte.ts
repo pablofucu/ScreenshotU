@@ -1209,7 +1209,7 @@ export function wake() {
 
 /* ---------- ajustes ---------- */
 export type SettingId =
-  | 'root' | 'rescan' | 'addgame' | 'hidden' | 'showhidden' | 'view' | 'shotsview' | 'shotsorder' | 'collstyle' | 'accent' | 'sound' | 'fullscreen' | 'monitor' | 'oncursor'
+  | 'root' | 'rescan' | 'addgame' | 'hidden' | 'showhidden' | 'view' | 'shotsview' | 'shotsorder' | 'collstyle' | 'accent' | 'achcardvariant' | 'sound' | 'fullscreen' | 'monitor' | 'oncursor'
   | 'audioout' | 'audiocombo' | 'audiohotkey' | 'hotkey' | 'combo' | 'mouse' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caponly' | 'caprumble' | 'quit'
   | 'sgdbkey' | 'sgdbauto' | 'sgdbnow' | 'sgdbgame'
   | 'backup' | 'backupmedia' | 'restore' | 'autobackup'
@@ -1244,7 +1244,7 @@ export const SETTING_SECTIONS: Array<{ name: string; icon: string; color: number
     icon: 'palette',
     color: 1,
     rows: [
-      'accent', 'view', 'shotsview', 'shotsorder', 'collstyle',
+      'accent', 'achcardvariant', 'view', 'shotsview', 'shotsorder', 'collstyle',
       'sgdbkey', 'sgdbauto', 'sgdbnow', 'sgdbgame',
     ],
   },
@@ -1465,6 +1465,13 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'shotsorder') { void patchConfig({ shotsOrder: app.config.shotsOrder === 'oldest' ? 'recent' : 'oldest' }); blip(1320); }
   else if (id === 'collstyle') { void patchConfig({ collectionsStyle: app.config.collectionsStyle === 'aurora' ? 'multi' : 'aurora' }); blip(1320); }
   else if (id === 'accent') cycleAccent(dir || 1);
+  else if (id === 'achcardvariant') {
+    const cur = app.config.achievementsCardVariant ?? 1;
+    const variants = [1, 2, 3, 4, 7, 8];
+    const nxt = cycleIn(variants, cur, dir || 1);
+    void patchConfig({ achievementsCardVariant: nxt });
+    blip(1320);
+  }
   else if (id === 'sound') { void patchConfig({ sound: !app.config.sound }); blip(1320); }
   else if (id === 'fullscreen') void toggleFullscreen();
   else if (id === 'monitor') { void refreshMonitor(dir || 1); blip(880); }

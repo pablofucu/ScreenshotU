@@ -2,7 +2,7 @@
 import { app } from './store.svelte';
 import { backend } from './backend';
 import { blip } from './sound';
-import { closeOverlay, pushOverlay, toast } from './controller.svelte';
+import { closeOverlay, patchConfig, pushOverlay, toast } from './controller.svelte';
 import type { Achievement, AchievementSummary } from './types';
 
 export const VALID_VARIANTS = [1, 2, 3, 4, 7, 8] as const;
@@ -69,7 +69,9 @@ export async function loadGameAchievements(gameId: string, appId?: string) {
       backend.getGameAchievements(gameId, appId),
     ]);
     if (achState.gameId === gameId) {
-      achState.summary = summary;
+      achState.summary = summary
+        ? { ...summary, variant: app.config.achievementsCardVariant ?? summary.variant }
+        : null;
       achState.list = list;
       if (achState.selectedIdx >= list.length) {
         achState.selectedIdx = 0;
@@ -84,18 +86,21 @@ export async function loadGameAchievements(gameId: string, appId?: string) {
   }
 }
 
-export async function cycleCardVariant(gameId: string) {
-  const cur = achState.summary?.variant ?? 1;
+export async function cycleCardVariant(gameId?: string) {
+  const cur = app.config.achievementsCardVariant ?? achState.summary?.variant ?? 1;
   const nxt = nextVariant(cur);
   if (achState.summary) {
     achState.summary.variant = nxt;
   }
   blip(1200);
-  toast(`Variante de logros: ${VARIANT_NAMES[nxt]}`, 1500);
-  try {
-    await backend.setAchievementsCardVariant(gameId, nxt);
-  } catch (err) {
-    console.error('Error al guardar preferencia de variante:', err);
+  toast(`Diseño de logros: ${VARIANT_NAMES[nxt]}`, 1500);
+  await patchConfig({ achievementsCardVariant: nxt }).catch(() => {});
+  if (gameId) {
+    try {
+      await backend.setAchievementsCardVariant(gameId, nxt);
+    } catch (err) {
+      console.error('Error al guardar preferencia de variante:', err);
+    }
   }
 }
 

@@ -211,7 +211,7 @@
     <div class="nolaunch pill"><b>Sin lanzador</b><small>Usa «Añadir juego» en Inicio</small></div>
   {/if}
 
-  <div class="dpanel dhours pill" class:fx={hasPlays} class:f={app.focus === 'dhrs'} data-k="dhrs" data-act="evo" class:jvn={isJvn}>
+  <div class="dpanel dhours pill" class:fx={hasPlays} class:f={app.focus === 'dhrs'} data-k="dhrs" data-act="evo">
     <div class="hsub">Horas jugadas{nSes > 0 ? ` · ${nSes} ${nSes === 1 ? 'sesión' : 'sesiones'}` : ''}</div>
     {#snippet cell(d: number, i: number)}
       {@const st = strip(d, i)}
@@ -227,7 +227,7 @@
   </div>
 
   {#if T.launchable}
-    <div class="dpanel dweek pill" class:fx={hasPlays} class:f={app.focus === 'dwk'} data-k="dwk" data-act="evo" class:jvn={isJvn}>
+    <div class="dpanel dweek pill" class:fx={hasPlays} class:f={app.focus === 'dwk'} data-k="dwk" data-act="evo">
       <div class="chart">
         {#if gx}{#key gx}<span class="gainchip wk">{gx.label}</span>{/key}{/if}
         <div class="hsub" style="margin:0">Esta semana · <span class:wcount={wshow !== null}>{weekText}</span></div>
@@ -239,29 +239,6 @@
             {/each}
           </div>
         {/key}
-      </div>
-    </div>
-  {/if}
-
-  {#if isJvn}
-    <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-    <div
-      class="dpanel dvocab pill fx"
-      class:f={app.focus === 'dvoc'}
-      data-k="dvoc"
-      data-act="phrases"
-      role="button"
-      tabindex="-1"
-      onclick={() => openPhrases(T.gameId, T.name)}
-      title="Repaso y vocabulario de la novela"
-    >
-      <div class="hsub">Vocabulario y frases</div>
-      <div class="vocab-body">
-        <span class="vico">{@html ICON.jvn}</span>
-        <div class="vinfo">
-          <b>Repaso / Glosario</b>
-          <small>Ver tarjetas guardadas →</small>
-        </div>
       </div>
     </div>
   {/if}
@@ -281,8 +258,8 @@
   {/if}
 
   <Hints list={[
-    ['A', app.focus === 'play' ? (playing ? 'En marcha' : 'Jugar') : app.focus === 'dach' ? 'Ver logros' : app.focus === 'dst' ? 'Cambiar estado' : app.focus === 'drel' ? 'Cambiar fecha' : app.focus === 'dvoc' ? 'Vocabulario' : app.focus === 'dhrs' || app.focus === 'dwk' ? 'Estadísticas' : 'Seleccionar', 'a'],
-    ...(app.focus === 'dach' ? [['Y', 'Cambiar diseño (' + (VARIANT_NAMES[achState.summary?.variant ?? 1] ?? '') + ')', 'y'] as [string, string, string]] : []),
+    ['A', app.focus === 'play' ? (playing ? 'En marcha' : 'Jugar') : app.focus === 'dach' ? 'Ver logros' : app.focus === 'dst' ? 'Cambiar estado' : app.focus === 'drel' ? 'Cambiar fecha' : app.focus === 'dhrs' || app.focus === 'dwk' ? 'Estadísticas' : 'Seleccionar', 'a'],
+    ...(app.focus === 'dach' ? [['Y', 'Cambiar diseño (' + (VARIANT_NAMES[app.config.achievementsCardVariant ?? achState.summary?.variant ?? 1] ?? '') + ')', 'y'] as [string, string, string]] : []),
     ...(T.launchable && !playing ? [['X', 'Jugar', 'x'] as [string, string, string]] : []),
     ['B', 'Volver', 'b'],
     ['Start', 'Opciones', 'menu'],
@@ -300,13 +277,4 @@
   .relpill small{font-size:15px;font-weight:700;opacity:.92}
 
 
-  /* Ajuste de anchos si es JVN/Novela con widget de vocabulario */
-  .dhours.jvn{width:310px}
-  .dweek.jvn{left:710px;width:250px}
-  .dvocab{left:980px;width:236px;cursor:pointer;background:linear-gradient(180deg,rgba(40,48,64,.78),rgba(24,28,40,.88))}
-  .vocab-body{display:flex;align-items:center;gap:10px}
-  .vico{width:38px;height:38px;border-radius:12px;background:rgba(168,85,247,.22);color:#c084fc;display:grid;place-items:center;flex:none}
-  .vico :global(svg){width:20px;height:20px}
-  .vinfo b{display:block;font-size:14px;font-weight:800;color:#fff}
-  .vinfo small{display:block;font-size:11px;font-weight:600;color:#94a3b8;margin-top:2px}
 </style>

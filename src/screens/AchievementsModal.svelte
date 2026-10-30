@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { app } from '../lib/store.svelte';
   import {
     achState,
     getFilteredAchievements,
@@ -90,9 +91,9 @@
           </div>
         </div>
 
-        <button class="btn-variant" type="button" onclick={onCycleVariant} title="Cambiar diseño de tarjeta (Y)">
+        <button class="btn-variant" type="button" onclick={onCycleVariant} title="Cambiar diseño global de tarjeta (Y)">
           <small>Diseño:</small>
-          <b>{VARIANT_NAMES[summary?.variant ?? 1] ?? 'Variante'}</b>
+          <b>{VARIANT_NAMES[app.config.achievementsCardVariant ?? summary?.variant ?? 1] ?? 'Variante'}</b>
           <span class="btn-chip-key">Y</span>
         </button>
       </header>
@@ -276,7 +277,7 @@
             ['A', 'Seleccionar', 'a'],
             ['LB/RB', 'Cambiar pestaña', 'lb'],
             ...(selected?.hidden && !selected.earned ? ([['X', 'Revelar secreto', 'x']] as [string, string, string][]) : []),
-            ['Y', 'Cambiar tarjeta (' + (VARIANT_NAMES[summary?.variant ?? 1] ?? '') + ')', 'y'],
+            ['Y', 'Cambiar tarjeta (' + (VARIANT_NAMES[app.config.achievementsCardVariant ?? summary?.variant ?? 1] ?? '') + ')', 'y'],
             ['B', 'Cerrar', 'b'],
           ]}
         />

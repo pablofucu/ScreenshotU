@@ -4,6 +4,54 @@ import sqlite3
 import json
 import time
 import base64
+import urllib.request
+import re
+
+ICON_CACHE = {}
+
+def get_steam_icon_data_uri(app_id, icon_hash):
+    if not icon_hash:
+        return None
+    cache_key = f"{app_id}_{icon_hash}"
+    if cache_key in ICON_CACHE:
+        return ICON_CACHE[cache_key]
+
+    img_url = f"https://shared.fastly.steamstatic.com/community_assets/images/apps/{app_id}/{icon_hash}"
+    try:
+        req = urllib.request.Request(img_url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+        with urllib.request.urlopen(req, timeout=6) as r:
+            raw = r.read()
+            uri = "data:image/jpeg;base64," + base64.b64encode(raw).decode("ascii")
+            ICON_CACHE[cache_key] = uri
+            return uri
+    except Exception as e:
+        return img_url
+
+def fetch_steam_api_achievements(app_id):
+    url = f"https://steamcommunity.com/stats/{app_id}/achievements"
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+    achievements = []
+    try:
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            html = resp.read().decode("utf-8", errors="ignore")
+        scripts = re.findall(r'<script[^>]*>(.*?)</script>', html, re.DOTALL)
+        for s in scripts:
+            s = s.strip()
+            if s.startswith("{") and "renderContext" in s and "queryData" in s:
+                data = json.loads(s)
+                qd = json.loads(data['renderContext']['queryData'])
+                for q in qd.get('queries', []):
+                    qk = q.get('queryKey', [])
+                    if isinstance(qk, list) and len(qk) >= 2 and qk[0] == 'achievements':
+                        qdata = q.get('state', {}).get('data', {})
+                        for group in qdata.get('groups', []):
+                            achs = group.get('achievements', [])
+                            if achs:
+                                achievements = achs
+                                break
+    except Exception as e:
+        print(f"  Note: error fetching Steam API achievements for {app_id}: {e}")
+    return achievements
 
 def generate_badge_data_uri(app_id, api_name, display_name):
     colors = {
@@ -139,7 +187,7 @@ SHOWCASE_GAMES = [
     },
     {
         "id": "manual:18e09f128fae914d",
-        "app_id": "1086940",
+        "app_id": "108710",
         "name": "Alan Wake 2",
         "variant": 4,
         "achievements": [
@@ -376,29 +424,53 @@ def build_test_database():
     print(f"  Copied {art_copied} Grafismos folders.")
 
     # Populate Achievements and Unlocks for Showcase Games
-    print("Inserting sample achievements and setting card variants...")
+    print("Inserting official Steam API achievements and icons...")
     now_ts = int(time.time())
     one_day = 86400
 
     for game in SHOWCASE_GAMES:
         gid = game["id"]
         variant = game["variant"]
-        achs = game["achievements"]
+        app_id = game.get("app_id")
         target_ids = [gid]
-        if game.get("app_id"):
-            target_ids.append(game["app_id"])
+        if app_id:
+            target_ids.append(app_id)
 
-        app_id_for_icon = game.get("app_id", "default")
+        # Intento de descarga de logros e iconos reales desde la Web API / Schema de Steam
+        steam_achs = fetch_steam_api_achievements(app_id) if app_id else []
+        if steam_achs:
+            print(f"  Downloaded {len(steam_achs)} official Steam achievements with icons for {game['name']} (AppID {app_id})")
+            achs_to_insert = []
+            for idx, sa in enumerate(steam_achs):
+                icon_h = sa.get("icon_achieved")
+                icon_unach_h = sa.get("icon_unachieved")
+                icon_uri = get_steam_icon_data_uri(app_id, icon_h)
+                icon_gray_uri = get_steam_icon_data_uri(app_id, icon_unach_h) if icon_unach_h else icon_uri
+                unlocked = 1 if (idx % 3 != 2) else 0  # Desbloqueamos ~66% para ver ambos estados
+                achs_to_insert.append((
+                    sa.get("api_name", f"ACH_{idx}"),
+                    sa.get("name", f"Achievement {idx}"),
+                    sa.get("description", ""),
+                    1 if sa.get("hidden") else 0,
+                    unlocked,
+                    icon_uri,
+                    icon_gray_uri
+                ))
+        else:
+            print(f"  Fallback a plantilla local para {game['name']}...")
+            achs_to_insert = []
+            for idx, (api_name, display_name, desc, hidden, unlocked) in enumerate(game["achievements"]):
+                icon_uri = generate_badge_data_uri(app_id or "default", api_name, display_name)
+                achs_to_insert.append((api_name, display_name, desc, 1 if hidden else 0, unlocked, icon_uri, icon_uri))
+
         for target_id in target_ids:
             dst_cur.execute("INSERT OR REPLACE INTO title_achievements_pref (title_id, variant) VALUES (?, ?)", (target_id, variant))
 
-            for idx, (api_name, display_name, desc, hidden, unlocked) in enumerate(achs):
-                hidden_val = 1 if hidden else 0
-                icon_uri = generate_badge_data_uri(app_id_for_icon, api_name, display_name)
+            for idx, (api_name, display_name, desc, hidden_val, unlocked, icon_uri, icon_gray_uri) in enumerate(achs_to_insert):
                 dst_cur.execute("""
                     INSERT OR REPLACE INTO achievements (app_id, api_name, display_name, description, hidden, icon, icon_gray, source)
                     VALUES (?, ?, ?, ?, ?, ?, ?, 'gse')
-                """, (target_id, api_name, display_name, desc, hidden_val, icon_uri, icon_uri))
+                """, (target_id, api_name, display_name, desc, hidden_val, icon_uri, icon_gray_uri))
 
                 if unlocked:
                     days_ago = idx % 6

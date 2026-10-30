@@ -7,6 +7,7 @@ export interface PlatformCfg {
 }
 export interface Config {
   root: string | null;
+  achievementsCardVariant?: number;
   titlesView: 'grid' | 'carousel';
   /** Cuadrícula de capturas continua o agrupada por días. */
   shotsView: 'grid' | 'days';

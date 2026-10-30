@@ -48,6 +48,7 @@ impl Default for AnkiMap {
 #[serde(rename_all = "camelCase", default)]
 pub struct Config {
     pub root: Option<String>,
+    pub achievements_card_variant: u8,
     /// "grid" | "carousel"
     pub titles_view: String,
     /// Cuadricula de capturas: "grid" (continua) | "days" (agrupada por dias)
@@ -174,6 +175,7 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             root: None,
+            achievements_card_variant: 1,
             titles_view: "grid".into(),
             shots_view: "grid".into(),
             shots_order: "recent".into(),
