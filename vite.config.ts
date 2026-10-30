@@ -5,7 +5,16 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 // Paginas: la app (index), la ventana de texthook (hook), la pagina de lectura (reader) y los avisos sobre el juego
 // (rec: indicador de grabacion; peek: miniatura de la ultima captura).
 export default defineConfig({
-  plugins: [svelte()],
+  plugins: [
+    svelte({
+      inspector: {
+        toggleKeyCombo: 'control-alt',
+        holdMode: true,
+        showToggleButton: 'always',
+        toggleButtonPos: 'bottom-right',
+      },
+    }),
+  ],
   clearScreen: false,
   server: { port: 1420, strictPort: true, host: '127.0.0.1' },
   build: {
