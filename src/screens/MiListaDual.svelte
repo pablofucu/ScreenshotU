@@ -73,12 +73,6 @@
                   {:else}
                     <div class="noart"><b>{t.name}</b></div>
                   {/if}
-                  <div class="card-info">
-                    <div class="c-title">{t.name}</div>
-                    {#if t.playSeconds >= 60}
-                      <div class="c-dur">{fmtDur(t.playSeconds)}</div>
-                    {/if}
-                  </div>
                 </div>
               </div>
             {/each}
@@ -121,9 +115,6 @@
                   {:else}
                     <div class="noart"><b>{t.name}</b></div>
                   {/if}
-                  <div class="card-info">
-                    <div class="c-title">{t.name}</div>
-                  </div>
                 </div>
               </div>
             {/each}
@@ -144,7 +135,6 @@
         <b>Cola de Pendientes</b>
         <span class="cnt">{pending.length}</span>
       </span>
-      <span class="subtext">Pulsando <b>LB / RB</b> reordenas la prioridad del juego enfocado</span>
     </div>
 
     <div class="glass pending-box">
@@ -155,7 +145,7 @@
             <small>En la ficha de cualquier juego, pulsa Y › Estado para añadirlo a tu cola de pendientes.</small>
           </div>
         {:else}
-          {#each pending as { t, i }, k (t.id)}
+          {#each pending as { t, i } (t.id)}
             {@const acc = app.titleAcc(app.p, i)}
             <div
               class="glass pend-cover-card fx"
@@ -165,7 +155,6 @@
               style="--acc:{acc.c}"
             >
               <div class="face">
-                <span class="p-num">{k + 1}</span>
                 {#if coverOf(i)}
                   <Thumb path={coverOf(i)!} />
                 {:else}
@@ -286,33 +275,6 @@
     overflow: hidden;
     background: #cbd5e1;
   }
-  .mini-play-card .card-info {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 6px;
-    background: linear-gradient(180deg, transparent 40%, rgba(15,23,42,0.85) 100%);
-    color: #fff;
-  }
-  .mini-play-card .c-title {
-    font-size: 11px;
-    font-weight: 800;
-    line-height: 1.15;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-  }
-  .mini-play-card .c-dur {
-    font-size: 10px;
-    font-weight: 700;
-    color: #86efac;
-    margin-top: 2px;
-  }
   .dropped-card {
     opacity: 0.88;
   }
@@ -363,23 +325,6 @@
     border-radius: 11px;
     overflow: hidden;
     background: #cbd5e1;
-  }
-  .pend-cover-card .p-num {
-    position: absolute;
-    top: 6px;
-    left: 6px;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 5px;
-    border-radius: 10px;
-    background: rgba(15,23,42,0.85);
-    color: #fff;
-    font-size: 11px;
-    font-weight: 800;
-    display: grid;
-    place-items: center;
-    z-index: 5;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
   }
   .pend-cover-card .p-name {
     position: absolute;

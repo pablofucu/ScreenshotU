@@ -143,11 +143,22 @@
   {#if tab === 'all' && titles.length > 1}<span class="btn x" data-hact="x">X</span><span class="tflt tord">{TITLE_ORDER_LABEL[app.titleOrder]}</span>{/if}
   {#if tab === 'all' && filtered}<span class="tflt tchip" data-hact="nofilter" title="Quitar el filtro">{filterName}<small>{vis.length}</small><b aria-label="Quitar el filtro">✕</b></span>{/if}
   {#if tab === 'all'}
-    <div class="tsearch pill">
-      <span class="ts-ic">{@html ICON.search}</span>
-      <input type="text" placeholder="Buscar juego..." bind:value={app.catalogSearch} />
+    <div class="tsearch" class:has-val={Boolean(app.catalogSearch)}>
+      <span class="ts-ic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </span>
+      <input
+        type="text"
+        placeholder="Buscar juego..."
+        bind:value={app.catalogSearch}
+        spellcheck="false"
+        autocomplete="off"
+      />
       {#if app.catalogSearch}
-        <button type="button" class="ts-x" onclick={() => (app.catalogSearch = '')}>✕</button>
+        <button type="button" class="ts-x" onclick={() => (app.catalogSearch = '')} title="Borrar búsqueda">✕</button>
       {/if}
     </div>
   {/if}
@@ -269,10 +280,80 @@
 {/if}
   <style>
   .ttabs.list-tabs { top: 72px; }
-  .tsearch { height: 34px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; margin-left: 12px; background: rgba(255, 255, 255, 0.85); }
-  .tsearch input { border: none; background: transparent; font-family: inherit; font-size: 14px; font-weight: 700; color: #334155; width: 140px; outline: none; }
-  .tsearch .ts-x { border: none; background: #cbd5e1; color: #475569; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; cursor: pointer; display: grid; place-items: center; padding: 0; }
-  .tsearch .ts-ic { display: grid; place-items: center; }
-  .tsearch .ts-ic :global(svg) { width: 16px; height: 16px; color: var(--acc); }
+  .tsearch {
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px 0 10px;
+    margin-left: 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.76);
+    backdrop-filter: blur(10px);
+    box-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgba(95, 110, 135, 0.22), 0 2px 6px rgba(15, 23, 42, 0.05);
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
+    color: #64748b;
+  }
+  .tsearch:hover {
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgba(95, 110, 135, 0.32), 0 3px 8px rgba(15, 23, 42, 0.08);
+  }
+  .tsearch:focus-within {
+    background: #ffffff;
+    box-shadow: inset 0 1px 0 #fff, 0 0 0 2px var(--acc, #00A0D8), 0 4px 14px rgba(0, 160, 216, 0.25);
+    color: var(--acc, #00A0D8);
+  }
+  .tsearch .ts-ic {
+    display: grid;
+    place-items: center;
+    flex: none;
+    transition: color 0.2s;
+  }
+  .tsearch .ts-ic svg {
+    width: 15px;
+    height: 15px;
+  }
+  .tsearch input {
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #2a313d;
+    width: 145px;
+    outline: none;
+    padding: 0;
+    transition: width 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+  .tsearch:focus-within input {
+    width: 175px;
+  }
+  .tsearch input::placeholder {
+    color: #8a93a3;
+    font-weight: 600;
+    opacity: 0.9;
+  }
+  .tsearch .ts-x {
+    border: none;
+    background: rgba(0, 0, 0, 0.08);
+    color: #475569;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    font-weight: 800;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    flex: none;
+    margin-right: -4px;
+    transition: background 0.15s, color 0.15s, transform 0.1s;
+  }
+  .tsearch .ts-x:hover {
+    background: #E8384F;
+    color: #fff;
+    transform: scale(1.1);
+  }
 
 </style>

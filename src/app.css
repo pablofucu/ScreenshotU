@@ -1,4 +1,4 @@
-﻿@import './assets/fonts.css';
+@import './assets/fonts.css';
 
 :root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI','Yu Gothic UI','Meiryo UI','Hiragino Maru Gothic ProN',system-ui,sans-serif;color-scheme:light}
 *{box-sizing:border-box}
@@ -463,8 +463,8 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .thead .tfav{display:flex;align-items:center;gap:4px}
 .thead .tfav svg{width:22px;height:22px}
 /* Pestañas de la categoría (View) y orden activo (X) */
-.ttabs{position:absolute;left:96px;top:124px;display:flex;gap:8px;align-items:center;z-index:4}
-.ttabs.car{left:50%;transform:translateX(-50%);top:140px}
+.ttabs{position:absolute;left:96px;top:144px;display:flex;gap:8px;align-items:center;z-index:4}
+.ttabs.car{left:50%;transform:translateX(-50%);top:144px}
 .ttabs .btn{cursor:pointer}
 .ttabs .btn.x{margin-left:14px}
 .ttabs .tord{color:#3F63E0}

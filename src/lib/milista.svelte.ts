@@ -208,30 +208,16 @@ function listMove(dx: number, dy: number) {
   blip(880);
 }
 
-/** LB/RB en Pendientes: el juego enfocado cambia de sitio con su vecino y se guarda. En las demás saltan varias portadas. */
+/** LB/RB en «Mi lista»: salta varias portadas. */
 function listShift(d: number) {
   const at = place();
   const sh = app.shelves;
   if (!at) return;
   const shelf = sh[at.s];
-  if (shelf.kind !== 'pending') {
-    const ni = Math.max(0, Math.min(shelf.items.length - 1, at.i + d * (LIST_VIS - 1)));
-    if (ni === at.i) { bump(document.querySelector('#screen .fx.f'), d, 0); return; }
-    setFocus('tit' + shelf.items[ni]);
-    blip(700);
-    return;
-  }
-  const ni = at.i + d;
-  if (ni < 0 || ni >= shelf.items.length) { bump(document.querySelector('#screen .fx.f'), d, 0); return; }
-  const order = [...shelf.items];
-  [order[at.i], order[ni]] = [order[ni], order[at.i]];
-  const titles = app.platform!.titles;
-  const ids = order.map((i) => titles[i].id);
-  const pos = new Map(ids.map((id, k) => [id, k + 1] as const));
-  patchTitles((t) => (pos.has(t.id) ? { listPos: pos.get(t.id)! } : null));
-  listReveal();
-  blip(1100);
-  backend.setPendingOrder(ids).catch((e) => toast(String(e), 3200));
+  const ni = Math.max(0, Math.min(shelf.items.length - 1, at.i + d * (LIST_VIS - 1)));
+  if (ni === at.i) { bump(document.querySelector('#screen .fx.f'), d, 0); return; }
+  setFocus('tit' + shelf.items[ni]);
+  blip(700);
 }
 
 /** Mando y teclado en «Mi lista». Devuelve true si el botón se ha atendido aquí. */
