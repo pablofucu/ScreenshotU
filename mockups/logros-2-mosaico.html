@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Logros · Mosaico</title>
+<style>
+/* ===== Sistema de diseño unificado (tokens) ===== */
+:root{
+  --round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;
+  /* arcoíris (RAINBOW) */
+  --red:#E8384F;--orange:#F27A1A;--yellow:#F2B807;--green:#3BB54A;--blue:#00A0D8;--indigo:#3F63E0;--violet:#9A4BD8;
+  --acc:var(--blue);--acc-ink:#fff;
+  /* radios */
+  --r-xs:6px;--r-sm:12px;--r-md:18px;--r-lg:28px;--r-pill:999px;
+  /* tipografía */
+  --t-micro:11px;--t-sec:13px;--t-body:15px;--t-hi:17px;--t-panel:20px;--t-screen:28px;--t-hero:44px;
+  /* espaciado (escala de 4) */
+  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;
+  /* superficies y texto */
+  --ink:#3a414e;--ink-2:#5f6776;--ink-3:#9aa2b0;--line:rgba(95,110,135,.22);
+  --face:#dfe3e9;--face-hi:#f4f6f9;
+  --hintband:64px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0f1218;overflow:hidden;font-family:var(--round)}
+#stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;color:var(--ink);
+  background:#eceef2;user-select:none;font-family:var(--round);font-weight:500}
+.bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(34px)}
+.blob.w{background:radial-gradient(circle,#fff,rgba(255,255,255,0) 70%)}
+.blob.a{background:radial-gradient(circle,color-mix(in srgb,var(--acc) 30%,transparent),transparent 70%);opacity:.55}
+.ghost{position:absolute;width:118px;height:118px;border-radius:28px;padding:10px;background:rgba(255,255,255,.7);
+  box-shadow:0 0 0 1px rgba(120,130,150,.25),0 10px 18px -10px rgba(40,50,70,.4);filter:blur(5px);animation:float 18s ease-in-out infinite alternate}
+.ghost i{display:block;width:100%;height:100%;border-radius:18px;background:linear-gradient(160deg,color-mix(in srgb,var(--g) 30%,white),var(--g))}
+@keyframes float{from{transform:translate(0,0) rotate(-4deg)}to{transform:translate(20px,-16px) rotate(3deg)}}
+
+/* ===== Glass nivel 1: panel (rim + arco de brillo + cara) ===== */
+.glass{position:absolute;--r:var(--r-lg);--bw:10px;border-radius:var(--r);padding:var(--bw);isolation:isolate;
+  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  backdrop-filter:blur(14px) saturate(1.7);
+  box-shadow:inset 0 1.5px 0 #fff,inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.95),
+    inset 0 -1.5px 0 rgba(110,125,150,.30),0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42);
+  transition:transform .24s cubic-bezier(.34,1.32,.64,1),box-shadow .24s,background .24s}
+.glass::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;
+  border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.20) 55%,rgba(255,255,255,0));
+  -webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.85}
+.glass::after{content:'';position:absolute;z-index:3;left:12%;top:3px;width:34%;height:5px;border-radius:5px;pointer-events:none;
+  background:linear-gradient(90deg,rgba(255,255,255,0),#fff 40%,rgba(255,255,255,0));filter:blur(.6px);opacity:.9}
+.glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:var(--face)}
+.glass .face::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(20,30,50,.20),inset 0 3px 6px -2px rgba(0,0,0,.35),inset 0 -2px 4px -2px rgba(255,255,255,.5)}
+.glass.f{transform:scale(1.06);z-index:4;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)),color-mix(in srgb,var(--acc) 72%,transparent) 55%,color-mix(in srgb,var(--acc) 92%,black));
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),inset 0 -10px 14px -8px color-mix(in srgb,var(--acc) 30%,white),
+    0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 0 26px 2px color-mix(in srgb,var(--acc) 50%,transparent),0 22px 34px -16px color-mix(in srgb,var(--acc) 70%,black)}
+.glass.rel{position:relative}
+.glass.flat .face{background:rgba(255,255,255,.55)}
+.glass.flat .face::after{box-shadow:inset 0 0 0 1px rgba(20,30,50,.10),inset 0 2px 4px -2px rgba(0,0,0,.18)}
+
+/* ===== Glass nivel 2: panel dentro de panel ===== */
+.glass-in{position:relative;border-radius:var(--r-md);background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.34));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(110,125,150,.16),0 0 0 1px rgba(95,110,135,.16);transition:box-shadow .18s,background .18s,transform .18s}
+.glass-in.f{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 10%,#fff),color-mix(in srgb,var(--acc) 18%,rgba(255,255,255,.7)));
+  box-shadow:inset 0 1px 0 #fff,0 0 0 2px var(--acc),0 0 18px -2px color-mix(in srgb,var(--acc) 55%,transparent),0 10px 18px -10px color-mix(in srgb,var(--acc) 70%,black);z-index:2}
+
+/* ===== Glass nivel 3: pastilla (crumbs, hints, secundaria) ===== */
+.pill{backdrop-filter:blur(16px) saturate(1.7);border-radius:var(--r-pill);
+  background:linear-gradient(180deg,rgba(255,255,255,.80),rgba(255,255,255,.52));
+  box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px var(--line),0 10px 20px -12px rgba(40,50,70,.4)}
+
+/* ===== Botones: principal / secundario / selector ===== */
+.bmain{display:inline-flex;align-items:center;gap:var(--s2);height:44px;padding:0 var(--s5) 0 var(--s3);border-radius:var(--r-pill);font:800 var(--t-hi) var(--round);color:var(--acc-ink);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 45%,white),var(--acc) 55%,color-mix(in srgb,var(--acc) 85%,black));
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),inset 0 -6px 10px -6px rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 10px 18px -10px color-mix(in srgb,var(--acc) 80%,black);text-shadow:0 1px 1px rgba(0,0,0,.2)}
+.bsec{display:inline-flex;align-items:center;gap:var(--s2);height:40px;padding:0 var(--s4);font:700 var(--t-body) var(--round);color:var(--ink)}
+.chips{display:inline-flex;gap:var(--s1);padding:var(--s1);border-radius:var(--r-pill)}
+.chip{height:32px;padding:0 var(--s4);border-radius:var(--r-pill);display:inline-flex;align-items:center;gap:6px;font:700 var(--t-body) var(--round);color:var(--ink-2);transition:background .2s,color .2s}
+.chip small{font-size:var(--t-sec);font-weight:700;opacity:.7}
+.chip.on{color:var(--acc-ink);background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 55%,white),var(--acc) 60%);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black)}
+.tag{display:inline-flex;align-items:center;height:22px;padding:0 var(--s2);border-radius:var(--r-xs);font:800 var(--t-micro) var(--round);letter-spacing:.04em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--c,var(--acc)) 80%,black);background:color-mix(in srgb,var(--c,var(--acc)) 16%,white);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c,var(--acc)) 35%,transparent)}
+
+/* ===== Hints de mando ===== */
+.btn{min-width:28px;height:28px;border-radius:14px;display:inline-grid;place-items:center;font-size:13px;font-weight:800;color:#fff;--b:#4a5260;padding:0 6px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white),var(--b) 55%,color-mix(in srgb,var(--b) 85%,black));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--b) 70%,black),0 1px 2px rgba(0,0,0,.2);text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.btn.a{--b:#3BB54A}.btn.b{--b:#E8384F}.btn.x{--b:#3F63E0}.btn.y{--b:#F2B807;color:#3a2f00;text-shadow:none}.btn.sh{border-radius:8px;--b:#6b7383}
+.hintband{position:absolute;left:0;right:0;bottom:0;height:var(--hintband);z-index:6;pointer-events:none;
+  background:linear-gradient(180deg,rgba(236,238,242,0),rgba(236,238,242,.85) 45%)}
+.hints{position:absolute;right:22px;bottom:14px;display:flex;gap:10px;z-index:7}
+.hints.l{left:22px;right:auto}
+.hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;font-size:16px;font-weight:700;color:#4a5260}
+
+/* ===== Barra superior ===== */
+.top{position:absolute;left:0;right:0;top:0;height:76px;z-index:5}
+.avatar{left:22px;top:12px;width:60px;height:60px;--r:16px;--bw:5px}
+.avatar .face{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,white),var(--acc));display:grid;place-items:center;color:#fff;font-weight:800;font-size:22px}
+.crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;font-size:20px;font-weight:700;color:#4a5260}
+.crumb .sep{color:#a3abb8;font-weight:500}
+.crumb .cur{color:var(--acc)}
+.clock{position:absolute;right:24px;top:24px;display:flex;gap:14px;align-items:center;font-size:20px;font-weight:700;color:#4a5260}
+.clock small{font-size:15px;font-weight:500;color:#657083}
+.batt{display:flex;gap:2px}.batt b{width:6px;height:13px;border-radius:2px;background:var(--acc)}.batt b.off{background:#c3c9d3}
+
+/* ===== utilidades ===== */
+.rainbow-bar{background:linear-gradient(90deg,var(--red),var(--orange),var(--yellow),var(--green),var(--blue),var(--indigo),var(--violet))}
+.ring{--p:50;--sz:120px;--th:12px;width:var(--sz);height:var(--sz);border-radius:50%;position:relative;flex:none}
+.ring i,.ring u{position:absolute;inset:0;border-radius:50%;
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - var(--th)),#000 calc(100% - var(--th) + 1px));mask:radial-gradient(farthest-side,transparent calc(100% - var(--th)),#000 calc(100% - var(--th) + 1px))}
+.ring u{background:rgba(95,110,135,.16)}
+.ring i{background:conic-gradient(var(--red),var(--orange),var(--yellow),var(--green),var(--blue),var(--indigo),var(--violet) calc(var(--p)*1%),transparent 0);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - var(--th)),#000 calc(100% - var(--th) + 1px));}
+.ring span{position:absolute;inset:0;display:grid;place-items:center;text-align:center;line-height:1}
+.cover{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:10px;color:#fff;font-weight:800;line-height:1.1;text-shadow:0 1px 3px rgba(0,0,0,.35);
+  background:radial-gradient(120% 90% at 25% 10%,color-mix(in srgb,var(--g) 25%,white),var(--g) 60%,color-mix(in srgb,var(--g) 70%,black))}
+.cover b{font-size:15px}
+.cover .mono{position:absolute;right:8px;top:6px;font-size:34px;opacity:.35}
+.ico{display:grid;place-items:center;color:#fff;background:radial-gradient(120% 100% at 30% 15%,color-mix(in srgb,var(--c) 30%,white),var(--c) 65%,color-mix(in srgb,var(--c) 75%,black))}
+.ico svg{width:56%;height:56%;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.ico.lock{background:linear-gradient(160deg,#e9ecf1,#c9ced7);color:#8d95a3}
+.note-dev{position:fixed;left:50%;transform:translateX(-50%);top:6px;opacity:.55;z-index:99;font:600 12px var(--round);color:#c9ced8;background:rgba(15,18,24,.7);padding:6px 10px;border-radius:8px;max-width:480px}
+.note-dev a{color:#7fd3f1}
+.note-dev:hover{opacity:1}
+
+.head{position:absolute;left:22px;top:92px;width:788px;height:96px;display:flex;flex-direction:column;justify-content:center;gap:var(--s3)}
+.h1{display:flex;align-items:baseline;gap:var(--s3)}
+.h1 b{font-size:var(--t-screen);font-weight:800}
+.h1 span{font-size:var(--t-body);font-weight:700;color:var(--ink-2)}
+.h1 em{margin-left:auto;font-style:normal;font-size:var(--t-screen);font-weight:800}
+.prog{height:12px;border-radius:6px;background:rgba(95,110,135,.16);overflow:hidden;box-shadow:inset 0 1px 2px rgba(0,0,0,.12)}
+.prog i{display:block;height:100%;border-radius:inherit}
+.bar2{position:absolute;left:22px;top:196px;width:788px;display:flex;justify-content:space-between;align-items:center}
+.sort{font-size:var(--t-sec);font-weight:700;color:var(--ink-3);display:flex;align-items:center;gap:var(--s2)}
+.sort b{color:var(--ink-2)}
+.grid{position:absolute;left:22px;top:252px;display:grid;grid-template-columns:repeat(8,86px);grid-auto-rows:86px;gap:14px 14px}
+.tile{--r:20px;--bw:5px;width:86px;height:86px;transition:transform .18s,opacity .25s,filter .25s}
+.tile .face{display:grid;place-items:center;background:rgba(255,255,255,.5)}
+.tile .ico{width:100%!important;height:100%!important;border-radius:0!important}
+.tile.dim{opacity:.22;filter:saturate(.3)}
+.tile.dim.f{opacity:.7}
+.tile .pd{position:absolute;z-index:5;left:10px;right:10px;bottom:9px;height:5px;border-radius:3px;background:rgba(255,255,255,.7);overflow:hidden}
+.tile .pd i{display:block;height:100%;background:var(--c)}
+/* detalle */
+.det{left:830px;top:92px;width:428px;height:552px}
+.det .face{display:flex;flex-direction:column;align-items:center;text-align:center;padding:var(--s6) var(--s5);gap:var(--s3)}
+.det .big{margin:var(--s2) 0 var(--s3);filter:drop-shadow(0 8px 18px color-mix(in srgb,var(--c) 45%,transparent))}
+.det .nm{font-size:var(--t-screen);font-weight:800;line-height:1.1}
+.det .ds{font-size:var(--t-body);color:var(--ink-2);line-height:1.35;max-width:320px}
+.det .rr{display:flex;align-items:center;gap:var(--s3);font-size:var(--t-sec);font-weight:700;color:var(--ink-2)}
+.det .foot{margin-top:auto;width:100%;padding:var(--s4);display:flex;flex-direction:column;gap:var(--s2);align-items:center}
+.det .foot .l1{font-size:var(--t-micro);font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.det .foot .l2{font-size:var(--t-panel);font-weight:800}
+.det .pg{width:100%;height:10px;border-radius:5px;background:rgba(95,110,135,.16);overflow:hidden}
+.det .pg i{display:block;height:100%;background:var(--c);border-radius:inherit}
+</style></head><body>
+<div id="stage">
+ <div class="bg"></div>
+ <div class="top">
+  <div class="glass avatar"><div class="face">P</div></div>
+  <div class="crumb pill"><span>Juegos PC</span><span class="sep">›</span><span>Elden Ring</span><span class="sep">›</span><span class="cur">Logros</span></div>
+  <div class="clock pill" style="padding:0 16px;height:40px;top:22px"><small>jue 30 oct</small>18:42<span class="batt"><b></b><b></b><b></b><b class="off"></b></span></div>
+ </div>
+
+ <div class="head">
+  <div class="h1"><b>Elden Ring</b><span id="cnt"></span><em id="pct"></em></div>
+  <div class="prog"><i class="rainbow-bar" id="pbar"></i></div>
+ </div>
+ <div class="bar2"><span class="chips pill" id="chips"></span><span class="sort">Orden <b id="sortv"></b></span></div>
+ <div class="grid" id="grid"></div>
+
+ <div class="glass det" id="det"><div class="face" id="detf"></div></div>
+
+ <div class="hintband"></div>
+ <div class="hints l" id="hl"></div>
+ <div class="hints" id="hints"></div>
+</div>
+<script>
+/* ===== base común de los mockups ===== */
+const RAINBOW=[{n:'Rojo',c:'#E8384F'},{n:'Naranja',c:'#F27A1A'},{n:'Amarillo',c:'#F2B807',dark:true},{n:'Verde',c:'#3BB54A'},{n:'Azul Wii U',c:'#00A0D8'},{n:'Añil',c:'#3F63E0'},{n:'Violeta',c:'#9A4BD8'}];
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const stage=$('#stage');
+function fit(){const k=Math.min(innerWidth/1280,innerHeight/720);window.K=k;stage.style.transform=`translate(${(innerWidth-1280*k)/2}px,${(innerHeight-720*k)/2}px) scale(${k})`}
+addEventListener('resize',fit);fit();
+function bg(colors){
+  const b=$('.bg');const G=[[60,120],[1080,90],[930,520],[180,560],[560,30],[1180,330],[20,330]];
+  b.innerHTML='<div class="blob w" style="left:-120px;top:-80px;width:520px;height:420px"></div><div class="blob a" style="right:-160px;top:120px;width:620px;height:560px"></div><div class="blob w" style="left:420px;bottom:-200px;width:560px;height:420px"></div>'+
+   G.map((p,i)=>`<div class="ghost" style="left:${p[0]}px;top:${p[1]}px;--g:${colors[i%colors.length]};animation-delay:-${i*3}s;transform:scale(${.7+((i*37)%5)/10})"><i></i></div>`).join('');
+}
+function hints(list,el=$('#hints')){el.innerHTML=list.map(([k,t])=>`<div class="hint pill"><span class="btn ${({A:'a',B:'b',X:'x',Y:'y'})[k]||(k.length>1?'sh':'')}">${k}</span>${t}</div>`).join('')}
+function setAcc(c){stage.style.setProperty('--acc',c)}
+/* foco espacial de mando: flechas/WASD, Enter = A */
+let FOC=null;
+function focusEl(el,quiet){if(!el)return;$$('[data-f].f').forEach(e=>e.classList.remove('f'));el.classList.add('f');FOC=el;
+  if(!quiet)el.scrollIntoView?.({block:'nearest',inline:'nearest'});window.onFocus&&window.onFocus(el)}
+function navMove(dx,dy){
+  const all=$$('[data-f]').filter(e=>e.offsetParent!==null&&!e.closest('[hidden]'));if(!FOC)return focusEl(all[0]);
+  const r=FOC.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let best=null,bs=1e9;
+  for(const e of all){if(e===FOC)continue;const q=e.getBoundingClientRect(),x=q.left+q.width/2-cx,y=q.top+q.height/2-cy;
+    const along=dx?x*dx:y*dy,across=dx?Math.abs(y):Math.abs(x);if(along<=4)continue;const s=along+across*2.2;if(s<bs){bs=s;best=e}}
+  if(best)focusEl(best);
+}
+addEventListener('keydown',e=>{const k=e.key;const m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1],a:[-1,0],d:[1,0],w:[0,-1],s:[0,1]}[k];
+  if(m){e.preventDefault();navMove(...m);return}
+  window.onKey&&window.onKey(k,e)});
+document.addEventListener('mouseover',e=>{const t=e.target.closest('[data-f]');if(t&&t!==FOC)focusEl(t,true)});
+const ICON={
+ trophy:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V17h3v3H8v-3h3v-2.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3V3zm0 4H6v1a2 2 0 0 0 1 1.7V7zm10 0v2.7A2 2 0 0 0 18 8V7h-1z"/></svg>',
+ sword:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 2h3v3l-9.5 9.5-3-3L19 2zM8.1 12.9l3 3-1.4 1.4 1.4 1.4-1.4 1.4-1.8-1.8L5 21.2 2.8 19l2.9-2.9-1.8-1.8 1.4-1.4 1.4 1.4 1.4-1.4z"/></svg>',
+ skull:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a9 9 0 0 0-9 9c0 3 1.5 5.2 3.5 6.6V21h3v-2h1v2h3v-2h1v2h3v-3.4C19.5 16.2 21 14 21 11a9 9 0 0 0-9-9zm-3.5 8a2 2 0 1 1 0 4 2 2 0 0 1 0-4zm7 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4z"/></svg>',
+ star:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5-4.8-4.6 6.6-.9z"/></svg>',
+ map:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2V5zm6 0v14l6 2V7L9 5z"/></svg>',
+ flame:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s6 5 6 11a6 6 0 0 1-12 0c0-3 2-5 2-5s0 3 2 4c0-5 2-10 2-10z"/></svg>',
+ gem:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h12l4 6-10 12L2 9l4-6zm1.2 2L5 8.5h4L7.2 5zm9.6 0L15 8.5h4L16.8 5zM9.3 5l1.4 3.5h2.6L14.7 5H9.3z"/></svg>',
+ crown:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 7l5 4 4-7 4 7 5-4-2 12H5L3 7z"/></svg>',
+ key:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 7a5 5 0 1 1 4.6 7H12v2h-2v2H8v2H4v-4l4.4-4.4A5 5 0 0 1 8 7zm5-1a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>',
+ bolt:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>',
+ heart:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z"/></svg>',
+ lock:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 10V8a5 5 0 0 1 10 0v2h1v11H6V10h1zm2 0h6V8a3 3 0 0 0-6 0v2z"/></svg>',
+ eye:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 5c5 0 9 4.5 10 7-1 2.5-5 7-10 7S3 14.5 2 12c1-2.5 5-7 10-7zm0 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"/></svg>',
+ check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+ pin:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 2l7 7-3 1-4 4 1 5-2 2-4-5-5 5-1-1 5-5-5-4 2-2 5 1 4-4z"/></svg>',
+ clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+};
+const ICONS_ROT=['sword','trophy','skull','star','map','flame','gem','crown','key','bolt','heart','eye'];
+/* rareza → arcoíris (un solo criterio: % de jugadores) */
+function rarity(p){return p<5?{k:'Legendario',c:'#9A4BD8',i:6}:p<12?{k:'Ultra raro',c:'#E8384F',i:0}:p<25?{k:'Raro',c:'#F27A1A',i:1}:p<50?{k:'Poco común',c:'#3BB54A',i:3}:{k:'Común',c:'#00A0D8',i:4}}
+
+/* datos de ejemplo: Elden Ring (Juegos PC) */
+const GAME={name:'Elden Ring',plat:'Juegos PC',hours:142,acc:'#F27A1A'};
+// [nombre, descripción, % jugadores, conseguido (fecha) | null, icono, oculto, progreso [n,m]]
+const ACH=[
+ ['Señor del Círculo','Alcanza el final «Señor del Círculo»',11.2,'2026-09-14','crown'],
+ ['Era de las estrellas','Alcanza el final «Era de las estrellas»',8.9,null,'star',true],
+ ['Señor de la Llama Frenética','Alcanza el final «Señor de la Llama Frenética»',9.6,null,'flame',true],
+ ['Elden Ring','Consigue todos los logros',3.1,null,'trophy'],
+ ['Portador de gran runa Godrick','Derrota a Godrick el Injertado',62.4,'2026-06-02','sword'],
+ ['Portador de gran runa Rennala','Derrota a Rennala, Reina de la Luna Llena',48.3,'2026-06-20','gem'],
+ ['Portador de gran runa Radahn','Derrota a Radahn, el Azote Estelar',43.7,'2026-07-04','star'],
+ ['Portador de gran runa Rykard','Derrota a Rykard, Señor de la Blasfemia',38.9,'2026-07-19','flame'],
+ ['Portador de gran runa Morgott','Derrota a Morgott, el Rey Augurio',37.2,'2026-08-02','crown'],
+ ['Portador de gran runa Mohg','Derrota a Mohg, Señor de la Sangre',21.5,'2026-08-21','skull'],
+ ['Portador de gran runa Malenia','Derrota a Malenia, Espada de Miquella',17.9,'2026-09-08','heart'],
+ ['Gran runa','Restaura el poder de una gran runa',58.0,'2026-06-03','gem'],
+ ['Rey de los dragones','Derrota a Placidusax, el Dragón Rey',13.4,null,'bolt'],
+ ['Dragón antiguo Lansseax','Derrota a la dragona antigua Lansseax',24.1,'2026-07-28','bolt'],
+ ['Astel, nacido del Vacío','Derrota a Astel en el lago de la Podredumbre',22.8,'2026-08-11','eye'],
+ ['Gigante de fuego','Derrota al Gigante de fuego',34.0,'2026-08-05','flame'],
+ ['Héroe de Fuerte Faroth','Derrota a la dragona Mina y su cría',19.2,null,'skull'],
+ ['Llave legendaria','Consigue todos los talismanes legendarios',9.1,null,'key',false,[5,8]],
+ ['Armamento legendario','Consigue todas las armas legendarias',10.4,null,'sword',false,[7,9]],
+ ['Encantamientos legendarios','Consigue todos los encantamientos legendarios',8.2,null,'bolt',false,[3,7]],
+ ['Cenizas legendarias','Consigue todas las cenizas de espíritu legendarias',12.6,null,'heart',false,[4,6]],
+ ['Mapa del mundo','Revela todos los fragmentos del mapa',29.5,'2026-08-30','map',false],
+ ['Mesa Redonda','Llega a la Mesa Redonda',89.3,'2026-05-28','map'],
+ ['Primera gran runa','Llévate tu primera gran runa',64.0,'2026-06-02','gem'],
+ ['Cuna de la Reina','Entra en la Academia de Raya Lucaria',55.7,'2026-06-15','key'],
+ ['Hermana de la muerte','Visita el lugar donde murió Godwyn',26.3,'2026-08-24','skull'],
+ ['Clérigo de la Bestia','Derrota al Clérigo de la Bestia',30.8,'2026-07-30','eye'],
+ ['Viajero sin rumbo','Descansa en 200 lugares de gracia',6.4,null,'flame',false,[164,200]],
+ ['Maliketh','Derrota a Maliketh, la Hoja Negra',33.1,'2026-09-02','sword'],
+ ['Hoarah Loux','Derrota a Hoarah Loux, el Guerrero',31.9,'2026-09-12','crown'],
+].map(([n,d,p,date,ico,hid,prog],i)=>({i,n,d,p,date,ico,hidden:!!hid,prog,earned:!!date,r:rarity(p)}));
+const ACH_N=ACH.length, ACH_OK=ACH.filter(a=>a.earned).length, ACH_PCT=Math.round(ACH_OK/ACH_N*100);
+const MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const fdate=s=>{const [y,m,d]=s.split('-');return `${+d} ${MESES[m-1]} ${y}`};
+function achIco(a,size){const lock=!a.earned;const secret=a.hidden&&!a.earned;
+  return `<div class="ico ${lock?'lock':''}" style="--c:${a.r.c};width:${size}px;height:${size}px;border-radius:${Math.round(size*.28)}px">${secret?'<b style="font-size:'+Math.round(size*.42)+'px">?</b>':ICON[a.ico]}</div>`}
+const pct=p=>p.toFixed(1).replace('.',',')+' %';
+const REV=new Set(); // secretos revelados con X
+const isSecret=a=>a.hidden&&!a.earned&&!REV.has(a.i);
+const aName=a=>isSecret(a)?'Logro oculto':a.n;
+const aDesc=a=>isSecret(a)?'Descripción oculta para evitar spoilers':a.d;
+const aIco=(a,s)=>achIco({...a,hidden:isSecret(a)},s);
+const TIERS=[{k:'Legendario',c:'#9A4BD8',t:'menos del 5 %'},{k:'Ultra raro',c:'#E8384F',t:'5–12 %'},{k:'Raro',c:'#F27A1A',t:'12–25 %'},{k:'Poco común',c:'#3BB54A',t:'25–50 %'},{k:'Común',c:'#00A0D8',t:'50 % o más'}];
+const LAST=ACH.filter(a=>a.earned).sort((a,b)=>b.date.localeCompare(a.date))[0];
+/* LB/RB en teclado: Q / E */
+const PADKEY=k=>({q:'LB',e:'RB',y:'Y',x:'X',Enter:'A',Escape:'B',Backspace:'B'})[k];
+
+bg(['#9A4BD8','#00A0D8','#E8384F','#3BB54A','#F27A1A','#F2B807','#3F63E0']);
+setAcc(GAME.acc);
+$('#cnt').textContent=`${ACH_OK} de ${ACH_N} logros · ${GAME.hours} h`;
+$('#pct').textContent=ACH_PCT+' %';
+const pb=$('#pbar');pb.style.width=ACH_PCT+'%';pb.style.backgroundSize=(100/ACH_PCT*100)+'% 100%';
+
+const F=[['Todos',a=>1],['Conseguidos',a=>a.earned],['Pendientes',a=>!a.earned],['Raros',a=>a.p<12]];
+// orden por color: sigue el arcoíris rojo→violeta, así el mosaico se lee como una franja
+const ORD={'Ultra raro':0,'Raro':1,'Poco común':3,'Común':4,'Legendario':6};
+const S=[['Color',(a,b)=>ORD[a.r.k]-ORD[b.r.k]||b.p-a.p],['Fecha',(a,b)=>(b.earned-a.earned)||(a.earned?b.date.localeCompare(a.date):0)],['Nombre',(a,b)=>aName(a).localeCompare(aName(b),'es')]];
+let fi=0,si=0;
+const fr=a=>a.prog?a.prog[0]/a.prog[1]:0;
+function chips(){$('#chips').innerHTML=F.map(([n,f],i)=>`<span class="chip ${i==fi?'on':''}" data-c="${i}">${n} <small>${ACH.filter(f).length}</small></span>`).join('');$('#sortv').textContent=S[si][0]}
+function render(keep){
+  chips();const l=[...ACH].sort(S[si][1]);
+  $('#grid').innerHTML=l.map(a=>`<div class="glass rel tile ${F[fi][1](a)?'':'dim'}" data-f data-i="${a.i}" style="--acc:${a.r.c};--c:${a.r.c}"><div class="face">${aIco(a,76)}</div>${a.prog?`<div class="pd"><i style="width:${fr(a)*100}%"></i></div>`:''}</div>`).join('');
+  const k=keep!=null&&$(`#grid [data-i="${keep}"]`);focusEl(k||$('#grid .tile:not(.dim)')||$('#grid .tile'),true)}
+function detail(a){const d=$('#detf');$('#det').style.setProperty('--acc',a.r.c);$('#det').style.setProperty('--c',a.r.c);
+  const foot=a.earned?`<div class="l1">Conseguido</div><div class="l2">${fdate(a.date)}</div>`
+   :a.prog?`<div class="l1">Progreso</div><div class="l2">${a.prog[0]} de ${a.prog[1]}</div><div class="pg"><i style="width:${fr(a)*100}%"></i></div>`
+   :`<div class="l1">Pendiente</div><div class="l2" style="color:var(--ink-3)">Aún sin conseguir</div>`;
+  d.innerHTML=`<div class="big">${aIco(a,132)}</div><div class="nm">${aName(a)}</div><div class="ds">${aDesc(a)}</div>
+   <div class="rr"><span class="tag">${a.r.k}</span>${pct(a.p)} de los jugadores</div>
+   <div class="foot glass-in">${foot}</div>`}
+window.onFocus=el=>{const a=ACH[el.dataset.i];detail(a);
+  hints([['LB',''],['RB','Filtro']],$('#hl'));
+  hints([...(isSecret(a)?[['X','Revelar']]:[]),['Y','Ordenar'],['B','Atrás']])};
+window.onKey=k=>{const p=PADKEY(k);
+  if(p=='LB'||p=='RB'){fi=(fi+(p=='RB'?1:F.length-1))%F.length;render(FOC&&F[fi][1](ACH[FOC.dataset.i])?FOC.dataset.i:null)}
+  else if(p=='Y'){si=(si+1)%S.length;render(FOC&&FOC.dataset.i)}
+  else if(p=='X'&&FOC){const a=ACH[FOC.dataset.i];if(isSecret(a)){REV.add(a.i);render(a.i)}}};
+$('#chips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(c){fi=+c.dataset.c;render()}});
+render();
+</script>
+<div class="note-dev">Flechas: mover · Q/E: filtro (atenúa, no oculta) · Y: orden por color/fecha/nombre · X: revelar. <a href="index-propuestas.html">← Índice</a></div>
+</body></html>
