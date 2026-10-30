@@ -74,6 +74,7 @@ pub fn sync_achievements_from_disk(
                 let base = schema_path.parent();
                 if let Ok(schema_list) = parse_schema_json(&app_id, &content, base) {
                     if !schema_list.is_empty() {
+                        fetch_missing_icons(&app_id, &schema_list);
                         let _ = state.db.with(|c| core::achievements_save(c, &app_id, &schema_list));
                     }
                 }
@@ -137,6 +138,67 @@ pub fn get_game_achievements(
         a.icon_gray = inline_icon(a.icon_gray.take());
     }
     Ok(list)
+}
+
+/// Rutas de iconos que ya fallaron en esta sesion (404, sin red...) para no reintentarlas cada vez que se abre la ficha.
+static ICON_FAILED: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+
+/// Los iconos del schema de Goldberg se nombran por el hash de Steam (`<sha1>.jpg`) y a menudo la carpeta
+/// `achievement_images` esta vacia: los que faltan se bajan de la CDN de Steam a su misma ruta. Al ejecutarse en
+/// cada sincronizacion cubre tanto los juegos nuevos como los antiguos.
+fn fetch_missing_icons(app_id: &str, list: &[Achievement]) {
+    if app_id.is_empty() || !app_id.bytes().all(|b| b.is_ascii_digit()) {
+        return;
+    }
+    let mut todo: Vec<PathBuf> = Vec::new();
+    for a in list {
+        for p in [a.icon.as_deref(), a.icon_gray.as_deref()].into_iter().flatten() {
+            let path = PathBuf::from(p);
+            let stem_ok = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .is_some_and(|s| s.len() == 40 && s.bytes().all(|b| b.is_ascii_hexdigit()));
+            if stem_ok && !path.exists() && !todo.contains(&path) {
+                todo.push(path);
+            }
+        }
+    }
+    {
+        let failed = ICON_FAILED.lock().unwrap();
+        todo.retain(|p| !failed.contains(&p.to_string_lossy().to_string()));
+    }
+    if todo.is_empty() {
+        return;
+    }
+    let agent = ureq::AgentBuilder::new()
+        .timeout_connect(Duration::from_secs(5))
+        .timeout(Duration::from_secs(15))
+        .build();
+    let chunk = todo.len().div_ceil(8).max(1);
+    std::thread::scope(|sc| {
+        for part in todo.chunks(chunk) {
+            let agent = &agent;
+            sc.spawn(move || {
+                for path in part {
+                    let name = path.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+                    let url = format!("https://shared.fastly.steamstatic.com/community_assets/images/apps/{app_id}/{name}");
+                    let ok = (|| -> Option<()> {
+                        let resp = agent.get(&url).call().ok()?;
+                        let mut bytes = Vec::new();
+                        std::io::Read::read_to_end(&mut std::io::Read::take(resp.into_reader(), 2_000_000), &mut bytes).ok()?;
+                        if bytes.is_empty() {
+                            return None;
+                        }
+                        std::fs::create_dir_all(path.parent()?).ok()?;
+                        std::fs::write(path, bytes).ok()
+                    })();
+                    if ok.is_none() {
+                        ICON_FAILED.lock().unwrap().push(path.to_string_lossy().to_string());
+                    }
+                }
+            });
+        }
+    });
 }
 
 /// La webview no puede leer rutas del disco fuera de la cache (scope de assets): los iconos que son
