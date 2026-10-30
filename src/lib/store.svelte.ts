@@ -385,7 +385,7 @@ class Store {
   platform = $derived(this.lib.platforms[this.p]);
 
   /* Estadísticas: clasificación por periodo o calendario; evolución de un juego. */
-  statsTab = $state<'rank' | 'fin' | 'cal' | 'year'>('rank');
+  statsTab = $state<'rank' | 'cal' | 'year'>('rank');
   /** Resumen anual: año elegido (null = el último con partidas), tarjeta actual y sentido de la última animación. */
   yearSel = $state<number | null>(null);
   yearCard = $state(0);

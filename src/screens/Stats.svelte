@@ -3,20 +3,20 @@
   // y calendario de los últimos 6 meses con el detalle del día enfocado.
   import { app } from '../lib/store.svelte';
   import { RANK_VIEW_H, rankH, rankY } from '../lib/controller.svelte';
-  import { CAL_WEEKS, PERIOD_KINDS, WDAYS, addDays, dayPlays, fmtClock, fmtHM, fmtLongDay, prevName } from '../lib/stats';
+  import { CAL_WEEKS, STATS_KINDS, WDAYS, addDays, dayPlays, fmtClock, fmtHM, fmtLongDay } from '../lib/stats';
   import TopBar from '../components/TopBar.svelte';
   import Hints from '../components/Hints.svelte';
   import HeroStrip from '../components/HeroStrip.svelte';
   import MiniCover from '../components/MiniCover.svelte';
   import Year from './Year.svelte';
-  import FinStats from './FinStats.svelte';
 
+  const KIND_LABEL: Record<string, string> = { month: 'Mes', year: 'Año', all: 'Siempre' };
+  const VIEW_LABEL = { rank: 'Clasificación', cal: 'Calendario', year: 'Resumen anual' };
   const R = $derived(app.rank);
   const rows = $derived(R.rows);
   const maxMs = $derived(Math.max(1, ...rows.map((r) => r.ms)));
   const all = $derived(app.statsKind === 'all');
   const now = $derived(app.now.getTime());
-  const prevN = $derived(prevName(app.statsKind, app.statsOff, now));
   const avg = $derived(R.n ? R.ms / R.n : 0);
   // Días transcurridos del periodo (el actual aún no ha terminado).
   const elapsed = $derived.by(() => {
@@ -25,10 +25,6 @@
     return Math.max(0, Math.round((to - R.range.from) / 864e5));
   });
   const pname = (pi: number) => app.lib.platforms[pi]?.name ?? '';
-  const plus = (d: number, f: (x: number) => string, unit = '') =>
-    d > 0 ? { c: 'up', t: `▲ ${f(d)}${unit} más` } : d < 0 ? { c: 'down', t: `▼ ${f(-d)}${unit} menos` } : { c: 'eq', t: '= igual' };
-  const delta = (ms: number, prev: number) =>
-    all ? null : prev === 0 ? (ms > 0 ? { c: 'up', t: 'nuevo' } : null) : ms === prev ? { c: 'eq', t: '=' } : { c: ms > prev ? 'up' : 'down', t: `${ms > prev ? '▲' : '▼'} ${fmtHM(Math.abs(ms - prev))}` };
   const canNewer = $derived(!all && app.statsOff < 0);
   const canOlder = $derived(!all && R.older);
 
@@ -66,66 +62,56 @@
   const SHOW = 4;
 </script>
 
-<TopBar crumbs={['Inicio', 'Estadísticas', app.statsTab === 'rank' ? 'Clasificación' : app.statsTab === 'fin' ? 'Terminados' : app.statsTab === 'cal' ? 'Calendario' : 'Resumen anual']} />
+<TopBar crumbs={['Inicio', 'Estadísticas', VIEW_LABEL[app.statsTab]]} />
 
-<div class="sttop">
+<div class="sx">
   {#if app.statsTab === 'rank'}
-    <div class="stabs pill">
-      <span class="btn sh" data-hact="lb">LB</span>
-      {#each PERIOD_KINDS as [k, l]}<span class="t" class:on={app.statsKind === k}>{l}</span>{/each}
-      <span class="btn sh" data-hact="rb">RB</span>
-    </div>
-    <div class="stper pill" data-hact="x">
-      <span class="btn sh">X</span>
-      <b>{pname(app.statsPlat) || 'Sin partidas'}</b>
-    </div>
-    {#if !all}
-      <div class="stper pill">
-        <span class="btn sh" class:off={!canOlder} data-hact="lt">LT</span>
-        <b>{R.range.label}</b>
-        <span class="btn sh" class:off={!canNewer} data-hact="rt">RT</span>
-      </div>
-    {/if}
+    <span class="cat">{pname(app.statsPlat) || 'Sin partidas'}</span>
+    <span class="dot"></span>
+    <span class="gl" data-hact="x">{#each STATS_KINDS as k}<span class="o" class:gem={app.statsKind === k}>{KIND_LABEL[k]}</span>{/each}</span>
+    <span class="gl" class:off={all}>
+      <span class="chev" class:dis={!canOlder} data-hact="lb">{@render chev(true)}</span>
+      <span class="lbl">{R.range.label}</span>
+      <span class="chev" class:dis={!canNewer} data-hact="rb">{@render chev(false)}</span>
+    </span>
   {:else if app.statsTab === 'year'}
     {@const yi = app.years.indexOf(app.yearNow)}
-    <div class="stper pill">
-      <span class="btn sh" class:off={yi <= 0} data-hact="lt">LT</span>
-      <b>{app.yearNow}</b>
-      <span class="btn sh" class:off={yi < 0 || yi >= app.years.length - 1} data-hact="rt">RT</span>
-    </div>
+    <span class="cat">Resumen anual</span>
+    <span class="gl">
+      <span class="chev" class:dis={yi <= 0} data-hact="lb">{@render chev(true)}</span>
+      <span class="lbl">{app.yearNow}</span>
+      <span class="chev" class:dis={yi < 0 || yi >= app.years.length - 1} data-hact="rb">{@render chev(false)}</span>
+    </span>
   {:else}
-    <div class="stper pill">
-      <span class="btn sh" class:off={!C.older} data-hact="lt">LT</span>
-      <b>{calRange}</b>
-      <span class="btn sh" class:off={app.calOff >= 0} data-hact="rt">RT</span>
-    </div>
+    <span class="cat">Calendario</span>
+    <span class="gl">
+      <span class="chev" class:dis={!C.older} data-hact="lb">{@render chev(true)}</span>
+      <span class="lbl cal">{calRange}</span>
+      <span class="chev" class:dis={app.calOff >= 0} data-hact="rb">{@render chev(false)}</span>
+    </span>
   {/if}
-  <div class="stview pill" data-hact="y">
-    <span class="btn y">Y</span>
-    <span class="t" class:on={app.statsTab === 'rank'}>Clasificación</span>
-    <span class="t" class:on={app.statsTab === 'fin'}>Terminados</span>
-    <span class="t" class:on={app.statsTab === 'cal'}>Calendario</span>
-    <span class="t" class:on={app.statsTab === 'year'}>Resumen anual</span>
-  </div>
+  <span class="gl vsw" data-hact="y">
+    <span class="gem">{VIEW_LABEL[app.statsTab]}</span>
+    <span class="dots">{#each ['rank', 'cal', 'year'] as v}<i class:on={app.statsTab === v}></i>{/each}</span>
+  </span>
 </div>
+
+{#snippet chev(left: boolean)}
+  <svg viewBox="0 0 12 12"><path d={left ? 'M7.5 2 3.5 6l4 4' : 'M4.5 2l4 4-4 4'} /></svg>
+{/snippet}
 
 {#if app.statsTab === 'year'}
   <Year />
-  <Hints list={[['A', 'Siguiente', 'a'], ['LT', 'Año anterior', 'lt'], ['RT', 'Año siguiente', 'rt'], ['Y', 'Clasificación', 'y'], ['B', 'Volver', 'b']]} />
-{:else if app.statsTab === 'fin'}
-  <FinStats />
-  <Hints list={[['A', 'Abrir ficha', 'a'], ['Y', 'Siguiente vista', 'y'], ['B', 'Volver', 'b']]} />
+  <Hints list={[['A', 'Siguiente', 'a'], ['LB/RB', 'Año', 'rb'], ['Y', 'Clasificación', 'y'], ['B', 'Volver', 'b']]} />
 {:else if app.statsTab === 'rank'}
   <div class="stsum">
     <div class="rbox">
       <div class="k">Tiempo jugado</div>
       <div class="v acc">{fmtHM(R.ms)}</div>
-      {#if !all}{@const d = plus(R.ms - R.prevMs, fmtHM)}<div class="s {d.c}">{d.t}{d.c === 'eq' ? '' : ` que ${prevN}`}</div>{/if}
     </div>
     <div class="rbox">
       <div class="k">Partidas</div>
       <div class="v">{R.n}</div>
-      {#if !all}{@const d = plus(R.n - R.prevN, String)}<div class="s {d.c}">{d.t}</div>{/if}
     </div>
     <div class="rbox">
       <div class="k">Media por partida</div>
@@ -149,24 +135,21 @@
       <div class="inner" style="transform:translateY({-app.goff}px)">
         {#each rows as r, i (r.t.id)}
           {@const a = app.titleAcc(r.pi, r.ti).c}
-          {@const d = delta(r.ms, r.prevMs)}
           {#if i < 3}
             <!-- Top 3: el hero se funde hacia el blanco y el logo va encima. -->
             <div class="rrow hrow fx" class:f={app.focus === 'sr' + i} data-k="sr{i}" data-act="sr:{r.pi}:{r.ti}" style="--g:{a}">
               <span class="medal m{i}">{i + 1}º</span>
               <HeroStrip t={r.t} />
-              <span class="bar"><i style="width:{(r.ms / maxMs) * 100}%"></i>{#if r.prevMs > 0 && r.prevMs <= maxMs}<u style="left:{(r.prevMs / maxMs) * 100}%"></u>{/if}</span>
+              <span class="bar"><i style="width:{(r.ms / maxMs) * 100}%"></i></span>
               <span class="tm">{fmtHM(r.ms)}<small>&nbsp;·&nbsp;{r.n} {r.n === 1 ? 'partida' : 'partidas'}</small></span>
-              <span class="dl {d?.c ?? ''}">{d?.t ?? ''}</span>
             </div>
           {:else}
             <div class="rrow fx" class:f={app.focus === 'sr' + i} data-k="sr{i}" data-act="sr:{r.pi}:{r.ti}" style="--g:{a}">
               <span class="pos">{i + 1}º</span>
               <MiniCover t={r.t} acc={a} />
               <span class="nm">{r.t.name}<small>{pname(r.pi)}</small></span>
-              <span class="bar"><i style="width:{(r.ms / maxMs) * 100}%"></i>{#if r.prevMs > 0 && r.prevMs <= maxMs}<u style="left:{(r.prevMs / maxMs) * 100}%"></u>{/if}</span>
+              <span class="bar"><i style="width:{(r.ms / maxMs) * 100}%"></i></span>
               <span class="tm">{fmtHM(r.ms)}<small>&nbsp;·&nbsp;{r.n} {r.n === 1 ? 'partida' : 'partidas'}</small></span>
-              <span class="dl {d?.c ?? ''}">{d?.t ?? ''}</span>
             </div>
           {/if}
         {/each}
@@ -177,7 +160,7 @@
     {/if}
   {/if}
 
-  <Hints list={[['A', 'Ver juego', 'a'], ['X', 'Categoría', 'x'], ['Y', 'Calendario', 'y'], ['B', 'Volver', 'b']]} />
+  <Hints list={[['A', 'Ver juego', 'a'], ['LB/RB', 'Fecha', 'rb'], ['X', 'Periodo', 'x'], ['LT/RT', 'Categoría', 'rt'], ['Y', 'Calendario', 'y'], ['B', 'Volver', 'b']]} />
 {:else}
   <div class="stsum">
     <div class="rbox"><div class="k">Días con partida</div><div class="v acc">{C.played} <small>de {C.elapsed}</small></div></div>
@@ -233,5 +216,5 @@
     {/if}
   </div>
 
-  <Hints list={[['LT', 'Antes', 'lt'], ['RT', 'Después', 'rt'], ['Y', 'Resumen anual', 'y'], ['B', 'Volver', 'b']]} />
+  <Hints list={[['LB/RB', 'Fecha', 'rb'], ['Y', 'Resumen anual', 'y'], ['B', 'Volver', 'b']]} />
 {/if}

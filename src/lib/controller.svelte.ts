@@ -11,7 +11,7 @@ import {
 } from './ops.svelte';
 import { shotLayout, type ShotLayout } from './shotlayout';
 import { tgrid, TZOOM_MAX } from './tgrid';
-import { EVO_KINDS, GMETRICS, PERIOD_KINDS } from './stats';
+import { EVO_KINDS, GMETRICS, STATS_KINDS } from './stats';
 import { editSgdbKey, openSgdbPicker, openSgdbTitles, sgdbAuto, sgdbCmd, sgdbTitlesCmd, toggleSgdbAuto } from './sgdb.svelte';
 import { AUDIO_COMBO_PRESETS, AUDIO_HOTKEY_PRESETS, COMBO_PRESETS, HOTKEY_PRESETS, MOUSE_PRESETS, learnKeydown, learnMouse, onLearnPad, startLearn } from './learn.svelte';
 import { READING_ROWS, isReadingId, readingAct, type ReadingId } from './reading.svelte';
@@ -755,21 +755,14 @@ function yearShift(d: number) {
   blip(700);
 }
 
-/** Y recorre Clasificación > Terminados > Calendario > Resumen anual. */
+/** Y recorre Clasificación > Calendario > Resumen anual (Terminados vive en «Mi lista»). */
 function toggleStatsTab() {
-  app.statsTab = app.statsTab === 'rank' ? 'fin' : app.statsTab === 'fin' ? 'cal' : app.statsTab === 'cal' ? 'year' : 'rank';
+  app.statsTab = app.statsTab === 'rank' ? 'cal' : app.statsTab === 'cal' ? 'year' : 'rank';
   if (app.statsTab === 'year') { app.yearCard = 0; app.yearSel = null; }
   app.goff = 0;
   delete app.fk.stats;
   setFocus(defaultKey('stats'));
   blip(700);
-}
-
-export function openFinStats() {
-  app.statsTab = 'fin';
-  delete app.fk.stats;
-  go('stats', 'fwd');
-  blip(1320);
 }
 
 /** LB/RB en las estadísticas de categoría: otra métrica de la clasificación. */
@@ -782,17 +775,26 @@ function gsMetric(d: number) {
   blip(700);
 }
 
-/** X en la clasificación: siguiente categoría con partidas (la clasificación nunca mezcla categorías). */
-function cycleStatsPlat() {
+/** LT/RT en la clasificación: categoría anterior/siguiente con partidas (la clasificación nunca mezcla categorías). */
+function cycleStatsPlat(d = 1) {
   const ps = app.statsPlats;
-  if (ps.length < 2) { bump(screenEl()?.querySelector('.fx.f'), 1, 0); return; }
-  app.statsPlatSel = ps[(ps.indexOf(app.statsPlat) + 1) % ps.length];
+  if (ps.length < 2) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+  app.statsPlatSel = ps[(ps.indexOf(app.statsPlat) + d + ps.length) % ps.length];
   app.goff = 0;
   setFocus(defaultKey('stats'));
   blip(700);
 }
 
-/** LB/RB: tipo de periodo (o escala de la evolución); en el calendario, igual que LT/RT. */
+/** X en la clasificación: Mes > Año > Siempre. */
+function cycleStatsKind() {
+  const ks = STATS_KINDS;
+  app.statsKind = ks[(ks.indexOf(app.statsKind) + 1) % ks.length];
+  app.statsOff = 0; app.goff = 0;
+  setFocus(defaultKey('stats'));
+  blip(700);
+}
+
+/** LB/RB: en la clasificación y el calendario mueven la fecha; en la evolución, la escala. */
 function statsKind(d: number) {
   if (app.view === 'stats' && app.statsTab === 'year') { yearShift(d); return; }
   if (app.view === 'evo') {
@@ -800,12 +802,6 @@ function statsKind(d: number) {
     if (i < 0 || i >= EVO_KINDS.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
     app.evoKind = EVO_KINDS[i][0];
     setFocus(defaultKey('evo'));
-  } else if (app.statsTab === 'rank') {
-    const i = PERIOD_KINDS.findIndex(([k]) => k === app.statsKind) + d;
-    if (i < 0 || i >= PERIOD_KINDS.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
-    app.statsKind = PERIOD_KINDS[i][0];
-    app.statsOff = 0; app.goff = 0;
-    setFocus(defaultKey('stats'));
   } else { statsShift(d); return; }
   blip(700);
 }
@@ -949,6 +945,7 @@ export function page(d: number) {
 
 /** LT/RT: en la lista de juegos, pestaña anterior/siguiente; en la vista de capturas por días, día anterior/siguiente. */
 export function trigger(d: number) {
+  if (app.view === 'stats' && app.statsTab === 'rank') { cycleStatsPlat(d); return; }
   if (app.view === 'stats' || app.view === 'evo') { statsShift(d); return; }
   if (app.view === 'titles') { cycleTitlesTab(d); return; }
   if (app.view === 'shots' && daysOn()) {
@@ -1729,7 +1726,7 @@ export function cmd(c: string) {
         const t = r && app.lib.platforms[r.pi]?.titles[r.ti];
         if (t?.launchable) void playTitle(t); else bump(screenEl()?.querySelector('.fx.f'), 0, 0);
       } else if (app.view === 'titles') cycleTitleOrder();
-      else if (app.view === 'stats' && app.statsTab === 'rank') cycleStatsPlat();
+      else if (app.view === 'stats' && app.statsTab === 'rank') cycleStatsKind();
       else toggleFav();
       break;
     case 'lt': trigger(-1); break;

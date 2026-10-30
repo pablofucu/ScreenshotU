@@ -54,6 +54,8 @@ export function games(lib: Library): GameRef[] {
 
 /* ---------- periodos ---------- */
 export type PeriodKind = 'week' | 'month' | 'year' | 'all';
+/** Periodos que ofrece la clasificación (X los recorre). */
+export const STATS_KINDS: PeriodKind[] = ['month', 'year', 'all'];
 export const PERIOD_KINDS: Array<[PeriodKind, string]> = [['week', 'Semana'], ['month', 'Mes'], ['year', 'Año'], ['all', 'Siempre']];
 export interface Range { from: number; to: number; label: string }
 
