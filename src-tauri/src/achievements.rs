@@ -131,8 +131,30 @@ pub fn get_game_achievements(
     app_id: Option<String>,
 ) -> Result<Vec<Achievement>, String> {
     let state = app.state::<AppState>();
-    let (_, list) = sync_achievements_from_disk(&state, &game_id, app_id.as_deref())?;
+    let (_, mut list) = sync_achievements_from_disk(&state, &game_id, app_id.as_deref())?;
+    for a in &mut list {
+        a.icon = inline_icon(a.icon.take());
+        a.icon_gray = inline_icon(a.icon_gray.take());
+    }
     Ok(list)
+}
+
+/// La webview no puede leer rutas del disco fuera de la cache (scope de assets): los iconos que son
+/// ficheros locales se mandan como `data:`; las URL y los `data:` ya existentes se dejan igual.
+fn inline_icon(icon: Option<String>) -> Option<String> {
+    let s = icon?;
+    if s.starts_with("data:") || s.starts_with("http://") || s.starts_with("https://") {
+        return Some(s);
+    }
+    let bytes = std::fs::read(&s).ok()?;
+    let mime = match Path::new(&s).extension().and_then(|e| e.to_str()).map(|e| e.to_ascii_lowercase()).as_deref() {
+        Some("png") => "image/png",
+        Some("webp") => "image/webp",
+        Some("gif") => "image/gif",
+        Some("ico") => "image/x-icon",
+        _ => "image/jpeg",
+    };
+    Some(format!("data:{mime};base64,{}", visor_core::capture::base64(&bytes)))
 }
 
 #[tauri::command]
