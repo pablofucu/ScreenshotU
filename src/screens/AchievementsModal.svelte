@@ -48,6 +48,17 @@
       void cycleCardVariant(achState.gameId);
     }
   }
+
+  let listEl = $state<HTMLElement | null>(null);
+
+  // Auto-scroll suave para el foco del mando sin necesidad de barra de scroll
+  $effect(() => {
+    const idx = achState.selectedIdx;
+    if (listEl) {
+      const el = listEl.querySelector<HTMLElement>(`[data-idx="${idx}"]`);
+      el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  });
 </script>
 
 <div class="modal-root">
@@ -110,8 +121,8 @@
 
       <!-- Cuerpo principal: Dos columnas -->
       <div class="modal-body">
-        <!-- Columna izquierda: Lista scrollable de logros -->
-        <div class="ach-list">
+        <!-- Columna izquierda: Lista scrollable de logros (sin barras visibles) -->
+        <div class="ach-list" bind:this={listEl}>
           {#if filtered.length === 0}
             <div class="empty-state">
               {#if achState.tab === 'unlocked'}
@@ -128,6 +139,7 @@
               <button
                 type="button"
                 class="ach-item"
+                data-idx={i}
                 class:selected={i === achState.selectedIdx}
                 class:earned={ach.earned}
                 class:is-hidden={hidden}
@@ -137,6 +149,8 @@
                 <div class="ach-ico" class:earned={ach.earned} class:secret={hidden}>
                   {#if hidden}
                     <b class="qmark">?</b>
+                  {:else if ach.icon}
+                    <img src={ach.icon} alt={ach.displayName} class="ach-ico-img" />
                   {:else if ach.earned}
                     {@html trophySvg}
                   {:else}
@@ -176,6 +190,8 @@
                 <div class="detail-ico" class:earned={selected.earned} class:secret={isSecret}>
                   {#if isSecret}
                     <b class="big-qmark">?</b>
+                  {:else if selected.icon}
+                    <img src={selected.icon} alt={selected.displayName} class="detail-ico-img" />
                   {:else if selected.earned}
                     {@html trophySvg}
                   {:else}
@@ -489,13 +505,20 @@
     min-height: 0;
   }
 
-  /* Lista */
+  /* Lista (scroll sin barra visible, navegación por mando) */
   .ach-list {
     overflow-y: auto;
-    padding-right: 8px;
+    padding-right: 4px;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .ach-list::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
   .ach-item {
     display: flex;
@@ -528,6 +551,7 @@
     place-items: center;
     background: #dfe4ec;
     color: #7a8291;
+    overflow: hidden;
   }
   .ach-ico.earned {
     background: linear-gradient(150deg, #f59e0b, #d97706);
@@ -541,6 +565,15 @@
   .ach-ico :global(svg) {
     width: 22px;
     height: 22px;
+  }
+  .ach-ico-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+  }
+  .ach-item:not(.earned) .ach-ico-img {
+    filter: grayscale(0.85) opacity(0.65);
   }
   .qmark {
     font-size: 22px;
@@ -597,7 +630,7 @@
     color: #059669 !important;
   }
 
-  /* Detalle lateral */
+  /* Detalle lateral (scroll sin barra visible) */
   .ach-detail {
     background: rgba(255, 255, 255, 0.85);
     border-radius: 20px;
@@ -606,6 +639,13 @@
     flex-direction: column;
     box-shadow: inset 0 1px 0 #fff, 0 4px 14px rgba(0, 0, 0, 0.05);
     overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .ach-detail::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
   .detail-card {
     display: flex;
@@ -626,6 +666,7 @@
     background: #cbd5e1;
     color: #64748b;
     flex: none;
+    overflow: hidden;
   }
   .detail-ico.earned {
     background: linear-gradient(150deg, #f59e0b, #d97706);
@@ -639,6 +680,15 @@
   .detail-ico :global(svg) {
     width: 34px;
     height: 34px;
+  }
+  .detail-ico-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 16px;
+  }
+  .detail-ico:not(.earned) .detail-ico-img {
+    filter: grayscale(0.85) opacity(0.65);
   }
   .big-qmark {
     font-size: 32px;

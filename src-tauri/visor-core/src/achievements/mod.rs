@@ -45,9 +45,9 @@ CREATE TABLE title_achievements_pref (
 );
 "#;
 
-pub const VALID_VARIANTS: &[u8] = &[1, 2, 4, 7, 8];
+pub const VALID_VARIANTS: &[u8] = &[1, 2, 3, 4, 7, 8];
 
-/// Normaliza la variante de tarjeta elegida a una de las permitidas (1, 2, 4, 7 u 8).
+/// Normaliza la variante de tarjeta elegida a una de las permitidas (1, 2, 3, 4, 7 u 8).
 pub fn normalize_variant(v: u8) -> u8 {
     if VALID_VARIANTS.contains(&v) {
         v

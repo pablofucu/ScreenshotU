@@ -5,12 +5,13 @@ import { blip } from './sound';
 import { closeOverlay, pushOverlay, toast } from './controller.svelte';
 import type { Achievement, AchievementSummary } from './types';
 
-export const VALID_VARIANTS = [1, 2, 4, 7, 8] as const;
+export const VALID_VARIANTS = [1, 2, 3, 4, 7, 8] as const;
 export type AchievementVariant = (typeof VALID_VARIANTS)[number];
 
 export const VARIANT_NAMES: Record<number, string> = {
   1: 'Anillo + último logro',
   2: 'Portada + banda',
+  3: 'Mosaico de iconos',
   4: 'Medalla de rango',
   7: 'Contador de horas',
   8: 'Por rareza',
@@ -19,6 +20,7 @@ export const VARIANT_NAMES: Record<number, string> = {
 export const VARIANT_SHORT_NAMES: Record<number, string> = {
   1: 'Anillo',
   2: 'Banda',
+  3: 'Mosaico',
   4: 'Medalla',
   7: 'Contador',
   8: 'Rareza',

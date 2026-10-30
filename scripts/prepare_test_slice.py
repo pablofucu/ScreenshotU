@@ -3,6 +3,57 @@ import shutil
 import sqlite3
 import json
 import time
+import base64
+
+def generate_badge_data_uri(app_id, api_name, display_name):
+    colors = {
+        "1245620": ("#ffd24d", "#b47a00", "#3a2500"),  # Elden Ring (gold / amber)
+        "1091500": ("#00f0ff", "#ff0055", "#180828"),  # Cyberpunk (cyan / magenta)
+        "1888160": ("#ff4444", "#8b0000", "#1a1a24"),  # Armored Core VI (ruby / industrial)
+        "1086940": ("#2dd4bf", "#0d9488", "#0f172a"),  # Alan Wake 2 (dark teal / obsidian)
+        "1693980": ("#38bdf8", "#0284c7", "#1c1917"),  # Dead Space (plasma blue / stone)
+        "1158850": ("#fbbf24", "#d97706", "#1e1b4b"),  # Ace Attorney (gold / royal navy)
+    }
+    c_primary, c_accent, c_bg = colors.get(str(app_id), ("#ffd24d", "#f59e0b", "#1e293b"))
+
+    key = (api_name + " " + display_name).lower()
+    if any(k in key for k in ["boss", "shardbearer", "malenia", "radahn", "godrick", "morgott", "rykard", "mohg", "maliketh", "warrior", "lord", "sword", "confront"]):
+        emblem = '<path d="M42 22 L52 12 L56 16 L46 26 M44 24 L24 44 L20 40 L40 20 M18 42 L14 46 L18 50 L22 46 M15 49 L10 54" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'
+    elif any(k in key for k in ["ring", "stars", "erdtree", "rune", "roundtable"]):
+        emblem = '<circle cx="32" cy="32" r="14" stroke="currentColor" stroke-width="3.5" fill="none"/><circle cx="32" cy="32" r="7" stroke="currentColor" stroke-width="2" stroke-dasharray="3 3" fill="none"/>'
+    elif any(k in key for k in ["gun", "revolver", "plasma", "weapon", "cut", "limb", "armaments", "gunslinger"]):
+        emblem = '<path d="M16 34 L36 34 L36 28 L46 28 L46 32 L50 32 L50 36 L36 36 L34 46 L28 46 L30 38 L16 38 Z" stroke="currentColor" stroke-width="3" fill="rgba(255,255,255,0.2)"/>'
+    elif any(k in key for k in ["mercenary", "fool", "lovers", "hermit", "wheel", "priestess", "world", "afterlife", "breathtaking", "city"]):
+        emblem = '<path d="M22 26 C22 18 42 18 42 26 C42 32 38 34 38 40 L26 40 C26 34 22 32 22 26 Z M26 40 L26 44 L38 44 L38 40" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="27" cy="27" r="2.5" fill="currentColor"/><circle cx="37" cy="27" r="2.5" fill="currentColor"/>'
+    elif any(k in key for k in ["raven", "mech", "arena", "mind", "tuning", "wall", "ocean", "worm", "entry", "fires", "liberator", "alea", "asset", "combat", "training", "testing", "tangent"]):
+        emblem = '<path d="M20 24 L32 16 L44 24 L40 40 L32 46 L24 40 Z M28 28 L36 28 L34 36 L30 36 Z" stroke="currentColor" stroke-width="3" fill="rgba(255,255,255,0.15)"/>'
+    elif any(k in key for k in ["detective", "court", "trial", "jury", "attorney", "objection", "departure", "watson", "herlock", "memoirs", "reaper", "armchair", "summation", "runaway", "story", "resolve"]):
+        emblem = '<path d="M20 20 L28 14 L34 22 L26 28 Z M30 26 L46 42 L42 46 L26 30" stroke="currentColor" stroke-width="3" fill="rgba(255,255,255,0.25)"/>'
+    elif any(k in key for k in ["dark", "light", "lamp", "room", "coffee", "writer", "escape", "overlap", "presence", "board", "scratch", "heralds", "song", "road"]):
+        emblem = '<path d="M24 38 L40 38 L36 22 L28 22 Z M32 16 L32 22 M26 44 L38 44" stroke="currentColor" stroke-width="3" fill="none"/><circle cx="32" cy="30" r="4" fill="currentColor"/>'
+    elif any(k in key for k in ["officer", "whole", "zero-g", "marker", "brute", "ishimura", "concordance", "surgeon", "maxed", "wishbone"]):
+        emblem = '<path d="M32 14 L46 20 V32 C46 40 32 48 32 48 C32 48 18 40 18 32 V20 Z" stroke="currentColor" stroke-width="3" fill="rgba(255,255,255,0.2)"/>'
+    else:
+        emblem = '<path d="M32 16 L36 26 L46 27 L38 34 L41 44 L32 39 L23 44 L26 34 L18 27 L28 26 Z" stroke="currentColor" stroke-width="2.5" fill="rgba(255,255,255,0.25)"/>'
+
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="{c_bg}"/>
+      <stop offset="100%" stop-color="#070a10"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="{c_primary}"/>
+      <stop offset="100%" stop-color="{c_accent}"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="58" height="58" rx="14" fill="url(#bg)" stroke="url(#rim)" stroke-width="2.5"/>
+  <rect x="7" y="7" width="50" height="50" rx="10" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/>
+  <g color="{c_primary}">
+    {emblem}
+  </g>
+</svg>"""
+    return "data:image/svg+xml;base64," + base64.b64encode(svg.encode("utf-8")).decode("ascii")
 
 SRC_DB = r"P:\ScreenshotUL\Visor de capturas\visor.db"
 SRC_CONFIG = r"P:\ScreenshotUL\Visor de capturas\config.json"
@@ -58,6 +109,32 @@ SHOWCASE_GAMES = [
             ("ACH_PANAM_ROAD", "Life of the Road", "Complete Panam Palmer's storyline", False, 1),
             ("ACH_GUNSLINGER", "Gunslinger", "Shoot an enemy grenade mid-air with a revolver", False, 0),
             ("ACH_LEGEND_OF_AFTERLIFE", "Legend of the Afterlife", "Reach maximum Street Cred", False, 1),
+        ]
+    },
+    {
+        "id": "manual:18e09f128fce914f",
+        "app_id": "1888160",
+        "name": "ARMORED CORE VI FIRES OF RUBICON",
+        "variant": 3,
+        "achievements": [
+            ("ACH_RAVEN", "The Fires of Raven", "Reached ending: The Fires of Raven", False, 1),
+            ("ACH_LIBERATOR", "Liberator of Rubicon", "Reached ending: Liberator of Rubicon", False, 1),
+            ("ACH_ALEPHEA", "Alea Iacta Est", "Reached ending: Alea Iacta Est", True, 0),
+            ("ACH_MASTER_ARENA", "Master of Arena", "Completed all Arena programs", False, 1),
+            ("ACH_ASSET_HOLDER", "Asset Holder", "Acquired all parts", False, 0),
+            ("ACH_TUNING_EXPERT", "Tuning Expert", "Performed all OS upgrades", False, 1),
+            ("ACH_EXPANDING_MIND", "Expanding Mind", "Unlocked all OS Tuning chips", False, 1),
+            ("ACH_CONTACT", "Illegal Entry", "Completed mission: Illegal Entry", False, 1),
+            ("ACH_OPERATION_WALL", "Operation Wallclimber", "Completed mission: Operation Wallclimber", False, 1),
+            ("ACH_OCEAN_CROSSING", "Ocean Crossing", "Completed mission: Ocean Crossing", False, 1),
+            ("ACH_ICE_WORM", "Into the Depths", "Defeated the Ice Worm", False, 1),
+            ("ACH_ALLMIND", "MIND TANGENT", "Achieved complete integration with ALLMIND", True, 0),
+            ("ACH_COMBAT_LOG", "Combat Log Collector", "Acquired all combat logs", False, 0),
+            ("ACH_TRAINING", "Training Complete", "Completed all training programs", False, 1),
+            ("ACH_TESTING", "Weapon Testing", "Completed testing at the proving ground", False, 1),
+            ("ACH_STRIKE", "The External", "Cleared the Redguns encounter", False, 0),
+            ("ACH_RUSTY", "Steel Haze", "Defeated V.IV Rusty in duel", False, 1),
+            ("ACH_S_RANK", "Perfect Mercenary", "Achieved S rank on all missions", False, 0),
         ]
     },
     {
@@ -117,7 +194,6 @@ SHOWCASE_GAMES = [
 ]
 
 OTHER_GAMES = [
-    "manual:18e09f128fce914f",  # Armored Core VI
     "manual:18e09f128f5e9148",  # A Plague Tale: Requiem
     "manual:18e09f128f8e914b",  # Age of Empires IV
     "manual:18e09f1298ee91e1",  # Xenoblade Chronicles 3
@@ -312,15 +388,17 @@ def build_test_database():
         if game.get("app_id"):
             target_ids.append(game["app_id"])
 
+        app_id_for_icon = game.get("app_id", "default")
         for target_id in target_ids:
             dst_cur.execute("INSERT OR REPLACE INTO title_achievements_pref (title_id, variant) VALUES (?, ?)", (target_id, variant))
 
             for idx, (api_name, display_name, desc, hidden, unlocked) in enumerate(achs):
                 hidden_val = 1 if hidden else 0
+                icon_uri = generate_badge_data_uri(app_id_for_icon, api_name, display_name)
                 dst_cur.execute("""
                     INSERT OR REPLACE INTO achievements (app_id, api_name, display_name, description, hidden, icon, icon_gray, source)
                     VALUES (?, ?, ?, ?, ?, ?, ?, 'gse')
-                """, (target_id, api_name, display_name, desc, hidden_val, None, None))
+                """, (target_id, api_name, display_name, desc, hidden_val, icon_uri, icon_uri))
 
                 if unlocked:
                     days_ago = idx % 6

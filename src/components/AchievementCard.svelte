@@ -43,16 +43,12 @@
     return () => ctl.abort();
   });
 
-  // SVG Trophy Icon
+  // SVG Icons
   const trophySvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8M9 17h6"/></svg>`;
+  const lockSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`;
 
   function onCardClick() {
     openAchievementsModal(gameId, title, coverPath);
-  }
-
-  function onVariantCycle(e: MouseEvent) {
-    e.stopPropagation();
-    void cycleCardVariant(gameId);
   }
 </script>
 
@@ -82,19 +78,6 @@
   title="Ver lista de logros (A) · Cambiar diseño (Y)"
 >
   <div class="face">
-    {#if summary && total > 0}
-      <!-- Píldora selector de variante en la esquina superior derecha -->
-      <button
-        class="var-pill"
-        type="button"
-        onclick={onVariantCycle}
-        title="Cambiar diseño de tarjeta (Y)"
-      >
-        <span>{variant} · {VARIANT_SHORT_NAMES[variant] ?? 'Variante'}</span>
-        <small>▾</small>
-      </button>
-    {/if}
-
     {#if !summary || total === 0}
       <!-- Sin logros: Portada normal -->
       {#if coverPath}
@@ -136,7 +119,11 @@
 
         <div class="last">
           <div class="ai" style="--h:45;width:34px;height:34px">
-            {@html trophySvg}
+            {#if last?.icon}
+              <img src={last.icon} alt={last.displayName} class="card-ico-img" />
+            {:else}
+              {@html trophySvg}
+            {/if}
           </div>
           <div class="last-txt">
             <b>{last ? last.displayName : 'Sin desbloqueos'}</b>
@@ -164,12 +151,55 @@
           </div>
           <div class="gb"><i style="width:{pct}%"></i></div>
           <div class="ics">
-            {#each Array(Math.min(5, unlocked)) as _, i}
+            {#each (achState.list && achState.list.length > 0 ? achState.list.filter(a => a.earned).slice(0, 5) : Array(Math.min(5, unlocked)).fill(null)) as ach, i}
               <div class="ai mini" style="--h:{i * 60 + 20};width:20px;height:20px">
-                {@html trophySvg}
+                {#if ach?.icon}
+                  <img src={ach.icon} alt={ach?.displayName ?? ''} class="card-ico-img" />
+                {:else}
+                  {@html trophySvg}
+                {/if}
               </div>
             {/each}
           </div>
+        </div>
+      </div>
+    {:else if variant === 3}
+      <!-- VARIANTE 3: Mosaico de la colección con todos los iconos -->
+      <div class="fc v3">
+        <div class="blurc" style={blur ? `background-image:url(${blur})` : ''}></div>
+        <div class="lab">
+          {@html trophySvg}
+          <span>Colección</span>
+          <em>{unlocked}/{total}</em>
+        </div>
+        <div class="mos">
+          {#each (achState.list && achState.list.length > 0 ? achState.list : Array(Math.min(25, total)).fill(null)).slice(0, 25) as ach, i}
+            {@const isEarned = ach ? ach.earned : i < unlocked}
+            {@const isSecret = ach ? (ach.hidden && !ach.earned) : false}
+            <div
+              class="mos-ico"
+              class:locked={!isEarned}
+              class:secret={isSecret}
+              title={ach?.displayName ?? ''}
+            >
+              {#if ach?.icon}
+                <img src={ach.icon} alt={ach?.displayName ?? ''} />
+              {:else if isSecret}
+                <span>?</span>
+              {:else if isEarned}
+                {@html trophySvg}
+              {:else}
+                {@html lockSvg}
+              {/if}
+            </div>
+          {/each}
+        </div>
+        <div class="ft">
+          <small>
+            <span>{pct} % completado</span>
+            <span>{total - unlocked} restantes</span>
+          </small>
+          <div class="gb"><i style="width:{pct}%"></i></div>
         </div>
       </div>
     {:else if variant === 4}
@@ -296,34 +326,11 @@
     background: linear-gradient(180deg, rgba(16, 20, 34, 0.45), rgba(16, 20, 34, 0.85) 75%);
   }
 
-  /* Selector de variante en la esquina */
-  .var-pill {
-    position: absolute;
-    right: 8px;
-    top: 8px;
-    z-index: 10;
-    height: 22px;
-    padding: 0 8px;
-    border-radius: 999px;
-    border: 0;
-    background: rgba(20, 26, 40, 0.75);
-    color: #fff;
-    font: 800 10.5px 'M PLUS Rounded 1c', sans-serif;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    cursor: pointer;
-    backdrop-filter: blur(8px);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35), inset 0 0.5px 0 rgba(255, 255, 255, 0.3);
-    transition: transform 0.1s, background 0.15s;
-  }
-  .var-pill:hover {
-    background: rgba(0, 160, 216, 0.85);
-    transform: scale(1.04);
-  }
-  .var-pill small {
-    font-size: 11px;
-    opacity: 0.8;
+  .card-ico-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
   }
 
   .lab {
@@ -504,6 +511,82 @@
     display: flex;
     gap: 4px;
     margin-top: 8px;
+  }
+
+  /* 3 · Mosaico de la colección */
+  .v3 {
+    background: linear-gradient(180deg, #2c3446, #151a25);
+    color: #fff;
+    padding: 10px 8px 9px;
+    align-items: center;
+  }
+  .v3 .lab {
+    align-self: stretch;
+    padding: 0 4px;
+    color: #ffe08a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .v3 .lab em {
+    margin-left: auto;
+    font-style: normal;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .v3 .mos {
+    display: grid;
+    grid-template-columns: repeat(5, 30px);
+    gap: 5px;
+    margin-top: 8px;
+    justify-content: center;
+  }
+  .mos-ico {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.08);
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: #ffe08a;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  }
+  .mos-ico img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 6px;
+  }
+  .mos-ico :global(svg) {
+    width: 16px;
+    height: 16px;
+  }
+  .mos-ico.locked {
+    opacity: 0.35;
+    filter: grayscale(1);
+    color: #8a94a6;
+  }
+  .mos-ico.secret {
+    opacity: 0.25;
+    color: #94a3b8;
+    background: rgba(0, 0, 0, 0.25);
+  }
+  .v3 .ft {
+    align-self: stretch;
+    margin-top: auto;
+    padding: 0 4px;
+  }
+  .v3 .ft small {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 5px;
   }
 
   /* 4 · Medalla */
