@@ -707,7 +707,8 @@ mod tests {
         assert_eq!(normalize_variant(4), 4);
         assert_eq!(normalize_variant(7), 7);
         assert_eq!(normalize_variant(8), 8);
-        assert_eq!(normalize_variant(3), 1);
+        assert_eq!(normalize_variant(3), 3);
+        assert_eq!(normalize_variant(5), 1);
         assert_eq!(normalize_variant(99), 1);
     }
 
