@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sistema de color v3</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#c9ced6}
+body{font-family:'M PLUS Rounded 1c',system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+:root{--ink:#3a414e;--ink-2:#5f6776;--ink-3:#9aa2b0;--line:rgba(95,110,135,.22);--face:#dfe3e9;--face-hi:#f4f6f9;--bgc:#eceef2;--rail:#d3d8e0}
+#stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;background:var(--bgc)}
+.view{position:absolute;inset:0;display:none}
+.view.on{display:block}
+.a{position:absolute}
+.bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb,#eceef2 55%,#e2e5ea)}
+.aurora::before,.aurora::after{content:"";position:absolute;left:-10%;right:-10%;filter:blur(56px);pointer-events:none}
+.aurora::before{top:-12%;height:55%;opacity:.26;transform:rotate(-7deg);background:linear-gradient(100deg,transparent 6%,#f5a6b0 20%,#f8c391 32%,#f7de8c 43%,#a7dbae 55%,#8ed2ec 67%,#a8b7f0 79%,#d1adee 90%,transparent)}
+.aurora::after{top:58%;height:46%;opacity:.15;transform:rotate(5deg);background:linear-gradient(80deg,transparent,#a8b7f0 28%,#8ed2ec 48%,#f8c391 70%,transparent)}
+
+/* cabecera de cada vista */
+.vh{position:absolute;left:40px;top:18px;right:40px;z-index:6}
+.vh .k{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:800}
+.vh h1{font-size:26px;font-weight:800;line-height:1.25;margin-top:2px;letter-spacing:-.01em}
+.vh p{font-size:14px;line-height:1.4;color:var(--ink-2);margin-top:2px}
+.rec{display:inline-block;font-size:11px;font-weight:800;vertical-align:4px;margin-left:10px;padding:3px 10px;border-radius:999px;background:#e2f0f7;color:#155c79;letter-spacing:.02em}
+
+/* cristal Wii U (A1) */
+.glass{position:absolute;--r:28px;--bw:10px;border-radius:var(--r);padding:var(--bw);isolation:isolate;
+  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  backdrop-filter:blur(14px) saturate(1.7);
+  box-shadow:inset 0 1.5px 0 #fff,inset 0 0 0 1px rgba(255,255,255,.55),inset 0 -10px 14px -8px rgba(255,255,255,.95),inset 0 -1.5px 0 rgba(110,125,150,.30),0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42);
+  transition:transform .28s cubic-bezier(.3,1.4,.5,1)}
+.glass::before{content:"";position:absolute;left:0;right:0;top:0;height:52%;border-radius:var(--r) var(--r) 0 0;background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.12));-webkit-mask:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);mask:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.85;pointer-events:none;z-index:-1}
+.glass::after{content:"";position:absolute;left:12%;top:3px;width:34%;height:5px;border-radius:999px;background:linear-gradient(90deg,rgba(255,255,255,0),#fff,rgba(255,255,255,0));pointer-events:none;z-index:3}
+.glass>.face{position:relative;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:var(--face)}
+.glass>.face::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 1px rgba(20,30,50,.20),inset 0 3px 6px -2px rgba(0,0,0,.35);pointer-events:none}
+/* foco nacarado (de A4) + filo deep */
+.glass.f{transform:scale(1.06);z-index:4;background:linear-gradient(110deg,var(--iris)) 0 0/300% 100%;animation:sheen 3.2s linear infinite;
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(255,255,255,.7),inset 0 -10px 14px -8px rgba(255,255,255,.75),0 0 0 1.5px var(--deep),0 3px 6px rgba(40,50,70,.14),0 22px 34px -14px var(--glow)}
+@keyframes sheen{to{background-position:300% 0}}
+
+.tile{width:176px;height:236px;cursor:pointer;--r:24px;--bw:9px}
+.art{position:absolute;inset:0}
+.tt{position:absolute;left:0;right:0;bottom:0;padding:24px 12px 10px;font-size:13px;font-weight:800;color:#fff;background:linear-gradient(180deg,transparent,rgba(10,14,22,.66));text-shadow:0 1px 2px rgba(0,0,0,.45)}
+
+.topbar{position:absolute;left:40px;right:40px;top:104px;height:44px;display:flex;align-items:center;gap:8px}
+.topbar .sp{flex:1}
+.chip{height:32px;padding:0 16px;border-radius:999px;display:inline-flex;align-items:center;font-size:13px;font-weight:700;color:var(--ink-2);background:rgba(255,255,255,.5);box-shadow:0 0 0 1px var(--line),inset 0 1px 0 #fff;white-space:nowrap}
+.chip.on{background:var(--soft);color:var(--deep);box-shadow:0 0 0 1.5px var(--line-acc),inset 0 1px 0 #fff}
+.pill{height:36px;padding:0 18px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--ink);background:linear-gradient(180deg,#fff,#e8ecf1);box-shadow:0 0 0 1px var(--line),inset 0 1px 0 #fff,0 2px 4px -2px rgba(40,50,70,.3);white-space:nowrap}
+.bmain{position:relative;overflow:hidden;height:48px;padding:0 30px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:var(--ink-on);background:var(--fill);box-shadow:inset 0 -3px 6px rgba(0,0,0,.14),0 0 0 1px rgba(20,30,50,.12),0 10px 18px -10px var(--glow);white-space:nowrap}
+.bmain::before{content:"";position:absolute;left:8px;right:8px;top:2px;height:48%;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.06))}
+.bmain span{position:relative}
+.prog{height:10px;border-radius:999px;background:var(--rail);box-shadow:inset 0 1px 2px rgba(20,30,50,.18);overflow:hidden}
+.prog i{display:block;height:100%;border-radius:inherit;background:var(--bar)}
+.irisprog .prog i{background:linear-gradient(90deg,var(--i0),var(--i1) 28%,var(--acc) 68%,var(--bar));box-shadow:inset 0 1px 0 rgba(255,255,255,.55)}
+
+/* panel de detalle */
+.pf{background:linear-gradient(180deg,#f7f8fa,#edf0f4)!important}
+.pc{position:absolute;left:22px;top:22px;width:132px;height:188px;border-radius:14px;box-shadow:inset 0 0 0 1px rgba(20,30,50,.18),0 6px 12px -6px rgba(20,30,50,.4)}
+.pt{font-size:28px;font-weight:800;letter-spacing:-.01em;line-height:1.2}
+.pm{font-size:13px;color:var(--ink-2);margin-top:4px}
+.row{display:flex;gap:8px;align-items:center}
+.pl{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:6px}
+.pl b{font-size:13px;color:var(--ink)}
+.sig{height:4px;width:180px;border-radius:999px;margin-top:6px;background:linear-gradient(90deg,var(--iris))}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px;background:linear-gradient(135deg,var(--i0),var(--acc))}
+.stat{font-size:12px;color:var(--ink-2);font-weight:700}
+.stat b{display:block;font-size:20px;color:var(--ink);font-weight:800;margin-top:1px}
+.v4 .stat b{color:var(--deep)}
+
+/* guías */
+.card{position:absolute;border-radius:18px;background:rgba(255,255,255,.66);box-shadow:0 0 0 1px var(--line),inset 0 1px 0 #fff,0 10px 22px -16px rgba(40,50,70,.45);padding:14px 16px}
+.card h3{font-size:15px;font-weight:800;margin-bottom:6px}
+.card .sub{font-size:12px;color:var(--ink-2);line-height:1.4}
+.num{display:inline-flex;width:22px;height:22px;border-radius:50%;align-items:center;justify-content:center;font-size:12px;font-weight:800;margin-right:8px;vertical-align:1px}
+.sw{display:inline-block;border-radius:6px;box-shadow:inset 0 0 0 1px rgba(20,30,50,.14);vertical-align:middle}
+.mono{font-family:ui-monospace,'Cascadia Mono',Consolas,monospace}
+table{border-collapse:collapse}
+.tl td,.tl th{padding:3px 6px;font-size:11.5px;text-align:left;white-space:nowrap}
+.tl th{color:var(--ink-3);font-weight:800;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase}
+.ok{color:#1d7a3a;font-weight:800}
+.bad{color:#b3261e;font-weight:800}
+.btnm{display:inline-flex;align-items:center;justify-content:center;height:24px;padding:0 12px;border-radius:999px;font-size:11.5px;font-weight:800;box-shadow:inset 0 -2px 4px rgba(0,0,0,.12),0 0 0 1px rgba(20,30,50,.1)}
+.chipm{display:inline-flex;align-items:center;height:22px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:700}
+
+/* rejilla antes / después */
+.pair{position:absolute;width:291px;height:188px;border-radius:16px;background:rgba(255,255,255,.55);box-shadow:0 0 0 1px var(--line),inset 0 1px 0 #fff;padding:6px 6px 0}
+.ph{display:flex;align-items:center;gap:6px;height:20px;font-size:11.5px;font-weight:800;padding:0 2px}
+.ph em{font-style:normal;font-weight:700;color:var(--ink-3);font-size:10.5px}
+.ph .src{margin-left:auto;font-size:10px;font-weight:700;color:var(--ink-2)}
+.cs{width:30px;height:12px;border-radius:4px;box-shadow:inset 0 0 0 1px rgba(20,30,50,.18)}
+.pmx{display:flex;gap:6px;margin-top:3px}
+.lab{font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);height:13px;padding-left:4px}
+.mini{width:136px;height:136px;border-radius:12px;padding:6px;position:relative;overflow:hidden}
+.mh{height:24px;border-radius:8px;display:flex;align-items:center;justify-content:space-between;padding:0 6px;font-size:9.5px;font-weight:800}
+.mh span{font-size:8.5px;padding:2px 6px;border-radius:999px}
+.mc{margin-top:6px;height:56px;border-radius:10px;padding:3px}
+.mci{height:100%;border-radius:8px;display:flex;gap:6px;padding:4px;align-items:center}
+.mcv{width:34px;height:42px;border-radius:5px;flex:none;box-shadow:inset 0 0 0 1px rgba(20,30,50,.18)}
+.mct{flex:1;font-size:8.5px;font-weight:700}
+.mct .prog{height:6px;margin-top:4px}
+.mr{margin-top:8px;display:flex;gap:4px}
+.mb{height:24px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:800;padding:0 10px;position:relative;overflow:hidden}
+/* antes: acento crudo + mezclas sueltas (como hoy) */
+.bef{background:color-mix(in srgb,var(--a) 9%,#eceef2)}
+.bef .mh{background:color-mix(in srgb,var(--a) 22%,white);color:var(--a)}
+.bef .mh span{background:var(--a);color:var(--ai)}
+.bef .mc{background:var(--a)}
+.bef .mci{background:color-mix(in srgb,var(--a) 14%,white)}
+.bef .mct{color:color-mix(in srgb,var(--a) 70%,black)}
+.bef .prog{background:color-mix(in srgb,var(--a) 25%,white)}
+.bef .prog i{background:var(--a)}
+.bef .mb.p{background:var(--a);color:var(--ai)}
+.bef .mb.s{background:color-mix(in srgb,var(--a) 35%,white);color:color-mix(in srgb,var(--a) 80%,black)}
+/* después: tokens */
+.aft{background:radial-gradient(120% 90% at 50% 0%,#f8f9fb,#eceef2 60%,#e4e7ec)}
+.aft .mh{background:linear-gradient(180deg,#fff,#eef1f5);box-shadow:0 0 0 1px var(--line),inset 0 1px 0 #fff;color:var(--ink)}
+.aft .mh span{background:var(--soft);color:var(--deep);box-shadow:0 0 0 1px var(--line-acc)}
+.aft .mc{background:linear-gradient(110deg,var(--iris)) 0 0/300% 100%;animation:sheen 3.2s linear infinite;box-shadow:0 0 0 1.5px var(--deep),0 8px 14px -8px var(--glow)}
+.aft .mci{background:linear-gradient(180deg,#f7f8fa,#edf0f4);box-shadow:inset 0 0 0 1px rgba(20,30,50,.12)}
+.aft .mct{color:var(--ink-2)}
+.aft .mct b{color:var(--deep)}
+.aft .mb.p{background:var(--fill);color:var(--ink-on);box-shadow:inset 0 -2px 4px rgba(0,0,0,.14),0 0 0 1px rgba(20,30,50,.1)}
+.aft .mb.p::before{content:"";position:absolute;left:5px;right:5px;top:1px;height:46%;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,.05))}
+.aft .mb.p span{position:relative}
+.aft .mb.s{background:linear-gradient(180deg,#fff,#e8ecf1);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+
+/* código */
+pre.code{font-family:ui-monospace,'Cascadia Mono',Consolas,monospace;font-size:10.6px;line-height:1.42;color:#2c3340;white-space:pre;overflow:hidden}
+pre.code .c{color:#7d8696}
+pre.code .k{color:#7a3fb0;font-weight:700}
+pre.code .s{color:#1d7a3a}
+
+/* constitución */
+.rule{position:absolute;width:584px;height:106px;border-radius:18px;background:rgba(255,255,255,.66);box-shadow:0 0 0 1px var(--line),inset 0 1px 0 #fff,0 10px 22px -16px rgba(40,50,70,.45);padding:16px 18px 0 76px}
+.rule .n{position:absolute;left:18px;top:18px;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;box-shadow:inset 0 -3px 6px rgba(0,0,0,.14),0 0 0 1px rgba(20,30,50,.1)}
+.rule .n::before{content:"";position:absolute;left:6px;right:6px;top:2px;height:46%;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.05))}
+.rule b{display:block;font-size:16px;font-weight:800;margin-bottom:4px}
+.rule span{font-size:13.2px;line-height:1.42;color:var(--ink-2)}
+
+/* navegación */
+#nav{position:absolute;left:0;right:0;bottom:6px;display:flex;justify-content:center;gap:5px;z-index:20}
+#nav button{font:inherit;font-size:10.5px;font-weight:800;height:20px;min-width:20px;padding:0 7px;border:0;border-radius:999px;cursor:pointer;color:var(--ink-2);background:rgba(255,255,255,.7);box-shadow:0 0 0 1px var(--line)}
+#nav button.on{background:#3a414e;color:#fff}
+</style>
+</head>
+<body>
+<div id="stage"><div id="nav"></div></div>
+<script>
+/* ===== Matemáticas OKLab (las mismas que src/lib/oklch.ts) ===== */
+const RAD = Math.PI / 180;
+const toLin = c => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+const fromLin = c => (c <= 0.0031308 ? c * 12.92 : 1.055 * c ** (1 / 2.4) - 0.055);
+const hexToRgb = h => { const v = parseInt(h.slice(1), 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255]; };
+const rgbToHex = r => '#' + r.map(x => x.toString(16).padStart(2, '0')).join('');
+function rgbToLch([r8, g8, b8]) {
+  const [r, g, b] = [toLin(r8 / 255), toLin(g8 / 255), toLin(b8 / 255)];
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  const L = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s;
+  const a = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+  const bb = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+  const h = Math.atan2(bb, a) / RAD;
+  return [L, Math.hypot(a, bb), h < 0 ? h + 360 : h];
+}
+function lchToLin(L, C, hd) {
+  const a = C * Math.cos(hd * RAD), b = C * Math.sin(hd * RAD);
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  return [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s, -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s];
+}
+const inGamut = v => v.every(c => c >= -0.0005 && c <= 1.0005);
+function maxChroma(L, h) { let lo = 0, hi = 0.4; for (let i = 0; i < 24; i++) { const mid = (lo + hi) / 2; if (inGamut(lchToLin(L, mid, h))) lo = mid; else hi = mid; } return lo; }
+function oklch(L, C, h) {
+  h = ((h % 360) + 360) % 360;
+  const c = Math.max(0, Math.min(C, maxChroma(L, h)));
+  return rgbToHex(lchToLin(L, c, h).map(v => Math.round(fromLin(Math.max(0, Math.min(1, v))) * 255)));
+}
+const lumHex = hex => { const r = hexToRgb(hex); return 0.2126 * toLin(r[0] / 255) + 0.7152 * toLin(r[1] / 255) + 0.0722 * toLin(r[2] / 255); };
+const contraste = (a, b) => { const x = lumHex(a), y = lumHex(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+const hueDist = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+const hueOf = hex => rgbToLch(hexToRgb(hex))[2];
+function hashTitulo(t) { let x = 2166136261; for (const ch of t) { x ^= ch.codePointAt(0); x = Math.imul(x, 16777619) >>> 0; } return x; }
+
+/* Superficies fijas */
+const INK = '#1f2530', BODY = '#3a414e', FACE = '#dfe3e9', RAIL = '#d3d8e0', FONDO = '#eceef2';
+const ARCOIRIS = [['Rojo', '#E8384F'], ['Naranja', '#F27A1A'], ['Amarillo', '#F2B807'], ['Verde', '#3BB54A'], ['Azul Wii U', '#00A0D8'], ['Añil', '#3F63E0'], ['Violeta', '#9A4BD8']];
+
+/* ===== El algoritmo (este mismo código se muestra en la vista 8) ===== */
+// 1-3 · De la portada a UN tono h (o a nada)
+function extraerTono(portada /* [[hex, área], …] */) {
+  let total = 0, util = 0; const px = [];
+  for (const [hex, area] of portada) {
+    total += area;
+    const [L, C, h] = rgbToLch(hexToRgb(hex));
+    if (L < 0.20 || L > 0.93 || C < 0.045) continue;  // negro, blanco, gris: fuera
+    util += area;
+    px.push({ h, w: area * C });                      // peso = área × croma (no C²)
+  }
+  if (!px.length || util / total < 0.03) return null; // sin tono útil → respaldo
+  let centro = px[0], max = -1;                       // gana el vecindario ±30° más pesado
+  for (const p of px) {
+    const s = px.filter(q => hueDist(p.h, q.h) <= 30).reduce((a, q) => a + q.w, 0);
+    if (s > max) { max = s; centro = p; }
+  }
+  let x = 0, y = 0;                                   // media circular del vecindario
+  for (const q of px) if (hueDist(centro.h, q.h) <= 30) {
+    x += q.w * Math.cos(q.h * RAD); y += q.w * Math.sin(q.h * RAD);
+  }
+  return (Math.atan2(y, x) / RAD + 360) % 360;
+}
+
+// 4-5 · Un tono → las MISMAS luces para cualquier juego
+function tokensDeTono(h) {
+  const am = Math.max(0, 1 - hueDist(h, 100) / 40);   // 0…1: cercanía al amarillo
+  const L = 0.66 + 0.16 * am;                         // el amarillo sube de luz
+  const acc = oklch(L, 0.15, h);                      // croma con techo 0.15
+  let fill, ink, l = L;
+  if (am >= 0.5) {                                    // amarillos: tinta oscura
+    ink = INK;
+    while (contraste(oklch(l, 0.15, h), ink) < 4.5) l += 0.01;
+  } else {                                            // el resto: tinta blanca
+    ink = '#ffffff';
+    while (contraste(oklch(l, 0.15, h), ink) < 4.5) l -= 0.01;
+  }
+  fill = oklch(l, 0.15, h);
+  let ld = 0.52;                                      // texto de acento ≥ 4.5:1
+  while (contraste(oklch(ld, 0.12, h), FACE) < 4.5) ld -= 0.01;
+  const deep = oklch(ld, 0.12, h);
+  return {
+    acc, fill, ink, deep,
+    soft: oklch(0.95, 0.03, h),                       // fondo de chip activo
+    line: oklch(0.86, 0.06, h),                       // borde de chip activo
+    bar: contraste(fill, RAIL) >= 3 ? fill : deep,    // final de barra ≥ 3:1
+    iris: [-120, -80, -40, 0, 40, 80, 120]            // nácar: foco y progreso
+      .map(d => oklch(0.84, 0.10, h + d)),
+  };
+}
+
+// Entrada única: portada, color a mano y respaldo pasan por aquí
+function colorDelJuego(juego) {
+  const h = juego.aMano ? hueOf(juego.aMano)          // a mano: solo cuenta su tono
+          : extraerTono(juego.portada);
+  if (h != null) return { ...tokensDeTono(h), h, origen: 'portada' };
+  const [nombre, hex] = ARCOIRIS[hashTitulo(juego.titulo) % 7];
+  return { ...tokensDeTono(hueOf(hex)), h: hueOf(hex), origen: 'arcoíris · ' + nombre };
+}
+
+/* ===== Datos de ejemplo: 12 portadas muy distintas ===== */
+const G = [
+  { titulo: 'Noche Eterna', caso: 'casi negra', portada: [['#07070a', 8], ['#121218', 6], ['#2b1f3d', 1]] },
+  { titulo: 'Nieve Blanca', caso: 'casi blanca', portada: [['#f7f7f5', 8], ['#ecebe8', 4], ['#c9d6e6', 1]] },
+  { titulo: 'Ciudad Gris', caso: 'gris', portada: [['#7a7c80', 6], ['#a2a4a8', 4], ['#4e5054', 3]] },
+  { titulo: 'Rayo Amarillo', caso: 'amarillo chillón', portada: [['#ffe600', 8], ['#ffcc00', 3], ['#222222', 2]] },
+  { titulo: 'Azul Eléctrico', caso: 'azul eléctrico', portada: [['#0047ff', 7], ['#00c8ff', 3], ['#0a0a40', 2]] },
+  { titulo: 'Bosque Hondo', caso: 'verde oscuro', portada: [['#1f6b2e', 6], ['#9bd36a', 2], ['#3b2a1a', 2]] },
+  { titulo: 'Rosa Neón', caso: 'neón', portada: [['#ff2bd6', 6], ['#5a00ff', 3], ['#10001a', 1]] },
+  { titulo: 'Atardecer', caso: 'multicolor', portada: [['#ff7a1a', 5], ['#c2185b', 3], ['#ffd27a', 2]] },
+  { titulo: 'Sepia', caso: 'apagada', portada: [['#8a6a4a', 6], ['#c9a77c', 3], ['#3a2c20', 2]] },
+  { titulo: 'Menta', caso: 'pastel', portada: [['#bff2dc', 6], ['#e9fff5', 3], ['#7fd6b5', 2]] },
+  { titulo: 'Rojo Sangre', caso: 'rojo profundo', portada: [['#b0001a', 6], ['#1a0004', 4]] },
+  { titulo: 'Violeta Bruma', caso: 'violeta medio', portada: [['#5b3a8c', 5], ['#2a1d45', 4], ['#e0c3ff', 1]] },
+];
+G.forEach(g => { g.T = colorDelJuego(g); });
+
+/* ===== utilidades de pintado ===== */
+function vars(T) {
+  const ir = [...T.iris, ...T.iris.slice(0, -1).reverse()].join(',');
+  return `--acc:${T.acc};--fill:${T.fill};--ink-on:${T.ink};--deep:${T.deep};--soft:${T.soft};--line-acc:${T.line};--bar:${T.bar};--glow:${T.acc}88;--iris:${ir};--i0:${T.iris[1]};--i1:${T.iris[2]}`;
+}
+function art(c) {
+  const a = c[0][0], b = (c[1] || c[0])[0], d = (c[2] || c[1] || c[0])[0];
+  return `radial-gradient(circle at 72% 28%,${d} 0 15%,transparent 16%),radial-gradient(120% 70% at 25% 112%,${b} 0 46%,transparent 47%),linear-gradient(165deg,${a},${a} 45%,${b})`;
+}
+function strip(c) {
+  const tot = c.reduce((s, x) => s + x[1], 0); let acc = 0; const st = [];
+  for (const [h, w] of c) { st.push(`${h} ${(acc / tot * 100).toFixed(1)}%`, `${h} ${((acc + w) / tot * 100).toFixed(1)}%`); acc += w; }
+  return `linear-gradient(90deg,${st.join(',')})`;
+}
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function head(k, t, p, extra = '') { return `<div class="vh"><div class="k">${k}</div><h1>${t}${extra}</h1><p>${p}</p></div>`; }
+
+/* ===== Vistas 1-4: variantes híbridas ===== */
+const VAR = [
+  { cls: 'v1', t: 'H1 · Nácar solo en el foco', p: 'El degradado vive únicamente en el aro del elemento enfocado; todo lo demás es cristal sobrio y un acento sólido del juego.' },
+  { cls: 'v2 irisprog', t: 'H2 · Nácar en foco y progreso', rec: true, p: 'El nácar marca dos cosas: dónde estás (foco) y cuánto llevas (barras). Es la dosis que propongo: visible sin cansar.' },
+  { cls: 'v3', t: 'H3 · Amanecer de fondo', p: 'Un velo de arcoíris pastel casi imperceptible tras el cristal, más el foco nacarado; las barras siguen sólidas.' },
+  { cls: 'v4', t: 'H4 · Firma en los titulares', p: 'El degradado subraya el título del juego y marca las cabeceras como una firma; foco nacarado y barras sólidas.' },
+];
+function buildVariant(sec, v, n) {
+  const ids = [4, 3, 7, 0, 5, 10]; let f = 1;
+  sec.innerHTML = `<div class="bg ${v.cls.startsWith('v3') ? 'aurora' : ''}"></div>` +
+    head(`Variante híbrida ${n}/4 · Cristal de mañana + Aurora`, v.t, v.p + ' Pulsa una carátula para cambiar de juego.', v.rec ? '<span class="rec">recomendada</span>' : '') +
+    `<div class="app ${v.cls} a" style="inset:0"></div>`;
+  const app = sec.querySelector('.app');
+  const v4 = v.cls === 'v4';
+  function render() {
+    const g = G[ids[f]], T = g.T;
+    app.style.cssText = 'position:absolute;inset:0;' + vars(T);
+    const tiles = ids.map((id, i) => {
+      const gg = G[id];
+      return `<div class="glass tile${i === f ? ' f' : ''}" data-i="${i}" style="left:${40 + i * 204.8}px;top:168px;${vars(gg.T)}"><div class="face"><div class="art" style="background:${art(gg.portada)}"></div><div class="tt">${gg.titulo}</div></div></div>`;
+    }).join('');
+    app.innerHTML = `
+      <div class="topbar"><span class="chip on">Juegos</span><span class="chip">Novelas visuales</span><span class="chip">Switch</span><span class="chip">Novelas japonesas</span><span class="sp"></span><span class="pill">Buscar</span><span class="pill">Orden</span></div>
+      ${tiles}
+      <div class="glass" style="left:40px;top:430px;width:1200px;height:250px"><div class="face pf">
+        <div class="pc" style="background:${art(g.portada)}"></div>
+        <div class="a" style="left:178px;top:20px"><div class="pt">${g.titulo}</div>${v4 ? '<div class="sig"></div>' : ''}<div class="pm">Juegos · 214 capturas · 36 h jugadas</div>
+          <div class="row" style="margin-top:14px"><span class="chip on">Mi lista</span><span class="chip">Favorito</span><span class="chip">Pendiente</span></div></div>
+        <div class="a" style="left:178px;top:160px;width:440px"><div class="pl"><span>${v4 ? '<i class="dot"></i>' : ''}Logros</span><b>18 / 40</b></div><div class="prog"><i style="width:45%"></i></div></div>
+        <div class="a row" style="left:668px;top:30px;gap:34px"><div class="stat">Capturas<b>214</b></div><div class="stat">Tiempo<b>36 h</b></div><div class="stat">Última<b>12 oct</b></div></div>
+        <div class="a" style="left:668px;top:160px;width:250px"><div class="pl"><span>${v4 ? '<i class="dot"></i>' : ''}Completado</span><b>62 %</b></div><div class="prog"><i style="width:62%"></i></div></div>
+        <div class="a" style="left:962px;top:46px;width:196px"><div class="bmain" style="width:196px"><span>Jugar</span></div><div class="pill" style="width:196px;margin-top:16px">Ver capturas</div></div>
+      </div></div>`;
+    app.querySelectorAll('.tile').forEach(t => t.onclick = () => { f = +t.dataset.i; render(); });
+  }
+  render();
+}
+
+/* ===== Vista 5: de la portada al tono ===== */
+function buildGuiaA(sec) {
+  const pasos = [
+    ['Reducir', 'Portada a 64 px y a OKLab (ya lo hace palette.rs).'],
+    ['Descartar', 'Fuera L < 0.20 (negros), L > 0.93 (blancos) y C < 0.045 (grises).'],
+    ['Elegir tono', 'Peso = área × croma (no croma²). Gana el vecindario de ±30° más pesado.'],
+    ['Respaldo', 'Si lo útil es < 3 % del área, no hay tono: arcoíris por título.'],
+    ['Quedarse con h', 'Se tiran la luz y el croma de la portada; solo pasa el tono.'],
+    ['Derivar luces', 'El sistema pone L y C: deep, fill, acc, iris y soft. Iguales para todos.'],
+  ];
+  const rb = ARCOIRIS.map(([, h]) => tokensDeTono(hueOf(h)));
+  let html = `<div class="bg"></div>` + head('Guía de color 1/4 · extracción y normalización', 'De la portada a un solo número: el tono',
+    'La portada solo decide el tono h; la luz y el croma los fija el sistema, así un juego negro, uno neón y uno pastel pesan lo mismo en pantalla.');
+  pasos.forEach(([t, s], i) => {
+    const T = rb[i % 7];
+    html += `<div class="card" style="left:${40 + i * 202}px;top:104px;width:190px;height:96px;padding:11px 13px"><h3 style="font-size:13.5px;margin-bottom:4px"><span class="num" style="background:${T.fill};color:${T.ink}">${i + 1}</span>${t}</h3><div class="sub" style="font-size:11.5px">${s}</div></div>`;
+  });
+  // ejemplos
+  let ex = '<h3>Tres portadas, paso a paso</h3>';
+  [0, 7, 2].forEach(gi => {
+    const g = G[gi];
+    ex += `<div style="margin-top:9px"><div style="font-size:12.5px;font-weight:800;margin-bottom:3px"><span class="sw" style="width:46px;height:14px;background:${strip(g.portada)};margin-right:8px"></span>${g.titulo} <span style="color:var(--ink-3);font-weight:700">· ${g.caso}</span></div><table class="tl"><tr><th></th><th>hex</th><th>área</th><th>L</th><th>C</th><th>h</th><th>veredicto</th></tr>`;
+    g.portada.forEach(([hex, w]) => {
+      const [L, C, h] = rgbToLch(hexToRgb(hex));
+      const v = L < 0.2 ? 'fuera · muy oscuro' : L > 0.93 ? 'fuera · muy claro' : C < 0.045 ? 'fuera · gris' : `útil · peso ${(w * C).toFixed(2)}`;
+      html;
+      ex += `<tr><td><span class="sw" style="width:16px;height:12px;background:${hex}"></span></td><td class="mono">${hex}</td><td>${w}</td><td>${L.toFixed(2)}</td><td>${C.toFixed(3)}</td><td>${Math.round(h)}°</td><td class="${v.startsWith('útil') ? 'ok' : ''}" style="${v.startsWith('fuera') ? 'color:var(--ink-3)' : ''}">${v}</td></tr>`;
+    });
+    const T = g.T;
+    ex += `</table><div style="font-size:11.5px;margin:3px 0 0 6px;display:flex;align-items:center;gap:6px"><b>→ ${T.origen === 'portada' ? 'tono ' + Math.round(T.h) + '°' : 'sin tono útil → ' + T.origen}</b>
+      <span class="sw" style="width:18px;height:14px;background:${T.deep}"></span><span class="sw" style="width:18px;height:14px;background:${T.fill}"></span><span class="sw" style="width:18px;height:14px;background:${T.acc}"></span><span class="sw" style="width:40px;height:14px;background:linear-gradient(90deg,${T.iris.join(',')})"></span><span class="sw" style="width:18px;height:14px;background:${T.soft}"></span></div></div>`;
+  });
+  html += `<div class="card" style="left:40px;top:214px;width:560px;height:470px">${ex}</div>`;
+  // luces
+  let t = `<h3>Las cinco luces de cada tono</h3><div class="sub" style="margin-bottom:8px">Hoy el arcoíris tiene pesos distintos (el amarillo grita, el añil se hunde). Con luces fijas, todos los tonos se leen igual de fuertes.</div>
+  <table class="tl" style="width:100%"><tr><th>tono</th><th>hoy</th><th>deep · L≈0.50<br>texto</th><th>fill · L≈0.56<br>botón</th><th>acc · L 0.66<br>luz</th><th>iris · L 0.84<br>nácar</th><th>soft · L 0.95<br>chip</th></tr>`;
+  ARCOIRIS.forEach(([n, hex], i) => {
+    const T = rb[i];
+    t += `<tr style="height:40px"><td style="font-weight:800;font-size:12px">${n}<br><span style="color:var(--ink-3);font-weight:700">${Math.round(hueOf(hex))}°</span></td>
+      <td><span class="btnm" style="background:${hex};color:${contraste(hex, '#fff') < 2.55 ? INK : '#fff'}">Jugar</span></td>
+      <td><span style="color:${T.deep};font-weight:800;font-size:12.5px">Logros 18/40</span></td>
+      <td><span class="btnm" style="background:${T.fill};color:${T.ink}">Jugar</span></td>
+      <td><span class="sw" style="width:42px;height:22px;background:${T.acc}"></span></td>
+      <td><span class="sw" style="width:70px;height:22px;background:linear-gradient(90deg,${T.iris.join(',')})"></span></td>
+      <td><span class="chipm" style="background:${T.soft};color:${T.deep};box-shadow:0 0 0 1px ${T.line}">Mi lista</span></td></tr>`;
+  });
+  t += `</table><div class="sub" style="margin-top:8px">Croma fijo 0.15 (0.12 en deep), recortado al gamut sRGB. Los amarillos (±40° de 100°) suben a L 0.82 y llevan tinta oscura: es lo único que cambia con el tono.</div>`;
+  html += `<div class="card" style="left:616px;top:214px;width:624px;height:470px">${t}</div>`;
+  sec.innerHTML = html;
+}
+
+/* ===== Vista 6: fijo/variable, contraste, casos límite, presupuesto ===== */
+function buildGuiaB(sec) {
+  const ref = G[4].T;
+  let html = `<div class="bg"></div>` + head('Guía de color 2/4 · reglas', 'Qué es fijo, qué varía y cuánto contraste',
+    'Todo lo neutro es idéntico en cada pantalla; el juego solo cambia el acento, el foco, el nácar y el progreso, y el contraste se calcula en vez de mirarse.');
+  // 1 fijo / variable
+  const fijos = [['Fondo', '#eceef2'], ['Cara', '#dfe3e9'], ['Cara alta', '#f4f6f9'], ['Texto', '#3a414e'], ['Texto 2', '#5f6776'], ['Texto 3', '#9aa2b0'], ['Borde', 'rgba(95,110,135,.22)'], ['Sombra', 'rgba(40,50,70,.42)'], ['Aro de cristal', 'blanco translúcido']];
+  const vari = [['acc', ref.acc, 'luz: brillo del foco, iconos'], ['fill + ink', ref.fill, 'el botón principal'], ['deep', ref.deep, 'texto e iconos de acento, filo del foco'], ['soft + line', ref.soft, 'chip activo, fila elegida'], ['bar', ref.bar, 'final de la barra de progreso'], ['iris', null, 'nácar del foco y del progreso']];
+  let p1 = `<h3>Fijo en todas las pantallas · Puede variar con el juego</h3><div style="display:flex;gap:16px;margin-top:6px"><div style="width:220px">`;
+  fijos.forEach(([n, c]) => { p1 += `<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;height:23px"><span class="sw" style="width:28px;height:16px;background:${c.startsWith('#') || c.startsWith('rgba') ? c : 'linear-gradient(180deg,#fff,rgba(255,255,255,.3))'}"></span><b style="width:84px">${n}</b><span class="mono" style="color:var(--ink-3);font-size:10px">${c}</span></div>`; });
+  p1 += `</div><div style="flex:1;border-left:1px solid var(--line);padding-left:16px">`;
+  vari.forEach(([n, c, d]) => { p1 += `<div style="display:flex;align-items:center;gap:8px;font-size:11.5px;height:30px"><span class="sw" style="width:40px;height:18px;background:${c || 'linear-gradient(90deg,' + ref.iris.join(',') + ')'}"></span><b style="width:74px">${n}</b><span style="color:var(--ink-2)">${d}</span></div>`; });
+  p1 += `<div class="sub" style="margin-top:8px">Ejemplo: Azul Eléctrico. Todo lo variable sale de un único número, el tono h.</div></div></div>`;
+  html += `<div class="card" style="left:40px;top:104px;width:590px;height:280px">${p1}</div>`;
+  // 2 contraste, comprobado en vivo
+  const Ts = [...G.map(g => g.T)];
+  for (let h = 0; h < 360; h += 5) Ts.push(tokensDeTono(h));
+  const minOf = fn => Math.min(...Ts.map(fn));
+  const filas = [
+    ['Texto de cuerpo', 'texto sobre cara', 7, contraste(BODY, FACE)],
+    ['Texto de acento', 'deep sobre cara', 4.5, minOf(T => contraste(T.deep, FACE))],
+    ['Etiqueta de botón', 'ink sobre fill', 4.5, minOf(T => contraste(T.ink, T.fill))],
+    ['Barra de progreso', 'bar sobre raíl', 3, minOf(T => contraste(T.bar, RAIL))],
+    ['Filo del foco', 'deep sobre fondo', 3, minOf(T => contraste(T.deep, FONDO))],
+  ];
+  let p2 = `<h3>Contraste mínimo</h3><div class="sub">Comprobado en vivo con los 12 juegos y 72 tonos (0–355°). Si un tono no llega, el algoritmo mueve la luz hasta que llega.</div><table class="tl" style="width:100%;margin-top:8px"><tr><th>elemento</th><th>pareja</th><th>mínimo</th><th>peor caso real</th><th></th></tr>`;
+  filas.forEach(([e, par, m, v]) => { p2 += `<tr style="height:26px"><td style="font-weight:800;font-size:12.5px">${e}</td><td>${par}</td><td>≥ ${m}:1</td><td class="mono">${v.toFixed(2)}:1</td><td class="${v >= m ? 'ok' : 'bad'}">${v >= m ? '✓ cumple' : '✗'}</td></tr>`; });
+  p2 += `</table><div class="sub" style="margin-top:8px">Hoy el umbral para elegir tinta blanca es 2.55:1, por debajo de cualquier norma: de ahí los botones que «se leen mal» en unos juegos y no en otros.</div>`;
+  html += `<div class="card" style="left:650px;top:104px;width:590px;height:280px">${p2}</div>`;
+  // 3 casos límite
+  const casos = [
+    [G[0], 'Muy oscura', 'Se ignoran los píxeles con L < 0.20; si queda un tinte (≥ 3 % del área), manda su tono.'],
+    [G[1], 'Muy clara', 'Igual con L > 0.93: los blancos no tiñen nada. Aquí no queda tinte → arcoíris.'],
+    [G[2], 'Gris', 'Croma < 0.045 no cuenta. Sin tono útil, color del arcoíris por título, nunca gris.'],
+    [G[6], 'Muy saturada', 'El neón conserva su tono pero baja a C 0.15 y a la luz fija.'],
+    [{ titulo: 'A mano', aMano: '#39ff14', portada: [['#39ff14', 1]] }, 'Elegido a mano', 'El color manual pasa por la misma tubería: solo se queda su tono.'],
+  ];
+  let p3 = `<h3>Portadas difíciles</h3>`;
+  casos.forEach(([g, n, r]) => {
+    const T = g.T || colorDelJuego(g);
+    p3 += `<div style="display:flex;align-items:center;gap:10px;height:42px;border-top:1px solid var(--line)"><span class="sw" style="width:44px;height:24px;flex:none;background:${strip(g.portada)}"></span><b style="width:92px;font-size:12px;flex:none">${n}</b><span style="font-size:11.5px;color:var(--ink-2);flex:1;line-height:1.3">${r}</span><span style="font-size:13px;color:var(--ink-3)">→</span><span class="btnm" style="flex:none;background:${T.fill};color:${T.ink}">Jugar</span><span class="sw" style="width:30px;height:14px;flex:none;background:linear-gradient(90deg,${T.iris.join(',')})"></span></div>`;
+  });
+  html += `<div class="card" style="left:40px;top:396px;width:590px;height:288px">${p3}</div>`;
+  // 4 presupuesto y respaldo
+  let p4 = `<h3>Presupuesto de acento por pantalla</h3><div style="display:flex;height:28px;border-radius:10px;overflow:hidden;box-shadow:0 0 0 1px var(--line);margin-top:4px;font-size:11px;font-weight:800">
+    <div style="flex:60;background:#eceef2;display:flex;align-items:center;padding-left:10px">60 % fondo neutro</div>
+    <div style="flex:30;background:linear-gradient(180deg,#fff,#e3e7ee);display:flex;align-items:center;padding-left:10px">30 % cristal y caras</div>
+    <div style="flex:10;background:linear-gradient(90deg,${ref.iris[2]},${ref.fill});color:#fff;display:flex;align-items:center;justify-content:center">10 %</div></div>
+    <div style="font-size:11.8px;line-height:1.5;color:var(--ink-2);margin-top:8px">El 10 % se reparte así: <b style="color:var(--ink)">un único botón sólido</b>, el foco nacarado, las barras de progreso y como mucho una línea de texto en deep. Chips activos en soft, nunca rellenos. Pastillas secundarias, neutras.</div>
+    <h3 style="margin-top:12px">Respaldo: el arcoíris</h3><div style="font-size:11.8px;line-height:1.45;color:var(--ink-2)">Sin tono útil, el juego recibe un color del arcoíris por hash estable de su título (siempre el mismo) y pasa por las mismas luces.</div><div style="display:flex;gap:6px;margin-top:8px">`;
+  ARCOIRIS.forEach(([n, hex]) => { const T = tokensDeTono(hueOf(hex)); p4 += `<div style="text-align:center;font-size:9.5px;font-weight:700;color:var(--ink-2)"><span class="btnm" style="background:${T.fill};color:${T.ink};width:70px;padding:0">Jugar</span><div style="margin-top:3px">${n}</div></div>`; });
+  p4 += `</div>`;
+  html += `<div class="card" style="left:650px;top:396px;width:590px;height:288px">${p4}</div>`;
+  sec.innerHTML = html;
+}
+
+/* ===== Vista 7: 12 juegos antes / después ===== */
+function mini(g, mode) {
+  const T = g.T;
+  const raw = g.portada[0][0];
+  const st = mode === 'bef' ? `--a:${raw};--ai:${contraste(raw, '#fff') < 2.55 ? INK : '#fff'}` : vars(T);
+  return `<div class="mini ${mode}" style="${st}"><div class="mh"><span style="display:none"></span>${g.titulo.split(' ')[0]}<span>18/40</span></div>
+    <div class="mc"><div class="mci"><div class="mcv" style="background:${art(g.portada)}"></div><div class="mct">Logros <b>45 %</b><div class="prog"><i style="width:45%"></i></div></div></div></div>
+    <div class="mr"><div class="mb p"><span>Jugar</span></div><div class="mb s"><span>Capturas</span></div></div></div>`;
+}
+function buildGrid(sec) {
+  let html = `<div class="bg"></div>` + head('Guía de color 3/4 · 12 portadas', 'La misma pantalla con 12 portadas: antes y después',
+    'Antes: el color dominante tal cual con las mezclas de hoy (unas chillan, otras se apagan). Después: solo cambia el tono; luz, croma y contraste son siempre los mismos.');
+  G.forEach((g, i) => {
+    const x = 40 + (i % 4) * 303, y = 100 + Math.floor(i / 4) * 196;
+    html += `<div class="pair" style="left:${x}px;top:${y}px"><div class="ph"><span class="cs" style="background:${strip(g.portada)}"></span>${g.titulo}<em>${g.caso}</em><span class="src">${g.T.origen === 'portada' ? Math.round(g.T.h) + '°' : g.T.origen}</span></div>
+      <div class="pmx"><div><div class="lab">antes</div>${mini(g, 'bef')}</div><div><div class="lab">después</div>${mini(g, 'aft')}</div></div></div>`;
+  });
+  sec.innerHTML = html;
+  sec.querySelectorAll('.mh span[style*="none"]').forEach(s => s.remove());
+}
+
+/* ===== Vista 8: algoritmo ===== */
+function hl(src) {
+  return esc(src).split('\n').map(line => {
+    const i = line.indexOf('//');
+    let code = i >= 0 ? line.slice(0, i) : line, com = i >= 0 ? line.slice(i) : '';
+    code = code.replace(/\b(function|const|let|return|if|else|for|of|while|continue|null)\b/g, '<span class="k">$1</span>').replace(/('[^']*')/g, '<span class="s">$1</span>');
+    return code + (com ? `<span class="c">${com}</span>` : '');
+  }).join('\n');
+}
+function buildAlgo(sec) {
+  let html = `<div class="bg"></div>` + head('Guía de color 4/4 · algoritmo', 'El algoritmo, listo para portar a Svelte',
+    'Es el código real que pinta esta página: una función decide el tono, otra deriva las luces y una tercera es la única puerta de entrada para cualquier color.');
+  html += `<div class="card" style="left:40px;top:104px;width:600px;height:440px;padding:12px 16px"><pre class="code">${hl(extraerTono.toString())}\n\n${hl(colorDelJuego.toString())}</pre></div>`;
+  html += `<div class="card" style="left:652px;top:104px;width:588px;height:440px;padding:12px 16px"><pre class="code">${hl(tokensDeTono.toString())}</pre></div>`;
+  const port = [
+    ['palette.rs', '<span class="mono">extract_palette</span> devuelve el tono h (u <span class="mono">None</span>), con peso área × C y el corte del 3 %.'],
+    ['oklch.ts', 'Añade <span class="mono">tokensDeTono(h)</span>; sobran L_MIN/L_MAX/C_MIN/C_MAX y el umbral 2.55.'],
+    ['store.svelte.ts', '<span class="mono">chrome</span> escribe 7 variables en la raíz: --acc, --acc-fill, --acc-ink, --acc-deep, --acc-soft, --acc-line, --acc-iris.'],
+    ['app.css', 'Se sustituyen los 116 <span class="mono">color-mix(… var(--acc) …)</span> por esos tokens.'],
+  ];
+  port.forEach(([f, t], i) => {
+    const T = tokensDeTono(hueOf(ARCOIRIS[[4, 5, 6, 0][i]][1]));
+    html += `<div class="card" style="left:${40 + i * 302}px;top:556px;width:290px;height:128px;padding:12px 14px"><h3 style="font-size:13.5px"><span class="num" style="background:${T.fill};color:${T.ink}">${i + 1}</span><span class="mono">${f}</span></h3><div class="sub" style="font-size:11.8px">${t}</div></div>`;
+  });
+  sec.innerHTML = html;
+}
+
+/* ===== Vista 9: constitución ===== */
+function buildConst(sec) {
+  const R = [
+    ['Solo el tono es del juego', 'De la portada sale un número, el tono h; la luz y el croma los pone siempre el sistema.'],
+    ['Cinco luces fijas', 'Cada tono se pinta igual: deep ≈0.50, fill ≈0.56, acc 0.66, iris 0.84, soft 0.95. Los amarillos suben a 0.82 con tinta oscura.'],
+    ['Croma con techo', 'Ningún acento pasa de C 0.15: una portada neón nunca grita más que el arcoíris.'],
+    ['Lo neutro no se tiñe', 'Fondo, cristal, caras, texto, bordes y sombras son idénticos en todas las pantallas.'],
+    ['Contraste calculado', 'Texto ≥ 7:1; texto de acento y etiqueta sobre acento ≥ 4.5:1; foco y progreso ≥ 3:1.'],
+    ['60 / 30 / 10', '60 % fondo neutro, 30 % cristal y caras, y como mucho un 10 % de acento.'],
+    ['Un solo botón sólido', 'Un botón con relleno de acento por pantalla; lo demás, pastillas neutras; el chip activo va en soft.'],
+    ['El nácar marca foco y progreso', 'El degradado, centrado en el tono del juego, solo vive en el foco y en las barras. El aro de cristal es siempre sobrio.'],
+    ['Nunca gris', 'Sin tono útil (negro, blanco o gris), el juego recibe un color del arcoíris por hash estable de su título.'],
+    ['Una sola tubería', 'Portada, color a mano y arcoíris pasan por la misma función; ningún componente usa color-mix propio.'],
+  ];
+  let html = `<div class="bg"></div>` + head('Resumen', 'La constitución del color',
+    'Diez reglas que cualquier pantalla nueva debe cumplir; si una pantalla necesita romper una, la regla está mal y se cambia aquí.');
+  R.forEach(([b, s], i) => {
+    const T = tokensDeTono(hueOf(ARCOIRIS[i % 7][1]));
+    const x = 40 + (i % 2) * 616, y = 104 + Math.floor(i / 2) * 116;
+    html += `<div class="rule" style="left:${x}px;top:${y}px"><div class="n" style="background:${T.fill};color:${T.ink}"><span style="position:relative;color:inherit;font:inherit;margin:0;display:inline">${i + 1}</span></div><b>${b}</b><span>${s}</span></div>`;
+  });
+  sec.innerHTML = html;
+}
+
+/* ===== montaje y navegación ===== */
+const stage = document.getElementById('stage'), nav = document.getElementById('nav');
+const builders = [...VAR.map((v, i) => s => buildVariant(s, v, i + 1)), buildGuiaA, buildGuiaB, buildGrid, buildAlgo, buildConst];
+const names = ['H1', 'H2', 'H3', 'H4', 'Tono', 'Reglas', '12 portadas', 'Algoritmo', 'Constitución'];
+const views = builders.map(b => { const s = document.createElement('section'); s.className = 'view'; stage.insertBefore(s, nav); b(s); return s; });
+let cur = 0;
+function go(i) {
+  cur = (i + views.length) % views.length;
+  views.forEach((v, j) => v.classList.toggle('on', j === cur));
+  nav.querySelectorAll('button[data-i]').forEach(b => b.classList.toggle('on', +b.dataset.i === cur));
+  try { history.replaceState(null, '', '#' + (cur + 1)); } catch (e) {}
+}
+nav.innerHTML = `<button data-p>←</button>` + names.map((n, i) => `<button data-i="${i}">${i + 1} · ${n}</button>`).join('') + `<button data-n>→</button>`;
+nav.onclick = e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.p !== undefined) go(cur - 1); else if (b.dataset.n !== undefined) go(cur + 1); else go(+b.dataset.i); };
+addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') { go(cur + 1); e.preventDefault(); }
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') { go(cur - 1); e.preventDefault(); }
+  else if (/^[1-9]$/.test(e.key)) go(+e.key - 1);
+});
+function fit() { const s = Math.min(innerWidth / 1280, innerHeight / 720); stage.style.transform = `translate(${(innerWidth - 1280 * s) / 2}px,${(innerHeight - 720 * s) / 2}px) scale(${s})`; }
+addEventListener('resize', fit); fit();
+go(Math.max(0, Math.min(views.length - 1, (parseInt(location.hash.slice(1)) || 1) - 1)));
+</script>
+</body>
+</html>
