@@ -7,7 +7,7 @@ export function buildBackground(): string {
   for (let i = 0; i < 9; i++) {
     const s = 180 + r() * 260;
     const b = (i % 3) + 1;
-    h += `<div class="blob" style="left:${r() * 1180 - 100}px;top:${r() * 640 - 100}px;width:${s}px;height:${s}px;--b:var(--b${b});animation-delay:-${(r() * 20).toFixed(1)}s"></div>`;
+    h += `<div class="blob" style="left:${r() * 1180 - 100}px;top:${r() * 640 - 100}px;width:${s}px;height:${s}px;--b:var(--b${b})"></div>`;
   }
   for (let i = 0; i < 9; i++) {
     const sc = 0.6 + r() * 0.8;
