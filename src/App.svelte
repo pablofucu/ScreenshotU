@@ -6,6 +6,13 @@
   import { buildBackground } from './lib/bg';
   import { lerpH, rbGrad, variablesCSS } from './lib/atmos';
   const RBY = rbGrad('180deg');
+  // Tramo de arcoíris de la sección actual (subrayado de pestañas); dentro de un juego, su degradado.
+  const rbsec = $derived.by(() => {
+    if (app.secK === null) return 'var(--grad)';
+    const d = 1 / (app.lib.platforms.length + 2);
+    const a = Math.max(0, Math.min(app.secK * d - d / 2, 1 - d));
+    return rbGrad('90deg', a, a + d);
+  });
   import Home from './screens/Home.svelte';
   import Titles from './screens/Titles.svelte';
   import Detail from './screens/Detail.svelte';
@@ -133,7 +140,7 @@
 <svelte:window bind:innerWidth={w} bind:innerHeight={h} onkeydown={onKeyDown} onkeyup={learnKeydown} />
 
 <!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
-<div id="stage" onclick={onStageClick} data-theme={app.config.theme === 'dark' ? 'dark' : 'light'} style="transform:translate({ox}px,{oy}px) scale({sc});{atmosCss};--rby:{RBY};--acc:var(--f1);--acc-ink:var(--on)">
+<div id="stage" onclick={onStageClick} data-theme={app.config.theme === 'dark' ? 'dark' : 'light'} style="transform:translate({ox}px,{oy}px) scale({sc});{atmosCss};--rby:{RBY};--rbsec:{rbsec};--acc:var(--f1);--acc-ink:var(--on)">
   <div class="bg">{@html bg}</div>
   {#if app.ready}
     {#key app.animKey}

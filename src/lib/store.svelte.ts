@@ -590,15 +590,20 @@ class Store {
     return this.pairAcc(this.titlePair(pi, ti), 'Del juego');
   }
   /** Pareja de tonos de la atmósfera actual. */
+  /** Posición de la sección actual en el arcoíris (null dentro de un juego o en Racha). */
+  secK = $derived.by((): number | null => {
+    const N = this.lib.platforms.length;
+    if (this.overlay === 'settings') return N + 2;
+    if (this.favView) return N;
+    if (this.view === 'home') return this.hp;
+    if (this.view === 'titles') return this.p;
+    if (this.view === 'stats' || this.view === 'evo') return N + 1;
+    return null;
+  });
+
   atmosTarget = $derived.by((): { h1: number; h2: number } => {
     // Un tramo igual de arcoíris por sección: las plataformas en su orden y, detrás, Mi lista, Estadísticas y Ajustes.
-    const sec = (k: number) => pair(k / (this.lib.platforms.length + 2));
-    const N = this.lib.platforms.length;
-    if (this.overlay === 'settings') return pair(1);
-    if (this.favView) return sec(N);
-    if (this.view === 'home') return sec(this.hp);
-    if (this.view === 'titles') return sec(this.p);
-    if (this.view === 'stats' || this.view === 'evo') return sec(N + 1);
+    if (this.secK !== null) return this.secPair(this.secK);
     if (this.view === 'streak') {
       const h1 = hueOf(GOAL_COL[this.streakKey].c);
       return { h1, h2: (h1 + 35) % 360 };
