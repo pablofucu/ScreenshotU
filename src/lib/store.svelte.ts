@@ -264,21 +264,22 @@ export function sortShots(shots: Shot[], mode: SortMode, favs: Set<string>): Sho
 /** Último uso de un juego: la última partida o, si no la hay, su última captura (0 = nada). */
 export const lastUse = (t: Title) => t.lastPlayed || t.shots[0]?.date || 0;
 
-/** Tono (0..360, empezando en el rojo) del color de la portada, o null si no tiene color (sin acento o casi gris). */
-function coverHue(t: Title): number | null {
+/** Tono OKLCH (0..360) del color de la portada, o null si no tiene color (sin acento o casi gris). */
+export function coverHue(t: Title): number | null {
   const hex = t.accentOverride ?? t.accent?.accent.color;
   const rgb = hex ? hexToRgb(hex) : null;
   if (!rgb) return null;
   const [, c, h] = rgbToLch(rgb);
-  return c < 0.04 ? null : (h - 20 + 360) % 360;
+  return c < 0.04 ? null : h;
 }
 
-/** Ordena índices de títulos: última partida (más reciente primero), A–Z o por tono del acento de la portada. */
-export function sortTitles(titles: Title[], idx: number[], order: TitleOrder): number[] {
+/** Ordena índices de títulos: última partida (más reciente primero), A–Z o por tono del acento de la portada.
+ *  Por color, la vuelta al círculo cromático empieza en `start` (el tono de la categoría) y los grises van al final. */
+export function sortTitles(titles: Title[], idx: number[], order: TitleOrder, start = 20): number[] {
   const name = (a: number, b: number) => byName.compare(titles[a].name, titles[b].name) || a - b;
   if (order === 'az') return [...idx].sort(name);
   if (order === 'color') {
-    const hue = new Map(idx.map((i) => [i, coverHue(titles[i])] as const));
+    const hue = new Map(idx.map((i) => { const h = coverHue(titles[i]); return [i, h == null ? null : (h - start + 720) % 360] as const; }));
     return [...idx].sort((a, b) => {
       const ha = hue.get(a), hb = hue.get(b);
       if (ha == null || hb == null) return ha == null && hb == null ? name(a, b) : ha == null ? 1 : -1;
@@ -523,7 +524,7 @@ class Store {
     if (this.catalogLetter) {
       v = v.filter((i) => titles[i].name.toUpperCase().startsWith(this.catalogLetter));
     }
-    return sortTitles(titles, v, this.titleOrder);
+    return sortTitles(titles, v, this.titleOrder, this.secPair(this.p).h1);
   });
 
   /** Tarjeta «Lectura de hoy» en Inicio (si existe alguna categoría de novelas). */
@@ -569,7 +570,10 @@ class Store {
   }
   /** `--p1/--p2` del punto de color de una portada (los dos tonos del juego). */
   pipStyle(pi: number, ti: number): string {
-    const v = this.pairFill(this.titlePair(pi, ti));
+    return this.pairStyle(this.titlePair(pi, ti));
+  }
+  pairStyle(p: { h1: number; h2: number }): string {
+    const v = this.pairFill(p);
     return `--p1:${v.c};--p2:${v.c2}`;
   }
   /** Pareja del tramo de arcoíris de la sección k: las plataformas en su orden y, detrás, Mi lista y Estadísticas. */
@@ -584,7 +588,10 @@ class Store {
     const t = this.lib.platforms[pi]?.titles[ti];
     if (!t) return this.secPair(pi);
     const live = pi === this.p && ti === this.t && this.view !== 'home' && this.view !== 'titles';
-    return gamePair(t, live ? this.accentPreview : null);
+    const prev = live ? this.accentPreview : null;
+    // Sin color propio (portada gris o sin arte): el de su categoría, no uno al azar por el nombre.
+    if (!t.accentOverride && !t.accent && (!prev || prev === 'auto')) return this.secPair(pi);
+    return gamePair(t, prev);
   }
   titleAcc(pi: number, ti: number): Accent {
     return this.pairAcc(this.titlePair(pi, ti), 'Del juego');
@@ -605,6 +612,12 @@ class Store {
     // Catálogo: toda la interfaz toma los colores del juego enfocado, no los de la categoría.
     if (this.view === 'titles' && this.titlesTab === 'all' && !this.overlay) {
       const t = this.lib.platforms[this.p]?.titles[this.t];
+      // Por color, la interfaz sigue la vuelta de la lista: el tono de la portada y, de segundo, el que viene detrás
+      // (siempre hacia delante, sin saltos). Los grises del final y «Añadir juego» vuelven al color de la categoría.
+      if (this.titleOrder === 'color') {
+        const h1 = (t && coverHue(t)) ?? this.secPair(this.p).h1;
+        return { h1, h2: (h1 + 30) % 360 };
+      }
       if (t) return gamePair(t);
     }
     // Un tramo igual de arcoíris por sección: las plataformas en su orden y, detrás, Mi lista, Estadísticas y Ajustes.

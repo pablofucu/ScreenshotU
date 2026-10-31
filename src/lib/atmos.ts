@@ -44,7 +44,8 @@ export const hueDist = (a: number, b: number): number => {
 
 /** Distancia angular más corta o deslizamiento a lo largo del arcoíris. */
 export function lerpH(a: number, b: number, p: number): number {
-  if (inRB(a) && inRB(b)) return (a + (b - a) * p + 360) % 360;
+  // Pasos cortos (de un juego al siguiente del catálogo por color) siempre por el camino corto, aunque crucen el rojo.
+  if (inRB(a) && inRB(b) && hueDist(a, b) > 60) return (a + (b - a) * p + 360) % 360;
   const d = ((b - a + 540) % 360) - 180;
   return (a + d * p + 360) % 360;
 }

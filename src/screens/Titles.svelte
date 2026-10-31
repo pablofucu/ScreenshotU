@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { app, LIST_COLOR, TITLE_FILTERS, TITLE_ORDER_LABEL, TITLES_TABS, type ListShelf } from '../lib/store.svelte';
+  import { app, coverHue, LIST_COLOR, TITLE_FILTERS, TITLE_ORDER_LABEL, TITLES_TABS, type ListShelf } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { fmtAgo, fmtDur, fmtShort, nCapturas } from '../lib/format';
   import { untrack } from 'svelte';
@@ -124,10 +124,12 @@
   const settled = (id: number) => { if (layers.some((l) => l.id < id)) layers = layers.filter((l) => l.id >= id); };
 
   // Velo de color: tiñe el fondo con los dos tonos del juego enfocado (al recorrer la lista, el fondo va cambiando de matiz).
-  // Si no hay juego enfocado (baldosa «Añadir»), se conserva el último.
+  // Si no hay juego enfocado (baldosa «Añadir»), se conserva el último. Por color, el velo sigue la misma vuelta que
+  // la interfaz (tono de la portada y el siguiente), así no salta entre portadas vecinas.
   const washTi = $derived(tab === 'coll' ? app.collShelves[app.collAt.c]?.items[app.collAt.i] : cur ? app.t : undefined);
   let wash = $state('');
   $effect(() => {
+    if (tab === 'all' && app.titleOrder === 'color') { if (!app.overlay) wash = app.pairStyle(app.atmosTarget); return; }
     const ti = washTi;
     if (ti !== undefined && titles[ti]) wash = app.pipStyle(app.p, ti);
   });
@@ -143,22 +145,33 @@
     if (h >= 325 || h < 20) return 7;
     return h < 45 ? 0 : h < 85 ? 1 : h < 115 ? 2 : h < 175 ? 3 : h < 225 ? 4 : h < 275 ? 5 : 6;
   };
-  // Barra lateral como minimapa: con el orden «Por color», los colores reales de los juegos, muestreados a ≤56 paradas
-  // (con otro orden la barra es neutra: los colores saldrían a rayas sin sentido).
+  // Barra lateral como minimapa: con el orden «Por color», el tono de cada juego (el mismo que ordena la lista) con la
+  // misma luz y croma para todos, así el degradado es continuo: empieza en el color de la categoría, da la vuelta
+  // siempre hacia delante (interpolado en OKLCH, sin grises de mezcla) y los juegos sin color quedan en gris al fondo.
+  // Con otro orden la barra es neutra: los colores saldrían a rayas sin sentido.
   // El tirador (70px) recorre 350px de los 420 de la barra, así que el color de cada posición va en ese tramo.
   const BAR_H = 420, THUMB = 70;
+  // El gris lleva el tono del último color para que el paso al gris sea un simple apagado (sin barrer el arcoíris).
+  const grey = (h = 255) => `oklch(0.8 0.01 ${h.toFixed(1)})`;
+  const barCol = (h: number) => `oklch(0.74 0.14 ${h.toFixed(1)})`;
   const mapGrad = $derived.by(() => {
     const n = vis.length;
     if (n < 2 || app.titleOrder !== 'color') return '';
-    const S = Math.min(n, 56);
-    const stops: string[] = [];
+    const at = (pos: number) => `${(((THUMB / 2 + (pos / Math.max(1, slots - 1)) * (BAR_H - THUMB)) / BAR_H) * 100).toFixed(2)}%`;
+    const hues = vis.map((ti) => coverHue(titles[ti]));
+    // Los grises van todos detrás: `nc` juegos con color al principio.
+    const nc = hues.findIndex((h) => h == null) < 0 ? n : hues.findIndex((h) => h == null);
+    if (!nc) return grey();
+    // Arriba del todo, el color de la categoría: la vuelta arranca siempre ahí aunque no haya juegos de ese tono.
+    const stops: string[] = [`${barCol(app.secPair(app.p).h1)} 0%`];
+    const S = Math.min(nc, 56);
     for (let k = 0; k < S; k++) {
-      const pos = Math.round((k * (n - 1)) / (S - 1));
-      // El color de la portada tal cual (el mismo que ordena la lista); sin color, gris: así el tramo final no sale a rayas.
-      const c = titleHex(titles[vis[pos]]) ?? '#8a93a3';
-      stops.push(`${c} ${(((THUMB / 2 + (pos / Math.max(1, slots - 1)) * (BAR_H - THUMB)) / BAR_H) * 100).toFixed(2)}%`);
+      const pos = S < 2 ? 0 : Math.round((k * (nc - 1)) / (S - 1));
+      stops.push(`${barCol(hues[pos]!)} ${at(pos)}`);
     }
-    return `linear-gradient(180deg,${stops.join(',')})`;
+    if (S < 2) stops.push(`${barCol(hues[0]!)} ${at(Math.max(0, nc - 1))}`);
+    if (nc < n) stops.push(`${grey(hues[nc - 1]!)} ${at(nc)}`, `${grey(hues[nc - 1]!)} 100%`);
+    return `linear-gradient(180deg in oklch increasing hue,${stops.join(',')})`;
   });
   let barEl = $state<HTMLElement>();
   let hov = $state<{ pos: number; y: number } | null>(null);

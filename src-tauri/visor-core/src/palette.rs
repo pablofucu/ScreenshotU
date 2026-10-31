@@ -28,6 +28,10 @@ pub const C_MAX: f32 = 0.20;
 /// Por debajo de este contraste con el blanco el texto sobre el acento pasa a ser oscuro
 /// (el amarillo del arcoiris queda por debajo; su verde y su naranja, por encima).
 pub const WHITE_MIN_CONTRAST: f32 = 2.55;
+/// Fraccion minima de la imagen (ponderada entre hero y portada) que debe tener color para dar un acento.
+pub const MIN_COLOURED: f32 = 0.03;
+/// Parte de la portada cuando tambien hay hero: es lo que se ve en el catalogo, asi que manda.
+pub const COVER_SHARE: f32 = 0.65;
 const K: usize = 6;
 const MAX_SWATCHES: usize = 5;
 
@@ -203,7 +207,8 @@ fn dist2(a: [f32; 3], b: [f32; 3]) -> f32 {
 }
 
 /// Pixeles utiles de una imagen (reducida): sin transparentes, casi negros, casi blancos ni grises.
-fn useful_pixels(img: &RgbaImage) -> Vec<Px> {
+/// Devuelve tambien que fraccion de la imagen tiene color.
+fn useful_pixels(img: &RgbaImage) -> (Vec<Px>, f32) {
     let m = img.width().max(img.height()).max(1);
     let small = if m > SAMPLE {
         image::imageops::thumbnail(img, (img.width() * SAMPLE / m).max(1), (img.height() * SAMPLE / m).max(1))
@@ -223,7 +228,8 @@ fn useful_pixels(img: &RgbaImage) -> Vec<Px> {
         }
         out.push(Px { lab, w: c * c / total });
     }
-    out
+    let frac = out.len() as f32 / total;
+    (out, frac)
 }
 
 /// k-means ponderado en OKLab con arranque determinista (el mas pesado y luego el mas lejano).
@@ -271,21 +277,30 @@ fn hue_dist(a: f32, b: f32) -> f32 {
 /// Extrae el acento y la paleta de una o varias imagenes (hero y portada). `None` si no hay ningun
 /// pixel con color (todo gris, negro o blanco, o sin imagenes).
 pub fn extract_palette(images: &[RgbaImage]) -> Option<AccentInfo> {
+    let share = 1.0 / images.len().max(1) as f32;
+    extract_palette_weighted(&images.iter().map(|im| (im, share)).collect::<Vec<_>>())
+}
+
+/// Como `extract_palette`, pero cada imagen aporta la parte indicada (las partes suman 1).
+pub fn extract_palette_weighted(images: &[(&RgbaImage, f32)]) -> Option<AccentInfo> {
     let mut px: Vec<Px> = Vec::new();
-    for im in images {
-        let mut v = useful_pixels(im);
-        // Cada imagen aporta lo mismo aunque una sea mucho mayor que la otra.
+    let mut coloured = 0.0f32;
+    for &(im, share) in images {
+        let (mut v, frac) = useful_pixels(im);
+        coloured += frac * share;
+        // Cada imagen aporta su parte aunque una sea mucho mayor que la otra.
         let sum: f32 = v.iter().map(|p| p.w).sum();
         if sum > 0.0 {
-            v.iter_mut().for_each(|p| p.w /= sum);
+            v.iter_mut().for_each(|p| p.w *= share / sum);
         }
         px.extend(v);
     }
     if px.is_empty() {
         return None;
     }
-    // Muy poco color en total (p. ej. una sola mota perdida en una imagen gris): no es fiable.
-    if px.len() < 6 {
+    // Muy poco color en total (p. ej. una sola mota perdida en una imagen gris, o una portada en blanco y negro con
+    // un detalle diminuto): no es fiable y a la vista es gris; va con los grises en vez de colarse entre los colores.
+    if px.len() < 6 || coloured < MIN_COLOURED {
         return None;
     }
     let mut groups = kmeans(&px, K);
@@ -318,7 +333,8 @@ pub fn load_for_palette(path: &Path) -> Option<RgbaImage> {
 /* Cache por ruta + fecha de modificacion                               */
 /* ------------------------------------------------------------------ */
 
-const CACHE_VERSION: &str = "v1";
+// v2: la portada pesa mas que el hero y las imagenes casi sin color dan gris.
+const CACHE_VERSION: &str = "v2";
 
 fn mtime_ms(p: &Path) -> Option<i64> {
     let md = fs::metadata(p).ok()?;
@@ -376,9 +392,14 @@ impl PaletteCache {
         if let Some(hit) = self.map.lock().unwrap().get(&key) {
             return hit.clone();
         }
-        let imgs: Vec<RgbaImage> = paths.iter().filter_map(|p| load_for_palette(p)).collect();
+        let hero_img = hero.and_then(load_for_palette);
+        let cover_img = cover.and_then(load_for_palette);
         self.computed.fetch_add(1, Relaxed);
-        let res = extract_palette(&imgs);
+        let res = match (&hero_img, &cover_img) {
+            (Some(h), Some(c)) => extract_palette_weighted(&[(h, 1.0 - COVER_SHARE), (c, COVER_SHARE)]),
+            (Some(one), None) | (None, Some(one)) => extract_palette_weighted(&[(one, 1.0)]),
+            (None, None) => None,
+        };
         self.map.lock().unwrap().insert(key, res.clone());
         self.dirty.store(true, Relaxed);
         res
@@ -462,6 +483,23 @@ mod tests {
         let hues: Vec<f32> = info.palette.iter().map(|s| lch_of(&s.color).2).collect();
         assert!(hues.iter().any(|h| *h < 40.0 || *h > 340.0), "{hues:?}");
         assert!(hues.iter().any(|h| (230.0..285.0).contains(h)), "{hues:?}");
+    }
+
+    #[test]
+    fn the_cover_decides_the_accent_over_the_hero() {
+        // Hero rojo y portada azul, igual de vivos: con el reparto de `accent_for` manda la portada.
+        let hero = solid(400, 130, [220, 30, 40]);
+        let cover = solid(60, 90, [30, 60, 220]);
+        let info = extract_palette_weighted(&[(&hero, 1.0 - COVER_SHARE), (&cover, COVER_SHARE)]).unwrap();
+        assert!((230.0..285.0).contains(&lch_of(&info.accent.color).2), "{}", info.accent.color);
+    }
+
+    #[test]
+    fn an_almost_grey_cover_counts_as_grey() {
+        // 2 % de color sobre gris: a la vista es una portada gris, no un acento vivo.
+        assert!(extract_palette(&[striped(200, 60, [128, 128, 128], [220, 30, 40], 0.02)]).is_none());
+        // Con un 10 % ya cuenta.
+        assert!(extract_palette(&[striped(200, 60, [128, 128, 128], [220, 30, 40], 0.1)]).is_some());
     }
 
     #[test]
