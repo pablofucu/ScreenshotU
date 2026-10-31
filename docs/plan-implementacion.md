@@ -76,7 +76,7 @@ Estado: **planificación terminada a falta de 4 decisiones; no se ha programado 
 6. Las categorías de la biblioteca no se tocan (`CLAUDE.md`).
 
 ### Decisiones abiertas (empezar por aquí)
-1. ❓ Dosis del degradado en `sistema-v4`: V1 Cristal teñido, V2 Hilo nácar o V3 Atmósfera (el usuario aún no ha elegido).
+1. ✅ Dosis del degradado en `sistema-v4`: **V3 Atmósfera** (2026-10-31). Dentro de un juego, su pareja g1/g2. ❓ Fuera de los juegos (biblioteca, menús, Ajustes): arcoíris **ordenado** en vez del color de las capturas; falta elegir cómo se reparte (por sección, por posición en pantalla o por orden de la lista).
 2. ❓ Logros: lista, mosaico o rareza.
 3. ❓ Nombre del cubo «Aparcado»: Aparcados / En el cajón / Archivo.
 4. ❓ Dónde se guarda «fijar» (mirar dónde vive `listPos`) y si los umbrales 14/90 días se ajustan en Ajustes.
