@@ -13,8 +13,12 @@
     icon?: string;
     /** Número de orden del juego dentro del año (1..N). */
     n?: number;
-    /** `--p1/--p2` de la pareja del juego para el punto de color. */
+    /** `--p1/--p2` de la pareja del juego (el foco y el resto de variables de color de la portada). */
     pip?: string;
+    /** Línea de tiempo (`rail`): false = no es la primera portada de su año, así que no lleva el año (salvo enfocada). */
+    mark?: boolean;
+    /** Línea de tiempo (`rail`): color del punto de la portada en el raíl. */
+    tint?: string;
   }
 </script>
 
@@ -31,7 +35,7 @@
   // del texto (`ink`, para colores claros como el amarillo).
   let {
     acc, title, sub = '', items, focus = -1, from = 0, visible = 9, top = 0, dim = false, ink = '#fff', tabStyle = '', aurora = [], icon = '', chip = '', extra, end,
-    positions, dividers = [], monthGroups,
+    positions, dividers = [], monthGroups, vars = '', rail = '',
   }: {
     acc: string;
     title: string;
@@ -60,6 +64,10 @@
     dividers?: number[];
     /** Grupos de meses para la tira inferior de etiquetas («slip»). */
     monthGroups?: Array<{ label: string; x0: number; x1: number; has: boolean }>;
+    /** Variables de color propias de la estantería (`--g1 --g2 --f1 --f2 --gf --on`…): rótulo de cristal, anillo y foco. */
+    vars?: string;
+    /** Línea de tiempo bajo las portadas (requiere `positions`): `background` CSS del raíl, normalmente un degradado. */
+    rail?: string;
   } = $props();
 
   const scrollX = $derived(positions ? from : from * SHELF_PITCH);
@@ -82,9 +90,12 @@
   );
   const hasLeft = $derived(positions ? scrollX > 5 : from > 0);
   const hasOrd = $derived(items.some((it) => it.n !== undefined));
+  const railW = $derived(positions && positions.length ? positions[positions.length - 1] + SHELF_CW : 0);
+  /** En la línea de tiempo solo la primera portada de cada año (y la enfocada) enseña su año. */
+  const showLabel = (it: ShelfItem, p: number) => !!it.label && (!rail || it.mark !== false || focus === p);
 </script>
 
-<div class="shelf" class:dim class:dk={ink !== '#fff'} class:with-ord={hasOrd} style="top:{top}px;--acc:{acc};--ink:{ink}">
+<div class="shelf" class:dim class:dk={ink !== '#fff'} class:with-ord={hasOrd} class:tinted={!!vars} style="top:{top}px;--acc:{acc};--on-acc:{ink}{vars ? ';' + vars : ';--ink:' + ink}">
   <div class="bsh" class:lit={!dim} class:soft={dim} class:hasaur={aurora.length > 0 || !!tabStyle}>
     {#if aurora.length}
       <div class="aur">{#each aurora as c, k}<b style="left:{4 + k * 20}%;background:{c}"></b>{/each}</div>
@@ -111,15 +122,15 @@
           <div class="glass scov fx" class:addtile={!it.path && !!it.icon} class:f={focus === p} class:hid={it.hidden} data-k={it.k} data-act={it.act}
             style="left:{positions ? positions[p] : p * SHELF_PITCH}px;width:{SHELF_CW}px;height:{SHELF_CH}px{it.pip ? ';' + it.pip : ''}">
             {#if it.n !== undefined}<span class="ord">{it.n}</span>{/if}
-            {#if it.pip}<i class="pip"></i>{/if}
             <div class="face">
               {#if it.path}<Thumb path={it.path} />{:else if it.icon}<div class="addin"><span>{@html it.icon}</span><b>{it.name}</b></div>{:else}<div class="noart"><b>{it.name}</b></div>{/if}
             </div>
           </div>
         {/each}
       </div>
-      <div class="slip">
+      <div class="slip" class:railed={!!rail && !!positions}>
         <div class="rtrack" style="transform:translateX({-scrollX}px)">
+          {#if rail && positions}<span class="rail" style="width:{railW}px;background:{rail}"></span>{/if}
           {#if monthGroups}
             {#each monthGroups as g}
               <span class="slab mlab" class:on={g.has} style="left:{g.x0}px;width:{g.x1 - g.x0}px">
@@ -129,9 +140,13 @@
           {:else}
             {#each win as p (items[p].k)}
               {@const it = items[p]}
+              {@const lab = showLabel(it, p)}
               <span class="slab" class:on={focus === p} style="left:{positions ? positions[p] : p * SHELF_PITCH}px;width:{SHELF_CW}px">
-                {#if it.label || it.stars}<s>{#if it.label}<b>{it.label}</b>{/if}{#if it.stars}<em>{'★'.repeat(it.stars)}</em>{/if}</s>{/if}
+                {#if lab || it.stars}<s>{#if lab}<b>{it.label}</b>{/if}{#if it.stars}<em>{'★'.repeat(it.stars)}</em>{/if}</s>{/if}
               </span>
+              {#if rail && positions}
+                <i class="rdot" class:yr={it.mark} class:on={focus === p} style="left:{positions[p] + SHELF_CW / 2}px{it.tint ? ';--dc:' + it.tint : ''}"></i>
+              {/if}
             {/each}
           {/if}
         </div>
@@ -219,5 +234,41 @@
   .mdiv{position:absolute;top:6px;bottom:6px;width:0;border-left:1.5px dashed rgba(95,110,135,.35);pointer-events:none}
   .slab.mlab{letter-spacing:.3px}
   .slab.mlab s{text-transform:lowercase}
-  @media (prefers-reduced-motion: reduce){.shelf,.rtrack{transition:none}}
+
+  /* ---- Línea de tiempo (colecciones): raíl bajo las portadas con un punto por juego, en su año ---- */
+  .slip.railed{height:36px}
+  .slip.railed .slab{height:24px}
+  .rail{position:absolute;left:0;top:27px;height:4px;border-radius:4px;opacity:.9}
+  .rdot{position:absolute;top:29px;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px var(--dc,var(--f1));
+    transition:width .2s,height .2s,margin .2s,box-shadow .2s}
+  .rdot.yr{width:12px;height:12px;margin:-6px 0 0 -6px}
+  .rdot.on{width:16px;height:16px;margin:-8px 0 0 -8px;box-shadow:0 0 0 3px var(--dc,var(--f1)),0 0 10px 2px color-mix(in srgb,var(--dc,var(--f1)) 60%,transparent)}
+  .slip.railed .slab s{transition:transform .2s}
+  .slip.railed .slab.on s{transform:scale(1.2)}
+
+  /* ---- Colecciones v5: rótulo de cristal con la aurora de sus juegos y un anillo del par de tonos ---- */
+  .shelf.tinted{--tsh:none}
+  .tinted .bsh{-webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);
+    background:linear-gradient(180deg,var(--glass-top),var(--glass-mid) 55%,var(--glass-bot));
+    box-shadow:inset 0 1px 0 var(--glass-top),inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+  .tinted .bsh.hasaur{overflow:visible}
+  .tinted .bsh::before{content:'';position:absolute;inset:-3px;border-radius:999px;padding:2.5px;box-sizing:border-box;pointer-events:none;z-index:2;
+    background:linear-gradient(115deg,var(--g1),var(--g2),var(--g1));background-size:200% 100%;
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
+    opacity:.45;transition:opacity .3s}
+  .tinted .bsh.lit::before{opacity:1;animation:shelfSheen 4s linear infinite}
+  .tinted .bsh.lit{box-shadow:inset 0 1px 0 var(--glass-top),inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.18),0 10px 22px -10px color-mix(in srgb,var(--f2) 65%,rgba(40,50,70,.5))}
+  .tinted .aur{opacity:.5}
+  .tinted .lit .aur{opacity:.9}
+  .tinted .bsh h3,.tinted .bsh.lit h3{color:var(--ink);text-shadow:none}
+  .tinted .bsh .m,.tinted .bsh.lit .m{color:var(--ink-2);text-shadow:none}
+  .tinted .chip{background:var(--gf);color:var(--on);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 0 1px color-mix(in srgb,var(--f2) 70%,black)}
+  .tinted .bsh .mic,.tinted .bsh.lit .mic{background:rgba(255,255,255,.92);box-shadow:inset 0 1px 0 #fff,0 0 0 1px color-mix(in srgb,var(--f1) 45%,transparent),0 4px 10px -5px var(--f2)}
+  .tinted .bsh .mic :global(svg[fill=none] *),.tinted .bsh.lit .mic :global(svg[fill=none] *){stroke:var(--f2)}
+  .tinted .bsh .mic :global(svg:not([fill=none]) *),.tinted .bsh.lit .mic :global(svg:not([fill=none]) *){fill:var(--f2)}
+  .tinted .bsh .mic :global(svg[fill=none] rect),.tinted .bsh.lit .mic :global(svg[fill=none] rect){fill:none}
+  .tinted .slab.on s{background:var(--gf);color:var(--on);text-shadow:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 4px 10px -4px var(--f2)}
+  .tinted .scov.f .ord{background:var(--gf);color:var(--on);box-shadow:0 3px 6px -2px rgba(40,50,70,.35)}
+  @keyframes shelfSheen{to{background-position:200% 0}}
+  @media (prefers-reduced-motion: reduce){.shelf,.rtrack{transition:none}.tinted .bsh.lit::before{animation:none}.rdot,.slip.railed .slab s{transition:none}}
 </style>

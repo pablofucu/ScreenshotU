@@ -1,10 +1,12 @@
 <script lang="ts">
-  import { app, LIST_COLOR, STATUS_LABEL, TITLE_FILTERS, TITLE_ORDER_LABEL, TITLES_TABS, type ListShelf } from '../lib/store.svelte';
+  import { app, LIST_COLOR, TITLE_FILTERS, TITLE_ORDER_LABEL, TITLES_TABS, type ListShelf } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { fmtAgo, fmtDur, fmtShort, nCapturas } from '../lib/format';
   import { untrack } from 'svelte';
   import { backend, decodeImg, thumbNow, thumbReady } from '../lib/backend';
-  import { titlesGrid, viewPos } from '../lib/controller.svelte';
+  import { setFocus, titlesGrid, viewPos } from '../lib/controller.svelte';
+  import { titleHex } from '../lib/collections';
+  import { hexToRgb, rgbToLch } from '../lib/oklch';
   import TopBar from '../components/TopBar.svelte';
   import Hints from '../components/Hints.svelte';
   import Thumb from '../components/Thumb.svelte';
@@ -117,6 +119,69 @@
   });
   /** La capa `id` terminó de entrar: las de debajo ya no se ven. */
   const settled = (id: number) => { if (layers.some((l) => l.id < id)) layers = layers.filter((l) => l.id >= id); };
+
+  // Velo de color: tiñe el fondo con los dos tonos del juego enfocado (al recorrer la lista, el fondo va cambiando de matiz).
+  // Si no hay juego enfocado (baldosa «Añadir»), se conserva el último.
+  const washTi = $derived(tab === 'coll' ? app.collShelves[app.collAt.c]?.items[app.collAt.i] : cur ? app.t : undefined);
+  let wash = $state('');
+  $effect(() => {
+    const ti = washTi;
+    if (ti !== undefined && titles[ti]) wash = app.pipStyle(app.p, ti);
+  });
+
+  // Familia de color de un juego (misma regla que «Por color»: tono OKLCH del acento; sin color = Grises).
+  const FAMS = ['Rojos', 'Naranjas', 'Amarillos', 'Verdes', 'Turquesas', 'Azules', 'Violetas', 'Rosas', 'Grises'];
+  const famOf = (ti: number) => {
+    const hex = titles[ti] ? titleHex(titles[ti]) : null;
+    const rgb = hex ? hexToRgb(hex) : null;
+    if (!rgb) return 8;
+    const [, c, h] = rgbToLch(rgb);
+    if (c < 0.04) return 8;
+    if (h >= 325 || h < 20) return 7;
+    return h < 45 ? 0 : h < 85 ? 1 : h < 115 ? 2 : h < 175 ? 3 : h < 225 ? 4 : h < 275 ? 5 : 6;
+  };
+  // Barra lateral como minimapa: los colores reales de los juegos en el orden actual, muestreados a ≤56 paradas.
+  // El tirador (70px) recorre 350px de los 420 de la barra, así que el color de cada posición va en ese tramo.
+  const BAR_H = 420, THUMB = 70;
+  const mapGrad = $derived.by(() => {
+    const n = vis.length;
+    if (n < 2) return '';
+    const S = Math.min(n, 56);
+    const stops: string[] = [];
+    for (let k = 0; k < S; k++) {
+      const pos = Math.round((k * (n - 1)) / (S - 1));
+      const c = app.pairFill(app.titlePair(app.p, vis[pos])).c;
+      stops.push(`${c} ${(((THUMB / 2 + (pos / Math.max(1, slots - 1)) * (BAR_H - THUMB)) / BAR_H) * 100).toFixed(2)}%`);
+    }
+    return `linear-gradient(180deg,${stops.join(',')})`;
+  });
+  let barEl = $state<HTMLElement>();
+  let hov = $state<{ pos: number; y: number } | null>(null);
+  /** Posición de la lista (0..slots-1) a la altura del puntero sobre la barra. */
+  const barAt = (e: PointerEvent) => {
+    const r = barEl!.getBoundingClientRect();
+    const y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)) * BAR_H;
+    const f = Math.min(1, Math.max(0, (y - THUMB / 2) / (BAR_H - THUMB)));
+    return { pos: Math.round(f * Math.max(1, slots - 1)), y };
+  };
+  const barJump = (pos: number) => { const i = realAt(pos); if (app.focus !== 'tit' + i) setFocus('tit' + i); };
+  const barDown = (e: PointerEvent) => {
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    const a = barAt(e); hov = a; barJump(a.pos);
+  };
+  const barMove = (e: PointerEvent) => {
+    const a = barAt(e); hov = a;
+    if (e.buttons & 1) barJump(a.pos);
+  };
+  const hovTi = $derived(hov ? realAt(hov.pos) : -1);
+  // Con el orden «Por color»: familias de la primera y la última portada de la página («Página 2/3 · Verdes–Azules»).
+  const pageFam = $derived.by(() => {
+    if (app.titleOrder !== 'color' || !grid || tab !== 'all' || pages < 2) return '';
+    const a = pg * PS, b = Math.min(vis.length - 1, a + PS - 1);
+    if (a > b) return '';
+    const f1 = FAMS[famOf(vis[a])], f2 = FAMS[famOf(vis[b])];
+    return `Página ${pg + 1}/${pages} · ${f1 === f2 ? f1 : f1 + '–' + f2}`;
+  });
 </script>
 
 {#snippet cell(i: number)}
@@ -124,14 +189,16 @@
     {#if i === titles.length}
       <div class="addin"><span>{@html ICON.plus}</span><b>Añadir juego</b></div>
     {:else}
-      {#if coverOf(i)}<Thumb path={coverOf(i)!} />{:else}<div class="noart"><b>{titles[i].name}</b></div>{/if}<i class="pip"></i>{#if titles[i].hidden}<span class="hbadge">{@html ICON.eyeOff}</span>{/if}{#if titles[i].status === 'finished' || titles[i].status === 'dropped'}<span class="sbadge {titles[i].status}" style="--c:{LIST_COLOR[titles[i].status!].c}" title={STATUS_LABEL[titles[i].status!]}>{#if titles[i].status === 'finished'}{@html ICON.check}{:else}<i></i>{/if}</span>{/if}
+      {#if coverOf(i)}<Thumb path={coverOf(i)!} />{:else}<div class="noart"><b>{titles[i].name}</b></div>{/if}{#if titles[i].hidden}<span class="hbadge">{@html ICON.eyeOff}</span>{/if}
     {/if}
   </div>
+  <i class="ring"></i><i class="halo"></i>
 {/snippet}
 
 <div class="amb" class:car={!grid} class:off={ambOff}>
   {#each layers as l (l.id)}<div class="amblayer" class:still={l.still} style="background-image:url({l.u})" onanimationend={() => settled(l.id)}></div>{/each}
 </div>
+<div class="ambwash" style={wash}></div>
 <TopBar crumbs={['Inicio', P?.name ?? '']} dots={grid && tab === 'all' ? pages : 0} dot={pg} />
 
 <div class="ttabs" class:car={!grid && tab === 'all'} class:list-tabs={tab === 'list'} style={tabsAcc ? `--acc:${tabsAcc.c};--acc-ink:${tabsAcc.dark ? '#3a2f00' : '#fff'}` : ''}>
@@ -226,11 +293,20 @@
     <div class="side" class:off={pg >= pages - 1} data-hact="rb" style="right:12px">{@html ICON.arrowR}</div>
     {#if tab === 'all' && pages > 1}
       <!-- Barra de desplazamiento: tira del arcoíris de principio a fin de la lista; el tirador sigue al enfocado. -->
-      <div class="sbar rb" style="right:auto;left:1182px;top:214px;height:420px">
+      <!-- Minimapa: colores reales de los juegos en el orden actual. Clic o arrastre = saltar a ese juego; el ratón encima enseña cuál es. -->
+      <div class="sbar rb" bind:this={barEl} style="right:auto;left:1182px;top:214px;height:{BAR_H}px{mapGrad ? ';background:' + mapGrad : ''}">
         {#if app.titleOrder === 'az'}<em style="top:-20px">A</em>{/if}
-        <i style="height:70px;top:{(q / Math.max(1, slots - 1)) * 350}px"></i>
+        <i style="height:{THUMB}px;top:{(q / Math.max(1, slots - 1)) * (BAR_H - THUMB)}px"></i>
         {#if app.titleOrder === 'az'}<em style="bottom:-20px">Z</em>{/if}
+        {#if hov}
+          <div class="sbub glass-lite" style="top:{hov.y}px">
+            {#if hovTi < titles.length}<span class="sdot" style="background:{app.pairFill(app.titlePair(app.p, hovTi)).c}"></span><b>{titles[hovTi].name}</b><small>{FAMS[famOf(hovTi)]}</small>{:else}<b>Añadir juego</b>{/if}
+          </div>
+        {/if}
+        <div class="shit" role="slider" tabindex="-1" aria-label="Saltar a un juego" aria-valuenow={q} aria-valuemin={0} aria-valuemax={slots - 1}
+          onpointerdown={barDown} onpointermove={barMove} onpointerleave={() => (hov = null)}></div>
       </div>
+      {#if pageFam}<div class="pgfam pill">{pageFam}</div>{/if}
     {/if}
   {:else}
     <div class="ctrack" style="transform:translateX({640 - 100 - q * 240}px)">

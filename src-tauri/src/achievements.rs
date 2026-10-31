@@ -122,6 +122,9 @@ pub fn sync_achievements_from_disk(
         }
     }
 
+    // 4. Rareza global (cache de Steam); sin datos no cambia nada.
+    let _ = state.db.with(|c| core::apply_rarity(c, &app_id, &mut list));
+
     Ok((app_id, list))
 }
 
@@ -132,12 +135,99 @@ pub fn get_game_achievements(
     app_id: Option<String>,
 ) -> Result<Vec<Achievement>, String> {
     let state = app.state::<AppState>();
-    let (_, mut list) = sync_achievements_from_disk(&state, &game_id, app_id.as_deref())?;
+    let (resolved_id, mut list) = sync_achievements_from_disk(&state, &game_id, app_id.as_deref())?;
     for a in &mut list {
         a.icon = inline_icon(a.icon.take());
         a.icon_gray = inline_icon(a.icon_gray.take());
     }
+    if !list.is_empty() {
+        refresh_rarity_in_background(&app, &resolved_id);
+    }
     Ok(list)
+}
+
+/// AppIDs cuya rareza se esta descargando ahora mismo (evita hilos duplicados si se abre la ficha varias veces).
+static RARITY_BUSY: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+/// Ultimo fallo de red por AppID (segundos epoch): se reintenta como pronto a la hora, no en cada apertura.
+static RARITY_FAILED: std::sync::Mutex<Vec<(String, i64)>> = std::sync::Mutex::new(Vec::new());
+const RARITY_RETRY_SECS: i64 = 3600;
+
+fn now_secs() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0)
+}
+
+/// Si la rareza global del juego no se ha consultado en 7 dias, la baja de la API publica de Steam en un hilo
+/// aparte (sin bloquear el comando) y la guarda en `ach_rarity`. Sin red o con error se conserva la cache anterior.
+/// Al llegar datos nuevos emite `achievements-rarity-updated` con `{ appId }`.
+fn refresh_rarity_in_background(app: &AppHandle, app_id: &str) {
+    if app_id.is_empty() || !app_id.bytes().all(|b| b.is_ascii_digit()) {
+        return;
+    }
+    let Ok(id) = app_id.parse::<i64>() else { return };
+    let now = now_secs();
+    let state = app.state::<AppState>();
+    if !state.db.with(|c| core::rarity_is_stale(c, id, now)) {
+        return;
+    }
+    if RARITY_FAILED.lock().unwrap().iter().any(|(a, t)| a == app_id && now - *t < RARITY_RETRY_SECS) {
+        return;
+    }
+    {
+        let mut busy = RARITY_BUSY.lock().unwrap();
+        if busy.iter().any(|a| a == app_id) {
+            return;
+        }
+        busy.push(app_id.to_string());
+    }
+    let (app, app_id) = (app.clone(), app_id.to_string());
+    std::thread::spawn(move || {
+        let outcome = fetch_rarity(&app_id);
+        let state = app.state::<AppState>();
+        match outcome {
+            Ok(entries) => {
+                let saved = state.db.with(|c| core::rarity_store(c, id, &entries, now_secs()));
+                match saved {
+                    Ok(()) if !entries.is_empty() => {
+                        let _ = app.emit("achievements-rarity-updated", serde_json::json!({ "appId": app_id }));
+                    }
+                    Ok(()) => {}
+                    Err(e) => eprintln!("[logros] no se pudo guardar la rareza de {app_id}: {e}"),
+                }
+            }
+            Err(e) => {
+                eprintln!("[logros] rareza de {app_id} no disponible: {e}");
+                let mut failed = RARITY_FAILED.lock().unwrap();
+                failed.retain(|(a, _)| a != &app_id);
+                failed.push((app_id.clone(), now_secs()));
+            }
+        }
+        RARITY_BUSY.lock().unwrap().retain(|a| a != &app_id);
+    });
+}
+
+/// Descarga los porcentajes globales. Un 4xx (juego sin logros o desconocido) cuenta como "sin datos" correcto;
+/// el resto de fallos (sin red, 5xx, JSON roto) se devuelven como error para conservar la cache.
+fn fetch_rarity(app_id: &str) -> Result<Vec<(String, f32)>, String> {
+    let agent = ureq::AgentBuilder::new()
+        .timeout_connect(Duration::from_secs(5))
+        .timeout(Duration::from_secs(15))
+        .build();
+    let url = format!(
+        "https://api.steampowered.com/ISteamUserStats/GetGlobalAchievementPercentagesForGame/v2/?gameid={app_id}"
+    );
+    match agent.get(&url).call() {
+        Ok(resp) => {
+            let mut body = String::new();
+            std::io::Read::read_to_string(&mut std::io::Read::take(resp.into_reader(), 4_000_000), &mut body)
+                .map_err(|e| e.to_string())?;
+            core::parse_rarity_json(&body).map_err(|e| e.to_string())
+        }
+        Err(ureq::Error::Status(code, _)) if (400..500).contains(&code) && code != 429 => Ok(Vec::new()),
+        Err(e) => Err(e.to_string()),
+    }
 }
 
 /// Rutas de iconos que ya fallaron en esta sesion (404, sin red...) para no reintentarlas cada vez que se abre la ficha.
@@ -357,7 +447,7 @@ pub fn on_launch(app: AppHandle, game: Game) {
                                 snap::trigger(&app_clone);
 
                                 // 3. Notificar a la interfaz mediante evento
-                                let ach = Achievement {
+                                let mut ach = Achievement {
                                     app_id: app_id.clone(),
                                     api_name: api_name.clone(),
                                     display_name: api_name.clone(),
@@ -373,6 +463,11 @@ pub fn on_launch(app: AppHandle, game: Game) {
                                     rarity_tier: 0,
                                     rarity_pct: None,
                                 };
+
+                                let _ = app_clone
+                                    .state::<AppState>()
+                                    .db
+                                    .with(|c| core::apply_rarity(c, &app_id, std::slice::from_mut(&mut ach)));
 
                                 let _ = app_clone.emit(
                                     "achievement-unlocked",

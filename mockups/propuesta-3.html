@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Estadísticas · Propuesta 3 (podio)</title>
+<style>
+:root{--acc:#00A0D8;--acc-ink:#fff;--ink:#3a414e;--mut:#6f7787;--up:#2f9e44;--dn:#d6334a;
+  --round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:14px;padding:22px 16px;background:#d9dde4;font-family:var(--round);color:var(--ink)}
+.dev{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;font-size:13px;font-weight:700}
+.dev button{font:inherit;border:0;border-radius:999px;padding:6px 12px;background:#fff;color:var(--ink);cursor:pointer;box-shadow:0 0 0 1px rgba(95,110,135,.25)}
+.dev button.on{background:var(--acc);color:#fff}
+.note{max-width:780px;font-size:12.5px;color:#4a5260;line-height:1.45;text-align:center}
+.frame{position:relative;width:780px;height:430px;overflow:hidden;border-radius:14px;box-shadow:0 20px 50px -20px rgba(30,40,60,.5);user-select:none}
+.bg{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.sq{position:absolute;border-radius:26px;filter:blur(22px);opacity:.75}
+.pill{background:linear-gradient(180deg,rgba(255,255,255,.80),rgba(255,255,255,.52));backdrop-filter:blur(16px) saturate(1.7);
+  box-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 8px 16px -10px rgba(40,50,70,.4)}
+.card{background:rgba(255,255,255,.88);border-radius:14px;box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.18),0 8px 16px -12px rgba(40,50,70,.4)}
+.topbar{position:absolute;left:12px;right:12px;top:10px;height:28px;display:flex;justify-content:space-between;align-items:center;z-index:5}
+.crumb{height:28px;display:flex;align-items:center;gap:7px;padding:0 12px;border-radius:999px;font-size:13px;font-weight:700;color:#4a5260}
+.crumb .sep{color:#a3abb8}.crumb .cur{color:var(--acc)}
+.clock{font-size:13px;font-weight:700;color:#4a5260;display:flex;gap:10px;align-items:center}
+.clock small{font-weight:500;color:#657083}
+.batt{display:flex;gap:2px}.batt b{width:4px;height:9px;border-radius:1px;background:var(--acc)}.batt b.off{background:#c3c9d3}
+.btn{min-width:20px;height:20px;border-radius:10px;display:inline-grid;place-items:center;font-size:10px;font-weight:800;color:#fff;--b:#4a5260;padding:0 5px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--b) 70%,black);text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.btn.a{--b:#3BB54A}.btn.b{--b:#E8384F}.btn.x{--b:#3F63E0}.btn.y{--b:#F2B807;color:#3a2f00;text-shadow:none}.btn.sh{border-radius:6px;--b:#6b7383}
+.hints{position:absolute;right:12px;bottom:10px;display:flex;gap:6px;z-index:9}
+.hint{display:flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 4px;border-radius:999px;font-size:12px;font-weight:700;color:#4a5260;cursor:pointer}
+.cover{flex:none;border-radius:7px;display:grid;place-items:center;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3);
+  background:linear-gradient(145deg,color-mix(in srgb,var(--g) 55%,white),var(--g) 60%,color-mix(in srgb,var(--g) 70%,black));box-shadow:0 0 0 1px rgba(0,0,0,.08)}
+.up{color:var(--up)}.dn{color:var(--dn)}.eq{color:var(--mut)}.new{color:#7a4fd0}
+.view{position:absolute;inset:0;display:none}.view.on{display:block}
+.medal{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff;--m:#d9a520;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--m) 50%,white),var(--m));box-shadow:0 0 0 1px color-mix(in srgb,var(--m) 70%,black),inset 0 1px 0 rgba(255,255,255,.6)}
+.medal.m1{--m:#9aa3b2}.medal.m2{--m:#c47a3c}.medal.mn{--m:#7f8aa0}
+.bar{position:relative;height:7px;border-radius:5px;background:#e9ecf1;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:linear-gradient(180deg,color-mix(in srgb,var(--g) 55%,white),var(--g))}
+.bar u{position:absolute;top:1px;bottom:1px;width:2px;background:rgba(58,65,78,.45);border-radius:1px}
+
+/* ---------- Propuesta 3: podio como héroe ---------- */
+.head{position:absolute;left:14px;right:12px;top:46px;height:34px;display:flex;align-items:center;gap:12px;z-index:4}
+.vt{display:flex;align-items:center;gap:8px;cursor:pointer}
+.vt h2{margin:0;font-size:21px;font-weight:800;letter-spacing:-.2px}
+.vt .ctxs{font-size:12px;font-weight:700;color:var(--mut)}
+.head .sp{flex:1}
+.kp{display:flex;align-items:baseline;gap:6px;font-size:11.5px;font-weight:700;color:var(--mut)}
+.kp b.big{font-size:22px;font-weight:800;color:color-mix(in srgb,var(--acc) 82%,black)}
+.fbtn{display:flex;align-items:center;gap:7px;height:30px;padding:0 12px 0 5px;border-radius:999px;font-size:13px;font-weight:800;color:#4a5260;cursor:pointer}
+.fbtn .chip{font-size:11px;font-weight:800;color:#fff;background:var(--acc);border-radius:999px;padding:2px 8px}
+/* podio */
+.podium{position:absolute;left:12px;right:12px;top:88px;height:186px;display:grid;grid-template-columns:1fr 1.18fr 1fr;gap:10px;align-items:end}
+.pc{position:relative;border-radius:18px;overflow:hidden;cursor:pointer;background:#fff;display:flex;flex-direction:column;
+  box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.16),0 10px 20px -12px rgba(40,50,70,.45)}
+.pc .hd{position:relative;height:64px;background:linear-gradient(135deg,color-mix(in srgb,var(--g) 60%,white),var(--g) 70%,color-mix(in srgb,var(--g) 75%,black));display:flex;align-items:flex-end;padding:0 12px 8px}
+.pc .hd .cover{width:50px;height:50px;font-size:17px;border-radius:10px;margin-bottom:-26px;box-shadow:0 0 0 3px #fff,0 6px 12px -6px rgba(0,0,0,.4)}
+.pc .hd .medal{position:absolute;right:10px;top:10px}
+.pc .hd .pos{position:absolute;right:42px;top:12px;font-size:12px;font-weight:800;color:rgba(255,255,255,.92);text-shadow:0 1px 2px rgba(0,0,0,.3)}
+.pc .bd{padding:30px 12px 10px;display:flex;flex-direction:column;gap:4px}
+.pc .nm{font-size:13.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc .hrs{font-size:26px;font-weight:800;line-height:1;color:color-mix(in srgb,var(--acc) 82%,black)}
+.pc .meta{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--mut)}
+.pc .meta .d{font-weight:800}
+.pc.p0 .hd{height:80px}.pc.p0 .hrs{font-size:32px}
+.pc.p0{height:186px}.pc.p1{height:164px}.pc.p2{height:156px}
+.pc.p1 .hd,.pc.p2 .hd{height:58px}
+.pc.f{box-shadow:0 0 0 3px var(--g),0 12px 22px -10px var(--g)}
+/* resto: rejilla densa */
+.grid{position:absolute;left:12px;right:12px;top:282px;bottom:44px;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:25px;gap:4px 10px;align-content:start}
+.gi{display:grid;grid-template-columns:22px 20px 1fr 70px 52px 54px;gap:8px;align-items:center;padding:0 10px 0 6px;border-radius:9px;background:rgba(255,255,255,.66);font-size:12px;font-weight:700;cursor:pointer;
+  box-shadow:0 0 0 1px rgba(95,110,135,.12)}
+.gi .pos{font-size:11px;font-weight:800;color:var(--mut);text-align:center}
+.gi .nm{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gi .h{text-align:right;font-weight:800}
+.gi .d{text-align:right;font-size:11px;font-weight:800;white-space:nowrap}
+.gi .bar{height:5px}
+.gi.f{background:color-mix(in srgb,var(--g) 14%,white);box-shadow:inset 0 0 0 2px var(--g)}
+.gi.all{grid-template-columns:1fr;place-items:center;color:var(--mut);font-size:11.5px;background:transparent;box-shadow:inset 0 0 0 1px rgba(95,110,135,.2)}
+/* cajón de filtros */
+.scrim{position:absolute;inset:0;background:rgba(40,48,62,.22);z-index:7;display:none}
+.drawer{position:absolute;top:46px;right:12px;bottom:44px;width:262px;border-radius:18px;padding:12px;z-index:8;display:none}
+.drawer.on,.scrim.on{display:block}
+.drawer h4{margin:0 4px 10px;font-size:15px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+.drawer h4 small{font-size:11px;color:var(--mut);font-weight:700}
+.fg{margin-bottom:10px}
+.fg .lb{font-size:10.5px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin:0 6px 5px}
+.seg{display:flex;gap:3px;padding:3px;border-radius:999px;background:#eceff3}
+.seg span{flex:1;text-align:center;height:24px;line-height:24px;border-radius:999px;font-size:12px;font-weight:800;color:#4a5260;cursor:pointer}
+.seg span.on{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 84%,white),var(--acc));color:#fff;box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 75%,black)}
+.stp{display:flex;align-items:center;justify-content:space-between;height:30px;padding:0 6px;border-radius:999px;background:#eceff3;font-size:13px;font-weight:800}
+.stp i{font-style:normal;width:22px;height:22px;display:grid;place-items:center;border-radius:50%;background:#fff;cursor:pointer;color:var(--mut)}
+.fg.f .seg,.fg.f .stp{box-shadow:0 0 0 2.5px var(--acc)}
+.fcat{font-size:11px;font-weight:700;color:var(--mut);margin:12px 6px 0;line-height:1.4}
+/* calendario */
+.cal{position:absolute;left:12px;top:88px;width:470px;bottom:44px;padding:10px 12px}
+.sth{font-size:12px;font-weight:800;color:#4a5260;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.leg{display:flex;gap:3px;align-items:center;font-size:10px;color:var(--mut);font-weight:700}
+.leg i,.hc{width:12px;height:12px;border-radius:3px;display:inline-block}
+.l0{background:#e6e9ee}.l1{background:color-mix(in srgb,var(--acc) 25%,white)}.l2{background:color-mix(in srgb,var(--acc) 50%,white)}.l3{background:color-mix(in srgb,var(--acc) 78%,white)}.l4{background:var(--acc)}
+.heat{display:grid;grid-template-rows:repeat(7,12px);grid-auto-flow:column;grid-auto-columns:12px;gap:3px;margin-left:4px}
+.heat .hc{cursor:pointer}.heat .hc.sel{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--ink)}.heat .hc.fut{background:transparent;box-shadow:inset 0 0 0 1px #e1e4ea}
+.cks{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+.ck{border-radius:12px;background:#f3f5f8;padding:8px 10px;font-size:10.5px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.4px}
+.ck b{display:block;font-size:19px;color:color-mix(in srgb,var(--acc) 82%,black);text-transform:none;letter-spacing:0;margin-top:2px}
+.ck b small{font-size:11px;color:var(--mut)}
+.day{position:absolute;left:492px;right:12px;top:88px;bottom:44px;padding:10px 12px}
+.ses{display:grid;grid-template-columns:70px 22px 1fr 44px;gap:8px;align-items:center;height:30px;font-size:11.5px;font-weight:700}
+.ses .t{color:var(--mut)}.ses .nm{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ses .d{text-align:right;font-weight:800}
+.dtot{display:flex;justify-content:space-between;border-top:1px solid #e3e6ec;margin-top:6px;padding-top:6px;font-size:11.5px;font-weight:800}
+/* resumen anual */
+.yhero{position:absolute;left:12px;top:88px;width:250px;bottom:44px;border-radius:18px;overflow:hidden;color:#fff;padding:14px 16px;
+  background:linear-gradient(150deg,color-mix(in srgb,var(--acc) 70%,white),var(--acc) 55%,color-mix(in srgb,var(--acc) 70%,black));box-shadow:0 10px 22px -12px rgba(0,80,120,.6)}
+.yhero .k{font-size:11px;font-weight:800;opacity:.85;text-transform:uppercase;letter-spacing:.6px}
+.yhero .n{font-size:40px;font-weight:800;line-height:1.05;margin:4px 0 10px}
+.yhero .r{display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;padding:6px 0;border-top:1px solid rgba(255,255,255,.28)}
+.yhero .r b{font-weight:800}
+.yr{position:absolute;left:272px;right:12px;top:88px;height:150px;padding:10px 14px}
+.ybars{display:flex;gap:7px;align-items:flex-end;height:104px}
+.ybars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;font-size:10px;font-weight:700;color:var(--mut)}
+.ybars div i{width:100%;border-radius:6px 6px 3px 3px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 55%,white),var(--acc))}
+.ybars div.best i{background:linear-gradient(180deg,#ffd76a,#e0a800)}
+.ybars div b{font-size:10px;color:var(--ink)}
+.ypod{position:absolute;left:272px;right:12px;top:246px;bottom:44px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.yp{border-radius:14px;padding:8px 10px;display:flex;gap:9px;align-items:center;background:linear-gradient(90deg,color-mix(in srgb,var(--g) 20%,white),#fff 70%);box-shadow:0 0 0 1px rgba(95,110,135,.16)}
+.yp .nm{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.yp .h{white-space:nowrap;font-size:16px;font-weight:800;color:color-mix(in srgb,var(--acc) 82%,black)}
+/* Terminados: estante en la portada de Juegos PC + ficha */
+.home{position:absolute;left:12px;top:48px;right:12px;bottom:44px}
+.shelf{margin-bottom:8px}
+.shelf .st{display:flex;align-items:baseline;gap:8px;font-size:13.5px;font-weight:800;margin:0 4px 6px}
+.shelf .st small{font-size:11px;color:var(--mut);font-weight:700}
+.shelf .row{display:flex;gap:9px}
+.shelf .cv{width:84px;height:84px;border-radius:12px;font-size:20px;position:relative}
+.shelf.dim{opacity:.5;filter:saturate(.6)}
+.shelf.hot{padding:8px 8px 10px;border-radius:16px;background:rgba(255,255,255,.7);box-shadow:inset 0 0 0 2.5px var(--acc)}
+.badge{position:absolute;left:5px;bottom:5px;font-size:9px;font-weight:800;padding:2px 6px;border-radius:999px;background:#fff;color:#2f9e44;text-shadow:none;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.shelf .cv.f{box-shadow:0 0 0 3px #fff,0 0 0 5.5px var(--acc)}
+.ficha{position:absolute;right:12px;top:48px;width:236px;bottom:44px;padding:12px;z-index:3}
+.ficha .fh{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.ficha .fh b{font-size:14px;font-weight:800;display:block}
+.ficha .fh small{font-size:11px;color:var(--mut);font-weight:700}
+.est{display:flex;flex-direction:column;gap:4px}
+.est span{display:flex;align-items:center;justify-content:space-between;height:28px;padding:0 12px;border-radius:999px;font-size:12.5px;font-weight:800;color:#4a5260;background:#f1f3f6}
+.est span.on{background:linear-gradient(180deg,#5cc46a,#2f9e44);color:#fff;box-shadow:0 0 0 1px #24803a}
+.ficha .fl{font-size:10.5px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;margin:2px 4px 6px}
+.callout{position:absolute;left:24px;bottom:50px;max-width:300px;font-size:11px;font-weight:700;color:#4a5260;background:#fff8d9;border-radius:10px;padding:7px 10px;box-shadow:0 0 0 1px #f0dc8a;z-index:4}
+</style>
+</head>
+<body>
+<div class="dev" id="dev"></div>
+<div class="frame" id="frame">
+  <div class="bg">
+    <div class="sq" style="left:-40px;top:40px;width:200px;height:200px;background:rgba(255,255,255,.9)"></div>
+    <div class="sq" style="right:60px;top:-60px;width:240px;height:180px;background:color-mix(in srgb,var(--acc) 22%,transparent)"></div>
+    <div class="sq" style="right:-50px;bottom:-40px;width:220px;height:220px;background:rgba(255,255,255,.85)"></div>
+    <div class="sq" style="left:260px;bottom:-80px;width:220px;height:160px;background:color-mix(in srgb,#E0533A 14%,transparent)"></div>
+  </div>
+  <div class="topbar">
+    <div class="crumb pill" id="crumb"></div>
+    <div class="clock"><span class="batt"><b></b><b></b><b></b><b class="off"></b></span><small>jue 30 oct</small>21:47</div>
+  </div>
+
+  <!-- Cabecera: título de vista (Y la cambia) + KPI principal + único botón Filtros -->
+  <div class="head" id="head">
+    <div class="vt" data-k="y"><h2 id="vtitle"></h2><span class="ctxs" id="vctx"></span></div>
+    <span class="sp"></span>
+    <div class="kp" id="kpi"></div>
+    <div class="fbtn pill" data-k="x"><span class="btn x">X</span>Filtros <span class="chip" id="fchip"></span></div>
+  </div>
+
+  <!-- CLASIFICACIÓN -->
+  <div class="view" id="v-rank">
+    <div class="podium" id="podium"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <!-- CALENDARIO -->
+  <div class="view" id="v-cal">
+    <div class="cal card">
+      <div class="sth">Tiempo jugado por día · jun – oct 2026<span class="leg">Menos <i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i> Más</span></div>
+      <div class="heat" id="heat"></div>
+      <div class="cks">
+        <div class="ck">Días<b>19 <small>/30</small></b></div>
+        <div class="ck">Racha<b>4 <small>días</small></b></div>
+        <div class="ck">Mejor<b>7 <small>días</small></b></div>
+        <div class="ck">Favorito<b>Sáb</b></div>
+      </div>
+    </div>
+    <div class="day card" id="day"></div>
+  </div>
+
+  <!-- RESUMEN ANUAL -->
+  <div class="view" id="v-year">
+    <div class="yhero">
+      <div class="k">Tu 2026 en Juegos PC</div>
+      <div class="n">186 h 40</div>
+      <div class="r"><span>Juegos</span><b>23</b></div>
+      <div class="r"><span>Días con partida</span><b>142</b></div>
+      <div class="r"><span>Mejor mes</span><b>Octubre · 34 h</b></div>
+      <div class="r"><span>Terminados</span><b>9</b></div>
+    </div>
+    <div class="yr card"><div class="sth">Horas por mes</div><div class="ybars" id="ybars"></div></div>
+    <div class="ypod" id="ypod"></div>
+  </div>
+
+  <!-- DÓNDE VA TERMINADOS: estante en la portada de Juegos PC + estado en la ficha -->
+  <div class="view" id="v-fin">
+    <div class="home">
+      <div class="shelf dim"><div class="st">Seguir jugando <small>4</small></div><div class="row" id="sh1"></div></div>
+      <div class="shelf hot"><div class="st">Terminados <small>14 juegos · más recientes primero</small></div><div class="row" id="sh2"></div></div>
+    </div>
+    <div class="ficha card">
+      <div class="fh"><span class="cover" style="--g:#B23A48;width:44px;height:44px;font-size:15px">HK</span><span><b>Hollow Knight: Silksong</b><small>31 h · 22 partidas</small></span></div>
+      <div class="fl">Estado (en la ficha del juego)</div>
+      <div class="est"><span>Jugando</span><span>Pendiente</span><span class="on">Terminado <small>28 oct</small></span><span>Abandonado</span></div>
+    </div>
+    <div class="callout">Terminados no está en Estadísticas: es un estante de la portada de Juegos PC. Se marca desde la ficha del juego (estado «Terminado»).</div>
+  </div>
+
+  <div class="scrim" id="scrim" data-k="b"></div>
+  <div class="drawer card" id="drawer">
+    <h4>Filtros <small>Juegos PC</small></h4>
+    <div class="fg" data-g="0"><div class="lb">Agrupar por</div><div class="seg" id="sg0"></div></div>
+    <div class="fg" data-g="1"><div class="lb">Periodo</div><div class="stp"><i data-s="-1">‹</i><span id="plbl"></span><i data-s="1">›</i></div></div>
+    <div class="fg" data-g="2"><div class="lb">Ordenar por</div><div class="seg" id="sg2"></div></div>
+    <div class="fcat">La categoría no se cambia aquí: Estadísticas siempre muestra solo Juegos PC.</div>
+  </div>
+
+  <div class="hints" id="hints"></div>
+</div>
+<div class="note"><b>Propuesta 3 · Podio.</b> La clasificación es el héroe: podio con los 3 primeros (horas grandes, % del total, cambio vs periodo anterior) y del 4º al 10º en una rejilla densa de dos columnas. Todos los filtros (agrupar, periodo, orden) viven tras un único botón X «Filtros»; Y cambia de vista. Teclado: X = filtros, Y = vista, flechas = foco, Enter = A, Esc = B.</div>
+
+<script>
+const G=[['Hades II','#E0533A',664,8,328],['Elden Ring','#C9A227',384,5,528],['Hollow Knight: Silksong','#B23A48',310,4,0],["Baldur's Gate 3",'#7A4FD0',222,3,250],['Celeste','#E0569B',135,4,40],['Stardew Valley','#4CAF50',110,3,125],['Disco Elysium','#D9822B',82,2,0],['Balatro','#3F63E0',58,5,90],['Outer Wilds','#2E8BC0',41,1,41],['Tunic','#2AA79B',26,1,0]];
+const TOT=G.reduce((s,g)=>s+g[2],0), MAX=G[0][2];
+const fm=m=>m<60?m+' min':Math.floor(m/60)+' h '+String(m%60).padStart(2,'0');
+const ini=n=>n.replace(/[^A-Za-z ]/g,'').split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('');
+const dl=(m,p)=>p===0?['new','Nuevo']:m===p?['eq','=']:m>p?['up','▲ '+fm(m-p)]:['dn','▼ '+fm(p-m)];
+const GR=['Semana','Mes','Año','Siempre'],ORD=['Horas','Partidas'];
+const PL={0:['27 oct – 2 nov','20 – 26 oct'],1:['Octubre 2026','Septiembre 2026','Agosto 2026'],2:['2026','2025'],3:['Desde 2019']};
+const VIEWS=[['rank','Clasificación'],['cal','Calendario'],['year','Resumen anual']];
+let S={v:'rank',f:0,day:28,dr:false,g:1,pi:0,ord:0,fg:0};
+const $=id=>document.getElementById(id);
+
+function rank(){
+  const order=[1,0,2];
+  $('podium').innerHTML=order.map(i=>{const [n,c,m,p,pv]=G[i],d=dl(m,pv),pc=(m/TOT*100).toFixed(0);
+    return `<div class="pc p${i}${S.f===i?' f':''}" style="--g:${c}" data-i="${i}"><div class="hd"><span class="cover" style="--g:${c}">${ini(n)}</span><span class="pos">${i+1}º</span><span class="medal m${i}">${i+1}</span></div>
+     <div class="bd"><div class="nm">${n}</div><div class="hrs">${fm(m)}</div><div class="bar"><i style="width:${m/MAX*100}%"></i>${pv&&pv<=MAX?`<u style="left:${pv/MAX*100}%"></u>`:''}</div>
+     <div class="meta"><span>${pc}% del total · ${p} partidas</span><span class="d ${d[0]}">${d[1]}</span></div></div></div>`}).join('');
+  $('grid').innerHTML=G.slice(3).map((g,j)=>{const i=j+3,[n,c,m,p,pv]=g,d=dl(m,pv);
+    return `<div class="gi${S.f===i?' f':''}" style="--g:${c}" data-i="${i}"><span class="pos">${i+1}º</span><span class="cover" style="--g:${c};width:20px;height:20px;font-size:8px;border-radius:5px">${ini(n)}</span><span class="nm">${n}</span><span class="bar"><i style="width:${m/MAX*100}%"></i></span><span class="h">${fm(m)}</span><span class="d ${d[0]}">${d[1]}</span></div>`}).join('')
+   +`<div class="gi all">+ 8 juegos más · Ver todos</div>`;
+}
+$('frame').addEventListener('click',e=>{const r=e.target.closest('[data-i]');if(r){S.f=+r.dataset.i;render()}});
+
+// calendario
+let rnd=7;const R=()=>(rnd=(rnd*9301+49297)%233280)/233280;
+const DAYS=[];for(let i=0;i<154;i++){const fut=i>150;DAYS.push(fut?-1:(R()<.38?0:Math.ceil(R()*4)))}
+function cal(){
+  $('heat').innerHTML=DAYS.map((v,i)=>`<i class="hc ${v<0?'fut':'l'+v}${i===S.day+122?' sel':''}" data-d="${i}"></i>`).join('');
+  const d=S.day+1;
+  $('day').innerHTML=`<div class="sth">${d===30?'Hoy':'Día'} · ${['lun','mar','mié','jue','vie','sáb','dom'][(d+2)%7]} ${d} oct</div>
+   <div class="ses"><span class="t">18:05–19:40</span><span class="cover" style="--g:#E0533A;width:20px;height:20px;font-size:8px;border-radius:5px">HI</span><span class="nm">Hades II</span><span class="d">1 h 35</span></div>
+   <div class="ses"><span class="t">20:10–21:02</span><span class="cover" style="--g:#E0569B;width:20px;height:20px;font-size:8px;border-radius:5px">C</span><span class="nm">Celeste</span><span class="d">52 min</span></div>
+   <div class="ses"><span class="t">21:15–21:40</span><span class="cover" style="--g:#3F63E0;width:20px;height:20px;font-size:8px;border-radius:5px">B</span><span class="nm">Balatro</span><span class="d">25 min</span></div>
+   <div class="dtot"><span>3 partidas · 3 juegos</span><span>2 h 52</span></div>`;
+}
+$('heat').onclick=e=>{const d=e.target.dataset.d;if(d&&d>=122&&d<=150){S.day=d-122;render()}};
+// año
+const YM=[['E',14],['F',18],['M',27],['A',21],['M',12],['J',9],['J',15],['A',11],['S',23],['O',34],['N',0],['D',0]];
+$('ybars').innerHTML=YM.map(([l,h],i)=>`<div class="${i===9?'best':''}"><b>${h?h:''}</b><i style="height:${h/34*72}px;${h?'':'background:#e6e9ee;height:3px'}"></i>${l}</div>`).join('');
+$('ypod').innerHTML=[['Hades II','#E0533A','41 h 10'],['Elden Ring','#C9A227','33 h 25'],["Baldur's Gate 3",'#7A4FD0','28 h 02']]
+ .map(([n,c,h],i)=>`<div class="yp" style="--g:${c}"><span class="medal m${i}">${i+1}</span><span class="cover" style="--g:${c};width:34px;height:34px;font-size:12px">${ini(n)}</span><span style="min-width:0"><div class="nm">${n}</div><div class="h">${h}</div></span></div>`).join('');
+// terminados
+$('sh1').innerHTML=G.slice(0,4).map(g=>`<div class="cv cover" style="--g:${g[1]}">${ini(g[0])}</div>`).join('');
+$('sh2').innerHTML=[['Hollow Knight: Silksong','#B23A48'],['Celeste','#E0569B'],['Outer Wilds','#2E8BC0'],['Disco Elysium','#D9822B'],['Tunic','#2AA79B'],['Hades','#c0392b']]
+ .map(([n,c],i)=>`<div class="cv cover${i===0?' f':''}" style="--g:${c}">${ini(n)}<span class="badge">✓ Terminado</span></div>`).join('');
+
+const HINTS={rank:[['a','A','Ver juego'],['x','X','Filtros'],['y','Y','Calendario'],['b','B','Volver']],
+ cal:[['a','A','Ver día'],['x','X','Filtros'],['y','Y','Resumen anual'],['b','B','Volver']],
+ year:[['x','X','Filtros'],['y','Y','Clasificación'],['b','B','Volver']],
+ fin:[['a','A','Abrir juego'],['x','X','Cambiar estado'],['b','B','Volver']],
+ dr:[['a','A','Elegir'],['x','X','Aplicar'],['b','B','Cerrar']]};
+function render(){
+  const V=S.v;document.querySelectorAll('.view').forEach(e=>e.classList.toggle('on',e.id==='v-'+V));
+  $('head').style.display=V==='fin'?'none':'flex';
+  const vi=VIEWS.findIndex(x=>x[0]===V);
+  $('vtitle').textContent=vi>=0?VIEWS[vi][1]:'';
+  $('vctx').textContent='Juegos PC';
+  const per=PL[S.g][S.pi];
+  $('fchip').textContent=V==='rank'?per:V==='cal'?'Jun – Oct 2026':'2026';
+  $('kpi').innerHTML=V==='rank'?`<b class="big">33 h 52</b><span class="up">▲ 10 h 30</span>· 36 partidas`:V==='cal'?`<b class="big">19</b> de 30 días con partida`:`<b class="big">186 h 40</b> en el año`;
+  $('crumb').innerHTML=V==='fin'?'<span>Inicio</span><span class="sep">›</span><span class="cur">Juegos PC</span>':`<span>Inicio</span><span class="sep">›</span><span>Juegos PC</span><span class="sep">›</span><span class="cur">Estadísticas</span>`;
+  $('drawer').classList.toggle('on',S.dr);$('scrim').classList.toggle('on',S.dr);
+  $('sg0').innerHTML=GR.map((t,i)=>`<span class="${i===S.g?'on':''}" data-sg="0.${i}">${t}</span>`).join('');
+  $('sg2').innerHTML=ORD.map((t,i)=>`<span class="${i===S.ord?'on':''}" data-sg="2.${i}">${t}</span>`).join('');
+  $('plbl').textContent=per;
+  document.querySelectorAll('.fg').forEach(e=>e.classList.toggle('f',+e.dataset.g===S.fg));
+  $('hints').innerHTML=HINTS[S.dr?'dr':V].map(([k,b,t])=>`<span class="hint pill" data-k="${k}"><span class="btn ${k}">${b}</span>${t}</span>`).join('');
+  if(V==='rank')rank();if(V==='cal')cal();
+  document.querySelectorAll('#dev button').forEach(b=>b.classList.toggle('on',b.dataset.v===V));
+}
+$('drawer').addEventListener('click',e=>{const s=e.target.dataset.sg,st=e.target.dataset.s;
+  if(s){const [g,i]=s.split('.').map(Number);if(g===0){S.g=i;S.pi=0}else S.ord=i;S.fg=g}
+  if(st){S.pi=Math.max(0,Math.min(PL[S.g].length-1,S.pi-(+st)));S.fg=1}
+  render()});
+// navegación del foco en la clasificación: podio (orden visual 2-1-3) y rejilla de 2 columnas
+const POD=[1,0,2];
+function move(dir){
+  if(S.v==='cal'){S.day=Math.max(0,Math.min(28,S.day+(dir==='r'||dir==='d'?1:-1)));return}
+  if(S.v!=='rank')return;
+  const f=S.f;
+  if(f<3){const p=POD.indexOf(f);
+    if(dir==='l'&&p>0)S.f=POD[p-1];else if(dir==='r'&&p<2)S.f=POD[p+1];else if(dir==='d')S.f=p===2?4:3;}
+  else{const j=f-3,col=j%2;
+    if(dir==='u')S.f=j<2?(col?2:1):f-2;else if(dir==='d'&&f+2<G.length)S.f=f+2;
+    else if(dir==='l'&&col)S.f=f-1;else if(dir==='r'&&!col&&f+1<G.length)S.f=f+1;}
+}
+function key(k){
+  if(S.dr){
+    if(k==='b'||k==='x')S.dr=false;
+    else if(k==='u')S.fg=Math.max(0,S.fg-1);else if(k==='d')S.fg=Math.min(2,S.fg+1);
+    else if(k==='l'||k==='r'){const s=k==='r'?1:-1;
+      if(S.fg===0){S.g=(S.g+s+4)%4;S.pi=0}else if(S.fg===1)S.pi=Math.max(0,Math.min(PL[S.g].length-1,S.pi-s));else S.ord=(S.ord+1)%2}
+    render();return}
+  if(k==='y'&&S.v!=='fin'){const i=VIEWS.findIndex(x=>x[0]===S.v);S.v=VIEWS[(i+1)%3][0]}
+  else if(k==='x'&&S.v!=='fin'){S.dr=true;S.fg=0}
+  else if(k==='b'&&S.v==='fin')S.v='rank';
+  else if('udlr'.includes(k))move(k);
+  render();
+}
+$('dev').innerHTML=[['rank','Clasificación'],['cal','Calendario'],['year','Resumen anual'],['fin','Dónde va Terminados']].map(([v,t])=>`<button data-v="${v}">${t}</button>`).join('');
+$('dev').onclick=e=>{const v=e.target.dataset.v;if(v){S.v=v;S.dr=false;render()}};
+$('frame').addEventListener('click',e=>{if(e.target.closest('#drawer'))return;const k=e.target.closest('[data-k]');if(k)key(k.dataset.k)});
+addEventListener('keydown',e=>{const m={x:'x',y:'y',escape:'b',enter:'a',arrowdown:'d',arrowup:'u',arrowleft:'l',arrowright:'r'}[e.key.toLowerCase()];if(m){e.preventDefault();key(m)}});
+render();
+</script>
+</body>
+</html>

@@ -81,6 +81,28 @@ export function autoHex(titles: Title[]): string | null {
   return best ? best.hex : null;
 }
 
+/** Los dos tonos (en grados) que más se repiten entre los acentos de las portadas, en cubos de 30° (cada uno con el
+ *  acento más vivo de su cubo). Con un solo tono, el segundo es el contiguo (+35°), como en `gamePair`. null = ninguna
+ *  portada tiene color. */
+export function topHues(titles: Title[]): [number, number] | null {
+  const bins = new Map<number, { w: number; h: number; c: number }>();
+  for (const t of titles) {
+    const hex = titleHex(t);
+    const rgb = hex ? hexToRgb(hex) : null;
+    if (!rgb) continue;
+    const [, c, h0] = rgbToLch(rgb);
+    if (c < 0.04) continue;
+    const h = ((h0 % 360) + 360) % 360;
+    const b = Math.floor(h / 30);
+    const cur = bins.get(b);
+    if (!cur) bins.set(b, { w: 1, h, c });
+    else { cur.w++; if (c > cur.c) { cur.h = h; cur.c = c; } }
+  }
+  const top = [...bins.values()].sort((a, b) => b.w - a.w || b.c - a.c);
+  if (!top.length) return null;
+  return [top[0].h, top[1] ? top[1].h : (top[0].h + 35) % 360];
+}
+
 /** Mismo tono que `hex`, pero con luz e intensidad fijas (OKLCH): así combinan aunque las portadas sean muy distintas. */
 export function harmonize(hex: string, L: number, C: number): string {
   const rgb = hexToRgb(hex);
@@ -139,4 +161,40 @@ export function suggestGroups(titles: Title[]): Array<{ name: string; ids: strin
     out.push({ name, ids: list.map((t) => t.id) });
   }
   return out.sort((a, b) => b.ids.length - a.ids.length || a.name.localeCompare(b.name, 'es')).slice(0, 8);
+}
+
+/** Línea de tiempo de una colección: posición horizontal de cada portada según su año. Los años seguidos se separan
+ *  unos píxeles y los muy lejanos se comprimen (tope); las de año desconocido van al final, sin marca de año. */
+export interface YearLayout {
+  xs: number[];
+  /** Primera portada de cada año (lleva la marca del año). */
+  marks: boolean[];
+  totalW: number;
+}
+const YEAR_GAP = 10, YEAR_GAP_MAX = 48, UNKNOWN_GAP = 28;
+export function yearLayout(years: Array<number | null>, pitch: number, cw: number): YearLayout {
+  const xs: number[] = [], marks: boolean[] = [];
+  let x = 0;
+  years.forEach((y, k) => {
+    const prev = k > 0 ? years[k - 1] : null;
+    if (k > 0 && prev !== null) {
+      if (y === null) x += UNKNOWN_GAP;
+      else if (y !== prev) x += Math.min(YEAR_GAP_MAX, Math.abs(y - prev) * YEAR_GAP);
+    }
+    xs.push(x);
+    marks.push(y !== null && (k === 0 || prev !== y));
+    x += pitch;
+  });
+  return { xs, marks, totalW: xs.length ? xs[xs.length - 1] + cw : 0 };
+}
+
+/** Degradado (`linear-gradient`) del raíl: el color de cada portada, en orden, sobre su posición. Las que no tienen
+ *  color toman el de la vecina. null = ninguna tiene color. */
+export function railGradient(xs: number[], cw: number, colors: Array<string | null>, totalW: number): string | null {
+  const first = colors.find((c) => c);
+  if (!first) return null;
+  let last = first;
+  const fill = colors.map((c) => (last = c ?? last));
+  const stops = fill.map((c, k) => `${c} ${xs[k] + cw / 2}px`);
+  return `linear-gradient(90deg,${fill[0]} 0px,${stops.join(',')},${fill[fill.length - 1]} ${totalW}px)`;
 }

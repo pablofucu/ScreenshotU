@@ -28,14 +28,18 @@
     { k: 'Raro', range: '12–25 %' },
     { k: 'Poco común', range: '25–50 %' },
     { k: 'Común', range: '50 % o más' },
+    { k: 'Sin datos de rareza', range: 'sin porcentaje' },
   ];
+  const NO_DATA = 5;
 
   function tierOf(a: Ach): number {
     const p = a.rarityPct;
     if (typeof p === 'number') return p < 5 ? 0 : p < 12 ? 1 : p < 25 ? 2 : p < 50 ? 3 : 4;
     // Sin porcentaje: el backend solo da 0 común, 1 raro, 2 ultra raro.
     const t = a.rarityTier ?? 0;
-    return t >= 2 ? 1 : t === 1 ? 2 : 4;
+    if (t >= 1) return t >= 2 ? 1 : 2;
+    // Sin dato real nunca es «Común»: los secretos sin conseguir van a «Raro», el resto a «Sin datos».
+    return a.hidden && !a.earned ? 2 : NO_DATA;
   }
 
   const fmtPct = (p: number) => p.toFixed(1).replace('.', ',') + ' %';
@@ -47,7 +51,8 @@
   const rank = $derived(getRankTier(pct));
 
   const filtered = $derived(getFilteredAchievements() as Ach[]);
-  const selected = $derived(filtered[achState.selectedIdx] ?? filtered[0] ?? null);
+  // selectedIdx < 0: tarjeta cerrada.
+  const selected = $derived(achState.selectedIdx >= 0 ? (filtered[achState.selectedIdx] ?? null) : null);
 
   // Los logros con porcentaje de jugadores por debajo del 12 % que ya tienes.
   const rareOwned = $derived((achState.list as Ach[]).filter((a) => a.earned && tierOf(a) <= 1).length);
@@ -86,13 +91,40 @@
     return a.statMax ? Math.min(1, (a.statCurrent ?? 0) / a.statMax) : 0;
   }
 
-  function selectAch(index: number) {
-    achState.selectedIdx = index;
+  // Ratón: pasar por encima muestra la tarjeta; un clic la fija hasta otro clic o un clic fuera.
+  let pinnedIdx = $state(-1);
+
+  $effect(() => {
+    if (achState.selectedIdx !== pinnedIdx) pinnedIdx = -1;
+  });
+
+  function hoverAch(index: number) {
+    if (pinnedIdx < 0) achState.selectedIdx = index;
+  }
+
+  function leaveAch() {
+    if (pinnedIdx < 0) achState.selectedIdx = -1;
+  }
+
+  function clickAch(index: number) {
+    if (pinnedIdx === index) {
+      pinnedIdx = -1;
+    } else {
+      achState.selectedIdx = index;
+      pinnedIdx = index;
+    }
+  }
+
+  function onRootClick(e: MouseEvent) {
+    if (pinnedIdx >= 0 && !(e.target as Element).closest('.med, .pop')) {
+      pinnedIdx = -1;
+      achState.selectedIdx = -1;
+    }
   }
 
   function setTab(tab: 'all' | 'unlocked' | 'locked') {
     achState.tab = tab;
-    achState.selectedIdx = 0;
+    achState.selectedIdx = -1;
   }
 
   function onToggleSecret() {
@@ -111,12 +143,18 @@
   let shelvesEl = $state<HTMLElement | null>(null);
   let popEl = $state<HTMLElement | null>(null);
   let popPos = $state({ x: 0, y: 0, left: false, ay: 0 });
+  // La tarjeta solo se desliza entre medallones; al abrirse aparece ya en su sitio.
+  let popAnim = $state(false);
 
   // Foco del mando: lleva el medallón al área visible y coloca el popover a su lado.
   $effect(() => {
     const idx = achState.selectedIdx;
     void filtered;
     void achState.revealedSecrets;
+    if (idx < 0) {
+      popAnim = false;
+      return;
+    }
     if (!rootEl || !shelvesEl) return;
     const el = shelvesEl.querySelector<HTMLElement>(`[data-idx="${idx}"]`);
     if (!el) return;
@@ -133,11 +171,13 @@
       const right = R + 18 + 320 <= rootEl.offsetWidth - 22;
       const y = Math.max(76, Math.min(rootEl.offsetHeight - 70 - h, cy - h / 2));
       popPos = { x: right ? R + 18 : L - 18 - 320, y, left: !right, ay: cy - y };
+      if (!popAnim) requestAnimationFrame(() => (popAnim = achState.selectedIdx >= 0));
     });
   });
 </script>
 
-<div class="root" bind:this={rootEl}>
+<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+<div class="root" bind:this={rootEl} onclick={onRootClick}>
   <header class="top">
     <button class="pillbtn" type="button" onclick={closeAchievementsModal} title="Cerrar (B)">
       <span class="chev">‹</span>
@@ -215,11 +255,15 @@
                 class:earned={a.earned}
                 class:secret
                 data-idx={i}
-                onclick={() => selectAch(i)}
-                title={secret ? 'Logro secreto' : a.displayName}
+                onmouseenter={() => hoverAch(i)}
+                onmouseleave={leaveAch}
+                onclick={() => clickAch(i)}
               >
                 {#if a.statMax && !a.earned}
-                  <span class="arc" style="--q:{frac(a) * 100}"></span>
+                  <svg class="arc" viewBox="0 0 66 66" aria-hidden="true">
+                    <rect class="trk" x="2" y="2" width="62" height="62" rx="15" />
+                    <rect class="bar" x="2" y="2" width="62" height="62" rx="15" pathLength="100" stroke-dasharray="{frac(a) * 100} 100" />
+                  </svg>
                 {/if}
                 <div class="ico">
                   {#if secret}
@@ -246,6 +290,7 @@
     class="pop"
     class:lft={popPos.left}
     class:off={!selected}
+    class:mv={popAnim}
     bind:this={popEl}
     style="left:{popPos.x}px;top:{popPos.y}px;--ay:{popPos.ay}px"
   >
@@ -259,7 +304,7 @@
           : selected.description}
       </div>
       <div class="m">
-        <span class="tag" style="--c:var(--rar-{ti})">{TIERS[ti].k}</span>
+        {#if ti !== NO_DATA}<span class="tag" style="--c:var(--rar-{ti})">{TIERS[ti].k}</span>{/if}
         {#if typeof selected.rarityPct === 'number'}<span>{fmtPct(selected.rarityPct)}</span>{/if}
         {#if selected.hidden}<span class="tag sec">Secreto</span>{/if}
         <span class="r">
@@ -291,7 +336,7 @@
       ['LB/RB', 'Cambiar pestaña', 'lb'],
       ...(selected?.hidden && !selected.earned ? ([['X', 'Revelar secreto', 'x']] as [string, string, string][]) : []),
       ['Y', 'Cambiar tarjeta (' + (VARIANT_NAMES[app.config.achievementsCardVariant ?? summary?.variant ?? 1] ?? '') + ')', 'y'],
-      ['B', 'Cerrar', 'b'],
+      ['B', selected ? 'Cerrar tarjeta' : 'Cerrar', 'b'],
     ]}
   />
 </div>
@@ -304,6 +349,7 @@
     --rar-2: #f27a1a;
     --rar-3: #3bb54a;
     --rar-4: #00a0d8;
+    --rar-5: var(--ink-3);
     --hint: 64px;
 
     position: absolute;
@@ -599,14 +645,14 @@
     position: relative;
     width: 56px;
     height: 56px;
-    border-radius: 50%;
+    border-radius: 12px;
     cursor: pointer;
     transition: transform 0.18s;
   }
   .med .ico {
     width: 100%;
     height: 100%;
-    border-radius: 50%;
+    border-radius: 12px;
     overflow: hidden;
     display: grid;
     place-items: center;
@@ -649,13 +695,24 @@
   .med.f .ico {
     box-shadow: 0 0 0 3px var(--glass-chip), 0 0 0 6px var(--c), 0 6px 18px color-mix(in srgb, var(--c) 50%, transparent);
   }
+  /* Progreso: rectángulo redondeado alrededor del icono; pathLength=100 hace que el dash sea el porcentaje. */
   .med .arc {
     position: absolute;
     inset: -5px;
-    border-radius: 50%;
-    background: conic-gradient(var(--c) calc(var(--q) * 1%), transparent 0);
-    -webkit-mask: radial-gradient(circle, transparent 31px, black 32px);
-    mask: radial-gradient(circle, transparent 31px, black 32px);
+    width: 66px;
+    height: 66px;
+    pointer-events: none;
+    overflow: visible;
+  }
+  .med .arc rect {
+    fill: none;
+    stroke-width: 3;
+  }
+  .med .arc .trk {
+    stroke: var(--line);
+  }
+  .med .arc .bar {
+    stroke: var(--c);
   }
 
   /* Popover flotante */
@@ -668,6 +725,8 @@
     background: var(--face-hi);
     box-shadow: 0 10px 30px var(--scrim), 0 0 0 1px var(--line);
     backdrop-filter: blur(8px);
+  }
+  .pop.mv {
     transition: left 0.15s, top 0.15s;
   }
   .pop.off {

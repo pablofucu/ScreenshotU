@@ -96,7 +96,6 @@
       {@const x = cx0 + i * (CW + CGAP)}
       {@const m = meta(r.t, app.lib.platforms[r.pi].name)}
       <div class="glass rcard fx" class:f={app.focus === 'rec' + i} data-k="rec{i}" data-act="rec:{i}" style="left:{x}px;--acc:{app.titleAcc(r.pi, r.ti).c};{app.pipStyle(r.pi, r.ti)}">
-        <i class="pip"></i>
         <RecentCard t={r.t} playing={!!r.t.gameId && app.playing?.id === r.t.gameId} />
       </div>
       <div class="rmeta" style="left:{x + 4}px">{m.when}{#if m.rest}<span>{m.when ? ' · ' : ''}{m.rest}</span>{/if}</div>
@@ -126,3 +125,32 @@
 </div>
 
 <Hints list={[['A', app.focus === 'read' ? 'Ver racha' : 'Abrir', 'a'], ...(focusRec?.t.launchable ? [['X', 'Jugar', 'x'] as [string, string, string]] : []), ['Start', 'Ajustes', 'menu']]} />
+
+<style>
+  /* Plataformas: el color del foco entra fundido (colores registrados, que sí se interpolan) y la
+     escala va sin rebote, para que color y tamaño lleguen a la vez. */
+  @property --pt { syntax: '<color>'; inherits: false; initial-value: transparent; }
+  @property --pm { syntax: '<color>'; inherits: false; initial-value: transparent; }
+  @property --pb { syntax: '<color>'; inherits: false; initial-value: transparent; }
+  .plat {
+    --pt: var(--glass-top);
+    --pm: var(--glass-mid);
+    --pb: var(--glass-bot);
+    background: linear-gradient(165deg, var(--pt) 0%, var(--pm) 48%, var(--pb) 100%);
+    transition: transform 0.28s cubic-bezier(.2, .8, .2, 1), box-shadow 0.28s cubic-bezier(.2, .8, .2, 1),
+      --pt 0.28s cubic-bezier(.2, .8, .2, 1), --pm 0.28s cubic-bezier(.2, .8, .2, 1), --pb 0.28s cubic-bezier(.2, .8, .2, 1);
+  }
+  .plat.f {
+    --pt: color-mix(in srgb, var(--g1) 55%, white);
+    --pm: var(--f1);
+    --pb: var(--f2);
+    background: linear-gradient(165deg, var(--pt) 0%, var(--pm) 48%, var(--pb) 100%);
+  }
+  .plabel,
+  .plabel.on {
+    transition: color 0.28s cubic-bezier(.2, .8, .2, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .plat, .plabel, .plabel.on { transition: none; }
+  }
+</style>

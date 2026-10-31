@@ -1,6 +1,6 @@
 // Estado reactivo y utilidades para el sistema de logros
 import { app } from './store.svelte';
-import { backend } from './backend';
+import { backend, IS_TAURI } from './backend';
 import { blip } from './sound';
 import { closeOverlay, patchConfig, pushOverlay, toast } from './controller.svelte';
 import type { Achievement, AchievementSummary } from './types';
@@ -42,7 +42,8 @@ class AchievementsState {
 
   // Modal interactivo
   tab = $state<'all' | 'unlocked' | 'locked'>('all');
-  selectedIdx = $state(0);
+  // -1 = ninguna seleccionada (la tarjeta de detalle está cerrada).
+  selectedIdx = $state(-1);
   revealedSecrets = $state<Set<string>>(new Set());
 }
 
@@ -74,7 +75,7 @@ export async function loadGameAchievements(gameId: string, appId?: string) {
         : null;
       achState.list = list;
       if (achState.selectedIdx >= list.length) {
-        achState.selectedIdx = 0;
+        achState.selectedIdx = -1;
       }
     }
   } catch (err) {
@@ -116,14 +117,34 @@ export async function setCardVariant(gameId: string, variant: number) {
   }
 }
 
+// La rareza de Steam llega en segundo plano: cuando el backend la guarda, se vuelve a leer la lista
+// abierta sin tocar la selección.
+let rarityListening = false;
+async function listenRarity() {
+  if (rarityListening || !IS_TAURI) return;
+  rarityListening = true;
+  const { listen } = await import('@tauri-apps/api/event');
+  void listen('achievements-rarity-updated', async () => {
+    const gameId = achState.gameId;
+    if (!gameId || !achState.list.length) return;
+    try {
+      const list = await backend.getGameAchievements(gameId);
+      if (achState.gameId === gameId) achState.list = list;
+    } catch (err) {
+      console.error('Error al refrescar la rareza:', err);
+    }
+  });
+}
+
 export function openAchievementsModal(gameId: string, titleName: string, cover?: string | null) {
   achState.gameId = gameId;
   achState.gameTitle = titleName;
   achState.coverPath = cover ?? null;
   achState.tab = 'all';
-  achState.selectedIdx = 0;
+  achState.selectedIdx = -1;
   pushOverlay('achievements');
   blip(1320);
+  void listenRarity();
   void loadGameAchievements(gameId);
 }
 
@@ -170,8 +191,12 @@ export function getRankTier(percentage: number): { name: string; color: string; 
 export function achievementsCmd(c: string) {
   const filtered = getFilteredAchievements();
   if (c === 'up') {
+    // Con la tarjeta cerrada, el primer movimiento lleva al primer logro y la abre.
     if (achState.selectedIdx > 0) {
       achState.selectedIdx--;
+      blip(880);
+    } else if (achState.selectedIdx < 0 && filtered.length > 0) {
+      achState.selectedIdx = 0;
       blip(880);
     }
   } else if (c === 'down') {
@@ -183,13 +208,13 @@ export function achievementsCmd(c: string) {
     if (achState.tab === 'locked') achState.tab = 'unlocked';
     else if (achState.tab === 'unlocked') achState.tab = 'all';
     else achState.tab = 'locked';
-    achState.selectedIdx = 0;
+    achState.selectedIdx = -1;
     blip(700);
   } else if (c === 'rb' || c === 'rt' || c === 'right') {
     if (achState.tab === 'all') achState.tab = 'unlocked';
     else if (achState.tab === 'unlocked') achState.tab = 'locked';
     else achState.tab = 'all';
-    achState.selectedIdx = 0;
+    achState.selectedIdx = -1;
     blip(700);
   } else if (c === 'x') {
     const cur = filtered[achState.selectedIdx];
@@ -200,6 +225,10 @@ export function achievementsCmd(c: string) {
     if (achState.gameId) {
       void cycleCardVariant(achState.gameId);
     }
+  } else if (c === 'b' && achState.selectedIdx >= 0) {
+    // Primera B: cierra la tarjeta; la siguiente cierra el modal.
+    achState.selectedIdx = -1;
+    blip(800);
   } else if (c === 'b' || c === 'menu') {
     closeAchievementsModal();
   }

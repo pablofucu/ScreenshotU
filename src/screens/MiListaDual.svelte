@@ -48,7 +48,6 @@
             data-act="tit:{it.ti}"
           >
             <div class="cv" style={app.pipStyle(app.p, it.ti)}>
-              <i class="pip"></i>
               <div class="fc">
                 {#if coverOf(it.ti)}
                   <Thumb path={coverOf(it.ti)!} />
@@ -114,10 +113,37 @@
     height: 108px;
     border-radius: var(--r-m);
     overflow: hidden;
-    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 16%, var(--glass-top)), var(--glass-mid) 60%);
-    box-shadow: inset 0 0 0 1px var(--line);
+    background: linear-gradient(180deg,
+      color-mix(in srgb, var(--c) 15%, var(--glass-top)) 0%,
+      color-mix(in srgb, var(--c) 15%, var(--glass-mid)) 46%,
+      color-mix(in srgb, var(--c) 15%, var(--glass-bot)) 100%
+    );
+    -webkit-backdrop-filter: blur(14px) saturate(1.7);
+    backdrop-filter: blur(14px) saturate(1.7);
+    box-shadow:
+      inset 0 1.5px 0 rgba(255,255,255,1),
+      inset 0 0 0 1px rgba(255,255,255,.55),
+      inset 0 -10px 14px -8px rgba(255,255,255,.95),
+      inset 0 -1.5px 0 rgba(110,125,150,.30),
+      0 0 0 1px rgba(95,110,135,.24),
+      0 2px 3px rgba(40,50,70,.10),
+      0 18px 30px -16px rgba(40,50,70,.42);
   }
-  .st-run { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 30%, var(--glass-top)), var(--glass-mid) 65%); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent), 0 6px 18px -10px var(--c); }
+  /* La franja de «Jugando» lleva algo más de tinte y un brillo de su color. */
+  .st-run {
+    background: linear-gradient(180deg,
+      color-mix(in srgb, var(--c) 28%, var(--glass-top)) 0%,
+      color-mix(in srgb, var(--c) 22%, var(--glass-mid)) 46%,
+      color-mix(in srgb, var(--c) 18%, var(--glass-bot)) 100%
+    );
+    box-shadow:
+      inset 0 1.5px 0 rgba(255,255,255,1),
+      inset 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent),
+      inset 0 -10px 14px -8px rgba(255,255,255,.9),
+      0 0 0 1px rgba(95,110,135,.24),
+      0 18px 30px -16px rgba(40,50,70,.42),
+      0 6px 18px -10px var(--c);
+  }
   .st-park .its { filter: saturate(0.35); opacity: 0.86; }
   .st-done .its { filter: saturate(0.1); opacity: 0.66; }
   .st-done .its :global(.it.f), .st-park .its :global(.it.f) { filter: none; }
@@ -162,6 +188,17 @@
     border-radius: 14px;
     align-items: center;
     cursor: pointer;
+    background: linear-gradient(180deg, var(--glass-top) 0%, var(--glass-mid) 46%, var(--glass-bot) 100%);
+    -webkit-backdrop-filter: blur(14px) saturate(1.7);
+    backdrop-filter: blur(14px) saturate(1.7);
+    box-shadow:
+      inset 0 1.5px 0 rgba(255,255,255,1),
+      inset 0 0 0 1px rgba(255,255,255,.55),
+      inset 0 -10px 14px -8px rgba(255,255,255,.95),
+      inset 0 -1.5px 0 rgba(110,125,150,.30),
+      0 0 0 1px rgba(95,110,135,.24),
+      0 2px 3px rgba(40,50,70,.10),
+      0 18px 30px -16px rgba(40,50,70,.42);
     transition: background 0.15s, box-shadow 0.15s;
   }
   .it.f {

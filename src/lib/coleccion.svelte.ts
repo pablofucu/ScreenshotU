@@ -5,12 +5,13 @@ import { app, accentOf } from './store.svelte';
 import { backend } from './backend';
 import { blip } from './sound';
 import { RAINBOW, type Accent } from './icons';
-import { inkDark } from './oklch';
+import { hueOf, inkDark } from './oklch';
+import { variablesCSS } from './atmos';
 import { openOsk } from './osk.svelte';
 import { bump, closeOverlay, go, openTitle, popOverlay, pushOverlay, setFocus, toast } from './controller.svelte';
 import { closeOrConfirm, inkFor } from './ops.svelte';
-import { LIST_VIS, revealShelf } from './milista.svelte';
-import { autoHex, coverColors, suggestGroups, suggestName } from './collections';
+import { LIST_VIS, revealShelfPx, SHELF_CW, SHELF_PITCH } from './milista.svelte';
+import { autoHex, coverColors, gameYear, harmonize, railGradient, suggestGroups, suggestName, titleHex, topHues, yearLayout } from './collections';
 import type { Collection, Library, Title } from './types';
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -86,6 +87,26 @@ export function tabLook(games: Title[], acc: Accent): { style: string; aurora: s
   return { style: '', aurora: coverColors(games, 0.72, 0.16, 5), ink };
 }
 
+/** Variables de color (`--g1 --g2 --f1 --f2 --gf --on`…) de una estantería: foco de las portadas, anillo y rótulo. Salen de
+ *  los 2 tonos más repetidos entre las portadas de la colección; si tiene un color elegido a mano, gana ese. */
+export function shelfVars(sh: { coll: Collection; items: number[] }, acc: Accent = shelfAccent(sh)): string {
+  let h1 = hueOf(acc.c), h2 = (h1 + 35) % 360;
+  if (sh.coll.color == null || !RAINBOW[sh.coll.color]) {
+    const top = topHues(sh.items.map((ti) => app.platform!.titles[ti]));
+    if (top) [h1, h2] = top;
+  }
+  return Object.entries(variablesCSS(h1, h2)).map(([k, v]) => `${k}:${v}`).join(';');
+}
+
+/** Línea de tiempo de una estantería: posición de cada portada (por año), si lleva marca de año, su color y el degradado del raíl. */
+export function collLayout(sh: { items: number[] }) {
+  const titles = app.platform?.titles ?? [];
+  if (!sh.items.length) return { xs: [0], marks: [false], totalW: SHELF_CW, tints: [null] as Array<string | null>, rail: null as string | null };
+  const L = yearLayout(sh.items.map((ti) => gameYear(titles[ti])), SHELF_PITCH, SHELF_CW);
+  const tints = sh.items.map((ti) => { const h = titleHex(titles[ti]); return h ? harmonize(h, 0.72, 0.16) : null; });
+  return { ...L, tints, rail: railGradient(L.xs, SHELF_CW, tints, L.totalW) };
+}
+
 /* ------------------------------------------------------------------ */
 /* Navegación por las estanterías                                       */
 /* ------------------------------------------------------------------ */
@@ -114,7 +135,7 @@ export function collReveal() {
   const { c, i } = app.collAt;
   const sh = app.collShelves[c];
   const f0 = sh ? (app.collFrom[sh.coll.id] ?? 0) : 0;
-  const r = revealShelf(i, cols(c), f0, c, app.collTop);
+  const r = revealShelfPx(i, sh ? collLayout(sh).xs : [0], f0, c, app.collTop);
   if (sh && r.from !== f0) app.collFrom = { ...app.collFrom, [sh.coll.id]: r.from };
   if (r.top !== app.collTop) app.collTop = r.top;
 }

@@ -45,6 +45,26 @@ CREATE TABLE title_achievements_pref (
 );
 "#;
 
+/// Rareza global de los logros (API publica de Steam). `ach_rarity_fetch` guarda cuando se consulto cada juego,
+/// de modo que un juego sin resultados tampoco se reconsulta a cada rato.
+pub const RARITY_SCHEMA: &str = r#"
+CREATE TABLE ach_rarity (
+    app_id     INTEGER NOT NULL,
+    api_name   TEXT NOT NULL,
+    pct        REAL NOT NULL,
+    fetched_at INTEGER NOT NULL,
+    PRIMARY KEY (app_id, api_name)
+);
+
+CREATE TABLE ach_rarity_fetch (
+    app_id     INTEGER PRIMARY KEY,
+    fetched_at INTEGER NOT NULL
+);
+"#;
+
+/// Cada cuantos segundos como maximo se vuelve a consultar la rareza de un juego (7 dias).
+pub const RARITY_REFRESH_SECS: i64 = 7 * 24 * 3600;
+
 pub const VALID_VARIANTS: &[u8] = &[1, 2, 3, 4, 7, 8];
 
 /// Normaliza la variante de tarjeta elegida a una de las permitidas (1, 2, 3, 4, 7 u 8).
@@ -72,7 +92,8 @@ pub struct Achievement {
     pub source: String,
     pub stat_current: Option<u64>,
     pub stat_max: Option<u64>,
-    pub rarity_tier: u8, // 0: Comun (>=15%), 1: Raro (5-15%), 2: Ultra raro (<5%)
+    /// 0 Comun (>=50 %) o sin datos, 1 Poco comun (<50), 2 Raro (<25), 3 Ultra raro (<12), 4 Legendario (<5).
+    pub rarity_tier: u8,
     pub rarity_pct: Option<f32>,
 }
 
@@ -491,8 +512,8 @@ pub fn calculate_summary(
 
     for a in achievements {
         match a.rarity_tier {
-            2 => ultra += 1,
-            1 => rare += 1,
+            3 | 4 => ultra += 1,
+            2 => rare += 1,
             _ => common += 1,
         }
 
@@ -621,6 +642,100 @@ pub fn achievements_load(c: &Connection, app_id: &str) -> Result<Vec<Achievement
         out.push(r?);
     }
     Ok(out)
+}
+
+/// Nivel de rareza de un porcentaje global de desbloqueo (ver [`Achievement::rarity_tier`]).
+pub fn rarity_tier_for(pct: f32) -> u8 {
+    if pct < 5.0 {
+        4
+    } else if pct < 12.0 {
+        3
+    } else if pct < 25.0 {
+        2
+    } else if pct < 50.0 {
+        1
+    } else {
+        0
+    }
+}
+
+/// Lee la respuesta de `GetGlobalAchievementPercentagesForGame`: pares (nombre API, porcentaje).
+/// `percent` puede venir como numero o como texto.
+pub fn parse_rarity_json(text: &str) -> Result<Vec<(String, f32)>> {
+    let v: serde_json::Value = serde_json::from_str(text).context("JSON de rareza invalido")?;
+    let arr = v
+        .pointer("/achievementpercentages/achievements")
+        .and_then(|a| a.as_array())
+        .context("respuesta de rareza sin lista de logros")?;
+    let mut out = Vec::new();
+    for e in arr {
+        let Some(name) = e.get("name").and_then(|n| n.as_str()) else { continue };
+        let pct = match e.get("percent") {
+            Some(serde_json::Value::Number(n)) => n.as_f64(),
+            Some(serde_json::Value::String(s)) => s.trim().parse::<f64>().ok(),
+            _ => None,
+        };
+        if let Some(p) = pct.filter(|p| p.is_finite() && (0.0..=100.0).contains(p)) {
+            out.push((name.to_string(), p as f32));
+        }
+    }
+    Ok(out)
+}
+
+/// Rellena `rarity_pct` y `rarity_tier` desde la cache `ach_rarity`. Sin datos (o sin tabla) no toca nada.
+pub fn apply_rarity(c: &Connection, app_id: &str, list: &mut [Achievement]) {
+    let Ok(id) = app_id.trim().parse::<i64>() else { return };
+    let Ok(mut st) = c.prepare("SELECT api_name, pct FROM ach_rarity WHERE app_id = ?1") else { return };
+    let Ok(rows) = st.query_map([id], |r| Ok((r.get::<_, String>(0)?, r.get::<_, f64>(1)?))) else { return };
+    let map: HashMap<String, f32> = rows.flatten().map(|(n, p)| (n.to_lowercase(), p as f32)).collect();
+    if map.is_empty() {
+        return;
+    }
+    for a in list {
+        if let Some(&p) = map.get(&a.api_name.to_lowercase()) {
+            a.rarity_pct = Some(p);
+            a.rarity_tier = rarity_tier_for(p);
+        }
+    }
+}
+
+/// `true` si la rareza de este juego nunca se consulto o se consulto hace mas de [`RARITY_REFRESH_SECS`].
+pub fn rarity_is_stale(c: &Connection, app_id: i64, now: i64) -> bool {
+    let last: Option<i64> = c
+        .query_row("SELECT fetched_at FROM ach_rarity_fetch WHERE app_id = ?1", [app_id], |r| r.get(0))
+        .optional()
+        .ok()
+        .flatten();
+    last.map_or(true, |t| now - t >= RARITY_REFRESH_SECS)
+}
+
+/// Guarda el resultado de una consulta correcta. Con datos reemplaza los anteriores del juego; sin datos
+/// conserva la cache vieja y solo anota la fecha para no reintentar de inmediato.
+pub fn rarity_store(c: &Connection, app_id: i64, entries: &[(String, f32)], now: i64) -> Result<()> {
+    c.execute_batch("SAVEPOINT ach_rarity_save")?;
+    let res = (|| -> Result<()> {
+        if !entries.is_empty() {
+            c.execute("DELETE FROM ach_rarity WHERE app_id = ?1", [app_id])?;
+            let mut st = c.prepare(
+                "INSERT OR REPLACE INTO ach_rarity(app_id, api_name, pct, fetched_at) VALUES (?1, ?2, ?3, ?4)",
+            )?;
+            for (name, pct) in entries {
+                st.execute(params![app_id, name, *pct as f64, now])?;
+            }
+        }
+        c.execute(
+            "INSERT INTO ach_rarity_fetch(app_id, fetched_at) VALUES (?1, ?2)
+             ON CONFLICT(app_id) DO UPDATE SET fetched_at = excluded.fetched_at",
+            params![app_id, now],
+        )?;
+        Ok(())
+    })();
+    if res.is_ok() {
+        c.execute_batch("RELEASE ach_rarity_save")?;
+    } else {
+        let _ = c.execute_batch("ROLLBACK TO ach_rarity_save; RELEASE ach_rarity_save");
+    }
+    res
 }
 
 pub fn unlock_record(
@@ -756,6 +871,38 @@ mod tests {
         assert_eq!(sum.variant, 7);
         assert_eq!(sum.recent.len(), 1);
         assert!(sum.next_target.is_some());
+    }
+
+    #[test]
+    fn rarity_tiers_parse_and_cache() {
+        assert_eq!(
+            [4.9, 5.0, 11.9, 12.0, 24.9, 25.0, 49.9, 50.0].map(rarity_tier_for),
+            [4, 3, 3, 2, 2, 1, 1, 0]
+        );
+        let parsed = parse_rarity_json(
+            r#"{"achievementpercentages":{"achievements":[{"name":"A","percent":3.5},{"name":"b","percent":"60.25"},{"name":"C","percent":"x"}]}}"#,
+        )
+        .unwrap();
+        assert_eq!(parsed, vec![("A".to_string(), 3.5), ("b".to_string(), 60.25)]);
+
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(RARITY_SCHEMA).unwrap();
+        assert!(rarity_is_stale(&conn, 10, 1000));
+        rarity_store(&conn, 10, &parsed, 1000).unwrap();
+        assert!(!rarity_is_stale(&conn, 10, 1000 + RARITY_REFRESH_SECS - 1));
+        assert!(rarity_is_stale(&conn, 10, 1000 + RARITY_REFRESH_SECS));
+        // Una consulta vacia no borra la cache.
+        rarity_store(&conn, 10, &[], 2000).unwrap();
+        let mk = |n: &str| Achievement {
+            app_id: "10".into(), api_name: n.into(), display_name: n.into(), description: String::new(),
+            hidden: false, icon: None, icon_gray: None, earned: false, unlocked_at: None, source: "gse".into(),
+            stat_current: None, stat_max: None, rarity_tier: 0, rarity_pct: None,
+        };
+        let mut list = vec![mk("a"), mk("B"), mk("zzz")];
+        apply_rarity(&conn, "10", &mut list);
+        assert_eq!((list[0].rarity_tier, list[0].rarity_pct), (4, Some(3.5)));
+        assert_eq!((list[1].rarity_tier, list[1].rarity_pct), (0, Some(60.25)));
+        assert_eq!((list[2].rarity_tier, list[2].rarity_pct), (0, None));
     }
 
     #[test]

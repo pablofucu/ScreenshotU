@@ -240,6 +240,8 @@ pub const MIGRATIONS: &[&str] = &[
     "#,
     // 13: sistema de logros (definicion del schema, estado de desbloqueo y preferencia de tarjeta en la ficha).
     crate::achievements::SCHEMA,
+    // 14: rareza real de los logros (porcentaje global de Steam) y cuando se consulto cada juego.
+    crate::achievements::RARITY_SCHEMA,
 ];
 
 /// Version del esquema que entiende esta compilacion.
