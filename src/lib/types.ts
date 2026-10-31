@@ -9,6 +9,8 @@ export interface Config {
   root: string | null;
   /** Tema de la interfaz: claro o «Noche ahumada». */
   theme?: 'light' | 'dark';
+  /** Juegos fijados en «En marcha» de Mi lista (ids de título). */
+  pinned?: string[];
   achievementsCardVariant?: number;
   titlesView: 'grid' | 'carousel';
   /** Cuadrícula de capturas continua o agrupada por días. */

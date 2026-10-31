@@ -58,6 +58,10 @@ pub struct Config {
     /// "art" (del juego, por defecto) | "rainbow" | "fixed"
     pub accent_mode: String,
     pub accent_fixed: u8,
+    /// Tema de la interfaz: "light" | "dark" (Noche ahumada)
+    pub theme: String,
+    /// Juegos fijados en "En marcha" de Mi lista (ids de titulo)
+    pub pinned: Vec<String>,
     pub sound: bool,
     pub platforms: Vec<PlatformCfg>,
     /// Atajo global de captura ("" = desactivado). Ej.: "F12", "Ctrl+F12".
@@ -181,6 +185,8 @@ impl Default for Config {
             shots_order: "recent".into(),
             accent_mode: "art".into(),
             accent_fixed: 4,
+            theme: "light".into(),
+            pinned: Vec::new(),
             sound: false,
             platforms: default_platforms(),
             capture_hotkey: "F12".into(),
