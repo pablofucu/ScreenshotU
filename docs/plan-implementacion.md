@@ -77,7 +77,18 @@ Estado: **planificación terminada a falta de 4 decisiones; no se ha programado 
 6. Las categorías de la biblioteca no se tocan (`CLAUDE.md`).
 
 ### Decisiones abiertas (empezar por aquí)
-1. ✅ Dosis del degradado en `sistema-v4`: **V3 Atmósfera** (2026-10-31). Dentro de un juego, su pareja g1/g2. ❓ Fuera de los juegos (biblioteca, menús, Ajustes): arcoíris **ordenado** en vez del color de las capturas; falta elegir cómo se reparte (por sección, por posición en pantalla o por orden de la lista).
+1. ✅ Dosis del degradado en `sistema-v4`: **V3 Atmósfera** (2026-10-31). Dentro de un juego, su pareja g1/g2. ✅ Fuera de los juegos: arcoíris ordenado **por sección** (`sistema-v5`, opción 1). Las categorías se reparten en su orden de rojo a violeta; Inicio, Mi lista, Estadísticas/Racha y Ajustes tienen tono fijo. Se quitan los modos `accentMode` (fijo/arte/arcoíris); se conserva el selector de color por juego.
+
+### Alcance de la primera entrega (2026-10-31)
+Solo **atmósfera + degradado**: manchas del fondo con g1/g2 (`--b1..3`), variables `--g1 --g2 --grad --f1 --f2 --gf --on` en `#stage` con transición de tono (~700 ms, respeta movimiento reducido), botón principal y barras de progreso con el degradado.
+
+### Apuntado para después
+- **Ajustes como en el mockup** (`sistema-v5`, `scrAjustes`): menú General / Apariencia / Mando / Biblioteca / Mi lista / Acerca de, y **cada sección de Ajustes con un color del arcoíris**.
+- Estilo de foco y pestañas con subrayado degradado.
+- Barra lateral A-Z en arcoíris.
+- Punto de color en cada portada.
+- Animación de la portada «volando» al entrar en un juego.
+- Modo oscuro «Noche ahumada».
 2. ❓ Logros: lista, mosaico o rareza.
 3. ❓ Nombre del cubo «Aparcado»: Aparcados / En el cajón / Archivo.
 4. ❓ Dónde se guarda «fijar» (mirar dónde vive `listPos`) y si los umbrales 14/90 días se ajustan en Ajustes.
