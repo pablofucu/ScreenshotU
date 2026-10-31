@@ -4,7 +4,8 @@ import { app, lastUse, STATUS_LABEL, STATUS_ORDER, type ListShelf } from './stor
 import { backend } from './backend';
 import { blip } from './sound';
 import { openAddColl } from './coleccion.svelte';
-import { bump, closeOverlay, openTitle, playTitle, popOverlay, pushOverlay, setFocus, toast } from './controller.svelte';
+import { bump, closeOverlay, openTitle, patchConfig, playTitle, popOverlay, pushOverlay, setFocus, toast } from './controller.svelte';
+import { RAINBOW } from './icons';
 import { fmtShort, nGames } from './format';
 import type { GameStatus, Title } from './types';
 
@@ -115,10 +116,138 @@ export function revealShelfPx(
 
 /** La pestaña «Mi lista» o «Terminados» de una categoría normal está a la vista (sin paneles encima). */
 export const listTab = () => app.view === 'titles' && (app.titlesTab === 'list' || app.titlesTab === 'fin');
+/* ------------------------------------------------------------------ */
+/* Tablero de franjas (pestaña «Mi lista»)                              */
+/* ------------------------------------------------------------------ */
+
+export type BandKind = 'run' | 'mid' | 'pend' | 'park' | 'done';
+export interface BoardItem {
+  /** Índice del título en `app.platform.titles` (solo de esta categoría). */
+  ti: number;
+  /** Días desde la última partida o desde el cambio de estado (-1 = no aplica). */
+  days: number;
+  pin: boolean;
+  /** Días que faltan para pasar a «Aparcado» si son ≤10 y no está fijado; 0 = sin aviso. */
+  warn: number;
+  year: number;
+  /** Primer juego de un año nuevo en la franja «Terminado» (lleva el separador). */
+  yearStart: boolean;
+}
+export interface Band { key: BandKind; label: string; color: string; compact: boolean; items: BoardItem[] }
+
+/** Umbrales del modelo automático, en días. */
+export const RUN_DAYS = 14;
+export const PARK_DAYS = 90;
+export const WARN_DAYS = 10;
+
+const BAND_DEF: Array<{ key: BandKind; label: string; color: string }> = [
+  { key: 'run', label: 'En marcha', color: RAINBOW[0].c },
+  { key: 'mid', label: 'A medias', color: RAINBOW[1].c },
+  { key: 'pend', label: 'Pendiente', color: RAINBOW[3].c },
+  { key: 'park', label: 'Aparcado', color: RAINBOW[4].c },
+  { key: 'done', label: 'Terminado', color: RAINBOW[6].c },
+];
+
+/** Reparte los juegos de la categoría en franjas. Nunca mezcla categorías: solo mira `app.platform`. */
+export function buildBoard(): Band[] {
+  const titles = app.platform?.titles ?? [];
+  const now = Date.now();
+  const pins = new Set(app.config.pinned ?? []);
+  const by: Record<BandKind, BoardItem[]> = { run: [], mid: [], pend: [], park: [], done: [] };
+  const name = (i: number) => titles[i].name;
+  titles.forEach((t, ti) => {
+    if (t.hidden || t.members) return;
+    const st = t.status;
+    const ref = Math.max(lastUse(t), t.statusMs ?? 0);
+    const days = ref ? Math.max(0, Math.floor((now - ref) / DAY)) : 9999;
+    const year = t.finishedMs ? new Date(t.finishedMs).getUTCFullYear() : 0;
+    const it: BoardItem = { ti, days, pin: false, warn: 0, year, yearStart: false };
+    if (st === 'finished') by.done.push(it);
+    else if (st === 'pending') by.pend.push({ ...it, days: -1 });
+    else if (st === 'dropped') by.park.push(it);
+    else if (st === 'playing') {
+      const pin = !!t.id && pins.has(t.id);
+      it.pin = pin;
+      if (pin || days <= RUN_DAYS) by.run.push(it);
+      else if (days <= PARK_DAYS) {
+        const left = PARK_DAYS - days;
+        it.warn = left <= WARN_DAYS ? Math.max(1, left) : 0;
+        by.mid.push(it);
+      } else by.park.push(it);
+    }
+  });
+  const recent = (a: BoardItem, b: BoardItem) => a.days - b.days || name(a.ti).localeCompare(name(b.ti));
+  by.run.sort((a, b) => Number(b.pin) - Number(a.pin) || recent(a, b));
+  by.mid.sort(recent);
+  by.park.sort(recent);
+  by.pend.sort((a, b) => (titles[a.ti].listPos ?? 1e9) - (titles[b.ti].listPos ?? 1e9) || name(a.ti).localeCompare(name(b.ti)));
+  by.done.sort((a, b) => (a.year || -1) === (b.year || -1)
+    ? (titles[b.ti].finishedMs ?? 0) - (titles[a.ti].finishedMs ?? 0) || name(a.ti).localeCompare(name(b.ti))
+    : (b.year || -1) - (a.year || -1));
+  by.done.forEach((it, k) => { it.yearStart = k === 0 || by.done[k - 1].year !== it.year; });
+  return BAND_DEF.filter((d) => by[d.key].length).map((d) => ({ ...d, compact: d.key === 'done', items: by[d.key] }));
+}
+
+const onBoard = () => app.titlesTab === 'list';
+/** Franja e índice del título dentro de ella. */
+function boardAt(ti = app.t, bands = buildBoard()): { b: number; i: number } | null {
+  for (let b = 0; b < bands.length; b++) {
+    const i = bands[b].items.findIndex((x) => x.ti === ti);
+    if (i >= 0) return { b, i };
+  }
+  return null;
+}
+
 /** Algún estante tiene este título (el foco de «Mi lista» solo cae en juegos que se ven). */
-export const listHas = (ti: number) => app.shelves.some((s) => s.items.includes(ti));
+export const listHas = (ti: number) => onBoard() ? boardAt(ti) !== null : app.shelves.some((s) => s.items.includes(ti));
 /** Primer juego de «Mi lista» (foco por defecto). */
-export const listFirst = (): number | undefined => app.shelves[0]?.items[0];
+export const listFirst = (): number | undefined => onBoard() ? buildBoard()[0]?.items[0]?.ti : app.shelves[0]?.items[0];
+
+/** X en el tablero: fija o suelta un juego (solo los que se están jugando; los fijados se quedan en «En marcha»). */
+function togglePin() {
+  const t = app.platform?.titles[app.t];
+  if (!t || !t.id || t.status !== 'playing') {
+    toast('Solo se pueden fijar los juegos que estás jugando', 2400);
+    bump(document.querySelector('#screen .fx.f'), 0, 0);
+    return;
+  }
+  const cur = app.config.pinned ?? [];
+  const was = cur.includes(t.id);
+  void patchConfig({ pinned: was ? cur.filter((x) => x !== t.id) : [...cur, t.id] });
+  toast(was ? 'Juego suelto: vuelve a seguir su racha' : 'Juego fijado en «En marcha»', 2200);
+  blip(was ? 520 : 1100);
+}
+
+function boardMove(dx: number, dy: number) {
+  const bands = buildBoard();
+  const at = boardAt(app.t, bands);
+  if (!at) {
+    const f = bands[0]?.items[0]?.ti;
+    if (f !== undefined) setFocus('tit' + f);
+    return;
+  }
+  if (dx) {
+    const n = at.i + dx;
+    if (n < 0 || n >= bands[at.b].items.length) { bump(document.querySelector('#screen .fx.f'), dx, dy); return; }
+    setFocus('tit' + bands[at.b].items[n].ti);
+    blip(880);
+    return;
+  }
+  const nb = at.b + dy;
+  if (nb < 0 || nb >= bands.length) { bump(document.querySelector('#screen .fx.f'), dx, dy); return; }
+  // Se cae en la portada de la franja de destino más cercana en horizontal a la actual.
+  const cur = document.querySelector<HTMLElement>('#screen .it.f');
+  const cx = cur ? cur.getBoundingClientRect().left + cur.getBoundingClientRect().width / 2 : 0;
+  let best = bands[nb].items[0].ti, bd = Infinity;
+  for (const el of document.querySelectorAll<HTMLElement>(`#screen [data-band="${bands[nb].key}"] .it`)) {
+    const r = el.getBoundingClientRect();
+    const dist = Math.abs(r.left + r.width / 2 - cx);
+    const k = el.dataset.k?.slice(3);
+    if (dist < bd && k !== undefined) { bd = dist; best = Number(k); }
+  }
+  setFocus('tit' + best);
+  blip(880);
+}
 
 /** Estantería y posición del juego enfocado. */
 function place(ti = app.t): { s: number; i: number } | null {
@@ -145,6 +274,7 @@ export function revealShelf(i: number, n: number, from: number, s: number, top: 
 
 /** Desplaza lo justo para que el juego enfocado se vea, con un vecino a cada lado si se puede. */
 export function listReveal() {
+  if (onBoard()) return; // el tablero desplaza cada franja desde el componente
   const at = place();
   if (!at) return;
   const sh = app.shelves[at.s];
@@ -169,6 +299,7 @@ export function resetList() {
 }
 
 function listMove(dx: number, dy: number) {
+  if (onBoard()) { boardMove(dx, dy); return; }
   const at = place();
   const sh = app.shelves;
   if (!at) {
@@ -210,6 +341,17 @@ function listMove(dx: number, dy: number) {
 
 /** LB/RB en «Mi lista»: salta varias portadas. */
 function listShift(d: number) {
+  if (onBoard()) {
+    const bands = buildBoard();
+    const b = boardAt(app.t, bands);
+    if (!b) return;
+    const items = bands[b.b].items;
+    const ni = Math.max(0, Math.min(items.length - 1, b.i + d * 4));
+    if (ni === b.i) { bump(document.querySelector('#screen .fx.f'), d, 0); return; }
+    setFocus('tit' + items[ni].ti);
+    blip(700);
+    return;
+  }
   const at = place();
   const sh = app.shelves;
   if (!at) return;
@@ -233,6 +375,7 @@ export function listCmd(c: string): boolean {
       if (listHas(app.t)) openTitle(app.t); else bump(document.querySelector('#screen .fx.f'), 0, 0);
       return true;
     case 'x': {
+      if (onBoard()) { if (listHas(app.t)) togglePin(); else bump(document.querySelector('#screen .fx.f'), 0, 0); return true; }
       const t = app.platform?.titles[app.t];
       if (t && listHas(app.t) && t.launchable) void playTitle(t); else bump(document.querySelector('#screen .fx.f'), 0, 0);
       return true;
@@ -467,28 +610,9 @@ export function stalledGames(): Array<{ t: Title; days: number }> {
 const STALLED_CHOICES: Array<GameStatus | 'keep'> = ['pending', 'dropped', 'keep'];
 export const STALLED_LABEL = ['Pendiente', 'Abandonado', 'Dejarlo'];
 
-/** Al arrancar: cambia solos los juegos parados o, con «Preguntar», abre una sola tarjeta con todos. */
+/** Antes abría la tarjeta de juegos parados; ahora no hace nada (se conserva por compatibilidad). */
 export async function checkStalled() {
-  if (!app.config.listStalled) return;
-  const list = stalledGames();
-  if (!list.length) return;
-  const act = app.config.listStalledAction;
-  if (act !== 'ask') {
-    let n = 0;
-    for (const { t } of list) if (await setStatus(t, act)) n++;
-    if (n) toast(`${n === 1 ? '1 juego parado pasa' : `${n} juegos parados pasan`} a ${STATUS_LABEL[act]}`, 5200);
-    return;
-  }
-  // Sin molestar: la tarjeta espera a que la app esté en Inicio y sin paneles abiertos (unos segundos como mucho).
-  for (let k = 0; k < 20; k++) {
-    if (app.view === 'home' && !app.overlay && !app.osk.open && !app.playing && !app.learn) break;
-    await new Promise((r) => setTimeout(r, 3000));
-    if (k === 19) return;
-  }
-  const again = stalledGames();
-  if (!again.length) return;
-  app.stalled = { rows: again.map(({ t, days }) => ({ id: t.id, name: t.name, days, choice: 2 })), row: 0 };
-  pushOverlay('stalled');
+  // Ya no hay preguntas: el tablero de «Mi lista» aparca solo los juegos y avisa en la portada.
 }
 
 async function stalledApply() {

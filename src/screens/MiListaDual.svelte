@@ -1,373 +1,270 @@
 <script lang="ts">
-  import { app, LIST_COLOR } from '../lib/store.svelte';
-  import { ICON } from '../lib/icons';
+  import { app } from '../lib/store.svelte';
+  import { buildBoard } from '../lib/milista.svelte';
   import { fmtDur } from '../lib/format';
   import Thumb from '../components/Thumb.svelte';
 
-  const P = $derived(app.platform);
-  const titles = $derived(P?.titles ?? []);
-
-  // Juegos clasificados
-  const playing = $derived(
-    titles
-      .map((t, i) => ({ t, i }))
-      .filter(({ t }) => !t.hidden && !t.members && t.status === 'playing')
-  );
-
-  const dropped = $derived(
-    titles
-      .map((t, i) => ({ t, i }))
-      .filter(({ t }) => !t.hidden && !t.members && t.status === 'dropped')
-  );
-
-  const pending = $derived(
-    titles
-      .map((t, i) => ({ t, i }))
-      .filter(({ t }) => !t.hidden && !t.members && t.status === 'pending')
-      .sort((a, b) => (a.t.listPos ?? 1e9) - (b.t.listPos ?? 1e9) || a.t.name.localeCompare(b.t.name))
-  );
-
+  const titles = $derived(app.platform?.titles ?? []);
+  // Las franjas se recalculan al cambiar estados, fijados o la categoría (nunca mezclan categorías).
+  const bands = $derived(buildBoard());
 
   const coverOf = (i: number) => titles[i]?.cover ?? titles[i]?.shots[0]?.path ?? null;
+
+  const hours = (sec: number) => (sec < 3600 ? fmtDur(sec) : `${Math.round(sec / 3600)} h`);
+  const ago = (d: number) =>
+    d <= 0 ? 'hoy' : d === 1 ? 'ayer' : d < 30 ? `hace ${d} días` : d < 365 ? `hace ${Math.round(d / 30)} meses` : `hace ${Math.round(d / 365)} ${Math.round(d / 365) === 1 ? 'año' : 'años'}`;
+
+  /** Mantiene a la vista la portada enfocada dentro de su franja (cada franja se desplaza sola). */
+  $effect(() => {
+    void app.focus;
+    queueMicrotask(() => {
+      const el = document.querySelector<HTMLElement>('#screen .it.f');
+      const box = el?.closest<HTMLElement>('.its');
+      if (!el || !box) return;
+      const e = el.getBoundingClientRect(), b = box.getBoundingClientRect();
+      const k = e.width / el.offsetWidth || 1;
+      const pad = 24 * k;
+      if (e.left < b.left + pad) box.scrollTo({ left: box.scrollLeft - (b.left + pad - e.left) / k, behavior: 'smooth' });
+      else if (e.right > b.right - pad) box.scrollTo({ left: box.scrollLeft + (e.right - (b.right - pad)) / k, behavior: 'smooth' });
+    });
+  });
 </script>
 
-<div class="milista-dual">
-  <!-- BANDA SUPERIOR DUAL (Jugando a la izquierda + Pausa/Terminados a la derecha) -->
-  <div class="top-dual-row">
-    
-    <!-- Columna Izquierda: JUGANDO AHORA -->
-    <div class="dual-col col-playing">
-      <div class="col-head">
-        <span class="stag playing">
-          <span class="sic">{@html ICON.play}</span>
-          <b>Jugando ahora</b>
-          <span class="cnt">{playing.length}</span>
-        </span>
-        {#if playing.length}
-          <span class="subtext">
-            {playing.reduce((s, { t }) => s + (t.playSeconds || 0), 0) >= 60 ? fmtDur(playing.reduce((s, { t }) => s + (t.playSeconds || 0), 0)) : ''}
-          </span>
-        {/if}
-      </div>
-
-      <div class="glass dual-box">
-        <div class="face dual-cards">
-          {#if !playing.length}
-            <div class="empty-msg">
-              <p>Ningún juego en curso</p>
-              <small>Usa Y en la ficha de un juego para marcarlo como «Jugando»</small>
-            </div>
-          {:else}
-            {#each playing as { t, i } (t.id)}
-              {@const acc = app.titleAcc(app.p, i)}
-              <div
-                class="glass mini-play-card fx"
-                class:f={app.focus === 'tit' + i}
-                data-k="tit{i}"
-                data-act="tit:{i}"
-                style="--acc:{acc.c}"
-              >
-                <div class="face">
-                  {#if coverOf(i)}
-                    <Thumb path={coverOf(i)!} />
-                  {:else}
-                    <div class="noart"><b>{t.name}</b></div>
-                  {/if}
-                </div>
-              </div>
-            {/each}
+<div class="board">
+  {#each bands as band (band.key)}
+    <section class="band st-{band.key}" data-band={band.key} style="--c:{band.color}">
+      <div class="vt"><span>{band.label}</span></div>
+      <div class="its">
+        {#each band.items as it (it.ti)}
+          {@const t = titles[it.ti]}
+          {#if band.key === 'done' && it.yearStart}
+            <div class="ysep">{it.year || 'Sin fecha'}</div>
           {/if}
-        </div>
-      </div>
-    </div>
-
-    <!-- Columna Derecha: EN PAUSA / ABANDONADOS + BANNER TERMINADOS -->
-    <div class="dual-col col-dropped">
-      <div class="col-head">
-        <span class="stag dropped">
-          <span class="sic">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10 15V9m4 6V9"/></svg>
-          </span>
-          <b>En pausa</b>
-          <span class="cnt">{dropped.length}</span>
-        </span>
-      </div>
-
-      <div class="glass dual-box">
-        <div class="face dual-cards">
-          {#if !dropped.length}
-            <div class="empty-msg compact">
-              <p>Sin juegos en pausa</p>
-            </div>
-          {:else}
-            {#each dropped as { t, i } (t.id)}
-              {@const acc = app.titleAcc(app.p, i)}
-              <div
-                class="glass mini-play-card dropped-card fx"
-                class:f={app.focus === 'tit' + i}
-                data-k="tit{i}"
-                data-act="tit:{i}"
-                style="--acc:{acc.c}"
-              >
-                <div class="face">
-                  {#if coverOf(i)}
-                    <Thumb path={coverOf(i)!} />
-                  {:else}
-                    <div class="noart"><b>{t.name}</b></div>
-                  {/if}
-                </div>
-              </div>
-            {/each}
-          {/if}
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- BANDA INFERIOR (Gran Balda de Pendientes con ancho completo) -->
-  <div class="pending-section">
-    <div class="col-head">
-      <span class="stag pending">
-        <span class="sic">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-        </span>
-        <b>Cola de Pendientes</b>
-        <span class="cnt">{pending.length}</span>
-      </span>
-    </div>
-
-    <div class="glass pending-box">
-      <div class="face pending-track">
-        {#if !pending.length}
-          <div class="empty-msg wide">
-            <p>No tienes juegos pendientes en {P?.name}</p>
-            <small>En la ficha de cualquier juego, pulsa Y › Estado para añadirlo a tu cola de pendientes.</small>
-          </div>
-        {:else}
-          {#each pending as { t, i } (t.id)}
-            {@const acc = app.titleAcc(app.p, i)}
-            <div
-              class="glass pend-cover-card fx"
-              class:f={app.focus === 'tit' + i}
-              data-k="tit{i}"
-              data-act="tit:{i}"
-              style="--acc:{acc.c}"
-            >
-              <div class="face">
-                {#if coverOf(i)}
-                  <Thumb path={coverOf(i)!} />
+          <div
+            class="it fx"
+            class:f={app.focus === 'tit' + it.ti}
+            class:compact={band.compact}
+            data-k="tit{it.ti}"
+            data-act="tit:{it.ti}"
+          >
+            <div class="cv">
+              <div class="fc">
+                {#if coverOf(it.ti)}
+                  <Thumb path={coverOf(it.ti)!} />
                 {:else}
                   <div class="noart"><b>{t.name}</b></div>
                 {/if}
-                <div class="p-name">{t.name}</div>
               </div>
+              {#if it.pin}
+                <span class="bd pin" title="Fijado">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 3 3v2h-4v6l-1 1-1-1v-6H7v-2l3-3z" fill="currentColor" /></svg>
+                </span>
+              {:else if band.key === 'done'}
+                <span class="bd chk" title="Terminado">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </span>
+              {/if}
             </div>
-          {/each}
-        {/if}
+            <div class="tx">
+              <b>{t.name}</b>
+              {#if band.key === 'pend'}
+                <small>sin empezar</small>
+              {:else if band.key === 'done'}
+                <small>{hours(t.playSeconds ?? 0)}</small>
+              {:else if t.status === 'dropped'}
+                <small>abandonado</small>
+              {:else}
+                <small>{hours(t.playSeconds ?? 0)} · {ago(it.days)}</small>
+              {/if}
+              {#if it.warn}
+                <span class="wtxt">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4" /><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></svg>
+                  Se aparca en {it.warn} d
+                </span>
+              {:else if it.pin}
+                <span class="ptxt">Fijado</span>
+              {/if}
+            </div>
+          </div>
+        {/each}
       </div>
-    </div>
-  </div>
+    </section>
+  {/each}
+  {#if !bands.length}
+    <div class="vacio">Aún no hay juegos en tu lista. Marca el estado de un juego con Y.</div>
+  {/if}
 </div>
 
 <style>
-  .milista-dual {
+  .board {
     position: absolute;
-    left: 80px;
-    right: 80px;
-    top: 118px;
-    bottom: 56px;
+    left: 40px;
+    right: 40px;
+    top: 112px;
+    bottom: 44px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 6px;
     user-select: none;
   }
-
-  /* Filas y columnas */
-  .top-dual-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    height: 206px;
-  }
-  .dual-col {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 0;
-  }
-  .col-head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    height: 32px;
-  }
-
-  /* Tags de estado */
-  .stag {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    height: 30px;
-    padding: 0 12px 0 8px;
-    border-radius: 999px;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 800;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  }
-  .stag.playing { background: var(--st-playing, #3BB54A); }
-  .stag.dropped { background: var(--st-dropped, #718096); }
-  .stag.pending { background: var(--st-pending, #F27A1A); }
-  .stag .sic { display: grid; place-items: center; }
-  .stag .sic :global(svg) { width: 14px; height: 14px; }
-  .stag .cnt {
-    font-size: 11px;
-    padding: 1px 6px;
-    border-radius: 999px;
-    background: rgba(0,0,0,0.2);
-  }
-  .subtext {
-    font-size: 13px;
-    font-weight: 700;
-    color: #718096;
-    margin-left: auto;
-  }
-
-  /* Cajas de cristal */
-  .dual-box {
-    position: relative !important;
-    left: auto !important;
-    top: auto !important;
-    width: 100% !important;
-    height: 168px !important;
-    --r: 20px;
-    --bw: 6px;
-  }
-  .dual-box > .face {
-    width: 100% !important;
-    height: 100% !important;
-  }
-  .dual-cards {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    overflow-x: auto;
-    background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(240,244,250,0.55));
-  }
-
-  /* Tarjetas pequeñas de jugando / pausa */
-  .mini-play-card {
-    position: relative !important;
-    left: auto !important;
-    top: auto !important;
-    width: 108px !important;
-    height: 144px !important;
-    flex: none !important;
-    cursor: pointer;
-    --r: 15px;
-    --bw: 5px;
-  }
-  .mini-play-card .face {
+  .band {
     position: relative;
-    border-radius: 10px;
+    flex: none;
+    height: 108px;
+    border-radius: var(--r-m);
     overflow: hidden;
-    background: #cbd5e1;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--c) 16%, var(--glass-top)), var(--glass-mid) 60%);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
-  .dropped-card {
-    opacity: 0.88;
-  }
-
-  /* Gran balda de Pendientes */
-  .pending-section {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-height: 0;
-  }
-  .pending-box {
-    position: relative !important;
-    left: auto !important;
-    top: auto !important;
-    width: 100% !important;
-    flex: 1;
-    --r: 22px;
-    --bw: 6px;
-  }
-  .pending-box > .face {
-    width: 100% !important;
-    height: 100% !important;
-  }
-  .pending-track {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 10px 16px;
-    overflow-x: auto;
-    background: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(238,242,248,0.6));
-  }
-
-  .pend-cover-card {
-    position: relative !important;
-    left: auto !important;
-    top: auto !important;
-    width: 108px !important;
-    height: 146px !important;
-    flex: none !important;
-    cursor: pointer;
-    --r: 16px;
-    --bw: 5px;
-  }
-  .pend-cover-card .face {
-    position: relative;
-    border-radius: 11px;
-    overflow: hidden;
-    background: #cbd5e1;
-  }
-  .pend-cover-card .p-name {
+  .st-run { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 30%, var(--glass-top)), var(--glass-mid) 65%); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent), 0 6px 18px -10px var(--c); }
+  .st-park .its { filter: saturate(0.35); opacity: 0.86; }
+  .st-done .its { filter: saturate(0.1); opacity: 0.66; }
+  .st-done .its :global(.it.f), .st-park .its :global(.it.f) { filter: none; }
+  .vt {
     position: absolute;
-    inset: 0;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 40px;
     display: flex;
-    align-items: flex-end;
-    padding: 6px;
-    background: linear-gradient(180deg, transparent 40%, rgba(15,23,42,0.88) 100%);
-    color: #fff;
-    font-size: 11px;
-    font-weight: 800;
-    line-height: 1.15;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-  }
-
-  /* Mensajes vacíos */
-  .empty-msg {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    text-align: center;
-    color: #64748b;
+    background: var(--c);
+    color: white;
   }
-  .empty-msg p { margin: 0 0 2px; font-weight: 800; font-size: 14px; }
-  .empty-msg small { font-size: 12px; }
-  .empty-msg.compact p { font-size: 13px; }
-  .empty-msg.wide { height: 100%; }
-
-  .noart {
+  .vt span {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .its {
     position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    padding: 6px;
+    left: 52px;
+    right: 10px;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+  }
+  .it {
+    display: flex;
+    flex: none;
+    gap: 9px;
+    height: 100px;
+    padding: 0 10px 0 0;
+    border-radius: 14px;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s;
+  }
+  .it.f {
+    background: var(--glass-chip);
+    box-shadow: var(--ring);
+    z-index: 2;
+  }
+  .cv {
+    position: relative;
+    flex: none;
+    width: 68px;
+    height: 100px;
+    padding: 4px;
+    box-sizing: border-box;
+    border-radius: 14px;
+    transition: transform 0.15s;
+  }
+  .it.f .cv { transform: scale(1.03); }
+  .fc {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--face);
+    box-shadow: 0 0 0 1px var(--line);
+  }
+  .fc :global(.tin) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .noart {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    box-sizing: border-box;
     text-align: center;
-    color: #475569;
-    font-size: 11px;
+    font-size: 10px;
+    color: var(--ink-2);
+    overflow: hidden;
+  }
+  .bd {
+    position: absolute;
+    right: -2px;
+    top: -2px;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--r-pill);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 0 0 2px var(--glass-chip);
+  }
+  .bd svg { width: 12px; height: 12px; }
+  .bd.pin { background: var(--g2); }
+  .bd.chk { background: var(--c); }
+  .tx {
+    width: 104px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+  }
+  .it.compact .tx { width: 72px; }
+  .tx b {
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.15;
+    color: var(--ink);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .tx small { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+  .wtxt, .ptxt {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11.5px;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+  .wtxt { color: var(--warn); filter: brightness(0.8); }
+  .wtxt svg { width: 12px; height: 12px; flex: none; }
+  .ptxt { color: var(--g2); }
+  .ysep {
+    flex: none;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    padding: 0 6px 0 10px;
+    margin-left: 4px;
+    border-left: 2px solid color-mix(in srgb, var(--c) 30%, transparent);
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--ink-2);
+  }
+  .vacio {
+    margin: auto;
+    font-size: var(--t-m);
+    color: var(--ink-3);
   }
 </style>

@@ -246,7 +246,7 @@ function parse(path: string): { pid: string; name: string; idx: number | 'cover'
 function mockStates(lib: Library): Record<string, { status: string; finishedMs?: number; rating?: number; listPos?: number; statusMs: number }> {
   const out: Record<string, { status: string; finishedMs?: number; rating?: number; listPos?: number; statusMs: number }> = {};
   const idOf = (pid: string, name: string) => lib.platforms.find((p) => p.id === pid)?.titles.find((t) => t.name === name)?.id;
-  const put = (pid: string, name: string, v: Omit<(typeof out)[string], 'statusMs'>) => { const id = idOf(pid, name); if (id) out[id] = { ...v, statusMs: NOW - 2 * 864e5 }; };
+  const put = (pid: string, name: string, v: Omit<(typeof out)[string], 'statusMs'>, ago = 2) => { const id = idOf(pid, name); if (id) out[id] = { ...v, statusMs: NOW - ago * 864e5 }; };
   const d = (y: number, m: number, day: number) => Date.UTC(y, m - 1, day, 12);
   for (const n of ['Elden Ring', 'Hades II', 'Hollow Knight']) put('pc', n, { status: 'playing' });
   ['Disco Elysium', "Baldur's Gate 3", 'Outer Wilds', 'Sekiro'].forEach((n, i) => put('pc', n, { status: 'pending', listPos: i + 1 }));
@@ -258,6 +258,11 @@ function mockStates(lib: Library): Record<string, { status: string; finishedMs?:
   put('pc', 'Hi-Fi Rush', { status: 'finished', finishedMs: d(2024, 6, 21), rating: 4 });
   put('pc', 'Dave the Diver', { status: 'finished' });
   put('pc', 'Cyberpunk 2077', { status: 'dropped' });
+  // Para ver todas las franjas de «Mi lista»: jugando desde hace 40, 84 y 200 días, y otro abandonado.
+  put('pc', 'Sekiro', { status: 'playing' }, 200);
+  put('pc', 'Outer Wilds', { status: 'playing' }, 84);
+  put('pc', 'Disco Elysium', { status: 'playing' }, 40);
+  put('pc', 'Hades', { status: 'dropped' }, 120);
   put('switch', 'Zelda: Tears of the Kingdom', { status: 'playing' });
   put('switch', 'Xenoblade Chronicles 3', { status: 'pending', listPos: 5 });
   put('switch', 'Metroid Dread', { status: 'finished', finishedMs: d(2024, 10, 15), rating: 5 });
@@ -408,7 +413,10 @@ export async function mockBackend(): Promise<Backend> {
   }
   return {
     isTauri: false,
-    async getGameAchievements(gameId: string) { return MOCK_ACHIEVEMENTS; },
+    async getGameAchievements(gameId: string) {
+      const pcts = [62, 48, 71, 33, 3.4, 18, 41, 9.8, 27, 55, 22, 66, 84, 91, 2.1, 7.5, 14, 36, 4.2, 11, 29, 1.6, 6.3, 0.9];
+      return MOCK_ACHIEVEMENTS.map((a, i) => ({ ...a, rarityPct: pcts[i % pcts.length] }));
+    },
     async getAchievementsSummary(gameId: string) { return getMockSummary(gameId); },
     async setAchievementsCardVariant(gameId: string, variant: number) { mockCardVariants.set(gameId, variant); },
     async getAchievementsCardVariant(gameId: string) { return mockCardVariants.get(gameId) ?? 1; },
