@@ -3,7 +3,8 @@
   import { ICON } from '../lib/icons';
   import { fmtAgo, fmtDur, fmtShort, nCapturas } from '../lib/format';
   import { untrack } from 'svelte';
-  import { backend, decodeImg, thumbNow, thumbReady } from '../lib/backend';
+  import { backend, thumbNow } from '../lib/backend';
+  import { ambBlur, ambBlurNow, ambPaint } from '../lib/ambblur';
   import { setFocus, titlesGrid, viewPos } from '../lib/controller.svelte';
   import { titleHex } from '../lib/collections';
   import { hexToRgb, rgbToLch } from '../lib/oklch';
@@ -96,7 +97,7 @@
   });
   const ambSrc = (t: typeof cur | undefined) => (t ? (t.hero ?? t.cover ?? t.shots[0]?.path ?? null) : null);
   let lid = 0;
-  const firstAmb = untrack(() => { const p = ambSrc(ambTitle); const u = p ? thumbNow(p) : undefined; return u && thumbReady(u) ? u : ''; });
+  const firstAmb = untrack(() => { const p = ambSrc(ambTitle); const u = p ? thumbNow(p) : undefined; return u && ambBlurNow(u) ? u : ''; });
   // `still`: capa pintada al montar con una imagen ya cargada (sin fundido de entrada).
   let layers = $state<Array<{ u: string; id: number; still?: boolean }>>(firstAmb ? [{ u: firstAmb, id: ++lid, still: true }] : []);
   let ambOff = $state(false);
@@ -110,13 +111,13 @@
     }
     const t = setTimeout(() => {
       backend.thumb(src, ctl.signal).then(async (u) => {
-        await decodeImg(u);
-        if (ctl.signal.aborted) return;
+        const c = await ambBlur(u);
+        if (ctl.signal.aborted || !c) return;
         ambOff = false;
         if (untrack(() => layers.at(-1)?.u) === u) return;
         layers = [...untrack(() => layers).slice(-2), { u, id: ++lid }];
       }, () => {});
-    }, 90);
+    }, 160);
     return () => { clearTimeout(t); ctl.abort(); };
   });
   /** La capa `id` terminó de entrar: las de debajo ya no se ven. */
@@ -199,7 +200,7 @@
 {/snippet}
 
 <div class="amb" class:car={!grid} class:off={ambOff}>
-  {#each layers as l (l.id)}<div class="amblayer" class:still={l.still} style="background-image:url({l.u})" onanimationend={() => settled(l.id)}></div>{/each}
+  {#each layers as l (l.id)}<canvas class="amblayer" class:still={l.still} use:ambPaint={l.u} onanimationend={() => settled(l.id)}></canvas>{/each}
 </div>
 <div class="ambwash" style={wash}></div>
 <TopBar crumbs={['Inicio', P?.name ?? '']} dots={grid && tab === 'all' ? pages : 0} dot={pg} />

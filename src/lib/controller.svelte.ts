@@ -290,8 +290,8 @@ export function intro(root: HTMLElement) {
   els.forEach(({ e }, k) => {
     try {
       e.animate(
-        [{ opacity: 0, translate: '0 16px', scale: 0.9 }, { opacity: 1, translate: '0 0', scale: 1 }],
-        { duration: 380, delay: 60 + Math.min(k, 12) * 28, easing: 'cubic-bezier(.34,1.4,.64,1)', fill: 'backwards' },
+        [{ opacity: 0.35, translate: '0 10px', scale: 0.95 }, { opacity: 1, translate: '0 0', scale: 1 }],
+        { duration: 320, delay: 30 + Math.min(k, 8) * 22, easing: 'cubic-bezier(.34,1.4,.64,1)', fill: 'backwards' },
       );
     } catch {
       /* sin animaciones web */

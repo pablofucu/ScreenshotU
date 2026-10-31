@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { app } from './lib/store.svelte';
   import { learnKeydown } from './lib/learn.svelte';
   import { boot, onKeyDown, onScreenClick, onScreenDblClick, onScreenMove, startGamepad, startMouse, hideToast, cmd, intro } from './lib/controller.svelte';
@@ -58,6 +58,9 @@
 
   let curAtmos: { h1: number; h2: number } | null = null;
   let atmosRaf = 0;
+  // Al cambiar de pantalla el color salta directo: degradarlo 700 ms repintaba todo el escenario
+  // a la vez que la entrada de la pantalla nueva.
+  let atmosKey = -1;
 
   // Las variables van en el propio atributo style del escenario: con setProperty se perdían cada vez que
   // Svelte reescribía el style (al cambiar el tamaño de la ventana).
@@ -75,7 +78,10 @@
     }
     cancelAnimationFrame(atmosRaf);
     const reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) {
+    const key = untrack(() => app.animKey);
+    const jump = key !== atmosKey;
+    atmosKey = key;
+    if (reduced || jump) {
       curAtmos = { ...target };
       applyAtmos(variablesCSS(curAtmos.h1, curAtmos.h2));
       return;
@@ -98,6 +104,8 @@
     atmosRaf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(atmosRaf);
   });
+  // Va después del efecto anterior: un cambio de pantalla sin cambio de color no cuenta para el siguiente.
+  $effect(() => { atmosKey = app.animKey; });
 
   // Hints de los paneles (fuera de #screen y del teclado en pantalla, que ya atienden los suyos).
   function onStageClick(e: MouseEvent) {

@@ -1,4 +1,4 @@
-@import './assets/fonts.css';
+﻿@import './assets/fonts.css';
 
 :root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI','Yu Gothic UI','Meiryo UI','Hiragino Maru Gothic ProN',system-ui,sans-serif;color-scheme:light}
 *{box-sizing:border-box}
@@ -85,8 +85,8 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .pill{-webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);
   background:linear-gradient(180deg,rgba(255,255,255,.80),rgba(255,255,255,.52));
   box-shadow:inset 0 1px 0 var(--glass-top),inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
-@keyframes enterFwd{from{opacity:0;transform:scale(.965)}to{opacity:1;transform:none}}
-@keyframes enterBack{from{opacity:0;transform:scale(1.035)}to{opacity:1;transform:none}}
+@keyframes enterFwd{from{opacity:.5;transform:scale(.975)}to{opacity:1;transform:none}}
+@keyframes enterBack{from{opacity:.5;transform:scale(1.025)}to{opacity:1;transform:none}}
 .screen.fwd{animation:enterFwd .28s cubic-bezier(.2,.8,.3,1)}
 .screen.back{animation:enterBack .28s cubic-bezier(.2,.8,.3,1)}
 
@@ -480,7 +480,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .amb{transition:opacity .6s ease}
 .amb.off{opacity:0}
 /* Cada capa nueva entra encima con un fundido; las de debajo se quitan al terminar (fundido cruzado sin cortes). */
-.amblayer{position:absolute;inset:-70px;background-size:cover;background-position:center;filter:blur(44px) saturate(1.4);opacity:.5;animation:ambin .7s ease both}
+.amblayer{position:absolute;inset:0;width:100%;height:100%;opacity:.5;animation:ambin .7s ease both}
 .amblayer.still{animation:none}
 .amb::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(236,238,242,.1) 0%,rgba(236,238,242,.55) 45%,rgba(236,238,242,.88) 100%)}
 .amb.car .amblayer{opacity:.45}
