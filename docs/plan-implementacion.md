@@ -62,6 +62,7 @@ Estado: **planificación terminada a falta de 4 decisiones; no se ha programado 
 ### Qué hay en `mockups/` (todo subido a GitHub)
 - `milista-v3.html` → **elegida la propuesta 3, Tablero de franjas** (resto descartadas).
 - `sistema-v4.html` → 9 vistas (teclas 1-9, `D` cambia claro/oscuro): V1 Cristal teñido, V2 Hilo nácar, V3 Atmósfera, algoritmo de dos tonos (`--g1`, `--g2`, `--grad`), dosis, 12 portadas, **Noche ahumada** (modo oscuro oficial), constitución (10 reglas) y código (`extraerDosTonos`, `tonosDelJuego`, `variablesCSS(h1,h2,modo)`).
+- `sistema-v5.html` → arcoíris ordenado fuera de los juegos (modo claro, dosis V3 Atmósfera), 3 opciones a comparar (teclas 1-3): **por sección** (recomendada), por posición en pantalla, por orden de la lista. Incluye la transición al entrar/salir de un juego (cada juego conserva su pareja g1/g2).
 - `sistema-v3.html` → **rechazado** (el degradado solo salía en barras de progreso y el foco usaba el arcoíris global).
 - `logros-1-lista`, `logros-2-mosaico`, `logros-3-rareza` → sin elegir.
 - `propuesta-1..3.html` son ficheros propios del usuario (sin versionar; no tocar).
