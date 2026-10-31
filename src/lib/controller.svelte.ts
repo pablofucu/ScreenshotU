@@ -14,9 +14,9 @@ import { tgrid, TZOOM_MAX } from './tgrid';
 import { EVO_KINDS, GMETRICS, STATS_KINDS } from './stats';
 import { editSgdbKey, openSgdbPicker, openSgdbTitles, sgdbAuto, sgdbCmd, sgdbTitlesCmd, toggleSgdbAuto } from './sgdb.svelte';
 import { AUDIO_COMBO_PRESETS, AUDIO_HOTKEY_PRESETS, COMBO_PRESETS, HOTKEY_PRESETS, MOUSE_PRESETS, learnKeydown, learnMouse, onLearnPad, startLearn } from './learn.svelte';
-import { READING_ROWS, isReadingId, readingAct, type ReadingId } from './reading.svelte';
+import { READING_CYCLE, READING_ROWS, isReadingId, readingAct, type ReadingId } from './reading.svelte';
 import { checkUpdate, updateAct } from './updater.svelte';
-import { isRemoteId, remoteAct, type RemoteId } from './remote.svelte';
+import { REMOTE_CYCLE, isRemoteId, remoteAct, type RemoteId } from './remote.svelte';
 import { openPhrases, phrasesCmd } from './phrases.svelte';
 import { goalMinLeft, goalTrack, localDay, RESCUE_MIN_PLAY, type GoalKey } from './readgoals';
 import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
@@ -1211,58 +1211,59 @@ export type SettingId =
   | 'sgdbkey' | 'sgdbauto' | 'sgdbnow' | 'sgdbgame'
   | 'backup' | 'backupmedia' | 'restore' | 'autobackup'
   | 'savesauto' | 'ludusavi' | 'inputmouse' | 'inputkeys' | 'update'
-  | 'liststalled' | 'liststalleddays' | 'liststalledact' | 'listautoplay'
+  | 'liststalled' | 'liststalleddays' | 'liststalledact' | 'listautoplay' | 'theme'
   | ReadingId | RemoteId;
-/** Secciones de Ajustes (LB/RB las recorren). `color` es el índice del arcoíris. Consolidado en 5 grupos limpios. */
-export const SETTING_SECTIONS: Array<{ name: string; icon: string; color: number; rows: SettingId[] }> = [
+/** Secciones de Ajustes (LB/RB las recorren). `t` es la posición en el arcoíris (0..1) que da su color. */
+export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[] }> = [
   {
-    name: 'Biblioteca y Juegos',
-    icon: 'folder',
-    color: 0,
-    rows: [
-      'root', 'rescan', 'addgame', 'hidden', 'showhidden',
-      'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay',
-      'magpieexe', 'magpie',
-      'savesauto', 'ludusavi', 'inputmouse', 'inputkeys',
-    ],
-  },
-  {
-    name: 'Capturas y Grabación',
-    icon: 'camera',
-    color: 3,
-    rows: [
-      'combo', 'mouse', 'hotkey',
-      'capsound', 'cappeek', 'caprumble', 'caponly',
-      'audioout', 'audiocombo', 'audiohotkey',
-    ],
+    name: 'General',
+    t: 0,
+    rows: ['sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey'],
   },
   {
     name: 'Apariencia',
-    icon: 'palette',
-    color: 1,
+    t: 0.2,
     rows: [
-      'achcardvariant', 'view', 'shotsview', 'shotsorder', 'collstyle',
+      'theme', 'achcardvariant', 'view', 'shotsview', 'shotsorder', 'collstyle',
       'sgdbkey', 'sgdbauto', 'sgdbnow', 'sgdbgame',
     ],
   },
   {
-    name: 'Lectura y Japonés',
-    icon: 'jvn',
-    color: 5,
-    rows: READING_ROWS,
-  },
-  {
-    name: 'Sistema y Copias',
-    icon: 'gear',
-    color: 2,
+    name: 'Mando',
+    t: 0.4,
     rows: [
-      'backup', 'backupmedia', 'restore', 'autobackup',
+      'combo', 'mouse', 'hotkey',
+      'capsound', 'cappeek', 'caprumble', 'caponly',
+      'magpieexe', 'magpie',
       'remoteon', 'remoteaddr', 'remotecode', 'remotehelp',
-      'sound', 'fullscreen', 'monitor', 'oncursor',
-      'update', 'quit',
     ],
   },
+  {
+    name: 'Biblioteca',
+    t: 0.6,
+    rows: [
+      'root', 'rescan', 'addgame', 'hidden', 'showhidden',
+      'savesauto', 'ludusavi', 'inputmouse', 'inputkeys',
+      'backup', 'backupmedia', 'restore', 'autobackup',
+      ...READING_ROWS,
+    ],
+  },
+  {
+    name: 'Mi lista',
+    t: 0.8,
+    rows: ['liststalled', 'liststalleddays', 'liststalledact', 'listautoplay'],
+  },
+  {
+    name: 'Acerca de',
+    t: 1,
+    rows: ['update', 'quit'],
+  },
 ];
+/** Filas que cambian de valor con izquierda/derecha (se marcan con ‹ ›). Las demás son acciones: izquierda vuelve al menú. */
+export const CYCLE = new Set<SettingId>(['theme', 'showhidden', 'view', 'shotsview', 'shotsorder', 'collstyle', 'achcardvariant', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'inputmouse', 'inputkeys', 'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay']);
+export const rowHasArrows = (id: SettingId | undefined) => !!id && (CYCLE.has(id) || READING_CYCLE.has(id as never) || REMOTE_CYCLE.has(id as never));
+/** Zona de foco en Ajustes: el menú de secciones o la lista de opciones. */
+export const setNav = $state({ zone: 'menu' as 'menu' | 'body' });
 const secRows = () => SETTING_SECTIONS[app.setSec]?.rows ?? [];
 
 
@@ -1404,6 +1405,7 @@ export function openSettings() {
   app.overlay = 'settings';
   app.setRow = 0;
   app.setSec = 0;
+  setNav.zone = 'menu';
   blip(1320);
 }
 export function closeSettings() {
@@ -1447,6 +1449,7 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
     void patchConfig({ showHidden: !app.config.showHidden }).then(() => { markRefresh(); });
     blip(1320);
   }
+  else if (id === 'theme') { void patchConfig({ theme: app.config.theme === 'dark' ? 'light' : 'dark' }); blip(1320); }
   else if (id === 'view') toggleTitlesView();
   else if (id === 'shotsview') toggleShotsView();
   else if (id === 'shotsorder') { void patchConfig({ shotsOrder: app.config.shotsOrder === 'oldest' ? 'recent' : 'oldest' }); blip(1320); }
@@ -1524,9 +1527,20 @@ function overlayCmd(c: string) {
     case 'stalled': stalledCmd(c); return;
     case 'achievements': achievementsCmd(c); return;
   }
-  // Arriba/abajo pasan de una sección a la siguiente al llegar al borde; LB/RB (o LT/RT) saltan de sección.
+  // Menú (izquierda): arriba/abajo cambian de sección, derecha/A entran en la lista.
+  // Lista (derecha): arriba/abajo recorren opciones; izquierda cambia el valor o, en acciones, vuelve al menú; B vuelve al menú.
   const rows = secRows();
   if (c === 'up' || c === 'down') dropRestore();
+  if (setNav.zone === 'menu') {
+    if (c === 'up') setSection(app.setSec - 1);
+    else if (c === 'down') setSection(app.setSec + 1);
+    else if (c === 'right' || c === 'a') setNav.zone = 'body';
+    else if (c === 'lb' || c === 'lt') { setSection(app.setSec - 1); blip(700); }
+    else if (c === 'rb' || c === 'rt') { setSection(app.setSec + 1); blip(700); }
+    else if (c === 'b' || c === 'menu') closeSettings();
+    if (c === 'up' || c === 'down') blip(880);
+    return;
+  }
   if (c === 'up') {
     if (app.setRow > 0) app.setRow--;
     else if (app.setSec > 0) { setSection(app.setSec - 1); app.setRow = secRows().length - 1; }
@@ -1536,10 +1550,11 @@ function overlayCmd(c: string) {
   }
   else if (c === 'lb' || c === 'lt') { setSection(app.setSec - 1); blip(700); }
   else if (c === 'rb' || c === 'rt') { setSection(app.setSec + 1); blip(700); }
-  else if (c === 'left') settingsAct(rows[app.setRow], -1);
+  else if (c === 'left') { if (rowHasArrows(rows[app.setRow])) settingsAct(rows[app.setRow], -1); else { dropRestore(); setNav.zone = 'menu'; } }
   else if (c === 'right') settingsAct(rows[app.setRow], 1);
   else if (c === 'a') settingsAct(rows[app.setRow], 0);
-  else if (c === 'b' || c === 'menu') closeSettings();
+  else if (c === 'b') { dropRestore(); setNav.zone = 'menu'; }
+  else if (c === 'menu') closeSettings();
   if (c === 'up' || c === 'down') blip(880);
 }
 

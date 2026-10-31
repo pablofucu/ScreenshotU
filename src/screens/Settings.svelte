@@ -1,25 +1,22 @@
 <script lang="ts">
   import { app } from '../lib/store.svelte';
-  import { ICON, RAINBOW } from '../lib/icons';
+  import { pair, variablesCSS } from '../lib/atmos';
   import {
-    closeSettings, dropRestore, setSection, settingsAct, SETTING_SECTIONS, type SettingId,
+    closeSettings, dropRestore, rowHasArrows, setNav, setSection, settingsAct, SETTING_SECTIONS, type SettingId,
   } from '../lib/controller.svelte';
   import { comboLabel, hotkeyLabel, mouseLabel } from '../lib/learn.svelte';
   import { sg, sgdbKeyLabel } from '../lib/sgdb.svelte';
   import { ludusaviLabel } from '../lib/saves.svelte';
   import { lb } from '../lib/library.svelte';
-  import { READING_CYCLE, isReadingId, readingRow } from '../lib/reading.svelte';
+  import { isReadingId, readingRow } from '../lib/reading.svelte';
   import { updateRow } from '../lib/updater.svelte';
-  import { REMOTE_CYCLE, isRemoteId, remoteRow } from '../lib/remote.svelte';
+  import { isRemoteId, remoteRow } from '../lib/remote.svelte';
   import Learn from '../components/Learn.svelte';
   import Hints from '../components/Hints.svelte';
   import { makeMoved } from '../lib/pointer';
   import { VARIANT_NAMES } from '../lib/achievements.svelte';
 
   const yn = (b: boolean) => (b ? 'Sí' : 'No');
-
-  // Filas que cambian de valor con izquierda/derecha (se marcan con ‹ › al enfocarlas).
-  const CYCLE = new Set<SettingId>(['showhidden', 'view', 'shotsview', 'shotsorder', 'collstyle', 'achcardvariant', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'inputmouse', 'inputkeys', 'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay']);
 
   /** Contenido de cada fila (etiqueta, valor y ayuda). Se evalúa al pintar: depende del estado vivo de la app. */
   type Row = { l: string; v: string; d: string };
@@ -33,6 +30,7 @@
       const v = app.config.achievementsCardVariant ?? 1;
       return { l: 'Diseño de logros en la ficha', v: `${v} · ${VARIANT_NAMES[v] ?? 'Anillo'}`, d: 'Diseño visual con el que se muestra la tarjeta de logros en la ficha de todos tus juegos: 1 · Anillo dorado + último logro, 2 · Portada + banda inferior, 3 · Mosaico de la colección (todos los iconos), 4 · Medalla de rango, 7 · Contador rodillo u 8 · Por rareza. Cambia para todos los juegos a la vez.' };
     },
+    theme: () => ({ l: 'Tema', v: app.config.theme === 'dark' ? 'Noche ahumada' : 'Claro', d: 'Claro o Noche ahumada (oscuro). Cambia toda la interfaz a la vez; el color de cada sección y de cada juego se mantiene.' }),
     view: () => ({ l: 'Vista de títulos', v: app.config.titlesView === 'grid' ? 'Cuadrícula' : 'Carrusel', d: 'Cuadrícula paginada de 5×2 o carrusel con la portada enfocada en grande. También se cambia con Y en la lista.' }),
     shotsview: () => ({ l: 'Cuadrícula de capturas', v: app.config.shotsView === 'days' ? 'Agrupada por días' : 'Continua', d: 'Agrupada por días pone una cabecera por día (con lo que jugaste ese día) y una línea de tiempo por meses; LT/RT saltan de día. Solo con orden por fecha. También se cambia con el botón View.' }),
     shotsorder: () => ({ l: 'Orden de las capturas', v: app.config.shotsOrder === 'oldest' ? 'Más antiguas primero' : 'Más recientes primero', d: 'Orden con el que se abre cualquier lista de capturas: la de un juego, una saga, las favoritas o las agrupadas por días. Si un juego tiene su propio orden (Y en su lista de capturas), ese manda en ese juego.' }),
@@ -101,7 +99,9 @@
     else if (i >= o + VIS) o = i - VIS + 1;
     if (o !== off) off = o;
   });
-  const showArrows = (id: SettingId) => CYCLE.has(id) || READING_CYCLE.has(id as never) || REMOTE_CYCLE.has(id as never);
+  const showArrows = (id: SettingId) => rowHasArrows(id);
+  const vars = (t: number) => { const p = pair(t); return Object.entries(variablesCSS(p.h1, p.h2)).map(([k, v]) => `${k}:${v}`).join(';'); };
+  const dark = $derived(app.config.theme === 'dark');
   function wheel(e: WheelEvent) {
     if (rows.length <= VIS) return;
     e.preventDefault();
@@ -111,45 +111,85 @@
 
   const moved = makeMoved();
   function hover(e: MouseEvent, i: number) {
-    if (moved(e)) { if (app.setRow !== i) dropRestore(); app.setRow = i; }
+    if (moved(e)) { if (app.setRow !== i) dropRestore(); app.setRow = i; setNav.zone = 'body'; }
   }
 </script>
 
-<div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closeSettings(); }}>
-  <div class="glass setpanel secpanel" style="--acc:{RAINBOW[SETTING_SECTIONS[app.setSec].color].c};--acc-ink:{RAINBOW[SETTING_SECTIONS[app.setSec].color].dark ? '#3a2f00' : '#fff'}">
-    <div class="face">
-      <div class="scats">
+<div class="scrim st-scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closeSettings(); }}>
+  <div class="st-wrap" style={vars(sec.t)}>
+    <div class="glass st-menu">
+      <div class="face">
         <h2>Ajustes</h2>
         {#each SETTING_SECTIONS as s, k (s.name)}
-          <button type="button" class="scat" class:on={app.setSec === k} style="--c:{RAINBOW[s.color].c}" onclick={() => setSection(k)}>
-            <i>{@html ICON[s.icon]}</i>{s.name}
+          <button type="button" class="st-mrow" class:on={app.setSec === k} class:f={app.setSec === k && setNav.zone === 'menu'} style={vars(s.t)} onclick={() => { setSection(k); setNav.zone = 'menu'; }} onmousemove={() => { if (app.setSec !== k) setSection(k); setNav.zone = 'menu'; }}>
+            <i></i><span>{s.name}</span>
           </button>
         {/each}
       </div>
-      <div class="sbody">
+    </div>
+    <div class="glass st-body">
+      <div class="face">
         <h3>{sec.name}</h3>
         <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div class="srows" style="height:{VIS * RH}px" onwheel={wheel}>
-        <div class="srtrack" style="transform:translateY({-off * RH}px)">
+        <div class="st-rows" style="height:{VIS * RH}px" onwheel={wheel}>
+        <div class="st-track" style="transform:translateY({-off * RH}px)">
         {#each rows as r, i (r.id)}
-          <button type="button" class="srow" class:f={app.setRow === i} class:danger={r.id === 'quit' || (r.id === 'restore' && !!app.restoreReady)} data-set={r.id} onmousemove={(e) => hover(e, i)} onclick={() => { app.setRow = i; settingsAct(r.id, 0); }}>
+          <button type="button" class="st-row" class:f={app.setRow === i && setNav.zone === 'body'} class:cur={app.setRow === i} class:danger={r.id === 'quit' || (r.id === 'restore' && !!app.restoreReady)} data-set={r.id} onmousemove={(e) => hover(e, i)} onclick={() => { app.setRow = i; setNav.zone = 'body'; settingsAct(r.id, 0); }}>
             <span class="sl">{r.l}</span>
-            <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-            {#if showArrows(r.id)}<span class="sarr" class:hid={app.setRow !== i} onclick={(e) => { e.stopPropagation(); settingsAct(r.id, -1); }}>‹</span>{/if}
-            <span class="sv">{r.v}</span>
-            <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-            {#if showArrows(r.id)}<span class="sarr" class:hid={app.setRow !== i} onclick={(e) => { e.stopPropagation(); settingsAct(r.id, 1); }}>›</span>{/if}
+            {#if r.id === 'theme'}
+              <span class="seg"><span class:on={!dark}>Claro</span><span class:on={dark}>Noche ahumada</span></span>
+            {:else}
+              <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+              {#if showArrows(r.id)}<span class="sarr" class:hid={app.setRow !== i} onclick={(e) => { e.stopPropagation(); settingsAct(r.id, -1); }}>‹</span>{/if}
+              <span class="sv">{r.v}</span>
+              <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+              {#if showArrows(r.id)}<span class="sarr" class:hid={app.setRow !== i} onclick={(e) => { e.stopPropagation(); settingsAct(r.id, 1); }}>›</span>{/if}
+            {/if}
           </button>
         {/each}
         </div>
         </div>
         {#if rows.length > VIS}
-          <div class="sscroll2" style="top:{26 + 34 + 4}px;height:{VIS * RH}px"><i style="height:{(VIS / rows.length) * 100}%;top:{(off / rows.length) * 100}%"></i></div>
+          <div class="st-scroll" style="height:{VIS * RH}px"><i style="height:{(VIS / rows.length) * 100}%;top:{(off / rows.length) * 100}%"></i></div>
         {/if}
-        {#if focused}<div class="sdesc"><b>{focused.l}.</b> {focused.d}</div>{/if}
+        {#if focused}<div class="st-desc"><b>{focused.l}.</b> {focused.d}</div>{/if}
       </div>
     </div>
   </div>
-  <Hints list={[['LB/RB', 'Sección', 'rb'], ['A', 'Seleccionar', 'a'], ['B', 'Cerrar', 'b']]} />
+  <Hints list={[['LB/RB', 'Sección', 'rb'], ['A', 'Seleccionar', 'a'], ['B', setNav.zone === 'body' ? 'Menú' : 'Cerrar', 'b']]} />
   {#if app.learn}<Learn />{/if}
 </div>
+
+<style>
+  .st-scrim { background: var(--scrim); }
+  .st-wrap { position: absolute; inset: 0; }
+  .st-menu { left: 56px; top: 40px; width: 290px; height: 640px; --r: 36px; cursor: default; }
+  .st-body { left: 366px; top: 40px; width: 858px; height: 640px; --r: 36px; cursor: default; }
+  .st-menu .face, .st-body .face { background: var(--face-hi); color: var(--ink); display: flex; flex-direction: column; padding: 24px 22px; position: relative; }
+  .st-menu h2 { margin: 0 8px 16px; font-size: var(--t-2xl); font-weight: 800; color: var(--ink); }
+  .st-mrow { position: relative; flex: none; display: flex; align-items: center; gap: 14px; height: 56px; margin-bottom: 6px; padding: 0 16px; border: 0; border-radius: var(--r-m); background: transparent; font: inherit; font-size: var(--t-xl); font-weight: 700; color: var(--ink-2); text-align: left; cursor: pointer; transition: background .15s, color .15s; }
+  .st-mrow i { flex: none; width: 14px; height: 14px; border-radius: 50%; background: var(--grad); box-shadow: 0 0 0 2px var(--line); }
+  .st-mrow.on { background: var(--gf); color: var(--on); }
+  .st-mrow.on i { background: var(--on); box-shadow: none; }
+  .st-mrow.f { box-shadow: var(--ring); }
+  .st-body h3 { margin: 0 0 10px; font-size: var(--t-2xl); font-weight: 800; color: var(--ink); }
+  .st-rows { position: relative; overflow: hidden; flex: none; box-sizing: content-box; margin: -4px -8px 0; padding: 4px 8px 0; }
+  .st-track { transition: transform .2s cubic-bezier(.25, 1, .4, 1); }
+  .st-row { display: flex; align-items: center; gap: 12px; width: 100%; height: 52px; margin-bottom: 4px; padding: 0 20px; border: 0; border-radius: var(--r-m); background: var(--glass-in); font: inherit; font-size: var(--t-l); font-weight: 700; color: var(--ink); text-align: left; cursor: pointer; transition: background .15s, color .15s; }
+  .st-row .sl { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .st-row .sv { max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--ink-2); }
+  .st-row .sarr { flex: none; font-size: 22px; line-height: 1; padding: 0 4px; opacity: .85; }
+  .st-row .sarr.hid { visibility: hidden; }
+  .st-row.cur { background: var(--glass-chip); }
+  .st-row.f { background: var(--gf); color: var(--on); box-shadow: var(--ring); position: relative; z-index: 1; }
+  .st-row.f .sv { color: inherit; opacity: .92; }
+  .st-row.danger.f { background: var(--bad); color: var(--on); }
+  .seg { display: flex; padding: 3px; border-radius: var(--r-pill); background: var(--line); }
+  .seg span { padding: 5px 16px; border-radius: var(--r-pill); font-size: var(--t-m); font-weight: 700; color: var(--ink-2); }
+  .seg span.on { background: var(--gf); color: var(--on); }
+  .st-row.f .seg { background: var(--glass-in); }
+  .st-scroll { position: absolute; right: 8px; top: 98px; width: 5px; border-radius: 3px; background: var(--line); }
+  .st-scroll i { position: absolute; left: 0; right: 0; border-radius: 3px; background: var(--g2); }
+  .st-desc { flex: none; margin: auto 0 0; height: 124px; overflow: hidden; border-radius: var(--r-m); padding: 12px 18px; background: var(--glass-in); font-size: var(--t-s); font-weight: 500; line-height: 1.45; color: var(--ink-2); }
+  .st-desc b { color: var(--ink); font-weight: 800; }
+</style>
