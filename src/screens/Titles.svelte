@@ -224,6 +224,14 @@
     </div>
     <div class="side" class:off={pg === 0} data-hact="lb" style="left:12px">{@html ICON.arrowL}</div>
     <div class="side" class:off={pg >= pages - 1} data-hact="rb" style="right:12px">{@html ICON.arrowR}</div>
+    {#if tab === 'all' && pages > 1}
+      <!-- Barra de desplazamiento: tira del arcoíris de principio a fin de la lista; el tirador sigue al enfocado. -->
+      <div class="sbar rb" style="right:auto;left:1182px;top:214px;height:420px">
+        {#if app.titleOrder === 'az'}<em style="top:-20px">A</em>{/if}
+        <i style="height:70px;top:{(q / Math.max(1, slots - 1)) * 350}px"></i>
+        {#if app.titleOrder === 'az'}<em style="bottom:-20px">Z</em>{/if}
+      </div>
+    {/if}
   {:else}
     <div class="ctrack" style="transform:translateX({640 - 100 - q * 240}px)">
       {#each idx as pos (realAt(pos))}

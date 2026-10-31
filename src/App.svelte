@@ -4,7 +4,8 @@
   import { learnKeydown } from './lib/learn.svelte';
   import { boot, onKeyDown, onScreenClick, onScreenDblClick, onScreenMove, startGamepad, startMouse, hideToast, cmd, intro } from './lib/controller.svelte';
   import { buildBackground } from './lib/bg';
-  import { lerpH, variablesCSS } from './lib/atmos';
+  import { lerpH, rbGrad, variablesCSS } from './lib/atmos';
+  const RBY = rbGrad('180deg');
   import Home from './screens/Home.svelte';
   import Titles from './screens/Titles.svelte';
   import Detail from './screens/Detail.svelte';
@@ -132,7 +133,7 @@
 <svelte:window bind:innerWidth={w} bind:innerHeight={h} onkeydown={onKeyDown} onkeyup={learnKeydown} />
 
 <!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
-<div id="stage" onclick={onStageClick} data-theme={app.config.theme === 'dark' ? 'dark' : 'light'} style="transform:translate({ox}px,{oy}px) scale({sc});{atmosCss};--acc:var(--f1);--acc-ink:var(--on)">
+<div id="stage" onclick={onStageClick} data-theme={app.config.theme === 'dark' ? 'dark' : 'light'} style="transform:translate({ox}px,{oy}px) scale({sc});{atmosCss};--rby:{RBY};--acc:var(--f1);--acc-ink:var(--on)">
   <div class="bg">{@html bg}</div>
   {#if app.ready}
     {#key app.animKey}

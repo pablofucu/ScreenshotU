@@ -155,8 +155,10 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .shot .face{border-radius:13px}
 .star{position:absolute;right:8px;top:8px;width:26px;height:26px;display:none}
 .shot.fav .star,.vstar.on{display:block}
-.sbar{position:absolute;right:30px;top:190px;width:6px;height:440px;border-radius:3px;background:rgba(160,168,182,.35)}
-.sbar i{position:absolute;left:0;right:0;border-radius:3px;background:var(--acc);transition:top .28s}
+.sbar{position:absolute;right:30px;top:190px;width:6px;height:440px;border-radius:9px;background:linear-gradient(180deg,var(--f1),var(--f2))}
+.sbar.rb{background:var(--rby)}
+.sbar em{position:absolute;left:-3px;font-style:normal;font-size:11px;font-weight:800;color:var(--ink-3)}
+.sbar i{position:absolute;left:-4px;width:14px;border-radius:9px;background:#fff;box-shadow:0 3px 10px -2px rgba(30,40,60,.4);transition:top .3s}
 
 /* viewer */
 .vw{position:absolute;inset:0;background:#1a1d24;overflow:hidden}
@@ -311,14 +313,14 @@ button.srow,button.scat{width:100%}
 .dhours{left:378px;width:400px}
 .dweek{left:802px;width:414px;padding:12px 20px 18px}
 .odo{display:flex;align-items:center;gap:6px;--ch:52px}
-.odo .c{width:42px;height:var(--ch);border-radius:10px;overflow:hidden;position:relative;background:linear-gradient(180deg,var(--face-hi),var(--face));box-shadow:inset 0 2px 4px rgba(0,0,0,.18),inset 0 -2px 0 var(--glass-top),0 0 0 1px var(--line)}
-.odo .c::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(0,0,0,.10)}
-.odo .c b{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center;font-size:38px;font-weight:800;line-height:var(--ch);color:var(--acc);animation:roll 1.2s cubic-bezier(.2,.8,.3,1) both}
+.odo .c{width:42px;height:var(--ch);border-radius:10px;overflow:hidden;position:relative;background:var(--gf);box-shadow:inset 0 2px 4px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.35)}
+.odo .c::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(0,0,0,.18)}
+.odo .c b{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center;font-size:38px;font-weight:800;line-height:var(--ch);color:var(--on);animation:roll 1.2s cubic-bezier(.2,.8,.3,1) both}
 @keyframes roll{from{transform:translateY(calc(var(--n) * var(--ch)))}to{transform:translateY(0)}}
 .odo .u{font-size:22px;font-weight:800;color:var(--ink-2);margin:0 8px 0 2px;align-self:flex-end;padding-bottom:6px}
 .chart{display:flex;flex-direction:column;gap:6px;height:100%;justify-content:center}
 .weekbars{display:flex;gap:22px;align-items:flex-end;height:46px}
-.weekbars i{display:block;width:30px;border-radius:5px 5px 3px 3px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 40%,white),var(--acc));box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
+.weekbars i{display:block;width:30px;border-radius:5px 5px 3px 3px;background:linear-gradient(180deg,var(--f1),var(--f2));box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
 .weekbars i.z{background:var(--line-2);box-shadow:none}
 .dsect{position:absolute;left:64px;top:514px;font-size:18px;font-weight:800;color:var(--ink-2)}
 .dsect span{font-weight:600;color:var(--ink-3);margin-left:8px}

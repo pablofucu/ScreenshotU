@@ -580,17 +580,14 @@ class Store {
   }
   /** Pareja de tonos de la atmósfera actual. */
   atmosTarget = $derived.by((): { h1: number; h2: number } => {
+    // Un tramo igual de arcoíris por sección: las plataformas en su orden y, detrás, Mi lista, Estadísticas y Ajustes.
+    const sec = (k: number) => pair(k / (this.lib.platforms.length + 2));
+    const N = this.lib.platforms.length;
     if (this.overlay === 'settings') return pair(1);
-    if (this.favView) return pair(2 / 6);
-    if (this.view === 'home') {
-      const N = this.lib.platforms.length;
-      return pair(N <= 1 ? 0 : this.hp / (N - 1));
-    }
-    if (this.view === 'titles') {
-      const N = this.lib.platforms.length;
-      return pair(N <= 1 ? 0 : this.p / (N - 1));
-    }
-    if (this.view === 'stats' || this.view === 'evo') return pair(5 / 6);
+    if (this.favView) return sec(N);
+    if (this.view === 'home') return sec(this.hp);
+    if (this.view === 'titles') return sec(this.p);
+    if (this.view === 'stats' || this.view === 'evo') return sec(N + 1);
     if (this.view === 'streak') {
       const h1 = hueOf(GOAL_COL[this.streakKey].c);
       return { h1, h2: (h1 + 35) % 360 };

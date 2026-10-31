@@ -24,6 +24,10 @@ export function RH(t: number): number {
   return (RAINBOW_H[i] + (RAINBOW_H[i + 1] - RAINBOW_H[i]) * f) % 360;
 }
 
+/** Degradado del arcoíris completo (o del tramo a..b) en la dirección dada. */
+export const rbGrad = (dir: string, a = 0, b = 1): string =>
+  `linear-gradient(${dir},${[0, 1, 2, 3, 4, 5, 6].map((i) => oklch(0.74, 0.14, RH(a + ((b - a) * i) / 6))).join(',')})`;
+
 export const inRB = (h: number): boolean => h >= RAINBOW_H[0] - 0.5 && h <= RAINBOW_H[RAINBOW_H.length - 1] + 0.5;
 
 /** Pareja de tonos para una posición t ∈ [0, 1]. */
