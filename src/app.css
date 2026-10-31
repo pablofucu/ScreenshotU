@@ -1,4 +1,4 @@
-﻿@import './assets/fonts.css';
+@import './assets/fonts.css';
 
 :root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI','Yu Gothic UI','Meiryo UI','Hiragino Maru Gothic ProN',system-ui,sans-serif;color-scheme:light}
 *{box-sizing:border-box}
@@ -867,10 +867,10 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .pgfam{position:absolute;right:28px;top:145px;height:30px;padding:0 14px;border-radius:999px;display:flex;align-items:center;font-size:14px;font-weight:700;color:var(--ink-2);white-space:nowrap;pointer-events:none}
 
 /* Catálogo: velo de color sobre el fondo de cuadraditos, con el matiz del juego enfocado (suave, cambia con fundido). */
-@property --w1{syntax:'<color>';inherits:false;initial-value:transparent}
-@property --w2{syntax:'<color>';inherits:false;initial-value:transparent}
-.ambwash{position:absolute;inset:0;pointer-events:none;--w1:var(--p1,transparent);--w2:var(--p2,transparent);
-  background:radial-gradient(ellipse 75% 65% at 10% 108%,color-mix(in srgb,var(--w1) 34%,transparent),transparent 72%),
-    radial-gradient(ellipse 70% 60% at 94% -8%,color-mix(in srgb,var(--w2) 26%,transparent),transparent 72%);
-  transition:--w1 .8s ease,--w2 .8s ease}
+@property --p1{syntax:'<color>';inherits:true;initial-value:transparent}
+@property --p2{syntax:'<color>';inherits:true;initial-value:transparent}
+.ambwash{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 75% 65% at 10% 108%,color-mix(in srgb,var(--p1) 34%,transparent),transparent 72%),
+    radial-gradient(ellipse 70% 60% at 94% -8%,color-mix(in srgb,var(--p2) 26%,transparent),transparent 72%);
+  transition:--p1 .8s ease,--p2 .8s ease}
 @media (prefers-reduced-motion: reduce){.ambwash{transition:none}}

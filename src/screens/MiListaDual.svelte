@@ -142,9 +142,9 @@
       0 18px 30px -16px rgba(40,50,70,.42),
       0 6px 18px -10px var(--c);
   }
-  .st-park .its { filter: saturate(0.35); opacity: 0.86; }
-  .st-done .its { filter: saturate(0.1); opacity: 0.66; }
-  .st-done .its :global(.it.f), .st-park .its :global(.it.f) { filter: none; }
+  .st-park .it:not(.f) { filter: saturate(0.35); opacity: 0.86; }
+  .st-done .it:not(.f) { filter: saturate(0.1); opacity: 0.66; }
+  .st-park .it.f, .st-done .it.f { filter: none; opacity: 1; }
   .vt {
     position: absolute;
     left: 0;
@@ -195,7 +195,7 @@
       0 0 0 1px rgba(95,110,135,.24),
       0 2px 3px rgba(40,50,70,.10),
       0 18px 30px -16px rgba(40,50,70,.42);
-    transition: background 0.15s, box-shadow 0.15s;
+    transition: background 0.15s, box-shadow 0.15s, filter 0.15s, opacity 0.15s;
   }
   .it.f {
     background: var(--glass-chip);

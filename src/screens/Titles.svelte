@@ -353,11 +353,11 @@
     padding: 0 12px 0 10px;
     margin-left: 10px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.76);
+    background: var(--glass-chip);
     backdrop-filter: blur(10px);
-    box-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgba(95, 110, 135, 0.22), 0 2px 6px rgba(15, 23, 42, 0.05);
+    box-shadow: inset 0 1px 0 var(--glass-top), 0 0 0 1px var(--line), 0 2px 6px rgba(15, 23, 42, 0.05);
     transition: all 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
-    color: #64748b;
+    color: var(--ink-2);
   }
   .tsearch:hover {
     background: rgba(255, 255, 255, 0.92);

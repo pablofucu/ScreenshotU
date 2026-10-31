@@ -40,7 +40,7 @@ fn dirs_named(dir: &Path, keys: &[String]) -> Vec<PathBuf> {
             let n = e.file_name().to_string_lossy().into_owned();
             let stem = n.rsplit_once('-').filter(|(_, d)| !d.is_empty() && d.chars().all(|c| c.is_ascii_digit())).map(|(a, _)| a).unwrap_or(&n);
             let k = norm_key(stem);
-            !k.is_empty() && keys.iter().any(|w| *w == k)
+            !k.is_empty() && keys.contains(&k)
         })
         .map(|e| e.path())
         .collect();

@@ -536,7 +536,7 @@ pub fn calculate_summary(
     }
 
     // Ordenar desbloqueados recientes por fecha descendente
-    recent_earned.sort_by(|x, y| y.unlocked_at.unwrap_or(0).cmp(&x.unlocked_at.unwrap_or(0)));
+    recent_earned.sort_by_key(|x| std::cmp::Reverse(x.unlocked_at.unwrap_or(0)));
 
     let last_unlocked = recent_earned.first().cloned();
     let recent = recent_earned.into_iter().take(5).collect();
@@ -706,7 +706,7 @@ pub fn rarity_is_stale(c: &Connection, app_id: i64, now: i64) -> bool {
         .optional()
         .ok()
         .flatten();
-    last.map_or(true, |t| now - t >= RARITY_REFRESH_SECS)
+    last.is_none_or(|t| now - t >= RARITY_REFRESH_SECS)
 }
 
 /// Guarda el resultado de una consulta correcta. Con datos reemplaza los anteriores del juego; sin datos

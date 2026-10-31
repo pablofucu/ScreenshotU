@@ -49,7 +49,7 @@ export function lchToRgb(L: number, C: number, h: number): number[] {
   return lchToLin(L, c, h).map((v) => Math.round(fromLin(Math.max(0, Math.min(1, v))) * 255));
 }
 
-const luminance = (rgb: number[]) => 0.2126 * toLin(rgb[0] / 255) + 0.7152 * toLin(rgb[1] / 255) + 0.0722 * toLin(rgb[2] / 255);
+export const luminance = (rgb: number[]) => 0.2126 * toLin(rgb[0] / 255) + 0.7152 * toLin(rgb[1] / 255) + 0.0722 * toLin(rgb[2] / 255);
 export const contrastWithWhite = (rgb: number[]) => 1.05 / (luminance(rgb) + 0.05);
 /** Texto oscuro sobre este color (poco contraste con el blanco). */
 export const needsDarkInk = (rgb: number[]) => contrastWithWhite(rgb) < WHITE_MIN_CONTRAST;
@@ -76,10 +76,27 @@ export function normalizeLch(L: number, C: number, h: number): number[] {
   const lf = best ? best[1] : fallback[1];
   return lchToRgb(lf, Math.min(want, maxChroma(lf, h)), h);
 }
-export function normalizeHex(hex: string): { color: string; dark: boolean } | null {
+const LCH_CACHE = new Map<string, [number, number, number] | null>();
+export function hexToLch(hex: string): [number, number, number] | null {
+  if (!hex) return null;
+  const hit = LCH_CACHE.get(hex);
+  if (hit !== undefined) return hit;
   const rgb = hexToRgb(hex);
-  if (!rgb) return null;
-  const [l, c, h] = rgbToLch(rgb);
+  if (!rgb) {
+    if (LCH_CACHE.size > 2000) LCH_CACHE.clear();
+    LCH_CACHE.set(hex, null);
+    return null;
+  }
+  const lch = rgbToLch(rgb);
+  if (LCH_CACHE.size > 2000) LCH_CACHE.clear();
+  LCH_CACHE.set(hex, lch);
+  return lch;
+}
+
+export function normalizeHex(hex: string): { color: string; dark: boolean } | null {
+  const lch = hexToLch(hex);
+  if (!lch) return null;
+  const [l, c, h] = lch;
   const out = normalizeLch(l, c, h);
   return { color: rgbToHex(out), dark: needsDarkInk(out) };
 }
@@ -88,7 +105,7 @@ export function accentForHue(h: number): { color: string; dark: boolean } {
   const out = normalizeLch(0.68, 0.16, ((h % 360) + 360) % 360);
   return { color: rgbToHex(out), dark: needsDarkInk(out) };
 }
-export const hueOf = (hex: string): number => { const rgb = hexToRgb(hex); return rgb ? rgbToLch(rgb)[2] : 220; };
+export const hueOf = (hex: string): number => { const lch = hexToLch(hex); return lch ? lch[2] : 220; };
 
 export function oklch(L: number, C: number, h: number): string {
   return rgbToHex(lchToRgb(L, C, ((h % 360) + 360) % 360));

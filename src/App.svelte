@@ -131,17 +131,26 @@
     const stage = document.getElementById('stage');
     curAtmos = { ...app.atmosTarget };
     applyAtmos(variablesCSS(curAtmos.h1, curAtmos.h2));
-    let raf = 0;
-    const tag = () => {
-      raf = 0;
-      stage?.querySelectorAll<HTMLElement>('[data-act],[data-set],[data-item],.scat').forEach((el) => {
-        if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
-      });
+    const tagNode = (el: HTMLElement) => {
+      if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
     };
-    const mo = new MutationObserver(() => { if (!raf) raf = requestAnimationFrame(tag); });
+    const tagTree = (root: ParentNode) => {
+      root.querySelectorAll<HTMLElement>('[data-act],[data-set],[data-item],.scat').forEach(tagNode);
+    };
+    const mo = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (let i = 0; i < m.addedNodes.length; i++) {
+          const n = m.addedNodes[i];
+          if (n instanceof HTMLElement) {
+            if (n.matches('[data-act],[data-set],[data-item],.scat')) tagNode(n);
+            tagTree(n);
+          }
+        }
+      }
+    });
     if (stage) mo.observe(stage, { childList: true, subtree: true });
-    tag();
-    return () => { window.removeEventListener('mousemove', show); mo.disconnect(); cancelAnimationFrame(raf); cancelAnimationFrame(atmosRaf); };
+    if (stage) tagTree(stage);
+    return () => { window.removeEventListener('mousemove', show); clearTimeout(t); mo.disconnect(); cancelAnimationFrame(atmosRaf); };
   });
 </script>
 

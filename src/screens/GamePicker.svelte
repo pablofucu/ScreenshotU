@@ -84,7 +84,7 @@
   .pkhead p{margin:2px 0 0;font-size:16px;font-weight:600;color:var(--ink-2);max-width:700px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pkbar{position:absolute;left:69px;right:69px;top:92px;display:flex;align-items:center;gap:10px}
   .pksearch{display:flex;align-items:center;gap:10px;width:380px;height:44px;padding:0 8px 0 14px;border-radius:999px;cursor:pointer;margin-right:10px;
-    background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(240,243,248,.85));box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px var(--line),0 8px 16px -10px rgba(40,50,70,.4)}
+    background:linear-gradient(180deg,var(--glass-chip),var(--face));box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px var(--line),0 8px 16px -10px rgba(40,50,70,.4)}
   .pksearch b{flex:1;font-size:18px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pksearch b.ph{color:var(--ink-3);font-weight:600}
   .pkic{width:22px;height:22px;flex:none;border-radius:7px;display:grid;place-items:center;background:var(--acc)}

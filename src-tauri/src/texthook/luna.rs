@@ -255,6 +255,7 @@ mod other {
         pub fn load(_dir: &Path, _tx: Sender<Event>) -> Result<Host, String> {
             Err(NO_WIN.into())
         }
+        #[allow(dead_code)]
         pub fn dir(&self) -> &Path {
             Path::new("")
         }
@@ -471,6 +472,7 @@ mod win {
             }
         }
 
+        #[allow(dead_code)]
         pub fn dir(&self) -> &Path {
             &self.dir
         }

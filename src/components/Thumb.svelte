@@ -30,4 +30,4 @@
   });
 </script>
 
-{#if src}<img class="tin" class:fade alt="" {src} draggable="false" />{/if}
+{#if src}<img class="tin" class:fade alt="" {src} draggable="false" loading="lazy" decoding="async" />{/if}

@@ -152,6 +152,7 @@ fn pending(c: &Connection, after_rowid: i64, limit: usize) -> Result<Vec<Pending
 
 /// SHA-256 de un archivo, en hexadecimal (minusculas).
 pub fn hash_file(path: &Path) -> std::io::Result<String> {
+    use std::fmt::Write;
     let mut f = File::open(path)?;
     let mut h = Sha256::new();
     let mut buf = vec![0u8; 1 << 20];
@@ -162,7 +163,12 @@ pub fn hash_file(path: &Path) -> std::io::Result<String> {
         }
         h.update(&buf[..n]);
     }
-    Ok(h.finalize().iter().map(|b| format!("{b:02x}")).collect())
+    let res = h.finalize();
+    let mut out = String::with_capacity(64);
+    for b in res {
+        let _ = write!(&mut out, "{b:02x}");
+    }
+    Ok(out)
 }
 
 /// Calcula las huellas que faltan, por lotes y sin tener la base bloqueada mientras se lee del disco.
@@ -175,8 +181,12 @@ pub fn hash_pending(db: &Db, root: &Path, stop: impl Fn() -> bool) -> Result<usi
         let batch = db.with(|c| pending(c, cursor, 64))?;
         let Some(last) = batch.last() else { return Ok(done) };
         cursor = last.rowid;
+        let mut computed = Vec::with_capacity(batch.len());
         for p in batch {
             if stop() {
+                if !computed.is_empty() {
+                    done += save_hash_batch(db, &computed)?;
+                }
                 return Ok(done);
             }
             let abs = relpath::to_abs(root, &p.path);
@@ -185,15 +195,27 @@ pub fn hash_pending(db: &Db, root: &Path, stop: impl Fn() -> bool) -> Result<usi
                 continue;
             }
             let Ok(hash) = hash_file(Path::new(&abs)) else { continue };
-            let n = db.with(|c| {
-                c.execute(
-                    "UPDATE shots SET sha256 = ?4 WHERE path = ?1 AND size = ?2 AND mtime_ms = ?3",
-                    params![p.path, p.size, p.mtime, hash],
-                )
-            })?;
-            done += n;
+            computed.push((p.path, p.size, p.mtime, hash));
+        }
+        if !computed.is_empty() {
+            done += save_hash_batch(db, &computed)?;
         }
     }
+}
+
+fn save_hash_batch(db: &Db, list: &[(String, i64, i64, String)]) -> Result<usize> {
+    db.with(|c| {
+        let tx = c.unchecked_transaction()?;
+        let mut n = 0;
+        {
+            let mut st = tx.prepare("UPDATE shots SET sha256 = ?4 WHERE path = ?1 AND size = ?2 AND mtime_ms = ?3")?;
+            for (path, size, mtime, hash) in list {
+                n += st.execute(params![path, size, mtime, hash])?;
+            }
+        }
+        tx.commit()?;
+        Ok(n)
+    })
 }
 
 #[cfg(test)]

@@ -302,7 +302,7 @@ pub fn list_auto(dir: &Path) -> Vec<(NaiveDate, PathBuf)> {
         .flatten()
         .filter_map(|e| parse_auto_name(&e.file_name().to_string_lossy()).map(|d| (d, e.path())))
         .collect();
-    v.sort_by(|a, b| b.0.cmp(&a.0));
+    v.sort_by_key(|a| std::cmp::Reverse(a.0));
     v
 }
 

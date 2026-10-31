@@ -2,7 +2,7 @@ import { SvelteSet } from 'svelte/reactivity';
 import { untrack } from 'svelte';
 import { RAINBOW, type Accent } from './icons';
 import type { AudioOutput, Config, GameStatsDb, GameStatus, Library, MagpieStatus, Collection, Shot, SortMode as SortModeT, Swatch, Title, TitleOrder } from './types';
-import { hexToRgb, hueOf, rgbToLch } from './oklch';
+import { hexToLch, hexToRgb, hueOf } from './oklch';
 import { gamePair, INK, pair, variablesCSS } from './atmos';
 import { collItems, collectionTitle } from './collections';
 import { GOAL_COL, type GoalKey } from './readgoals';
@@ -267,9 +267,10 @@ export const lastUse = (t: Title) => t.lastPlayed || t.shots[0]?.date || 0;
 /** Tono OKLCH (0..360) del color de la portada, o null si no tiene color (sin acento o casi gris). */
 export function coverHue(t: Title): number | null {
   const hex = t.accentOverride ?? t.accent?.accent.color;
-  const rgb = hex ? hexToRgb(hex) : null;
-  if (!rgb) return null;
-  const [, c, h] = rgbToLch(rgb);
+  if (!hex) return null;
+  const lch = hexToLch(hex);
+  if (!lch) return null;
+  const [, c, h] = lch;
   return c < 0.04 ? null : h;
 }
 

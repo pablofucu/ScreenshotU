@@ -71,10 +71,10 @@ pub fn convert_legacy(list: &[Saga], platform_of: &HashMap<String, String>) -> (
         }
         changed = true;
         // Orden estable: mas juegos primero; a igualdad, la que aparecio antes.
-        cats.sort_by(|a, b| b.1.cmp(&a.1));
+        cats.sort_by_key(|a| std::cmp::Reverse(a.1));
         let main = cats[0].0.clone();
         out.push(Saga {
-            members: s.members.iter().filter(|m| platform_of.get(*m).map_or(true, |p| *p == main)).cloned().collect(),
+            members: s.members.iter().filter(|m| platform_of.get(*m).is_none_or(|p| *p == main)).cloned().collect(),
             platform: Some(main),
             ..s.clone()
         });

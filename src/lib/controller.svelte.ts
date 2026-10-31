@@ -2029,10 +2029,17 @@ function poll(t: number) {
   requestAnimationFrame(poll);
   let pads: Gamepad[] = [];
   try {
-    pads = navigator.getGamepads ? [...navigator.getGamepads()].filter((g): g is Gamepad => !!g && g.connected) : [];
+    const raw = navigator.getGamepads ? navigator.getGamepads() : null;
+    if (raw) {
+      for (let i = 0; i < raw.length; i++) {
+        const g = raw[i];
+        if (g && g.connected) pads.push(g);
+      }
+    }
   } catch { pads = []; }
-  app.padConnected = pads.length > 0;
-  if (!pads.length) {
+  const hasPad = pads.length > 0;
+  if (app.padConnected !== hasPad) app.padConnected = hasPad;
+  if (!hasPad) {
     // Sin mandos se olvida lo pulsado: al volver uno, sus botones cuentan como pulsaciones nuevas.
     for (const k in held) delete held[k];
     triggerState.lt = false;

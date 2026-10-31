@@ -255,11 +255,11 @@ fn handle(mut s: TcpStream, app: &tauri::AppHandle) -> std::io::Result<()> {
     s.set_read_timeout(Some(Duration::from_secs(5)))?;
     let _ = s.set_nodelay(true);
     let Some(head) = peek_head(&s) else { return Ok(()) };
-    if !head.headers.get("host").map_or(false, |h| is_local_host(h)) {
+    if !head.headers.get("host").is_some_and(|h| is_local_host(h)) {
         return respond(&mut s, 403, "text/plain; charset=utf-8", b"Forbidden", false);
     }
     let path = head.target.split('?').next().unwrap_or("/");
-    let is_ws = head.headers.get("upgrade").map_or(false, |u| u.eq_ignore_ascii_case("websocket"));
+    let is_ws = head.headers.get("upgrade").is_some_and(|u| u.eq_ignore_ascii_case("websocket"));
     if is_ws && path == "/ws" {
         ws_session(s);
         return Ok(());

@@ -130,7 +130,10 @@ pub fn rgba_to_jpeg(width: u32, height: u32, rgba: &[u8], max_w: u32, quality: u
     if width == 0 || height == 0 || rgba.len() != width as usize * height as usize * 4 {
         anyhow::bail!("tamano de imagen incoherente");
     }
-    let rgb: Vec<u8> = rgba.chunks_exact(4).flat_map(|p| [p[0], p[1], p[2]]).collect();
+    let mut rgb = Vec::with_capacity(rgba.len() / 4 * 3);
+    for p in rgba.chunks_exact(4) {
+        rgb.extend_from_slice(&p[0..3]);
+    }
     let img = image::RgbImage::from_raw(width, height, rgb).context("imagen incoherente")?;
     let img = if width > max_w && max_w > 0 {
         let h = ((height as u64 * max_w as u64) / width as u64).max(1) as u32;
@@ -168,7 +171,10 @@ pub fn save_rgba_png(path: &Path, width: u32, height: u32, rgba: Vec<u8>) -> Res
     if let Some(dir) = path.parent() {
         fs::create_dir_all(dir).with_context(|| format!("creando {}", dir.display()))?;
     }
-    let rgb: Vec<u8> = rgba.chunks_exact(4).flat_map(|p| [p[0], p[1], p[2]]).collect();
+    let mut rgb = Vec::with_capacity(rgba.len() / 4 * 3);
+    for p in rgba.chunks_exact(4) {
+        rgb.extend_from_slice(&p[0..3]);
+    }
     drop(rgba);
     let tmp = path.with_extension("png.tmp");
     let res = (|| -> Result<()> {

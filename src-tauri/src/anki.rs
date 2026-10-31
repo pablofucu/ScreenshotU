@@ -97,7 +97,7 @@ pub fn state(app: &AppHandle) -> Value {
     // El mazo configurado se respeta aunque aun no exista: se crea al enviar la primera nota (o con «Crear mazo»).
     let deck_of = |list: &[String]| if c.anki_deck.is_empty() { pick("", list) } else { c.anki_deck.clone() };
     // Sin tipo de nota en Ajustes (o si el elegido ya no existe), el propio de la app: se crea al enviar.
-    let model_of = |list: &[String]| if list.iter().any(|m| *m == c.anki_model) { c.anki_model.clone() } else { OWN_MODEL.to_string() };
+    let model_of = |list: &[String]| if list.contains(&c.anki_model) { c.anki_model.clone() } else { OWN_MODEL.to_string() };
     let r = call(&c.anki_url, "version", json!({}))
         .and_then(|_| Ok((strings(&call(&c.anki_url, "deckNames", json!({}))?), strings(&call(&c.anki_url, "modelNames", json!({}))?))));
     match r {

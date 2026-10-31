@@ -337,12 +337,13 @@ pub fn scan_library_ex(root: Option<&Path>, platforms: &[PlatformCfg], games: &[
                 .unwrap_or_default();
             // Directorio de plataforma donde viviran las carpetas nuevas (aunque no exista todavia).
             let base = pdir.clone().or_else(|| root.map(|r| r.join(&cfg.folder)));
+            let mut title_keys: Vec<String> = titles.iter().map(|t| norm_key(&t.folder)).collect();
             for g in games.iter().filter(|g| g.platform == cfg.id) {
                 let key = norm_key(&g.folder);
-                let hit = titles.iter().position(|t| t.game_id.is_none() && norm_key(&t.folder) == key);
+                let hit = titles.iter().enumerate().position(|(i, t)| t.game_id.is_none() && title_keys[i] == key);
                 if let Some(i) = hit {
                     link_game(&mut titles[i], g, stats);
-                } else if titles.iter().any(|t| t.game_id.is_some() && norm_key(&t.folder) == key) {
+                } else if titles.iter().enumerate().any(|(i, t)| t.game_id.is_some() && title_keys[i] == key) {
                     continue; // dos juegos con la misma carpeta: gana el primero
                 } else {
                     let dir = base.as_ref().map(|b| b.join(&g.folder));
@@ -358,6 +359,7 @@ pub fn scan_library_ex(root: Option<&Path>, platforms: &[PlatformCfg], games: &[
                         ..Title::blank()
                     };
                     link_game(&mut t, g, stats);
+                    title_keys.push(key);
                     titles.push(t);
                 }
             }
@@ -366,7 +368,7 @@ pub fn scan_library_ex(root: Option<&Path>, platforms: &[PlatformCfg], games: &[
                 b.last_played
                     .cmp(&a.last_played)
                     .then_with(|| b.shots.first().map(|s| s.date).cmp(&a.shots.first().map(|s| s.date)))
-                    .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
+                    .then_with(|| a.name.chars().flat_map(|c| c.to_lowercase()).cmp(b.name.chars().flat_map(|c| c.to_lowercase())))
             });
             for t in titles.iter_mut() {
                 t.id = title_id(t.game_id.as_deref(), &cfg.id, &t.folder);
@@ -400,8 +402,8 @@ pub fn scan_library_ex(root: Option<&Path>, platforms: &[PlatformCfg], games: &[
             }
             if let Some(cache) = opts.palettes {
                 titles.par_iter_mut().for_each(|t| {
-                    let cover = t.cover.clone().or_else(|| t.shots.first().map(|s| s.path.clone()));
-                    t.accent = cache.accent_for(t.hero.as_deref().map(Path::new), cover.as_deref().map(Path::new));
+                    let cover = t.cover.as_deref().or_else(|| t.shots.first().map(|s| s.path.as_str()));
+                    t.accent = cache.accent_for(t.hero.as_deref().map(Path::new), cover.map(Path::new));
                 });
             }
             Platform {
@@ -420,7 +422,6 @@ pub fn scan_library_ex(root: Option<&Path>, platforms: &[PlatformCfg], games: &[
 /// Orden natural sin distinguir mayusculas: `captura2` antes que `captura10`.
 fn natural_cmp(a: &str, b: &str) -> std::cmp::Ordering {
     use std::cmp::Ordering::*;
-    let (a, b) = (a.to_lowercase(), b.to_lowercase());
     let (mut x, mut y) = (a.chars().peekable(), b.chars().peekable());
     loop {
         match (x.peek().copied(), y.peek().copied()) {
@@ -428,31 +429,50 @@ fn natural_cmp(a: &str, b: &str) -> std::cmp::Ordering {
             (None, _) => return Less,
             (_, None) => return Greater,
             (Some(c), Some(d)) if c.is_ascii_digit() && d.is_ascii_digit() => {
-                let mut n = String::new();
+                let mut n = [0u8; 32];
+                let mut n_len = 0;
                 while let Some(c) = x.peek().copied().filter(|c| c.is_ascii_digit()) {
-                    n.push(c);
+                    if n_len < n.len() {
+                        n[n_len] = c as u8;
+                        n_len += 1;
+                    }
                     x.next();
                 }
-                let mut m = String::new();
+                let mut m = [0u8; 32];
+                let mut m_len = 0;
                 while let Some(c) = y.peek().copied().filter(|c| c.is_ascii_digit()) {
-                    m.push(c);
+                    if m_len < m.len() {
+                        m[m_len] = c as u8;
+                        m_len += 1;
+                    }
                     y.next();
                 }
-                let (n, m) = (n.trim_start_matches('0'), m.trim_start_matches('0'));
-                match n.len().cmp(&m.len()).then_with(|| n.cmp(m)) {
+                let n_start = n[..n_len].iter().position(|&b| b != b'0').unwrap_or(n_len);
+                let m_start = m[..m_len].iter().position(|&b| b != b'0').unwrap_or(m_len);
+                let n_digits = &n[n_start..n_len];
+                let m_digits = &m[m_start..m_len];
+                match n_digits.len().cmp(&m_digits.len()).then_with(|| n_digits.cmp(m_digits)) {
                     Equal => {}
                     o => return o,
                 }
             }
-            (Some(c), Some(d)) => match c.cmp(&d) {
-                Equal => {
-                    x.next();
-                    y.next();
+            (Some(c), Some(d)) => {
+                let c_low = c.to_ascii_lowercase();
+                let d_low = d.to_ascii_lowercase();
+                match c_low.cmp(&d_low) {
+                    Equal => {
+                        x.next();
+                        y.next();
+                    }
+                    o => return o,
                 }
-                o => return o,
-            },
+            }
         }
     }
+}
+
+fn shot_name(s: &Shot) -> &str {
+    s.path.rsplit(['/', '\\']).next().unwrap_or(&s.path)
 }
 
 /// Ordena capturas: `recent` (mas recientes), `oldest` (mas antiguas), `favs` (favoritas primero, cada
@@ -464,8 +484,7 @@ pub fn sort_shots(shots: &mut [Shot], mode: &str, favs: &HashSet<String>) {
         "oldest" => shots.sort_by(|a, b| recent(b, a)),
         "favs" => shots.sort_by(|a, b| favs.contains(&b.path).cmp(&favs.contains(&a.path)).then_with(|| recent(a, b))),
         "name" => shots.sort_by(|a, b| {
-            let name = |s: &Shot| s.path.rsplit(['/', '\\']).next().unwrap_or(&s.path).to_string();
-            natural_cmp(&name(a), &name(b)).then_with(|| a.path.cmp(&b.path))
+            natural_cmp(shot_name(a), shot_name(b)).then_with(|| a.path.cmp(&b.path))
         }),
         _ => shots.sort_by(recent),
     }

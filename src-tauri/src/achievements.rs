@@ -123,7 +123,7 @@ pub fn sync_achievements_from_disk(
     }
 
     // 4. Rareza global (cache de Steam); sin datos no cambia nada.
-    let _ = state.db.with(|c| core::apply_rarity(c, &app_id, &mut list));
+    state.db.with(|c| core::apply_rarity(c, &app_id, &mut list));
 
     Ok((app_id, list))
 }
@@ -472,7 +472,7 @@ pub fn on_launch(app: AppHandle, game: Game) {
                                     .unwrap_or(fallback);
                                 ach.icon = inline_icon(ach.icon.take());
                                 ach.icon_gray = inline_icon(ach.icon_gray.take());
-                                let _ = st2.db.with(|c| core::apply_rarity(c, &app_id, std::slice::from_mut(&mut ach)));
+                                st2.db.with(|c| core::apply_rarity(c, &app_id, std::slice::from_mut(&mut ach)));
                                 crate::achpop::show(&app_clone, &ach);
 
                                 let _ = app_clone.emit(

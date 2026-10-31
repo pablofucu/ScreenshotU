@@ -1,4 +1,4 @@
-import { contrast, hueOf, oklch } from './oklch';
+import { hexToRgb, lchToRgb, luminance, rgbToHex, hueOf, oklch } from './oklch';
 import { RAINBOW } from './icons';
 import { hash } from './rng';
 import type { Title } from './types';
@@ -66,18 +66,26 @@ export interface AtmosVariables {
   [key: string]: string;
 }
 
+const INK_RGB = hexToRgb(INK) ?? [31, 37, 48];
+const LUM_INK = luminance(INK_RGB);
+
 /** Variables CSS para el tema claro a partir de dos tonos h1 y h2. */
 export function variablesCSS(h1: number, h2: number): AtmosVariables {
   const isYellowish = (h: number) => hueDist(h, 100) <= 20;
   const on = isYellowish(h1) || isYellowish(h2) ? INK : '#ffffff';
+  const lumOn = on === INK ? LUM_INK : 1.0;
 
   const relleno = (h: number) => {
     let l = 0.66;
-    const ok = () => contrast(oklch(l, 0.15, h), on) >= 4.5;
-    while (!ok() && l > 0.2 && l < 0.97) {
+    const hNorm = ((h % 360) + 360) % 360;
+    while (l > 0.2 && l < 0.97) {
+      const rgb = lchToRgb(l, 0.15, hNorm);
+      const la = luminance(rgb);
+      const c = (Math.max(la, lumOn) + 0.05) / (Math.min(la, lumOn) + 0.05);
+      if (c >= 4.5) return rgbToHex(rgb);
       l += on === INK ? 0.01 : -0.01;
     }
-    return oklch(l, 0.15, h);
+    return rgbToHex(lchToRgb(l, 0.15, hNorm));
   };
 
   const f1 = relleno(h1);

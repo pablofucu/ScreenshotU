@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { untrack } from 'svelte';
+  import { onDestroy, untrack } from 'svelte';
   import { app } from '../lib/store.svelte';
   import { resetZoom } from '../lib/controller.svelte';
   import { ICON } from '../lib/icons';
@@ -45,12 +45,12 @@
         }
       }
     }
-    return () => {
-      while (keep.length) {
-        const evicted = keep.pop();
-        if (evicted) evicted.src = '';
-      }
-    };
+  });
+  onDestroy(() => {
+    while (keep.length) {
+      const evicted = keep.pop();
+      if (evicted) evicted.src = '';
+    }
   });
 
   // Al cambiar de captura el zoom vuelve al 100 %.

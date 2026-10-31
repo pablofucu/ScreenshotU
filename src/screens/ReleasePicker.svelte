@@ -55,7 +55,7 @@
   .fcol{display:flex;flex-direction:column;align-items:center;gap:6px}
   .fcol small{font-size:14px;font-weight:700;color:var(--ink-3)}
   .fbox{position:relative;min-width:150px;height:76px;border-radius:18px;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;
-    background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(235,239,245,.85));box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px var(--line);transition:background .15s,transform .15s,opacity .15s}
+    background:linear-gradient(180deg,var(--glass-chip),var(--face));box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px var(--line);transition:background .15s,transform .15s,opacity .15s}
   .fbox.wide{min-width:190px}
   .fbox.off{opacity:.5}
   .fbox b{font-size:30px;font-weight:800;color:var(--ink)}
@@ -68,6 +68,6 @@
   .fbtns{margin-top:auto;margin-bottom:2px;align-self:center;display:flex;gap:14px}
   .fsave{display:flex;align-items:center;gap:10px;height:44px;padding:0 22px 0 8px;border-radius:999px;cursor:pointer;font-size:18px;font-weight:800;color:var(--on);
     background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 80%,white),var(--acc));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black)}
-  .fsave.alt{background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(235,239,245,.85));color:var(--ink-2);box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px var(--line)}
+  .fsave.alt{background:linear-gradient(180deg,var(--glass-chip),var(--face));color:var(--ink-2);box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px var(--line)}
   .fsave.dis{opacity:.5}
 </style>

@@ -155,9 +155,7 @@ pub fn resolve_folder(platform_dir: &Path, desired: &str) -> String {
             let n = e.file_name().to_string_lossy().into_owned();
             if n == desired {
                 exact = Some(n);
-            } else if n.to_lowercase() == desired.to_lowercase() {
-                loose = loose.or(Some(n));
-            } else if !want.is_empty() && norm_key(&n) == want {
+            } else if n.eq_ignore_ascii_case(desired) || (!want.is_empty() && norm_key(&n) == want) {
                 loose = loose.or(Some(n));
             }
         }

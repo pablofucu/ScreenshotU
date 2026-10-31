@@ -53,20 +53,6 @@
   }
 </script>
 
-<svg width="0" height="0" style="position:absolute">
-  <defs>
-    <linearGradient id="card-gold" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" style="stop-color:var(--gold-hi)" />
-      <stop offset="1" style="stop-color:var(--gold-lo)" />
-    </linearGradient>
-    <linearGradient id="card-silver" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" style="stop-color:white" />
-      <stop offset="0.45" style="stop-color:color-mix(in srgb, var(--ink-3) 25%, white)" />
-      <stop offset="1" style="stop-color:color-mix(in srgb, var(--ink-3) 80%, white)" />
-    </linearGradient>
-  </defs>
-</svg>
-
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div
   class="glass dcover fx ach-card"
@@ -78,6 +64,19 @@
   onclick={onCardClick}
   title="Ver lista de logros (A) · Cambiar diseño (Y)"
 >
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="card-gold" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" style="stop-color:var(--gold-hi)" />
+        <stop offset="1" style="stop-color:var(--gold-lo)" />
+      </linearGradient>
+      <linearGradient id="card-silver" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" style="stop-color:white" />
+        <stop offset="0.45" style="stop-color:color-mix(in srgb, var(--ink-3) 25%, white)" />
+        <stop offset="1" style="stop-color:color-mix(in srgb, var(--ink-3) 80%, white)" />
+      </linearGradient>
+    </defs>
+  </svg>
   <div class="face">
     {#if !summary || total === 0}
       <!-- Sin logros: Portada normal -->
@@ -300,6 +299,8 @@
     /* Colores semánticos de rareza (fijos); el dorado deriva del token --warn. */
     --rar-common: #9fc0dc;
     --rar-rare: #b67cf0;
+    --rar-ultra: var(--warn);
+    --gold: var(--warn);
     --gold-hi: color-mix(in srgb, var(--warn) 55%, white);
     --gold-lo: var(--warn);
     --gold-ink: color-mix(in srgb, var(--warn) 60%, black);
@@ -621,8 +622,8 @@
     margin-top: auto;
     padding: 7px 9px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.85);
-    box-shadow: inset 0 0 0 1px rgba(95, 110, 135, 0.18);
+    background: var(--glass-chip);
+    box-shadow: inset 0 0 0 1px var(--line);
     text-align: left;
   }
   .v4 .nx small {
