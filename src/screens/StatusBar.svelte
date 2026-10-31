@@ -78,7 +78,7 @@
   .spanel.fin{top:140px;height:376px}
   .spanel .face{padding:20px 30px 16px;gap:6px}
   .schips{display:flex;gap:12px;margin-top:4px}
-  .schip{flex:1;height:84px;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:#4a5260;font-size:18px;font-weight:800;
+  .schip{flex:1;height:84px;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:color-mix(in srgb,var(--ink),var(--ink-2));font-size:18px;font-weight:800;
     background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(235,239,245,.8));box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.22);transition:transform .18s,box-shadow .18s,background .18s}
   .schip i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--c);box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
   .schip i :global(svg){width:70%;height:70%}
@@ -87,13 +87,13 @@
     background:linear-gradient(180deg,color-mix(in srgb,var(--c) 70%,white),var(--c) 60%,color-mix(in srgb,var(--c) 82%,black));
     box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--c) 75%,black),0 8px 18px -8px var(--c)}
   .schip.f i{background:rgba(255,255,255,.9)}
-  .shint{margin:8px 4px 0;font-size:16px;font-weight:600;color:#5f6776}
+  .shint{margin:8px 4px 0;font-size:16px;font-weight:600;color:var(--ink-2)}
   .frow{display:flex;align-items:center;gap:14px;margin-top:4px}
-  .flab{width:80px;font-size:18px;font-weight:800;color:#5f6776}
+  .flab{width:80px;font-size:18px;font-weight:800;color:var(--ink-2)}
   .fbox{position:relative;min-width:150px;height:76px;border-radius:18px;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;
     background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(235,239,245,.85));box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.25);transition:background .15s,transform .15s}
-  .fbox b{font-size:30px;font-weight:800;color:#3a414e}
-  .fbox button{position:absolute;left:50%;transform:translateX(-50%);border:0;background:none;font:800 12px var(--round);color:#8a93a3;cursor:pointer;padding:0 14px;line-height:1}
+  .fbox b{font-size:30px;font-weight:800;color:var(--ink)}
+  .fbox button{position:absolute;left:50%;transform:translateX(-50%);border:0;background:none;font:800 12px var(--round);color:var(--ink-3);cursor:pointer;padding:0 14px;line-height:1}
   .fbox .inc{top:6px}
   .fbox .dec{bottom:6px}
   .fbox.f{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 80%,white),var(--acc));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 8px 16px -8px var(--acc);transform:scale(1.04)}
@@ -101,13 +101,13 @@
   .fbox.f button{color:var(--acc-ink)}
   .fbox.stars{min-width:360px;padding:0 20px;gap:8px}
   .rstar{font-size:44px;line-height:1;cursor:pointer;color:rgba(95,110,135,.35);transition:color .15s}
-  .rstar.on{color:#F2B807;text-shadow:0 1px 2px rgba(120,80,0,.35)}
+  .rstar.on{color:var(--warn);text-shadow:0 1px 2px rgba(120,80,0,.35)}
   .fbox.f .rstar{color:rgba(255,255,255,.5)}
   .fbox.f .rstar.on{color:#FFD84A}
-  .fbox.stars small{margin-left:8px;font-size:17px;font-weight:700;color:#5f6776}
+  .fbox.stars small{margin-left:8px;font-size:17px;font-weight:700;color:var(--ink-2)}
   .fbox.stars.f small{color:var(--acc-ink)}
   .fbtns{margin-top:auto;margin-bottom:2px;align-self:center;display:flex;gap:14px}
-  .fsave.alt{background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(235,239,245,.85));color:#4a5260;box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.3)}
+  .fsave.alt{background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(235,239,245,.85));color:color-mix(in srgb,var(--ink),var(--ink-2));box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.3)}
   .fsave{display:flex;align-items:center;gap:10px;height:44px;padding:0 22px 0 8px;border-radius:999px;cursor:pointer;font-size:18px;font-weight:800;color:#fff;
     background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 80%,white),var(--acc));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black)}
 </style>

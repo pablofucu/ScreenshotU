@@ -155,9 +155,9 @@
   .bsh.hasaur{overflow:hidden}
   .bsh>:global(*:not(.aur)){position:relative}
   .bsh>:global(*:last-child:not(.aur)){margin-right:8px}
-  .bsh h3{margin:0;font-size:22px;font-weight:800;color:#3a414e;line-height:1;max-width:430px;overflow:hidden;text-overflow:ellipsis;min-width:0}
-  .bsh .m{font-size:15px;font-weight:600;color:#5f6776}
-  .bsh :global(.hint){height:32px;font-size:15px;background:rgba(255,255,255,.9);box-shadow:none;text-shadow:none;color:#4a5260}
+  .bsh h3{margin:0;font-size:22px;font-weight:800;color:var(--ink);line-height:1;max-width:430px;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .bsh .m{font-size:15px;font-weight:600;color:var(--ink-2)}
+  .bsh :global(.hint){height:32px;font-size:15px;background:rgba(255,255,255,.9);box-shadow:none;text-shadow:none;color:color-mix(in srgb,var(--ink),var(--ink-2))}
   .chip{font-size:14px;font-weight:800;padding:3px 11px;border-radius:999px;color:var(--ink);background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
   .aur{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:inherit}
   .aur b{position:absolute;top:-30%;width:34%;height:160%;border-radius:50%;filter:blur(16px)}
@@ -166,8 +166,8 @@
   .lit .aur{opacity:.5}
   .soft{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 22%,white),color-mix(in srgb,var(--acc) 38%,#eef1f5));
     box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.75),0 0 0 1px color-mix(in srgb,var(--acc) 50%,rgba(95,110,135,.3)),0 10px 20px -12px color-mix(in srgb,var(--acc) 55%,rgba(40,50,70,.5))}
-  .soft h3{color:color-mix(in srgb,var(--acc) 50%,#2f3540)}
-  .shelf.dk .soft h3{color:color-mix(in srgb,var(--acc) 30%,#2f3540)}
+  .soft h3{color:color-mix(in srgb,var(--acc) 50%,var(--ink))}
+  .shelf.dk .soft h3{color:color-mix(in srgb,var(--acc) 30%,var(--ink))}
   .lit{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 84%,white),var(--acc) 70%,color-mix(in srgb,var(--acc) 88%,black));
     box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),inset 0 -2px 5px -2px rgba(0,0,0,.18),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 8px 16px -8px color-mix(in srgb,var(--acc) 70%,black)}
   .lit h3,.lit .m{color:var(--ink);text-shadow:var(--tsh)}
@@ -200,18 +200,18 @@
     box-shadow:inset 0 1px 0 #fff,0 -6px 12px -10px rgba(40,50,70,.4)}
   .slip .rtrack{left:9px}
   .slab{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;
-    font-size:13px;font-weight:700;color:#5f6776;transition:color .2s}
+    font-size:13px;font-weight:700;color:var(--ink-2);transition:color .2s}
   .slab em{font-style:normal;font-size:13px;letter-spacing:-.5px;color:#d9a520}
   .slab s{text-decoration:none;display:flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px}
   .slab.on s{background:var(--acc);color:var(--ink);text-shadow:var(--tsh);font-weight:800;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
   .slab.on em{color:#FFE27A}
   .shelf.dk .slab.on em{color:#7a5a00}
-  .sm{position:absolute;top:54px;z-index:6;font-style:normal;font-size:15px;font-weight:800;color:#5f6776;pointer-events:none;
+  .sm{position:absolute;top:54px;z-index:6;font-style:normal;font-size:15px;font-weight:800;color:var(--ink-2);pointer-events:none;
     padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 0 0 1px rgba(95,110,135,.2)}
   .sm.l{left:8px}
   .sm.r{right:8px}
   /* Nº de orden sobre la portada */
-  .ord{position:absolute;z-index:4;left:-7px;top:-7px;min-width:28px;height:28px;box-sizing:border-box;padding:0 6px;border-radius:999px;display:grid;place-items:center;font-size:14px;font-weight:800;color:#4a5260;
+  .ord{position:absolute;z-index:4;left:-7px;top:-7px;min-width:28px;height:28px;box-sizing:border-box;padding:0 6px;border-radius:999px;display:grid;place-items:center;font-size:14px;font-weight:800;color:color-mix(in srgb,var(--ink),var(--ink-2));
     background:linear-gradient(180deg,#fff,#e9edf2);box-shadow:0 0 0 1px rgba(95,110,135,.3),0 3px 6px -2px rgba(40,50,70,.35)}
   .scov.f .ord{background:var(--acc);color:var(--ink);box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 3px 6px -2px rgba(40,50,70,.35)}
   .shelf.with-ord .rtrack.view{top:11px}

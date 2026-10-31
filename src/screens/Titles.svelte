@@ -308,8 +308,8 @@
   }
   .tsearch:focus-within {
     background: #ffffff;
-    box-shadow: inset 0 1px 0 #fff, 0 0 0 2px var(--acc, #00A0D8), 0 4px 14px rgba(0, 160, 216, 0.25);
-    color: var(--acc, #00A0D8);
+    box-shadow: inset 0 1px 0 #fff, 0 0 0 2px var(--acc), 0 4px 14px color-mix(in srgb,var(--acc) 25%,transparent);
+    color: var(--acc);
   }
   .tsearch .ts-ic {
     display: grid;
@@ -327,7 +327,7 @@
     font-family: inherit;
     font-size: 13.5px;
     font-weight: 700;
-    color: #2a313d;
+    color: var(--ink);
     width: 145px;
     outline: none;
     padding: 0;
@@ -337,7 +337,7 @@
     width: 175px;
   }
   .tsearch input::placeholder {
-    color: #8a93a3;
+    color: var(--ink-3);
     font-weight: 600;
     opacity: 0.9;
   }
@@ -359,7 +359,7 @@
     transition: background 0.15s, color 0.15s, transform 0.1s;
   }
   .tsearch .ts-x:hover {
-    background: #E8384F;
+    background: var(--bad);
     color: #fff;
     transform: scale(1.1);
   }

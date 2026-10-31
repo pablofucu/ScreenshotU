@@ -60,6 +60,6 @@
   .srow.f .nm small{color:inherit;opacity:.85}
   .opts{display:flex;gap:6px;flex:none}
   .opts .tflt{cursor:pointer;text-shadow:none}
-  .apply{justify-content:center;font-weight:800;color:#3a414e}
+  .apply{justify-content:center;font-weight:800;color:var(--ink)}
   .apply.f{color:var(--acc-ink)}
 </style>
