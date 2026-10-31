@@ -85,10 +85,10 @@
 
 <style>
   /* Línea de tiempo en el rótulo: tinta neutra en reposo y la tinta del rótulo cuando está encendido. */
-  .tl{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700;color:#5f6776;white-space:nowrap}
-  .tr{position:relative;width:200px;height:4px;border-radius:4px;background:rgba(160,168,182,.45)}
-  .tr i{position:absolute;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 2px #fff;transition:width .2s,height .2s,margin .2s,box-shadow .2s}
-  .tr i.on{width:16px;height:16px;margin:-8px 0 0 -8px;box-shadow:0 0 0 3px #fff,0 0 10px 2px color-mix(in srgb,var(--acc) 60%,transparent)}
+  .tl{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+  .tr{position:relative;width:200px;height:4px;border-radius:4px;background:var(--line-2)}
+  .tr i{position:absolute;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 2px var(--on);transition:width .2s,height .2s,margin .2s,box-shadow .2s}
+  .tr i.on{width:16px;height:16px;margin:-8px 0 0 -8px;box-shadow:0 0 0 3px var(--on),0 0 10px 2px color-mix(in srgb,var(--acc) 60%,transparent)}
   :global(.bsh.lit) .tl{color:var(--ink);text-shadow:var(--tsh)}
   :global(.bsh.lit) .tr{background:color-mix(in srgb,var(--ink) 38%,transparent)}
   :global(.bsh.lit) .tr i{background:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.25)}

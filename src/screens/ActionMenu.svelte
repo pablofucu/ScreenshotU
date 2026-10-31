@@ -136,9 +136,9 @@
   .mcol { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   /* Dos columnas (ficha del juego): primero la izquierda, de arriba abajo. */
   .menupanel.two { left: 210px; width: 860px; }
-  .mhead { margin: 0; height: 26px; line-height: 26px; padding: 0 4px; font-size: 13px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: #7a8496; border-bottom: 2px solid color-mix(in srgb, var(--acc) 35%, transparent); }
+  .mhead { margin: 0; height: 26px; line-height: 26px; padding: 0 4px; font-size: 13px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); border-bottom: 2px solid color-mix(in srgb, var(--acc) 35%, transparent); }
   .mcol > .mhead:not(:first-child) { margin-top: 4px; }
-  .mcount { margin-left: auto; font-size: 15px; font-weight: 700; color: #7a8496; }
+  .mcount { margin-left: auto; font-size: 15px; font-weight: 700; color: var(--ink-3); }
   .f .mcount { color: inherit; opacity: 0.85; }
   /* Textos largos (p. ej. el nombre de una salida de audio) se cortan con puntos suspensivos. */
   .mrow .sl { min-width: 0; overflow: hidden; text-overflow: ellipsis; }

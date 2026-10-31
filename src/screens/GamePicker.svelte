@@ -33,7 +33,7 @@
   }
 </script>
 
-<div class="scrim pkscrim" role="presentation" style="--acc:{acc.c};--acc-ink:{acc.dark ? '#3a2f00' : '#fff'}">
+<div class="scrim pkscrim" role="presentation" style="--acc:{acc.c};--acc-ink:{acc.dark ? 'var(--ink)' : 'var(--on)'}">
   <div class="pkhead">
     <h2>Elige los juegos</h2>
     <p>{f.name || 'Nueva colección'} · {plat?.name ?? ''}</p>
@@ -78,19 +78,19 @@
 </div>
 
 <style>
-  .pkscrim{background:rgba(236,238,242,.95)}
+  .pkscrim{background:var(--face-hi)}
   .pkhead{position:absolute;left:69px;top:26px}
-  .pkhead h2{margin:0;font-size:30px;font-weight:800;color:#3a414e}
-  .pkhead p{margin:2px 0 0;font-size:16px;font-weight:600;color:#5f6776;max-width:700px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pkhead h2{margin:0;font-size:30px;font-weight:800;color:var(--ink)}
+  .pkhead p{margin:2px 0 0;font-size:16px;font-weight:600;color:var(--ink-2);max-width:700px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pkbar{position:absolute;left:69px;right:69px;top:92px;display:flex;align-items:center;gap:10px}
   .pksearch{display:flex;align-items:center;gap:10px;width:380px;height:44px;padding:0 8px 0 14px;border-radius:999px;cursor:pointer;margin-right:10px;
-    background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(240,243,248,.85));box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.28),0 8px 16px -10px rgba(40,50,70,.4)}
-  .pksearch b{flex:1;font-size:18px;font-weight:700;color:#3a414e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .pksearch b.ph{color:#8a93a3;font-weight:600}
+    background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(240,243,248,.85));box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px var(--line),0 8px 16px -10px rgba(40,50,70,.4)}
+  .pksearch b{flex:1;font-size:18px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pksearch b.ph{color:var(--ink-3);font-weight:600}
   .pkic{width:22px;height:22px;flex:none;border-radius:7px;display:grid;place-items:center;background:var(--acc)}
   .pkic :global(svg){width:70%;height:70%}
   .tflt{cursor:pointer}
-  .pkcount{margin-left:auto;font-size:15px;font-weight:700;color:#5f6776}
+  .pkcount{margin-left:auto;font-size:15px;font-weight:700;color:var(--ink-2)}
   .pkgrid{position:absolute;left:0;right:0;top:150px;overflow:hidden}
   .pktrack{position:absolute;left:69px;top:0;transition:transform .22s cubic-bezier(.25,1,.4,1)}
   .pkcov{--r:16px;--bw:6px}
@@ -98,11 +98,11 @@
   /* El marcado va en la cara (anillo del acento sobre la portada) para no pisar el resplandor del foco, que va en el cristal. */
   .pkcov.on .face::after{box-shadow:inset 0 0 0 4px var(--acc),inset 0 3px 6px -2px rgba(0,0,0,.35)}
   .pkchk{position:absolute;right:6px;top:6px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
-    background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 2px #fff,0 3px 8px -2px rgba(0,0,0,.5);z-index:3}
+    background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 2px var(--on),0 3px 8px -2px rgba(0,0,0,.5);z-index:3}
   .pkchk :global(svg){width:62%;height:62%}
-  .pkempty{position:absolute;left:0;right:0;top:150px;text-align:center;font-size:20px;font-weight:700;color:#5f6776;margin:0}
+  .pkempty{position:absolute;left:0;right:0;top:150px;text-align:center;font-size:20px;font-weight:700;color:var(--ink-2);margin:0}
   .pkname{position:absolute;right:69px;top:34px;display:flex;flex-direction:column;align-items:flex-end;gap:2px;max-width:420px;white-space:nowrap}
-  .pkname b{font-size:22px;font-weight:800;color:#3a414e;max-width:100%;overflow:hidden;text-overflow:ellipsis}
-  .pkname span{font-size:15px;font-weight:700;color:#5f6776}
+  .pkname b{font-size:22px;font-weight:800;color:var(--ink);max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  .pkname span{font-size:15px;font-weight:700;color:var(--ink-2)}
   @media (prefers-reduced-motion: reduce){.pktrack{transition:none}}
 </style>

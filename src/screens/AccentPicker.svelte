@@ -68,7 +68,7 @@
       </div>
 
       <div class="accprev">
-        <span class="chip" style="background:{cur ?? (autoColor || app.chrome.c)};color:{inkDark(cur ?? (autoColor || app.chrome.c)) ? '#3a2f00' : '#fff'}" data-testid="acc-chip">
+        <span class="chip" style="background:{cur ?? (autoColor || app.chrome.c)};color:{inkDark(cur ?? (autoColor || app.chrome.c)) ? 'var(--ink)' : 'var(--on)'}" data-testid="acc-chip">
           {a.row === 0 ? 'Automático' : (cur ?? '')}
         </span>
         <span class="fhint">Se ve al instante en la ficha. A lo guarda; B cancela.</span>

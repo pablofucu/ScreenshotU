@@ -46,7 +46,7 @@
     {/if}
     <span>{clock.d} <small>({clock.w})</small></span><span>{clock.t}</span>
     <span class="batt" title={app.padConnected ? 'Mando conectado' : 'Sin mando'}>
-      <svg width="30" height="20" viewBox="0 0 30 20"><rect x="1" y="3" width="28" height="14" rx="7" fill={app.padConnected ? 'var(--acc)' : '#a3abb8'} /><circle cx="8" cy="10" r="3" fill="#fff" /><circle cx="22" cy="10" r="2" fill="#fff" /></svg>
+      <svg width="30" height="20" viewBox="0 0 30 20"><rect x="1" y="3" width="28" height="14" rx="7" fill={app.padConnected ? 'var(--acc)' : 'var(--ink-3)'} /><circle cx="8" cy="10" r="3" fill="var(--on)" /><circle cx="22" cy="10" r="2" fill="var(--on)" /></svg>
     </span>
   </div>
 </div>
@@ -55,10 +55,10 @@
   .aud { position: relative; display: flex; }
   .audbtn {
     width: 34px; height: 30px; padding: 0; display: grid; place-items: center; cursor: pointer;
-    background: transparent; border: 0; border-radius: 10px; color: #7a8496; opacity: 0.75;
+    background: transparent; border: 0; border-radius: 10px; color: var(--ink-3); opacity: 0.75;
     transition: opacity 0.15s, color 0.15s, background 0.15s;
   }
   .audbtn.f { box-shadow: inset 0 0 0 2px var(--acc); }
   .audbtn :global(svg) { width: 22px; height: 22px; }
-  .audbtn:hover, .audbtn.open, .audbtn.f { opacity: 1; color: var(--acc); background: rgba(255, 255, 255, 0.55); }
+  .audbtn:hover, .audbtn.open, .audbtn.f { opacity: 1; color: var(--acc); background: var(--glass-in); }
 </style>

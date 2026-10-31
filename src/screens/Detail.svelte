@@ -270,8 +270,8 @@
   /* Estado y fecha de lanzamiento, uno tras otro sobre el hero */
   .dchips{position:absolute;left:100px;top:108px;z-index:6;display:flex;gap:10px}
   .dchips :global(.stpill){position:static;cursor:pointer}
-  .dchips :global(.stpill.st-none){background:rgba(40,48,64,.82);color:#94a3b8;border:1px dashed rgba(255,255,255,.25)}
-  .relpill{height:36px;padding:0 16px 0 12px;border-radius:999px;display:flex;align-items:center;gap:8px;font-size:17px;font-weight:800;color:#fff;box-sizing:border-box;cursor:pointer;
+  .dchips :global(.stpill.st-none){background:rgba(40,48,64,.82);color:var(--ink-3);border:1px dashed var(--line)}
+  .relpill{height:36px;padding:0 16px 0 12px;border-radius:999px;display:flex;align-items:center;gap:8px;font-size:17px;font-weight:800;color:var(--on);box-sizing:border-box;cursor:pointer;
     background:linear-gradient(180deg,rgba(60,68,84,.78),rgba(30,36,48,.82));box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 6px 14px -6px rgba(0,0,0,.5)}
   .relpill :global(svg){width:18px;height:18px}
   .relpill small{font-size:15px;font-weight:700;opacity:.92}

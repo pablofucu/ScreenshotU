@@ -49,16 +49,16 @@
   .learnpanel .msub { height: auto; white-space: normal; }
   .lcombo {
     margin-top: 6px; min-width: 220px; padding: 12px 24px; border-radius: 18px; font-size: 24px; font-weight: 800;
-    color: #8a92a0; background: rgba(40, 50, 70, .06); box-shadow: inset 0 0 0 2px rgba(40, 50, 70, .08);
+    color: var(--ink-3); background: var(--glass-in); box-shadow: inset 0 0 0 2px var(--line);
   }
   .lcombo.on { color: var(--acc-ink); background: var(--acc); box-shadow: none; }
-  .lwarn { margin: 4px 0 0; font-size: 13px; font-weight: 600; color: #b5303f; line-height: 1.3; }
+  .lwarn { margin: 4px 0 0; font-size: 13px; font-weight: 600; color: var(--bad); line-height: 1.3; }
   .lfoot { margin-top: auto; width: 100%; display: flex; align-items: center; justify-content: space-between; }
-  .lleft { font-size: 15px; font-weight: 700; color: #8a92a0; }
+  .lleft { font-size: 15px; font-weight: 700; color: var(--ink-3); }
   .lcancel {
-    font: 700 15px var(--round); color: #4a5260; background: rgba(40, 50, 70, .08); border: 0; border-radius: 14px;
+    font: 700 15px var(--round); color: var(--ink-2); background: var(--glass-in); border: 0; border-radius: 14px;
     padding: 8px 16px; cursor: pointer;
   }
-  .lcancel:hover { background: rgba(40, 50, 70, .14); }
+  .lcancel:hover { background: var(--glass-chip); }
   @keyframes lpulse { 50% { transform: scale(1.08); } }
 </style>

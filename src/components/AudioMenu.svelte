@@ -39,19 +39,19 @@
     position: absolute; top: 66px; right: 24px; z-index: 40; min-width: 280px; max-width: 420px; padding: 8px; cursor: default;
     display: flex; flex-direction: column; gap: 2px; font-size: 17px; animation: audIn 0.16s ease-out both;
     /* Sobre el visor oscuro el cristal translúcido deja el texto oscuro sin contraste: fondo casi opaco. */
-    background: rgba(247, 249, 252, 0.96);
+    background: var(--face-hi);
   }
   @keyframes audIn { from { opacity: 0; transform: translateY(-6px); } }
-  .audhead { padding: 4px 10px 6px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #657083; }
+  .audhead { padding: 4px 10px 6px; font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); }
   .audit {
     display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0; border-radius: 10px; cursor: pointer;
-    background: transparent; color: #3a4252; font: inherit; font-weight: 700; text-align: left; transition: background 0.12s;
+    background: transparent; color: var(--ink); font: inherit; font-weight: 700; text-align: left; transition: background 0.12s;
   }
-  .audit i { display: grid; place-items: center; width: 22px; height: 22px; color: #7a8496; flex: none; }
+  .audit i { display: grid; place-items: center; width: 22px; height: 22px; color: var(--ink-3); flex: none; }
   .audit i :global(svg) { width: 100%; height: 100%; }
   .audit span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .audit b { color: var(--acc); }
-  .audit.f { background: rgba(255, 255, 255, 0.85); box-shadow: inset 0 0 0 2px var(--acc); }
+  .audit.f { background: var(--glass-chip); box-shadow: inset 0 0 0 2px var(--acc); }
   .audit.on, .audit.on i { color: var(--acc); }
   @media (prefers-reduced-motion: reduce) { .audmenu { animation: none; } }
 </style>

@@ -10,7 +10,7 @@
   const S = 112, SW = 11;
 
   // Geometría, pistas y «racha pendiente» compartidas con la pantalla de racha (Streak).
-  const rr = createReadRings({ size: S, stroke: SW, gap: 1.15, empty: '#dde1e7' });
+  const rr = createReadRings({ size: S, stroke: SW, gap: 1.15, empty: 'var(--face)' });
   const tracks = $derived(rr.tracks);
   const rings = $derived(rr.rings);
   const { pending, cellBg } = rr;
@@ -94,7 +94,7 @@
 
 <style>
   .rrings{position:absolute;inset:0;display:flex;align-items:center;gap:14px;padding:0 12px;
-    background:linear-gradient(180deg,#fbfcfd,#eef1f5);color:#3a414e}
+    background:linear-gradient(180deg,var(--face-hi),var(--face));color:var(--ink)}
   .rr-ring{position:relative;flex:none}
   .rr-ring svg{display:block;overflow:visible}
   .arc{transition:stroke-dashoffset .9s cubic-bezier(.3,.8,.3,1)}
@@ -103,12 +103,12 @@
   .rr-col{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0}
   .rmed{display:grid;grid-template-columns:18px max-content minmax(0,1fr);align-items:center;column-gap:4px;height:48px;padding:0 8px;border-radius:14px;
     background:linear-gradient(180deg,color-mix(in srgb,var(--soft) 45%,white),var(--soft));
-    box-shadow:inset 0 1px 0 #fff,0 0 0 1px color-mix(in srgb,var(--c) 40%,white);
+    box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px color-mix(in srgb,var(--c) 40%,white);
     animation:rdrop .55s ease-out var(--d) both}
   .rfl{width:18px;height:18px}
   .rnw{height:26px;overflow:hidden}
   .rnum{display:inline-block;font-size:24px;font-weight:800;line-height:26px;color:var(--ink)}
-  .rlab{font-size:12px;font-weight:800;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#4a5260}
+  .rlab{font-size:12px;font-weight:800;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink-2)}
   .rlab small{display:block;font-size:10px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.04em}
   .rlab small.rp{color:var(--rink)}
   .rmap{display:flex;gap:2px}
