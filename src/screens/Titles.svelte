@@ -360,12 +360,12 @@
     color: var(--ink-2);
   }
   .tsearch:hover {
-    background: rgba(255, 255, 255, 0.92);
-    box-shadow: inset 0 1px 0 #fff, 0 0 0 1px rgba(95, 110, 135, 0.32), 0 3px 8px rgba(15, 23, 42, 0.08);
+    background: var(--face-hi);
+    box-shadow: inset 0 1px 0 var(--glass-top), 0 0 0 1px var(--line-2), 0 3px 8px rgba(15, 23, 42, 0.08);
   }
   .tsearch:focus-within {
-    background: #ffffff;
-    box-shadow: inset 0 1px 0 #fff, 0 0 0 2px var(--acc), 0 4px 14px color-mix(in srgb,var(--acc) 25%,transparent);
+    background: var(--face);
+    box-shadow: inset 0 1px 0 var(--glass-top), 0 0 0 2px var(--acc), 0 4px 14px color-mix(in srgb,var(--acc) 25%,transparent);
     color: var(--acc);
   }
   .tsearch .ts-ic {
@@ -400,8 +400,8 @@
   }
   .tsearch .ts-x {
     border: none;
-    background: rgba(0, 0, 0, 0.08);
-    color: #475569;
+    background: var(--line);
+    color: var(--ink-2);
     border-radius: 50%;
     width: 18px;
     height: 18px;

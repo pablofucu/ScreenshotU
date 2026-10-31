@@ -130,6 +130,7 @@
     <div class="glass st-body">
       <div class="face">
         <h3>{sec.name}</h3>
+        <div class="st-rows-wrap">
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div class="st-rows" style="height:{VIS * RH}px" onwheel={wheel}>
         <div class="st-track" style="transform:translateY({-off * RH}px)">
@@ -152,6 +153,7 @@
         {#if rows.length > VIS}
           <div class="st-scroll" style="height:{VIS * RH}px"><i style="height:{(VIS / rows.length) * 100}%;top:{(off / rows.length) * 100}%"></i></div>
         {/if}
+        </div>
         {#if focused}<div class="st-desc"><b>{focused.l}.</b> {focused.d}</div>{/if}
       </div>
     </div>
@@ -188,7 +190,8 @@
   .seg span { padding: 5px 16px; border-radius: var(--r-pill); font-size: var(--t-m); font-weight: 700; color: var(--ink-2); }
   .seg span.on { background: var(--gf); color: var(--on); }
   .st-row.f .seg { background: var(--glass-in); }
-  .st-scroll { position: absolute; right: 8px; top: 98px; width: 5px; border-radius: 3px; background: var(--line); }
+  .st-rows-wrap { position: relative; }
+  .st-scroll { position: absolute; right: 0; top: 4px; width: 5px; border-radius: 3px; background: var(--line); }
   .st-scroll i { position: absolute; left: 0; right: 0; border-radius: 3px; background: var(--g2); }
   .st-desc { flex: none; margin: auto 0 0; height: 124px; overflow: hidden; border-radius: var(--r-m); padding: 12px 18px; background: var(--glass-in); font-size: var(--t-s); font-weight: 500; line-height: 1.45; color: var(--ink-2); }
   .st-desc b { color: var(--ink); font-weight: 800; }

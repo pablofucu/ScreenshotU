@@ -196,7 +196,7 @@
   .bsh>:global(*:last-child:not(.aur)){margin-right:8px}
   .bsh h3{margin:0;font-size:22px;font-weight:800;color:var(--ink);line-height:1;max-width:430px;overflow:hidden;text-overflow:ellipsis;min-width:0}
   .bsh .m{font-size:15px;font-weight:600;color:var(--ink-2)}
-  .bsh :global(.hint){height:32px;font-size:15px;background:rgba(255,255,255,.9);box-shadow:none;text-shadow:none;color:color-mix(in srgb,var(--ink),var(--ink-2))}
+  .bsh :global(.hint){height:32px;font-size:15px;background:var(--glass-chip);box-shadow:none;text-shadow:none;color:color-mix(in srgb,var(--ink),var(--ink-2))}
   /* Colecciones: botón de cristal con anillo del par de tonos; al pulsarlo se llena con el degradado (como el rótulo). */
   .tinted .bsh :global(.hint){padding:0 14px 0 4px;color:var(--ink);background:rgba(255,255,255,.55);
     box-shadow:inset 0 1px 0 #fff,0 0 0 1.5px color-mix(in srgb,var(--g1) 55%,transparent);transition:transform .12s,background .12s,color .12s,box-shadow .12s}
@@ -225,7 +225,7 @@
   /* ---- Balda: el cristal común, neutro ---- */
   .bsb{position:relative;width:100%;height:190px;--r:26px;--bw:7px;cursor:default}
   .bsb::before{opacity:.4}
-  .bsb>.face{background:linear-gradient(180deg,rgba(250,251,253,.75),rgba(236,240,245,.6))}
+  .bsb>.face{background:linear-gradient(180deg,var(--glass-top),var(--glass-bot))}
   .bsb>.face::after{box-shadow:inset 0 0 0 1px rgba(20,30,50,.12),inset 0 2px 5px -2px rgba(0,0,0,.18);z-index:5}
   .rtrack{position:absolute;left:0;top:0;height:100%;transition:transform .3s cubic-bezier(.25,1,.4,1)}
   .rtrack.view{left:9px;top:10px;height:139px}
@@ -241,8 +241,8 @@
 
   /* ---- Borde de etiquetas ---- */
   .slip{position:absolute;left:0;right:0;bottom:0;height:26px;z-index:4;overflow:hidden;
-    background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(222,227,235,.88));
-    box-shadow:inset 0 1px 0 #fff,0 -6px 12px -10px rgba(40,50,70,.4)}
+    background:linear-gradient(180deg,var(--glass-chip),var(--face));
+    box-shadow:inset 0 1px 0 var(--glass-top),0 -6px 12px -10px rgba(40,50,70,.4)}
   .slip .rtrack{left:9px}
   .slab{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;
     font-size:13px;font-weight:700;color:var(--ink-2);transition:color .2s}
@@ -252,12 +252,12 @@
   .slab.on em{color:#FFE27A}
   .shelf.dk .slab.on em{color:#7a5a00}
   .sm{position:absolute;top:54px;z-index:6;font-style:normal;font-size:15px;font-weight:800;color:var(--ink-2);pointer-events:none;
-    padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 0 0 1px rgba(95,110,135,.2)}
+    padding:3px 10px;border-radius:999px;background:var(--glass-chip);box-shadow:0 0 0 1px var(--line)}
   .sm.l{left:8px}
   .sm.r{right:8px}
   /* Nº de orden sobre la portada */
   .ord{position:absolute;z-index:4;left:-7px;top:-7px;min-width:28px;height:28px;box-sizing:border-box;padding:0 6px;border-radius:999px;display:grid;place-items:center;font-size:14px;font-weight:800;color:color-mix(in srgb,var(--ink),var(--ink-2));
-    background:linear-gradient(180deg,#fff,#e9edf2);box-shadow:0 0 0 1px rgba(95,110,135,.3),0 3px 6px -2px rgba(40,50,70,.35)}
+    background:linear-gradient(180deg,var(--face-hi),var(--face));box-shadow:0 0 0 1px var(--line),0 3px 6px -2px rgba(40,50,70,.35)}
   .scov.f .ord{background:var(--acc);color:var(--ink);box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 3px 6px -2px rgba(40,50,70,.35)}
   .shelf.with-ord .rtrack.view{top:11px}
   /* Separadores y etiquetas de mes */

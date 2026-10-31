@@ -296,7 +296,7 @@
 <style>
   .spage :global(.hints) { z-index: 40; }
   .spage { background: var(--face); -webkit-backdrop-filter: none; backdrop-filter: none; color: var(--ink); }
-  .panel { position: absolute; border-radius: 24px; background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(250, 251, 253, 0.86)); box-shadow: inset 0 1.5px 0 var(--glass-top), 0 0 0 1px var(--line), 0 18px 30px -18px rgba(40, 50, 70, 0.45); }
+  .panel { position: absolute; border-radius: 24px; background: linear-gradient(180deg, var(--face-hi), var(--face)); box-shadow: inset 0 1.5px 0 var(--glass-top), 0 0 0 1px var(--line), 0 18px 30px -18px rgba(40, 50, 70, 0.45); }
   .lst { left: 40px; top: 92px; width: 392px; height: 560px; padding: 16px 14px; display: flex; flex-direction: column; }
   .rp { left: 448px; top: 92px; width: 792px; height: 560px; padding: 18px 22px; display: flex; flex-direction: column; }
   .k-auto { --k: var(--acc); } .k-manual { --k: var(--ok); } .k-antes { --k: var(--warn); }
