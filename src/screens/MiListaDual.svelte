@@ -118,8 +118,6 @@
       color-mix(in srgb, var(--c) 15%, var(--glass-mid)) 46%,
       color-mix(in srgb, var(--c) 15%, var(--glass-bot)) 100%
     );
-    -webkit-backdrop-filter: blur(14px) saturate(1.7);
-    backdrop-filter: blur(14px) saturate(1.7);
     box-shadow:
       inset 0 1.5px 0 rgba(255,255,255,1),
       inset 0 0 0 1px rgba(255,255,255,.55),
@@ -189,8 +187,6 @@
     align-items: center;
     cursor: pointer;
     background: linear-gradient(180deg, var(--glass-top) 0%, var(--glass-mid) 46%, var(--glass-bot) 100%);
-    -webkit-backdrop-filter: blur(14px) saturate(1.7);
-    backdrop-filter: blur(14px) saturate(1.7);
     box-shadow:
       inset 0 1.5px 0 rgba(255,255,255,1),
       inset 0 0 0 1px rgba(255,255,255,.55),

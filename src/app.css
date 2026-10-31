@@ -124,6 +124,9 @@ body.nocursor,body.nocursor *{cursor:none !important}
 
 /* titles grid */
 .ttrack{position:absolute;left:0;top:0;height:100%;transition:transform .35s cubic-bezier(.25,1,.4,1)}
+/* Portadas y miniaturas repetidas: sin backdrop-filter. Decenas de desenfoques en vivo (encima del fondo ya difuminado)
+   saturan la composición de WebView2 y parpadean al mover el foco o cambiar de pestaña; el cristal se ve casi igual. */
+.glass.cover,.glass.scov,.glass.bsb,.glass.shot,.glass.vthumb,.glass.pkcov,.glass.dshot,.glass.dcover{-webkit-backdrop-filter:none;backdrop-filter:none}
 .cover{width:176px;height:236px;--r:24px;--bw:9px}
 .cover .face{border-radius:16px}
 .thead{position:absolute;left:96px;top:82px;right:96px;display:flex;align-items:baseline;gap:14px;font-size:26px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden}
