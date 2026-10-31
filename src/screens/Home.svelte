@@ -95,7 +95,8 @@
     {#each recent as r, i (r.t.id)}
       {@const x = cx0 + i * (CW + CGAP)}
       {@const m = meta(r.t, app.lib.platforms[r.pi].name)}
-      <div class="glass rcard fx" class:f={app.focus === 'rec' + i} data-k="rec{i}" data-act="rec:{i}" style="left:{x}px;--acc:{app.titleAcc(r.pi, r.ti).c}">
+      <div class="glass rcard fx" class:f={app.focus === 'rec' + i} data-k="rec{i}" data-act="rec:{i}" style="left:{x}px;--acc:{app.titleAcc(r.pi, r.ti).c};{app.pipStyle(r.pi, r.ti)}">
+        <i class="pip"></i>
         <RecentCard t={r.t} playing={!!r.t.gameId && app.playing?.id === r.t.gameId} />
       </div>
       <div class="rmeta" style="left:{x + 4}px">{m.when}{#if m.rest}<span>{m.when ? ' · ' : ''}{m.rest}</span>{/if}</div>

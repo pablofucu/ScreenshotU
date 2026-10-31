@@ -38,11 +38,11 @@
   const shelfItems = (sh: ListShelf): ShelfItem[] =>
     sh.items.map((ti, k) => {
       const { label, stars } = itemLabel(sh, titles[ti], k);
-      return { k: 'tit' + ti, act: 'tit:' + ti, path: coverOf(ti), name: titles[ti].name, label, stars };
+      return { k: 'tit' + ti, act: 'tit:' + ti, path: coverOf(ti), name: titles[ti].name, label, stars, pip: app.pipStyle(app.p, ti) };
     });
   const finShelfItems = (sh: ListShelf): ShelfItem[] =>
     sh.items.map((ti, k) => ({
-      k: 'tit' + ti, act: 'tit:' + ti, path: coverOf(ti), name: titles[ti].name, n: k + 1, stars: 0,
+      k: 'tit' + ti, act: 'tit:' + ti, path: coverOf(ti), name: titles[ti].name, n: k + 1, stars: 0, pip: app.pipStyle(app.p, ti),
     }));
   // «Terminados»: cuántos juegos se terminaron cada mes del año (barritas del rótulo).
   const monthCounts = (sh: ListShelf) => {

@@ -47,7 +47,8 @@
             data-k="tit{it.ti}"
             data-act="tit:{it.ti}"
           >
-            <div class="cv">
+            <div class="cv" style={app.pipStyle(app.p, it.ti)}>
+              <i class="pip"></i>
               <div class="fc">
                 {#if coverOf(it.ti)}
                   <Thumb path={coverOf(it.ti)!} />

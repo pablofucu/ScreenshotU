@@ -13,6 +13,8 @@
     icon?: string;
     /** Número de orden del juego dentro del año (1..N). */
     n?: number;
+    /** `--p1/--p2` de la pareja del juego para el punto de color. */
+    pip?: string;
   }
 </script>
 
@@ -107,8 +109,9 @@
         {#each win as p (items[p].k)}
           {@const it = items[p]}
           <div class="glass scov fx" class:addtile={!it.path && !!it.icon} class:f={focus === p} class:hid={it.hidden} data-k={it.k} data-act={it.act}
-            style="left:{positions ? positions[p] : p * SHELF_PITCH}px;width:{SHELF_CW}px;height:{SHELF_CH}px">
+            style="left:{positions ? positions[p] : p * SHELF_PITCH}px;width:{SHELF_CW}px;height:{SHELF_CH}px{it.pip ? ';' + it.pip : ''}">
             {#if it.n !== undefined}<span class="ord">{it.n}</span>{/if}
+            {#if it.pip}<i class="pip"></i>{/if}
             <div class="face">
               {#if it.path}<Thumb path={it.path} />{:else if it.icon}<div class="addin"><span>{@html it.icon}</span><b>{it.name}</b></div>{:else}<div class="noart"><b>{it.name}</b></div>{/if}
             </div>

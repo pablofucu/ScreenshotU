@@ -387,10 +387,14 @@ export function menuLayout(): MenuGroup[][] {
 export function openTitle(i: number) {
   const t = app.platform?.titles[i];
   if (!t) return;
-  app.detailFrom = 'titles';
-  app.t = i; app.s = 0; app.favView = false; app.sortMode = t.sortMode ?? app.config.shotsOrder;
-  delete app.fk.detail;
-  go('detail', 'fwd');
+  // La portada enfocada «vuela» hasta su sitio en la ficha (sin vuelo con movimiento reducido).
+  const from = screenEl()?.querySelector<HTMLElement>('.fx.f .face, .fx.f .fc');
+  morph(from, () => {
+    app.detailFrom = 'titles';
+    app.t = i; app.s = 0; app.favView = false; app.sortMode = t.sortMode ?? app.config.shotsOrder;
+    delete app.fk.detail;
+    go('detail', 'fwd');
+  }, () => screenEl()?.querySelector<HTMLElement>('.dcover .face'));
   backend.prefetch(t.shots.slice(0, DETAIL_SHOTS + 1).map((s) => s.path));
 }
 

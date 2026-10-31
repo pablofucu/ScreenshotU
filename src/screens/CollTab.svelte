@@ -24,7 +24,7 @@
     const sh = shelves[k];
     // Una colección sin juegos visibles enseña un hueco que abre su edición.
     if (!sh.items.length) return [{ k: `cl${k}.0`, act: `cgame:${k}:0`, path: null, name: 'Añadir juegos', icon: ICON.plus }];
-    return sh.items.map((ti, j) => ({ k: `cl${k}.${j}`, act: `cgame:${k}:${j}`, path: coverOf(ti), name: titles[ti].name, label: String(gameYear(titles[ti]) ?? '–') }));
+    return sh.items.map((ti, j) => ({ k: `cl${k}.${j}`, act: `cgame:${k}:${j}`, path: coverOf(ti), name: titles[ti].name, label: String(gameYear(titles[ti]) ?? '–'), pip: app.pipStyle(app.p, ti) }));
   }
 
   /** Línea de tiempo: un punto por juego según su año (de lanzamiento o, sin él, de su primera captura o partida). */
