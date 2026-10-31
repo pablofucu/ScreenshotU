@@ -251,7 +251,7 @@
 {#if tab === 'list'}
   <Hints list={[
     ['A', 'Abrir', 'a'],
-    ...(cur?.launchable ? [['X', 'Jugar', 'x'] as H] : []),
+    ['X', 'Fijar', 'x'],
     ['Y', 'Opciones', 'y'],
     ['LB/RB', 'Pestaña', 'rb'],
     ['Start', 'Menú', 'menu'],
