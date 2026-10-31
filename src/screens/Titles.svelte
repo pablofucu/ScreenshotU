@@ -80,9 +80,11 @@
       : [Math.max(0, q - 9), Math.min(slots, q + 10)],
   );
   const idx = $derived(Array.from({ length: Math.max(0, range[1] - range[0]) }, (_, k) => range[0] + k));
-  // Posición y tamaño de la portada nº `j` de la página `page` (los textos y bordes se escalan con el tamaño).
+  // Las páginas se apilan en vertical (una pantalla de alto cada una), igual que la barra de la derecha.
+  const PH = 720;
+  // Posición y tamaño de la portada nº `j` de la página `page` (los textos y el marco fino se escalan con el tamaño).
   const cellStyle = (page: number, j: number) =>
-    `left:${page * 1280 + G.gx + (j % G.cols) * (G.cw + G.gap)}px;top:${G.top + Math.floor(j / G.cols) * (G.ch + G.rg)}px;width:${G.cw}px;height:${G.ch}px;--r:${(22 * G.s).toFixed(1)}px;--bw:${(8 * G.s).toFixed(1)}px;--fr:${(15 * G.s).toFixed(1)}px;--ts:${(0.55 + 0.45 * G.s).toFixed(3)}`;
+    `left:${G.gx + (j % G.cols) * (G.cw + G.gap)}px;top:${page * PH + G.top + Math.floor(j / G.cols) * (G.ch + G.rg)}px;width:${G.cw}px;height:${G.ch}px;--r:${(16 * G.s).toFixed(1)}px;--bw:${(3 * G.s).toFixed(1)}px;--fr:${(13 * G.s).toFixed(1)}px;--ts:${(0.55 + 0.45 * G.s).toFixed(3)}`;
 
   // Fondo ambiental: el hero (o la portada) del juego enfocado, muy desenfocado, con fundido cruzado entre juegos.
   // La capa nueva entra encima (ya decodificada) y las de debajo se quitan solo cuando acabó de entrar; si no hay
@@ -140,12 +142,13 @@
     if (h >= 325 || h < 20) return 7;
     return h < 45 ? 0 : h < 85 ? 1 : h < 115 ? 2 : h < 175 ? 3 : h < 225 ? 4 : h < 275 ? 5 : 6;
   };
-  // Barra lateral como minimapa: los colores reales de los juegos en el orden actual, muestreados a ≤56 paradas.
+  // Barra lateral como minimapa: con el orden «Por color», los colores reales de los juegos, muestreados a ≤56 paradas
+  // (con otro orden la barra es neutra: los colores saldrían a rayas sin sentido).
   // El tirador (70px) recorre 350px de los 420 de la barra, así que el color de cada posición va en ese tramo.
   const BAR_H = 420, THUMB = 70;
   const mapGrad = $derived.by(() => {
     const n = vis.length;
-    if (n < 2) return '';
+    if (n < 2 || app.titleOrder !== 'color') return '';
     const S = Math.min(n, 56);
     const stops: string[] = [];
     for (let k = 0; k < S; k++) {
@@ -279,7 +282,7 @@
     {/if}
   {/if}
   {#if grid}
-    <div class="ttrack" style="width:{pages * 1280}px;transform:translateX({-pg * 1280}px)">
+    <div class="ttrack" style="width:1280px;height:{pages * PH}px;transform:translateY({-pg * PH}px)">
       {#each idx as pos (realAt(pos))}
         {@const i = realAt(pos)}
         {@const j = pos % PS}
@@ -289,11 +292,9 @@
         </div>
       {/each}
     </div>
-    <div class="side" class:off={pg === 0} data-hact="lb" style="left:12px">{@html ICON.arrowL}</div>
-    <div class="side" class:off={pg >= pages - 1} data-hact="rb" style="right:12px">{@html ICON.arrowR}</div>
     {#if tab === 'all' && pages > 1}
-      <!-- Barra de desplazamiento: tira del arcoíris de principio a fin de la lista; el tirador sigue al enfocado. -->
-      <!-- Minimapa: colores reales de los juegos en el orden actual. Clic o arrastre = saltar a ese juego; el ratón encima enseña cuál es. -->
+      <!-- Barra de desplazamiento vertical (las páginas bajan): por color es un minimapa con los colores de los juegos.
+           Clic o arrastre = saltar a ese juego; el ratón encima enseña cuál es. -->
       <div class="sbar rb" bind:this={barEl} style="right:auto;left:1182px;top:214px;height:{BAR_H}px{mapGrad ? ';background:' + mapGrad : ''}">
         {#if app.titleOrder === 'az'}<em style="top:-20px">A</em>{/if}
         <i style="height:{THUMB}px;top:{(q / Math.max(1, slots - 1)) * (BAR_H - THUMB)}px"></i>
@@ -357,7 +358,7 @@
     ...(cur?.launchable ? [['X', 'Jugar', 'x'] as H] : []),
     ['Y', 'Buscar / Vista', 'y'],
     ['LB/RB', 'Pestaña', 'rb'],
-    ['LT/RT', 'Página', 'rt'],
+    ['LT/RT', 'Subir / bajar página', 'rt'],
     ['Start', 'Menú', 'menu'],
     ['B', 'Volver', 'b'],
   ]} />

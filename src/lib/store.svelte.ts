@@ -201,7 +201,7 @@ export const TITLE_FILTERS: Array<[TitleFilter, string]> = [
 export const validFilter = (f: string | null | undefined): TitleFilter => (TITLE_FILTERS.some(([k]) => k === f) ? (f as TitleFilter) : 'all');
 
 /** Orden de la lista de juegos (botón X), en el orden en que se recorre; se recuerda por categoría. */
-export const TITLE_ORDERS: TitleOrder[] = ['last', 'az', 'color'];
+export const TITLE_ORDERS: TitleOrder[] = ['color', 'az', 'last'];
 export const TITLE_ORDER_LABEL: Record<TitleOrder, string> = { last: 'Última partida', az: 'A–Z', color: 'Por color' };
 
 /** Pestañas dentro de cada categoría (botón View): Todos · Mi lista · Colecciones. */
@@ -505,7 +505,7 @@ class Store {
     return out;
   });
   /** Orden activo de la categoría abierta. */
-  titleOrder = $derived<TitleOrder>(this.config.titlesOrder?.[this.lib.platforms[this.p]?.id ?? ''] ?? 'last');
+  titleOrder = $derived<TitleOrder>(this.config.titlesOrder?.[this.lib.platforms[this.p]?.id ?? ''] ?? 'color');
   tview = $derived.by((): number[] => {
     const titles = this.lib.platforms[this.p]?.titles ?? [];
     const all = titles.map((_, i) => i);

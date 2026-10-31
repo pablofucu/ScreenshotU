@@ -257,7 +257,13 @@ export function move(dx: number, dy: number) {
     const s = prim + Math.abs(dx ? vy : vx) * 2.4;
     if (s < bs) { bs = s; best = e; }
   }
-  if (best) { setFocus(best.dataset.k!); blip(880); } else bump(cur, dx, dy);
+  if (best) { setFocus(best.dataset.k!); blip(880); return; }
+  // Cuadrícula de juegos: al final de una fila, izquierda/derecha siguen con el juego anterior/siguiente.
+  if (dx && app.view === 'titles' && app.config.titlesView === 'grid' && onAllTab()) {
+    const np = viewPos(app.t) + dx;
+    if (np >= 0 && np <= app.tview.length) { setFocus('tit' + atPos(np)); blip(880); return; }
+  }
+  bump(cur, dx, dy);
 }
 
 /* ---------- animaciones ---------- */

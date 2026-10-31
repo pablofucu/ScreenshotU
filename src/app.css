@@ -854,6 +854,11 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
   box-shadow:-14px 0 34px -6px var(--p1,var(--f1)),14px 0 34px -6px var(--p2,var(--f2));opacity:0;transition:opacity .25s}
 .tcov.f>.ring,.tcov.f>.halo,.ccover.f>.ring,.ccover.f>.halo{opacity:1}
 @media (prefers-reduced-motion: reduce){.tcov>.ring,.ccover>.ring{animation:none}.tcov>.halo,.ccover>.halo,.tcov>.ring,.ccover>.ring{transition:none}}
+/* Catálogo en cuadrícula: un solo marco fino y neutro para todas las portadas; la enfocada lleva un único
+   contorno del color de la sección (sin anillo, halo ni brillos con los colores de cada juego). */
+.ttrack .tcov{background:var(--face);box-shadow:0 0 0 1px var(--line),0 10px 22px -14px rgba(20,30,50,.55)}
+.ttrack .tcov::before,.ttrack .tcov::after,.ttrack .tcov>.ring,.ttrack .tcov>.halo{display:none}
+.ttrack .tcov.f{transform:scale(1.06);background:var(--face);box-shadow:0 0 0 3px var(--f1),0 18px 34px -12px rgba(20,30,50,.6)}
 
 /* Catálogo: velo de color sobre el fondo difuminado, con el matiz del juego enfocado (suave, cambia con fundido). */
 @property --w1{syntax:'<color>';inherits:false;initial-value:transparent}
