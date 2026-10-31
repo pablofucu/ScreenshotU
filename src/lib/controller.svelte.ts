@@ -709,7 +709,7 @@ function scheduleGoalNotice(gameId: string) {
     if (!r) return;
     const at = now + Math.max(r.need - r.got, RESCUE_MIN_PLAY) * 60000 + 15000;
     if (localDay(at) !== localDay(now) || (r.last && at > r.closeAt)) return;
-    backend.goalNotice(gameId, at, '¡Racha recuperada!').catch((e) => console.error(e));
+    backend.goalNotice(gameId, at, '¡Racha recuperada!', t.streak, k).catch((e) => console.error(e));
     return;
   }
   // Con la partida que empieza ya contada: si la anterior de este juego terminó hace menos de 2 min, se unen y el
@@ -719,8 +719,8 @@ function scheduleGoalNotice(gameId: string) {
   const at = now + goalMinLeft(t2.today, goal) * 60000 + 15000;
   if (localDay(at) !== localDay(now)) return;
   const n = t.streak + 1;
-  const text = n > 1 ? `¡Meta cumplida! Racha de ${n} días` : '¡Meta de lectura cumplida!';
-  backend.goalNotice(gameId, at, text).catch((e) => console.error(e));
+  const text = n > 1 ? '¡Meta cumplida!' : '¡Meta de lectura cumplida!';
+  backend.goalNotice(gameId, at, text, n, k).catch((e) => console.error(e));
 }
 
 /** Cuántas filas de la clasificación de categoría caben sin desplazar. */

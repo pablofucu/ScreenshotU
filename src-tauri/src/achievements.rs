@@ -446,8 +446,8 @@ pub fn on_launch(app: AppHandle, game: Game) {
                                 // 2. Captura automatica segun el contrato de integracion
                                 snap::trigger(&app_clone);
 
-                                // 3. Notificar a la interfaz mediante evento
-                                let mut ach = Achievement {
+                                // 3. Aviso sobre el juego y evento para la interfaz. Sin esquema solo se sabe el nombre interno.
+                                let fallback = Achievement {
                                     app_id: app_id.clone(),
                                     api_name: api_name.clone(),
                                     display_name: api_name.clone(),
@@ -464,10 +464,16 @@ pub fn on_launch(app: AppHandle, game: Game) {
                                     rarity_pct: None,
                                 };
 
-                                let _ = app_clone
-                                    .state::<AppState>()
-                                    .db
-                                    .with(|c| core::apply_rarity(c, &app_id, std::slice::from_mut(&mut ach)));
+                                // El esquema da nombre, descripcion e icono; la sincronizacion trae tambien la rareza.
+                                let st2 = app_clone.state::<AppState>();
+                                let mut ach = sync_achievements_from_disk(&st2, &game_id_clone, None)
+                                    .ok()
+                                    .and_then(|(_, l)| l.into_iter().find(|a| a.api_name == api_name))
+                                    .unwrap_or(fallback);
+                                ach.icon = inline_icon(ach.icon.take());
+                                ach.icon_gray = inline_icon(ach.icon_gray.take());
+                                let _ = st2.db.with(|c| core::apply_rarity(c, &app_id, std::slice::from_mut(&mut ach)));
+                                crate::achpop::show(&app_clone, &ach);
 
                                 let _ = app_clone.emit(
                                     "achievement-unlocked",

@@ -1,5 +1,6 @@
 //! Capa Tauri: solo traduce comandos de la interfaz a llamadas a `visor-core`.
 mod achievements;
+mod achpop;
 mod ai;
 mod anki;
 mod audio;
@@ -345,7 +346,7 @@ static GOAL_GEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::ne
 /// Aviso sobre el juego cuando la partida en curso llegue a la meta diaria de lectura. La app calcula la hora (`at`,
 /// ms reales) con las partidas de hoy; aqui se espera y, si la partida de `id` sigue en marcha, sale el cartel.
 #[tauri::command]
-fn goal_notice(app: AppHandle, id: String, at: i64, text: String) {
+fn goal_notice(app: AppHandle, id: String, at: i64, text: String, days: u32, key: String) {
     let gen = GOAL_GEN.fetch_add(1, Ordering::SeqCst) + 1;
     let _ = std::thread::Builder::new().name("goal-notice".into()).spawn(move || loop {
         if GOAL_GEN.load(Ordering::SeqCst) != gen {
@@ -357,7 +358,7 @@ fn goal_notice(app: AppHandle, id: String, at: i64, text: String) {
         }
         let now = chrono_now_ms();
         if now >= at {
-            overlay::goal(&text);
+            overlay::goal(&key, days, &text);
             return;
         }
         std::thread::sleep(std::time::Duration::from_millis((at - now).clamp(50, 5000) as u64));

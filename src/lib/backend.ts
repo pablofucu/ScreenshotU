@@ -144,7 +144,7 @@ async function tauriBackend(): Promise<Backend> {
     setAudioOutput: (id: string) => invoke<AudioOutput[]>('set_audio_output', { id }),
     hotkeySuspend: (suspend: boolean) => invoke('hotkey_suspend', { suspend }),
     launch: (id) => invoke('launch_game', { id }),
-    goalNotice: (id, at, text) => invoke('goal_notice', { id, at, text }),
+    goalNotice: (id, at, text, days, key) => invoke('goal_notice', { id, at, text, days, key }),
     openFolder: (path) => invoke('open_folder', { path }),
     addGame: (game: NewGame) => invoke<AddReport>('add_game', { game }),
     scanGamesDir: (dir: string) => invoke<DirScan>('scan_games_dir', { dir }),

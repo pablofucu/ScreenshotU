@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Avisos sobre el juego</title>
+<style>
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:500;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-500-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:700;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-700-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:800;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-800-latin.woff2') format('woff2')}
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;--acc:#00A0D8;--pink:#ff4f7b;--ink:#3a414e;--muted:#5f6776;color-scheme:light}
+*{box-sizing:border-box}
+html,body{margin:0;background:#dfe3e9;font-family:var(--round);color:var(--ink)}
+button,select{font-family:inherit}
+
+/* ============ Documento ============ */
+.doc{max-width:1400px;margin:0 auto;padding:36px 16px 80px}
+.doc>header h1{font-size:32px;font-weight:800;margin:0 0 6px}
+.doc>header p{font-size:16px;line-height:1.55;margin:0 0 8px;max-width:900px;color:var(--muted)}
+.rules{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0;padding:0;list-style:none}
+.rules li{font-size:13.5px;background:#fff;border-radius:999px;padding:5px 12px;box-shadow:0 0 0 1px rgba(95,110,135,.18)}
+.toolbar{position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin:20px -16px 0;padding:10px 16px;background:rgba(223,227,233,.92);border-bottom:1px solid rgba(95,110,135,.18)}
+.grp{display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:var(--muted)}
+.seg{display:inline-flex;background:#fff;border-radius:999px;padding:3px;box-shadow:0 0 0 1px rgba(95,110,135,.2)}
+.seg button{border:0;background:none;padding:5px 11px;border-radius:999px;font-size:13.5px;font-weight:700;color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.chk{display:flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:var(--muted);cursor:pointer}
+.btn{border:0;background:var(--acc);color:#fff;font-weight:800;font-size:13.5px;padding:7px 14px;border-radius:999px;cursor:pointer}
+.btn.ghost{background:#fff;color:var(--ink);box-shadow:0 0 0 1px rgba(95,110,135,.25)}
+.btn:focus-visible,.seg button:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
+
+section.s{margin-top:48px}
+section.s>h2{font-size:26px;font-weight:800;margin:0 0 4px;display:flex;align-items:center;gap:12px}
+section.s>h2 .n{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--ink);color:#fff;font-size:19px}
+section.s>.why{font-size:15.5px;color:var(--muted);margin:0 0 12px;max-width:900px;line-height:1.5}
+.sctl{display:flex;flex-wrap:wrap;gap:10px 18px;margin:0 0 14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,660px),1fr));gap:20px}
+.card{background:#fff;border-radius:18px;padding:16px;box-shadow:0 0 0 1px rgba(95,110,135,.18);min-width:0}
+.card h3{margin:0;font-size:18px;font-weight:800;display:flex;align-items:center;gap:8px}
+.card h3 .code{font-size:12px;font-weight:800;background:var(--ink);color:#fff;border-radius:6px;padding:2px 7px}
+.card h3 .fav{font-size:12px;font-weight:800;background:#ffe9a8;color:#7a5600;border-radius:6px;padding:2px 7px}
+.card .dist{margin:4px 0 12px;font-size:14.5px;color:var(--muted);line-height:1.45}
+.stagewrap{position:relative;width:100%;border-radius:12px;overflow:hidden;background:#0d1016}
+.stagewrap .sizer{width:100%}
+.world{position:absolute;left:0;top:0;width:640px;height:360px;transform-origin:0 0;overflow:hidden}
+.scale-tag{position:absolute;left:8px;bottom:8px;z-index:9;font-size:11px;font-weight:800;color:#fff;background:rgba(0,0,0,.45);padding:2px 7px;border-radius:999px}
+.prog{height:4px;border-radius:2px;background:#e6e9ee;margin-top:8px;overflow:hidden}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--pink));transform-origin:0 50%;transform:scaleX(0)}
+.card footer{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
+.spec{margin:10px 0 0;font-size:13px;line-height:1.55;color:var(--muted)}
+.spec b{color:var(--ink)}
+.spec code{font-family:Consolas,ui-monospace,monospace;font-size:12px;background:#f1f3f6;border-radius:4px;padding:1px 4px}
+.reco{margin-top:14px;background:#fff8e1;border-radius:14px;padding:12px 16px;font-size:14.5px;line-height:1.5;box-shadow:0 0 0 1px #f2d98a}
+.reco b{color:#7a5600}
+
+/* ============ Fondos que simulan un juego ============ */
+.world.bg-dark{background:
+  radial-gradient(circle at 78% 22%,rgba(255,170,80,.28),transparent 28%),
+  radial-gradient(ellipse at 25% 115%,#3a1d4a,transparent 60%),
+  repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 2px,transparent 2px 28px),
+  repeating-linear-gradient(90deg,rgba(255,255,255,.02) 0 2px,transparent 2px 56px),
+  linear-gradient(#0a0e1a,#151b2e 62%,#1e1426)}
+.world.bg-light{background:
+  radial-gradient(circle at 86% 10%,#fff 0 7%,rgba(255,255,255,.7) 14%,transparent 30%),
+  linear-gradient(170deg,transparent 58%,#f6fbff 58.3%,#e3ecf4),
+  linear-gradient(#a9d8ff,#e8f5ff 58%)}
+.world.bg-color{background:
+  radial-gradient(circle at 80% 18%,rgba(255,255,255,.35),transparent 25%),
+  linear-gradient(135deg,#ff3d77,#ffb800 38%,#00d4a8 68%,#3a7bff)}
+.hud{position:absolute;inset:0;pointer-events:none}
+.hud .map{position:absolute;left:16px;top:16px;width:70px;height:70px;border-radius:50%;background:rgba(0,0,0,.35);box-shadow:inset 0 0 0 2px rgba(255,255,255,.5)}
+.hud .map::after{content:'';position:absolute;left:31px;top:29px;border:6px solid transparent;border-bottom:10px solid #fff;border-top:0}
+.hud .hp{position:absolute;left:16px;bottom:18px;width:180px;height:12px;border-radius:6px;background:rgba(0,0,0,.4);overflow:hidden}
+.hud .hp::after{content:'';position:absolute;inset:0;width:68%;background:linear-gradient(90deg,#e8384f,#ff8a5b)}
+.hud .ammo{position:absolute;right:20px;bottom:14px;font:800 26px/1 var(--round);color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.6)}
+.hud .hero{position:absolute;left:300px;bottom:70px;width:34px;height:70px;border-radius:16px 16px 6px 6px;background:rgba(0,0,0,.55)}
+.world.bg-light .hud .hero{background:rgba(40,60,90,.55)}
+
+/* Ventana del aviso: rectángulo fijo, recortado (overflow hidden = lo que hace Tauri) */
+.win{position:absolute;top:18px;right:18px;overflow:hidden;pointer-events:none}
+.win .inner{position:absolute;inset:0}
+.show-rect .win{outline:1px dashed rgba(255,255,255,.9);box-shadow:0 0 0 1px rgba(0,0,0,.55)}
+.wlabel{position:absolute;right:18px;font:800 10.5px/1 var(--round);color:#fff;background:rgba(0,0,0,.55);padding:3px 6px;border-radius:4px;display:none}
+.show-rect .wlabel{display:block}
+
+/* ============ Comunes de los avisos ============ */
+.win{font-family:var(--round);color:#fff;user-select:none}
+.shot{position:absolute;inset:0;border-radius:8px;overflow:hidden;background:rgba(30,36,48,.88)}
+.shot img{display:block;width:100%;height:100%;object-fit:cover}
+.shot::after{content:'';position:absolute;inset:0;border-radius:8px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.75);z-index:5}
+.ok{position:absolute;right:5px;bottom:5px;width:14px;height:14px;border-radius:50%;background:#3bd35a;box-shadow:0 0 6px rgba(0,0,0,.5);z-index:6}
+.ok::after{content:'';position:absolute;left:5px;top:2.5px;width:3px;height:6px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.fx{position:absolute;inset:0;pointer-events:none;opacity:0}
+.odo{display:inline-block;height:1.1em;line-height:1.1em;overflow:hidden;vertical-align:bottom}
+.odo .col{display:flex;flex-direction:column;transform:translateY(-50%)}
+.odo .col i{font-style:normal;display:block;height:1.1em;text-align:center}
+.flame .fl{transform-box:fill-box;transform-origin:50% 100%}
+
+/* ---- C1 Obturador ---- */
+.p-C1 .flash{background:#fff;z-index:4}
+.p-C1 .blade{position:absolute;left:0;right:0;height:51%;background:#0b0d12;z-index:3}
+.p-C1 .blade.t{top:0;transform:translateY(-101%);box-shadow:0 1px 0 rgba(255,255,255,.25)}
+.p-C1 .blade.b{bottom:0;transform:translateY(101%);box-shadow:0 -1px 0 rgba(255,255,255,.25)}
+/* ---- C2 Foto instantánea ---- */
+.p-C2 .shot{transform-origin:100% 0}
+.p-C2 .dev{background:linear-gradient(160deg,#4a3d33,#1d2b35);z-index:2}
+.p-C2 .slot{position:absolute;left:6px;right:6px;top:0;height:3px;border-radius:0 0 3px 3px;background:#0e1117;box-shadow:0 1px 0 rgba(255,255,255,.45);opacity:0;z-index:8}
+/* ---- C3 Iris ---- */
+.p-C3 .sheen{position:absolute;top:0;bottom:0;left:-60%;width:220%;background:linear-gradient(105deg,transparent 42%,rgba(255,255,255,.6) 50%,transparent 58%);transform:translateX(-60%);z-index:4}
+.p-C3 .halo{position:absolute;left:50%;top:50%;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;box-shadow:inset 0 0 0 2px #fff,0 0 12px rgba(255,255,255,.6);opacity:0}
+.p-C3 .okring{position:absolute;right:5px;bottom:5px;width:14px;height:14px;border-radius:50%;box-shadow:0 0 0 2px #3bd35a;opacity:0;z-index:6}
+
+/* ---- R1 Anillo que se cierra (400×44) ---- */
+.p-R1 .pill{position:absolute;inset:0;border-radius:22px;display:flex;align-items:center;justify-content:space-between;padding:0 5px 0 18px;transform-origin:100% 50%;
+  background:linear-gradient(90deg,rgba(15,19,27,.93) 55%,rgba(58,28,22,.93));box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.18)}
+.p-R1 .txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:16px;font-weight:800;letter-spacing:.01em}
+.p-R1 .txt .sub{font-weight:700;color:rgba(255,255,255,.72);margin-left:6px}
+.p-R1 .txt .sub b{color:#ffcf7a}
+.p-R1 .ring{position:relative;flex:none;width:34px;height:34px;border-radius:50%;background:radial-gradient(circle,rgba(255,150,50,.28),rgba(255,150,50,.06) 70%)}
+.p-R1 .ring svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.p-R1 .trk{fill:none;stroke:rgba(255,255,255,.16);stroke-width:3}
+.p-R1 .arc{fill:none;stroke:#ffb340;stroke-width:3;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:0}
+.p-R1 .flame{position:absolute;left:9px;top:8px;width:16px;height:18px}
+.p-R1 .glow{position:absolute;inset:0;border-radius:22px;box-shadow:inset 0 0 0 2px #ffb340,inset 0 0 14px rgba(255,179,64,.45);opacity:0}
+
+/* ---- R2 Contador con llama (400×64) ---- */
+.p-R2 .card2{position:absolute;inset:0;border-radius:18px;overflow:hidden;display:flex;align-items:center;gap:12px;padding:0 18px 0 10px;transform-origin:100% 0;
+  background:linear-gradient(100deg,#046f97,#33509b 48%,#a32b5c);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.24)}
+.p-R2 .badge{position:relative;flex:none;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.24);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.2)}
+.p-R2 .badge .flame{position:absolute;left:10px;top:8px;width:24px;height:27px}
+.p-R2 .ember{position:absolute;left:20px;top:14px;width:4px;height:4px;border-radius:50%;background:#ffd36b;box-shadow:0 0 4px #ffb340;opacity:0}
+.p-R2 .ember.e2{left:14px}.p-R2 .ember.e3{left:27px}
+.p-R2 .txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.p-R2 .txt b{font-size:16.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-R2 .txt span{font-size:12.5px;font-weight:700;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-R2 .num{flex:none;display:flex;flex-direction:column;align-items:flex-end;line-height:1}
+.p-R2 .num .odo{font-size:32px;font-weight:800;text-shadow:0 2px 8px rgba(0,0,0,.3)}
+.p-R2 .num small{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.85;margin-top:1px}
+.p-R2 .sheen{position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.28) 50%,transparent 60%);transform:translateX(-110%)}
+
+/* ---- R3 Semana encendida (400×88) ---- */
+.p-R3 .card3{position:absolute;inset:0;border-radius:20px;overflow:hidden;display:flex;align-items:center;gap:14px;padding:4px 16px 0 10px;transform-origin:100% 0;
+  background:rgba(16,20,29,.93);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14)}
+.p-R3 .line{position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--acc),var(--pink));transform-origin:100% 50%}
+.p-R3 .gold .line{background:linear-gradient(90deg,#ffe08a,#f2b807,#ff9d2e)}
+.p-R3 .big{position:relative;flex:none;width:76px;display:flex;flex-direction:column;align-items:center;line-height:1}
+.p-R3 .big .n{font-size:40px;font-weight:800;background:linear-gradient(180deg,#ffd36b,#ff7a3d);-webkit-background-clip:text;background-clip:text;color:transparent}
+.p-R3 .big small{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.7);margin-top:2px}
+.p-R3 .right{flex:1;min-width:0}
+.p-R3 .ttl{display:block;font-size:16px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:8px}
+.p-R3 .week{display:flex;gap:9px}
+.p-R3 .d{display:flex;flex-direction:column;align-items:center;gap:3px}
+.p-R3 .dot{position:relative;width:21px;height:21px;border-radius:50%;background:rgba(255,255,255,.12)}
+.p-R3 .fill{position:absolute;inset:0;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--pink));opacity:0}
+.p-R3 .d.on .fill{opacity:1}
+.p-R3 .d.today .fill{background:linear-gradient(135deg,#ffcf5a,#ff5a3d)}
+.p-R3 .d.today .fill::after{content:'';position:absolute;left:7px;top:5px;width:7px;height:10px;border-radius:50% 50% 45% 45%;background:#fff;opacity:.9}
+.p-R3 .burst{position:absolute;inset:-3px;border-radius:50%;box-shadow:0 0 0 2px #ffb340;opacity:0}
+.p-R3 .d em{font-style:normal;font-size:10px;font-weight:800;color:rgba(255,255,255,.55)}
+.p-R3 .d.today em{color:#ffcf7a}
+.p-R3 .star{position:absolute;width:10px;height:10px;opacity:0;color:#ffe08a}
+
+/* ---- Logros: comunes ---- */
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;white-space:nowrap;border-radius:999px;padding:3px 9px;
+  color:color-mix(in srgb,var(--r) 55%,white);background:color-mix(in srgb,var(--r) 22%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--r) 45%,transparent)}
+.chip::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--r)}
+
+/* ---- L1 Pop central (400×72) ---- */
+.p-L1 .bar{position:absolute;inset:0;border-radius:36px;display:flex;align-items:center;gap:10px;padding:0 16px 0 76px;overflow:hidden;
+  background:rgba(14,17,24,.94);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--r) 60%,transparent)}
+.p-L1 .txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.p-L1 .k{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:color-mix(in srgb,var(--r) 70%,white)}
+.p-L1 .nm{font-size:17px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-L1 .sweep{position:absolute;inset:0;background:linear-gradient(100deg,transparent 35%,color-mix(in srgb,var(--r) 40%,transparent) 50%,transparent 65%);transform:translateX(-100%)}
+.p-L1 .ico{position:absolute;left:10px;top:10px;width:52px;height:52px;border-radius:50%;overflow:hidden;background:#222;
+  box-shadow:0 0 0 2px var(--r),0 0 14px color-mix(in srgb,var(--r) 60%,transparent)}
+.p-L1 .ico img{width:100%;height:100%;display:block;transform:scale(1.18)}
+.p-L1 .pulse{position:absolute;left:10px;top:10px;width:52px;height:52px;border-radius:50%;box-shadow:0 0 0 2px var(--r);opacity:0}
+
+/* ---- L2 Medalla que gira (400×96) ---- */
+.p-L2 .card4{position:absolute;left:6px;right:6px;top:6px;height:80px;border-radius:16px;overflow:hidden;display:flex;align-items:center;gap:12px;padding:0 14px 0 8px;
+  background:rgba(250,251,253,.97);color:#23262e;box-shadow:0 0 0 1px rgba(0,0,0,.1),0 3px 8px rgba(0,0,0,.3)}
+.p-L2 .medal{position:relative;flex:none;width:66px;height:66px;perspective:300px}
+.p-L2 .medal svg.rg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+.p-L2 .rg .t{fill:none;stroke:rgba(0,0,0,.08);stroke-width:3}
+.p-L2 .rg .a{fill:none;stroke:var(--r);stroke-width:3;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:0}
+.p-L2 .coin{position:absolute;left:9px;top:9px;width:48px;height:48px;transform-style:preserve-3d;transform:rotateY(180deg)}
+.p-L2 .face{position:absolute;inset:0;border-radius:13px;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.p-L2 .face img{width:100%;height:100%;display:block}
+.p-L2 .face.back{transform:rotateY(180deg)}
+.p-L2 .txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.p-L2 .k{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:color-mix(in srgb,var(--r) 62%,black)}
+.p-L2 .nm{font-size:17px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-L2 .ds{font-size:12.5px;font-weight:500;color:#5b6270;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-L2 .meta{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700;color:#6a7282;margin-top:2px}
+.p-L2 .meter{width:46px;height:5px;border-radius:3px;background:rgba(0,0,0,.09);overflow:hidden}
+.p-L2 .meter i{display:block;height:100%;background:var(--r);transform-origin:0 50%}
+.p-L2 .sheen{position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.85) 50%,transparent 60%);transform:translateX(-110%);mix-blend-mode:soft-light}
+.p-L2 .spk{position:absolute;width:10px;height:10px;color:var(--r);opacity:0}
+
+/* ---- L3 Candado y rayos (400×88) ---- */
+.p-L3 .card5{position:absolute;inset:0;border-radius:18px;overflow:hidden;display:flex;align-items:center;gap:12px;padding:0 14px 0 0;
+  background:linear-gradient(110deg,color-mix(in srgb,var(--r) 34%,#0f1219),#0f1219 58%);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--r) 50%,transparent)}
+.p-L3 .zone{position:relative;flex:none;width:88px;height:88px;display:grid;place-items:center}
+.p-L3 .rays{position:absolute;left:50%;top:50%;width:170px;height:170px;margin:-85px 0 0 -85px;border-radius:50%;opacity:0;
+  background:repeating-conic-gradient(from 0deg,color-mix(in srgb,var(--r) 80%,white) 0 7deg,transparent 7deg 22deg);
+  -webkit-mask:radial-gradient(circle,#000 18%,transparent 62%);mask:radial-gradient(circle,#000 18%,transparent 62%)}
+.p-L3 .flashc{position:absolute;left:50%;top:50%;width:70px;height:70px;margin:-35px 0 0 -35px;border-radius:50%;background:radial-gradient(circle,#fff,rgba(255,255,255,0) 70%);opacity:0}
+.p-L3 .ico{position:relative;width:56px;height:56px}
+.p-L3 .ico img{position:absolute;inset:0;width:100%;height:100%;border-radius:14px}
+.p-L3 .ico .col{opacity:1}
+.p-L3 .lock{position:absolute;right:-6px;bottom:-6px;width:24px;height:24px;border-radius:50%;background:#1b1f29;box-shadow:0 0 0 2px #0f1219;display:grid;place-items:center;opacity:0}
+.p-L3 .lock svg{width:13px;height:13px}
+.p-L3 .txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.p-L3 .krow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.p-L3 .k{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:color-mix(in srgb,var(--r) 70%,white);white-space:nowrap}
+.p-L3 .chip{font-size:10.5px;padding:2px 8px}
+.p-L3 .nm{font-size:17px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-L3 .ds{font-size:12.5px;font-weight:500;color:rgba(255,255,255,.66);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-L3 .sweep{position:absolute;inset:0;background:linear-gradient(100deg,transparent 38%,color-mix(in srgb,var(--r) 45%,transparent) 50%,transparent 62%);transform:translateX(-110%)}
+</style>
+</head>
+<body>
+<div class="doc">
+  <header>
+    <h1>Avisos sobre el juego · propuestas con animación</h1>
+    <p>Tres avisos que salen en la esquina superior derecha del monitor del juego: <b>captura hecha</b>, <b>meta/racha diaria</b> y <b>logro conseguido</b> (nuevo). Cada recuadro simula el juego a tamaño real (640×360 de escena; la ventana del aviso a sus píxeles reales, a 18 px del borde) y reproduce la animación con su duración real.</p>
+    <p>Todas las animaciones viven <b>dentro</b> del rectángulo fijo de la ventana (activa «Ver rectángulo» para comprobarlo): nada depende de pintar fuera. Solo se anima <code>transform</code>, <code>opacity</code> y, en momentos puntuales y cortos, <code>filter</code>, <code>clip-path</code> o <code>stroke-dashoffset</code> sobre áreas diminutas.</p>
+    <ul class="rules">
+      <li>Ventana transparente, sin foco, sin clics</li>
+      <li>No se puede difuminar el juego de detrás (backdrop-filter no ve otra ventana) → fondos opacos al ~92 %</li>
+      <li>Contorno claro + sombra corta: se lee sobre oscuro y sobre claro</li>
+      <li>prefers-reduced-motion → solo fundido de entrada/salida</li>
+    </ul>
+  </header>
+
+  <div class="toolbar" role="toolbar" aria-label="Controles globales">
+    <div class="grp">Fondo <span class="seg" id="bgSeg">
+      <button data-bg="dark" aria-pressed="true">Oscuro</button><button data-bg="light" aria-pressed="false">Claro</button><button data-bg="color" aria-pressed="false">Colorido</button></span></div>
+    <div class="grp">Velocidad <span class="seg" id="spdSeg">
+      <button data-spd="1" aria-pressed="true">1×</button><button data-spd="0.5" aria-pressed="false">0,5×</button><button data-spd="0.2" aria-pressed="false">0,2×</button></span></div>
+    <label class="chk"><input type="checkbox" id="rectChk" /> Ver rectángulo de la ventana</label>
+    <label class="chk"><input type="checkbox" id="rmChk" /> Simular movimiento reducido</label>
+    <button class="btn" id="allBtn">▶ Repetir todas</button>
+  </div>
+
+  <section class="s" id="sec-shot">
+    <h2><span class="n">1</span>Captura de pantalla hecha</h2>
+    <p class="why">El diseño actual se mantiene (miniatura 112 px de ancho, borde blanco, check verde). Cambia solo la coreografía: 1700 ms en total y <b>reentrada</b>: si llega otra captura mientras se ve, la animación arranca de nuevo con la foto nueva (botón «＋ Otra captura»).</p>
+    <div class="grid" id="grid-shot"></div>
+    <div class="reco"><b>Recomendada: C1 · Flash de obturador.</b> Es la que mejor dice «foto hecha» en menos de 300 ms, se lee igual sobre cualquier fondo y es la más barata (transform + opacity; el <code>filter</code> dura medio segundo sobre 112 px). En reentrada salta el fundido inicial y vuelve a disparar el obturador sin parpadeo.</div>
+  </section>
+
+  <section class="s" id="sec-goal">
+    <h2><span class="n">2</span>Meta / racha diaria cumplida</h2>
+    <p class="why">Rediseño completo (diseño + animación), 4500 ms. Hoy es una píldora de 400×44 con degradado azul→rosa y un punto que late. Las propuestas usan la llama/anillo del lenguaje de «Racha» y hacen protagonista al número de días.</p>
+    <div class="sctl">
+      <div class="grp">Días <span class="seg" id="daySeg"><button data-d="1" aria-pressed="false">1</button><button data-d="5" aria-pressed="true">5</button><button data-d="30" aria-pressed="false">30</button></span></div>
+      <div class="grp">Mensaje <span class="seg" id="kindSeg"><button data-k="meta" aria-pressed="true">Meta cumplida</button><button data-k="recup" aria-pressed="false">Racha recuperada</button><button data-k="lectura" aria-pressed="false">Meta de lectura</button></span></div>
+    </div>
+    <div class="grid" id="grid-goal"></div>
+    <div class="reco"><b>Recomendada: R2 · Contador con llama (400×64).</b> Los 20 px extra permiten título + subtítulo legibles y un número grande que «rueda» de N−1 a N: el momento de recompensa se entiende de un vistazo sin leer. Necesita que el backend pase los días aparte del texto; <code>__rec('goal', segundos, texto)</code> ya tiene el segundo argumento libre para eso.</div>
+  </section>
+
+  <section class="s" id="sec-ach">
+    <h2><span class="n">3</span>Logro conseguido <small style="font-size:14px;color:var(--muted);font-weight:700">(nuevo)</small></h2>
+    <p class="why">Evento <code>achievement-unlocked</code> → <code>{displayName, description, icon, iconGray, rarityTier, rarityPct}</code>. Siempre icono + nombre; descripción y rareza son secundarias (si <code>rarityTier = 0</code> o no hay <code>rarityPct</code>, el chip de rareza se oculta). Colores de rareza de <code>AchievementCard</code>: común <span style="color:#6f98bd">#9fc0dc</span>, rara <span style="color:#b67cf0">#b67cf0</span>, ultra = dorado <span style="color:#c99600">--warn #F2B807</span>. ~5 s.</p>
+    <div class="sctl">
+      <div class="grp">Logro <span class="seg" id="achSeg"></span></div>
+      <div class="grp">Rareza <span class="seg" id="rarSeg"><button data-r="common" aria-pressed="false">Común</button><button data-r="rare" aria-pressed="false">Rara</button><button data-r="ultra" aria-pressed="true">Ultra</button></span></div>
+    </div>
+    <div class="grid" id="grid-ach"></div>
+    <div class="reco"><b>Recomendada: L3 · Candado y rayos.</b> Cuenta una historia en un segundo (icono gris con candado → el candado salta → se tiñe de color con un estallido de rayos) usando a la vez <code>iconGray</code> e <code>icon</code>, y la rareza modula la intensidad (rayos tenues en común, dorados y con barrido en ultra). Es oscura y opaca, así que funciona sobre cualquier juego, y su barrido de entrada nace del borde de la pantalla, coherente con la esquina.</div>
+  </section>
+</div>
+
+<script>
+'use strict';
+/* ================= Datos de ejemplo ================= */
+function svgUrl(svg){ return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg); }
+// Igual que mockAchIcon en src/lib/mock.ts
+function mockAchIcon(sym, bg1, bg2){ return svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><defs><radialGradient id="g" cx="30%" cy="30%"><stop offset="0%" stop-color="${bg1}"/><stop offset="100%" stop-color="${bg2}"/></radialGradient></defs><rect width="64" height="64" rx="14" fill="url(#g)"/><text x="32" y="42" font-size="28" text-anchor="middle" fill="#ffffff" font-family="sans-serif">${sym}</text></svg>`); }
+function mockAchIconGray(sym){ return svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"><rect width="64" height="64" rx="14" fill="#2a2d36"/><text x="32" y="42" font-size="28" text-anchor="middle" fill="#666c7a" font-family="sans-serif">${sym}</text></svg>`); }
+function makeShot(sky1, sky2, hill1, hill2, sun){
+  return svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 135" width="240" height="135"><defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky1}"/><stop offset="1" stop-color="${sky2}"/></linearGradient></defs><rect width="240" height="135" fill="url(#s)"/><circle cx="170" cy="48" r="18" fill="${sun}"/><path d="M0 95 L40 60 L75 88 L120 45 L165 92 L200 70 L240 96 V135 H0Z" fill="${hill1}"/><path d="M0 112 Q60 92 120 108 T240 104 V135 H0Z" fill="${hill2}"/><rect x="104" y="96" width="9" height="16" rx="3" fill="#111"/></svg>`);
+}
+const SHOTS = [
+  makeShot('#ff9a5a','#ffd8a8','#6b3f6e','#2f2340','#fff3c4'),
+  makeShot('#0f1d3d','#2d4b7a','#1b2b45','#0c1426','#e8f0ff'),
+  makeShot('#7fd3ff','#d8f4ff','#3f9a5a','#2b6d3f','#fffbe0'),
+];
+const ACHS = [
+  { sym:'👑', b1:'#f6d365', b2:'#fda085', name:'Leyenda del sur', desc:'Derrota al coloso sumergido.' },
+  { sym:'🌙', b1:'#30cfd0', b2:'#330867', name:'Noche en vela', desc:'Sobrevive a la tempestad en alta mar.' },
+  { sym:'💎', b1:'#00c6fb', b2:'#005bea', name:'Coleccionista', desc:'Consigue 50 esquirlas de ámbar marino.' },
+  { sym:'🧭', b1:'#f093fb', b2:'#f5576c', name:'Marinera de agua dulce y señora de los siete puertos', desc:'Zarpa por primera vez desde el puerto base sin perder ni un solo barril de provisiones.' },
+].map(a => ({ ...a, icon: mockAchIcon(a.sym, a.b1, a.b2), iconGray: mockAchIconGray(a.sym) }));
+const RAR = {
+  common: { tier:1, label:'Común', color:'#9fc0dc', pct:62.4, rays:.35, spk:0 },
+  rare:   { tier:2, label:'Rara', color:'#b67cf0', pct:8.1, rays:.6, spk:3 },
+  ultra:  { tier:3, label:'Ultra rara', color:'#F2B807', pct:1.3, rays:.9, spk:6 },
+};
+const pctFmt = p => p.toLocaleString('es-ES', { maximumFractionDigits: 1 }) + ' %';
+const GOAL_TXT = {
+  meta:    { title:'¡Meta cumplida!', sub:'Hoy ya cuenta para tu racha' },
+  recup:   { title:'¡Racha recuperada!', sub:'Recuperaste el día que faltaba' },
+  lectura: { title:'¡Meta de lectura cumplida!', sub:'Hoy cuenta para tu racha de lectura' },
+};
+const dias = d => d === 1 ? 'día' : 'días';
+
+const FLAME = (cls='flame') => `<svg class="${cls}" viewBox="0 0 24 27" aria-hidden="true"><defs><linearGradient id="fg" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff4a2e"/><stop offset=".55" stop-color="#ff9a2e"/><stop offset="1" stop-color="#ffd84d"/></linearGradient></defs><g class="fl"><path d="M12 1c1.4 4.4-.9 6.9-2.7 9C7.4 12.2 5 14.6 5 18.3A7 7 0 0 0 12 26a7 7 0 0 0 7-7.2c0-2.8-1.4-5-3-6.6.3 2.2-.6 3.9-2 4.7.6-4.2-1.3-9.1-2-15.9z" fill="url(#fg)"/><path d="M12 15.5c.5 1.8-.4 2.8-1.1 3.6-.6.7-1.2 1.4-1.2 2.6a2.3 2.3 0 0 0 4.6 0c0-1.6-.9-2.6-2.3-6.2z" fill="#fff4c2"/></g></svg>`;
+const STAR = `<svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M5 0 6 4 10 5 6 6 5 10 4 6 0 5 4 4Z" fill="currentColor"/></svg>`;
+const LOCK = `<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="8" rx="2" fill="#c9cfdb"/><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="#c9cfdb" stroke-width="2"/></svg>`;
+
+/* ================= Utilidades de animación ================= */
+const E = {
+  out:'cubic-bezier(.16,1,.3,1)', inOut:'cubic-bezier(.65,0,.35,1)', in:'cubic-bezier(.55,0,1,.45)',
+  back:'cubic-bezier(.34,1.56,.64,1)', snap:'cubic-bezier(.22,1,.36,1)', roll:'cubic-bezier(.5,-.4,.3,1.4)',
+};
+// Línea de tiempo en milisegundos absolutos: cada elemento corre toda la duración con keyframes situados por offset.
+function T(el, total, frames){
+  if (!el) return null;
+  const kf = frames.map(([ms, p]) => ({ offset: Math.min(1, Math.max(0, ms / total)), ...p }));
+  if (kf[0].offset !== 0) kf.unshift({ ...kf[0], offset: 0, easing: 'linear' });
+  if (kf[kf.length - 1].offset !== 1) kf.push({ ...kf[kf.length - 1], offset: 1, easing: 'linear' });
+  return el.animate(kf, { duration: total, fill: 'both' });
+}
+const pop = (t0, dur=200, from='scale(0)', to='scale(1)', ease=E.back) =>
+  [[0,{transform:from,opacity:0}],[t0,{transform:from,opacity:0,easing:ease}],[t0+dur,{transform:to,opacity:1}]];
+
+/* ================= Propuestas ================= */
+const P = [];
+
+/* ---------- CAPTURA (112×63, 1700 ms) ---------- */
+const shotHTML = (ctx, extra='') => `<div class="shot"><img src="${ctx.shot}" alt="" />${extra}<i class="ok"></i></div>`;
+P.push({
+  sec:'shot', code:'C1', fav:true, name:'Flash de obturador', w:112, h:63, total:1700, reentrySkip:60,
+  dist:'Dos láminas negras se abren como un obturador a la vez que un destello blanco quema la foto, que se «enfría» a su color. Luego entra el check.',
+  spec:'<b>1700 ms</b> · 0–60 aparece · 70–280 láminas abren <code>cubic-bezier(.7,0,.2,1)</code> · flash 70–420 <code>ease-out</code> · brillo 1.9→1 hasta 520 · check 380–560 <code>back(.34,1.56)</code> · salida 1380–1700 <code>ease-in</code> (scale .96 + fade). Reentrada: arranca en 60 ms (sin fundido).',
+  html: ctx => shotHTML(ctx, `<div class="blade t"></div><div class="blade b"></div><div class="fx flash"></div>`),
+  play(w, ctx, t){
+    const q = s => w.querySelector(s);
+    return [
+      T(q('.shot'), t, [[0,{opacity:0,transform:'scale(1.06)'}],[50,{opacity:1,transform:'scale(1.06)',easing:E.out}],[340,{opacity:1,transform:'scale(1)'}],[1380,{opacity:1,transform:'scale(1)',easing:E.in}],[1700,{opacity:0,transform:'scale(.96)'}]]),
+      T(q('.blade.t'), t, [[0,{transform:'translateY(0%)'}],[70,{transform:'translateY(0%)',easing:'cubic-bezier(.7,0,.2,1)'}],[280,{transform:'translateY(-101%)'}]]),
+      T(q('.blade.b'), t, [[0,{transform:'translateY(0%)'}],[70,{transform:'translateY(0%)',easing:'cubic-bezier(.7,0,.2,1)'}],[280,{transform:'translateY(101%)'}]]),
+      T(q('.flash'), t, [[0,{opacity:0}],[70,{opacity:.95,easing:'ease-out'}],[420,{opacity:0}]]),
+      T(q('img'), t, [[0,{filter:'brightness(1.9) contrast(.85)'}],[90,{filter:'brightness(1.9) contrast(.85)',easing:E.out}],[520,{filter:'brightness(1) contrast(1)'}]]),
+      T(q('.ok'), t, pop(380, 180)),
+    ];
+  },
+});
+P.push({
+  sec:'shot', code:'C2', name:'Foto instantánea', w:112, h:63, total:1700, reentrySkip:0,
+  dist:'Aparece una ranura arriba y la foto «sale» de ella como una instantánea; se revela de sepia apagado a color. Sale encogiéndose hacia la esquina.',
+  spec:'<b>1700 ms</b> · ranura 40–200 <code>expo-out</code> · la foto baja 160–620 <code>cubic-bezier(.3,.7,.2,1)</code> · revelado (velo + <code>saturate</code>) 520–1200 <code>ease-out</code> · check 1050–1230 · salida 1420–1700 scale .9 hacia arriba-derecha <code>ease-in</code>.',
+  html: ctx => `<div class="slot"></div>` + shotHTML(ctx, `<div class="fx dev"></div>`),
+  play(w, ctx, t){
+    const q = s => w.querySelector(s);
+    return [
+      T(q('.slot'), t, [[0,{opacity:0,transform:'scaleX(0)'}],[40,{opacity:1,transform:'scaleX(0)',easing:E.out}],[200,{opacity:1,transform:'scaleX(1)'}],[620,{opacity:1,transform:'scaleX(1)',easing:'ease'}],[820,{opacity:0,transform:'scaleX(1)'}]]),
+      T(q('.shot'), t, [[0,{opacity:1,transform:'translateY(-102%) scale(1)'}],[160,{opacity:1,transform:'translateY(-102%) scale(1)',easing:'cubic-bezier(.3,.7,.2,1)'}],[620,{opacity:1,transform:'translateY(0%) scale(1)'}],[1420,{opacity:1,transform:'translateY(0%) scale(1)',easing:E.in}],[1700,{opacity:0,transform:'translateY(0%) scale(.9)'}]]),
+      T(q('.dev'), t, [[0,{opacity:.85}],[520,{opacity:.85,easing:'ease-out'}],[1150,{opacity:0}]]),
+      T(q('img'), t, [[0,{filter:'saturate(0) contrast(.75) brightness(.85)'}],[520,{filter:'saturate(0) contrast(.75) brightness(.85)',easing:'ease-out'}],[1200,{filter:'saturate(1) contrast(1) brightness(1)'}]]),
+      T(q('.ok'), t, pop(1050, 180)),
+    ];
+  },
+});
+P.push({
+  sec:'shot', code:'C3', name:'Iris y destello', w:112, h:63, total:1700, reentrySkip:0,
+  dist:'La foto se abre en círculo como un diafragma con un halo que se expande; un reflejo de luz cruza el cristal y el check late. Se cierra con el mismo iris.',
+  spec:'<b>1700 ms</b> · iris <code>clip-path: circle()</code> 0→72 % en 0–340 <code>cubic-bezier(.2,.9,.25,1)</code> · zoom 1.25→1 0–500 · halo 30–480 · reflejo 380–820 <code>(.4,0,.2,1)</code> · check 560–760 + anillo 600–1000 · cierre iris 1400–1700 <code>(.6,0,.8,.4)</code>.',
+  html: ctx => `<div class="halo"></div>` + shotHTML(ctx, `<div class="sheen"></div><span class="okring"></span>`),
+  play(w, ctx, t){
+    const q = s => w.querySelector(s);
+    const C0 = 'circle(0% at 50% 50%)', C1 = 'circle(72% at 50% 50%)';
+    return [
+      T(q('.shot'), t, [[0,{clipPath:C0,opacity:1,easing:'cubic-bezier(.2,.9,.25,1)'}],[340,{clipPath:C1,opacity:1}],[1400,{clipPath:C1,opacity:1,easing:'cubic-bezier(.6,0,.8,.4)'}],[1640,{clipPath:C0,opacity:1}],[1700,{clipPath:C0,opacity:0}]]),
+      T(q('img'), t, [[0,{transform:'scale(1.25)',easing:E.out}],[500,{transform:'scale(1)'}]]),
+      T(q('.halo'), t, [[0,{opacity:0,transform:'scale(.2)'}],[30,{opacity:.9,transform:'scale(.2)',easing:E.out}],[480,{opacity:0,transform:'scale(1.3)'}]]),
+      T(q('.sheen'), t, [[0,{transform:'translateX(-60%)'}],[380,{transform:'translateX(-60%)',easing:'cubic-bezier(.4,0,.2,1)'}],[820,{transform:'translateX(60%)'}]]),
+      T(q('.ok'), t, pop(560, 200)),
+      T(q('.okring'), t, [[0,{opacity:0,transform:'scale(1)'}],[600,{opacity:0,transform:'scale(1)'}],[610,{opacity:.9,transform:'scale(1)',easing:E.out}],[1000,{opacity:0,transform:'scale(2.2)'}]]),
+    ];
+  },
+});
+
+/* ---------- RACHA (4500 ms) ---------- */
+const odo = d => `<span class="odo"><span class="col"><i>${d - 1}</i><i>${d}</i></span></span>`;
+P.push({
+  sec:'goal', code:'R1', name:'Anillo que se cierra', w:400, h:44, total:4500,
+  dist:'Mantiene el tamaño actual (400×44). Nace como un círculo pegado a la esquina, se estira hacia la izquierda, el anillo de la meta se completa, prende la llama y el número de días rueda.',
+  spec:'<b>4500 ms</b> · semilla 0–200 <code>expo-out</code> · despliegue <code>clip-path: inset()</code> 200–660 <code>(.22,1,.36,1)</code> · anillo <code>stroke-dashoffset</code> 300–1100 <code>(.45,0,.2,1)</code> · llama 1000–1280 <code>back</code> + parpadeo · número 1150–1550 <code>(.5,-.4,.3,1.4)</code> · destello borde 1100–1900 · recogida 4050–4330 <code>(.65,0,.35,1)</code> → fade 4500.',
+  html: ctx => { const g = GOAL_TXT[ctx.kind]; return `<div class="pill"><div class="txt">${g.title}<span class="sub">· <b>${odo(ctx.days)}</b> ${dias(ctx.days)}</span></div><span class="ring"><svg viewBox="0 0 36 36"><circle class="trk" cx="18" cy="18" r="15"/><circle class="arc" cx="18" cy="18" r="15" pathLength="100"/></svg>${FLAME()}</span></div><div class="glow"></div>`; },
+  play(w, ctx, t){
+    const q = s => w.querySelector(s);
+    const C0 = 'inset(0px 0px 0px 356px round 22px)', C1 = 'inset(0px 0px 0px 0px round 22px)';
+    return [
+      T(q('.pill'), t, [[0,{clipPath:C0,opacity:0,transform:'scale(.5)',easing:E.out}],[200,{clipPath:C0,opacity:1,transform:'scale(1)',easing:E.snap}],[660,{clipPath:C1,opacity:1,transform:'scale(1)'}],[4050,{clipPath:C1,opacity:1,transform:'scale(1)',easing:E.inOut}],[4330,{clipPath:C0,opacity:1,transform:'scale(1)',easing:E.in}],[4500,{clipPath:C0,opacity:0,transform:'scale(.5)'}]]),
+      T(q('.txt'), t, [[0,{opacity:0,transform:'translateX(14px)'}],[420,{opacity:0,transform:'translateX(14px)',easing:E.out}],[820,{opacity:1,transform:'translateX(0px)'}],[3980,{opacity:1,transform:'translateX(0px)',easing:E.in}],[4180,{opacity:0,transform:'translateX(10px)'}]]),
+      T(q('.arc'), t, [[0,{strokeDashoffset:100}],[300,{strokeDashoffset:100,easing:'cubic-bezier(.45,0,.2,1)'}],[1100,{strokeDashoffset:0}]]),
+      T(q('.flame'), t, pop(1000, 280)),
+      q('.fl').animate([{transform:'scale(1,1)'},{transform:'scale(1.07,.93)'},{transform:'scale(.96,1.06)'},{transform:'scale(1,1)'}],{duration:620,delay:1300,iterations:4,easing:'ease-in-out'}),
+      T(q('.col'), t, [[0,{transform:'translateY(0%)'}],[1150,{transform:'translateY(0%)',easing:E.roll}],[1550,{transform:'translateY(-50%)'}]]),
+      T(q('.glow'), t, [[0,{opacity:0}],[1100,{opacity:0,easing:'ease-out'}],[1250,{opacity:1,easing:'ease-out'}],[1900,{opacity:0}]]),
+      T(q('.ring'), t, [[0,{transform:'scale(1)'}],[1100,{transform:'scale(1)',easing:'ease-out'}],[1220,{transform:'scale(1.12)',easing:E.out}],[1500,{transform:'scale(1)'}]]),
+    ];
+  },
+});
+P.push({
+  sec:'goal', code:'R2', fav:true, name:'Contador con llama', w:400, h:64, total:4500,
+  dist:'Propone 400×64 para separar título y subtítulo y dar al número de días un tamaño de marcador. La tarjeta crece desde la esquina, la llama gira al prender y suelta chispas, el contador rueda de N−1 a N y un brillo cruza la tarjeta.',
+  spec:'<b>4500 ms</b> · tarjeta scale .92→1 desde arriba-derecha 0–420 <code>(.16,1,.3,1)</code> · insignia 180–560 <code>back</code> · llama parpadea 560+ · título 280–620, sub 380–720 · contador 800–1300 <code>(.5,-.4,.3,1.4)</code> + latido 1300–1600 · chispas 600–2200 · brillo 1350–2000 · salida 4100–4500 <code>ease-in</code>. <i>Por qué 64 px: dos líneas de 16,5/12,5 px y un número de 32 px no caben en 44.</i>',
+  html: ctx => { const g = GOAL_TXT[ctx.kind]; return `<div class="card2"><span class="badge">${FLAME()}<i class="ember e1"></i><i class="ember e2"></i><i class="ember e3"></i></span><div class="txt"><b>${g.title}</b><span>${g.sub}</span></div><div class="num">${odo(ctx.days)}<small>${dias(ctx.days)}</small></div><div class="sheen"></div></div>`; },
+  play(w, ctx, t){
+    const q = s => w.querySelector(s), qa = s => [...w.querySelectorAll(s)];
+    return [
+      T(q('.card2'), t, [[0,{opacity:0,transform:'scale(.92)',easing:E.out}],[420,{opacity:1,transform:'scale(1)'}],[4100,{opacity:1,transform:'scale(1)',easing:E.in}],[4500,{opacity:0,transform:'scale(.95)'}]]),
+      T(q('.badge'), t, [[0,{transform:'scale(0) rotate(-40deg)'}],[180,{transform:'scale(0) rotate(-40deg)',easing:E.back}],[560,{transform:'scale(1) rotate(0deg)'}]]),
+      q('.fl').animate([{transform:'scale(1,1)'},{transform:'scale(1.07,.93)'},{transform:'scale(.95,1.07)'},{transform:'scale(1,1)'}],{duration:560,delay:560,iterations:6,easing:'ease-in-out'}),
+      ...qa('.ember').map((e, i) => T(e, t, [[0,{opacity:0,transform:'translate(0px,0px) scale(1)'}],[600+i*240,{opacity:0,transform:'translate(0px,0px) scale(1)',easing:'ease-out'}],[700+i*240,{opacity:1,transform:`translate(${(i-1)*3}px,-4px) scale(1)`,easing:'ease-out'}],[1500+i*240,{opacity:0,transform:`translate(${(i-1)*6}px,-16px) scale(.4)`}]])),
+      T(q('.txt b'), t, [[0,{opacity:0,transform:'translateY(6px)'}],[280,{opacity:0,transform:'translateY(6px)',easing:E.out}],[620,{opacity:1,transform:'translateY(0px)'}]]),
+      T(q('.txt span'), t, [[0,{opacity:0,transform:'translateY(6px)'}],[380,{opacity:0,transform:'translateY(6px)',easing:E.out}],[720,{opacity:.82,transform:'translateY(0px)'}]]),
+      T(q('.col'), t, [[0,{transform:'translateY(0%)'}],[800,{transform:'translateY(0%)',easing:E.roll}],[1300,{transform:'translateY(-50%)'}]]),
+      T(q('.num'), t, [[0,{opacity:0,transform:'scale(1)'}],[300,{opacity:0,transform:'scale(1)',easing:'ease-out'}],[600,{opacity:1,transform:'scale(1)'}],[1300,{opacity:1,transform:'scale(1)',easing:'ease-out'}],[1420,{opacity:1,transform:'scale(1.12)',easing:E.out}],[1620,{opacity:1,transform:'scale(1)'}]]),
+      T(q('.sheen'), t, [[0,{transform:'translateX(-110%)'}],[1350,{transform:'translateX(-110%)',easing:'cubic-bezier(.4,0,.2,1)'}],[2000,{transform:'translateX(110%)'}]]),
+    ];
+  },
+});
+function weekLetters(){ const L=['D','L','M','X','J','V','S'], d=new Date().getDay(); return Array.from({length:7},(_,i)=>L[(d-6+i+7)%7]); }
+P.push({
+  sec:'goal', code:'R3', name:'Semana encendida', w:400, h:88, total:4500,
+  dist:'Propone 400×88: número grande a la izquierda y la semana en puntos que se encienden uno tras otro hasta hoy, que estalla con un anillo. En hitos (30 días) la línea superior pasa a dorado y saltan estrellas.',
+  spec:'<b>4500 ms</b> · tarjeta 0–380 <code>expo-out</code> · línea superior 300–900 · número 200–600 <code>back</code> · puntos cada 90 ms desde 500 <code>back</code> · hoy: latido + anillo 2.3× 600 ms · estrellas en hitos · salida 4080–4500. <i>Por qué 88 px: la fila de 7 días con etiquetas necesita ~36 px bajo el título; es la más informativa pero también la más grande.</i>',
+  html: ctx => { const g = GOAL_TXT[ctx.kind], k = Math.min(ctx.days, 7), gold = ctx.days >= 30, L = weekLetters();
+    const dots = L.map((l, i) => { const on = i >= 7 - k, today = i === 6; return `<span class="d${on?' on':''}${today?' today':''}"><i class="dot"><i class="fill"></i>${today?'<i class="burst"></i>':''}</i><em>${l}</em></span>`; }).join('');
+    const stars = gold ? [[6,10],[62,6],[66,58],[4,62],[34,2]].map(([x,y])=>`<span class="star" style="left:${x}px;top:${y}px">${STAR}</span>`).join('') : '';
+    return `<div class="card3${gold?' gold':''}"><i class="line"></i><div class="big"><span class="n">${ctx.days}</span><small>${dias(ctx.days)}</small>${stars}</div><div class="right"><b class="ttl">${g.title}</b><div class="week">${dots}</div></div></div>`; },
+  play(w, ctx, t){
+    const q = s => w.querySelector(s), qa = s => [...w.querySelectorAll(s)];
+    const k = Math.min(ctx.days, 7), lit = qa('.d.on .fill'), tEnd = 500 + (k - 1) * 90 + 220;
+    const a = [
+      T(q('.card3'), t, [[0,{opacity:0,transform:'scale(.94)',easing:E.out}],[380,{opacity:1,transform:'scale(1)'}],[4080,{opacity:1,transform:'scale(1)',easing:E.in}],[4500,{opacity:0,transform:'scale(.96)'}]]),
+      T(q('.line'), t, [[0,{transform:'scaleX(0)'}],[300,{transform:'scaleX(0)',easing:E.out}],[900,{transform:'scaleX(1)'}]]),
+      T(q('.n'), t, [[0,{opacity:0,transform:'translateY(10px) scale(.8)'}],[200,{opacity:0,transform:'translateY(10px) scale(.8)',easing:E.back}],[600,{opacity:1,transform:'translateY(0px) scale(1)'}],[tEnd,{opacity:1,transform:'translateY(0px) scale(1)',easing:E.out}],[tEnd+140,{opacity:1,transform:'translateY(0px) scale(1.14)',easing:E.out}],[tEnd+420,{opacity:1,transform:'translateY(0px) scale(1)'}]]),
+      T(q('.ttl'), t, [[0,{opacity:0,transform:'translateX(8px)'}],[300,{opacity:0,transform:'translateX(8px)',easing:E.out}],[650,{opacity:1,transform:'translateX(0px)'}]]),
+      ...lit.map((f, j) => T(f, t, [[0,{opacity:0,transform:'scale(.3)'}],[500+j*90,{opacity:0,transform:'scale(.3)',easing:E.back}],[760+j*90,{opacity:1,transform:'scale(1)'}]])),
+      T(q('.d.today .dot'), t, [[0,{transform:'scale(1)'}],[tEnd,{transform:'scale(1)',easing:E.out}],[tEnd+120,{transform:'scale(1.3)',easing:E.out}],[tEnd+340,{transform:'scale(1)'}]]),
+      T(q('.burst'), t, [[0,{opacity:0,transform:'scale(1)'}],[tEnd,{opacity:0,transform:'scale(1)'}],[tEnd+10,{opacity:.95,transform:'scale(1)',easing:E.out}],[tEnd+600,{opacity:0,transform:'scale(2.3)'}]]),
+    ];
+    qa('.star').forEach((s, i) => a.push(T(s, t, [[0,{opacity:0,transform:'scale(0) rotate(0deg)'}],[tEnd+i*110,{opacity:0,transform:'scale(0) rotate(0deg)',easing:E.out}],[tEnd+i*110+220,{opacity:1,transform:'scale(1.2) rotate(45deg)',easing:'ease-in'}],[tEnd+i*110+800,{opacity:0,transform:'scale(.2) rotate(90deg)'}]])));
+    return a;
+  },
+});
+
+/* ---------- LOGRO (~5000 ms) ---------- */
+P.push({
+  sec:'ach', code:'L1', name:'Pop central (estilo consola)', w:400, h:72, total:5000,
+  dist:'El icono aparece en círculo en el centro y la píldora se abre hacia los lados mientras el icono se desliza a su sitio, como los avisos de consola. Un barrido del color de la rareza cruza la barra (dos veces en ultra).',
+  spec:'<b>5000 ms</b> · icono pop 0–320 <code>expo-out</code> · apertura <code>clip-path: inset()</code> + deslizamiento 420–820 <code>(.65,0,.25,1)</code> · kicker 700–1000, nombre 780–1080, chip 900–1200 · barrido 1100–1700 (+2300–2900 ultra) · cierre simétrico 4450–4800 → fade 5000.',
+  html: ctx => `<div class="bar"><div class="txt"><span class="k">Logro desbloqueado</span><b class="nm">${ctx.ach.name}</b></div><span class="chip">${ctx.rar.label} · ${pctFmt(ctx.rar.pct)}</span><i class="sweep"></i></div><span class="pulse"></span><div class="ico"><img src="${ctx.ach.icon}" alt="" /></div>`,
+  play(w, ctx, t){
+    const q = s => w.querySelector(s);
+    const C0 = 'inset(0px 164px 0px 164px round 36px)', C1 = 'inset(0px 0px 0px 0px round 36px)', M = 'cubic-bezier(.65,0,.25,1)';
+    const sweep = [[0,{transform:'translateX(-100%)'}],[1100,{transform:'translateX(-100%)',easing:'cubic-bezier(.4,0,.2,1)'}],[1700,{transform:'translateX(100%)'}]];
+    if (ctx.rar.tier === 3) sweep.push([2300,{transform:'translateX(-100%)',easing:'cubic-bezier(.4,0,.2,1)'}],[2900,{transform:'translateX(100%)'}]);
+    return [
+      T(q('.ico'), t, [[0,{opacity:0,transform:'translateX(164px) scale(.3)',easing:E.out}],[320,{opacity:1,transform:'translateX(164px) scale(1)'}],[420,{opacity:1,transform:'translateX(164px) scale(1)',easing:M}],[820,{opacity:1,transform:'translateX(0px) scale(1)'}],[4450,{opacity:1,transform:'translateX(0px) scale(1)',easing:M}],[4800,{opacity:1,transform:'translateX(164px) scale(1)',easing:E.in}],[5000,{opacity:0,transform:'translateX(164px) scale(.3)'}]]),
+      T(q('.pulse'), t, [[0,{opacity:0,transform:'translateX(164px) scale(1)'}],[200,{opacity:.9,transform:'translateX(164px) scale(1)',easing:E.out}],[620,{opacity:0,transform:'translateX(164px) scale(1.5)'}]]),
+      T(q('.bar'), t, [[0,{clipPath:C0,opacity:0}],[200,{clipPath:C0,opacity:0,easing:'ease-out'}],[320,{clipPath:C0,opacity:1}],[420,{clipPath:C0,opacity:1,easing:M}],[820,{clipPath:C1,opacity:1}],[4450,{clipPath:C1,opacity:1,easing:M}],[4800,{clipPath:C0,opacity:1,easing:'ease-in'}],[4900,{clipPath:C0,opacity:0}]]),
+      T(q('.k'), t, [[0,{opacity:0,transform:'translateX(-8px)'}],[700,{opacity:0,transform:'translateX(-8px)',easing:E.out}],[1000,{opacity:1,transform:'translateX(0px)'}],[4300,{opacity:1,transform:'translateX(0px)',easing:E.in}],[4450,{opacity:0,transform:'translateX(0px)'}]]),
+      T(q('.nm'), t, [[0,{opacity:0,transform:'translateX(-8px)'}],[780,{opacity:0,transform:'translateX(-8px)',easing:E.out}],[1080,{opacity:1,transform:'translateX(0px)'}],[4300,{opacity:1,transform:'translateX(0px)',easing:E.in}],[4450,{opacity:0,transform:'translateX(0px)'}]]),
+      T(q('.chip'), t, [[0,{opacity:0,transform:'scale(.8)'}],[900,{opacity:0,transform:'scale(.8)',easing:E.back}],[1200,{opacity:1,transform:'scale(1)'}],[4300,{opacity:1,transform:'scale(1)',easing:E.in}],[4450,{opacity:0,transform:'scale(1)'}]]),
+      T(q('.sweep'), t, sweep),
+    ];
+  },
+});
+P.push({
+  sec:'ach', code:'L2', name:'Medalla que gira', w:400, h:96, total:5000,
+  dist:'Tarjeta clara (contrasta con juegos oscuros). El icono gira como una moneda de la versión gris a la de color mientras el anillo de la rareza se dibuja alrededor; debajo, descripción y medidor de «% de jugadores». Destellos según rareza.',
+  spec:'<b>5000 ms</b> · tarjeta baja 6 px 0–380 <code>expo-out</code> (cabe en el margen interior) · moneda <code>rotateY</code> 0→180° 350–1050 <code>(.3,1.3,.5,1)</code> · anillo 300–1100 · textos escalonados 400–960 · medidor 900–1500 · reflejo 1150–1750 · destellos 0/3/6 desde 1100 · salida 4600–5000.',
+  html: ctx => { const n = ctx.rar.spk, R = 35, cx = 47, cy = 46;
+    const spk = Array.from({length:n},(_,i)=>{ const a = (-120 + i*(360/n))*Math.PI/180; return `<span class="spk" style="left:${(cx+Math.cos(a)*R-5).toFixed(1)}px;top:${(cy+Math.sin(a)*R-5).toFixed(1)}px">${STAR}</span>`; }).join('');
+    const fill = Math.max(.06, Math.min(1, ctx.rar.pct / 100));
+    return `<div class="card4"><div class="medal"><svg class="rg" viewBox="0 0 66 66"><circle class="t" cx="33" cy="33" r="31"/><circle class="a" cx="33" cy="33" r="31" pathLength="100"/></svg><div class="coin"><div class="face front"><img src="${ctx.ach.iconGray}" alt=""/></div><div class="face back"><img src="${ctx.ach.icon}" alt=""/></div></div></div><div class="txt"><span class="k">¡Logro conseguido!</span><b class="nm">${ctx.ach.name}</b><span class="ds">${ctx.ach.desc}</span><span class="meta"><span class="meter"><i style="width:${(fill*100).toFixed(0)}%"></i></span>${ctx.rar.label} · ${pctFmt(ctx.rar.pct)} de jugadores</span></div><i class="sheen"></i></div>${spk}`; },
+  play(w, ctx, t){
+    const q = s => w.querySelector(s), qa = s => [...w.querySelectorAll(s)];
+    const st = (el, t0) => T(el, t, [[0,{opacity:0,transform:'translateY(5px)'}],[t0,{opacity:0,transform:'translateY(5px)',easing:E.out}],[t0+320,{opacity:1,transform:'translateY(0px)'}]]);
+    const a = [
+      T(q('.card4'), t, [[0,{opacity:0,transform:'translateY(-6px)',easing:E.out}],[380,{opacity:1,transform:'translateY(0px)'}],[4600,{opacity:1,transform:'translateY(0px)',easing:E.in}],[5000,{opacity:0,transform:'translateY(-6px)'}]]),
+      T(q('.coin'), t, [[0,{transform:'rotateY(0deg) scale(.8)'}],[350,{transform:'rotateY(0deg) scale(.8)',easing:'cubic-bezier(.3,1.3,.5,1)'}],[1050,{transform:'rotateY(180deg) scale(1)'}]]),
+      T(q('.rg .a'), t, [[0,{strokeDashoffset:100}],[300,{strokeDashoffset:100,easing:'cubic-bezier(.45,0,.2,1)'}],[1100,{strokeDashoffset:0}]]),
+      st(q('.k'), 400), st(q('.nm'), 480), st(q('.ds'), 560), st(q('.meta'), 640),
+      T(q('.meter i'), t, [[0,{transform:'scaleX(0)'}],[900,{transform:'scaleX(0)',easing:E.out}],[1500,{transform:'scaleX(1)'}]]),
+      T(q('.sheen'), t, [[0,{transform:'translateX(-110%)'}],[1150,{transform:'translateX(-110%)',easing:'cubic-bezier(.4,0,.2,1)'}],[1750,{transform:'translateX(110%)'}]]),
+    ];
+    qa('.spk').forEach((s, i) => {
+      const f = [[0,{opacity:0,transform:'scale(0) rotate(0deg)'}]], waves = ctx.rar.tier === 3 ? [1100, 2500] : [1100];
+      waves.forEach(w0 => { const s0 = w0 + i*110; f.push([s0,{opacity:0,transform:'scale(0) rotate(0deg)',easing:E.out}],[s0+220,{opacity:1,transform:'scale(1.15) rotate(45deg)',easing:'ease-in'}],[s0+760,{opacity:0,transform:'scale(.2) rotate(90deg)'}]); });
+      f.push([4600,{opacity:0,transform:'scale(.2) rotate(90deg)'}]);
+      a.push(T(s, t, f));
+    });
+    return a;
+  },
+});
+P.push({
+  sec:'ach', code:'L3', fav:true, name:'Candado y rayos', w:400, h:88, total:5000,
+  dist:'La tarjeta entra con un barrido desde el borde. El icono está gris con candado; el candado tiembla y salta, el icono se tiñe de color con un flash y detrás nace un disco de rayos del color de la rareza que gira lento hasta el final.',
+  spec:'<b>5000 ms</b> · barrido <code>clip-path</code> 0–420 <code>(.7,0,.2,1)</code> · candado tiembla 600–900, salta 900–1100 · color (fundido <code>iconGray</code>→<code>icon</code>) 950–1250 + pop 1.15 · flash 950–1350 · rayos 950–1400 <code>expo-out</code> y giro lineal hasta 4400 (opacidad .35/.6/.9 según rareza) · textos 1100–1560 · barrido dorado extra en ultra · salida por barrido 4600–5000.',
+  html: ctx => `<div class="card5"><div class="zone"><i class="rays"></i><i class="flashc"></i><div class="ico"><img class="gray" src="${ctx.ach.iconGray}" alt=""/><img class="col" src="${ctx.ach.icon}" alt=""/><span class="lock">${LOCK}</span></div></div><div class="txt"><div class="krow"><span class="k">Logro desbloqueado</span><span class="chip">${ctx.rar.label} · ${pctFmt(ctx.rar.pct)}</span></div><b class="nm">${ctx.ach.name}</b><span class="ds">${ctx.ach.desc}</span></div><i class="sweep"></i></div>`,
+  play(w, ctx, t){
+    const q = s => w.querySelector(s);
+    const C0 = 'inset(0px 0px 0px 400px round 18px)', C1 = 'inset(0px 0px 0px 0px round 18px)', W = 'cubic-bezier(.7,0,.2,1)', ro = ctx.rar.rays;
+    const tx = (el, t0, op=1) => T(el, t, [[0,{opacity:0,transform:'translateX(10px)'}],[t0,{opacity:0,transform:'translateX(10px)',easing:E.out}],[t0+300,{opacity:op,transform:'translateX(0px)'}]]);
+    const sweep = [[0,{transform:'translateX(-110%)'}]];
+    if (ctx.rar.tier >= 2) sweep.push([1500,{transform:'translateX(-110%)',easing:'cubic-bezier(.4,0,.2,1)'}],[2100,{transform:'translateX(110%)'}]);
+    if (ctx.rar.tier === 3) sweep.push([2900,{transform:'translateX(-110%)',easing:'cubic-bezier(.4,0,.2,1)'}],[3500,{transform:'translateX(110%)'}]);
+    return [
+      T(q('.card5'), t, [[0,{clipPath:C0,easing:W}],[420,{clipPath:C1}],[4600,{clipPath:C1,easing:W}],[5000,{clipPath:C0}]]),
+      T(q('.ico'), t, [[0,{transform:'scale(.85)'}],[250,{transform:'scale(.85)',easing:E.out}],[600,{transform:'scale(1)'}],[950,{transform:'scale(1)',easing:E.out}],[1080,{transform:'scale(1.15)',easing:E.out}],[1350,{transform:'scale(1)'}]]),
+      T(q('.lock'), t, [[0,{opacity:0,transform:'translate(0px,0px) rotate(0deg)'}],[300,{opacity:0,transform:'translate(0px,0px) rotate(0deg)'}],[450,{opacity:1,transform:'translate(0px,0px) rotate(0deg)'}],[600,{opacity:1,transform:'translate(0px,0px) rotate(0deg)'}],[675,{opacity:1,transform:'translate(0px,0px) rotate(-16deg)'}],[750,{opacity:1,transform:'translate(0px,0px) rotate(14deg)'}],[825,{opacity:1,transform:'translate(0px,0px) rotate(-9deg)'}],[900,{opacity:1,transform:'translate(0px,0px) rotate(0deg)',easing:'cubic-bezier(.3,0,.6,1)'}],[1100,{opacity:0,transform:'translate(7px,-16px) rotate(35deg)'}]]),
+      T(q('.ico .col'), t, [[0,{opacity:0}],[950,{opacity:0,easing:'ease-out'}],[1250,{opacity:1}]]),
+      T(q('.flashc'), t, [[0,{opacity:0,transform:'scale(.5)'}],[950,{opacity:0,transform:'scale(.5)'}],[960,{opacity:.85,transform:'scale(.5)',easing:E.out}],[1350,{opacity:0,transform:'scale(1.6)'}]]),
+      T(q('.rays'), t, [[0,{opacity:0,transform:'scale(.2) rotate(0deg)'}],[950,{opacity:0,transform:'scale(.2) rotate(0deg)',easing:E.out}],[1400,{opacity:ro,transform:'scale(1) rotate(40deg)',easing:'linear'}],[4400,{opacity:ro,transform:'scale(1) rotate(150deg)',easing:'linear'}],[4700,{opacity:0,transform:'scale(1.05) rotate(160deg)'}]]),
+      tx(q('.krow'), 1100), tx(q('.nm'), 1180), tx(q('.ds'), 1260),
+      T(q('.sweep'), t, sweep),
+    ];
+  },
+});
+
+/* ================= Estado y montaje ================= */
+const state = { bg:'dark', spd:1, rm: matchMedia('(prefers-reduced-motion: reduce)').matches, days:5, kind:'meta', ach:0, rar:'ultra', shotIdx:0 };
+const BGS = ['dark','light','color'];
+const cards = []; // {p, el, world, win, anims, bg}
+
+function ctxFor(p){
+  if (p.sec === 'shot') return { shot: SHOTS[state.shotIdx % SHOTS.length] };
+  if (p.sec === 'goal') return { days: state.days, kind: state.kind };
+  return { ach: ACHS[state.ach], rar: RAR[state.rar] };
+}
+
+function buildCard(p){
+  const el = document.createElement('article');
+  el.className = 'card';
+  el.innerHTML = `
+    <h3><span class="code">${p.code}</span>${p.name}${p.fav ? '<span class="fav">★ recomendada</span>' : ''}</h3>
+    <p class="dist">${p.dist}</p>
+    <div class="stagewrap"><div class="sizer"></div><div class="world"><div class="hud"><i class="map"></i><i class="hero"></i><i class="hp"></i><span class="ammo">24 / 90</span></div>
+      <div class="win p-${p.code}" style="width:${p.w}px;height:${p.h}px"><div class="inner"></div></div>
+      <span class="wlabel" style="top:${18 + p.h + 4}px">${p.w}×${p.h}</span></div><span class="scale-tag"></span></div>
+    <div class="prog"><i></i></div>
+    <footer>
+      <button class="btn" data-act="replay">▶ Repetir</button>
+      ${p.sec === 'shot' ? '<button class="btn ghost" data-act="again">＋ Otra captura (reentrada)</button>' : ''}
+      <button class="btn ghost" data-act="bg">Cambiar fondo</button>
+    </footer>
+    <p class="spec">${p.spec}</p>`;
+  const c = { p, el, world: el.querySelector('.world'), win: el.querySelector('.win'), inner: el.querySelector('.inner'), bar: el.querySelector('.prog i'), anims: [], bg: state.bg, start: 0 };
+  el.querySelector('[data-act="replay"]').onclick = () => play(c);
+  el.querySelector('[data-act="bg"]').onclick = () => { c.bg = BGS[(BGS.indexOf(c.bg) + 1) % 3]; applyBg(c); };
+  const again = el.querySelector('[data-act="again"]');
+  if (again) again.onclick = () => { state.shotIdx++; play(c, true); };
+  applyBg(c);
+  document.getElementById('grid-' + p.sec).appendChild(el);
+  cards.push(c);
+  return c;
+}
+function applyBg(c){ c.world.className = 'world bg-' + c.bg; }
+
+function render(c){ c.inner.innerHTML = c.p.html(ctxFor(c.p)); }
+
+function play(c, reentry=false){
+  const wasVisible = c.anims.length && c.anims.some(a => a && a.playState === 'running');
+  c.anims.forEach(a => a && a.cancel());
+  render(c);
+  const t = c.p.total, ctx = ctxFor(c.p);
+  let anims;
+  if (state.rm) {
+    // Movimiento reducido: todo en su estado final, solo fundido de entrada y salida.
+    anims = [T(c.inner, t, [[0,{opacity:0}],[200,{opacity:1}],[t - 300,{opacity:1,easing:'ease-in'}],[t,{opacity:0}]])];
+  } else {
+    c.inner.style.opacity = '';
+    anims = c.p.play(c.win, ctx, t).filter(Boolean);
+  }
+  anims.push(c.bar.animate([{transform:'scaleX(0)'},{transform:'scaleX(1)'}], { duration: t, easing: 'linear', fill: 'both' }));
+  const skip = (reentry && wasVisible && !state.rm) ? (c.p.reentrySkip || 0) : 0;
+  anims.forEach(a => { a.playbackRate = state.spd; if (skip) a.currentTime = skip; });
+  c.anims = anims;
+}
+
+function rerenderSec(sec){ cards.filter(c => c.p.sec === sec).forEach(c => play(c)); }
+
+// Escalado del escenario: 1:1 si cabe, si no se reduce (móvil).
+const ro = new ResizeObserver(entries => {
+  for (const e of entries) {
+    const wrap = e.target, w = wrap.clientWidth, s = Math.min(1, w / 640);
+    wrap.querySelector('.sizer').style.height = (360 * s) + 'px';
+    const world = wrap.querySelector('.world');
+    world.style.width = (s === 1 ? w : 640) + 'px';
+    world.style.transform = `scale(${s})`;
+    wrap.querySelector('.scale-tag').textContent = s === 1 ? 'Escala 1:1' : `Escala ${Math.round(s * 100)} %`;
+  }
+});
+
+/* ================= Controles ================= */
+function seg(id, attr, onPick){
+  const box = document.getElementById(id);
+  box.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    box.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    onPick(b.dataset[attr]);
+  });
+}
+document.getElementById('achSeg').innerHTML = ACHS.map((a, i) => `<button data-a="${i}" aria-pressed="${i === 0}" title="${a.name}">${a.sym}${i === 3 ? ' largo' : ''}</button>`).join('');
+seg('bgSeg', 'bg', v => { state.bg = v; cards.forEach(c => { c.bg = v; applyBg(c); }); });
+seg('spdSeg', 'spd', v => { state.spd = Number(v); cards.forEach(c => c.anims.forEach(a => a && (a.playbackRate = state.spd))); });
+seg('daySeg', 'd', v => { state.days = Number(v); rerenderSec('goal'); });
+seg('kindSeg', 'k', v => { state.kind = v; rerenderSec('goal'); });
+seg('achSeg', 'a', v => { state.ach = Number(v); rerenderSec('ach'); });
+seg('rarSeg', 'r', v => { state.rar = v; cards.filter(c => c.p.sec === 'ach').forEach(c => c.win.style.setProperty('--r', RAR[v].color)); rerenderSec('ach'); });
+const rmChk = document.getElementById('rmChk');
+rmChk.checked = state.rm;
+rmChk.onchange = () => { state.rm = rmChk.checked; cards.forEach(c => play(c)); };
+document.getElementById('rectChk').onchange = e => document.body.classList.toggle('show-rect', e.target.checked);
+document.getElementById('allBtn').onclick = () => cards.forEach(c => play(c));
+
+/* ================= Arranque ================= */
+P.forEach(p => {
+  const c = buildCard(p);
+  if (p.sec === 'ach') c.win.style.setProperty('--r', RAR[state.rar].color);
+  ro.observe(c.el.querySelector('.stagewrap'));
+  render(c);
+});
+// Reproduce cada tarjeta la primera vez que entra en pantalla.
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) { const c = cards.find(x => x.el === e.target); if (c) play(c); io.unobserve(e.target); }
+}), { threshold: .4 });
+cards.forEach(c => io.observe(c.el));
+</script>
+</body>
+</html>

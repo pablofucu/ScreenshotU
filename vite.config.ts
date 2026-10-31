@@ -27,6 +27,7 @@ export default defineConfig({
         reader: 'reader.html',
         rec: 'rec.html',
         peek: 'peek.html',
+        ach: 'ach.html',
       },
     },
   },

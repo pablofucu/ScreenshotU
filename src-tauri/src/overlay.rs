@@ -16,6 +16,8 @@ const W_TEXT: f64 = 330.0;
 /// Ancho del aviso de meta de lectura cumplida.
 const W_GOAL: f64 = 400.0;
 const H: f64 = 44.0;
+/// Alto del aviso de meta cumplida (título y subtítulo, y el contador de días).
+const H_GOAL: f64 = 64.0;
 const MARGIN: i32 = 18;
 
 static APP: std::sync::Mutex<Option<AppHandle>> = std::sync::Mutex::new(None);
@@ -26,6 +28,8 @@ static KEEPER: AtomicBool = AtomicBool::new(false);
 static FLASH_GEN: AtomicU64 = AtomicU64::new(0);
 /// Ancho (logico) con el que se coloca ahora la ventana.
 static WIDTH: AtomicU64 = AtomicU64::new(0);
+/// Alto (logico) con el que se coloca ahora la ventana.
+static HEIGHT: AtomicU64 = AtomicU64::new(44);
 
 /// Guarda el `AppHandle` para poder mostrar el indicador desde cualquier hilo.
 pub fn init(app: &AppHandle) {
@@ -42,9 +46,10 @@ pub fn flash(text: &str) {
     flash_as("audio", text, 2200);
 }
 
-/// Aviso «meta de lectura cumplida» sobre el juego (un poco más largo que el de audio).
-pub fn goal(text: &str) {
-    flash_as("goal", text, 4500);
+/// Aviso «meta de lectura cumplida» sobre el juego: `key` es el anillo (`vn` azul, `jvn` rosa), `days` la racha y
+/// `title` el titular. La pagina recibe todo junto en el texto (`clave|dias|titular`).
+pub fn goal(key: &str, days: u32, title: &str) {
+    flash_as("goal", &format!("{key}|{days}|{title}"), 4500);
 }
 
 fn flash_as(state: &'static str, text: &str, ms: u64) {
@@ -72,6 +77,7 @@ fn show_with(state: &'static str, secs: u64, text: &str) {
         _ => W,
     };
     WIDTH.store(w as u64, Ordering::SeqCst);
+    HEIGHT.store(if state == "goal" { H_GOAL } else { H } as u64, Ordering::SeqCst);
     if state != "audio" && state != "goal" {
         // Un cartel de texto pendiente no debe ocultar el indicador que sale ahora.
         FLASH_GEN.fetch_add(1, Ordering::SeqCst);
@@ -128,7 +134,7 @@ pub fn is_visible() -> bool {
 
 /// Alto fisico ocupado por el indicador en la esquina (margen incluido), con la escala de `scale`.
 pub fn corner_height(scale: f64) -> i32 {
-    MARGIN + (H * scale) as i32
+    MARGIN + (HEIGHT.load(Ordering::SeqCst) as f64 * scale) as i32
 }
 
 pub fn hide(app: &AppHandle) {
@@ -145,7 +151,7 @@ fn build(app: &AppHandle, state: &str, secs: u64, text: &str) -> Option<tauri::W
     let url = format!("rec.html?s={state}&t={secs}&x={}", pct(text));
     let w = WebviewWindowBuilder::new(app, LABEL, WebviewUrl::App(url.into()))
         .title("REC")
-        .inner_size(W, H)
+        .inner_size(WIDTH.load(Ordering::SeqCst).max(W as u64) as f64, HEIGHT.load(Ordering::SeqCst) as f64)
         .decorations(false)
         .transparent(true)
         .always_on_top(true)
@@ -234,11 +240,7 @@ pub(crate) fn hide_quiet(w: &tauri::WebviewWindow) {
 
 /// Esquina superior derecha del monitor donde esta la ventana del juego.
 fn place(app: &AppHandle, win: &tauri::WebviewWindow) {
-    let pid = {
-        let st = app.state::<AppState>();
-        let p = st.active.lock().unwrap().as_ref().and_then(|a| a.pids.lock().unwrap().first().copied());
-        p.or_else(|| crate::texthook::status().proc.map(|p| p.pid))
-    };
+    let pid = active_pid(app);
     let m = crate::reader::monitor::game_monitor(pid);
     // Primero en el monitor, para que el factor de escala sea el suyo; luego en la esquina.
     let _ = win.set_position(tauri::PhysicalPosition::new(m.x + 10, m.y + 10));
@@ -247,7 +249,15 @@ fn place(app: &AppHandle, win: &tauri::WebviewWindow) {
         0 => W,
         n => n as f64,
     };
-    let _ = win.set_size(tauri::LogicalSize::new(w, H));
+    let h = HEIGHT.load(Ordering::SeqCst) as f64;
+    let _ = win.set_size(tauri::LogicalSize::new(w, h));
     let wpx = (w * scale) as i32;
     let _ = win.set_position(tauri::PhysicalPosition::new(m.x + m.w as i32 - wpx - MARGIN, m.y + MARGIN));
+}
+
+/// Proceso del juego en marcha (o de la novela con el lector abierto), para saber en que monitor esta.
+pub(crate) fn active_pid(app: &AppHandle) -> Option<u32> {
+    let st = app.state::<AppState>();
+    let p = st.active.lock().unwrap().as_ref().and_then(|a| a.pids.lock().unwrap().first().copied());
+    p.or_else(|| crate::texthook::status().proc.map(|p| p.pid))
 }
