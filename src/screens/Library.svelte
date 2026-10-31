@@ -88,5 +88,5 @@
   .litem .lfrom { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; font-size: 13px; color: #7a8291; }
   .litem b { flex: none; font-variant-numeric: tabular-nums; }
   .lbar { height: 14px; border-radius: 7px; background: rgba(95, 110, 135, 0.18); overflow: hidden; margin: 18px 0 6px; }
-  .lbar i { display: block; height: 100%; border-radius: 7px; background: var(--acc); transition: width 0.25s; }
+  .lbar i { display: block; height: 100%; border-radius: 7px; background: var(--gf); transition: width 0.25s; }
 </style>

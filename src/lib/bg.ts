@@ -1,5 +1,4 @@
 import { rng } from './rng';
-import { RAINBOW } from './icons';
 
 /** Fondo del mockup: manchas, iconos fantasma y bokeh con semilla fija (42). */
 export function buildBackground(): string {
@@ -7,11 +6,13 @@ export function buildBackground(): string {
   let h = '';
   for (let i = 0; i < 9; i++) {
     const s = 180 + r() * 260;
-    h += `<div class="blob ${i % 3 === 0 ? 'a' : 'w'}" style="left:${r() * 1180 - 100}px;top:${r() * 640 - 100}px;width:${s}px;height:${s}px;animation-delay:-${(r() * 20).toFixed(1)}s"></div>`;
+    const b = (i % 3) + 1;
+    h += `<div class="blob" style="left:${r() * 1180 - 100}px;top:${r() * 640 - 100}px;width:${s}px;height:${s}px;--b:var(--b${b});animation-delay:-${(r() * 20).toFixed(1)}s"></div>`;
   }
   for (let i = 0; i < 9; i++) {
     const sc = 0.6 + r() * 0.8;
-    h += `<div class="ghost" style="left:${r() * 1200 - 40}px;top:${r() * 660 - 40}px;opacity:${(0.18 + r() * 0.22).toFixed(2)};transform:scale(${sc.toFixed(2)}) rotate(${(r() * 16 - 8).toFixed(1)}deg);--g:${RAINBOW[i % 7].c}"><i></i></div>`;
+    const g = i % 2 === 0 ? 'var(--b1)' : 'var(--b2)';
+    h += `<div class="ghost" style="left:${r() * 1200 - 40}px;top:${r() * 660 - 40}px;opacity:${(0.18 + r() * 0.22).toFixed(2)};transform:scale(${sc.toFixed(2)}) rotate(${(r() * 16 - 8).toFixed(1)}deg);--g:${g}"><i></i></div>`;
   }
   for (let i = 0; i < 14; i++) {
     const s = 10 + r() * 34;

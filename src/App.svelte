@@ -4,6 +4,7 @@
   import { learnKeydown } from './lib/learn.svelte';
   import { boot, onKeyDown, onScreenClick, onScreenDblClick, onScreenMove, startGamepad, startMouse, hideToast, cmd, intro } from './lib/controller.svelte';
   import { buildBackground } from './lib/bg';
+  import { lerpH, variablesCSS } from './lib/atmos';
   import Home from './screens/Home.svelte';
   import Titles from './screens/Titles.svelte';
   import Detail from './screens/Detail.svelte';
@@ -48,6 +49,50 @@
   const bg = buildBackground();
   let error = $state('');
 
+  let curAtmos: { h1: number; h2: number } | null = null;
+  let atmosRaf = 0;
+
+  function applyAtmos(vars: Record<string, string>) {
+    const stage = document.getElementById('stage');
+    if (!stage) return;
+    for (const [k, v] of Object.entries(vars)) {
+      stage.style.setProperty(k, v);
+    }
+  }
+
+  $effect(() => {
+    const target = app.atmosTarget;
+    if (!curAtmos) {
+      curAtmos = { ...target };
+      applyAtmos(variablesCSS(curAtmos.h1, curAtmos.h2));
+      return;
+    }
+    cancelAnimationFrame(atmosRaf);
+    const reduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced) {
+      curAtmos = { ...target };
+      applyAtmos(variablesCSS(curAtmos.h1, curAtmos.h2));
+      return;
+    }
+    const from = { ...curAtmos };
+    if (from.h1 === target.h1 && from.h2 === target.h2) return;
+    const t0 = performance.now();
+    const dur = 700;
+    const step = (now: number) => {
+      const p = Math.min(1, (now - t0) / dur);
+      const e = 1 - Math.pow(1 - p, 3);
+      const h1 = lerpH(from.h1, target.h1, e);
+      const h2 = lerpH(from.h2, target.h2, e);
+      curAtmos = { h1, h2 };
+      applyAtmos(variablesCSS(h1, h2));
+      if (p < 1) {
+        atmosRaf = requestAnimationFrame(step);
+      }
+    };
+    atmosRaf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(atmosRaf);
+  });
+
   // Hints de los paneles (fuera de #screen y del teclado en pantalla, que ya atienden los suyos).
   function onStageClick(e: MouseEvent) {
     const t = e.target as HTMLElement;
@@ -70,6 +115,8 @@
     show();
     // Los elementos clicables son divs: se marcan como botones para los lectores de pantalla.
     const stage = document.getElementById('stage');
+    curAtmos = { ...app.atmosTarget };
+    applyAtmos(variablesCSS(curAtmos.h1, curAtmos.h2));
     let raf = 0;
     const tag = () => {
       raf = 0;
@@ -80,7 +127,7 @@
     const mo = new MutationObserver(() => { if (!raf) raf = requestAnimationFrame(tag); });
     if (stage) mo.observe(stage, { childList: true, subtree: true });
     tag();
-    return () => { window.removeEventListener('mousemove', show); mo.disconnect(); cancelAnimationFrame(raf); };
+    return () => { window.removeEventListener('mousemove', show); mo.disconnect(); cancelAnimationFrame(raf); cancelAnimationFrame(atmosRaf); };
   });
 </script>
 

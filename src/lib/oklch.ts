@@ -89,3 +89,15 @@ export function accentForHue(h: number): { color: string; dark: boolean } {
   return { color: rgbToHex(out), dark: needsDarkInk(out) };
 }
 export const hueOf = (hex: string): number => { const rgb = hexToRgb(hex); return rgb ? rgbToLch(rgb)[2] : 220; };
+
+export function oklch(L: number, C: number, h: number): string {
+  return rgbToHex(lchToRgb(L, C, ((h % 360) + 360) % 360));
+}
+export function contrast(hexA: string, hexB: string): number {
+  const rgbA = hexToRgb(hexA);
+  const rgbB = hexToRgb(hexB);
+  if (!rgbA || !rgbB) return 1;
+  const la = luminance(rgbA);
+  const lb = luminance(rgbB);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}

@@ -2,7 +2,8 @@ import { SvelteSet } from 'svelte/reactivity';
 import { untrack } from 'svelte';
 import { RAINBOW, type Accent } from './icons';
 import type { AudioOutput, Config, GameStatsDb, GameStatus, Library, MagpieStatus, Collection, Shot, SortMode as SortModeT, Swatch, Title, TitleOrder } from './types';
-import { hexToRgb, inkDark, rgbToLch } from './oklch';
+import { hexToRgb, hueOf, inkDark, rgbToLch } from './oklch';
+import { gamePair, pair } from './atmos';
 import { collItems, collectionTitle } from './collections';
 import { GOAL_COL, type GoalKey } from './readgoals';
 import { calendar, categoryStats, evoBuckets, playedPlatforms, playYears, rankPeriod, titleStats, yearReview, type EvoKind, type GMetric, type PeriodKind } from './stats';
@@ -555,7 +556,7 @@ class Store {
 
   /** Acento del arcoíris (por índice) o color fijo, según el modo («Del juego» usa aquí el arcoíris de reserva). */
   acc(i: number): Accent {
-    return RAINBOW[this.config.accentMode === 'fixed' ? this.config.accentFixed : ((i % 7) + 7) % 7];
+    return RAINBOW[((i % 7) + 7) % 7];
   }
   platAcc(pi: number): Accent {
     return this.acc(this.lib.platforms[pi]?.accent ?? this.config.platforms[pi]?.accent ?? 4);
@@ -574,9 +575,33 @@ class Store {
   }
   private autoAcc(t: Title, rb: Accent, ignoreOverride: boolean): Accent {
     if (!ignoreOverride && t.accentOverride) return accentOf(t.accentOverride, inkDark(t.accentOverride));
-    if (this.config.accentMode === 'art' && t.accent) return accentOf(t.accent.accent.color, t.accent.accent.dark, 'Del juego');
+    if (t.accent) return accentOf(t.accent.accent.color, t.accent.accent.dark, 'Del juego');
     return rb;
   }
+  /** Pareja de tonos de la atmósfera actual. */
+  atmosTarget = $derived.by((): { h1: number; h2: number } => {
+    if (this.overlay === 'settings') return pair(1);
+    if (this.favView) return pair(2 / 6);
+    if (this.view === 'home') {
+      const N = this.lib.platforms.length;
+      return pair(N <= 1 ? 0 : this.hp / (N - 1));
+    }
+    if (this.view === 'titles') {
+      const N = this.lib.platforms.length;
+      return pair(N <= 1 ? 0 : this.p / (N - 1));
+    }
+    if (this.view === 'stats' || this.view === 'evo') return pair(5 / 6);
+    if (this.view === 'streak') {
+      const h1 = hueOf(GOAL_COL[this.streakKey].c);
+      return { h1, h2: (h1 + 35) % 360 };
+    }
+    const t = this.collTitle ?? this.lib.platforms[this.p]?.titles[this.t];
+    if (t) {
+      return gamePair(t, this.accentPreview);
+    }
+    return pair(0);
+  });
+
   /** Acento de la pantalla actual (para --acc del escenario). */
   chrome = $derived.by((): Accent => {
     if (this.view === 'home') return this.platAcc(this.hp);

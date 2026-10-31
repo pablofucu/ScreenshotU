@@ -1206,7 +1206,7 @@ export function wake() {
 
 /* ---------- ajustes ---------- */
 export type SettingId =
-  | 'root' | 'rescan' | 'addgame' | 'hidden' | 'showhidden' | 'view' | 'shotsview' | 'shotsorder' | 'collstyle' | 'accent' | 'achcardvariant' | 'sound' | 'fullscreen' | 'monitor' | 'oncursor'
+  | 'root' | 'rescan' | 'addgame' | 'hidden' | 'showhidden' | 'view' | 'shotsview' | 'shotsorder' | 'collstyle' | 'achcardvariant' | 'sound' | 'fullscreen' | 'monitor' | 'oncursor'
   | 'audioout' | 'audiocombo' | 'audiohotkey' | 'hotkey' | 'combo' | 'mouse' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caponly' | 'caprumble' | 'quit'
   | 'sgdbkey' | 'sgdbauto' | 'sgdbnow' | 'sgdbgame'
   | 'backup' | 'backupmedia' | 'restore' | 'autobackup'
@@ -1241,7 +1241,7 @@ export const SETTING_SECTIONS: Array<{ name: string; icon: string; color: number
     icon: 'palette',
     color: 1,
     rows: [
-      'accent', 'achcardvariant', 'view', 'shotsview', 'shotsorder', 'collstyle',
+      'achcardvariant', 'view', 'shotsview', 'shotsorder', 'collstyle',
       'sgdbkey', 'sgdbauto', 'sgdbnow', 'sgdbgame',
     ],
   },
@@ -1412,16 +1412,6 @@ export function closeSettings() {
   flushRefresh();
   blip(520);
 }
-/** Estados de acento: 0 = del juego (automático), 1 = arcoíris, 2..8 = color fijo. */
-export function accentState(): number {
-  const m = app.config.accentMode;
-  return m === 'art' ? 0 : m === 'rainbow' ? 1 : app.config.accentFixed + 2;
-}
-function cycleAccent(d: number) {
-  const n = (accentState() + d + 9) % 9;
-  void patchConfig(n === 0 ? { accentMode: 'art' } : n === 1 ? { accentMode: 'rainbow' } : { accentMode: 'fixed', accentFixed: n - 2 });
-  blip(880);
-}
 function cycleIn<T>(list: T[], cur: T, d: number): T {
   const i = Math.max(0, list.indexOf(cur));
   return list[(i + d + list.length) % list.length];
@@ -1461,7 +1451,6 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'shotsview') toggleShotsView();
   else if (id === 'shotsorder') { void patchConfig({ shotsOrder: app.config.shotsOrder === 'oldest' ? 'recent' : 'oldest' }); blip(1320); }
   else if (id === 'collstyle') { void patchConfig({ collectionsStyle: app.config.collectionsStyle === 'aurora' ? 'multi' : 'aurora' }); blip(1320); }
-  else if (id === 'accent') cycleAccent(dir || 1);
   else if (id === 'achcardvariant') {
     const cur = app.config.achievementsCardVariant ?? 1;
     const variants = [1, 2, 3, 4, 7, 8];

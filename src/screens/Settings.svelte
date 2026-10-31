@@ -2,7 +2,7 @@
   import { app } from '../lib/store.svelte';
   import { ICON, RAINBOW } from '../lib/icons';
   import {
-    accentState, closeSettings, dropRestore, setSection, settingsAct, SETTING_SECTIONS, type SettingId,
+    closeSettings, dropRestore, setSection, settingsAct, SETTING_SECTIONS, type SettingId,
   } from '../lib/controller.svelte';
   import { comboLabel, hotkeyLabel, mouseLabel } from '../lib/learn.svelte';
   import { sg, sgdbKeyLabel } from '../lib/sgdb.svelte';
@@ -19,7 +19,7 @@
   const yn = (b: boolean) => (b ? 'Sí' : 'No');
 
   // Filas que cambian de valor con izquierda/derecha (se marcan con ‹ › al enfocarlas).
-  const CYCLE = new Set<SettingId>(['showhidden', 'view', 'shotsview', 'shotsorder', 'collstyle', 'accent', 'achcardvariant', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'inputmouse', 'inputkeys', 'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay']);
+  const CYCLE = new Set<SettingId>(['showhidden', 'view', 'shotsview', 'shotsorder', 'collstyle', 'achcardvariant', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'inputmouse', 'inputkeys', 'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay']);
 
   /** Contenido de cada fila (etiqueta, valor y ayuda). Se evalúa al pintar: depende del estado vivo de la app. */
   type Row = { l: string; v: string; d: string };
@@ -29,7 +29,6 @@
     addgame: () => ({ l: 'Añadir juego…', v: '', d: 'Añade un ejecutable, un emulador con su ROM, una carpeta de juegos o solo una carpeta de capturas.' }),
     hidden: () => ({ l: 'Juegos ocultos', v: app.lib.hidden.length ? `${app.lib.hidden.length}` : 'Ninguno', d: 'Lista de juegos ocultos desde su ficha (Y → Ocultar juego) para volver a mostrarlos. Sus archivos no se tocan.' }),
     showhidden: () => ({ l: 'Mostrar ocultos (atenuados)', v: yn(app.config.showHidden), d: 'Enseña los juegos ocultos en las listas, atenuados y con una marca, en vez de quitarlos.' }),
-    accent: () => ({ l: 'Color de acento', v: accentState() === 0 ? 'Del juego (automático)' : accentState() === 1 ? 'Arcoíris' : RAINBOW[app.config.accentFixed].n, d: '«Del juego» saca el color del hero y la portada de cada juego. También puedes usar el arcoíris o un color fijo. Cada juego puede tener el suyo desde su ficha (Y → Color de acento).' }),
     achcardvariant: () => {
       const v = app.config.achievementsCardVariant ?? 1;
       return { l: 'Diseño de logros en la ficha', v: `${v} · ${VARIANT_NAMES[v] ?? 'Anillo'}`, d: 'Diseño visual con el que se muestra la tarjeta de logros en la ficha de todos tus juegos: 1 · Anillo dorado + último logro, 2 · Portada + banda inferior, 3 · Mosaico de la colección (todos los iconos), 4 · Medalla de rango, 7 · Contador rodillo u 8 · Por rareza. Cambia para todos los juegos a la vez.' };
@@ -135,13 +134,6 @@
         {#each rows as r, i (r.id)}
           <button type="button" class="srow" class:f={app.setRow === i} class:danger={r.id === 'quit' || (r.id === 'restore' && !!app.restoreReady)} data-set={r.id} onmousemove={(e) => hover(e, i)} onclick={() => { app.setRow = i; settingsAct(r.id, 0); }}>
             <span class="sl">{r.l}</span>
-            {#if r.id === 'accent'}
-              <span class="sw">
-                <i class="art" title="Del juego" class:sel={accentState() === 0}></i>
-                <i class="rb" title="Arcoíris" class:sel={accentState() === 1}></i>
-                {#each RAINBOW as c, k}<i style="background:{c.c}" class:sel={accentState() === k + 2}></i>{/each}
-              </span>
-            {/if}
             <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
             {#if showArrows(r.id)}<span class="sarr" class:hid={app.setRow !== i} onclick={(e) => { e.stopPropagation(); settingsAct(r.id, -1); }}>‹</span>{/if}
             <span class="sv">{r.v}</span>
