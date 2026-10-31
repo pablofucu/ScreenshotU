@@ -75,7 +75,7 @@
   {/each}
 </div>
 {#if !shelves.length}
-  <div class="glass note-card" style="left:300px;top:400px;height:240px;--acc:{app.chrome.c}">
+  <div class="glass note-card" style="left:300px;top:400px;height:240px">
     <div class="face">
       <h2>Agrupa tus juegos en colecciones</h2>
       <p>Una colección junta en una estantería varios juegos de {P?.name ?? 'esta categoría'} (Trails, Kingdom Hearts…), los ordena por año y reúne todas sus capturas. Solo es una agrupación: no mueve ni copia ningún archivo.</p>

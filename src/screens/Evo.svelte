@@ -53,7 +53,7 @@
 {#if T}
   <TopBar crumbs={[P?.name ?? '', T.name, 'Estadísticas']} />
 
-  <div class="glass rcard evhead" style="--acc:{app.chrome.c}">
+  <div class="glass rcard evhead">
     <RecentCard t={T} />
     <div class="evtot">
       <div><small>Tiempo total</small><b>{fmtHM(T.playSeconds * 1000)}</b></div>

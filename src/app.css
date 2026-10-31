@@ -363,6 +363,7 @@ button.srow,button.scat{width:100%}
 .mrow.addrow{height:60px;line-height:1.15}
 .addpanel{left:380px;width:520px}
 .cover.dim{opacity:.42;filter:saturate(.45)}
+.pip{position:absolute;right:11px;top:11px;z-index:2;width:17px;height:17px;border-radius:50%;background:linear-gradient(135deg,var(--p1,var(--g1)),var(--p2,var(--g2)));border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);pointer-events:none}
 .hbadge{position:absolute;left:8px;top:8px;width:30px;height:30px;border-radius:50%;background:rgba(40,46,58,.72);display:grid;place-items:center}
 .hbadge svg{width:64%;height:64%}
 .addtile .face{background:rgba(255,255,255,.62);display:grid;place-items:center;box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--acc) 55%,transparent)}

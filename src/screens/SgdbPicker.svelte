@@ -38,7 +38,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closeSgdbPicker(); }}>
-  <div class="glass setpanel sgpanel" style="--acc:{app.chrome.c}">
+  <div class="glass setpanel sgpanel">
     <div class="face">
       <div class="sghead">
         <div class="sgtitle">

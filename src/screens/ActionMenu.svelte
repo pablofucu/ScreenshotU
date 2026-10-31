@@ -100,7 +100,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closeOverlay(); }}>
-  <div class="glass menupanel" class:tight={!grouped && per > 9} class:tighter={!grouped && per > 11} class:squeeze={squeeze || grouped} class:two={cols > 1} style="--acc:{app.chrome.c};--mrh:{pitch - 4}px;top:{(720 - H) / 2}px;height:{H}px">
+  <div class="glass menupanel" class:tight={!grouped && per > 9} class:tighter={!grouped && per > 11} class:squeeze={squeeze || grouped} class:two={cols > 1} style="--mrh:{pitch - 4}px;top:{(720 - H) / 2}px;height:{H}px">
     <div class="face">
       <h2>{list ? (app.menu.items[0]?.startsWith('flt:') ? 'Filtrar' : (t ? t.name : 'Lista de juegos')) : shots ? 'Capturas' : 'Grafismos y opciones'}</h2>
       <p class="msub">{sub}</p>

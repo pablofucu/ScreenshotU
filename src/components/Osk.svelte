@@ -16,7 +16,7 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div class="scrim oskscrim" onclick={click}>
-  <div class="glass oskpanel" style="--acc:{app.chrome.c}">
+  <div class="glass oskpanel">
     <div class="face">
       <div class="oskhead">
         <span class="oskl">{app.osk.label}</span>

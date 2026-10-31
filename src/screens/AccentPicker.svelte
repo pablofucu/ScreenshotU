@@ -22,7 +22,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) cancelAccent(); }}>
-  <div class="glass menupanel accpanel" style="--acc:{app.chrome.c};top:{(720 - H) / 2}px;height:{H}px">
+  <div class="glass menupanel accpanel" style="top:{(720 - H) / 2}px;height:{H}px">
     <div class="face">
       <h2>Color de acento</h2>
       <p class="msub">{t?.name ?? ''}</p>

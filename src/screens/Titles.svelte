@@ -69,7 +69,7 @@
   const filterName = $derived(TITLE_FILTERS.find(([f]) => f === app.titleFilter)?.[1] ?? '');
   // Acento de la barra de pestañas: el del estado (Mi lista), el de la colección enfocada (Colecciones) o el del juego enfocado (cuadrícula de «Todos»).
   type H = [string, string, string];
-  const tabsAcc = $derived((tab === 'list' || tab === 'fin') ? listAcc : tab === 'coll' ? collFocusAccent() : tab === 'all' && grid && cur ? app.titleAcc(app.p, app.t) : null);
+  const tabsAcc = $derived((tab === 'list' || tab === 'fin') ? listAcc : tab === 'coll' ? collFocusAccent() : null);
 
   // Ventana virtual: solo se pintan la página actual y las vecinas (cuadrícula) o ±9 (carrusel).
   const range = $derived(
@@ -124,7 +124,7 @@
     {#if i === titles.length}
       <div class="addin"><span>{@html ICON.plus}</span><b>Añadir juego</b></div>
     {:else}
-      {#if coverOf(i)}<Thumb path={coverOf(i)!} />{:else}<div class="noart"><b>{titles[i].name}</b></div>{/if}{#if titles[i].hidden}<span class="hbadge">{@html ICON.eyeOff}</span>{/if}{#if titles[i].status === 'finished' || titles[i].status === 'dropped'}<span class="sbadge {titles[i].status}" style="--c:{LIST_COLOR[titles[i].status!].c}" title={STATUS_LABEL[titles[i].status!]}>{#if titles[i].status === 'finished'}{@html ICON.check}{:else}<i></i>{/if}</span>{/if}
+      {#if coverOf(i)}<Thumb path={coverOf(i)!} />{:else}<div class="noart"><b>{titles[i].name}</b></div>{/if}<i class="pip"></i>{#if titles[i].hidden}<span class="hbadge">{@html ICON.eyeOff}</span>{/if}{#if titles[i].status === 'finished' || titles[i].status === 'dropped'}<span class="sbadge {titles[i].status}" style="--c:{LIST_COLOR[titles[i].status!].c}" title={STATUS_LABEL[titles[i].status!]}>{#if titles[i].status === 'finished'}{@html ICON.check}{:else}<i></i>{/if}</span>{/if}
     {/if}
   </div>
 {/snippet}
@@ -184,13 +184,13 @@
   {/if}
   <CollTab />
 {:else if titles.length === 0}
-  <div class="glass note-card" style="left:300px;top:170px;--acc:{app.chrome.c}">
+  <div class="glass note-card" style="left:300px;top:170px">
     <div class="face">
       <h2>Aún no hay juegos en {P?.name}</h2>
       <p>Crea una carpeta por juego dentro de <b>{P?.folder}</b> y copia dentro tus capturas (png, jpg, jpeg o webp), o añade un juego con la baldosa de abajo.</p>
     </div>
   </div>
-  <div class="glass cover addtile fx" class:f={app.focus === 'tit0'} data-k="tit0" data-act="tit:0" style="left:552px;top:430px;--acc:{app.chrome.c}">
+  <div class="glass cover addtile fx" class:f={app.focus === 'tit0'} data-k="tit0" data-act="tit:0" style="left:552px;top:430px">
     <div class="face"><div class="addin"><span>{@html ICON.plus}</span><b>Añadir juego</b></div></div>
   </div>
 {:else}
@@ -217,7 +217,7 @@
         {@const i = realAt(pos)}
         {@const j = pos % PS}
         <div class="glass cover tcov fx" class:addtile={i === titles.length} class:dim={titles[i]?.hidden} class:f={app.focus === 'tit' + i} data-k="tit{i}" data-act="tit:{i}" data-i={i}
-          style="{cellStyle(Math.floor(pos / PS), j)};--acc:{i === titles.length ? app.chrome.c : app.titleAcc(app.p, i).c}">
+          style="{cellStyle(Math.floor(pos / PS), j)}{i < titles.length ? ';' + app.pipStyle(app.p, i) : ''}">
           {@render cell(i)}
         </div>
       {/each}
@@ -237,7 +237,7 @@
       {#each idx as pos (realAt(pos))}
         {@const i = realAt(pos)}
         <div class="glass cover ccover fx" class:addtile={i === titles.length} class:dim={titles[i]?.hidden} class:f={app.focus === 'tit' + i} data-k="tit{i}" data-act="tit:{i}" data-i={i}
-          style="left:{pos * 240}px;--acc:{i === titles.length ? app.chrome.c : app.titleAcc(app.p, i).c}">
+          style="left:{pos * 240}px{i < titles.length ? ';' + app.pipStyle(app.p, i) : ''}">
           {@render cell(i)}
         </div>
       {/each}

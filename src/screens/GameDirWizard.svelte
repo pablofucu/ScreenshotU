@@ -33,7 +33,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) cmd('b'); }}>
-  <div class="glass formpanel" style="--acc:{app.chrome.c};height:{g.loading || !it ? 220 : H}px;top:{(720 - (g.loading || !it ? 220 : H)) / 2}px">
+  <div class="glass formpanel" style="height:{g.loading || !it ? 220 : H}px;top:{(720 - (g.loading || !it ? 220 : H)) / 2}px">
     <div class="face">
       {#if g.loading || !it}
         <h2>Carpeta con juegos</h2>

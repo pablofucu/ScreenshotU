@@ -26,7 +26,6 @@
   const metaGoal = (m: number) => (m % 60 === 0 ? `${m / 60} h` : m > 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`);
   const totalTitles = $derived(plats.reduce((n, p) => n + p.titles.length, 0));
   const count = (p: (typeof plats)[number]) => p.titles.reduce((s, t) => s + t.shots.length, 0);
-  const wacc = $derived(app.acc(4));
 
   // «Seguir jugando»
   const CW = 350, CGAP = 34, RW = 440;
@@ -61,7 +60,7 @@
 <TopBar crumbs={['Inicio']} pad />
 
 {#if !app.config.root}
-  <div class="glass welcome fx" class:f={app.focus === 'welcome'} data-k="welcome" data-act="welcome" style="left:240px;top:130px;--acc:{wacc.c}">
+  <div class="glass welcome fx" class:f={app.focus === 'welcome'} data-k="welcome" data-act="welcome" style="left:240px;top:130px">
     <div class="face">
       <div class="wicon">{@html ICON.import}</div>
       <h2>Elige la carpeta de tu biblioteca</h2>

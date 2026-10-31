@@ -29,7 +29,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closePhrases(); }}>
-  <div class="glass setpanel phrpanel" style="--acc:{app.chrome.c}">
+  <div class="glass setpanel phrpanel">
     <div class="face">
       {#if ph.mode === 'list'}
         <h2>Frases{ph.gameName ? ` · ${ph.gameName}` : ''}</h2>

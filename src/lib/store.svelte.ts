@@ -2,8 +2,8 @@ import { SvelteSet } from 'svelte/reactivity';
 import { untrack } from 'svelte';
 import { RAINBOW, type Accent } from './icons';
 import type { AudioOutput, Config, GameStatsDb, GameStatus, Library, MagpieStatus, Collection, Shot, SortMode as SortModeT, Swatch, Title, TitleOrder } from './types';
-import { hexToRgb, hueOf, inkDark, rgbToLch } from './oklch';
-import { gamePair, pair } from './atmos';
+import { hexToRgb, hueOf, rgbToLch } from './oklch';
+import { gamePair, INK, pair, variablesCSS } from './atmos';
 import { collItems, collectionTitle } from './collections';
 import { GOAL_COL, type GoalKey } from './readgoals';
 import { calendar, categoryStats, evoBuckets, playedPlatforms, playYears, rankPeriod, titleStats, yearReview, type EvoKind, type GMetric, type PeriodKind } from './stats';
@@ -290,6 +290,8 @@ export function sortTitles(titles: Title[], idx: number[], order: TitleOrder): n
 }
 
 /** Un color `#rrggbb` como acento de la interfaz. */
+/** Relleno f1 ya calculado por pareja de tonos (variablesCSS busca el contraste en bucle). */
+const PAIR_FILL = new Map<string, { c: string; c2: string; dark: boolean }>();
 export const accentOf = (c: string, dark: boolean, n = 'Personalizado'): Accent => ({ n, c, dark });
 
 class Store {
@@ -554,29 +556,38 @@ class Store {
     return { name: t.name, cover: t.cover, shots: sortShots(t.shots, this.sortMode, untrack(() => this.favs)), isFavs: false };
   });
 
-  /** Acento del arcoíris (por índice) o color fijo, según el modo («Del juego» usa aquí el arcoíris de reserva). */
-  acc(i: number): Accent {
-    return RAINBOW[((i % 7) + 7) % 7];
+  /** Acento sólido (relleno f1 de la atmósfera v5) para una pareja de tonos. */
+  pairAcc(p: { h1: number; h2: number }, n = 'Atmósfera'): Accent {
+    const v = this.pairFill(p);
+    return accentOf(v.c, v.dark, n);
+  }
+  pairFill(p: { h1: number; h2: number }): { c: string; c2: string; dark: boolean } {
+    const key = `${p.h1.toFixed(1)}|${p.h2.toFixed(1)}`;
+    let v = PAIR_FILL.get(key);
+    if (!v) { const css = variablesCSS(p.h1, p.h2); v = { c: css['--f1'], c2: css['--f2'], dark: css['--on'] === INK }; PAIR_FILL.set(key, v); }
+    return v;
+  }
+  /** `--p1/--p2` del punto de color de una portada (los dos tonos del juego). */
+  pipStyle(pi: number, ti: number): string {
+    const v = this.pairFill(this.titlePair(pi, ti));
+    return `--p1:${v.c};--p2:${v.c2}`;
+  }
+  /** Pareja del tramo de arcoíris de la sección k: las plataformas en su orden y, detrás, Mi lista y Estadísticas. */
+  secPair(k: number): { h1: number; h2: number } {
+    return pair(k / (this.lib.platforms.length + 2));
   }
   platAcc(pi: number): Accent {
-    return this.acc(this.lib.platforms[pi]?.accent ?? this.config.platforms[pi]?.accent ?? 4);
+    return this.pairAcc(this.secPair(pi));
   }
-  /** Acento de un juego: vista previa > color manual > color del arte (modo «Del juego») > arcoíris / fijo. */
-  titleAcc(pi: number, ti: number): Accent {
-    const rb = this.acc((this.lib.platforms[pi]?.accent ?? 4) + 1 + ti);
+  /** Pareja de un juego: vista previa (solo el juego abierto) > color manual > color del arte > arcoíris por nombre. */
+  titlePair(pi: number, ti: number): { h1: number; h2: number } {
     const t = this.lib.platforms[pi]?.titles[ti];
-    if (!t) return rb;
-    const prev = this.accentPreview;
-    if (prev && pi === this.p && ti === this.t && this.view !== 'home' && this.view !== 'titles') {
-      if (prev !== 'auto') return accentOf(prev, inkDark(prev));
-      return this.autoAcc(t, rb, true);
-    }
-    return this.autoAcc(t, rb, false);
+    if (!t) return this.secPair(pi);
+    const live = pi === this.p && ti === this.t && this.view !== 'home' && this.view !== 'titles';
+    return gamePair(t, live ? this.accentPreview : null);
   }
-  private autoAcc(t: Title, rb: Accent, ignoreOverride: boolean): Accent {
-    if (!ignoreOverride && t.accentOverride) return accentOf(t.accentOverride, inkDark(t.accentOverride));
-    if (t.accent) return accentOf(t.accent.accent.color, t.accent.accent.dark, 'Del juego');
-    return rb;
+  titleAcc(pi: number, ti: number): Accent {
+    return this.pairAcc(this.titlePair(pi, ti), 'Del juego');
   }
   /** Pareja de tonos de la atmósfera actual. */
   atmosTarget = $derived.by((): { h1: number; h2: number } => {
@@ -599,15 +610,8 @@ class Store {
     return pair(0);
   });
 
-  /** Acento de la pantalla actual (para --acc del escenario). */
-  chrome = $derived.by((): Accent => {
-    if (this.view === 'home') return this.platAcc(this.hp);
-    if (this.view === 'titles') return this.platAcc(this.p);
-    if (this.view === 'stats') return this.acc(5);
-    if (this.view === 'streak') return accentOf(GOAL_COL[this.streakKey].c, false, 'Racha');
-    if (this.favView) return this.acc(2);
-    return this.titleAcc(this.p, this.t);
-  });
+  /** Acento sólido de la pantalla actual (el mismo tono que --f1 de la atmósfera, sin la transición). */
+  chrome = $derived.by((): Accent => this.pairAcc(this.atmosTarget));
 }
 
 export const app = new Store();

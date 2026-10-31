@@ -142,7 +142,7 @@
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-<div class="scrim spage" role="presentation" bind:this={root} onclick={onScrim} style="--acc:{app.chrome.c};--acc-ink:{app.chrome.dark ? 'var(--ink)' : 'var(--on)'}">
+<div class="scrim spage" role="presentation" bind:this={root} onclick={onScrim}>
   <TopBar crumbs={[info?.name ?? '', 'Partidas guardadas']} />
 
   <!-- Izquierda: espacio y lista por días -->

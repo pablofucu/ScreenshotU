@@ -16,7 +16,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) popOverlay(); }}>
-  <div class="glass rpanel" style="--acc:{app.chrome.c}">
+  <div class="glass rpanel">
     <div class="face">
       <h2>Fecha de lanzamiento</h2>
       <p class="msub">{t?.name ?? ''}</p>

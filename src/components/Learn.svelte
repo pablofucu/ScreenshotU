@@ -15,7 +15,7 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div class="scrim learnscrim" onclick={(e) => { e.stopPropagation(); if (e.target === e.currentTarget) cancelLearn(); }}>
-  <div class="glass menupanel learnpanel" style="--acc:{app.chrome.c}">
+  <div class="glass menupanel learnpanel">
     <div class="face">
       <div class="lic">{@html ic}</div>
       <h2>{TITLE[l.kind]}</h2>

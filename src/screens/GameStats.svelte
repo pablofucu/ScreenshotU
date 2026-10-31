@@ -76,7 +76,7 @@
 {:else if T && S}
   <TopBar crumbs={[P?.name ?? '', T.name, 'Estadísticas de juego']} />
 
-  <div class="glass rcard evhead" style="--acc:{app.chrome.c}">
+  <div class="glass rcard evhead">
     <RecentCard t={T} />
   </div>
   <div class="sttop" style="top:98px;left:auto;right:64px">

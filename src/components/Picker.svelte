@@ -22,7 +22,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) onclose(); }}>
-  <div class="glass setpanel pickpanel" style="--acc:{app.chrome.c};height:{H}px;top:{(720 - H) / 2}px">
+  <div class="glass setpanel pickpanel" style="height:{H}px;top:{(720 - H) / 2}px">
     <div class="face">
       <h2>{title}</h2>
       <p class="msub">{sub}</p>

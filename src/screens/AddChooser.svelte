@@ -21,7 +21,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) popOverlay(); }}>
-  <div class="glass menupanel addpanel" style="--acc:{app.chrome.c};top:{(720 - H) / 2}px;height:{H}px">
+  <div class="glass menupanel addpanel" style="top:{(720 - H) / 2}px;height:{H}px">
     <div class="face">
       <h2>Añadir juego</h2>
       <p class="msub">¿De dónde viene?</p>
