@@ -477,16 +477,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
   box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--dc) 70%,black),0 0 18px 2px color-mix(in srgb,var(--dc) 45%,transparent),0 10px 18px -10px rgba(40,50,70,.5)}
 .dpill.f i{background:rgba(255,255,255,.28);box-shadow:none}
 
-/* ---------- Títulos: fondo ambiental, cabecera, filtros y página ---------- */
-.amb{position:absolute;inset:0;overflow:hidden;pointer-events:none}
-.amb{transition:opacity .6s ease}
-.amb.off{opacity:0}
-/* Cada capa nueva entra encima con un fundido; las de debajo se quitan al terminar (fundido cruzado sin cortes). */
-.amblayer{position:absolute;inset:0;width:100%;height:100%;opacity:.5;animation:ambin .7s ease both}
-.amblayer.still{animation:none}
-.amb::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(236,238,242,.1) 0%,rgba(236,238,242,.55) 45%,rgba(236,238,242,.88) 100%)}
-.amb.car .amblayer{opacity:.45}
-@keyframes ambin{from{opacity:0}}
+/* ---------- Títulos: cabecera, filtros y página ---------- */
 .thead h3{margin:0;font-size:32px;font-weight:800;color:var(--ink);overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:0}
 .thead > span{font-size:17px;font-weight:600;color:var(--ink-2);white-space:nowrap}
 .thead > span b{color:var(--ink);font-weight:800}
@@ -864,15 +855,6 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .ttrack .tcov{background:var(--face);box-shadow:0 0 0 1px var(--line),0 10px 22px -14px rgba(20,30,50,.55)}
 .ttrack .tcov::before,.ttrack .tcov::after{display:none}
 .ttrack .tcov.f{transform:scale(1.06);background:var(--face);box-shadow:0 18px 34px -12px rgba(20,30,50,.6)}
-
-/* Catálogo: velo de color sobre el fondo difuminado, con el matiz del juego enfocado (suave, cambia con fundido). */
-@property --w1{syntax:'<color>';inherits:false;initial-value:transparent}
-@property --w2{syntax:'<color>';inherits:false;initial-value:transparent}
-.ambwash{position:absolute;inset:0;pointer-events:none;--w1:var(--p1,transparent);--w2:var(--p2,transparent);
-  background:radial-gradient(ellipse 75% 65% at 10% 108%,color-mix(in srgb,var(--w1) 34%,transparent),transparent 72%),
-    radial-gradient(ellipse 70% 60% at 94% -8%,color-mix(in srgb,var(--w2) 26%,transparent),transparent 72%);
-  transition:--w1 .8s ease,--w2 .8s ease}
-@media (prefers-reduced-motion: reduce){.ambwash{transition:none}}
 
 /* Catálogo: barra lateral como minimapa (zona de clic/arrastre, burbuja con el juego y etiqueta de familias de la página). */
 .sbar .shit{position:absolute;left:-12px;right:-12px;top:-10px;bottom:-10px;cursor:pointer;touch-action:none;z-index:2}

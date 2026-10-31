@@ -2,9 +2,6 @@
   import { app, coverHue, LIST_COLOR, TITLE_FILTERS, TITLE_ORDER_LABEL, TITLES_TABS, type ListShelf } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { fmtAgo, fmtDur, fmtShort, nCapturas } from '../lib/format';
-  import { untrack } from 'svelte';
-  import { backend, thumbNow } from '../lib/backend';
-  import { ambBlur, ambBlurNow, ambPaint } from '../lib/ambblur';
   import { setFocus, titlesGrid, viewPos } from '../lib/controller.svelte';
   import { titleHex } from '../lib/collections';
   import { hexToRgb, rgbToLch } from '../lib/oklch';
@@ -87,51 +84,11 @@
   const cellStyle = (page: number, j: number) =>
     `left:${G.gx + (j % G.cols) * (G.cw + G.gap)}px;top:${page * PH + G.top + Math.floor(j / G.cols) * (G.ch + G.rg)}px;width:${G.cw}px;height:${G.ch}px;--r:${(16 * G.s).toFixed(1)}px;--bw:${(3 * G.s).toFixed(1)}px;--fr:${(13 * G.s).toFixed(1)}px;--ts:${(0.55 + 0.45 * G.s).toFixed(3)}`;
 
-  // Fondo ambiental: el hero (o la portada) del juego enfocado, muy desenfocado, con fundido cruzado entre juegos.
-  // La capa nueva entra encima (ya decodificada) y las de debajo se quitan solo cuando acabó de entrar; si no hay
-  // imagen, el fondo se apaga con un fundido en vez de vaciarse de golpe.
+  // Juego enfocado en la pestaña «Colecciones» (o el de la lista en las demás).
   const ambTitle = $derived.by(() => {
     if (tab !== 'coll') return cur;
     const ti = app.collShelves[app.collAt.c]?.items[app.collAt.i];
     return ti === undefined ? undefined : titles[ti];
-  });
-  const ambSrc = (t: typeof cur | undefined) => (t ? (t.hero ?? t.cover ?? t.shots[0]?.path ?? null) : null);
-  let lid = 0;
-  const firstAmb = untrack(() => { const p = ambSrc(ambTitle); const u = p ? thumbNow(p) : undefined; return u && ambBlurNow(u) ? u : ''; });
-  // `still`: capa pintada al montar con una imagen ya cargada (sin fundido de entrada).
-  let layers = $state<Array<{ u: string; id: number; still?: boolean }>>(firstAmb ? [{ u: firstAmb, id: ++lid, still: true }] : []);
-  let ambOff = $state(false);
-  $effect(() => {
-    const src = ambSrc(ambTitle);
-    const ctl = new AbortController();
-    // En la pestaña «Colecciones», la baldosa «Nueva colección» no tiene juego: se conserva el último fondo.
-    if (!src) {
-      if (tab !== 'coll' || !untrack(() => layers.length)) ambOff = true;
-      return;
-    }
-    const t = setTimeout(() => {
-      backend.thumb(src, ctl.signal).then(async (u) => {
-        const c = await ambBlur(u);
-        if (ctl.signal.aborted || !c) return;
-        ambOff = false;
-        if (untrack(() => layers.at(-1)?.u) === u) return;
-        layers = [...untrack(() => layers).slice(-2), { u, id: ++lid }];
-      }, () => {});
-    }, 160);
-    return () => { clearTimeout(t); ctl.abort(); };
-  });
-  /** La capa `id` terminó de entrar: las de debajo ya no se ven. */
-  const settled = (id: number) => { if (layers.some((l) => l.id < id)) layers = layers.filter((l) => l.id >= id); };
-
-  // Velo de color: tiñe el fondo con los dos tonos del juego enfocado (al recorrer la lista, el fondo va cambiando de matiz).
-  // Si no hay juego enfocado (baldosa «Añadir»), se conserva el último. Por color, el velo sigue la misma vuelta que
-  // la interfaz (tono de la portada y el siguiente), así no salta entre portadas vecinas.
-  const washTi = $derived(tab === 'coll' ? app.collShelves[app.collAt.c]?.items[app.collAt.i] : cur ? app.t : undefined);
-  let wash = $state('');
-  $effect(() => {
-    if (tab === 'all' && app.titleOrder === 'color') { if (!app.overlay) wash = app.pairStyle(app.atmosTarget); return; }
-    const ti = washTi;
-    if (ti !== undefined && titles[ti]) wash = app.pipStyle(app.p, ti);
   });
 
   // Familia de color de un juego (misma regla que «Por color»: tono OKLCH del acento; sin color = Grises).
@@ -213,10 +170,6 @@
   <i class="ring"></i><i class="halo"></i>
 {/snippet}
 
-<div class="amb" class:car={!grid} class:off={ambOff}>
-  {#each layers as l (l.id)}<canvas class="amblayer" class:still={l.still} use:ambPaint={l.u} onanimationend={() => settled(l.id)}></canvas>{/each}
-</div>
-<div class="ambwash" style={wash}></div>
 <TopBar crumbs={['Inicio', P?.name ?? '']} dots={grid && tab === 'all' ? pages : 0} dot={pg} />
 
 <div class="ttabs" class:car={!grid && tab === 'all'} class:list-tabs={tab === 'list'} style={tabsAcc ? `--acc:${tabsAcc.c};--acc-ink:${tabsAcc.dark ? '#3a2f00' : '#fff'}` : ''}>
