@@ -602,6 +602,11 @@ class Store {
   });
 
   atmosTarget = $derived.by((): { h1: number; h2: number } => {
+    // Catálogo: toda la interfaz toma los colores del juego enfocado, no los de la categoría.
+    if (this.view === 'titles' && this.titlesTab === 'all' && !this.overlay) {
+      const t = this.lib.platforms[this.p]?.titles[this.t];
+      if (t) return gamePair(t);
+    }
     // Un tramo igual de arcoíris por sección: las plataformas en su orden y, detrás, Mi lista, Estadísticas y Ajustes.
     if (this.secK !== null) return this.secPair(this.secK);
     if (this.view === 'streak') {

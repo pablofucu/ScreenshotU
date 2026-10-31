@@ -846,19 +846,22 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 
 /* Catálogo: anillo y halo en movimiento de la portada enfocada (con los dos colores del juego, --p1/--p2). */
 @keyframes sheen{to{background-position:200% 0}}
-.tcov>.ring,.ccover>.ring{position:absolute;inset:-5px;z-index:4;border-radius:calc(var(--r) + 5px);padding:3px;box-sizing:border-box;
+.tcov>.ring,.ccover>.ring{position:absolute;inset:-7px;z-index:4;border-radius:calc(var(--r) + 7px);padding:5px;box-sizing:border-box;
   background:linear-gradient(115deg,var(--p1,var(--f1)),var(--p2,var(--f2)),var(--p1,var(--f1)));background-size:200% 100%;
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
   opacity:0;transition:opacity .2s;animation:sheen 3s linear infinite;pointer-events:none}
-.tcov>.halo,.ccover>.halo{position:absolute;inset:0;z-index:0;border-radius:inherit;pointer-events:none;
-  box-shadow:-14px 0 34px -6px var(--p1,var(--f1)),14px 0 34px -6px var(--p2,var(--f2));opacity:0;transition:opacity .25s}
-.tcov.f>.ring,.tcov.f>.halo,.ccover.f>.ring,.ccover.f>.halo{opacity:1}
-@media (prefers-reduced-motion: reduce){.tcov>.ring,.ccover>.ring{animation:none}.tcov>.halo,.ccover>.halo,.tcov>.ring,.ccover>.ring{transition:none}}
-/* Catálogo en cuadrícula: un solo marco fino y neutro para todas las portadas; la enfocada lleva un único
-   contorno del color de la sección (sin anillo, halo ni brillos con los colores de cada juego). */
+/* Halo grueso: los dos colores del juego en un degradado desenfocado que rota con el anillo. */
+.tcov>.halo,.ccover>.halo{position:absolute;inset:-12px;z-index:0;border-radius:calc(var(--r) + 12px);pointer-events:none;
+  background:linear-gradient(115deg,var(--p1,var(--f1)),var(--p2,var(--f2)),var(--p1,var(--f1)));background-size:200% 100%;
+  filter:blur(22px);opacity:0;transition:opacity .25s;animation:sheen 3s linear infinite}
+.tcov.f>.ring,.ccover.f>.ring{opacity:1}
+.tcov.f>.halo,.ccover.f>.halo{opacity:.9}
+@media (prefers-reduced-motion: reduce){.tcov>.ring,.ccover>.ring,.tcov>.halo,.ccover>.halo{animation:none}.tcov>.halo,.ccover>.halo,.tcov>.ring,.ccover>.ring{transition:none}}
+/* Catálogo en cuadrícula: marco fino y neutro en todas las portadas; la enfocada lleva el anillo y el halo con los
+   colores de su propia portada (sin el cristal teñido ni los brillos, para no tapar el arte). */
 .ttrack .tcov{background:var(--face);box-shadow:0 0 0 1px var(--line),0 10px 22px -14px rgba(20,30,50,.55)}
-.ttrack .tcov::before,.ttrack .tcov::after,.ttrack .tcov>.ring,.ttrack .tcov>.halo{display:none}
-.ttrack .tcov.f{transform:scale(1.06);background:var(--face);box-shadow:0 0 0 3px var(--f1),0 18px 34px -12px rgba(20,30,50,.6)}
+.ttrack .tcov::before,.ttrack .tcov::after{display:none}
+.ttrack .tcov.f{transform:scale(1.06);background:var(--face);box-shadow:0 18px 34px -12px rgba(20,30,50,.6)}
 
 /* Catálogo: velo de color sobre el fondo difuminado, con el matiz del juego enfocado (suave, cambia con fundido). */
 @property --w1{syntax:'<color>';inherits:false;initial-value:transparent}

@@ -154,7 +154,8 @@
     const stops: string[] = [];
     for (let k = 0; k < S; k++) {
       const pos = Math.round((k * (n - 1)) / (S - 1));
-      const c = app.pairFill(app.titlePair(app.p, vis[pos])).c;
+      // El color de la portada tal cual (el mismo que ordena la lista); sin color, gris: así el tramo final no sale a rayas.
+      const c = titleHex(titles[vis[pos]]) ?? '#8a93a3';
       stops.push(`${c} ${(((THUMB / 2 + (pos / Math.max(1, slots - 1)) * (BAR_H - THUMB)) / BAR_H) * 100).toFixed(2)}%`);
     }
     return `linear-gradient(180deg,${stops.join(',')})`;
@@ -302,7 +303,7 @@
         {#if app.titleOrder === 'az'}<em style="bottom:-20px">Z</em>{/if}
         {#if hov}
           <div class="sbub glass-lite" style="top:{hov.y}px">
-            {#if hovTi < titles.length}<span class="sdot" style="background:{app.pairFill(app.titlePair(app.p, hovTi)).c}"></span><b>{titles[hovTi].name}</b><small>{FAMS[famOf(hovTi)]}</small>{:else}<b>Añadir juego</b>{/if}
+            {#if hovTi < titles.length}<span class="sdot" style="background:{titleHex(titles[hovTi]) ?? '#8a93a3'}"></span><b>{titles[hovTi].name}</b><small>{FAMS[famOf(hovTi)]}</small>{:else}<b>Añadir juego</b>{/if}
           </div>
         {/if}
         <div class="shit" role="slider" tabindex="-1" aria-label="Saltar a un juego" aria-valuenow={q} aria-valuemin={0} aria-valuemax={slots - 1}
