@@ -56,13 +56,13 @@
 <svg width="0" height="0" style="position:absolute">
   <defs>
     <linearGradient id="card-gold" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffe27a" />
-      <stop offset="1" stop-color="#e3a400" />
+      <stop offset="0" style="stop-color:var(--gold-hi)" />
+      <stop offset="1" style="stop-color:var(--gold-lo)" />
     </linearGradient>
     <linearGradient id="card-silver" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffffff" />
-      <stop offset="0.45" stop-color="#d5dbe4" />
-      <stop offset="1" stop-color="#8f9aab" />
+      <stop offset="0" style="stop-color:white" />
+      <stop offset="0.45" style="stop-color:color-mix(in srgb, var(--ink-3) 25%, white)" />
+      <stop offset="1" style="stop-color:color-mix(in srgb, var(--ink-3) 80%, white)" />
     </linearGradient>
   </defs>
 </svg>
@@ -207,11 +207,11 @@
       <!-- VARIANTE 4: Medalla de rango -->
       <div class="fc v4">
         <svg viewBox="0 0 120 128" width="112" height="120">
-          <path d="M36 0h20l14 42H50z" fill="#3F63E0" />
-          <path d="M84 0H64L50 42h20z" fill="#E8384F" />
-          <circle cx="60" cy="80" r="44" fill="url(#card-silver)" stroke="#fff" stroke-width="3" />
+          <path d="M36 0h20l14 42H50z" style="fill:var(--f2, var(--ink-2))" />
+          <path d="M84 0H64L50 42h20z" style="fill:var(--bad)" />
+          <circle cx="60" cy="80" r="44" fill="url(#card-silver)" style="stroke:white" stroke-width="3" />
           <circle cx="60" cy="80" r="35" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="2" stroke-dasharray="3 4" />
-          <text x="60" y="88" text-anchor="middle" font-family="'M PLUS Rounded 1c', sans-serif" font-size="24" font-weight="800" fill="#4a5260">
+          <text x="60" y="88" text-anchor="middle" font-family="'M PLUS Rounded 1c', sans-serif" font-size="24" font-weight="800" style="fill:var(--ink-2)">
             {pct}%
           </text>
         </svg>
@@ -264,12 +264,12 @@
             <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="10" />
             <!-- Segmentos aproximados según distribución -->
             <circle
-              cx="50" cy="50" r="44" fill="none" stroke="#9fc0dc" stroke-width="10"
+              cx="50" cy="50" r="44" fill="none" style="stroke:var(--rar-common)" stroke-width="10"
               pathLength="24" stroke-dasharray="{Math.max(1, summary.rarityCommon * (total ? 24 / total : 1))} 24"
               transform="rotate(-90 50 50)"
             />
             <circle
-              cx="50" cy="50" r="44" fill="none" stroke="#b67cf0" stroke-width="10"
+              cx="50" cy="50" r="44" fill="none" style="stroke:var(--rar-rare)" stroke-width="10"
               pathLength="24" stroke-dasharray="{Math.max(1, summary.rarityRare * (total ? 24 / total : 1))} 24"
               stroke-dashoffset="-{summary.rarityCommon * (total ? 24 / total : 1)}"
               transform="rotate(-90 50 50)"
@@ -286,8 +286,8 @@
           </div>
         </div>
         <div class="lg">
-          <div><i style="background:#9fc0dc"></i>Comunes<b>{summary.rarityCommon}</b></div>
-          <div><i style="background:#b67cf0"></i>Raros<b>{summary.rarityRare}</b></div>
+          <div><i style="background:var(--rar-common)"></i>Comunes<b>{summary.rarityCommon}</b></div>
+          <div><i style="background:var(--rar-rare)"></i>Raros<b>{summary.rarityRare}</b></div>
           <div><i style="background:var(--gold)"></i>Ultra raros<b>{summary.rarityUltra}</b></div>
         </div>
       </div>
@@ -297,6 +297,14 @@
 
 <style>
   .ach-card {
+    /* Colores semánticos de rareza (fijos); el dorado deriva del token --warn. */
+    --rar-common: #9fc0dc;
+    --rar-rare: #b67cf0;
+    --gold-hi: color-mix(in srgb, var(--warn) 55%, white);
+    --gold-lo: var(--warn);
+    --gold-ink: color-mix(in srgb, var(--warn) 60%, black);
+    --gold-pale: color-mix(in srgb, var(--warn) 12%, white);
+    --night: var(--g2, var(--ink-2));
     cursor: pointer;
     user-select: none;
   }
@@ -316,7 +324,7 @@
     inset: -20px;
     background-size: cover;
     background-position: center;
-    background-color: #1e2638;
+    background-color: color-mix(in srgb, var(--night) 45%, black);
     filter: blur(14px) brightness(0.65) saturate(1.3);
     z-index: 0 !important;
   }
@@ -342,7 +350,7 @@
     font-weight: 800;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #ffe08a;
+    color: var(--gold-hi);
   }
   .lab :global(svg) {
     width: 14px;
@@ -382,8 +390,8 @@
     border-radius: 22%;
     display: grid;
     place-items: center;
-    color: #fff;
-    background: linear-gradient(150deg, #f59e0b, #d97706);
+    color: white;
+    background: linear-gradient(150deg, var(--gold-lo), var(--gold-ink));
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 2px 5px rgba(0, 0, 0, 0.3);
   }
   .ai :global(svg) {
@@ -401,12 +409,12 @@
     display: block;
     height: 100%;
     border-radius: 3px;
-    background: linear-gradient(90deg, #ffd75a, #F2B807);
+    background: linear-gradient(90deg, var(--gold-hi), var(--gold-lo));
   }
 
   /* 1 · Anillo */
   .v1 {
-    color: #fff;
+    color: white;
     padding: 12px 12px 10px;
     align-items:center;
   }
@@ -422,7 +430,7 @@
     font-style: normal;
     font-size: 12px;
     font-weight: 800;
-    color: #ffe08a;
+    color: var(--gold-hi);
     margin-top: 3px;
   }
   .v1 .last {
@@ -467,8 +475,8 @@
     height: 22px;
     padding: 0 8px;
     border-radius: 999px;
-    background: linear-gradient(180deg, #ffe58a, #F2B807);
-    color: #3a2f00;
+    background: linear-gradient(180deg, var(--gold-hi), var(--gold-lo));
+    color: color-mix(in srgb, var(--warn) 25%, black);
     font-size: 11px;
     font-weight: 800;
     display: flex;
@@ -488,7 +496,7 @@
     height: 82px;
     border-radius: 14px;
     padding: 9px 10px;
-    color: #fff;
+    color: white;
     background: rgba(14, 18, 30, 0.65);
     backdrop-filter: blur(10px);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
@@ -516,15 +524,15 @@
 
   /* 3 · Mosaico de la colección */
   .v3 {
-    background: linear-gradient(180deg, #2c3446, #151a25);
-    color: #fff;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--night) 70%, black), color-mix(in srgb, var(--night) 35%, black));
+    color: white;
     padding: 10px 8px 9px;
     align-items: center;
   }
   .v3 .lab {
     align-self: stretch;
     padding: 0 4px;
-    color: #ffe08a;
+    color: var(--gold-hi);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -532,7 +540,7 @@
   .v3 .lab em {
     margin-left: auto;
     font-style: normal;
-    color: #fff;
+    color: white;
     font-size: 13px;
     font-weight: 700;
   }
@@ -553,7 +561,7 @@
     place-items: center;
     font-size: 11px;
     font-weight: 800;
-    color: #ffe08a;
+    color: var(--gold-hi);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
   }
   .mos-ico img {
@@ -569,11 +577,11 @@
   .mos-ico.locked {
     opacity: 0.35;
     filter: grayscale(1);
-    color: #8a94a6;
+    color: var(--ink-3);
   }
   .mos-ico.secret {
     opacity: 0.25;
-    color: #94a3b8;
+    color: var(--ink-3);
     background: rgba(0, 0, 0, 0.25);
   }
   .v3 .ft {
@@ -592,10 +600,10 @@
 
   /* 4 · Medalla */
   .v4 {
-    background: radial-gradient(120% 70% at 50% 20%, #fff, #e6eaf0);
+    background: radial-gradient(120% 70% at 50% 20%, var(--face-hi), var(--face));
     align-items: center;
     padding: 8px 10px 10px;
-    color: #3a414e;
+    color: var(--ink);
     text-align: center;
   }
   .v4 .t {
@@ -606,7 +614,7 @@
   .v4 .s {
     font-size: 12px;
     font-weight: 700;
-    color: #7a8291;
+    color: var(--ink-3);
   }
   .v4 .nx {
     align-self: stretch;
@@ -622,24 +630,24 @@
     justify-content: space-between;
     font-size: 11px;
     font-weight: 800;
-    color: #6a7282;
+    color: var(--ink-2);
     margin-bottom: 5px;
   }
   .v4 .nx small b {
-    color: #a67c00;
+    color: var(--gold-ink);
   }
 
   /* 7 · Odómetro / Contador */
   .v7 {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), #eef1f5);
+    background: linear-gradient(180deg, var(--face-hi), var(--face));
     align-items: center;
     padding: 12px 10px 10px;
-    color: #3a414e;
+    color: var(--ink);
   }
   .v7 .hs {
     font-size: 12.5px;
     font-weight: 700;
-    color: #5f6776;
+    color: var(--ink-2);
     align-self: stretch;
     text-align: center;
   }
@@ -657,14 +665,14 @@
     place-items: center;
     font-size: 40px;
     font-weight: 800;
-    color: #c49400;
-    background: linear-gradient(180deg, #fffdf3, #f4efdc);
+    color: var(--gold-ink);
+    background: linear-gradient(180deg, var(--gold-pale), color-mix(in srgb, var(--warn) 18%, var(--face)));
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(110, 125, 150, 0.25);
   }
   .v7 .odo .u {
     font-size: 16px;
     font-weight: 800;
-    color: #5a6270;
+    color: var(--ink-2);
     margin: 0 0 0 3px;
     align-self: flex-end;
     padding-bottom: 8px;
@@ -672,7 +680,7 @@
   .v7 .pc {
     font-size: 11.5px;
     font-weight: 800;
-    color: #a67c00;
+    color: var(--gold-ink);
     margin-top: 6px;
   }
   .v7 .wkb {
@@ -680,7 +688,7 @@
     margin-top: auto;
     padding: 8px 8px 6px;
     border-radius: 12px;
-    background: #fff;
+    background: var(--face-hi);
     box-shadow: inset 0 0 0 1px rgba(95, 110, 135, 0.15);
   }
   .v7 .wkb .r {
@@ -688,11 +696,11 @@
     justify-content: space-between;
     font-size: 11px;
     font-weight: 800;
-    color: #6a7282;
+    color: var(--ink-2);
     margin-bottom: 6px;
   }
   .v7 .wkb .r b {
-    color: #a67c00;
+    color: var(--gold-ink);
   }
   .v7 .bars {
     display: flex;
@@ -707,12 +715,12 @@
     gap: 2px;
     font-size: 9px;
     font-weight: 800;
-    color: #9aa1ad;
+    color: var(--ink-3);
   }
   .v7 .bars i {
     width: 14px;
     border-radius: 4px 4px 2px 2px;
-    background: linear-gradient(180deg, #ffe27a, #e3a400);
+    background: linear-gradient(180deg, var(--gold-hi), var(--gold-lo));
   }
   .v7 .bars i.z {
     background: rgba(160, 168, 182, 0.3);
@@ -720,7 +728,7 @@
 
   /* 8 · Rareza */
   .v8 {
-    color: #fff;
+    color: white;
     padding: 11px 11px 10px;
     align-items: center;
   }
