@@ -10,6 +10,30 @@ body.nocursor,body.nocursor *{cursor:none !important}
 #stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;outline:none;
   font-family:var(--round);color:#3a414e;background:#eceef2;--acc:#00A0D8;--acc-ink:#fff;--b1:#00A0D8;--b2:#3F63E0;--b3:#00A0D8;--g1:#00A0D8;--g2:#3F63E0;--grad:linear-gradient(115deg,#00A0D8,#3F63E0);--f1:#0089be;--f2:#3253c5;--gf:linear-gradient(115deg,#0089be,#3253c5);--on:#ffffff;user-select:none;-webkit-user-select:none}
 #stage:focus-visible{box-shadow:inset 0 0 0 4px var(--acc)}
+/* ---------- Tokens del sistema (v5) ----------
+   Superficies, texto, radios, tipografía y cristal. Las pantallas usan estas variables en vez de hex fijos;
+   el color de cada sección / juego llega por --g1 --g2 --grad (suaves) y --f1 --f2 --gf --on (rellenos),
+   que App.svelte calcula desde la atmósfera. --acc = --f1 para todo lo antiguo. */
+#stage{
+  --ink:#3a414e;--ink-2:#5f6776;--ink-3:#8a92a1;--line:rgba(95,110,135,.24);--line-2:rgba(150,160,180,.35);
+  --face:#dfe3e9;--face-hi:rgba(247,249,252,.94);--panel:rgba(255,255,255,.75);--scrim:rgba(20,26,36,.45);
+  --glass-top:rgba(255,255,255,.72);--glass-mid:rgba(255,255,255,.30);--glass-bot:rgba(225,234,246,.22);
+  --glass-in:rgba(255,255,255,.55);--glass-chip:rgba(255,255,255,.80);
+  --ok:#3BB54A;--bad:#E8384F;--warn:#F2B807;
+  --r-xs:6px;--r-s:12px;--r-m:18px;--r-l:28px;--r-pill:999px;
+  --t-xs:11px;--t-s:13px;--t-m:15px;--t-l:17px;--t-xl:20px;--t-2xl:28px;--t-3xl:44px;
+  --ring:0 0 0 3px var(--f1),0 0 22px 2px color-mix(in srgb,var(--f2) 45%,transparent);
+}
+/* «Noche ahumada»: modo oscuro oficial (neón). Solo redefine tokens; las reglas no cambian. */
+#stage[data-theme=dark]{color-scheme:dark;color:#e6e9f0;background:#14161c;
+  --ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#7f8899;--line:rgba(200,210,235,.16);--line-2:rgba(200,210,235,.24);
+  --face:#262a33;--face-hi:rgba(30,33,41,.94);--panel:rgba(30,34,43,.78);--scrim:rgba(0,0,0,.6);
+  --glass-top:rgba(60,66,80,.62);--glass-mid:rgba(36,40,50,.42);--glass-bot:rgba(20,22,28,.38);
+  --glass-in:rgba(255,255,255,.08);--glass-chip:rgba(40,44,56,.82);
+  --ring:0 0 0 3px var(--g1),0 0 26px 4px color-mix(in srgb,var(--g2) 60%,transparent);
+}
+#stage[data-theme=dark] .bg{background:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
+#stage[data-theme=dark] .blob{opacity:.38}
 .bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
 .blob{position:absolute;border-radius:50%;filter:blur(34px);opacity:.55;transition:background .6s;animation:drift 26s ease-in-out infinite alternate;background:radial-gradient(circle,var(--b,var(--b1)),transparent 70%)}
 
@@ -23,7 +47,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 /* Translucent acrylic case: blurred backdrop shows through the rim, bright top edge, caustic glow along the bottom,
    one gloss arc that runs across rim AND content, and a sunken content well. */
 .glass{position:absolute;--r:28px;--bw:10px;border-radius:var(--r);padding:var(--bw);box-sizing:border-box;cursor:pointer;isolation:isolate;
-  background:linear-gradient(180deg,rgba(255,255,255,.72) 0%,rgba(255,255,255,.30) 46%,rgba(225,234,246,.22) 100%);
+  background:linear-gradient(180deg,var(--glass-top) 0%,var(--glass-mid) 46%,var(--glass-bot) 100%);
   -webkit-backdrop-filter:blur(14px) saturate(1.7);backdrop-filter:blur(14px) saturate(1.7);
   box-shadow:
     inset 0 1.5px 0 rgba(255,255,255,1),
@@ -42,19 +66,19 @@ body.nocursor,body.nocursor *{cursor:none !important}
 /* small specular glint on the upper-left rim */
 .glass::after{content:'';position:absolute;z-index:3;left:12%;top:3px;width:34%;height:5px;border-radius:5px;pointer-events:none;
   background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,1) 40%,rgba(255,255,255,0));filter:blur(.6px);opacity:.9}
-.glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:#dfe3e9}
+.glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:var(--face)}
 .glass .face::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
   box-shadow:inset 0 0 0 1px rgba(20,30,50,.20),inset 0 3px 6px -2px rgba(0,0,0,.35),inset 0 -2px 4px -2px rgba(255,255,255,.5)}
 .glass .face img{width:100%;height:100%;object-fit:cover;display:block}
 .glass.f{transform:scale(1.06);z-index:3;
-  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 30%,rgba(255,255,255,.85)) 0%,color-mix(in srgb,var(--acc) 72%,transparent) 55%,color-mix(in srgb,var(--acc) 92%,black) 100%);
+  background:linear-gradient(150deg,color-mix(in srgb,var(--g1) 55%,white) 0%,var(--f1) 50%,var(--f2) 100%);
   box-shadow:
     inset 0 1.5px 0 rgba(255,255,255,.95),
     inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),
-    inset 0 -10px 14px -8px color-mix(in srgb,var(--acc) 30%,white),
-    0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),
-    0 0 26px 2px color-mix(in srgb,var(--acc) 50%,transparent),
-    0 22px 34px -16px color-mix(in srgb,var(--acc) 70%,black)}
+    inset 0 -10px 14px -8px color-mix(in srgb,var(--g2) 40%,white),
+    0 0 0 1px color-mix(in srgb,var(--f2) 75%,black),
+    0 0 26px 2px color-mix(in srgb,var(--f1) 45%,transparent),
+    0 22px 34px -16px color-mix(in srgb,var(--f2) 70%,black)}
 .glass.bump{animation:bump .18s ease-out}
 @keyframes bump{0%,100%{translate:0 0}40%{translate:var(--bx,0) var(--by,0)}}
 /* shared glass pill for crumbs, hints, info */

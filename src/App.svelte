@@ -52,12 +52,11 @@
   let curAtmos: { h1: number; h2: number } | null = null;
   let atmosRaf = 0;
 
+  // Las variables van en el propio atributo style del escenario: con setProperty se perdían cada vez que
+  // Svelte reescribía el style (al cambiar el tamaño de la ventana).
+  let atmosCss = $state('');
   function applyAtmos(vars: Record<string, string>) {
-    const stage = document.getElementById('stage');
-    if (!stage) return;
-    for (const [k, v] of Object.entries(vars)) {
-      stage.style.setProperty(k, v);
-    }
+    atmosCss = Object.entries(vars).map(([k, v]) => `${k}:${v}`).join(';');
   }
 
   $effect(() => {
@@ -134,7 +133,7 @@
 <svelte:window bind:innerWidth={w} bind:innerHeight={h} onkeydown={onKeyDown} onkeyup={learnKeydown} />
 
 <!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
-<div id="stage" onclick={onStageClick} style="transform:translate({ox}px,{oy}px) scale({sc});--acc:{app.chrome.c};--acc-ink:{app.chrome.dark ? '#3a2f00' : '#fff'}">
+<div id="stage" onclick={onStageClick} data-theme={app.config.theme === 'dark' ? 'dark' : 'light'} style="transform:translate({ox}px,{oy}px) scale({sc});{atmosCss};--acc:var(--f1);--acc-ink:var(--on)">
   <div class="bg">{@html bg}</div>
   {#if app.ready}
     {#key app.animKey}

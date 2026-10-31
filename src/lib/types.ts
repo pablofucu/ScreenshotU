@@ -7,6 +7,8 @@ export interface PlatformCfg {
 }
 export interface Config {
   root: string | null;
+  /** Tema de la interfaz: claro o «Noche ahumada». */
+  theme?: 'light' | 'dark';
   achievementsCardVariant?: number;
   titlesView: 'grid' | 'carousel';
   /** Cuadrícula de capturas continua o agrupada por días. */
