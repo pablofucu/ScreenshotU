@@ -93,10 +93,23 @@
   const railW = $derived(positions && positions.length ? positions[positions.length - 1] + SHELF_CW : 0);
   /** En la línea de tiempo solo la primera portada de cada año (y la enfocada) enseña su año. */
   const showLabel = (it: ShelfItem, p: number) => !!it.label && (!rail || it.mark !== false || focus === p);
+  /** Línea de tiempo «regla»: un rótulo por año, centrado bajo sus portadas (×N si hay varios juegos ese año). */
+  const yearGroups = $derived.by(() => {
+    if (!rail || !positions) return null;
+    const gs: { x0: number; x1: number; label: string; n: number; on: boolean }[] = [];
+    items.forEach((it, p) => {
+      const g = gs[gs.length - 1], x = positions[p];
+      if (g && g.label === (it.label ?? '')) { g.x1 = x + SHELF_CW; g.n++; g.on ||= focus === p; }
+      else gs.push({ x0: x, x1: x + SHELF_CW, label: it.label ?? '', n: 1, on: focus === p });
+    });
+    return gs;
+  });
+  /** Tramo de color de la regla: del centro de la primera portada al de la última. */
+  const segX = $derived(positions && positions.length ? [positions[0] + SHELF_CW / 2, positions[positions.length - 1] + SHELF_CW / 2] : [0, 0]);
 </script>
 
 <div class="shelf" class:dim class:dk={ink !== '#fff'} class:with-ord={hasOrd} class:tinted={!!vars} style="top:{top}px;--acc:{acc};--on-acc:{ink}{vars ? ';' + vars : ';--ink:' + ink}">
-  <div class="bsh" class:lit={!dim} class:soft={dim} class:hasaur={aurora.length > 0 || !!tabStyle}>
+  <div class="bsh" class:lit={!dim} class:soft={dim} class:hasaur={aurora.length > 0 || !!tabStyle} class:noic={!icon}>
     {#if aurora.length}
       <div class="aur">{#each aurora as c, k}<b style="left:{4 + k * 20}%;background:{c}"></b>{/each}</div>
     {:else if tabStyle}
@@ -130,8 +143,22 @@
       </div>
       <div class="slip" class:railed={!!rail && !!positions}>
         <div class="rtrack" style="transform:translateX({-scrollX}px)">
-          {#if rail && positions}<span class="rail" style="width:{railW}px;background:{rail}"></span>{/if}
-          {#if monthGroups}
+          {#if rail && positions}
+            <span class="rline" style="width:{railW}px"></span>
+            <span class="rail" style="left:{segX[0]}px;width:{segX[1] - segX[0]}px;background:{rail};background-size:{railW}px 100%;background-position:{-segX[0]}px 0"></span>
+          {/if}
+          {#if yearGroups}
+            {#each yearGroups as g}
+              <span class="slab ylab" class:on={g.on} style="left:{g.x0}px;width:{g.x1 - g.x0}px">
+                <s><b>{g.label}</b>{#if g.n > 1}<small>×{g.n}</small>{/if}</s>
+              </span>
+            {/each}
+            {#each win as p (items[p].k)}
+              {@const it = items[p]}
+              <i class="rstem" style="left:{positions![p] + SHELF_CW / 2}px"></i>
+              <i class="rdot" class:on={focus === p} style="left:{positions![p] + SHELF_CW / 2}px{it.tint ? ';--dc:' + it.tint : ''}"></i>
+            {/each}
+          {:else if monthGroups}
             {#each monthGroups as g}
               <span class="slab mlab" class:on={g.has} style="left:{g.x0}px;width:{g.x1 - g.x0}px">
                 <s>{g.label}</s>
@@ -144,9 +171,6 @@
               <span class="slab" class:on={focus === p} style="left:{positions ? positions[p] : p * SHELF_PITCH}px;width:{SHELF_CW}px">
                 {#if lab || it.stars}<s>{#if lab}<b>{it.label}</b>{/if}{#if it.stars}<em>{'★'.repeat(it.stars)}</em>{/if}</s>{/if}
               </span>
-              {#if rail && positions}
-                <i class="rdot" class:yr={it.mark} class:on={focus === p} style="left:{positions[p] + SHELF_CW / 2}px{it.tint ? ';--dc:' + it.tint : ''}"></i>
-              {/if}
             {/each}
           {/if}
         </div>
@@ -173,6 +197,12 @@
   .bsh h3{margin:0;font-size:22px;font-weight:800;color:var(--ink);line-height:1;max-width:430px;overflow:hidden;text-overflow:ellipsis;min-width:0}
   .bsh .m{font-size:15px;font-weight:600;color:var(--ink-2)}
   .bsh :global(.hint){height:32px;font-size:15px;background:rgba(255,255,255,.9);box-shadow:none;text-shadow:none;color:color-mix(in srgb,var(--ink),var(--ink-2))}
+  /* Colecciones: botón de cristal con anillo del par de tonos; al pulsarlo se llena con el degradado (como el rótulo). */
+  .tinted .bsh :global(.hint){padding:0 14px 0 4px;color:var(--ink);background:rgba(255,255,255,.55);
+    box-shadow:inset 0 1px 0 #fff,0 0 0 1.5px color-mix(in srgb,var(--g1) 55%,transparent);transition:transform .12s,background .12s,color .12s,box-shadow .12s}
+  .tinted .bsh :global(.hint .btn){background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;text-shadow:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
+  .tinted .bsh :global(.hint:active){transform:scale(.95);color:#fff;background:linear-gradient(115deg,var(--g1),var(--g2));box-shadow:inset 0 2px 6px rgba(0,0,0,.25)}
+  .tinted .bsh :global(.hint:active .btn){background:#fff;color:var(--g2)}
   .chip{font-size:14px;font-weight:800;padding:3px 11px;border-radius:999px;color:var(--ink);background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
   .aur{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:inherit}
   .aur b{position:absolute;top:-30%;width:34%;height:160%;border-radius:50%;filter:blur(16px)}
@@ -235,19 +265,23 @@
   .slab.mlab{letter-spacing:.3px}
   .slab.mlab s{text-transform:lowercase}
 
-  /* ---- Línea de tiempo (colecciones): raíl bajo las portadas con un punto por juego, en su año ---- */
-  .slip.railed{height:36px}
-  .slip.railed .slab{height:24px}
-  .rail{position:absolute;left:0;top:27px;height:4px;border-radius:4px;opacity:.9}
-  .rdot{position:absolute;top:29px;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px var(--dc,var(--f1));
-    transition:width .2s,height .2s,margin .2s,box-shadow .2s}
-  .rdot.yr{width:12px;height:12px;margin:-6px 0 0 -6px}
-  .rdot.on{width:16px;height:16px;margin:-8px 0 0 -8px;box-shadow:0 0 0 3px var(--dc,var(--f1)),0 0 10px 2px color-mix(in srgb,var(--dc,var(--f1)) 60%,transparent)}
-  .slip.railed .slab s{transition:transform .2s}
-  .slip.railed .slab.on s{transform:scale(1.2)}
+  /* ---- Línea de tiempo (colecciones), «regla»: tallo bajo cada portada, línea gris con el tramo de color de sus juegos,
+     puntos blancos con anillo del color del juego y un rótulo por año (el enfocado, en píldora con el degradado) ---- */
+  .slip.railed{height:40px}
+  .rline{position:absolute;left:0;top:9px;height:2px;border-radius:2px;background:rgba(60,70,90,.16)}
+  .rail{position:absolute;top:8px;height:4px;border-radius:4px}
+  .rstem{position:absolute;top:0;width:2px;height:9px;margin-left:-1px;background:rgba(60,70,90,.2)}
+  .rdot{position:absolute;top:10px;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:#fff;
+    box-shadow:0 0 0 2.5px var(--dc,var(--f1)),0 1px 3px rgba(40,50,70,.3);transition:width .2s,height .2s,margin .2s,box-shadow .2s}
+  .rdot.on{width:14px;height:14px;margin:-7px 0 0 -7px;box-shadow:0 0 0 3px var(--dc,var(--f1)),0 0 0 5px rgba(255,255,255,.85),0 0 10px 3px color-mix(in srgb,var(--dc,var(--f1)) 55%,transparent)}
+  .slip.railed .slab{top:17px;height:22px;font-size:15px;font-weight:800;color:var(--ink)}
+  .slab.ylab small{font-size:11px;font-weight:700;color:var(--ink-2)}
+  .slab.ylab s{padding:1px 10px;transition:transform .2s}
+  .slab.ylab.on small{color:inherit;opacity:.85}
 
   /* ---- Colecciones v5: rótulo de cristal con la aurora de sus juegos y un anillo del par de tonos ---- */
   .shelf.tinted{--tsh:none}
+  .tinted .bsh.noic{padding-left:18px}
   .tinted .bsh{-webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);
     background:linear-gradient(180deg,var(--glass-top),var(--glass-mid) 55%,var(--glass-bot));
     box-shadow:inset 0 1px 0 var(--glass-top),inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
@@ -270,5 +304,5 @@
   .tinted .slab.on s{background:var(--gf);color:var(--on);text-shadow:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 4px 10px -4px var(--f2)}
   .tinted .scov.f .ord{background:var(--gf);color:var(--on);box-shadow:0 3px 6px -2px rgba(40,50,70,.35)}
   @keyframes shelfSheen{to{background-position:200% 0}}
-  @media (prefers-reduced-motion: reduce){.shelf,.rtrack{transition:none}.tinted .bsh.lit::before{animation:none}.rdot,.slip.railed .slab s{transition:none}}
+  @media (prefers-reduced-motion: reduce){.shelf,.rtrack{transition:none}.tinted .bsh.lit::before{animation:none}.rdot,.slab.ylab s,.tinted .bsh :global(.hint){transition:none}}
 </style>

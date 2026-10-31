@@ -44,10 +44,10 @@
       {@const look = tabLook(games, acc)}
       {@const L = collLayout(sh)}
       {@const here = app.collAt.c === k}
-      <Shelf acc={acc.c} ink={look.ink} tabStyle={look.style} aurora={look.aurora} title={sh.coll.name} icon={ICON.saga}
+      <Shelf acc={acc.c} ink={look.ink} tabStyle={look.style} aurora={look.aurora} title={sh.coll.name}
         sub={here ? `${nGames(sh.items.length)} · ${nCapturas(shotsOf(k))}` : nCapturas(shotsOf(k))} chip={nGames(sh.items.length)} items={itemsOf(k)}
         focus={here ? app.collAt.i : -1} from={Math.min(app.collFrom[sh.coll.id] ?? 0, Math.max(0, L.totalW - SHELF_VIEW_W))} visible={LIST_VIS}
-        positions={L.xs} rail={L.rail ?? undefined} vars={shelfVars(sh, acc)}
+        positions={L.xs} rail={L.rail ?? 'linear-gradient(90deg,var(--g1),var(--g2))'} vars={shelfVars(sh, acc)}
         top={(k - app.collTop) * SHELF_STEP + COLL_DY} dim={!here}>
         {#snippet end()}
           {#if here}

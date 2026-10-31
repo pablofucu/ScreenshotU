@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Colecciones: mejoras</title>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1f2530;--ink2:#5a6270;--ink3:#8a919c;--bg:#eef1f6;--glass-top:rgba(255,255,255,.92);--glass-mid:rgba(255,255,255,.7);--glass-bot:rgba(244,247,251,.62)}
+*{box-sizing:border-box;margin:0}
+body{font-family:'M PLUS Rounded 1c',system-ui,sans-serif;background:#d9dde4;color:var(--ink);min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 16px}
+.ctl{max-width:1280px;width:100%;background:#fff;border-radius:14px;padding:12px 16px;display:grid;grid-template-columns:150px 1fr;gap:8px 14px;align-items:center;font-size:13px}
+.ctl .lb{font-weight:800;color:var(--ink)}
+.ctl .opts{display:flex;flex-wrap:wrap;gap:6px}
+.ctl button{font:inherit;font-size:13px;font-weight:700;border:0;border-radius:999px;padding:6px 13px;background:#eef1f6;color:var(--ink2);cursor:pointer}
+.ctl button.on{background:var(--ink);color:#fff}
+.ctl button.pre{background:#fff;box-shadow:0 0 0 1.5px var(--ink3)}
+.ctl button.pre.on{background:var(--ink);box-shadow:none}
+.ctl .why{grid-column:2;color:var(--ink3);font-size:12.5px;line-height:1.45;margin-top:-3px}
+.ctl label{display:flex;gap:6px;align-items:center;font-weight:700;color:var(--ink2);cursor:pointer}
+.sel{max-width:1280px;width:100%;font-size:13px;color:var(--ink2);text-align:center}
+.sel b{color:var(--ink)}
+#hold{position:relative;flex:none}
+#stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;border-radius:18px;background:var(--bg);box-shadow:0 30px 60px -30px rgba(20,30,50,.5);user-select:none}
+.amb{position:absolute;inset:0;pointer-events:none}
+.amb i{position:absolute;border-radius:50%;filter:blur(80px);opacity:.45}
+.amb .b1{left:-12%;top:-34%;width:62%;height:96%;background:#f4b08a}
+.amb .b2{right:-14%;bottom:-40%;width:64%;height:100%;background:#a9c3f4}
+
+/* cabecera de la app (simplificada) */
+.top{position:absolute;left:96px;top:22px;right:40px;display:flex;align-items:center;gap:14px}
+.top h1{font-size:28px;font-weight:800}
+.top .c{font-size:14px;color:var(--ink3);font-weight:700}
+.tabs{position:absolute;left:96px;top:70px;display:flex;gap:6px}
+.tabs span{padding:7px 16px;border-radius:999px;font-size:13.5px;font-weight:700;color:var(--ink2);background:rgba(255,255,255,.45)}
+.tabs span.on{background:linear-gradient(115deg,#e8574a,#f2a541);color:#fff;box-shadow:0 6px 14px -6px #e8574a}
+
+/* ── estantería ── */
+.shelf{position:absolute;left:80px;width:1120px}
+.shelf.dim{opacity:.92}
+.hd{display:flex;align-items:center;gap:12px;margin:0 0 8px 8px;height:40px}
+.pill{position:relative;display:inline-flex;align-items:center;gap:12px;height:40px;padding:0 8px 0 8px;border-radius:999px;white-space:nowrap;
+  backdrop-filter:blur(16px) saturate(1.7);background:linear-gradient(180deg,var(--glass-top),var(--glass-mid) 55%,var(--glass-bot));
+  box-shadow:inset 0 1px 0 var(--glass-top),inset 0 -6px 10px -6px rgba(255,255,255,.9),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+.pill::before{content:'';position:absolute;inset:-3px;border-radius:999px;padding:2.5px;pointer-events:none;
+  background:linear-gradient(115deg,var(--g1),var(--g2),var(--g1));background-size:200% 100%;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.45}
+.on .pill::before{opacity:1;animation:sheen 4s linear infinite}
+@keyframes sheen{to{background-position:200% 0}}
+.aur{position:absolute;inset:0;border-radius:inherit;overflow:hidden;pointer-events:none}
+.aur b{position:absolute;top:-30%;width:34%;height:160%;border-radius:50%;filter:blur(16px);opacity:.45}
+.on .aur b{opacity:.75}
+.pill>*:not(.aur){position:relative}
+.pill h3{font-size:22px;font-weight:800;line-height:1}
+.pill .m{font-size:15px;font-weight:600;color:var(--ink2)}
+.pill .chip{font-size:14px;font-weight:800;padding:3px 11px;border-radius:999px;color:#fff;background:linear-gradient(115deg,var(--g1),var(--g2))}
+
+/* icono inicial: variantes */
+.lead{flex:none;display:grid;place-items:center}
+.lead.actual{width:30px;height:30px;border-radius:10px;background:rgba(255,255,255,.92);box-shadow:inset 0 1px 0 #fff,0 0 0 1px color-mix(in srgb,var(--g1) 45%,transparent),0 4px 10px -5px var(--g2)}
+.lead.actual svg{width:62%;height:62%}
+.lead.actual svg *{stroke:var(--g2)}
+.lead.dot{width:20px;height:20px;border-radius:50%;margin-left:4px;background:linear-gradient(135deg,var(--g1),var(--g2));box-shadow:0 0 0 3px rgba(255,255,255,.85),0 3px 8px -3px var(--g2)}
+.lead.minis{position:relative;width:46px;height:32px}
+.lead.minis i{position:absolute;top:2px;width:20px;height:28px;border-radius:5px;box-shadow:0 0 0 1.5px #fff,0 3px 6px -2px rgba(30,40,60,.45)}
+.lead.minis i:nth-child(1){left:2px;transform:rotate(-10deg)}
+.lead.minis i:nth-child(2){left:24px;transform:rotate(10deg)}
+.lead.minis i:nth-child(3){left:13px;top:0;z-index:2}
+.lead.count{min-width:30px;height:30px;padding:0 8px;border-radius:999px;font-size:15px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--g1),var(--g2));box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 4px 10px -5px var(--g2)}
+.pill.nolead{padding-left:18px}
+
+/* botón Capturas: variantes */
+.cap{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:15px;font-weight:700;white-space:nowrap;transition:transform .12s,background .15s,box-shadow .15s,color .15s}
+.xb{width:26px;height:26px;border-radius:13px;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;flex:none}
+/* actual: blanco con la X azul del sistema; al pulsar solo cambia a gris */
+.cap.actual{height:32px;padding:0 14px 0 4px;border-radius:999px;background:rgba(255,255,255,.9);color:var(--ink2)}
+.cap.actual .xb{background:#3b82f6}
+.cap.actual:active,.press .cap.actual{background:#d4d8df;color:var(--ink3)}
+/* cristal: la misma piel que la píldora; al pulsar se rellena con el par de tonos */
+.cap.glass{height:32px;padding:0 14px 0 4px;border-radius:999px;color:var(--ink);background:rgba(255,255,255,.55);box-shadow:inset 0 1px 0 #fff,0 0 0 1.5px color-mix(in srgb,var(--g1) 55%,transparent)}
+.cap.glass .xb{background:linear-gradient(135deg,var(--g1),var(--g2))}
+.cap.glass:active,.press .cap.glass{transform:scale(.95);color:#fff;background:linear-gradient(115deg,var(--g1),var(--g2));box-shadow:inset 0 2px 6px rgba(0,0,0,.25)}
+.cap.glass:active .xb,.press .cap.glass .xb{background:rgba(255,255,255,.95);color:var(--g2)}
+/* segmento: el final de la píldora, separado por una raya */
+.cap.seg{align-self:stretch;margin:-0px -8px -0px 2px;padding:0 16px 0 14px;border-radius:0 999px 999px 0;color:var(--ink);border-left:1.5px solid rgba(95,110,135,.2)}
+.cap.seg .xb{background:linear-gradient(135deg,var(--g1),var(--g2))}
+.cap.seg:active,.press .cap.seg{color:#fff;background:linear-gradient(115deg,var(--g1),var(--g2));box-shadow:inset 0 2px 6px rgba(0,0,0,.22);border-left-color:transparent}
+.cap.seg:active .xb,.press .cap.seg .xb{background:#fff;color:var(--g2)}
+/* fuera: botón propio a la derecha de la balda, misma altura que la píldora */
+.cap.out{margin-left:auto;margin-right:2px;height:40px;padding:0 18px 0 7px;border-radius:999px;color:var(--ink);backdrop-filter:blur(16px);
+  background:linear-gradient(180deg,var(--glass-top),var(--glass-mid));box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+.cap.out .xb{background:linear-gradient(135deg,var(--g1),var(--g2))}
+.cap.out small{font-size:13px;color:var(--ink3);font-weight:700}
+.cap.out:active,.press .cap.out{transform:scale(.96);color:#fff;background:linear-gradient(115deg,var(--g1),var(--g2));box-shadow:inset 0 2px 6px rgba(0,0,0,.22),0 8px 18px -8px var(--g2)}
+.cap.out:active small,.press .cap.out small{color:rgba(255,255,255,.85)}
+.cap.out:active .xb,.press .cap.out .xb{background:#fff;color:var(--g2)}
+
+/* balda */
+.bsb{position:relative;width:100%;border-radius:26px;background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.85);box-shadow:0 12px 30px -16px rgba(30,40,60,.35),inset 0 1px 0 rgba(255,255,255,.9);backdrop-filter:blur(18px);padding:7px}
+.face{position:relative;border-radius:19px;overflow:hidden;background:linear-gradient(180deg,rgba(250,251,253,.75),rgba(236,240,245,.6));box-shadow:inset 0 0 0 1px rgba(20,30,50,.12)}
+.covers{position:relative;height:155px}
+.cv{position:absolute;top:10px;width:96px;height:136px;border-radius:14px;padding:4px;background:rgba(255,255,255,.6);box-shadow:0 8px 16px -10px rgba(30,40,60,.5),inset 0 1px 0 #fff;transition:transform .2s}
+.cv i{display:block;width:100%;height:100%;border-radius:10px;position:relative;overflow:hidden}
+.cv i::after{content:attr(data-n);position:absolute;left:6px;right:6px;bottom:6px;font-style:normal;font-size:11px;font-weight:800;color:#fff;line-height:1.1;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.cv.f{transform:scale(1.07);z-index:3}
+.cv.f::before{content:'';position:absolute;inset:-5px;border-radius:19px;padding:3px;background:linear-gradient(115deg,var(--g1),var(--g2),var(--g1));background-size:200% 100%;animation:sheen 3s linear infinite;
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+
+/* ── línea temporal: variantes ── */
+.tl{position:relative;overflow:hidden}
+/* actual: raíl de 4 px de color, puntos blancos y año solo en la primera portada */
+.tl.actual{height:36px;background:linear-gradient(180deg,rgba(255,255,255,.88),rgba(222,227,235,.88));box-shadow:inset 0 1px 0 #fff}
+.tl.actual .rail{position:absolute;left:9px;top:27px;height:4px;border-radius:4px;background:linear-gradient(90deg,var(--g1),var(--g2))}
+.tl.actual .yr{position:absolute;top:2px;width:96px;text-align:center;font-size:13px;font-weight:700;color:var(--ink2)}
+.tl.actual .yr.on s{background:linear-gradient(115deg,var(--g1),var(--g2));color:#fff;transform:scale(1.2);display:inline-block}
+.tl.actual .yr s{text-decoration:none;padding:1px 9px;border-radius:999px}
+.tl.actual .dt{position:absolute;top:29px;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px var(--dc)}
+.tl.actual .dt.y{width:12px;height:12px;margin:-6px 0 0 -6px}
+.tl.actual .dt.on{width:16px;height:16px;margin:-8px 0 0 -8px;box-shadow:0 0 0 3px var(--dc),0 0 10px 2px var(--dc)}
+
+/* A · regla: línea neutra fina, años grandes y oscuros con su marca, tallo de cada portada a su punto */
+.tl.regla{height:50px;background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(235,239,245,.92));box-shadow:inset 0 1px 0 #fff}
+.tl.regla .line{position:absolute;left:9px;right:9px;top:14px;height:2px;border-radius:2px;background:rgba(60,70,90,.18)}
+.tl.regla .seg{position:absolute;top:13px;height:4px;border-radius:4px;background:linear-gradient(90deg,var(--g1),var(--g2))}
+.tl.regla .st{position:absolute;top:0;width:2px;height:15px;margin-left:-1px;background:rgba(60,70,90,.2)}
+.tl.regla .dt{position:absolute;top:15px;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--dc);box-shadow:0 0 0 2.5px #fff}
+.tl.regla .dt.on{width:16px;height:16px;margin:-8px 0 0 -8px;box-shadow:0 0 0 3px #fff,0 0 0 5px var(--dc)}
+.tl.regla .yr{position:absolute;top:24px;transform:translateX(-50%);font-size:16px;font-weight:800;color:var(--ink);letter-spacing:.3px;white-space:nowrap}
+.tl.regla .yr small{font-size:12px;color:var(--ink3);font-weight:700;margin-left:3px}
+.tl.regla .yr.on{color:#fff;background:linear-gradient(115deg,var(--g1),var(--g2));padding:0 10px;border-radius:999px;box-shadow:0 4px 10px -4px var(--g2)}
+.tl.regla .yr.on small{color:rgba(255,255,255,.85)}
+
+/* B · tramos: cada año es una franja que abarca sus portadas */
+.tl.tramos{height:40px;background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(232,236,242,.9));box-shadow:inset 0 1px 0 #fff}
+.tl.tramos .tr{position:absolute;top:7px;height:26px;border-radius:999px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:15px;font-weight:800;color:var(--ink);
+  background:color-mix(in srgb,var(--dc) 18%,white);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--dc) 45%,transparent)}
+.tl.tramos .tr small{font-size:12px;font-weight:700;color:var(--ink2)}
+.tl.tramos .tr.on{color:#fff;background:linear-gradient(115deg,var(--g1),var(--g2));box-shadow:0 4px 12px -4px var(--g2)}
+.tl.tramos .tr.on small{color:rgba(255,255,255,.85)}
+.tl.tramos .gap{position:absolute;top:13px;font-size:12px;font-weight:800;color:var(--ink3);transform:translateX(-50%)}
+
+/* C · eje real: fuera del cristal, años a escala (huecos incluidos); cada portada baja una línea a su año */
+.tl.eje{height:0}
+.axis{position:relative;height:58px;margin:0 7px}
+.axis svg{position:absolute;left:0;top:0;overflow:visible}
+.axis .ylab{position:absolute;top:30px;transform:translateX(-50%);font-size:15px;font-weight:800;color:var(--ink);white-space:nowrap}
+.axis .ylab.min{font-size:11.5px;color:var(--ink3);font-weight:700;top:33px}
+.axis .ylab.on{color:#fff;background:linear-gradient(115deg,var(--g1),var(--g2));padding:0 10px;border-radius:999px;box-shadow:0 4px 10px -4px var(--g2)}
+
+.note{position:absolute;right:40px;bottom:16px;display:flex;gap:10px}
+.note span{display:flex;align-items:center;gap:8px;height:34px;padding:0 14px 0 5px;border-radius:999px;font-size:14px;font-weight:700;color:var(--ink2);background:rgba(255,255,255,.6)}
+.note .xb{background:#64748b}
+@media (prefers-reduced-motion: reduce){.on .pill::before,.cv.f::before{animation:none}}
+</style></head><body>
+
+<div class="ctl" id="ctl">
+  <span class="lb">Propuestas</span>
+  <div class="opts" data-g="preset"></div>
+  <span class="why">Cada propuesta es una combinación hecha; abajo puedes mezclar piezas sueltas.</span>
+  <span class="lb">Línea temporal</span>
+  <div class="opts" data-g="tl"></div>
+  <span class="why" id="why-tl"></span>
+  <span class="lb">Icono del rótulo</span>
+  <div class="opts" data-g="lead"></div>
+  <span class="why" id="why-lead"></span>
+  <span class="lb">Botón Capturas</span>
+  <div class="opts" data-g="cap"></div>
+  <span class="why" id="why-cap"></span>
+  <span class="lb">Probar</span>
+  <div class="opts">
+    <label><input type="checkbox" id="press"> Ver el botón pulsado (o mantén pulsado el botón)</label>
+    <label><input type="checkbox" id="mv" checked> Mover el foco solo</label>
+  </div>
+</div>
+<div class="sel" id="sel"></div>
+<div id="hold"><div id="stage">
+  <div class="amb"><i class="b1"></i><i class="b2"></i></div>
+  <div class="top"><h1>Juegos</h1><span class="c">412 juegos · 14.208 capturas</span></div>
+  <div class="tabs"><span>Catálogo</span><span>Mi lista</span><span class="on">Colecciones</span><span>Logros</span></div>
+  <div id="shelves"></div>
+  <div class="note"><span><span class="xb" style="background:#22a06b">A</span>Abrir</span><span><span class="xb" style="background:#e5484d">B</span>Volver</span></div>
+</div></div>
+
+<script>
+const SAGA=`<svg viewBox="0 0 120 120" fill="none" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="30" width="42" height="64" rx="8" transform="rotate(-12 35 62)"/><rect x="64" y="30" width="42" height="64" rx="8" transform="rotate(12 85 62)"/><rect x="39" y="22" width="42" height="68" rx="8"/></svg>`;
+const OPTS={
+  tl:[['actual','Actual'],['regla','A · Regla'],['tramos','B · Tramos por año'],['eje','C · Eje a escala']],
+  lead:[['actual','Actual (icono saga)'],['none','Sin icono'],['dot','Punto de color'],['minis','Mini-portadas'],['count','Nº de juegos']],
+  cap:[['actual','Actual'],['glass','Cristal a juego'],['seg','Final de la píldora'],['out','Botón propio a la derecha']],
+};
+const WHY={
+  tl:{actual:'Raíl de 4 px con puntos pequeños; el año solo sale en la primera portada y en gris claro. Cuesta leerlo.',
+      regla:'Línea neutra fina con el tramo de la colección en color, tallos de cada portada a su punto y el año grande y oscuro (con ×2 si hay dos juegos ese año).',
+      tramos:'Sin raíl: cada año es una franja que tapa justo sus portadas. El año enfocado se rellena con los dos tonos. Lo más fácil de leer de un vistazo.',
+      eje:'Bajo la balda, fuera del cristal: los años van a escala real (se ven los huecos, p. ej. 2006→2011) y cada portada baja una línea a su año. Ocupa más alto.'},
+  lead:{actual:'Cuadro blanco con el glifo de saga: el único icono-dibujo de toda la píldora, por eso no pega.',
+      none:'Se quita y el título empieza directamente; la aurora y el anillo ya dan el color.',
+      dot:'El mismo círculo con los dos tonos que lleva la miga de pan de arriba: une la colección con el resto de la app.',
+      minis:'Tres portadas en miniatura de la colección en abanico: dice «colección» con sus propios juegos.',
+      count:'Círculo con el nº de juegos en los dos tonos; sustituye al chip «8 juegos».'},
+  cap:{actual:'Blanco con la X azul del sistema; al pulsar pasa a gris, que no tiene nada que ver con los tonos de la colección.',
+      glass:'Misma piel de cristal que la píldora, borde y X en los dos tonos. Pulsado: se hunde y se rellena con el degradado.',
+      seg:'Pasa a ser el final de la propia píldora, separado por una raya. Pulsado: ese tramo se rellena con el degradado.',
+      out:'Sale de la píldora a la derecha de la balda, con el nº de capturas. Pulsado: degradado y se hunde. Deja la píldora solo para el nombre.'},
+};
+const PRESETS=[
+  ['Actual',{tl:'actual',lead:'actual',cap:'actual'}],
+  ['Propuesta 1 · Limpia',{tl:'regla',lead:'none',cap:'glass'}],
+  ['Propuesta 2 · Franjas',{tl:'tramos',lead:'dot',cap:'seg'}],
+  ['Propuesta 3 · Cronología',{tl:'eje',lead:'minis',cap:'out'}],
+];
+let S={tl:'actual',lead:'actual',cap:'actual'};
+
+const COLLS=[
+  {name:'Trails',g1:'#e8574a',g2:'#f2a541',aur:['#e8574a','#f2a541','#f7d27a','#e57a9b'],shots:2114,games:[
+    ['Trails in the Sky FC',2004,'#c94b3c','#f2c46b'],['Trails in the Sky SC',2006,'#3a6fb5','#9ec5f0'],['Trails in the Sky 3rd',2007,'#5d3d8f','#c79cf0'],
+    ['Zero no Kiseki',2010,'#2d8f6b','#a6e3c6'],['Ao no Kiseki',2011,'#2b5aa8','#7fb2ee'],['Cold Steel',2013,'#a52b3a','#f08a7b'],
+    ['Cold Steel II',2014,'#7b2333','#e8b04f'],['Cold Steel III',2017,'#304a6e','#e66b5b'],['Cold Steel IV',2018,'#4a2f6b','#f0a14e'],['Reverie',2020,'#2a4b6c','#f2d16b']]},
+  {name:'Kingdom Hearts',g1:'#3f7fe0',g2:'#8a5be8',aur:['#3f7fe0','#8a5be8','#6fc6f2'],shots:986,games:[
+    ['Kingdom Hearts',2002,'#2f5fb8','#f5d36b'],['Chain of Memories',2004,'#a9352f','#f3b56a'],['Kingdom Hearts II',2005,'#25335f','#d8a547'],
+    ['358/2 Days',2009,'#4e3f8f','#f08a6b'],['Birth by Sleep',2010,'#295f9a','#f2c56b'],['Dream Drop Distance',2012,'#2b8bb0','#f07fb8'],['Kingdom Hearts III',2019,'#3a6fd0','#9bd6f5']]},
+];
+let focus=4;
+const CW=96,PITCH=110,YGAP=18;
+function layout(games){const xs=[];let x=9,prev=null;games.forEach((g,i)=>{if(i&&g[1]!==prev)x+=YGAP;xs.push(x);x+=PITCH;prev=g[1]});return xs}
+const cov=(g)=>`background:linear-gradient(160deg,${g[3]},${g[2]} 60%)`;
+
+function timeline(c,xs,on){
+  const G=c.games;
+  if(S.tl==='actual'){
+    let h=`<div class="tl actual"><span class="rail" style="width:${xs[xs.length-1]+CW-9}px"></span>`;
+    G.forEach((g,i)=>{const first=!i||G[i-1][1]!==g[1];const f=on&&i===focus;
+      if(first||f)h+=`<span class="yr${f?' on':''}" style="left:${xs[i]}px"><s>${g[1]}</s></span>`;
+      h+=`<i class="dt${first?' y':''}${f?' on':''}" style="left:${xs[i]+CW/2}px;--dc:${g[2]}"></i>`});
+    return h+'</div>';
+  }
+  if(S.tl==='regla'){
+    const a=xs[0]+CW/2,b=xs[xs.length-1]+CW/2;
+    let h=`<div class="tl regla"><span class="line"></span><span class="seg" style="left:${a}px;width:${b-a}px"></span>`;
+    const years={};G.forEach((g,i)=>{(years[g[1]]=years[g[1]]||[]).push(i)});
+    G.forEach((g,i)=>{const f=on&&i===focus;h+=`<i class="st" style="left:${xs[i]+CW/2}px"></i><i class="dt${f?' on':''}" style="left:${xs[i]+CW/2}px;--dc:${g[2]}"></i>`});
+    Object.entries(years).forEach(([y,ix])=>{const cx=(xs[ix[0]]+xs[ix[ix.length-1]])/2+CW/2;const f=on&&ix.includes(focus);
+      h+=`<span class="yr${f?' on':''}" style="left:${cx}px">${y}${ix.length>1?`<small>×${ix.length}</small>`:''}</span>`});
+    return h+'</div>';
+  }
+  if(S.tl==='tramos'){
+    let h='<div class="tl tramos">';const grp=[];G.forEach((g,i)=>{if(!i||G[i-1][1]!==g[1])grp.push([i]);else grp[grp.length-1].push(i)});
+    grp.forEach((ix,k)=>{const x0=xs[ix[0]]+2,x1=xs[ix[ix.length-1]]+CW-2;const f=on&&ix.includes(focus);
+      h+=`<span class="tr${f?' on':''}" style="left:${x0}px;width:${x1-x0}px;--dc:${G[ix[0]][2]}">${G[ix[0]][1]}${ix.length>1?`<small>· ${ix.length}</small>`:''}</span>`;
+      if(k){const py=G[grp[k-1][0]][1],gap=G[ix[0]][1]-py;if(gap>1)h+=`<span class="gap" style="left:${x0-YGAP/2-2}px">+${gap}</span>`}});
+    return h+'</div>';
+  }
+  return '<div class="tl eje"></div>';
+}
+function axis(c,xs,on){
+  const G=c.games,y0=G[0][1],y1=G[G.length-1][1],L=30,R=1090,sx=y=>L+(y-y0)/(y1-y0||1)*(R-L);
+  let s=`<svg width="1106" height="30"><defs><linearGradient id="ag${c.name.length}" x1="0" x2="1"><stop offset="0" stop-color="${c.g1}"/><stop offset="1" stop-color="${c.g2}"/></linearGradient></defs>`;
+  G.forEach((g,i)=>{const cx=xs[i]+CW/2+7,f=on&&i===focus;s+=`<path d="M${cx} 0 C ${cx} 12, ${sx(g[1])} 10, ${sx(g[1])} 22" fill="none" stroke="${f?g[2]:'rgba(60,70,90,.28)'}" stroke-width="${f?3:1.5}"/>`});
+  s+=`<rect x="${L}" y="21" width="${R-L}" height="3" rx="1.5" fill="url(#ag${c.name.length})"/>`;
+  for(let y=y0;y<=y1;y++){const has=G.some(g=>g[1]===y);s+=`<circle cx="${sx(y)}" cy="22.5" r="${has?5:2}" fill="${has?'#fff':'rgba(60,70,90,.3)'}" ${has?`stroke="${c.g2}" stroke-width="2.5"`:''}/>`}
+  s+='</svg>';let lab='';const seen=new Set();
+  for(let y=y0;y<=y1;y++){const has=G.some(g=>g[1]===y);const f=on&&G[focus]&&G[focus][1]===y;if(has){seen.add(y);lab+=`<span class="ylab${f?' on':''}" style="left:${sx(y)}px">${y}</span>`}else if((y-y0)%2===0&&(y1-y0)>8)lab+=`<span class="ylab min" style="left:${sx(y)}px">${String(y).slice(2)}</span>`}
+  return `<div class="axis">${s}${lab}</div>`;
+}
+function lead(c){
+  if(S.lead==='none')return '';
+  if(S.lead==='actual')return `<span class="lead actual">${SAGA}</span>`;
+  if(S.lead==='dot')return '<span class="lead dot"></span>';
+  if(S.lead==='minis')return `<span class="lead minis">${[1,2,0].map(k=>`<i style="${cov(c.games[k])}"></i>`).join('')}</span>`;
+  return `<span class="lead count">${c.games.length}</span>`;
+}
+function render(){
+  let top=118,h='';
+  COLLS.forEach((c,k)=>{const on=k===0,xs=layout(c.games);
+    const sub=on?`${c.games.length} juegos · ${c.shots.toLocaleString('es')} capturas`:`${c.shots.toLocaleString('es')} capturas`;
+    const chip=!on&&S.lead!=='count'?`<span class="chip">${c.games.length} juegos</span>`:'';
+    const capIn=on&&S.cap!=='out'?`<span class="cap ${S.cap}"><span class="xb">X</span>Capturas</span>`:'';
+    const capOut=on&&S.cap==='out'?`<span class="cap out"><span class="xb">X</span>Ver capturas <small>${c.shots.toLocaleString('es')}</small></span>`:'';
+    const covers=c.games.map((g,i)=>`<div class="cv${on&&i===focus?' f':''}" style="left:${xs[i]}px"><i style="${cov(g)}" data-n="${g[0]}"></i></div>`).join('');
+    h+=`<div class="shelf${on?' on':' dim'}" style="top:${top}px;--g1:${c.g1};--g2:${c.g2}">
+      <div class="hd"><span class="pill${S.lead==='none'?' nolead':''}"><span class="aur">${c.aur.map((a,j)=>`<b style="left:${4+j*22}%;background:${a}"></b>`).join('')}</span>
+        ${lead(c)}<h3>${c.name}</h3>${chip}<span class="m">${sub}</span>${capIn}</span>${capOut}</div>
+      <div class="bsb"><div class="face"><div class="covers">${covers}</div>${timeline(c,xs,on)}</div></div>
+      ${S.tl==='eje'?axis(c,xs,on):''}</div>`;
+    top+=S.tl==='eje'?318:(S.tl==='regla'?290:278);
+  });
+  document.getElementById('shelves').innerHTML=h;
+  document.getElementById('stage').classList.toggle('press',document.getElementById('press').checked);
+  ['tl','lead','cap'].forEach(g=>document.getElementById('why-'+g).textContent=WHY[g][S[g]]);
+  document.querySelectorAll('[data-g] button').forEach(b=>{const g=b.parentNode.dataset.g;
+    b.classList.toggle('on',g==='preset'?JSON.stringify(PRESETS[b.dataset.v][1])===JSON.stringify(S):S[g]===b.dataset.v)});
+  const nm=g=>OPTS[g].find(o=>o[0]===S[g])[1];
+  document.getElementById('sel').innerHTML=`Tu combinación: <b>Línea ${nm('tl')}</b> · <b>Icono ${nm('lead')}</b> · <b>Botón ${nm('cap')}</b>`;
+}
+document.querySelectorAll('[data-g]').forEach(d=>{const g=d.dataset.g;
+  if(g==='preset')PRESETS.forEach(([n],i)=>d.insertAdjacentHTML('beforeend',`<button class="pre" data-v="${i}">${n}</button>`));
+  else OPTS[g].forEach(([v,n])=>d.insertAdjacentHTML('beforeend',`<button data-v="${v}">${n}</button>`));
+  d.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(g==='preset')S={...PRESETS[b.dataset.v][1]};else S[g]=b.dataset.v;render()});
+});
+document.getElementById('press').onchange=render;
+setInterval(()=>{if(document.getElementById('mv').checked){focus=(focus+1)%COLLS[0].games.length;render()}},1800);
+function fit(){const w=Math.min(1280,innerWidth-32),s=w/1280,st=document.getElementById('stage'),ho=document.getElementById('hold');st.style.transform=`scale(${s})`;ho.style.width=w+'px';ho.style.height=720*s+'px'}
+addEventListener('resize',fit);fit();render();
+</script>
+</body></html>
