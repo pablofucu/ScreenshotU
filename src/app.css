@@ -865,3 +865,12 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .sbar .sbub small{font-size:13px;font-weight:700;color:var(--ink-2);flex:none}
 .sbar .sbub .sdot{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)}
 .pgfam{position:absolute;right:28px;top:145px;height:30px;padding:0 14px;border-radius:999px;display:flex;align-items:center;font-size:14px;font-weight:700;color:var(--ink-2);white-space:nowrap;pointer-events:none}
+
+/* Catálogo: velo de color sobre el fondo de cuadraditos, con el matiz del juego enfocado (suave, cambia con fundido). */
+@property --w1{syntax:'<color>';inherits:false;initial-value:transparent}
+@property --w2{syntax:'<color>';inherits:false;initial-value:transparent}
+.ambwash{position:absolute;inset:0;pointer-events:none;--w1:var(--p1,transparent);--w2:var(--p2,transparent);
+  background:radial-gradient(ellipse 75% 65% at 10% 108%,color-mix(in srgb,var(--w1) 34%,transparent),transparent 72%),
+    radial-gradient(ellipse 70% 60% at 94% -8%,color-mix(in srgb,var(--w2) 26%,transparent),transparent 72%);
+  transition:--w1 .8s ease,--w2 .8s ease}
+@media (prefers-reduced-motion: reduce){.ambwash{transition:none}}

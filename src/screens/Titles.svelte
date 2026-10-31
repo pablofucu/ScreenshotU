@@ -91,6 +91,17 @@
     return ti === undefined ? undefined : titles[ti];
   });
 
+  // Velo de color: tiñe el fondo de cuadraditos con los dos tonos del juego enfocado (al recorrer la lista, el fondo va cambiando de matiz).
+  // Si no hay juego enfocado (baldosa «Añadir»), se conserva el último. Por color, el velo sigue la misma vuelta que
+  // la interfaz (tono de la portada y el siguiente), así no salta entre portadas vecinas.
+  const washTi = $derived(tab === 'coll' ? app.collShelves[app.collAt.c]?.items[app.collAt.i] : cur ? app.t : undefined);
+  let wash = $state('');
+  $effect(() => {
+    if (tab === 'all' && app.titleOrder === 'color') { if (!app.overlay) wash = app.pairStyle(app.atmosTarget); return; }
+    const ti = washTi;
+    if (ti !== undefined && titles[ti]) wash = app.pipStyle(app.p, ti);
+  });
+
   // Familia de color de un juego (misma regla que «Por color»: tono OKLCH del acento; sin color = Grises).
   const FAMS = ['Rojos', 'Naranjas', 'Amarillos', 'Verdes', 'Turquesas', 'Azules', 'Violetas', 'Rosas', 'Grises'];
   const famOf = (ti: number) => {
@@ -170,6 +181,7 @@
   <i class="ring"></i><i class="halo"></i>
 {/snippet}
 
+<div class="ambwash" style={wash}></div>
 <TopBar crumbs={['Inicio', P?.name ?? '']} dots={grid && tab === 'all' ? pages : 0} dot={pg} />
 
 <div class="ttabs" class:car={!grid && tab === 'all'} class:list-tabs={tab === 'list'} style={tabsAcc ? `--acc:${tabsAcc.c};--acc-ink:${tabsAcc.dark ? '#3a2f00' : '#fff'}` : ''}>
