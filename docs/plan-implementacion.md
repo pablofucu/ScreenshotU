@@ -82,6 +82,9 @@ Estado: **planificación terminada a falta de 4 decisiones; no se ha programado 
 ### Alcance de la primera entrega (2026-10-31)
 Solo **atmósfera + degradado**: manchas del fondo con g1/g2 (`--b1..3`), variables `--g1 --g2 --grad --f1 --f2 --gf --on` en `#stage` con transición de tono (~700 ms, respeta movimiento reducido), botón principal y barras de progreso con el degradado.
 
+### Tema v5 completo (1.6.0, 2026-10-31)
+Hecho y publicado en v1.6.0: una sola fuente de color (atmósfera; se quitaron `chrome`/`platAcc`/`titleAcc`), foco/pestañas/chips con el degradado, subrayado arcoíris por sección (`--rbsec`), Ajustes con menú v5 y cada sección en su tono, punto de color en todas las portadas, vuelo de la portada al abrir un juego (View Transition), hex fijos → tokens. **Pendiente: modo oscuro «Noche ahumada».**
+
 ### Apuntado para después
 - **Ajustes como en el mockup** (`sistema-v5`, `scrAjustes`): menú General / Apariencia / Mando / Biblioteca / Mi lista / Acerca de, y **cada sección de Ajustes con un color del arcoíris**.
 - Estilo de foco y pestañas con subrayado degradado.
