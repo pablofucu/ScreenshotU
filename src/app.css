@@ -842,12 +842,12 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 @property --ang{syntax:'<angle>';inherits:false;initial-value:0deg}
 @keyframes spinRing{to{--ang:360deg}}
 .tcov>.ring,.ccover>.ring{position:absolute;inset:-2px;z-index:4;border-radius:calc(var(--r) + 2px);padding:calc(var(--bw) + 2px);box-sizing:border-box;
-  background:conic-gradient(from var(--ang),var(--p1,var(--f1)),var(--p2,var(--f2)),var(--p1,var(--f1)));
+  background:conic-gradient(from var(--ang),color-mix(in srgb,var(--g1,var(--p1,var(--f1))) 65%,white) 0deg,var(--p1,var(--f1)) 90deg,var(--p2,var(--f2)) 180deg,color-mix(in srgb,var(--g2,var(--p2,var(--f2))) 65%,white) 270deg,color-mix(in srgb,var(--g1,var(--p1,var(--f1))) 65%,white) 360deg);
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
   opacity:0;transition:opacity .2s;animation:spinRing 3s linear infinite;pointer-events:none}
 /* Halo grueso: los dos colores del juego en un degradado desenfocado que rota con el anillo. */
 .tcov>.halo,.ccover>.halo{display:none;position:absolute;inset:-12px;z-index:0;border-radius:calc(var(--r) + 12px);pointer-events:none;
-  background:conic-gradient(from var(--ang),var(--p1,var(--f1)),var(--p2,var(--f2)),var(--p1,var(--f1)));
+  background:conic-gradient(from var(--ang),color-mix(in srgb,var(--g1,var(--p1,var(--f1))) 65%,white) 0deg,var(--p1,var(--f1)) 90deg,var(--p2,var(--f2)) 180deg,color-mix(in srgb,var(--g2,var(--p2,var(--f2))) 65%,white) 270deg,color-mix(in srgb,var(--g1,var(--p1,var(--f1))) 65%,white) 360deg);
   filter:blur(22px);opacity:0;transition:opacity .25s}
 .tcov.f>.ring,.ccover.f>.ring{opacity:1}
 #stage[data-theme=dark] .tcov>.halo,#stage[data-theme=dark] .ccover>.halo{display:block;animation:spinRing 3s linear infinite}
@@ -857,7 +857,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
    colores de su propia portada (sin el cristal teñido ni los brillos, para no tapar el arte). */
 .ttrack .tcov{background:var(--face);box-shadow:0 0 0 1px var(--line),0 10px 22px -14px rgba(20,30,50,.55)}
 .ttrack .tcov::before,.ttrack .tcov::after{display:none}
-.ttrack .tcov.f{transform:scale(1.06);background:var(--face);box-shadow:0 18px 34px -12px rgba(20,30,50,.6)}
+.ttrack .tcov.f{transform:scale(1.06);background:var(--face);box-shadow:0 0 24px 2px color-mix(in srgb,var(--p1,var(--f1)) 35%,transparent),0 18px 34px -12px rgba(20,30,50,.6)}
 
 /* Catálogo: barra lateral como minimapa (zona de clic/arrastre, burbuja con el juego y etiqueta de familias de la página). */
 .sbar .shit{position:absolute;left:-12px;right:-12px;top:-10px;bottom:-10px;cursor:pointer;touch-action:none;z-index:2}
@@ -872,6 +872,8 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 /* Catálogo: velo de color sobre el fondo de cuadraditos, con el matiz del juego enfocado (suave, cambia con fundido). */
 @property --p1{syntax:'<color>';inherits:true;initial-value:transparent}
 @property --p2{syntax:'<color>';inherits:true;initial-value:transparent}
+@property --g1{syntax:'<color>';inherits:true;initial-value:transparent}
+@property --g2{syntax:'<color>';inherits:true;initial-value:transparent}
 .ambwash{position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(ellipse 75% 65% at 10% 108%,color-mix(in srgb,var(--p1) 34%,transparent),transparent 72%),
     radial-gradient(ellipse 70% 60% at 94% -8%,color-mix(in srgb,var(--p2) 26%,transparent),transparent 72%);
