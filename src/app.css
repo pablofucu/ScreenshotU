@@ -567,12 +567,12 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .sx .cat{font-size:18px;font-weight:800;color:var(--ink-2);white-space:nowrap}
 .sx .dot{width:5px;height:5px;border-radius:50%;background:var(--ink-3)}
 .sx .gl{display:flex;position:relative;flex-shrink:0;align-items:center;gap:3px;height:44px;padding:4px;border-radius:999px;box-sizing:border-box;font-size:17px;font-weight:800;color:var(--ink-2);
-  background:linear-gradient(180deg,rgba(120,135,160,.20),rgba(255,255,255,.35));-webkit-backdrop-filter:blur(10px) saturate(1.6);backdrop-filter:blur(10px) saturate(1.6);
-  box-shadow:inset 0 2px 4px rgba(60,75,100,.22),inset 0 -1px 0 rgba(255,255,255,.8),0 0 0 1px rgba(255,255,255,.55)}
-.sx .gem{position:relative;display:grid;place-items:center;padding:0 18px;height:36px;border-radius:999px;color:var(--on);text-shadow:0 1px 1px rgba(0,60,100,.35);
-  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 55%,white) 0%,var(--acc) 55%,color-mix(in srgb,var(--acc) 75%,black) 100%);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -2px 3px rgba(0,70,110,.35),0 2px 5px rgba(0,120,170,.4),0 0 0 1px rgba(0,110,160,.55)}
-.sx .gem::before{content:"";position:absolute;left:8px;right:8px;top:3px;height:13px;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,.05));pointer-events:none}
+  background:var(--panel);-webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);
+  box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px var(--line),0 8px 18px -10px rgba(20,30,50,.35)}
+.sx .gem{position:relative;display:grid;place-items:center;padding:0 18px;height:36px;border-radius:999px;color:var(--on);font-weight:800;
+  background:var(--gf);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--f2) 75%,black),0 6px 14px -8px var(--f2)}
+.sx .gem::before{display:none}
 .sx .o{padding:0 16px;height:36px;display:grid;place-items:center;border-radius:999px;cursor:pointer}
 .sx .lbl{min-width:190px;text-align:center;color:var(--ink);white-space:nowrap}
 .sx .lbl.cal{min-width:230px}
