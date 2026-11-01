@@ -7,7 +7,9 @@
   import MiniCover from '../components/MiniCover.svelte';
   import { logoSrc } from '../components/RecentCard.svelte';
   import { MI } from '../lib/icons';
+  import { RemoteSource } from '../lib/source';
   import { app } from '../lib/store.svelte';
+  import { Streaming, stream } from '../lib/streaming.svelte';
 
   let { id }: { id: string } = $props();
   const ref = $derived(app.index.get(id));
@@ -29,6 +31,22 @@
   const live = $derived(playingNow && app.playing ? Math.max(0, Math.floor((app.now - app.playing.since) / 1000)) : 0);
   const recentShots = $derived(T?.shots.slice(0, 9) ?? []);
   const hasPlays = $derived((T?.plays?.length ?? 0) > 0);
+
+  // «Jugar en el PC» (solo tablet): lanza el juego con el lanzador del visor y abre el stream de Moonlight.
+  const canPlay = $derived(stream.tablet && !!T?.gameId && !T?.members && app.source instanceof RemoteSource);
+  let launching = $state(false);
+  async function playOnPc() {
+    const src = app.source;
+    if (!T?.gameId || !(src instanceof RemoteSource) || launching) return;
+    if (!stream.moonlight) { app.toast('Moonlight no está instalado'); return; }
+    launching = true;
+    try {
+      await src.post('launch', { id: T.gameId });
+      await Streaming.stream({ pc: stream.pcName(app.snap?.name || (app.server && app.server !== 'demo' ? app.server.name : '') || ''), app: stream.appName.trim() || 'Desktop' });
+    } catch (e) {
+      app.toast(e instanceof Error ? e.message : String(e));
+    } finally { launching = false; }
+  }
 </script>
 
 {#if T && ref && acc}
@@ -56,6 +74,14 @@
         {#if playingNow}<span class="tag live">● Jugando ahora · {fmtDur(live)}</span>{/if}
       </div>
     </div>
+
+    {#if canPlay}
+      <div class="pad play">
+        <button class="bigbtn" disabled={launching || playingNow} onclick={playOnPc}>
+          {launching ? 'Lanzando…' : playingNow ? 'Ya está en marcha' : 'Jugar en el PC'}
+        </button>
+      </div>
+    {/if}
 
     {#if T.members}
       <div class="sect">Juegos de la saga<small>{T.members.length}</small></div>
@@ -129,6 +155,7 @@
   .logo{position:absolute;z-index:2;left:10%;right:10%;top:16%;bottom:12%;width:80%;height:72%;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(0,0,0,.55))}
   .bname{position:absolute;z-index:2;left:16px;right:16px;bottom:14px;font-size:24px;font-weight:800;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6);line-height:1.1}
   .title{padding:12px 18px 0}
+  .play{margin-top:14px}
   h1{margin:0;font-size:23px;font-weight:800;color:var(--ink);line-height:1.15}
   .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
   .tag.live{background:#3BB54A;color:#fff}

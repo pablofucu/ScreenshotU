@@ -4,4 +4,5 @@
     <string name="title_activity_main">Visor</string>
     <string name="package_name">app.visorcapturas.movil</string>
     <string name="custom_url_scheme">app.visorcapturas.movil</string>
+    <string name="capture_service_desc">Con Moonlight abierto, la tecla de bajar volumen hace una captura en el PC. En el resto de apps no hace nada. Solo mira qué app está en primer plano y la tecla de volumen; no lee el contenido de la pantalla.</string>
 </resources>

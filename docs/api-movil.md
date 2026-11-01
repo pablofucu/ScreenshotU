@@ -26,10 +26,11 @@ misma IP se responde `429` durante ese minuto.
 ### `GET /api/v1/hello` (sin código)
 
 ```json
-{ "app": "visor-capturas", "api": 1, "name": "PC-SALON", "version": "0.1.0" }
+{ "app": "visor-capturas", "api": 1, "name": "PC-SALON", "version": "0.1.0", "features": ["launch", "capture"] }
 ```
 
-Sirve para comprobar que en esa dirección hay un visor antes de pedir el código.
+Sirve para comprobar que en esa dirección hay un visor antes de pedir el código. `features` lista las acciones
+(`POST`) que ofrece este PC.
 
 ### `GET /api/v1/snapshot`
 
@@ -81,7 +82,19 @@ transparencia (logos), los hero y para «Ver original».
 (capturas, portadas, hero y logos). Cualquier otra ruta da `404`, así que el servidor nunca expone otros archivos
 del PC.
 
+### `POST /api/v1/launch`
+
+Cuerpo `{"id": "<id del juego>"}` (el `id` de la instantánea). Lanza el juego con el lanzador del visor, así que
+cuenta el tiempo de juego. Si el juego no está en el último escaneo se escanea de nuevo. Respuesta `{"ok": true}`;
+`400` sin `id`, `409` con el motivo (juego no encontrado, ya hay otro en marcha, sin ejecutable…).
+
+### `POST /api/v1/capture`
+
+Sin cuerpo. Hace una captura ahora, como el atajo del escritorio, y responde `{"ok": true}` en cuanto la lanza (la
+captura se hace en segundo plano; si no hay juego abierto el visor lo avisa en el PC). Mismo código y mismo límite
+de intentos que el resto; con `GET` da `405`.
+
 ## Errores
 
 `{"error": "mensaje en español"}` con `400` (parámetros), `401` (código), `404` (ruta desconocida o
-desaparecida), `429` (demasiados intentos) o `500`.
+desaparecida), `405` (método), `409` (acción rechazada), `429` (demasiados intentos) o `500`.

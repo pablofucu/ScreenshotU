@@ -15,7 +15,7 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
 use std::fs;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -99,6 +99,14 @@ pub trait Provider: Send + Sync + 'static {
     fn thumbs_dir(&self) -> PathBuf;
     /// Cache de vistas previas de 1920 px.
     fn previews_dir(&self) -> PathBuf;
+    /// Lanza un juego por su id con el lanzador del escritorio (cuenta el tiempo de juego).
+    fn launch(&self, _id: &str) -> Result<()> {
+        anyhow::bail!("Este equipo no puede lanzar juegos")
+    }
+    /// Hace una captura ahora, como el atajo del escritorio.
+    fn capture(&self) -> Result<()> {
+        anyhow::bail!("Este equipo no puede hacer capturas")
+    }
 }
 
 /* ---------- utilidades publicas ---------- */
@@ -329,6 +337,8 @@ pub struct Req {
     /// Nombres en minusculas.
     pub headers: Vec<(String, String)>,
     pub ip: IpAddr,
+    /// Cuerpo de la peticion (solo las POST; vacio en el resto).
+    pub body: Vec<u8>,
 }
 
 impl Req {
@@ -346,7 +356,7 @@ impl Req {
                 (percent_decode(k), percent_decode(v))
             })
             .collect();
-        Req { method: method.to_ascii_uppercase(), path: percent_decode(path), query, headers, ip }
+        Req { method: method.to_ascii_uppercase(), path: percent_decode(path), query, headers, ip, body: Vec::new() }
     }
 }
 
@@ -487,16 +497,21 @@ fn route(inner: &Inner, req: &Req) -> Reply {
     if req.method == "OPTIONS" {
         return Reply::empty(204);
     }
-    if req.method != "GET" && req.method != "HEAD" {
+    let post = req.method == "POST";
+    if !post && req.method != "GET" && req.method != "HEAD" {
         return Reply::error(405, "Método no permitido");
     }
     let ep = match req.path.trim_end_matches('/') {
         "/api/v1/hello" => {
             return Reply::json(
                 200,
-                &serde_json::json!({ "app": "visor-capturas", "api": API_VERSION, "name": inner.provider.name(), "version": env!("CARGO_PKG_VERSION") }),
+                &serde_json::json!({ "app": "visor-capturas", "api": API_VERSION, "name": inner.provider.name(), "version": env!("CARGO_PKG_VERSION"), "features": ["launch", "capture"] }),
             )
         }
+        "/api/v1/launch" | "/api/v1/capture" if !post => return Reply::error(405, "Método no permitido"),
+        "/api/v1/launch" => "launch",
+        "/api/v1/capture" => "capture",
+        _ if post => return Reply::error(405, "Método no permitido"),
         "/api/v1/snapshot" => "snapshot",
         "/api/v1/thumb" => "thumb",
         "/api/v1/preview" => "preview",
@@ -510,6 +525,22 @@ fn route(inner: &Inner, req: &Req) -> Reply {
     if !inner.authorized(req) {
         inner.throttle.fail(req.ip, now);
         return Reply::error(401, "Falta el código de emparejamiento o no es correcto.");
+    }
+    if ep == "launch" {
+        let id = serde_json::from_slice::<serde_json::Value>(&req.body).ok().and_then(|v| v.get("id").and_then(|i| i.as_str().map(str::to_string))).filter(|i| !i.is_empty());
+        let Some(id) = id else {
+            return Reply::error(400, "Falta el id del juego");
+        };
+        return match inner.provider.launch(&id) {
+            Ok(()) => Reply::json(200, &serde_json::json!({ "ok": true })),
+            Err(e) => Reply::error(409, &format!("{e:#}")),
+        };
+    }
+    if ep == "capture" {
+        return match inner.provider.capture() {
+            Ok(()) => Reply::json(200, &serde_json::json!({ "ok": true })),
+            Err(e) => Reply::error(409, &format!("{e:#}")),
+        };
     }
     if ep == "snapshot" {
         let fresh = req.query.get("fresh").is_some_and(|v| v == "1" || v == "true");
@@ -587,14 +618,18 @@ fn snapshot_reply(c: &Cached, req: &Req) -> Reply {
 const CORS: [(&str, &str); 4] = [
     ("Access-Control-Allow-Origin", "*"),
     ("Access-Control-Allow-Headers", "Authorization, If-None-Match, Content-Type"),
-    ("Access-Control-Allow-Methods", "GET, OPTIONS"),
+    ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
     ("Access-Control-Expose-Headers", "ETag"),
 ];
 
-fn handle(inner: &Inner, rq: tiny_http::Request) {
+fn handle(inner: &Inner, mut rq: tiny_http::Request) {
     let headers = rq.headers().iter().map(|h| (h.field.as_str().as_str().to_ascii_lowercase(), h.value.as_str().to_string())).collect();
     let ip = rq.remote_addr().map(|a| a.ip()).unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED));
-    let req = Req::parse(rq.method().as_str(), rq.url(), headers, ip);
+    let mut req = Req::parse(rq.method().as_str(), rq.url(), headers, ip);
+    if req.method == "POST" {
+        // Cuerpo pequeno (JSON con un id): se limita para que nadie llene la memoria.
+        let _ = std::io::Read::take(rq.as_reader(), 16 * 1024).read_to_end(&mut req.body);
+    }
     let reply = route(inner, &req);
     let head_only = req.method == "HEAD";
     let mut resp = match reply.body {
@@ -813,6 +848,13 @@ mod tests {
         fn previews_dir(&self) -> PathBuf {
             self.dir.join("previews")
         }
+        fn launch(&self, id: &str) -> Result<()> {
+            anyhow::ensure!(id == "pc/A", "Juego no encontrado");
+            Ok(())
+        }
+        fn capture(&self) -> Result<()> {
+            Ok(())
+        }
     }
 
     struct Resp {
@@ -861,6 +903,39 @@ mod tests {
             out.extend_from_slice(&b[end + 2..end + 2 + n]);
             i = end + 2 + n + 2;
         }
+    }
+
+    /// POST con cuerpo JSON (la funcion `get` de arriba no manda cuerpo).
+    fn post(addr: SocketAddr, url: &str, token: Option<&str>, body: &str) -> (u16, String) {
+        let mut s = TcpStream::connect(addr).unwrap();
+        s.set_read_timeout(Some(Duration::from_secs(30))).unwrap();
+        let auth = token.map(|t| format!("Authorization: Bearer {t}\r\n")).unwrap_or_default();
+        let req = format!("POST {url} HTTP/1.1\r\nHost: x\r\nConnection: close\r\n{auth}Content-Type: application/json\r\nContent-Length: {}\r\n\r\n{body}", body.len());
+        s.write_all(req.as_bytes()).unwrap();
+        let mut raw = Vec::new();
+        s.read_to_end(&mut raw).unwrap();
+        let text = String::from_utf8_lossy(&raw).into_owned();
+        let status = text.split(' ').nth(1).unwrap().parse().unwrap();
+        (status, text)
+    }
+
+    #[test]
+    fn launch_and_capture_over_http() {
+        let d = tempfile::tempdir().unwrap();
+        let fake = Fake { lib: lib_with(vec![]), dir: d.path().to_path_buf(), scans: Arc::new(AtomicU64::new(0)) };
+        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), "ABCD-EFGH".into(), fake).unwrap();
+        let a = srv.local_addr();
+        let hello = get(a, "GET", "/api/v1/hello", &[]);
+        assert!(String::from_utf8_lossy(&hello.body).contains("\"launch\""));
+        // sin codigo: 401; con codigo: 200, 409 (el proveedor rechaza el id) o 400 (cuerpo sin id)
+        assert_eq!(post(a, "/api/v1/capture", None, "").0, 401);
+        assert_eq!(post(a, "/api/v1/launch", None, "{\"id\":\"pc/A\"}").0, 401);
+        assert_eq!(post(a, "/api/v1/capture", Some("ABCD-EFGH"), "").0, 200);
+        assert_eq!(post(a, "/api/v1/launch", Some("ABCD-EFGH"), "{\"id\":\"pc/A\"}").0, 200);
+        assert_eq!(post(a, "/api/v1/launch", Some("ABCD-EFGH"), "{\"id\":\"otro\"}").0, 409);
+        assert_eq!(post(a, "/api/v1/launch", Some("ABCD-EFGH"), "no es json").0, 400);
+        // por GET no se puede lanzar ni capturar
+        assert_eq!(get(a, "GET", "/api/v1/capture", &[("Authorization", "Bearer ABCD-EFGH")]).status, 405);
     }
 
     #[test]

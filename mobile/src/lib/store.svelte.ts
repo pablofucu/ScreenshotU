@@ -6,6 +6,7 @@ import type { Saga } from '@shared/types';
 import type { Library, Shot, Title } from '@shared/types';
 import type { EvoKind, PeriodKind } from '@shared/stats';
 import { AuthError, demoSource, RemoteSource, type Playing, type RemoteConfig, type ServerCfg, type Snapshot, type Source } from './source';
+import { pushConnection } from './streaming.svelte';
 import { DEFAULT_PREFS, loadPrefs, loadServer, readSnap, saveServer, savePrefs, serverKey, writeSnap, type Prefs } from './cache';
 
 export type Tab = 'home' | 'games' | 'stats' | 'favs' | 'settings';
@@ -181,6 +182,7 @@ class Store {
   async start() {
     const s = this.server;
     if (!s) return;
+    pushConnection(s);
     this.error = '';
     if (s === 'demo') {
       this.loading = true;
@@ -248,6 +250,7 @@ class Store {
   disconnect(msg = '') {
     this.server = null;
     saveServer(null);
+    pushConnection(null);
     this.source = null;
     this.snap = null;
     this.lib = EMPTY_LIB;

@@ -101,6 +101,16 @@ export class RemoteSource implements Source {
   }
   setEtag(e: string) { this.etag = e; }
   getEtag() { return this.etag; }
+  /** Acción del PC (`launch`, `capture`): POST con el código; lanza el error con el motivo que da el visor. */
+  async post(action: 'launch' | 'capture', body: object = {}) {
+    const headers = { Authorization: `Bearer ${normCode(this.server.code)}`, 'Content-Type': 'application/json' };
+    const r = await get(`${base(this.server)}/api/v1/${action}`, { method: 'POST', headers, body: JSON.stringify(body) }, 15000);
+    if (r.status === 401) throw new AuthError('El código no es correcto');
+    if (!r.ok) {
+      const j = await r.json().catch(() => null);
+      throw new NetError(j?.error ?? `Error del PC (${r.status})`);
+    }
+  }
   async thumb(path: string) { return `${base(this.server)}/api/v1/thumb?${this.q(path)}`; }
   async preview(path: string) { return `${base(this.server)}/api/v1/preview?${this.q(path)}`; }
   async file(path: string) { return `${base(this.server)}/api/v1/file?${this.q(path)}`; }

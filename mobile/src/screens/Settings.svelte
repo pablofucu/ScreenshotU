@@ -3,6 +3,8 @@
   import { ICON } from '@shared/icons';
   import { MI } from '../lib/icons';
   import { app } from '../lib/store.svelte';
+  import { stream } from '../lib/streaming.svelte';
+  import { onMount } from 'svelte';
 
   const isDemo = $derived(app.server === 'demo');
   const serverName = $derived.by(() => {
@@ -29,6 +31,15 @@
   function handleSync() {
     void app.sync(true);
   }
+
+  // Streaming (solo tablet): al volver de los ajustes de accesibilidad se vuelve a mirar el estado.
+  onMount(() => {
+    if (!stream.tablet) return;
+    const again = () => { if (!document.hidden) void stream.refresh(); };
+    document.addEventListener('visibilitychange', again);
+    void stream.refresh();
+    return () => document.removeEventListener('visibilitychange', again);
+  });
 </script>
 
 <div class="pad settings-wrap">
@@ -87,10 +98,49 @@
       </div>
     </div>
   </div>
+  {#if stream.tablet && !isDemo}
+    <div class="glass panel">
+      <div class="face settings-card">
+        <div class="card-head">
+          <div class="srv-info">
+            <span class="srv-type">Streaming</span>
+            <h2 class="srv-title">Moonlight</h2>
+          </div>
+        </div>
+
+        <div class="meta-rows">
+          <label class="meta-row">
+            <span class="meta-label">PC en Moonlight</span>
+            <input class="meta-in" type="text" placeholder={app.snap?.name || 'Nombre del PC'} bind:value={stream.pc} onchange={() => stream.save()} autocapitalize="off" autocomplete="off" spellcheck="false" />
+          </label>
+          <label class="meta-row">
+            <span class="meta-label">Aplicación de Sunshine</span>
+            <input class="meta-in" type="text" placeholder="Desktop" bind:value={stream.appName} onchange={() => stream.save()} autocapitalize="off" autocomplete="off" spellcheck="false" />
+          </label>
+          <div class="meta-row">
+            <span class="meta-label">Moonlight</span>
+            <span class="meta-val status"><i class="sync-dot" class:off={!stream.moonlight}></i>{stream.moonlight ? 'Instalado' : 'No instalado'}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Captura con volumen −</span>
+            <span class="meta-val status"><i class="sync-dot" class:off={!stream.service}></i>{stream.service ? 'Activada' : 'Desactivada'}</span>
+          </div>
+          <div class="sync-action">
+            <button type="button" class="sync-btn pill" onclick={() => stream.openService()}>
+              <span>{stream.service ? 'Ajustes de accesibilidad' : 'Activar captura con volumen −'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
   .settings-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
     padding-top: 14px;
     padding-bottom: 24px;
     max-width: 480px;
@@ -239,6 +289,22 @@
     height: 16px;
     display: block;
     stroke: var(--acc);
+  }
+  .meta-in {
+    flex: 1;
+    min-width: 0;
+    max-width: 60%;
+    text-align: right;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font: inherit;
+    font-weight: 800;
+    color: var(--ink2);
+  }
+  .meta-in::placeholder {
+    color: var(--dim2);
+    font-weight: 600;
   }
   .actions {
     padding-top: 6px;

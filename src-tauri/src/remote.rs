@@ -39,6 +39,37 @@ impl Provider for AppProvider {
     fn previews_dir(&self) -> PathBuf {
         self.app.state::<AppState>().previews_dir()
     }
+
+    fn launch(&self, id: &str) -> anyhow::Result<()> {
+        let id = id.to_string();
+        let app = self.app.clone();
+        // El lanzador toca la ventana y la pantalla principal: va en el hilo principal, como el comando del visor.
+        let (tx, rx) = std::sync::mpsc::channel();
+        self.app
+            .run_on_main_thread(move || {
+                let st = app.state::<AppState>();
+                let mut game = st.games.lock().unwrap().iter().find(|g| g.id == id).cloned();
+                if game.is_none() {
+                    // Aun no hay escaneo (o el juego es nuevo): se escanea igual que la instantanea.
+                    let (_, found, _) = crate::scan_full(&st);
+                    game = found.iter().find(|g| g.id == id).cloned();
+                    *st.games.lock().unwrap() = found;
+                }
+                let r = match game {
+                    Some(g) => crate::launcher::start(&app, g),
+                    None => Err("Juego no encontrado".to_string()),
+                };
+                let _ = tx.send(r);
+            })
+            .map_err(|e| anyhow::anyhow!("{e}"))?;
+        rx.recv_timeout(std::time::Duration::from_secs(30)).map_err(|_| anyhow::anyhow!("El visor no respondió a tiempo"))?.map_err(|e| anyhow::anyhow!(e))
+    }
+
+    fn capture(&self) -> anyhow::Result<()> {
+        // snap::trigger ya trabaja en su propio hilo y no necesita el principal.
+        crate::snap::trigger(&self.app);
+        Ok(())
+    }
 }
 
 /// El acceso desde el móvil está activo; el guard de apply() sirve como interruptor de desarrollo.
