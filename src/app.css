@@ -566,7 +566,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .sx{position:absolute;left:48px;right:48px;top:84px;display:flex;gap:14px;align-items:center;z-index:4}
 .sx .cat{font-size:18px;font-weight:800;color:var(--ink-2);white-space:nowrap}
 .sx .dot{width:5px;height:5px;border-radius:50%;background:var(--ink-3)}
-.sx .gl{display:flex;align-items:center;gap:3px;height:44px;padding:4px;border-radius:999px;box-sizing:border-box;font-size:17px;font-weight:800;color:var(--ink-2);
+.sx .gl{display:flex;position:relative;flex-shrink:0;align-items:center;gap:3px;height:44px;padding:4px;border-radius:999px;box-sizing:border-box;font-size:17px;font-weight:800;color:var(--ink-2);
   background:linear-gradient(180deg,rgba(120,135,160,.20),rgba(255,255,255,.35));-webkit-backdrop-filter:blur(10px) saturate(1.6);backdrop-filter:blur(10px) saturate(1.6);
   box-shadow:inset 0 2px 4px rgba(60,75,100,.22),inset 0 -1px 0 rgba(255,255,255,.8),0 0 0 1px rgba(255,255,255,.55)}
 .sx .gem{position:relative;display:grid;place-items:center;padding:0 18px;height:36px;border-radius:999px;color:var(--on);text-shadow:0 1px 1px rgba(0,60,100,.35);
@@ -671,7 +671,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .evleg{position:absolute;left:24px;top:14px;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--ink-3)}
 .evleg i{display:inline-block;width:14px;height:14px;border-radius:4px;margin-left:8px}
 .evleg i.lb{background:var(--acc);margin-left:0}.evleg i.ld{background:var(--ink);border-radius:50%}
-.gl{position:absolute;height:1px;background:var(--line)}
+.evchart .gl{position:absolute;height:1px;background:var(--line)}
 .yl{position:absolute;left:0;text-align:right;font-size:13px;font-weight:700;color:var(--ink-3)}
 .yr{position:absolute;font-size:13px;font-weight:700;color:var(--ink-3)}
 .ecol{position:absolute;display:flex;align-items:flex-end;justify-content:center;border-radius:10px;cursor:pointer}
