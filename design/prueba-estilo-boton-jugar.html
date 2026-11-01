@@ -9,6 +9,12 @@
 @font-face{font-family:'M PLUS Rounded 1c';font-weight:700;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-700-latin.woff2') format('woff2')}
 @font-face{font-family:'M PLUS Rounded 1c';font-weight:800;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-800-latin.woff2') format('woff2')}
 
+@property --ang-j {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
 :root {
   --round: 'M PLUS Rounded 1c', 'Nunito', 'Segoe UI', system-ui, sans-serif;
   --theme-bg: #e6e9f0;
@@ -154,425 +160,117 @@ h1 span {
 }
 
 /* ========================================================
-   SECCIÓN BENCHMARK: EL BOTÓN «JUGAR» ORIGINAL
+   SECCIÓN DE AFINACIÓN EXCLUSIVA DEL HÍBRIDO (RESOLVER LO QUE CHIRRÍA)
    ======================================================== */
-.benchmark-section {
+.tuner-section {
   background: var(--panel-bg);
-  border: 1px solid var(--panel-border);
+  border: 2px solid #6E56CF;
   border-radius: 24px;
   padding: 22px 28px;
   margin-bottom: 30px;
-  box-shadow: 0 6px 20px -8px rgba(30,40,60,.08);
+  box-shadow: 0 8px 30px -10px rgba(110,86,207,.25);
 }
-.benchmark-header {
+.tuner-title {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
+  margin-bottom: 16px;
 }
-.benchmark-title {
+.tuner-title h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
   display: flex;
   align-items: center;
   gap: 10px;
+  color: #6E56CF;
 }
-.benchmark-title h2 {
-  margin: 0;
-  font-size: 17px;
-  font-weight: 800;
+[data-theme="dark"] .tuner-title h2 {
+  color: #9d87f5;
 }
-.benchmark-tag {
-  font-size: 11px;
-  font-weight: 800;
-  background: #3BB54A;
-  color: #fff;
-  padding: 2px 8px;
-  border-radius: 6px;
-  text-transform: uppercase;
-}
-.benchmark-stage {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-  padding: 16px 0 8px;
-  flex-wrap: wrap;
-}
-
-/* Estilos exactos del Botón «Jugar» extraídos de Detail.svelte y app.css */
-.play-btn-wrapper {
-  position: relative;
-  width: 290px;
-  height: 112px;
-}
-.glass-btn {
-  position: absolute;
-  inset: 0;
-  --r: 30px;
-  --bw: 8px;
-  border-radius: var(--r);
-  padding: var(--bw);
-  box-sizing: border-box;
-  cursor: pointer;
-  isolation: isolate;
-  transform: scale(1.06);
-  background: linear-gradient(150deg,
-    color-mix(in srgb, var(--g1) 55%, white) 0%,
-    var(--f1) 50%,
-    var(--f2) 100%
-  );
-  box-shadow:
-    inset 0 1.5px 0 rgba(255,255,255,.95),
-    inset 0 0 0 1px color-mix(in srgb, white 45%, transparent),
-    inset 0 -10px 14px -8px color-mix(in srgb, var(--g2) 40%, white),
-    0 0 0 1px color-mix(in srgb, var(--f2) 75%, black),
-    0 0 26px 2px color-mix(in srgb, var(--f1) 45%, transparent),
-    0 22px 34px -16px color-mix(in srgb, var(--f2) 70%, black);
-  transition: transform .2s ease;
-}
-.glass-btn::before {
-  content: '';
-  position: absolute;
-  z-index: 2;
-  left: 2px; right: 2px; top: 2px;
-  height: 52%;
-  pointer-events: none;
-  border-radius: calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
-  background: linear-gradient(180deg, rgba(255,255,255,.62) 0%, rgba(255,255,255,.20) 55%, rgba(255,255,255,0) 100%);
-  -webkit-mask-image: radial-gradient(140% 100% at 50% 0%, #000 64%, transparent 65%);
-  mask-image: radial-gradient(140% 100% at 50% 0%, #000 64%, transparent 65%);
-  opacity: .85;
-}
-.glass-btn::after {
-  content: '';
-  position: absolute;
-  z-index: 3;
-  left: 12%; top: 3px;
-  width: 34%; height: 5px;
-  border-radius: 5px;
-  pointer-events: none;
-  background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,1) 40%, rgba(255,255,255,0));
-  filter: blur(.6px);
-  opacity: .9;
-}
-.glass-btn .btn-face {
-  position: relative;
-  z-index: 1;
-  width: 100%; height: 100%;
-  border-radius: calc(var(--r) - var(--bw) + 2px);
-  overflow: hidden;
-  background: var(--gf);
-  color: var(--on);
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 0 24px;
-}
-.glass-btn .btn-face::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  box-shadow:
-    inset 0 0 0 1px rgba(20,30,50,.20),
-    inset 0 3px 6px -2px rgba(0,0,0,.35),
-    inset 0 -2px 4px -2px rgba(255,255,255,.5);
-}
-.glass-btn .pi {
-  flex: none;
-  width: 50px; height: 50px;
-  border-radius: 50%;
-  background: linear-gradient(180deg, var(--on), #fff);
-  display: grid;
-  place-items: center;
-  box-shadow: inset 0 -2px 3px rgba(0,0,0,.12), 0 3px 8px rgba(0,0,0,.25);
-}
-.glass-btn .pi svg {
-  width: 22px; height: 22px;
-  margin-left: 3px;
-}
-.glass-btn .pi svg path { fill: var(--f1); }
-.glass-btn b {
-  font-size: 32px;
-  font-weight: 800;
-  display: block;
-  line-height: 1.05;
-  text-shadow: 0 1px 2px rgba(0,0,0,.2);
-}
-.glass-btn small {
-  font-size: 14px;
-  font-weight: 600;
-  opacity: .92;
-  white-space: nowrap;
-}
-
-.benchmark-desc {
-  flex: 1;
-  min-width: 280px;
-  font-size: 13.5px;
-  line-height: 1.55;
+.tuner-subtitle {
+  font-size: 13px;
   color: var(--theme-sub);
-}
-.benchmark-desc b {
-  color: var(--theme-text);
-}
-.formula-badge {
-  background: rgba(0,0,0,.06);
-  padding: 3px 7px;
-  border-radius: 5px;
-  font-family: monospace;
-  font-size: 12px;
-}
-[data-theme="dark"] .formula-badge {
-  background: rgba(255,255,255,.08);
+  margin-bottom: 20px;
+  line-height: 1.5;
 }
 
-/* ========================================================
-   GRID DE COMPARACIÓN DE OPCIONES DE CARÁTULA
-   ======================================================== */
-.cards-grid {
+/* 4 Comparativas del Híbrido */
+.hybrid-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
-  gap: 22px;
-  margin-top: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  margin-top: 14px;
 }
-
-.variant-card {
-  background: var(--panel-bg);
-  border: 1px solid var(--panel-border);
-  border-radius: 22px;
-  padding: 22px 18px 18px;
+.h-box {
+  background: rgba(255,255,255,.55);
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 20px;
+  padding: 18px 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
-  box-shadow: 0 4px 18px -6px rgba(40,50,70,.08);
 }
-[data-theme="dark"] .variant-card {
-  box-shadow: 0 8px 24px -10px rgba(0,0,0,.4);
+[data-theme="dark"] .h-box {
+  background: rgba(20,24,32,.55);
+  border-color: rgba(255,255,255,.07);
 }
 
-.variant-tag {
+.h-tag {
   position: absolute;
-  left: 18px;
-  top: 16px;
-  font-size: 11px;
+  left: 14px;
+  top: 14px;
+  font-size: 10.5px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .08em;
-  padding: 3px 8px;
+  padding: 2px 7px;
   border-radius: 6px;
-  background: rgba(0,0,0,.06);
+  background: rgba(0,0,0,.07);
   color: var(--theme-sub);
 }
-[data-theme="dark"] .variant-tag {
-  background: rgba(255,255,255,.08);
+[data-theme="dark"] .h-tag {
+  background: rgba(255,255,255,.1);
 }
-.variant-tag.fav {
-  background: #6E56CF;
+.h-tag.alert {
+  background: #f59e0b;
+  color: #fff;
+}
+.h-tag.fix {
+  background: #10b981;
   color: #fff;
 }
 
-.card-stage {
-  height: 260px;
+.h-stage {
+  height: 250px;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  margin: 14px 0 6px;
+  margin: 12px 0 6px;
 }
 
-/* Base de la carátula */
-.cov-base {
-  position: relative;
-  width: 160px;
-  height: 214px;
-  border-radius: var(--r, 22px);
-  padding: var(--bw, 8px);
-  box-sizing: border-box;
-  isolation: isolate;
-  user-select: none;
-  transform: scale(1.06);
-}
-.cov-base .face {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  height: 100%;
-  border-radius: calc(var(--r, 22px) - var(--bw, 8px) + 2px);
-  overflow: hidden;
-  background: #11141c;
-}
-.cov-base .face img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-/* ========================================================
-   ESTILOS ESPECÍFICOS DE LAS VARIACIONES
-   ======================================================== */
-
-/* --- OPCIÓN 1: CRISTAL CANÓNICO FIEL AL BOTÓN «JUGAR» ---
-   Exactas 6 capas de box-shadow, degradado 150° y bisel embutido */
-.v-fiel {
-  --r: 22px;
-  --bw: 8px;
-  background: linear-gradient(150deg,
-    color-mix(in srgb, var(--g1) 55%, white) 0%,
-    var(--f1) 50%,
-    var(--f2) 100%
-  );
-  box-shadow:
-    inset 0 1.5px 0 rgba(255,255,255,.95),
-    inset 0 0 0 1px color-mix(in srgb, white 45%, transparent),
-    inset 0 -10px 14px -8px color-mix(in srgb, var(--g2) 40%, white),
-    0 0 0 1px color-mix(in srgb, var(--f2) 75%, black),
-    0 0 24px 2px color-mix(in srgb, var(--f1) 45%, transparent),
-    0 20px 32px -14px color-mix(in srgb, var(--f2) 70%, black);
-}
-.v-fiel .face::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  box-shadow:
-    inset 0 0 0 1px rgba(20,30,50,.20),
-    inset 0 3px 6px -2px rgba(0,0,0,.35),
-    inset 0 -2px 4px -2px rgba(255,255,255,.5);
-}
-
-/* --- OPCIÓN 2: BISEL DE 5PX (PROPORCIÓN PERFECTA PARA CARÁTULA) ---
-   Mismo acabado joya de 6 sombras, pero adaptado a 5px para no tapar arte */
-.v-proporcional {
-  --r: 18px;
-  --bw: 5.5px;
-  background: linear-gradient(150deg,
-    color-mix(in srgb, var(--g1) 60%, white) 0%,
-    var(--f1) 45%,
-    var(--f2) 100%
-  );
-  box-shadow:
-    inset 0 1.2px 0 rgba(255,255,255,.98),
-    inset 0 0 0 1px color-mix(in srgb, white 50%, transparent),
-    inset 0 -7px 10px -5px color-mix(in srgb, var(--g2) 45%, white),
-    0 0 0 1px color-mix(in srgb, var(--f2) 75%, black),
-    0 0 22px 2px color-mix(in srgb, var(--f1) 45%, transparent),
-    0 18px 30px -12px color-mix(in srgb, var(--f2) 70%, black);
-}
-.v-proporcional .face::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  box-shadow:
-    inset 0 0 0 1px rgba(20,30,50,.20),
-    inset 0 2px 4px -1px rgba(0,0,0,.30);
-}
-
-/* --- OPCIÓN 3: CRISTAL CON RESPIRACIÓN CÁUSTICA ---
-   La luz en la base (--g2) y el resplandor pulsan suavemente */
-@keyframes caustic-breath {
-  0%, 100% {
-    box-shadow:
-      inset 0 1.5px 0 rgba(255,255,255,.95),
-      inset 0 0 0 1px color-mix(in srgb, white 45%, transparent),
-      inset 0 -8px 12px -7px color-mix(in srgb, var(--g2) 30%, white),
-      0 0 0 1px color-mix(in srgb, var(--f2) 75%, black),
-      0 0 18px 1px color-mix(in srgb, var(--f1) 35%, transparent),
-      0 20px 32px -14px color-mix(in srgb, var(--f2) 70%, black);
-  }
-  50% {
-    box-shadow:
-      inset 0 1.8px 0 rgba(255,255,255,1),
-      inset 0 0 0 1px color-mix(in srgb, white 60%, transparent),
-      inset 0 -14px 18px -7px color-mix(in srgb, var(--g2) 75%, white),
-      0 0 0 1px color-mix(in srgb, var(--f2) 80%, black),
-      0 0 32px 5px color-mix(in srgb, var(--f1) 65%, transparent),
-      0 22px 36px -12px color-mix(in srgb, var(--f2) 75%, black);
-  }
-}
-.v-breath {
-  --r: 20px;
-  --bw: 6.5px;
-  background: linear-gradient(150deg,
-    color-mix(in srgb, var(--g1) 55%, white) 0%,
-    var(--f1) 50%,
-    var(--f2) 100%
-  );
-  animation: caustic-breath 3.4s ease-in-out infinite;
-}
-.v-breath .face::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  box-shadow: inset 0 0 0 1px rgba(20,30,50,.20), inset 0 3px 5px -2px rgba(0,0,0,.35);
-}
-
-/* --- OPCIÓN 4: CRISTAL CON DESTELLO ESPECULAR (GLINT SWEEP) ---
-   Mantiene el marco estático idéntico a «Jugar» y añade un destello viajero */
-@keyframes glint-run {
-  0% { transform: translateX(-120%) rotate(25deg); opacity: 0; }
-  20% { opacity: .75; }
-  45% { transform: translateX(240%) rotate(25deg); opacity: 0; }
-  100% { transform: translateX(240%) rotate(25deg); opacity: 0; }
-}
-.v-glint {
-  --r: 20px;
-  --bw: 7px;
-  overflow: hidden;
-  background: linear-gradient(150deg,
-    color-mix(in srgb, var(--g1) 55%, white) 0%,
-    var(--f1) 50%,
-    var(--f2) 100%
-  );
-  box-shadow:
-    inset 0 1.5px 0 rgba(255,255,255,.95),
-    inset 0 0 0 1px color-mix(in srgb, white 45%, transparent),
-    inset 0 -10px 14px -8px color-mix(in srgb, var(--g2) 40%, white),
-    0 0 0 1px color-mix(in srgb, var(--f2) 75%, black),
-    0 0 24px 2px color-mix(in srgb, var(--f1) 45%, transparent),
-    0 20px 32px -14px color-mix(in srgb, var(--f2) 70%, black);
-}
-.v-glint::before {
-  content: '';
-  position: absolute;
-  inset: -50%;
-  width: 60px;
-  height: 200%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.8), transparent);
-  animation: glint-run 4.5s ease-in-out infinite;
-  pointer-events: none;
-  z-index: 5;
-}
-.v-glint .face::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  box-shadow: inset 0 0 0 1px rgba(20,30,50,.20), inset 0 3px 5px -2px rgba(0,0,0,.35);
-}
-
-/* --- OPCIÓN 5: HÍBRIDO CONIC CON ILUMINACIÓN Y BISEL 3D ---
-   Rotación 360° pero con la riqueza cromática y bisel del botón Jugar */
-@property --ang-j {
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 0deg;
-}
+/* Animación Conic compartida */
 @keyframes spin-hyb {
   to { --ang-j: 360deg; }
 }
-.v-hybrid {
-  --r: 18px;
-  --bw: 5.5px;
+
+/* 5. ORIGINAL (EL QUE CHIRRÍA):
+   Tiene:
+   - Línea exterior negra rígida de 1px (box-shadow 0 0 0 1px)
+   - Línea interior blanca rígida de 1px (inset 0 0 0 1px)
+   - Sombra y línea interior que muerde la imagen (.face::after)
+   - Radio interior con +2px que deforma las esquinas */
+.hyb-original {
+  position: relative;
+  width: 160px;
+  height: 214px;
+  border-radius: 18px;
+  padding: 5.5px;
+  box-sizing: border-box;
+  transform: scale(1.06);
   background: conic-gradient(from var(--ang-j),
     color-mix(in srgb, var(--g1) 65%, white) 0deg,
     var(--f1) 90deg,
@@ -589,37 +287,238 @@ h1 span {
     0 0 24px 2px color-mix(in srgb, var(--f1) 45%, transparent),
     0 18px 30px -12px color-mix(in srgb, var(--f2) 70%, black);
 }
-.v-hybrid .face::after {
+.hyb-original .face {
+  width: 100%; height: 100%;
+  border-radius: calc(18px - 5.5px + 2px); /* 14.5px: estrecha las esquinas */
+  overflow: hidden;
+  position: relative;
+}
+.hyb-original .face::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  pointer-events: none;
   box-shadow: inset 0 0 0 1px rgba(20,30,50,.20), inset 0 2px 4px -1px rgba(0,0,0,.30);
 }
+.hyb-original img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-/* Metadatos bajo cada tarjeta */
-.card-details {
-  width: 100%;
-  margin-top: 14px;
-  text-align: left;
-  border-top: 1px solid rgba(0,0,0,.06);
-  padding-top: 12px;
+/* 5A: SIN MICRO-LÍNEAS (LIMPIEZA TOTAL)
+   Eliminadas las 3 líneas duras de 1px:
+   - Cero línea exterior negra
+   - Cero línea interior blanca
+   - Cero línea cortando el arte
+   Solo el degradado fluido + sombra física exterior suave */
+.hyb-clean {
+  position: relative;
+  width: 160px;
+  height: 214px;
+  border-radius: 18px;
+  padding: 5.5px;
+  box-sizing: border-box;
+  transform: scale(1.06);
+  background: conic-gradient(from var(--ang-j),
+    color-mix(in srgb, var(--g1) 65%, white) 0deg,
+    var(--f1) 90deg,
+    var(--f2) 180deg,
+    color-mix(in srgb, var(--g2) 65%, white) 270deg,
+    color-mix(in srgb, var(--g1) 65%, white) 360deg
+  );
+  animation: spin-hyb 3.2s linear infinite;
+  box-shadow:
+    inset 0 1.2px 0 rgba(255,255,255,.9),
+    inset 0 -8px 12px -6px color-mix(in srgb, var(--g2) 45%, white),
+    0 0 24px 2px color-mix(in srgb, var(--f1) 40%, transparent),
+    0 18px 30px -12px rgba(20,30,50,.55);
 }
-[data-theme="dark"] .card-details {
+.hyb-clean .face {
+  width: 100%; height: 100%;
+  border-radius: calc(18px - 5.5px); /* 12.5px exactos concéntricos */
+  overflow: hidden;
+  position: relative;
+}
+.hyb-clean img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* 5B: BISEL SUAVE CONTINUO (SOLO LUZ)
+   Mantiene el volumen tridimensional pero usando degradado de luz difusa
+   en lugar de líneas secas de 1px. */
+.hyb-bevel {
+  position: relative;
+  width: 160px;
+  height: 214px;
+  border-radius: 18px;
+  padding: 5px;
+  box-sizing: border-box;
+  transform: scale(1.06);
+  background: conic-gradient(from var(--ang-j),
+    color-mix(in srgb, var(--g1) 70%, white) 0deg,
+    var(--f1) 90deg,
+    var(--f2) 180deg,
+    color-mix(in srgb, var(--g2) 70%, white) 270deg,
+    color-mix(in srgb, var(--g1) 70%, white) 360deg
+  );
+  animation: spin-hyb 3.2s linear infinite;
+  box-shadow:
+    inset 0 1.5px 2px rgba(255,255,255,.85),
+    inset 0 -6px 10px -4px color-mix(in srgb, var(--g2) 60%, white),
+    0 2px 8px rgba(0,0,0,.15),
+    0 18px 30px -12px color-mix(in srgb, var(--f2) 65%, black);
+}
+.hyb-bevel .face {
+  width: 100%; height: 100%;
+  border-radius: 13px; /* Concéntrico exacto 18 - 5 = 13 */
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 0 4px rgba(0,0,0,.35); /* La sombra cae sobre el marco, no sobre la imagen */
+}
+.hyb-bevel img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* 5C: GROSOR GENEROSO 7.5PX (IGUAL AL BOTÓN JUGAR)
+   El problema a veces es que un borde de 5.5px es demasiado estrecho para
+   albergar biseles y degradados. Con 7.5px respira con la presencia del botón. */
+.hyb-thick {
+  position: relative;
+  width: 160px;
+  height: 214px;
+  border-radius: 20px;
+  padding: 7.5px;
+  box-sizing: border-box;
+  transform: scale(1.06);
+  background: conic-gradient(from var(--ang-j),
+    color-mix(in srgb, var(--g1) 65%, white) 0deg,
+    var(--f1) 90deg,
+    var(--f2) 180deg,
+    color-mix(in srgb, var(--g2) 65%, white) 270deg,
+    color-mix(in srgb, var(--g1) 65%, white) 360deg
+  );
+  animation: spin-hyb 3.2s linear infinite;
+  box-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,.95),
+    inset 0 -10px 14px -8px color-mix(in srgb, var(--g2) 45%, white),
+    0 0 26px 2px color-mix(in srgb, var(--f1) 40%, transparent),
+    0 20px 32px -14px color-mix(in srgb, var(--f2) 70%, black);
+}
+.hyb-thick .face {
+  width: 100%; height: 100%;
+  border-radius: calc(20px - 7.5px); /* 12.5px */
+  overflow: hidden;
+  position: relative;
+}
+.hyb-thick img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.h-info {
+  margin-top: 12px;
+  width: 100%;
+  border-top: 1px solid rgba(0,0,0,.06);
+  padding-top: 10px;
+}
+[data-theme="dark"] .h-info {
   border-top-color: rgba(255,255,255,.06);
 }
-.card-details h4 {
+.h-info h4 {
   margin: 0 0 4px;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 800;
 }
-.card-details p {
+.h-info p {
   margin: 0;
   font-size: 12px;
   color: var(--theme-sub);
   line-height: 1.45;
 }
+
+/* ========================================================
+   LABORATORIO EN VIVO CON SLIDERS (CONTROLES INTERACTIVOS)
+   ======================================================== */
+.live-tuner-box {
+  background: rgba(255,255,255,.75);
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 20px;
+  padding: 18px 24px;
+  margin-top: 24px;
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+[data-theme="dark"] .live-tuner-box {
+  background: rgba(24,28,38,.75);
+  border-color: rgba(255,255,255,.07);
+}
+.tuner-preview {
+  flex: none;
+  width: 220px;
+  display: flex;
+  justify-content: center;
+}
+.tuner-sliders {
+  flex: 1;
+  min-width: 300px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.slider-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.slider-item label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--theme-text);
+  display: flex;
+  justify-content: space-between;
+}
+.slider-item input[type="range"] {
+  accent-color: #6E56CF;
+  cursor: pointer;
+}
+.toggle-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+}
+.toggle-item input[type="checkbox"] {
+  accent-color: #6E56CF;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Elemento del laboratorio interactivo */
+#interactive-card {
+  position: relative;
+  width: 160px;
+  height: 214px;
+  border-radius: 18px;
+  padding: 5.5px;
+  box-sizing: border-box;
+  transform: scale(1.06);
+  background: conic-gradient(from var(--ang-j),
+    color-mix(in srgb, var(--g1) 65%, white) 0deg,
+    var(--f1) 90deg,
+    var(--f2) 180deg,
+    color-mix(in srgb, var(--g2) 65%, white) 270deg,
+    color-mix(in srgb, var(--g1) 65%, white) 360deg
+  );
+  animation: spin-hyb 3.2s linear infinite;
+  box-shadow:
+    inset 0 1.2px 0 rgba(255,255,255,.9),
+    inset 0 -8px 12px -6px color-mix(in srgb, var(--g2) 45%, white),
+    0 0 24px 2px color-mix(in srgb, var(--f1) 40%, transparent),
+    0 18px 30px -12px rgba(20,30,50,.55);
+}
+#interactive-card .face {
+  width: 100%; height: 100%;
+  border-radius: 12.5px;
+  overflow: hidden;
+  position: relative;
+}
+#interactive-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 </style>
 </head>
@@ -628,8 +527,8 @@ h1 span {
 <header>
   <div class="header-top">
     <h1>
-      Adaptación de Borde «Botón Jugar» a Carátulas
-      <span>Propuestas Interactivas</span>
+      Afinación del Borde Híbrido
+      <span>Laboratorio de Diagnóstico</span>
     </h1>
     <div style="display:flex;gap:8px;align-items:center;">
       <button class="btn-pill" id="theme-btn" onclick="toggleTheme()">
@@ -648,118 +547,118 @@ h1 span {
 
 <div class="container">
 
-  <!-- SECCIÓN BENCHMARK: EL BOTÓN JUGAR ORIGINAL -->
-  <div class="benchmark-section">
-    <div class="benchmark-header">
-      <div class="benchmark-title">
-        <span class="benchmark-tag">Referencia Canónica</span>
-        <h2>Botón «Jugar» original (Detail.svelte) con los colores de este juego</h2>
-      </div>
-      <div style="font-size:12px;color:var(--theme-sub);">
-        Ángulo estático <span class="formula-badge">150°</span> · 6 capas de <span class="formula-badge">box-shadow</span> · Bisel <span class="formula-badge">8px</span>
-      </div>
+  <!-- SECCIÓN TUNER: DIAGNÓSTICO DEL HÍBRIDO -->
+  <div class="tuner-section">
+    <div class="tuner-title">
+      <h2>🔍 Diagnóstico: ¿Por qué chirriaba el borde pequeño en la Opción 5?</h2>
+      <span style="font-size:12px;font-weight:800;color:var(--theme-sub);">Compara las 4 correcciones abajo</span>
     </div>
-    <div class="benchmark-stage">
-      <div class="play-btn-wrapper">
-        <div class="glass-btn">
-          <div class="btn-face">
-            <span class="pi">
-              <svg viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"></path></svg>
-            </span>
-            <span>
-              <b>Jugar</b>
-              <small id="bench-via">Con Ryujinx</small>
-            </span>
+    <div class="tuner-subtitle">
+      En la opción híbrida anterior confluían <b>3 micro-líneas rígidas de 1px</b> (un alambre exterior oscuro, un alambre interior blanco y una sombra que mordía el arte del juego), además de una fórmula de redondeo que estrangulaba las esquinas haciéndolas parecer más delgadas. Abajo tienes las soluciones lado a lado para ver cuál es exactamente la que te sienta bien:
+    </div>
+
+    <div class="hybrid-grid">
+
+      <!-- 5. ORIGINAL -->
+      <div class="h-box">
+        <span class="h-tag alert">El que chirriaba</span>
+        <div class="h-stage">
+          <div class="hyb-original">
+            <div class="face">
+              <img class="cov-img" alt="" draggable="false">
+            </div>
           </div>
         </div>
+        <div class="h-info">
+          <h4>5. Original con 3 micro-líneas</h4>
+          <p>Lleva línea oscura exterior rígida (1px), línea blanca concéntrica (1px) y sombra que pisa la imagen. Las esquinas se afinan a 3.5px por desajuste de radio.</p>
+        </div>
       </div>
-      <div class="benchmark-desc">
-        <b>¿Por qué destaca tanto este borde?</b><br>
-        A diferencia de un marco plano o un anillo lineal, utiliza una dirección de luz estática a <b>150°</b> que proyecta luz arriba-izquierda (<span class="formula-badge">--g1 + blanco</span>) y sombra abajo-derecha (<span class="formula-badge">--f2</span>), rematada con un destello blanco superior tallado de 1.5px y un rebote cáustico en la base. Abajo puedes ver cómo luce adaptado al rectángulo de la carátula:
+
+      <!-- 5A. LIMPIO -->
+      <div class="h-box">
+        <span class="h-tag fix">Solución 1: Limpio</span>
+        <div class="h-stage">
+          <div class="hyb-clean">
+            <div class="face">
+              <img class="cov-img" alt="" draggable="false">
+            </div>
+          </div>
+        </div>
+        <div class="h-info">
+          <h4>5A. Sin micro-líneas (100% Fluido)</h4>
+          <p><b>Eliminadas las 3 líneas duras de 1px</b>. El degradado va limpio directo a la carátula. Radio concéntrico exacto (12.5px) para que las esquinas no se estrechen.</p>
+        </div>
       </div>
+
+      <!-- 5B. BISEL DE LUZ -->
+      <div class="h-box">
+        <span class="h-tag fix">Solución 2: Solo Luz</span>
+        <div class="h-stage">
+          <div class="hyb-bevel">
+            <div class="face">
+              <img class="cov-img" alt="" draggable="false">
+            </div>
+          </div>
+        </div>
+        <div class="h-info">
+          <h4>5B. Bisel de Luz Difusa (Sin alambres)</h4>
+          <p>Mantiene la tridimensionalidad pero sustituye los alambres secos por un bisel de luz suave arriba y cáustica abajo. El arte queda 100% intocado.</p>
+        </div>
+      </div>
+
+      <!-- 5C. GROSOR 7.5PX -->
+      <div class="h-box">
+        <span class="h-tag fix">Solución 3: Más cuerpo</span>
+        <div class="h-stage">
+          <div class="hyb-thick">
+            <div class="face">
+              <img class="cov-img" alt="" draggable="false">
+            </div>
+          </div>
+        </div>
+        <div class="h-info">
+          <h4>5C. Grosor Generoso 7.5px (Como Jugar)</h4>
+          <p>Aumenta el grosor de 5.5px a 7.5px para darle el mismo empaque físico que tiene el botón de Jugar en la pantalla de detalle.</p>
+        </div>
+      </div>
+
     </div>
-  </div>
 
-  <!-- GRID DE OPCIONES PARA LA CARÁTULA -->
-  <div class="cards-grid">
-
-    <!-- 1. FIEL AL BOTÓN -->
-    <div class="variant-card">
-      <span class="variant-tag fav">Recomendado</span>
-      <div class="card-stage">
-        <div class="cov-base v-fiel">
+    <!-- LABORATORIO EN VIVO CON SLIDERS -->
+    <div class="live-tuner-box">
+      <div class="tuner-preview">
+        <div id="interactive-card">
           <div class="face">
             <img class="cov-img" alt="" draggable="false">
           </div>
         </div>
       </div>
-      <div class="card-details">
-        <h4>1. Cristal Canónico 150° (Fiel al botón)</h4>
-        <p>Misma física: marco de 8px, ángulo a 150°, 6 capas de sombras y luz cáustica en la base. La carátula queda embutida como en una vitrina de cristal.</p>
-      </div>
-    </div>
-
-    <!-- 2. PROPORCIONAL -->
-    <div class="variant-card">
-      <span class="variant-tag">Estilizado</span>
-      <div class="card-stage">
-        <div class="cov-base v-proporcional">
-          <div class="face">
-            <img class="cov-img" alt="" draggable="false">
-          </div>
+      <div class="tuner-sliders">
+        <div class="slider-item">
+          <label>Grosor del Borde: <span id="val-bw">5.5px</span></label>
+          <input type="range" id="range-bw" min="3" max="10" step="0.5" value="5.5" oninput="updateInteractive()">
         </div>
-      </div>
-      <div class="card-details">
-        <h4>2. Bisel Cristal 5.5px (Proporción Óptima)</h4>
-        <p>El mismo acabado joya tridimensional de 6 sombras, pero ajustado a 5.5px para dejar visible el 95% del arte de la carátula sin abultar.</p>
-      </div>
-    </div>
-
-    <!-- 3. RESPIRACIÓN CÁUSTICA -->
-    <div class="variant-card">
-      <span class="variant-tag">Con Vida</span>
-      <div class="card-stage">
-        <div class="cov-base v-breath">
-          <div class="face">
-            <img class="cov-img" alt="" draggable="false">
-          </div>
+        <div class="slider-item">
+          <label>Radio de Esquinas: <span id="val-r">18px</span></label>
+          <input type="range" id="range-r" min="12" max="24" step="1" value="18" oninput="updateInteractive()">
         </div>
-      </div>
-      <div class="card-details">
-        <h4>3. Respiración Cáustica (Pulso de Luz)</h4>
-        <p>Estructura física idéntica al botón Jugar, pero la luz que rebota en la base y el aura ambiental respiran suavemente en un ciclo sinusoidal de 3.4s.</p>
-      </div>
-    </div>
-
-    <!-- 4. DESTELLO VIAJERO (GLINT) -->
-    <div class="variant-card">
-      <span class="variant-tag">Especular</span>
-      <div class="card-stage">
-        <div class="cov-base v-glint">
-          <div class="face">
-            <img class="cov-img" alt="" draggable="false">
-          </div>
-        </div>
-      </div>
-      <div class="card-details">
-        <h4>4. Destello Viajero sobre Cristal</h4>
-        <p>El marco estático idéntico al botón «Jugar» recibe periódicamente (cada 4.5s) una caricia de luz blanca que recorre el bisel de cristal pulido.</p>
-      </div>
-    </div>
-
-    <!-- 5. HÍBRIDO CONIC CON BISEL 3D -->
-    <div class="variant-card">
-      <span class="variant-tag">Híbrido</span>
-      <div class="card-stage">
-        <div class="cov-base v-hybrid">
-          <div class="face">
-            <img class="cov-img" alt="" draggable="false">
-          </div>
-        </div>
-      </div>
-      <div class="card-details">
-        <h4>5. Giro Conic con Profundidad 3D</h4>
-        <p>Combina la rotación continua 360° perimétrica con los tonos <span class="formula-badge">--g1/--g2</span> más claros y las 6 capas de bisel y cáustica tridimensional.</p>
+        <label class="toggle-item">
+          <input type="checkbox" id="chk-darkwire" onchange="updateInteractive()">
+          Línea oscura exterior de 1px (Alambre)
+        </label>
+        <label class="toggle-item">
+          <input type="checkbox" id="chk-whitewire" onchange="updateInteractive()">
+          Línea blanca interior de 1px
+        </label>
+        <label class="toggle-item">
+          <input type="checkbox" id="chk-inshadow" onchange="updateInteractive()">
+          Sombra que pisa la carátula
+        </label>
+        <label class="toggle-item">
+          <input type="checkbox" id="chk-caustic" checked onchange="updateInteractive()">
+          Cáustica inferior de luz (--g2)
+        </label>
       </div>
     </div>
 
@@ -784,6 +683,7 @@ function init() {
     cBar.appendChild(btn);
   });
   applyGame(curKey);
+  updateInteractive();
 }
 
 function selectGame(k) {
@@ -802,11 +702,48 @@ function applyGame(k) {
   r.setProperty('--g2', g.g2);
   r.setProperty('--gf', `linear-gradient(115deg, ${g.f1}, ${g.f2})`);
 
-  document.getElementById('bench-via').innerText = g.via;
-
   document.querySelectorAll('.cov-img').forEach(img => {
     img.src = g.b64;
   });
+  updateInteractive();
+}
+
+function updateInteractive() {
+  const bw = parseFloat(document.getElementById('range-bw').value);
+  const r = parseFloat(document.getElementById('range-r').value);
+  const darkWire = document.getElementById('chk-darkwire').checked;
+  const whiteWire = document.getElementById('chk-whitewire').checked;
+  const inShadow = document.getElementById('chk-inshadow').checked;
+  const caustic = document.getElementById('chk-caustic').checked;
+
+  document.getElementById('val-bw').innerText = bw + 'px';
+  document.getElementById('val-r').innerText = r + 'px';
+
+  const card = document.getElementById('interactive-card');
+  const face = card.querySelector('.face');
+
+  card.style.padding = bw + 'px';
+  card.style.borderRadius = r + 'px';
+  face.style.borderRadius = Math.max(4, r - bw) + 'px';
+
+  // Construir box-shadow
+  let shadows = [
+    'inset 0 1.2px 0 rgba(255,255,255,.95)',
+    '0 0 24px 2px color-mix(in srgb, var(--f1) 40%, transparent)',
+    '0 18px 30px -12px rgba(20,30,50,.55)'
+  ];
+
+  if (whiteWire) shadows.push('inset 0 0 0 1px color-mix(in srgb, white 45%, transparent)');
+  if (caustic) shadows.push('inset 0 -8px 12px -6px color-mix(in srgb, var(--g2) 50%, white)');
+  if (darkWire) shadows.push('0 0 0 1px color-mix(in srgb, var(--f2) 75%, black)');
+
+  card.style.boxShadow = shadows.join(', ');
+
+  if (inShadow) {
+    face.style.boxShadow = 'inset 0 0 0 1px rgba(20,30,50,.20), inset 0 2px 4px -1px rgba(0,0,0,.30)';
+  } else {
+    face.style.boxShadow = 'none';
+  }
 }
 
 function toggleTheme() {
