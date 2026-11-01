@@ -1,6 +1,7 @@
 <script lang="ts">
   import { app } from '../lib/store.svelte';
   import { buildBoard } from '../lib/milista.svelte';
+  import { setTitlesTab } from '../lib/controller.svelte';
   import { fmtDur } from '../lib/format';
   import Thumb from '../components/Thumb.svelte';
 
@@ -34,7 +35,7 @@
   {#each bands as band (band.key)}
     <section class="band st-{band.key}" data-band={band.key} style="--c:{band.color}">
       <div class="vt"><span>{band.label}</span></div>
-      <div class="its">
+      <div class="its" onwheel={(e) => { if (e.deltaY) { e.currentTarget.scrollLeft += e.deltaY; e.preventDefault(); } }}>
         {#each band.items as it (it.ti)}
           {@const t = titles[it.ti]}
           {#if band.key === 'done' && it.yearStart}
@@ -91,7 +92,20 @@
     </section>
   {/each}
   {#if !bands.length}
-    <div class="vacio">Aún no hay juegos en tu lista. Marca el estado de un juego con Y.</div>
+    <button
+      type="button"
+      class="vacio fx"
+      class:f={app.focus === 'list-empty'}
+      data-k="list-empty"
+      data-act="list-catalog"
+      tabindex="-1"
+      onclick={() => setTitlesTab('all')}
+    >
+      <p>Aún no hay juegos en tu lista.</p>
+      <span class="btn-cat">
+        <span class="btn a">A</span> Ir al Catálogo para añadir juegos
+      </span>
+    </button>
   {/if}
 </div>
 
@@ -297,8 +311,44 @@
     color: var(--ink-2);
   }
   .vacio {
+    border: none;
+    font: inherit;
     margin: auto;
     font-size: var(--t-m);
-    color: var(--ink-3);
+    color: var(--ink-2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 28px 36px;
+    border-radius: var(--r-m);
+    background: linear-gradient(180deg, var(--glass-top) 0%, var(--glass-mid) 46%, var(--glass-bot) 100%);
+    box-shadow:
+      inset 0 1.5px 0 rgba(255,255,255,1),
+      inset 0 0 0 1px rgba(255,255,255,.55),
+      inset 0 -10px 14px -8px rgba(255,255,255,.95),
+      0 0 0 1px rgba(95,110,135,.24),
+      0 18px 30px -16px rgba(40,50,70,.42);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.3, 1);
+  }
+  .vacio.f {
+    background: var(--glass-chip);
+    box-shadow: var(--ring);
+    transform: scale(1.02);
+  }
+  .vacio p {
+    margin: 0;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--ink-2);
+  }
+  .btn-cat {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--ink);
   }
 </style>

@@ -4,7 +4,7 @@ import { app, lastUse, STATUS_LABEL, STATUS_ORDER, type ListShelf } from './stor
 import { backend } from './backend';
 import { blip } from './sound';
 import { openAddColl } from './coleccion.svelte';
-import { bump, closeOverlay, openTitle, patchConfig, playTitle, popOverlay, pushOverlay, setFocus, toast } from './controller.svelte';
+import { bump, closeOverlay, openTitle, patchConfig, playTitle, popOverlay, pushOverlay, setFocus, setTitlesTab, toast } from './controller.svelte';
 import { RAINBOW } from './icons';
 import { fmtShort, nGames } from './format';
 import type { GameStatus, Title } from './types';
@@ -220,6 +220,7 @@ function togglePin() {
 
 function boardMove(dx: number, dy: number) {
   const bands = buildBoard();
+  if (!bands.length) { bump(document.querySelector('#screen .fx.f'), dx, dy); return; }
   const at = boardAt(app.t, bands);
   if (!at) {
     const f = bands[0]?.items[0]?.ti;
@@ -372,7 +373,9 @@ export function listCmd(c: string): boolean {
     case 'lb': listShift(-1); return true;
     case 'rb': listShift(1); return true;
     case 'a':
-      if (listHas(app.t)) openTitle(app.t); else bump(document.querySelector('#screen .fx.f'), 0, 0);
+      if (listHas(app.t)) openTitle(app.t);
+      else if (!buildBoard().length) setTitlesTab('all');
+      else bump(document.querySelector('#screen .fx.f'), 0, 0);
       return true;
     case 'x': {
       if (onBoard()) { if (listHas(app.t)) togglePin(); else bump(document.querySelector('#screen .fx.f'), 0, 0); return true; }

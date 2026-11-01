@@ -2,7 +2,7 @@
   import { app, coverHue, LIST_COLOR, TITLE_FILTERS, TITLE_ORDER_LABEL, TITLES_TABS, type ListShelf } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { fmtAgo, fmtDur, fmtShort, nCapturas } from '../lib/format';
-  import { setFocus, titlesGrid, viewPos } from '../lib/controller.svelte';
+  import { setFocus, titlesGrid, viewPos, setTitlesTab, cycleTitleOrder } from '../lib/controller.svelte';
   import { titleHex } from '../lib/collections';
   import { hexToRgb, rgbToLch } from '../lib/oklch';
   import TopBar from '../components/TopBar.svelte';
@@ -11,7 +11,7 @@
   import Shelf, { type ShelfItem } from '../components/Shelf.svelte';
   import CollTab from './CollTab.svelte';
   import MiListaDual from './MiListaDual.svelte';
-  import { computeMonthPositions, finShelfSub, itemLabel, LIST_VIS, SHELF_STEP, shelfSub } from '../lib/milista.svelte';
+  import { buildBoard, computeMonthPositions, finShelfSub, itemLabel, LIST_VIS, SHELF_STEP, shelfSub } from '../lib/milista.svelte';
   import { collFocusAccent } from '../lib/coleccion.svelte';
   import { inkFor } from '../lib/ops.svelte';
 
@@ -29,6 +29,7 @@
   const pg = $derived(Math.floor(q / PS));
   // Pestaña de la categoría: Todos, Mi lista o Colecciones.
   const tab = $derived(app.titlesTab);
+  const hasListTitles = $derived(buildBoard().length > 0);
   // «Mi lista»: estanterías por estado. Se pintan la enfocada y sus vecinas; cada una con el color fijo de su estado.
   const shelves = $derived(app.shelves);
   const focusShelf = $derived(shelves.findIndex((s) => s.items.includes(app.t)));
@@ -184,13 +185,16 @@
 <div class="ambwash" style={wash}></div>
 <TopBar crumbs={['Inicio', P?.name ?? '']} dots={grid && tab === 'all' ? pages : 0} dot={pg} />
 
-<div class="ttabs" class:car={!grid && tab === 'all'} class:list-tabs={tab === 'list'} style={tabsAcc ? `--acc:${tabsAcc.c};--acc-ink:${tabsAcc.dark ? '#3a2f00' : '#fff'}` : ''}>
+<div class="ttabs" class:car={!grid && tab === 'all'} class:list-tabs={tab === 'list'} style={tabsAcc ? `--acc:${tabsAcc.c};--acc-ink:#fff` : ''}>
   <span class="btn sh" data-hact="lt">LT</span>
   {#each TITLES_TABS as [f, label]}
-    <span class="tflt" class:on={tab === f}>{label}</span>
+    <button type="button" class="tflt" class:on={tab === f} onclick={() => setTitlesTab(f)}>{label}</button>
   {/each}
   <span class="btn sh" data-hact="rt">RT</span>
-  {#if tab === 'all' && titles.length > 1}<span class="btn x" data-hact="x">X</span><span class="tflt tord">{TITLE_ORDER_LABEL[app.titleOrder]}</span>{/if}
+  {#if tab === 'all' && titles.length > 1}
+    <button type="button" class="btn x" data-hact="x" onclick={cycleTitleOrder}>X</button>
+    <button type="button" class="tflt tord" onclick={cycleTitleOrder}>{TITLE_ORDER_LABEL[app.titleOrder]}</button>
+  {/if}
   {#if tab === 'all' && filtered}<span class="tflt tchip" data-hact="nofilter" title="Quitar el filtro">{filterName}<small>{vis.length}</small><b aria-label="Quitar el filtro">✕</b></span>{/if}
   {#if tab === 'all'}
     <div class="tsearch" class:has-val={Boolean(app.catalogSearch)}>
@@ -217,7 +221,7 @@
 {#snippet fhead(t: NonNullable<typeof cur>, a: { c: string; dark?: boolean }, chip: string)}
   <div class="thead">
     <h3>{t.name}</h3>
-    <span class="chip" style="background:{a.c};color:{a.dark ? '#3a2f00' : '#fff'}">{chip}</span>
+    <span class="chip" style="background:{a.c};color:#fff">{chip}</span>
     {#if t.playSeconds >= 60}<span>Jugado <b>{fmtDur(t.playSeconds)}</b></span>{/if}
     {#if t.lastPlayed}<span>Última partida <b>{fmtAgo(t.lastPlayed).toLowerCase()}</b></span>
     {:else if t.shots.length}<span>Última captura <b>{fmtShort(t.shots[0].date)}</b></span>{/if}
@@ -249,7 +253,7 @@
       {@const a = app.titleAcc(app.p, app.t)}
       <div class="thead">
         <h3>{cur.name}</h3>
-        <span class="chip" style="background:{a.c};color:{a.dark ? '#3a2f00' : '#fff'}">{cur.shots.length ? nCapturas(cur.shots.length) : 'Sin capturas'}</span>
+        <span class="chip" style="background:{a.c};color:#fff">{cur.shots.length ? nCapturas(cur.shots.length) : 'Sin capturas'}</span>
         {#if cur.playSeconds >= 60}<span>Jugado <b>{fmtDur(cur.playSeconds)}</b></span>{/if}
         {#if cur.lastPlayed}<span>Última partida <b>{fmtAgo(cur.lastPlayed).toLowerCase()}</b></span>
         {:else if cur.shots.length}<span>Última captura <b>{fmtShort(cur.shots[0].date)}</b></span>{/if}
@@ -314,36 +318,48 @@
 
 <!-- Pistas: solo lo principal de cada pestaña; el resto (filtro, tamaño, audio, Ajustes) está en Start. -->
 {#if tab === 'list'}
-  <Hints list={[
-    ['A', 'Abrir', 'a'],
-    ['X', 'Fijar', 'x'],
-    ['Y', 'Opciones', 'y'],
-    ['LB/RB', 'Pestaña', 'rb'],
-    ['Start', 'Menú', 'menu'],
-    ['B', 'Volver', 'b'],
-  ]} />
+  {#if !hasListTitles}
+    <Hints list={[
+      ['A', 'Ir al Catálogo', 'a'],
+      ['LT/RT', 'Pestaña', 'rt'],
+      ['Start', 'Menú', 'menu'],
+      ['B', 'Volver', 'b'],
+    ]} />
+  {:else}
+    <Hints list={[
+      ['A', 'Abrir', 'a'],
+      ['X', 'Fijar', 'x'],
+      ['Y', 'Opciones', 'y'],
+      ['LT/RT', 'Pestaña', 'rt'],
+      ['Start', 'Menú', 'menu'],
+      ['B', 'Volver', 'b'],
+    ]} />
+  {/if}
 {:else if tab === 'coll'}
   <Hints list={[
     ['A', app.collAt.c >= app.collShelves.length ? 'Nueva colección' : 'Abrir', 'a'],
     ...(app.collAt.c < app.collShelves.length ? [['X', 'Jugar / Capturas', 'x'] as H, ['Y', 'Editar', 'y'] as H] : []),
-    ['LB/RB', 'Pestaña', 'rb'],
+    ['LT/RT', 'Pestaña', 'rt'],
     ['Start', 'Menú', 'menu'],
     ['B', 'Volver', 'b'],
   ]} />
 {:else if titles.length === 0}
-  <Hints list={[['A', 'Añadir juego', 'a'], ['LB/RB', 'Pestaña', 'rb'], ['B', 'Volver', 'b']]} />
+  <Hints list={[['A', 'Añadir juego', 'a'], ['LT/RT', 'Pestaña', 'rt'], ['B', 'Volver', 'b']]} />
 {:else}
   <Hints list={[
     ['A', 'Abrir', 'a'],
     ...(cur?.launchable ? [['X', 'Jugar', 'x'] as H] : []),
     ['Y', 'Buscar / Vista', 'y'],
-    ['LB/RB', 'Pestaña', 'rb'],
-    ['LT/RT', 'Subir / bajar página', 'rt'],
+    ['LB/RB', 'Página', 'rb'],
+    ['LT/RT', 'Pestaña', 'rt'],
     ['Start', 'Menú', 'menu'],
     ['B', 'Volver', 'b'],
   ]} />
 {/if}
   <style>
+  button.tflt { border: none; font: inherit; cursor: pointer; }
+  button.tflt.tord { background: transparent; box-shadow: none; }
+  button.btn.x { border: none; font: inherit; cursor: pointer; }
   .ttabs.list-tabs { top: 72px; }
   .tsearch {
     height: 32px;

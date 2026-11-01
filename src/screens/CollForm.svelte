@@ -55,7 +55,7 @@
   />
 {:else}
   <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) collFormCmd('b'); }}>
-    <div class="glass setpanel cfpanel" style="--acc:{acc.c};--acc-ink:{acc.dark ? 'var(--ink)' : 'var(--on)'};height:{H}px;top:{(720 - H) / 2}px">
+    <div class="glass setpanel cfpanel" style="--acc:{acc.c};--acc-ink:var(--on);height:{H}px;top:{(720 - H) / 2}px">
       <div class="face">
         <h2>{f.id ? 'Editar colección' : 'Nueva colección'}</h2>
         <p class="msub">{sub}</p>

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { app } from '../lib/store.svelte';
   import { RAINBOW } from '../lib/icons';
-  import { accentForHue, inkDark } from '../lib/oklch';
+  import { accentForHue } from '../lib/oklch';
   import { accentCmd, accentFocus, accentPickColor, applyAccent, cancelAccent, curTitle } from '../lib/ops.svelte';
   import Hints from '../components/Hints.svelte';
 
@@ -68,7 +68,7 @@
       </div>
 
       <div class="accprev">
-        <span class="chip" style="background:{cur ?? (autoColor || app.chrome.c)};color:{inkDark(cur ?? (autoColor || app.chrome.c)) ? 'var(--ink)' : 'var(--on)'}" data-testid="acc-chip">
+        <span class="chip" style="background:{cur ?? (autoColor || app.chrome.c)};color:var(--on)" data-testid="acc-chip">
           {a.row === 0 ? 'Automático' : (cur ?? '')}
         </span>
         <span class="fhint">Se ve al instante en la ficha. A lo guarda; B cancela.</span>

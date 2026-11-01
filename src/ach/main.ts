@@ -19,11 +19,11 @@ const SHEEN = 'cubic-bezier(.4,0,.2,1)';
 const STAR = '<svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M5 0 6 4 10 5 6 6 5 10 4 6 0 5 4 4Z" fill="currentColor"/></svg>';
 /** Colores de rareza (los mismos que la tarjeta de logros de la app) y destellos que sueltan. */
 const RAR = [
-  { label: 'Común', color: '#9fc0dc', spk: 0 },
-  { label: 'Poco común', color: '#4fc3a1', spk: 2 },
-  { label: 'Raro', color: '#b67cf0', spk: 3 },
-  { label: 'Ultra raro', color: '#f2b807', spk: 6 },
-  { label: 'Legendario', color: '#ff7a45', spk: 8 },
+  { label: 'Común', color: '#00a0d8', spk: 0 },
+  { label: 'Poco común', color: '#3bb54a', spk: 2 },
+  { label: 'Raro', color: '#f27a1a', spk: 3 },
+  { label: 'Ultra raro', color: '#e8384f', spk: 6 },
+  { label: 'Legendario', color: '#9a4bd8', spk: 8 },
 ];
 const FALLBACK = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#4a5568"/><text x="32" y="43" font-size="30" text-anchor="middle">🏆</text></svg>');
 

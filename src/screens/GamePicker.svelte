@@ -33,7 +33,7 @@
   }
 </script>
 
-<div class="scrim pkscrim" role="presentation" style="--acc:{acc.c};--acc-ink:{acc.dark ? 'var(--ink)' : 'var(--on)'}">
+<div class="scrim pkscrim" role="presentation" style="--acc:{acc.c};--acc-ink:var(--on)">
   <div class="pkhead">
     <h2>Elige los juegos</h2>
     <p>{f.name || 'Nueva colección'} · {plat?.name ?? ''}</p>

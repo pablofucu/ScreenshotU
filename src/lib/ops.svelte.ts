@@ -657,6 +657,6 @@ export function accentCmd(c: string) {
 }
 
 /** Texto de tinta para un color elegido (se usa en el selector). */
-export const inkFor = (hex: string) => (inkDark(hex) ? '#3a2f00' : '#fff');
+export const inkFor = (_hex: string) => '#fff';
 export const fileLabel = (p: string) => (p ? shortFile(p) : '');
 export type { Shot };

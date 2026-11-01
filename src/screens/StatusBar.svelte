@@ -19,7 +19,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) { if (fin) sb.step = 'pick'; else popOverlay(); } }}>
-  <div class="glass menupanel spanel" class:fin style="--acc:{color.c};--acc-ink:{color.dark ? '#3a2f00' : '#fff'}">
+  <div class="glass menupanel spanel" class:fin style="--acc:{color.c};--acc-ink:#fff">
     <div class="face">
       {#if !fin}
         <h2>Estado del juego</h2>

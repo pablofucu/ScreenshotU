@@ -274,7 +274,7 @@
               transform="rotate(-90 50 50)"
             />
             <circle
-              cx="50" cy="50" r="44" fill="none" stroke="url(#card-gold)" stroke-width="10"
+              cx="50" cy="50" r="44" fill="none" style="stroke:var(--rar-ultra)" stroke-width="10"
               pathLength="24" stroke-dasharray="{Math.max(1, summary.rarityUltra * (total ? 24 / total : 1))} 24"
               stroke-dashoffset="-{(summary.rarityCommon + summary.rarityRare) * (total ? 24 / total : 1)}"
               transform="rotate(-90 50 50)"
@@ -287,7 +287,7 @@
         <div class="lg">
           <div><i style="background:var(--rar-common)"></i>Comunes<b>{summary.rarityCommon}</b></div>
           <div><i style="background:var(--rar-rare)"></i>Raros<b>{summary.rarityRare}</b></div>
-          <div><i style="background:var(--gold)"></i>Ultra raros<b>{summary.rarityUltra}</b></div>
+          <div><i style="background:var(--rar-ultra)"></i>Ultra raros<b>{summary.rarityUltra}</b></div>
         </div>
       </div>
     {/if}
@@ -296,10 +296,12 @@
 
 <style>
   .ach-card {
-    /* Colores semánticos de rareza (fijos); el dorado deriva del token --warn. */
-    --rar-common: #9fc0dc;
-    --rar-rare: #b67cf0;
-    --rar-ultra: var(--warn);
+    /* Colores semánticos de rareza arcoíris sincronizados con AchievementsModal */
+    --rar-common: #00a0d8;
+    --rar-uncommon: #3bb54a;
+    --rar-rare: #f27a1a;
+    --rar-ultra: #e8384f;
+    --rar-legendary: #9a4bd8;
     --gold: var(--warn);
     --gold-hi: color-mix(in srgb, var(--warn) 55%, white);
     --gold-lo: var(--warn);

@@ -1,7 +1,7 @@
 import { SvelteSet } from 'svelte/reactivity';
 import { untrack } from 'svelte';
 import { RAINBOW, type Accent } from './icons';
-import type { AudioOutput, Config, GameStatsDb, GameStatus, Library, MagpieStatus, Collection, Shot, SortMode as SortModeT, Swatch, Title, TitleOrder } from './types';
+import type { AudioOutput, Config, GameStatsDb, GameStatus, Library, MagpieStatus, Collection, Shot, SortMode as SortModeT, Swatch, Title, TitleOrder, TitlesTab } from './types';
 import { hexToLch, hexToRgb, hueOf } from './oklch';
 import { gamePair, INK, pair, variablesCSS } from './atmos';
 import { collItems, collectionTitle } from './collections';
@@ -205,7 +205,7 @@ export const TITLE_ORDERS: TitleOrder[] = ['color', 'az', 'last'];
 export const TITLE_ORDER_LABEL: Record<TitleOrder, string> = { last: 'Última partida', az: 'A–Z', color: 'Por color' };
 
 /** Pestañas dentro de cada categoría (botón View): Todos · Mi lista · Colecciones. */
-export type TitlesTab = 'list' | 'coll' | 'all' | 'fin';
+export type { TitlesTab };
 export const TITLES_TABS: Array<[TitlesTab, string]> = [['list', 'Mi lista'], ['coll', 'Colecciones'], ['all', 'Catálogo']];
 
 /** Estados de un juego, en el orden en que los recorre el selector. */
@@ -405,7 +405,7 @@ class Store {
   streakKey = $state<GoalKey>('vn');
   streakFrom = $state<View>('home');
   /** Desde dónde se abrió la ficha (B vuelve allí). */
-  detailFrom = $state<'titles' | 'stats' | 'gstats'>('titles');
+  detailFrom = $state<'home' | 'titles' | 'stats' | 'gstats'>('titles');
   /** Estadísticas de juego: de un título (desde Evolución) o de la categoría abierta (desde Start en la lista), métrica elegida y pantalla de origen. */
   gsScope = $state<'title' | 'cat'>('title');
   gsMetric = $state<GMetric>('time');

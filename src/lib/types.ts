@@ -101,6 +101,7 @@ export interface Config {
 }
 /** Orden de la lista de juegos: última partida, A–Z o por color de la portada. */
 export type TitleOrder = 'last' | 'az' | 'color';
+export type TitlesTab = 'list' | 'coll' | 'all' | 'fin';
 export interface AnkiMap { word: string; reading: string; meaning: string; sentence: string; translation: string; shot: string; audio: string }
 export interface Shot {
   path: string;
