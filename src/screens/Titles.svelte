@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { IS_TABLET } from '../lib/backend';
   import { app, coverHue, LIST_COLOR, TITLE_FILTERS, TITLE_ORDER_LABEL, TITLES_TABS, type ListShelf } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { fmtAgo, fmtDur, fmtShort, nCapturas } from '../lib/format';
@@ -20,7 +21,8 @@
   const grid = $derived(app.config.titlesView === 'grid');
   // Lista visible (filtrada); la baldosa «Añadir juego» ocupa la posición siguiente a la última.
   const vis = $derived(app.tview);
-  const slots = $derived(vis.length + 1);
+  // La baldosa «Añadir juego» no existe en la tablet.
+  const slots = $derived(vis.length + (IS_TABLET ? 0 : 1));
   // Medidas de la cuadrícula según el tamaño elegido (5 a 8 por fila).
   const G = $derived(titlesGrid());
   const PS = $derived(G.size);
@@ -241,12 +243,14 @@
   <div class="glass note-card" style="left:300px;top:170px">
     <div class="face">
       <h2>Aún no hay juegos en {P?.name}</h2>
-      <p>Crea una carpeta por juego dentro de <b>{P?.folder}</b> y copia dentro tus capturas (png, jpg, jpeg o webp), o añade un juego con la baldosa de abajo.</p>
+      <p>Crea una carpeta por juego dentro de <b>{P?.folder}</b> y copia dentro tus capturas (png, jpg, jpeg o webp){#if !IS_TABLET}, o añade un juego con la baldosa de abajo{/if}.</p>
     </div>
   </div>
+  {#if !IS_TABLET}
   <div class="glass cover addtile fx" class:f={app.focus === 'tit0'} data-k="tit0" data-act="tit:0" style="left:552px;top:430px">
     <div class="face"><div class="addin"><span>{@html ICON.plus}</span><b>Añadir juego</b></div></div>
   </div>
+  {/if}
 {:else}
   {#if grid}
     {#if cur}

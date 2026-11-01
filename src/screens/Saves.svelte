@@ -3,6 +3,7 @@
   // días; a la derecha la copia elegida y la comparación archivo a archivo con las partidas de ahora. «Dónde guarda»
   // es un cajón que se abre desde la cabecera. Ratón: clic, clic derecho = menú ⋯, «Restaurar este» al pasar por una fila.
   import { app } from '../lib/store.svelte';
+  import { IS_TABLET } from '../lib/backend';
   import { fmtBytes } from '../lib/controller.svelte';
   import { fmtHM } from '../lib/stats';
   import {
@@ -100,7 +101,8 @@
       const r = focusedRow;
       const h: Array<[string, string, string?]> = [['A', r?.k === 'loc' ? (info!.locs[r.i].enabled ? 'No copiar' : 'Copiar') : 'Elegir', 'a']];
       if (r?.k === 'loc' && info!.locs[r.i].origin === 'manual') h.push(['X', 'Quitar', 'x']);
-      h.push(['Y', r?.k === 'loc' ? 'Abrir ubicación' : 'Abrir copias', 'y'], ['B', 'Volver', 'b']);
+      if (!IS_TABLET) h.push(['Y', r?.k === 'loc' ? 'Abrir ubicación' : 'Abrir copias', 'y']);
+      h.push(['B', 'Volver', 'b']);
       return h;
     }
     if (sv.focus === 'menu') return [['↑↓', 'Elegir'], ['A', 'Aceptar', 'a'], ['B', 'Cerrar', 'b']];

@@ -1,7 +1,7 @@
 // Partidas guardadas de un juego, a pantalla completa: lista de copias por días a la izquierda; a la derecha la copia
 // elegida (miniatura, restaurar, fijar, menú) y la comparación de sus archivos con los de ahora. «Dónde guarda»
 // (ubicaciones detectadas con Ludusavi o por el motor, o añadidas a mano) es un cajón que se abre desde la cabecera.
-import { IS_TAURI, backend } from './backend';
+import { IS_TAURI, IS_TABLET, backend } from './backend';
 import { blip } from './sound';
 import { fmtBytes, popOverlay, pushOverlay, toast } from './controller.svelte';
 import { fmtAgo } from './format';
@@ -136,7 +136,8 @@ export function savesRows(): SaveRow[] {
   const out: SaveRow[] = [];
   if (!i.manifestGames && i.hasExe) out.push({ k: 'download' });
   i.locs.forEach((_, n) => out.push({ k: 'loc', i: n }));
-  out.push({ k: 'adddir' }, { k: 'addfile' });
+  // En la tablet no se pueden añadir carpetas ni archivos del PC.
+  if (!IS_TABLET) out.push({ k: 'adddir' }, { k: 'addfile' });
   return out;
 }
 
@@ -204,11 +205,14 @@ export function rowHelp(r: SaveRow | undefined): string {
 export function menuItems(): Array<{ id: MenuId; label: string }> {
   const c = sv.info?.copies[sv.sel];
   if (!c) return [];
+  // Exportar el .zip y abrir en el explorador solo existen en el PC.
   return [
     { id: 'note', label: c.note ? 'Cambiar la nota…' : 'Escribir nota…' },
     { id: 'pin', label: c.pinned ? 'Quitar de fijadas' : 'Fijar' },
-    { id: 'export', label: 'Exportar .zip…' },
-    { id: 'open', label: 'Abrir en el explorador' },
+    ...(IS_TABLET ? [] : [
+      { id: 'export' as const, label: 'Exportar .zip…' },
+      { id: 'open' as const, label: 'Abrir en el explorador' },
+    ]),
     { id: 'del', label: sv.confirm === 'del' ? '¿Seguro? Otra vez' : 'Borrar copia' },
   ];
 }
@@ -527,7 +531,7 @@ export function savesCmd(c: string) {
     else if (c === 'down') { sv.row = Math.min(rows.length - 1, sv.row + 1); blip(880); }
     else if (c === 'a' && r) void act(r);
     else if (c === 'x' && r) void removeManual(r);
-    else if (c === 'y') void reveal(r);
+    else if (c === 'y' && !IS_TABLET) void reveal(r);
     else if (c === 'b' || c === 'lb' || c === 'left') { closeLocs(); blip(520); }
     return;
   }

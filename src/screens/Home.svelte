@@ -1,5 +1,6 @@
 <script lang="ts">
   import { app } from '../lib/store.svelte';
+  import { IS_TABLET } from '../lib/backend';
   import { ICON, RAINBOW } from '../lib/icons';
   import TopBar from '../components/TopBar.svelte';
   import { dayKey, fmtAgo, fmtDur, fmtShort, naiveNow, nCapturas, nTitulos } from '../lib/format';
@@ -60,6 +61,8 @@
 <TopBar crumbs={['Inicio']} pad />
 
 {#if !app.config.root}
+  <!-- En la tablet no se elige la carpeta de la biblioteca: es la del PC. -->
+  {#if !IS_TABLET}
   <div class="glass welcome fx" class:f={app.focus === 'welcome'} data-k="welcome" data-act="welcome" style="left:240px;top:130px">
     <div class="face">
       <div class="wicon">{@html ICON.import}</div>
@@ -72,6 +75,7 @@
       <p class="wgo"><span class="btn a">A</span> Elegir carpeta</p>
     </div>
   </div>
+  {/if}
 {:else}
   {#each shown as { p, i }, k (p.id)}
     {@const a = app.platAcc(i)}
@@ -118,9 +122,11 @@
 
 <div class="hdock">
   {#each DOCK as d, i}
+    {#if !(IS_TABLET && (i === 3 || i === 5))}
     <div class="dpill pill fx" class:f={app.focus === 'dock' + i} data-k="dock{i}" data-act="dock:{i}" style="--dc:{RAINBOW[d.c].c}">
       <i>{@html d.ic}</i>{d.n}
     </div>
+    {/if}
   {/each}
 </div>
 

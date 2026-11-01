@@ -1,7 +1,7 @@
 // Acciones de usuario añadidas sobre el controlador: asistente «Añadir juego», juegos ocultos, importar y mover
 // capturas, selección múltiple y selector de color de acento. Usa las funciones del controlador (toast, refrescos...).
 import { app, type FormKind, type MenuItem, type MoveTarget } from './store.svelte';
-import { backend } from './backend';
+import { backend, IS_TABLET } from './backend';
 import { blip } from './sound';
 import { openOsk } from './osk.svelte';
 import { RAINBOW } from './icons';
@@ -403,8 +403,8 @@ export function shotMenuItems(): MenuItem[] {
     if (!app.selMode) it.push('select', 'move');
     else { it.push('selall'); if (app.sel.size) it.push('move'); it.push('unselect'); }
   } else it.push('copy', 'move');
-  it.push('reveal');
-  if (!app.favView && !app.collTitle) it.push('addshots');
+  if (!IS_TABLET) it.push('reveal');
+  if (!app.favView && !app.collTitle && !IS_TABLET) it.push('addshots');
   // Borrar (a la Papelera): la captura enfocada o, en el modo selección, las marcadas.
   if (app.selMode) { if (app.sel.size) it.push('delsel'); }
   else if (app.cur.shots[app.s]) it.push('delshot');

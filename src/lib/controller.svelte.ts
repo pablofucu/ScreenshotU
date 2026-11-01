@@ -90,9 +90,10 @@ function validKey(view: View, key: string | undefined): string | undefined {
   if (!key) return undefined;
   const n = parseInt(key.replace(/^\D+/, ''), 10);
   if (view === 'home') {
-    if (key === 'welcome') return app.config.root ? undefined : key;
+    if (key === 'welcome') return app.config.root || IS_TABLET ? undefined : key;
     if (/^plat\d+$/.test(key)) return app.config.root && n < app.lib.platforms.length ? key : undefined;
-    if (/^dock\d+$/.test(key)) return n < DOCK_N ? key : undefined;
+    // En la tablet no existen «Añadir juego» (dock3) ni «Salir» (dock5): solo funcionan en el PC.
+    if (/^dock\d+$/.test(key)) return n < DOCK_N && !(IS_TABLET && (n === 3 || n === 5)) ? key : undefined;
     if (/^rec\d+$/.test(key)) return app.config.root && n < app.recent.length ? key : undefined;
     if (key === 'read') return app.readCard ? key : undefined;
     if (key === 'audio') return app.audioOutputs.length ? key : undefined;
@@ -102,7 +103,7 @@ function validKey(view: View, key: string | undefined): string | undefined {
     if (/^tit\d+$/.test(key)) {
       if (app.titlesTab === 'coll') return undefined;
       if (listTab()) return listHas(n) ? key : undefined;
-      return n === (app.platform?.titles.length ?? 0) || app.tview.includes(n) ? key : undefined;
+      return (!IS_TABLET && n === (app.platform?.titles.length ?? 0)) || app.tview.includes(n) ? key : undefined;
     }
     // «Colecciones»: `cl<estantería>.<portada>` y la baldosa final `cnew`.
     if (/^(cl\d+\.\d+|cnew)$/.test(key)) return app.titlesTab === 'coll' && collValid(key) ? key : undefined;
@@ -129,7 +130,7 @@ function validKey(view: View, key: string | undefined): string | undefined {
   return undefined;
 }
 function defaultKey(view: View): string {
-  if (view === 'home') return app.config.root ? validKey('home', 'plat' + Math.min(app.hp, Math.max(0, app.lib.platforms.length - 1))) ?? 'plat0' : 'welcome';
+  if (view === 'home') return app.config.root ? validKey('home', 'plat' + Math.min(app.hp, Math.max(0, app.lib.platforms.length - 1))) ?? 'plat0' : IS_TABLET ? 'dock0' : 'welcome';
   if (view === 'titles') {
     if (app.titlesTab === 'coll') return collFirst();
     return listTab() ? (listFirst() === undefined ? 'list-empty' : 'tit' + listFirst()) : 'tit' + atPos(0);
@@ -260,7 +261,7 @@ export function move(dx: number, dy: number) {
   // Cuadrícula de juegos: al final de una fila, izquierda/derecha siguen con el juego anterior/siguiente.
   if (dx && app.view === 'titles' && app.config.titlesView === 'grid' && onAllTab()) {
     const np = viewPos(app.t) + dx;
-    if (np >= 0 && np <= app.tview.length) { setFocus('tit' + atPos(np)); blip(880); return; }
+    if (np >= 0 && np <= app.tview.length - (IS_TABLET ? 1 : 0)) { setFocus('tit' + atPos(np)); blip(880); return; }
   }
   bump(cur, dx, dy);
 }
@@ -345,16 +346,16 @@ export function go(v: View, anim: 'fwd' | 'back' | '' = '') {
 export function menuItemsFor(t: Title): MenuItem[] {
   const items: MenuItem[] = [];
   if (t.launchable && !app.playing) items.push('play');
-  if (t.hasFolder) items.push('folder');
+  if (t.hasFolder && !IS_TABLET) items.push('folder');
   items.push('reload');
   items.push('sgdb');
   if (t.gameId && (app.platform?.id === 'jvn' || app.platform?.id === 'vn' || app.platform?.icon === 'vn')) items.push('phrases');
-  if (app.config.root && t.dir) items.push('addshots');
+  if (app.config.root && t.dir && !IS_TABLET) items.push('addshots');
   items.push('accent');
   if (!t.members && t.id) items.push('status', 'release', 'addcoll');
   if (t.gameId && !t.members) items.push('saves');
   // Ejecutable y carpeta de trabajo: solo juegos .exe añadidos a mano (no emuladores). Se cambian cuando se quiera.
-  if (t.launchable && t.source === 'manual' && t.gameId) items.push('setexe', 'setdir');
+  if (t.launchable && t.source === 'manual' && t.gameId && !IS_TABLET) items.push('setexe', 'setdir');
   // Escalado con Magpie: solo juegos .exe (no emuladores).
   if (t.launchable && t.source === 'manual' && t.gameId) items.push('magpie');
   if (t.gameId && t.removable && !t.members && app.config.platforms.length > 1) items.push('category');
@@ -1025,7 +1026,7 @@ export function openTitlesMenu() {
     if (t.gameId && !t.members) items.push('saves');
     items.push(t.hidden ? 'unhide' : 'hide');
     if (t.removable) items.push('remove');
-    if (t.hasFolder) items.push('folder');
+    if (t.hasFolder && !IS_TABLET) items.push('folder');
   }
   app.menu = { kind: 'titles', title: app.t, row: 0, items, confirm: false };
   pushOverlay('menu');
@@ -1233,12 +1234,15 @@ export type SettingId =
   | 'liststalled' | 'liststalleddays' | 'liststalledact' | 'listautoplay' | 'theme'
   | 'tabpc' | 'tabstate' | 'tabdisc'
   | ReadingId | RemoteId;
+/** Filas de lectura que en la tablet no existen (Anki y atajo de grabación son del PC). */
+const TABLET_HIDDEN_READING = new Set<string>(['ankiurl', 'ankitest', 'ankiauto', 'ankiexe', 'ankideck', 'ankicreate', 'ankimodel', 'ankistyle', 'map_word', 'map_reading', 'map_meaning', 'map_sentence', 'map_translation', 'map_shot', 'map_audio', 'rechotkey']);
 /** Secciones de Ajustes (LB/RB las recorren). `t` es la posición en el arcoíris (0..1) que da su color. */
 export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[] }> = [
   {
     name: 'General',
     t: 0,
-    rows: ['sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey'],
+    // En la tablet no hay pantalla completa, monitor ni atajos de teclado/mando que aprender.
+    rows: IS_TABLET ? ['sound', 'oncursor', 'audioout'] : ['sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey'],
   },
   {
     name: 'Apariencia',
@@ -1251,22 +1255,32 @@ export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[
   {
     name: 'Mando',
     t: 0.4,
-    rows: [
-      'combo', 'mouse', 'hotkey',
-      'capsound', 'cappeek', 'caprumble', 'caponly',
-      'magpieexe', 'magpie',
-      'remoteon', 'remoteaddr', 'remotecode', 'remotehelp',
-    ],
+    // En la tablet: sin aprender botones/atajos, sin elegir Magpie.exe y sin el servidor «Acceso desde el móvil».
+    rows: IS_TABLET
+      ? ['capsound', 'cappeek', 'caprumble', 'caponly', 'magpie']
+      : [
+        'combo', 'mouse', 'hotkey',
+        'capsound', 'cappeek', 'caprumble', 'caponly',
+        'magpieexe', 'magpie',
+        'remoteon', 'remoteaddr', 'remotecode', 'remotehelp',
+      ],
   },
   {
     name: 'Biblioteca',
     t: 0.6,
-    rows: [
-      'root', 'rescan', 'addgame', 'hidden', 'showhidden',
-      'savesauto', 'ludusavi', 'inputmouse', 'inputkeys',
-      'backup', 'backupmedia', 'restore', 'autobackup',
-      ...READING_ROWS,
-    ],
+    // En la tablet: sin carpeta de la biblioteca, añadir juegos, copias de seguridad ni Anki/atajos de lectura.
+    rows: IS_TABLET
+      ? [
+        'rescan', 'hidden', 'showhidden',
+        'savesauto', 'ludusavi', 'inputmouse', 'inputkeys',
+        ...READING_ROWS.filter((r) => !TABLET_HIDDEN_READING.has(r)),
+      ]
+      : [
+        'root', 'rescan', 'addgame', 'hidden', 'showhidden',
+        'savesauto', 'ludusavi', 'inputmouse', 'inputkeys',
+        'backup', 'backupmedia', 'restore', 'autobackup',
+        ...READING_ROWS,
+      ],
   },
   {
     name: 'Mi lista',
@@ -1690,7 +1704,7 @@ export async function boot() {
   await initBackend();
   backend.onEvent(onBackendEvent);
   void refreshAudio();
-  backend.onFilesDropped(onFilesDropped);
+  if (!IS_TABLET) backend.onFilesDropped(onFilesDropped); // soltar archivos no existe en la tablet
   void listenSaves();
   const cfg = await backend.loadConfig();
   Object.assign(app.config, cfg);
@@ -1940,7 +1954,7 @@ function onWheel(e: WheelEvent) {
       if (collTab()) { collCmd(d > 0 ? 'down' : 'up'); break; }
       if (app.config.titlesView === 'grid') { page(d); break; }
       const np = viewPos(app.t) + d;
-      if (np >= 0 && np <= app.tview.length) { setFocus('tit' + atPos(np)); blip(880); }
+      if (np >= 0 && np <= app.tview.length - (IS_TABLET ? 1 : 0)) { setFocus('tit' + atPos(np)); blip(880); }
       break;
     }
     case 'shots': {
