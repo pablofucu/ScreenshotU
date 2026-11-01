@@ -391,6 +391,7 @@ h1 span {
   pointer-events: none;
 }
 .halo {
+  display: none;
   position: absolute;
   inset: -12px;
   z-index: 0;
@@ -398,6 +399,9 @@ h1 span {
   pointer-events: none;
   filter: blur(20px);
   opacity: .85;
+}
+[data-theme="dark"] .halo {
+  display: block;
 }
 
 /* ========================================================

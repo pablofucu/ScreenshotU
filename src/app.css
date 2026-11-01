@@ -846,11 +846,12 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
   opacity:0;transition:opacity .2s;animation:spinRing 3s linear infinite;pointer-events:none}
 /* Halo grueso: los dos colores del juego en un degradado desenfocado que rota con el anillo. */
-.tcov>.halo,.ccover>.halo{position:absolute;inset:-12px;z-index:0;border-radius:calc(var(--r) + 12px);pointer-events:none;
+.tcov>.halo,.ccover>.halo{display:none;position:absolute;inset:-12px;z-index:0;border-radius:calc(var(--r) + 12px);pointer-events:none;
   background:conic-gradient(from var(--ang),var(--p1,var(--f1)),var(--p2,var(--f2)),var(--p1,var(--f1)));
-  filter:blur(22px);opacity:0;transition:opacity .25s;animation:spinRing 3s linear infinite}
+  filter:blur(22px);opacity:0;transition:opacity .25s}
 .tcov.f>.ring,.ccover.f>.ring{opacity:1}
-.tcov.f>.halo,.ccover.f>.halo{opacity:.9}
+#stage[data-theme=dark] .tcov>.halo,#stage[data-theme=dark] .ccover>.halo{display:block;animation:spinRing 3s linear infinite}
+#stage[data-theme=dark] .tcov.f>.halo,#stage[data-theme=dark] .ccover.f>.halo{opacity:.9}
 @media (prefers-reduced-motion: reduce){.tcov>.ring,.ccover>.ring,.tcov>.halo,.ccover>.halo{animation:none}.tcov>.halo,.ccover>.halo,.tcov>.ring,.ccover>.ring{transition:none}}
 /* Catálogo en cuadrícula: marco fino y neutro en todas las portadas; la enfocada lleva el anillo y el halo con los
    colores de su propia portada (sin el cristal teñido ni los brillos, para no tapar el arte). */
