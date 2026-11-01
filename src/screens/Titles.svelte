@@ -357,9 +357,9 @@
   ]} />
 {/if}
   <style>
-  button.tflt { border: none; font-family: inherit; font-size: inherit; font-weight: inherit; cursor: pointer; }
-  button.tflt.tord { background: transparent; box-shadow: none; }
-  button.btn.x { border: none; font-family: inherit; font-size: inherit; font-weight: inherit; cursor: pointer; }
+  button.tflt { border: none; font-family: var(--round); font-size: 15px; font-weight: 800; cursor: pointer; }
+  button.tflt.tord { background: transparent; box-shadow: none; font-family: var(--round); font-size: 15px; font-weight: 800; }
+  button.btn.x { border: none; font-family: var(--round); font-size: 13px; font-weight: 800; cursor: pointer; }
   .ttabs.list-tabs { top: 72px; }
   .tsearch {
     height: 32px;

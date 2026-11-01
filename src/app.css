@@ -3,6 +3,7 @@
 :root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI','Yu Gothic UI','Meiryo UI','Hiragino Maru Gothic ProN',system-ui,sans-serif;color-scheme:light}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:#0f1218;overflow:hidden;font-family:var(--round)}
+button,input,select,textarea{font-family:var(--round)}
 body.nocursor,body.nocursor *{cursor:none !important}
 #app{position:fixed;inset:0;overflow:hidden}
 
@@ -238,7 +239,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .srow .sl{flex:1;white-space:nowrap}
 .srow .sv{max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:var(--ink-2)}
 /* Filas, categorías y botones que son <button>: sin el aspecto por defecto del navegador (:where = sin especificidad, las clases de cada uno mandan). */
-:where(button.srow,button.scat,button.schip,button.fsave){appearance:none;margin:0;padding:0;border:0;outline:none;background:transparent;color:inherit;font-family:inherit;font-style:inherit;line-height:inherit;letter-spacing:inherit;word-spacing:inherit;text-align:inherit;text-transform:inherit;text-indent:inherit;text-shadow:inherit;white-space:inherit}
+:where(button.srow,button.scat,button.schip,button.fsave,button.tflt){appearance:none;margin:0;padding:0;border:0;outline:none;background:transparent;color:inherit;font-family:inherit;font-style:inherit;line-height:inherit;letter-spacing:inherit;word-spacing:inherit;text-align:inherit;text-transform:inherit;text-indent:inherit;text-shadow:inherit;white-space:inherit}
 button.srow,button.scat{width:100%}
 .srow.f{background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 60%),var(--gf);color:var(--on);text-shadow:0 1px 2px rgba(0,0,0,.28);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--f2) 75%,black),0 0 18px -2px color-mix(in srgb,var(--f1) 45%,transparent),0 6px 12px -8px color-mix(in srgb,var(--f2) 70%,black)}
 .srow.f .sv{color:inherit;opacity:.92}
@@ -494,7 +495,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .ttabs .tchip{margin-left:6px;cursor:pointer;color:var(--ink-2);background:var(--glass-chip);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--acc) 55%,transparent)}
 .ttabs .tchip b{display:grid;place-items:center;width:18px;height:18px;margin-right:-6px;border-radius:50%;font-size:11px;color:var(--on);background:var(--ink-3)}
 .ttabs .tchip:hover b{background:var(--bad)}
-.tflt{height:32px;padding:0 14px;border-radius:999px;display:flex;align-items:center;gap:6px;font-size:15px;font-weight:800;color:var(--ink-2);white-space:nowrap;
+.tflt{height:32px;padding:0 14px;border-radius:999px;display:flex;align-items:center;gap:6px;font-family:var(--round);font-size:15px;font-weight:800;color:var(--ink-2);white-space:nowrap;
   background:var(--face);box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px var(--line);transition:background .25s,color .25s,box-shadow .25s}
 .tflt small{font-size:13px;font-weight:700;opacity:.65}
 .tflt.on{background:var(--gf);color:var(--on);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--f2) 75%,black),0 6px 14px -8px var(--f2)}
