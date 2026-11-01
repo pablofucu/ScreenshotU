@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Comparador de Estilos · Animación y Degradados de Selección</title>
+<style>
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:400;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-400-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:700;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-700-latin.woff2') format('woff2')}
+@font-face{font-family:'M PLUS Rounded 1c';font-weight:800;font-display:swap;src:url('../src/assets/fonts/mplus-rounded-1c-800-latin.woff2') format('woff2')}
+
+@property --ang {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@property --glow-pos {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
+:root {
+  --round: 'M PLUS Rounded 1c', 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  --speed: 3s;
+  --theme-bg: #eceef2;
+  --theme-text: #2c3340;
+  --theme-sub: #657184;
+  --card-bg: #e6e9ee;
+  --card-line: rgba(95,110,135,.24);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --theme-bg: #13161c;
+  --theme-text: #f0f3f8;
+  --theme-sub: #8e9bb0;
+  --card-bg: #1c202a;
+  --card-line: rgba(255,255,255,.14);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--theme-bg);
+  font-family: var(--round);
+  color: var(--theme-text);
+  transition: background .3s, color .3s;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255,255,255,.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(0,0,0,.08);
+  padding: 16px 28px;
+}
+[data-theme="dark"] header {
+  background: rgba(20,24,32,.85);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+h1 span {
+  font-size: 13px;
+  font-weight: 700;
+  background: #00A0D8;
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.controls-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0,0,0,.06);
+}
+[data-theme="dark"] .controls-bar {
+  border-top-color: rgba(255,255,255,.06);
+}
+
+.c-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.c-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--theme-sub);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-right: 2px;
+}
+
+.btn-pill {
+  height: 32px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,.12);
+  background: rgba(255,255,255,.6);
+  font: 700 13px var(--round);
+  color: var(--theme-text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all .15s;
+}
+[data-theme="dark"] .btn-pill {
+  border-color: rgba(255,255,255,.15);
+  background: rgba(255,255,255,.06);
+}
+.btn-pill:hover {
+  transform: translateY(-1px);
+  background: #fff;
+}
+[data-theme="dark"] .btn-pill:hover {
+  background: rgba(255,255,255,.12);
+}
+.btn-pill.active {
+  background: #00A0D8;
+  color: #fff;
+  border-color: #00A0D8;
+  box-shadow: 0 3px 8px rgba(0,160,216,.35);
+}
+
+.dot-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.15);
+}
+
+.container {
+  max-width: 1420px;
+  margin: 0 auto;
+  padding: 30px 24px 80px;
+}
+
+.section-head {
+  margin: 20px 0 14px;
+}
+.section-head h2 {
+  font-size: 19px;
+  font-weight: 800;
+  margin: 0 0 4px;
+}
+.section-head p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--theme-sub);
+}
+
+/* Rejilla de tarjetas de comparación */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 26px;
+  margin-top: 18px;
+}
+
+.variant-box {
+  background: rgba(255,255,255,.65);
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 24px;
+  padding: 24px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  box-shadow: 0 4px 18px -6px rgba(40,50,70,.1);
+  transition: transform .2s, box-shadow .2s;
+}
+[data-theme="dark"] .variant-box {
+  background: rgba(26,30,40,.65);
+  border-color: rgba(255,255,255,.07);
+  box-shadow: 0 8px 24px -10px rgba(0,0,0,.4);
+}
+.variant-box:hover {
+  box-shadow: 0 12px 28px -8px rgba(40,50,70,.18);
+}
+
+.badge-tag {
+  position: absolute;
+  left: 20px;
+  top: 18px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(0,0,0,.07);
+  color: var(--theme-sub);
+}
+[data-theme="dark"] .badge-tag {
+  background: rgba(255,255,255,.08);
+}
+.badge-tag.highlight {
+  background: #00A0D8;
+  color: #fff;
+}
+.badge-tag.warn {
+  background: #e67e22;
+  color: #fff;
+}
+
+.card-stage {
+  height: 270px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 10px 0;
+}
+
+/* Estructura real de la tarjeta (.tcov) */
+.tcov {
+  position: relative;
+  width: 160px;
+  height: 214px;
+  --r: 16px;
+  --bw: 3px;
+  border-radius: var(--r);
+  padding: var(--bw);
+  box-sizing: border-box;
+  background: var(--card-bg);
+  box-shadow: 0 18px 34px -12px rgba(20,30,50,.55);
+  transform: scale(1.06);
+  cursor: pointer;
+  isolation: isolate;
+  user-select: none;
+}
+
+.tcov .face {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  border-radius: calc(var(--r) - var(--bw));
+  overflow: hidden;
+  background: #181d28;
+}
+.tcov .face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.tcov .face-title {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 6px rgba(0,0,0,.8);
+  line-height: 1.2;
+}
+
+/* Componentes comunes de la tarjeta */
+.ring {
+  position: absolute;
+  inset: -2px;
+  z-index: 4;
+  border-radius: calc(var(--r) + 2px);
+  padding: calc(var(--bw) + 2px);
+  box-sizing: border-box;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.halo {
+  position: absolute;
+  inset: -12px;
+  z-index: 0;
+  border-radius: calc(var(--r) + 12px);
+  pointer-events: none;
+  filter: blur(20px);
+  opacity: .85;
+}
+
+/* ========================================================
+   ESTILOS DE ANIMACIÓN (LAS OPCIONES TÉCNICAS)
+   ======================================================== */
+
+/* VARIANTE 0: ESTADO ACTUAL (Linear diagonal trasladado) */
+@keyframes sheen-actual {
+  to { background-position: 200% 0; }
+}
+.v-actual .ring {
+  background: linear-gradient(115deg, var(--c1), var(--c2), var(--c1));
+  background-size: 200% 100%;
+  animation: sheen-actual var(--speed) linear infinite;
+}
+.v-actual .halo {
+  background: linear-gradient(115deg, var(--c1), var(--c2), var(--c1));
+  background-size: 200% 100%;
+  animation: sheen-actual var(--speed) linear infinite;
+}
+
+/* VARIANTE 1: CONIC-GRADIENT ROTATORIO CONTINUO (Giro 360° perimétrico perfecto) */
+@keyframes spin-conic {
+  to { --ang: 360deg; }
+}
+.v-conic .ring {
+  background: conic-gradient(from var(--ang), var(--c1), var(--c2), var(--c-light, var(--c1)), var(--c1));
+  animation: spin-conic var(--speed) linear infinite;
+}
+.v-conic .halo {
+  background: conic-gradient(from var(--ang), var(--c1), var(--c2), var(--c1));
+  animation: spin-conic var(--speed) linear infinite;
+}
+
+/* VARIANTE 2: DESTELLO / SHIMMER BEAM (Haz de luz blanco brillante que viaja) */
+@keyframes shimmer-orbit {
+  to { --ang: 360deg; }
+}
+.v-shimmer .ring {
+  background: conic-gradient(
+    from var(--ang),
+    var(--c1) 0deg,
+    var(--c1) 180deg,
+    var(--c2) 260deg,
+    #ffffff 330deg,
+    var(--c1) 360deg
+  );
+  animation: shimmer-orbit var(--speed) linear infinite;
+}
+.v-shimmer .halo {
+  background: conic-gradient(from var(--ang), var(--c1), var(--c2), #ffffff, var(--c1));
+  animation: shimmer-orbit var(--speed) linear infinite;
+  opacity: .7;
+}
+
+/* VARIANTE 3: ONDA OSCILANTE SUAVE (Ease-in-out alternate sin saltos de ciclo) */
+@keyframes wave-smooth {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+.v-wave .ring {
+  background: linear-gradient(90deg, var(--c1), var(--c2), var(--c-light, #fff), var(--c1));
+  background-size: 300% 100%;
+  animation: wave-smooth calc(var(--speed) * 0.9) ease-in-out infinite alternate;
+}
+.v-wave .halo {
+  background: linear-gradient(90deg, var(--c1), var(--c2), var(--c1));
+  background-size: 300% 100%;
+  animation: wave-smooth calc(var(--speed) * 0.9) ease-in-out infinite alternate;
+}
+
+/* VARIANTE 4: RESPIRACIÓN / BREATHING PULSE (Suave, relajado, sin traslación) */
+@keyframes breathe {
+  0%, 100% {
+    filter: brightness(1) saturate(1);
+    opacity: .75;
+  }
+  50% {
+    filter: brightness(1.45) saturate(1.35) drop-shadow(0 0 8px var(--c1));
+    opacity: 1;
+  }
+}
+@keyframes breathe-halo {
+  0%, 100% { transform: scale(0.96); opacity: .45; }
+  50% { transform: scale(1.08); opacity: .95; }
+}
+.v-breathe .ring {
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  animation: breathe calc(var(--speed) * 0.8) ease-in-out infinite;
+}
+.v-breathe .halo {
+  background: radial-gradient(circle, var(--c1), var(--c2), transparent 70%);
+  animation: breathe-halo calc(var(--speed) * 0.8) ease-in-out infinite;
+}
+
+/* VARIANTE 5: NEÓN INTENSO CON CRESTA LUMINOSA (Alto contraste gamer / arcade) */
+@keyframes neon-sweep {
+  to { --ang: 360deg; }
+}
+.v-neon .ring {
+  background: conic-gradient(
+    from var(--ang),
+    var(--c1) 0deg,
+    var(--c2) 90deg,
+    var(--c1) 180deg,
+    var(--c2) 270deg,
+    var(--c1) 360deg
+  );
+  filter: drop-shadow(0 0 4px var(--c1)) drop-shadow(0 0 6px var(--c2));
+  animation: neon-sweep var(--speed) linear infinite;
+}
+.v-neon .halo {
+  background: conic-gradient(from var(--ang), var(--c1), var(--c2), var(--c1));
+  filter: blur(28px) saturate(1.8);
+  animation: neon-sweep var(--speed) linear infinite;
+}
+
+/* Info del recuadro */
+.v-info {
+  width: 100%;
+  border-top: 1px solid rgba(0,0,0,.08);
+  padding-top: 14px;
+  margin-top: 10px;
+}
+[data-theme="dark"] .v-info {
+  border-top-color: rgba(255,255,255,.08);
+}
+.v-title {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0 0 6px;
+}
+.v-desc {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--theme-sub);
+  margin: 0 0 12px;
+  min-height: 54px;
+}
+.pros-cons {
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(0,0,0,.03);
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+[data-theme="dark"] .pros-cons {
+  background: rgba(255,255,255,.04);
+}
+.pro { color: #10b981; font-weight: 700; }
+.con { color: #ef4444; font-weight: 700; }
+
+.action-row {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+.btn-copy {
+  border: 0;
+  background: transparent;
+  color: #00A0D8;
+  font: 800 12px var(--round);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background .15s;
+}
+.btn-copy:hover {
+  background: rgba(0,160,216,.1);
+}
+
+/* Mini resumen explicativo */
+.summary-box {
+  background: rgba(0, 160, 216, 0.08);
+  border: 1px solid rgba(0, 160, 216, 0.25);
+  border-radius: 18px;
+  padding: 20px 24px;
+  margin: 20px 0 30px;
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+.summary-box b {
+  color: #00A0D8;
+}
+
+</style>
+</head>
+<body data-theme="light">
+
+<header>
+  <div class="header-top">
+    <h1>
+      Comparador de Estilos de Selección
+      <span>Interactivo</span>
+    </h1>
+    <div class="c-group">
+      <button class="btn-pill" id="themeBtn" onclick="toggleTheme()">☀️ Modo claro</button>
+      <button class="btn-pill" id="pauseBtn" onclick="togglePause()">⏸️ Pausar animación</button>
+    </div>
+  </div>
+
+  <div class="controls-bar">
+    <div class="c-group">
+      <span class="c-label">Juego:</span>
+      <button class="btn-pill active" onclick="setGame('zelda', this)">
+        <span class="dot-color" style="background:#6a69cd"></span> Zelda: TotK
+      </button>
+      <button class="btn-pill" onclick="setGame('metroid', this)">
+        <span class="dot-color" style="background:#d62828"></span> Metroid Dread
+      </button>
+      <button class="btn-pill" onclick="setGame('hades', this)">
+        <span class="dot-color" style="background:#d14fb2"></span> Hades II
+      </button>
+      <button class="btn-pill" onclick="setGame('cyberpunk', this)">
+        <span class="dot-color" style="background:#fcee0a"></span> Cyberpunk 2077
+      </button>
+      <button class="btn-pill" onclick="setGame('hollow', this)">
+        <span class="dot-color" style="background:#5a67d8"></span> Hollow Knight
+      </button>
+    </div>
+
+    <div style="flex:1"></div>
+
+    <div class="c-group">
+      <span class="c-label">Combinación de Color:</span>
+      <button class="btn-pill active" onclick="setColorMode('actual', this)" title="Los dos tonos análogos actuales del juego">
+        🎨 Tonos Actuales (p1 + p2)
+      </button>
+      <button class="btn-pill" onclick="setColorMode('light', this)" title="Tono principal del juego + Resplandor de luz blanco">
+        ✨ Color + Destello Luz
+      </button>
+      <button class="btn-pill" onclick="setColorMode('contrast', this)" title="Mayor contraste angular (120°)">
+        🌈 Mayor Contraste (120°)
+      </button>
+      <button class="btn-pill" onclick="setColorMode('neon', this)" title="Colores ultrasaturados neón">
+        ⚡ Neón Puro
+      </button>
+    </div>
+
+    <div class="c-group">
+      <span class="c-label">Velocidad:</span>
+      <button class="btn-pill" onclick="setSpeed('5s', this)">Lenta</button>
+      <button class="btn-pill active" onclick="setSpeed('3s', this)">Normal</button>
+      <button class="btn-pill" onclick="setSpeed('1.6s', this)">Rápida</button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="summary-box">
+    💡 <b>¿Por qué comparar?</b> Puedes alternar el <b>Juego</b> (diferentes pares de colores), el <b>Modo de color</b> (añadir destello de luz o mayor contraste) y ver en tiempo real cómo responde cada uno de los 6 estilos de animación en la tarjeta con el tamaño exacto del catálogo.
+  </div>
+
+  <div class="section-head">
+    <h2>1. Opciones de Animación frente a frente</h2>
+    <p>Observa cómo fluye la luz en las cuatro esquinas y la suavidad del movimiento continuo:</p>
+  </div>
+
+  <div class="cards-grid">
+
+    <!-- VARIANTE 0: ACTUAL -->
+    <div class="variant-box">
+      <span class="badge-tag warn">Estado Actual</span>
+      <div class="card-stage">
+        <div class="tcov v-actual">
+          <div class="face">
+            <img id="cover-0" src="" alt="Portada" />
+            <div class="face-title" id="title-0">Zelda: TotK</div>
+          </div>
+          <i class="ring"></i>
+          <i class="halo"></i>
+        </div>
+      </div>
+      <div class="v-info">
+        <div class="v-title">0. Linear Gradient Diagonal (Actual)</div>
+        <div class="v-desc">El degradado se traslada horizontalmente al 200%. En los bordes laterales casi no se mueve y en el ciclo salta abruptamente.</div>
+        <div class="pros-cons">
+          <span class="con">✕ Salto brusco cada vez que termina el ciclo.</span>
+          <span class="con">✕ Las esquinas no siguen el flujo de la luz.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- VARIANTE 1: CONIC ROTATORIO -->
+    <div class="variant-box">
+      <span class="badge-tag highlight">Recomendada A</span>
+      <div class="card-stage">
+        <div class="tcov v-conic">
+          <div class="face">
+            <img id="cover-1" src="" alt="Portada" />
+            <div class="face-title" id="title-1">Zelda: TotK</div>
+          </div>
+          <i class="ring"></i>
+          <i class="halo"></i>
+        </div>
+      </div>
+      <div class="v-info">
+        <div class="v-title">1. Conic-Gradient Perimétrico</div>
+        <div class="v-desc">El degradado gira 360° continuamente. La luz recorre suavemente las 4 esquinas de forma natural y sin ningún corte.</div>
+        <div class="pros-cons">
+          <span class="pro">✓ 100% fluido: sin inicio ni final brusco.</span>
+          <span class="pro">✓ El degradado recorre todo el perímetro del marco.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- VARIANTE 2: SHIMMER BEAM -->
+    <div class="variant-box">
+      <span class="badge-tag highlight">Recomendada B (Consola)</span>
+      <div class="card-stage">
+        <div class="tcov v-shimmer">
+          <div class="face">
+            <img id="cover-2" src="" alt="Portada" />
+            <div class="face-title" id="title-2">Zelda: TotK</div>
+          </div>
+          <i class="ring"></i>
+          <i class="halo"></i>
+        </div>
+      </div>
+      <div class="v-info">
+        <div class="v-title">2. Haz de Luz Brillante (Shimmer Beam)</div>
+        <div class="v-desc">Marco con el color del juego por donde viaja un haz de luz blanca cristalina. Estilo muy habitual en interfaces de Wii U y Switch.</div>
+        <div class="pros-cons">
+          <span class="pro">✓ Contraste inmediato: el destello se distingue siempre.</span>
+          <span class="pro">✓ Sensación premium y limpia en mando / TV.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- VARIANTE 3: ONDA SUAVE ALTERNADA -->
+    <div class="variant-box">
+      <span class="badge-tag">Alternativa C</span>
+      <div class="card-stage">
+        <div class="tcov v-wave">
+          <div class="face">
+            <img id="cover-3" src="" alt="Portada" />
+            <div class="face-title" id="title-3">Zelda: TotK</div>
+          </div>
+          <i class="ring"></i>
+          <i class="halo"></i>
+        </div>
+      </div>
+      <div class="v-info">
+        <div class="v-title">3. Marea Bicolor (Dual Wave)</div>
+        <div class="v-desc">El degradado se mece suavemente de izquierda a derecha con desaceleración en los extremos (ease-in-out alternate).</div>
+        <div class="pros-cons">
+          <span class="pro">✓ Sin cortes: desacelera y vuelve suavemente.</span>
+          <span class="con">✕ No da sensación de rotación perimétrica.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- VARIANTE 4: RESPIRACIÓN PULSANTE -->
+    <div class="variant-box">
+      <span class="badge-tag">Alternativa D</span>
+      <div class="card-stage">
+        <div class="tcov v-breathe">
+          <div class="face">
+            <img id="cover-4" src="" alt="Portada" />
+            <div class="face-title" id="title-4">Zelda: TotK</div>
+          </div>
+          <i class="ring"></i>
+          <i class="halo"></i>
+        </div>
+      </div>
+      <div class="v-info">
+        <div class="v-title">4. Respiración de Halo (Breathing Glow)</div>
+        <div class="v-desc">Sin traslación lateral. El marco y su halo pulsan sinusoidalmente en brillo y saturación. Muy relajante y discreto.</div>
+        <div class="pros-cons">
+          <span class="pro">✓ Cero distracción al navegar por el catálogo.</span>
+          <span class="con">✕ Menos sensación de dinamismo activo.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- VARIANTE 5: NEÓN INTENSO -->
+    <div class="variant-box">
+      <span class="badge-tag">Gamer / Arcade</span>
+      <div class="card-stage">
+        <div class="tcov v-neon">
+          <div class="face">
+            <img id="cover-5" src="" alt="Portada" />
+            <div class="face-title" id="title-5">Zelda: TotK</div>
+          </div>
+          <i class="ring"></i>
+          <i class="halo"></i>
+        </div>
+      </div>
+      <div class="v-info">
+        <div class="v-title">5. Neón Doble con Resplandor</div>
+        <div class="v-desc">Cuatro cuadrantes de color alternado con doble filtro drop-shadow para generar un contorno electrizante y muy llamativo.</div>
+        <div class="pros-cons">
+          <span class="pro">✓ Máximo impacto visual en pantallas oscuras.</span>
+          <span class="con">✕ Puede resultar algo estridente en temas claros.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// Base de datos de juegos para pruebas
+const GAMES = {
+  zelda: {
+    title: 'Zelda: Tears of the Kingdom',
+    // Colores reales de la app para Zelda:
+    p1: '#6a69cd',
+    p2: '#007e9b',
+    contrast: '#00d2ff',
+    light: '#e0e7ff',
+    neon1: '#7000ff',
+    neon2: '#00e5ff',
+    coverBg: 'linear-gradient(160deg, #1d273e, #0e1626)',
+    svg: `<svg viewBox="0 0 160 214" width="100%" height="100%"><rect width="160" height="214" fill="#0d1b2a"/><circle cx="80" cy="90" r="46" fill="none" stroke="#2a9d8f" stroke-width="3" stroke-dasharray="8 4"/><polygon points="80,55 105,100 55,100" fill="#e9c46a" opacity=".85"/><polygon points="80,72 92,95 68,95" fill="#0d1b2a"/><circle cx="80" cy="115" r="8" fill="#e76f51"/><path d="M40,165 Q80,140 120,165" stroke="#2a9d8f" stroke-width="4" fill="none"/></svg>`
+  },
+  metroid: {
+    title: 'Metroid Dread',
+    p1: '#d62828',
+    p2: '#f77f00',
+    contrast: '#00b4d8',
+    light: '#ffe3e3',
+    neon1: '#ff003c',
+    neon2: '#ff9900',
+    coverBg: 'linear-gradient(160deg, #300a0e, #140507)',
+    svg: `<svg viewBox="0 0 160 214" width="100%" height="100%"><rect width="160" height="214" fill="#180509"/><circle cx="80" cy="85" r="44" fill="#d62828" opacity=".2"/><circle cx="80" cy="85" r="28" fill="#f77f00" opacity=".4"/><ellipse cx="80" cy="85" rx="36" ry="14" fill="#00f0ff" opacity=".85"/><circle cx="80" cy="85" r="8" fill="#ffffff"/><path d="M48,150 L80,125 L112,150" stroke="#d62828" stroke-width="5" fill="none"/></svg>`
+  },
+  hades: {
+    title: 'Hades II',
+    p1: '#d14fb2',
+    p2: '#38ef7d',
+    contrast: '#ffea00',
+    light: '#fce7f3',
+    neon1: '#ff007f',
+    neon2: '#00ff88',
+    coverBg: 'linear-gradient(160deg, #2b0b2e, #0e0717)',
+    svg: `<svg viewBox="0 0 160 214" width="100%" height="100%"><rect width="160" height="214" fill="#13091f"/><path d="M80,35 Q115,75 80,135 Q45,75 80,35 Z" fill="#d14fb2" opacity=".75"/><circle cx="80" cy="85" r="16" fill="#38ef7d"/><path d="M60,140 Q80,120 100,140 L80,170 Z" fill="#e0a96d"/></svg>`
+  },
+  cyberpunk: {
+    title: 'Cyberpunk 2077',
+    p1: '#fcee0a',
+    p2: '#00f0ff',
+    contrast: '#ff0055',
+    light: '#fffde0',
+    neon1: '#ffff00',
+    neon2: '#00f0ff',
+    coverBg: 'linear-gradient(160deg, #232205, #080f14)',
+    svg: `<svg viewBox="0 0 160 214" width="100%" height="100%"><rect width="160" height="214" fill="#0c1015"/><polygon points="30,40 130,40 120,120 40,120" fill="#fcee0a"/><polygon points="45,60 115,60 110,105 50,105" fill="#0c1015"/><rect x="40" y="145" width="80" height="12" fill="#00f0ff"/><text x="80" y="92" font-size="20" font-weight="900" fill="#00f0ff" text-anchor="middle" font-family="sans-serif">2077</text></svg>`
+  },
+  hollow: {
+    title: 'Hollow Knight',
+    p1: '#5a67d8',
+    p2: '#805ad5',
+    contrast: '#63b3ed',
+    light: '#e8ecff',
+    neon1: '#667eea',
+    neon2: '#b794f4',
+    coverBg: 'linear-gradient(160deg, #13172e, #070914)',
+    svg: `<svg viewBox="0 0 160 214" width="100%" height="100%"><rect width="160" height="214" fill="#090b16"/><circle cx="80" cy="80" r="38" fill="#ffffff" opacity=".9"/><ellipse cx="68" cy="82" rx="7" ry="11" fill="#090b16"/><ellipse cx="92" cy="82" rx="7" ry="11" fill="#090b16"/><path d="M60,45 Q40,15 65,35" stroke="#ffffff" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M100,45 Q120,15 95,35" stroke="#ffffff" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M80,120 L80,175 M68,140 L92,140" stroke="#cbd5e0" stroke-width="5" stroke-linecap="round"/></svg>`
+  }
+};
+
+let currentGame = 'zelda';
+let currentColorMode = 'actual';
+let isPaused = false;
+
+function svgToDataUrl(svg) {
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
+function updateCards() {
+  const g = GAMES[currentGame];
+
+  let c1, c2, cLight;
+
+  if (currentColorMode === 'actual') {
+    c1 = g.p1;
+    c2 = g.p2;
+    cLight = g.light;
+  } else if (currentColorMode === 'light') {
+    c1 = g.p1;
+    c2 = '#ffffff';
+    cLight = '#ffffff';
+  } else if (currentColorMode === 'contrast') {
+    c1 = g.p1;
+    c2 = g.contrast;
+    cLight = '#ffffff';
+  } else if (currentColorMode === 'neon') {
+    c1 = g.neon1;
+    c2 = g.neon2;
+    cLight = '#ffffff';
+  }
+
+  document.documentElement.style.setProperty('--c1', c1);
+  document.documentElement.style.setProperty('--c2', c2);
+  document.documentElement.style.setProperty('--c-light', cLight);
+
+  const dataUrl = svgToDataUrl(g.svg);
+  for (let i = 0; i <= 5; i++) {
+    const img = document.getElementById('cover-' + i);
+    const title = document.getElementById('title-' + i);
+    if (img) img.src = dataUrl;
+    if (title) title.textContent = g.title;
+  }
+}
+
+function setGame(id, btn) {
+  currentGame = id;
+  btn.parentNode.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateCards();
+}
+
+function setColorMode(mode, btn) {
+  currentColorMode = mode;
+  btn.parentNode.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateCards();
+}
+
+function setSpeed(spd, btn) {
+  document.documentElement.style.setProperty('--speed', spd);
+  btn.parentNode.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function toggleTheme() {
+  const body = document.body;
+  const isDark = body.getAttribute('data-theme') === 'dark';
+  body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.getElementById('themeBtn').textContent = isDark ? '☀️ Modo claro' : '🌙 Modo oscuro';
+}
+
+function togglePause() {
+  isPaused = !isPaused;
+  const style = isPaused ? 'paused' : 'running';
+  document.querySelectorAll('.ring, .halo').forEach(el => {
+    el.style.animationPlayState = style;
+  });
+  document.getElementById('pauseBtn').textContent = isPaused ? '▶️ Reanudar' : '⏸️ Pausar animación';
+}
+
+// Inicializar
+updateCards();
+</script>
+
+</body>
+</html>
