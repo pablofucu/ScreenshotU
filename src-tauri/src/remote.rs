@@ -4,7 +4,7 @@ use crate::state::{self, AppState};
 use serde::Serialize;
 use std::net::{Ipv4Addr, SocketAddr};
 use std::path::PathBuf;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Listener, Manager, State};
 use visor_core::db::data as dbd;
 use visor_core::remote::{self, Playing, Provider, RemoteConfig, RemoteServer, Snapshot};
 
@@ -69,6 +69,51 @@ impl Provider for AppProvider {
         // snap::trigger ya trabaja en su propio hilo y no necesita el principal.
         crate::snap::trigger(&self.app);
         Ok(())
+    }
+
+    fn call(&self, cmd: &str, args: serde_json::Value) -> Result<serde_json::Value, String> {
+        crate::remote_call::dispatch(&self.app, cmd, args)
+    }
+
+    fn asset_roots(&self) -> Vec<PathBuf> {
+        let st = self.app.state::<AppState>();
+        let mut v = vec![st.thumbs_dir(), st.previews_dir(), st.paths.art.clone(), st.paths.saves.clone(), st.paths.glossary.clone()];
+        v.extend(st.paths.captures.clone());
+        // Raiz de la biblioteca de juegos (capturas, portadas, hero y logos que viven junto a ellas).
+        if let Some(r) = st.config.lock().unwrap().root.as_deref().filter(|r| !r.trim().is_empty()) {
+            v.push(PathBuf::from(r));
+        }
+        v
+    }
+}
+
+/// Eventos de Tauri que se reenvian a las tablets (`GET /api/v1/events`). Quedan fuera los de la ventana del PC:
+/// el texthook (`th-*`), el lector de novelas (`novel-prefs`) y el aprendizaje del mando (`learn-pad`).
+const FORWARDED_EVENTS: &[&str] = &[
+    "achievement-unlocked",
+    "achievements-rarity-updated",
+    "audio-outputs",
+    "capture-error",
+    "capture-saved",
+    "game-exited",
+    "game-started",
+    "import-progress",
+    "library-progress",
+    "magpie-status",
+    "saves-copied",
+    "sgdb-art",
+    "sgdb-done",
+    "sgdb-progress",
+    "thumb-ready",
+];
+
+/// Escucha los eventos de `FORWARDED_EVENTS` y los deja en el bus de `visor_core::remote`. Se llama una vez.
+pub fn forward_events(app: &AppHandle) {
+    for name in FORWARDED_EVENTS {
+        app.listen_any(*name, move |ev| {
+            let payload = serde_json::from_str(ev.payload()).unwrap_or(serde_json::Value::Null);
+            remote::event_bus().push(name, payload);
+        });
     }
 }
 

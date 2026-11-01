@@ -146,6 +146,17 @@ T1–T2 y T3 son independientes y pueden ir en paralelo. T4 depende de T0 y apro
 4. **Arrancar el visor con Windows en la bandeja**: ¿sí?
 5. Hacer la **prueba T0** cuando puedas y pasarme el resultado.
 
+### Respuestas (2026-11-01)
+- Sí: la tablet usa la interfaz del escritorio **tal cual** (sin rediseño táctil; basta con que funcione al tocar).
+- Mismas funciones que el escritorio: mirar, favoritos, capturas, estados, Mi lista, etc.
+- Solo horizontal.
+- Apollo + Artemis: adelante.
+- **La app debe funcionar con el PC apagado**: en el futuro capturas y partidas guardadas estarán en un servidor en
+  la nube. Por eso el `RemoteBackend` habla con «un servidor» (hoy el PC, mañana la nube, misma API) y guarda en la
+  tablet lo último sincronizado: datos en IndexedDB, imágenes en la caché HTTP, y los cambios hechos sin conexión
+  (favoritos, estados, orden…) en una cola que se envía al volver.
+- El PC tiene IP fija, pero se quiere igualmente que la app lo encuentre sola (fase T3).
+
 ## Fuera de alcance
 - Rediseño del móvil (pantalla < 600 dp): más adelante.
 - Las categorías de la biblioteca no se tocan (`CLAUDE.md`).

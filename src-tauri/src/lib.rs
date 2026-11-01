@@ -20,6 +20,7 @@ mod peek;
 mod platform;
 mod reader;
 mod remote;
+mod remote_call;
 mod saves;
 mod sgdb;
 mod shots;
@@ -1083,6 +1084,7 @@ pub fn run() {
                 remote_error: Mutex::new(None),
             });
             // Servidor para la app movil, si esta activado.
+            remote::forward_events(app.handle());
             remote::apply(app.handle());
             if let Err(e) = apply_hotkeys(app.handle(), &hotkey, &rec_hotkey, &audio_hotkey) {
                 eprintln!("{e}");

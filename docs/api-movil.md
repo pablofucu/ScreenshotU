@@ -26,7 +26,7 @@ misma IP se responde `429` durante ese minuto.
 ### `GET /api/v1/hello` (sin código)
 
 ```json
-{ "app": "visor-capturas", "api": 1, "name": "PC-SALON", "version": "0.1.0", "features": ["launch", "capture"] }
+{ "app": "visor-capturas", "api": 1, "name": "PC-SALON", "version": "0.1.0", "features": ["launch", "capture", "call", "events", "asset"] }
 ```
 
 Sirve para comprobar que en esa dirección hay un visor antes de pedir el código. `features` lista las acciones
@@ -94,7 +94,32 @@ Sin cuerpo. Hace una captura ahora, como el atajo del escritorio, y responde `{"
 captura se hace en segundo plano; si no hay juego abierto el visor lo avisa en el PC). Mismo código y mismo límite
 de intentos que el resto; con `GET` da `405`.
 
+### `POST /api/v1/call`
+
+Cuerpo `{"cmd": "<comando de Tauri>", "args": {...}}`: ejecuta en el PC el mismo comando que la interfaz del
+escritorio llama con `invoke`. `args` usa las claves que manda el JS (camelCase: `gameId`, `targetDir`…). Responde
+`200` con el resultado JSON del comando (`null` si no devuelve nada), `400` (cuerpo o argumentos no válidos), `403`
+`{"error":"No disponible desde la tablet"}` para los comandos que no se exponen (ventanas y atajos del PC, copias de
+seguridad y biblioteca, abrir carpetas, texthook, Anki, lector de novelas, datos del servidor remoto) y `500` con el
+mensaje cuando el comando devuelve error. Puede tardar (p. ej. `scan_library`); cada petición va en su propio hilo.
+
+### `GET /api/v1/events?since=<seq>&wait=<s>`
+
+Eventos del escritorio (los que la interfaz escucha con `listen`: `game-started`, `game-exited`, `capture-saved`,
+`thumb-ready`, `sgdb-*`, `library-progress`…). Respuesta `{"seq": N, "events": [{"seq", "name", "payload"}]}`. Es un
+long-poll: si hay eventos con `seq > since` los devuelve ya; si no, espera hasta `wait` segundos (máx. 25) y devuelve
+la lista vacía. Con `since` ausente o `0` devuelve solo la `seq` actual (punto de partida). El servidor guarda los
+últimos 200; si `since` es mayor que `seq` (el PC se reinició) también devuelve solo la `seq` actual.
+
+### `GET /api/v1/asset?p=<ruta absoluta>&k=<código>`
+
+Sirve un archivo cualquiera de las carpetas de datos que la interfaz muestra con `convertFileSrc`: raíz de la
+biblioteca, miniaturas, vistas previas, grafismos (`art`), partidas/capturas de partidas y medios de las frases. La
+ruta se canoniza y debe quedar dentro de una de esas carpetas (`..` o enlaces que salgan → `404`). Cabeceras:
+`Cache-Control: public, max-age=31536000, immutable`, `ETag` (tamaño + fecha; `If-None-Match` → `304`) y el
+`Content-Type` por extensión.
+
 ## Errores
 
-`{"error": "mensaje en español"}` con `400` (parámetros), `401` (código), `404` (ruta desconocida o
+`{"error": "mensaje en español"}` con `400` (parámetros), `401` (código), `403` (comando no disponible), `404` (ruta desconocida o
 desaparecida), `405` (método), `409` (acción rechazada), `429` (demasiados intentos) o `500`.

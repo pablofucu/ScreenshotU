@@ -13,7 +13,7 @@ use image::codecs::jpeg::JpegEncoder;
 use image::imageops::FilterType;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs;
 use std::io::{Read, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket};
@@ -34,7 +34,17 @@ const SNAPSHOT_MAX_AGE: Duration = Duration::from_secs(30);
 const FAIL_LIMIT: u32 = 10;
 const FAIL_WINDOW: Duration = Duration::from_secs(60);
 /// Hilos que atienden peticiones.
-const WORKERS: usize = 8;
+const WORKERS: usize = 16;
+/// Eventos que guarda el bus (los mas recientes).
+const EVENT_BUFFER: usize = 200;
+/// Espera maxima de `GET /events` (segundos).
+const EVENTS_MAX_WAIT: u64 = 25;
+/// Cuerpo maximo de las peticiones POST.
+const MAX_BODY: u64 = 1024 * 1024;
+/// Error de `Provider::call` para un comando que no se puede usar desde fuera del escritorio (da 403).
+pub const CALL_NOT_ALLOWED: &str = "No disponible desde la tablet";
+/// Prefijo del error de `Provider::call` cuando los argumentos no encajan con el comando (da 400).
+pub const CALL_BAD_ARGS: &str = "Argumentos no válidos";
 /// Alfabeto del codigo de emparejamiento (sin 0/O, 1/I/L ni otros ambiguos).
 pub const CODE_ALPHABET: &[u8] = b"ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
@@ -107,6 +117,88 @@ pub trait Provider: Send + Sync + 'static {
     fn capture(&self) -> Result<()> {
         anyhow::bail!("Este equipo no puede hacer capturas")
     }
+    /// Ejecuta un comando del visor por su nombre (`POST /call`). `Err(CALL_NOT_ALLOWED)` = no permitido.
+    fn call(&self, _cmd: &str, _args: serde_json::Value) -> std::result::Result<serde_json::Value, String> {
+        Err(CALL_NOT_ALLOWED.into())
+    }
+    /// Carpetas de las que sirve `GET /asset` (cualquier archivo dentro de ellas).
+    fn asset_roots(&self) -> Vec<PathBuf> {
+        vec![self.thumbs_dir(), self.previews_dir()]
+    }
+}
+
+/* ---------- eventos (long-poll) ---------- */
+
+/// Un evento del escritorio reenviado a los clientes remotos.
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct Event {
+    pub seq: u64,
+    pub name: String,
+    pub payload: serde_json::Value,
+}
+
+struct BusState {
+    seq: u64,
+    buf: VecDeque<Event>,
+}
+
+/// Cola circular de eventos con numero de secuencia; `poll` espera a los nuevos.
+pub struct EventBus {
+    st: Mutex<BusState>,
+    cv: std::sync::Condvar,
+}
+
+impl Default for EventBus {
+    fn default() -> Self {
+        EventBus::new()
+    }
+}
+
+impl EventBus {
+    pub fn new() -> EventBus {
+        EventBus { st: Mutex::new(BusState { seq: 0, buf: VecDeque::new() }), cv: std::sync::Condvar::new() }
+    }
+    pub fn push(&self, name: &str, payload: serde_json::Value) {
+        let mut st = lock(&self.st);
+        st.seq += 1;
+        let seq = st.seq;
+        st.buf.push_back(Event { seq, name: name.to_string(), payload });
+        while st.buf.len() > EVENT_BUFFER {
+            st.buf.pop_front();
+        }
+        drop(st);
+        self.cv.notify_all();
+    }
+    /// Secuencia del ultimo evento (0 = ninguno aun).
+    pub fn current(&self) -> u64 {
+        lock(&self.st).seq
+    }
+    /// Eventos con `seq > since`; si no hay, espera hasta `wait` y devuelve lo que llegue. `since == 0` (o de un
+    /// servidor anterior, mayor que la secuencia actual) devuelve solo la secuencia vigente.
+    pub fn poll(&self, since: u64, wait: Duration) -> (u64, Vec<Event>) {
+        let deadline = Instant::now() + wait;
+        let mut st = lock(&self.st);
+        if since == 0 || since > st.seq {
+            return (st.seq, Vec::new());
+        }
+        loop {
+            if st.seq > since {
+                let ev = st.buf.iter().filter(|e| e.seq > since).cloned().collect();
+                return (st.seq, ev);
+            }
+            let now = Instant::now();
+            if now >= deadline {
+                return (st.seq, Vec::new());
+            }
+            st = self.cv.wait_timeout(st, deadline - now).unwrap_or_else(|e| e.into_inner()).0;
+        }
+    }
+}
+
+/// Bus unico del proceso: la app empuja aqui los eventos de Tauri y `GET /events` los sirve.
+pub fn event_bus() -> &'static EventBus {
+    static BUS: std::sync::OnceLock<EventBus> = std::sync::OnceLock::new();
+    BUS.get_or_init(EventBus::new)
 }
 
 /* ---------- utilidades publicas ---------- */
@@ -420,6 +512,18 @@ fn content_type(p: &Path) -> &'static str {
         Some("png") => "image/png",
         Some("jpg") | Some("jpeg") => "image/jpeg",
         Some("webp") => "image/webp",
+        Some("gif") => "image/gif",
+        Some("bmp") => "image/bmp",
+        Some("avif") => "image/avif",
+        Some("ico") => "image/x-icon",
+        Some("svg") => "image/svg+xml",
+        Some("mp3") => "audio/mpeg",
+        Some("ogg") | Some("oga") | Some("opus") => "audio/ogg",
+        Some("wav") => "audio/wav",
+        Some("m4a") => "audio/mp4",
+        Some("flac") => "audio/flac",
+        Some("webm") => "video/webm",
+        Some("mp4") => "video/mp4",
         _ => "application/octet-stream",
     }
 }
@@ -505,17 +609,20 @@ fn route(inner: &Inner, req: &Req) -> Reply {
         "/api/v1/hello" => {
             return Reply::json(
                 200,
-                &serde_json::json!({ "app": "visor-capturas", "api": API_VERSION, "name": inner.provider.name(), "version": env!("CARGO_PKG_VERSION"), "features": ["launch", "capture"] }),
+                &serde_json::json!({ "app": "visor-capturas", "api": API_VERSION, "name": inner.provider.name(), "version": env!("CARGO_PKG_VERSION"), "features": ["launch", "capture", "call", "events", "asset"] }),
             )
         }
-        "/api/v1/launch" | "/api/v1/capture" if !post => return Reply::error(405, "Método no permitido"),
+        "/api/v1/launch" | "/api/v1/capture" | "/api/v1/call" if !post => return Reply::error(405, "Método no permitido"),
         "/api/v1/launch" => "launch",
+        "/api/v1/call" => "call",
         "/api/v1/capture" => "capture",
         _ if post => return Reply::error(405, "Método no permitido"),
         "/api/v1/snapshot" => "snapshot",
         "/api/v1/thumb" => "thumb",
         "/api/v1/preview" => "preview",
         "/api/v1/file" => "file",
+        "/api/v1/events" => "events",
+        "/api/v1/asset" => "asset",
         _ => return Reply::error(404, "No existe"),
     };
     let now = Instant::now();
@@ -535,6 +642,17 @@ fn route(inner: &Inner, req: &Req) -> Reply {
             Ok(()) => Reply::json(200, &serde_json::json!({ "ok": true })),
             Err(e) => Reply::error(409, &format!("{e:#}")),
         };
+    }
+    if ep == "call" {
+        return call_reply(inner, &req.body);
+    }
+    if ep == "events" {
+        let num = |k: &str| req.query.get(k).and_then(|v| v.parse::<u64>().ok()).unwrap_or(0);
+        let (seq, events) = event_bus().poll(num("since"), Duration::from_secs(num("wait").min(EVENTS_MAX_WAIT)));
+        return Reply::json(200, &serde_json::json!({ "seq": seq, "events": events })).with("Cache-Control", "no-store");
+    }
+    if ep == "asset" {
+        return asset_reply(inner, req);
     }
     if ep == "capture" {
         return match inner.provider.capture() {
@@ -594,6 +712,58 @@ fn route(inner: &Inner, req: &Req) -> Reply {
     r
 }
 
+/// `POST /call`: `{"cmd": "...", "args": {...}}` -> resultado JSON del comando.
+fn call_reply(inner: &Inner, body: &[u8]) -> Reply {
+    let Ok(v) = serde_json::from_slice::<serde_json::Value>(body) else {
+        return Reply::error(400, "El cuerpo no es JSON");
+    };
+    let Some(cmd) = v.get("cmd").and_then(|c| c.as_str()).filter(|c| !c.is_empty()) else {
+        return Reply::error(400, "Falta cmd");
+    };
+    let args = match v.get("args") {
+        None | Some(serde_json::Value::Null) => serde_json::json!({}),
+        Some(a) if a.is_object() => a.clone(),
+        Some(_) => return Reply::error(400, "args debe ser un objeto"),
+    };
+    match inner.provider.call(cmd, args) {
+        Ok(r) => Reply::json(200, &r),
+        Err(e) if e == CALL_NOT_ALLOWED => Reply::error(403, CALL_NOT_ALLOWED),
+        Err(e) if e.starts_with(CALL_BAD_ARGS) => Reply::error(400, &e),
+        Err(e) => Reply::error(500, &e),
+    }
+}
+
+/// Resuelve `p` y comprueba que quede dentro de una de las carpetas permitidas (sin saltos con `..` ni enlaces).
+pub fn resolve_asset(p: &str, roots: &[PathBuf]) -> Option<PathBuf> {
+    let real = fs::canonicalize(p).ok()?;
+    if !real.is_file() {
+        return None;
+    }
+    roots.iter().filter_map(|r| fs::canonicalize(r).ok()).any(|r| real.starts_with(&r)).then_some(real)
+}
+
+/// `GET /asset`: cualquier archivo de las carpetas de datos, con cache larga (la interfaz versiona la URL).
+fn asset_reply(inner: &Inner, req: &Req) -> Reply {
+    let Some(p) = req.query.get("p").filter(|p| !p.is_empty()) else {
+        return Reply::error(400, "Falta el parámetro p");
+    };
+    let Some(real) = resolve_asset(p, &inner.provider.asset_roots()) else {
+        return Reply::error(404, "Ruta desconocida");
+    };
+    let cache = "public, max-age=31536000, immutable";
+    let Ok(meta) = fs::metadata(&real) else {
+        return Reply::error(404, "El archivo ya no existe");
+    };
+    let mtime = meta.modified().ok().and_then(|m| m.duration_since(UNIX_EPOCH).ok()).map(|d| d.as_millis()).unwrap_or(0);
+    let etag = format!("\"a-{:x}-{:x}\"", meta.len(), mtime);
+    if etag_matches(req.header("if-none-match"), &etag) {
+        return Reply::empty(304).with("ETag", etag).with("Cache-Control", cache);
+    }
+    Reply { status: 200, headers: vec![("Content-Type", content_type(&real).into())], body: Body::File(real) }
+        .with("Cache-Control", cache)
+        .with("ETag", etag)
+}
+
 fn snapshot_reply(c: &Cached, req: &Req) -> Reply {
     if etag_matches(req.header("if-none-match"), &c.etag) {
         return Reply::empty(304).with("ETag", c.etag.clone()).with("Cache-Control", "no-cache").with("Vary", "Accept-Encoding");
@@ -627,8 +797,8 @@ fn handle(inner: &Inner, mut rq: tiny_http::Request) {
     let ip = rq.remote_addr().map(|a| a.ip()).unwrap_or(IpAddr::V4(Ipv4Addr::UNSPECIFIED));
     let mut req = Req::parse(rq.method().as_str(), rq.url(), headers, ip);
     if req.method == "POST" {
-        // Cuerpo pequeno (JSON con un id): se limita para que nadie llene la memoria.
-        let _ = std::io::Read::take(rq.as_reader(), 16 * 1024).read_to_end(&mut req.body);
+        // Cuerpo JSON (un id o los argumentos de un comando): se limita para que nadie llene la memoria.
+        let _ = std::io::Read::take(rq.as_reader(), MAX_BODY).read_to_end(&mut req.body);
     }
     let reply = route(inner, &req);
     let head_only = req.method == "HEAD";
@@ -855,6 +1025,13 @@ mod tests {
         fn capture(&self) -> Result<()> {
             Ok(())
         }
+        fn call(&self, cmd: &str, args: serde_json::Value) -> std::result::Result<serde_json::Value, String> {
+            match cmd {
+                "ping" => Ok(serde_json::json!({ "pong": args["n"] })),
+                "boom" => Err("fallo".into()),
+                _ => Err(CALL_NOT_ALLOWED.into()),
+            }
+        }
     }
 
     struct Resp {
@@ -917,6 +1094,104 @@ mod tests {
         let text = String::from_utf8_lossy(&raw).into_owned();
         let status = text.split(' ').nth(1).unwrap().parse().unwrap();
         (status, text)
+    }
+
+    #[test]
+    fn event_bus_buffer_and_poll() {
+        let bus = EventBus::new();
+        assert_eq!(bus.poll(0, Duration::from_millis(10)), (0, vec![]));
+        for i in 0..(EVENT_BUFFER + 5) {
+            bus.push("x", serde_json::json!(i));
+        }
+        let cur = bus.current();
+        assert_eq!(cur as usize, EVENT_BUFFER + 5);
+        // since == 0 solo da la secuencia; since desfasado (servidor reiniciado) tambien
+        assert_eq!(bus.poll(0, Duration::from_millis(10)), (cur, vec![]));
+        assert_eq!(bus.poll(cur + 100, Duration::from_millis(10)), (cur, vec![]));
+        // el buffer descarta los mas viejos
+        let (_, all) = bus.poll(1, Duration::from_millis(10));
+        assert_eq!(all.len(), EVENT_BUFFER);
+        assert_eq!(all.last().unwrap().seq, cur);
+        // sin novedades espera y devuelve vacio
+        let t = Instant::now();
+        assert_eq!(bus.poll(cur, Duration::from_millis(80)).1.len(), 0);
+        assert!(t.elapsed() >= Duration::from_millis(70));
+    }
+
+    #[test]
+    fn event_bus_wakes_a_waiting_poll() {
+        let bus = Arc::new(EventBus::new());
+        bus.push("a", serde_json::json!(1));
+        let b2 = bus.clone();
+        let h = std::thread::spawn(move || b2.poll(1, Duration::from_secs(10)));
+        std::thread::sleep(Duration::from_millis(100));
+        bus.push("b", serde_json::json!({"k": 2}));
+        let (seq, ev) = h.join().unwrap();
+        assert_eq!(seq, 2);
+        assert_eq!(ev.len(), 1);
+        assert_eq!(ev[0].name, "b");
+    }
+
+    #[test]
+    fn asset_paths_stay_inside_roots() {
+        let d = tempfile::tempdir().unwrap();
+        let root = d.path().join("root");
+        let other = d.path().join("other");
+        fs::create_dir_all(&root).unwrap();
+        fs::create_dir_all(&other).unwrap();
+        fs::write(root.join("a.png"), b"x").unwrap();
+        fs::write(other.join("secret.txt"), b"x").unwrap();
+        let roots = vec![root.clone()];
+        assert!(resolve_asset(root.join("a.png").to_str().unwrap(), &roots).is_some());
+        assert!(resolve_asset(other.join("secret.txt").to_str().unwrap(), &roots).is_none());
+        // salto con ..
+        let sneaky = root.join("..").join("other").join("secret.txt");
+        assert!(resolve_asset(sneaky.to_str().unwrap(), &roots).is_none());
+        // una carpeta no es un archivo; una ruta que no existe tampoco
+        assert!(resolve_asset(root.to_str().unwrap(), &roots).is_none());
+        assert!(resolve_asset(root.join("no.png").to_str().unwrap(), &roots).is_none());
+    }
+
+    #[test]
+    fn call_events_asset_over_http() {
+        let d = tempfile::tempdir().unwrap();
+        fs::create_dir_all(d.path().join("thumbs")).unwrap();
+        fs::write(d.path().join("thumbs").join("t.png"), b"png!").unwrap();
+        let fake = Fake { lib: lib_with(vec![]), dir: d.path().to_path_buf(), scans: Arc::new(AtomicU64::new(0)) };
+        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), "ABCD-EFGH".into(), fake).unwrap();
+        let a = srv.local_addr();
+        let auth = [("Authorization", "Bearer ABCD-EFGH")];
+        // call: sin codigo 401; cuerpo roto 400; comando del proveedor de prueba 200; el resto 403 / 500
+        assert_eq!(post(a, "/api/v1/call", None, "{\"cmd\":\"ping\"}").0, 401);
+        assert_eq!(post(a, "/api/v1/call", Some("ABCD-EFGH"), "no es json").0, 400);
+        assert_eq!(post(a, "/api/v1/call", Some("ABCD-EFGH"), "{}").0, 400);
+        let (st, text) = post(a, "/api/v1/call", Some("ABCD-EFGH"), "{\"cmd\":\"ping\",\"args\":{\"n\":2}}");
+        assert_eq!(st, 200);
+        assert!(text.contains("{\"pong\":2}"), "{text}");
+        assert_eq!(post(a, "/api/v1/call", Some("ABCD-EFGH"), "{\"cmd\":\"exit_app\"}").0, 403);
+        assert_eq!(post(a, "/api/v1/call", Some("ABCD-EFGH"), "{\"cmd\":\"boom\"}").0, 500);
+        assert_eq!(get(a, "GET", "/api/v1/call", &auth).status, 405);
+        // events: since ausente = secuencia vigente sin eventos; con novedades las devuelve
+        event_bus().push("test-evento", serde_json::json!({"v": 1}));
+        let r = get(a, "GET", "/api/v1/events", &auth);
+        assert_eq!(r.status, 200);
+        let cur = serde_json::from_slice::<serde_json::Value>(&r.body).unwrap()["seq"].as_u64().unwrap();
+        event_bus().push("test-evento", serde_json::json!({"v": 2}));
+        let r = get(a, "GET", &format!("/api/v1/events?since={cur}&wait=5"), &auth);
+        let v = serde_json::from_slice::<serde_json::Value>(&r.body).unwrap();
+        assert_eq!(v["events"][0]["payload"]["v"], 2);
+        // asset: dentro de las carpetas 200 con cache inmutable y ETag; fuera 404
+        let p = d.path().join("thumbs").join("t.png");
+        let url = format!("/api/v1/asset?p={}&k=ABCD-EFGH", p.to_string_lossy().replace('\\', "/"));
+        let r = get(a, "GET", &url, &[]);
+        assert_eq!(r.status, 200);
+        assert_eq!(r.h("content-type"), Some("image/png"));
+        assert!(r.h("cache-control").unwrap().contains("immutable"));
+        let etag = r.h("etag").unwrap().to_string();
+        assert_eq!(get(a, "GET", &url, &[("If-None-Match", &etag)]).status, 304);
+        let out = format!("/api/v1/asset?p={}&k=ABCD-EFGH", d.path().join("thumbs").join("..").join("x.png").to_string_lossy().replace('\\', "/"));
+        assert_eq!(get(a, "GET", &out, &[]).status, 404);
+        assert_eq!(get(a, "GET", "/api/v1/asset?p=x", &[]).status, 401);
     }
 
     #[test]
