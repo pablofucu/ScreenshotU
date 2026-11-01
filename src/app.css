@@ -840,7 +840,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 
 /* Catálogo: anillo y halo en movimiento de la portada enfocada (con los dos colores del juego, --p1/--p2). */
 @keyframes sheen{to{background-position:200% 0}}
-.tcov>.ring,.ccover>.ring{position:absolute;inset:-7px;z-index:4;border-radius:calc(var(--r) + 7px);padding:5px;box-sizing:border-box;
+.tcov>.ring,.ccover>.ring{position:absolute;inset:-2px;z-index:4;border-radius:calc(var(--r) + 2px);padding:calc(var(--bw) + 2px);box-sizing:border-box;
   background:linear-gradient(115deg,var(--p1,var(--f1)),var(--p2,var(--f2)),var(--p1,var(--f1)));background-size:200% 100%;
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
   opacity:0;transition:opacity .2s;animation:sheen 3s linear infinite;pointer-events:none}
