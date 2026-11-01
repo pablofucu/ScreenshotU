@@ -1,6 +1,8 @@
 import type { Achievement, AchievementSummary, GameDetection, AddReport, AudioOutput, Backend, BackupResult, GameStatsDb, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, MoveReport, TrashReport, RemoteInfo, NewGame, Collection, SortMode } from './types';
 
 export const IS_TAURI = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+/** La UI de escritorio corre dentro del APK de la tablet (el arranque de `mobile/` lo marca antes de cargarla): habla con el PC por HTTP. */
+export const IS_TABLET = typeof window !== 'undefined' && (window as unknown as { __VISOR_TABLET__?: boolean }).__VISOR_TABLET__ === true;
 export const FORCE_MOCK = typeof window !== 'undefined' && (
   new URLSearchParams(window.location.search).has('mock') ||
   localStorage.getItem('visor_force_mock') === 'true'
@@ -123,7 +125,7 @@ async function tauriBackend(): Promise<Backend> {
       return url;
     },
     fullUrl: (path) => convertFileSrc(path),
-    artUrl: (path) => convertFileSrc(path) + (artVer ? `?v=${artVer}` : ''),
+    artUrl: (path) => { const u = convertFileSrc(path); return artVer ? u + (u.includes('?') ? '&' : '?') + `v=${artVer}` : u; },
     bustArt() { artVer = Date.now(); },
     prefetch(paths) {
       const todo = paths.filter((p) => !cache.has(p));

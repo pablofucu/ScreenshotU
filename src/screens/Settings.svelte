@@ -15,6 +15,8 @@
   import Hints from '../components/Hints.svelte';
   import { makeMoved } from '../lib/pointer';
   import { VARIANT_NAMES } from '../lib/achievements.svelte';
+  import { endpoint } from '../lib/remote/config';
+  import { lastSyncLabel, remoteStatus } from '../lib/remote/status.svelte';
 
   const yn = (b: boolean) => (b ? 'Sí' : 'No');
 
@@ -72,6 +74,9 @@
     liststalledact: () => ({ l: 'Qué hacer con ellos', v: app.config.listStalledAction === 'pending' ? 'Pasar a Pendiente' : app.config.listStalledAction === 'dropped' ? 'Pasar a Abandonado' : 'Preguntar', d: 'Preguntar enseña una tarjeta al arrancar con Pendiente, Abandonado o Dejarlo para cada juego; «Dejarlo» no se vuelve a preguntar hasta que lo juegues otra vez. Las otras opciones los cambian solas y avisan con un mensaje.' }),
     listautoplay: () => ({ l: 'Al lanzar un pendiente, pasa a Jugando', v: yn(app.config.listAutoPlay), d: 'Cuando lanzas desde el visor un juego marcado como Pendiente, pasa solo a Jugando.' }),
     update: () => updateRow(),
+    tabpc: () => ({ l: 'PC conectado', v: endpoint()?.name ?? '—', d: `La tablet muestra la biblioteca de este PC (${endpoint()?.base.replace(/^https?:\/\//, '') ?? 'sin dirección'}). Todo lo que ves viene de allí; los últimos datos se guardan para consultarlos aunque el PC esté apagado.` }),
+    tabstate: () => ({ l: 'Estado', v: remoteStatus.online ? 'Conectado' : 'Sin conexión', d: remoteStatus.online ? 'El PC responde: los cambios se guardan al momento.' : `El PC no responde. Ves los datos guardados${lastSyncLabel() ? ` a las ${lastSyncLabel()}` : ''}; los cambios sencillos (favoritas, estados, colecciones…) se envían solos cuando vuelva${remoteStatus.pending ? ` (${remoteStatus.pending} pendientes)` : ''}.` }),
+    tabdisc: () => ({ l: 'Desconectar', v: '', d: 'Olvida este PC y vuelve a la pantalla de conexión para elegir otro o escribir de nuevo la dirección y el código.' }),
     quit: () => ({ l: 'Salir de la aplicación', v: '', d: 'Cierra el visor. Las capturas con el atajo dejan de funcionar hasta que lo vuelvas a abrir.' }),
     sgdbkey: () => ({ l: 'Clave de API', v: sgdbKeyLabel(), d: 'Clave gratuita de steamgriddb.com (inicia sesión → Preferencias → API). Pulsa A para escribirla o pegarla con Ctrl+V.' }),
     sgdbauto: () => ({ l: 'Descargar grafismos que falten', v: yn(app.config.sgdbAuto), d: 'Al escanear, busca cada juego por su nombre y descarga la portada, el hero y el logo que falten. Se guardan en la carpeta Grafismos de la biblioteca: la carpeta de capturas del juego no se toca y sus grafismos propios siempre ganan.' }),

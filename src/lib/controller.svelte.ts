@@ -1,6 +1,7 @@
 import { tick } from 'svelte';
 import { app, SORT_LABEL, SORT_ORDER, TITLE_FILTERS, TITLE_ORDERS, TITLE_ORDER_LABEL, TITLES_TABS, validFilter, type MenuItem, type SortMode, type TitleFilter, type View } from './store.svelte';
-import { backend, initBackend } from './backend';
+import { backend, initBackend, IS_TABLET } from './backend';
+import { clearServer } from './remote/config';
 import { blip } from './sound';
 import type { BackendEvent, Config, Library, MagpieMode, Shot, Title, TitlesTab } from './types';
 import { fmtDur } from './format';
@@ -1230,6 +1231,7 @@ export type SettingId =
   | 'backup' | 'backupmedia' | 'restore' | 'autobackup'
   | 'savesauto' | 'ludusavi' | 'inputmouse' | 'inputkeys' | 'update'
   | 'liststalled' | 'liststalleddays' | 'liststalledact' | 'listautoplay' | 'theme'
+  | 'tabpc' | 'tabstate' | 'tabdisc'
   | ReadingId | RemoteId;
 /** Secciones de Ajustes (LB/RB las recorren). `t` es la posición en el arcoíris (0..1) que da su color. */
 export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[] }> = [
@@ -1274,7 +1276,8 @@ export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[
   {
     name: 'Acerca de',
     t: 1,
-    rows: ['update', 'quit'],
+    // En la tablet no hay actualizador ni cierre de la app: se enseña a qué PC está conectada.
+    rows: IS_TABLET ? ['tabpc', 'tabstate', 'tabdisc'] : ['update', 'quit'],
   },
 ];
 /** Filas que cambian de valor con izquierda/derecha (se marcan con ‹ ›). Las demás son acciones: izquierda vuelve al menú. */
@@ -1497,6 +1500,7 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'caponly') { void patchConfig({ captureOnlyGames: !app.config.captureOnlyGames }); blip(1320); }
   else if (id === 'caprumble') { void patchConfig({ captureRumble: !app.config.captureRumble }); blip(1320); }
   else if (id === 'update') void updateAct(dir);
+  else if (id === 'tabdisc' && dir === 0) { clearServer(); location.reload(); } // vuelve a la pantalla de conexión
   else if (id === 'quit' && dir === 0) void quit();
   else if (id === 'backup' && dir === 0) void createBackup();
   else if (id === 'backupmedia') { app.backupMedia = !app.backupMedia; blip(1320); }
@@ -1956,6 +1960,52 @@ export function startMouse() {
   window.addEventListener('mousedown', onMouseButton);
   window.addEventListener('auxclick', (e) => { if (e.button === 3 || e.button === 4) e.preventDefault(); });
   window.addEventListener('wheel', onWheel, { passive: false });
+  if (IS_TABLET) startTouch();
+}
+
+/** Tablet: arrastrar el dedo hace lo mismo que la rueda (carruseles, páginas, listas); en el visor, deslizar a
+ *  un lado cambia de captura. Los paneles con desplazamiento propio (Ajustes, Partidas…) se mueven solos. */
+// La rueda avanza un paso cada 40 px: con 1/3, un paso cada ~120 px de dedo.
+const TOUCH_SLOP = 10, TOUCH_GAIN = 1 / 3, SWIPE_MIN = 70;
+function scrollable(el: HTMLElement | null): boolean {
+  for (; el && el !== document.body; el = el.parentElement) {
+    const s = getComputedStyle(el);
+    if (/(auto|scroll)/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 1) return true;
+    if (/(auto|scroll)/.test(s.overflowX) && el.scrollWidth > el.clientWidth + 1) return true;
+  }
+  return false;
+}
+function startTouch() {
+  document.body.style.touchAction = 'pan-x pan-y';
+  let x0 = 0, y0 = 0, lx = 0, ly = 0, active = false, native = false, dragging = false;
+  window.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) { active = false; return; }
+    const t = e.touches[0];
+    x0 = lx = t.clientX; y0 = ly = t.clientY;
+    active = true; dragging = false;
+    native = scrollable(e.target as HTMLElement | null);
+  }, { passive: true });
+  window.addEventListener('touchmove', (e) => {
+    if (!active || native || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    if (!dragging && Math.hypot(t.clientX - x0, t.clientY - y0) < TOUCH_SLOP) return;
+    dragging = true;
+    e.preventDefault();
+    if (app.view === 'viewer' && !app.overlay) return; // en el visor se decide al soltar
+    const dx = lx - t.clientX, dy = ly - t.clientY;
+    lx = t.clientX; ly = t.clientY;
+    e.target?.dispatchEvent(new WheelEvent('wheel', {
+      deltaX: dx * TOUCH_GAIN, deltaY: dy * TOUCH_GAIN, clientX: t.clientX, clientY: t.clientY, bubbles: true, cancelable: true,
+    }));
+  }, { passive: false });
+  window.addEventListener('touchend', (e) => {
+    if (!active) return;
+    active = false;
+    if (native || !dragging || app.view !== 'viewer' || app.overlay) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - x0, dy = t.clientY - y0;
+    if (Math.abs(dx) > SWIPE_MIN && Math.abs(dx) > Math.abs(dy) * 1.5) cmd(dx < 0 ? 'right' : 'left');
+  }, { passive: true });
 }
 
 /* ---------- mando ---------- */
