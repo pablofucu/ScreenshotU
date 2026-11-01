@@ -303,6 +303,21 @@
   .tinted .bsh .mic :global(svg[fill=none] rect),.tinted .bsh.lit .mic :global(svg[fill=none] rect){fill:none}
   .tinted .slab.on s{background:var(--gf);color:var(--on);text-shadow:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 4px 10px -4px var(--f2)}
   .tinted .scov.f .ord{background:var(--gf);color:var(--on);box-shadow:0 3px 6px -2px rgba(40,50,70,.35)}
+  /* Títulos «letras de caramelo»: el propio texto lleva el par de tonos de la colección, con bisel blanco, sobre cristal sin aurora. */
+  .tinted .aur{display:none}
+  .tinted .bsh{background:linear-gradient(180deg,var(--glass-chip),var(--glass-top))}
+  .tinted .bsh.soft{background:linear-gradient(180deg,var(--glass-top),var(--glass-mid) 55%,var(--glass-bot))}
+  .tinted .bsh::before{opacity:.25}
+  .tinted .bsh.lit::before{opacity:.7;animation:none}
+  .tinted .bsh h3,.tinted .bsh.lit h3{font:800 25px/1.15 var(--round);padding:2px 1px;color:transparent;
+    background:linear-gradient(115deg,var(--f1),var(--f2),var(--f1));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;
+    filter:drop-shadow(0 1px 0 rgba(255,255,255,.95)) drop-shadow(0 2px 3px color-mix(in srgb,var(--f2) 35%,transparent))}
+  .tinted .bsh.lit h3{animation:shelfSheen 6s linear infinite}
+  .tinted .bsh.soft h3{background:none;color:var(--ink-2);filter:none;font-size:22px}
+  .tinted .chip,.tinted .bsh .m{font:800 var(--t-s) var(--round)}
+  .tinted .bsh.soft .chip{background:var(--glass-chip);color:var(--ink-2);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--g1) 55%,transparent)}
+  :global(#stage[data-theme=dark]) .tinted .bsh h3{background-image:linear-gradient(115deg,var(--g1),var(--g2),var(--g1));filter:drop-shadow(0 0 8px color-mix(in srgb,var(--g2) 45%,transparent))}
+  :global(#stage[data-theme=dark]) .tinted .bsh.soft h3{background:none;filter:none}
   @keyframes shelfSheen{to{background-position:200% 0}}
   @media (prefers-reduced-motion: reduce){.shelf,.rtrack{transition:none}.tinted .bsh.lit::before{animation:none}.rdot,.slab.ylab s,.tinted .bsh :global(.hint){transition:none}}
 </style>
