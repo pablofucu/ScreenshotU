@@ -88,9 +88,17 @@ Si la prueba sale mal → seguimos con Sunshine y cambiamos la resolución del m
    (lo hace principal mientras dura la partida) y `magpie::on_launch` recalcula el perfil para el tamaño de ese
    monitor. En una sesión de streaming el monitor objetivo pasa a ser **la pantalla virtual de Apollo** (la que
    tiene la resolución del cliente, `SUNSHINE_CLIENT_WIDTH/HEIGHT`) en vez del monitor del visor; así el juego
-   sale allí y Magpie lo escala a la resolución de la tablet. Requisitos: lanzar **después** de conectar (punto 2)
-   y que la tablet mande ratón absoluto (Artemis sin «trackpad» y sin táctil nativo: Magpie traduce la posición
-   del ratón, no los toques nativos). Cuidar que el perfil de Magpie no oscile entre PC y tablet.
+   sale allí y Magpie lo escala a la resolución de la tablet. Requisito: lanzar **después** de conectar (punto 2).
+   Hecho en `launch_stream` (1.7.9) y confirmado por el usuario: el juego carga bien.
+7. **Toques con Magpie (sin resolver).** Probado por el usuario: con ratón absoluto el puntero acierta en unas zonas
+   y se desvía en otras. Causa (`Magpie.Core/CursorManager.cpp`): mientras escala, el cursor real vive dentro de la
+   ventana del juego (`srcRect`) y Magpie lo convierte a la imagen grande (`destRect`) con `SrcToScaling`. Apollo
+   manda coordenadas de la pantalla completa, y las que caen dentro de `srcRect` se leen como posiciones del juego.
+   - Solución propuesta: durante la sesión, un gancho `WH_MOUSE_LL` (ya hay uno en `mouse.rs`) se queda los
+     movimientos inyectados, aplica la inversa (`ScalingToSrc`: `destRect` a `srcRect`) y llama a `SetCursorPos`.
+   - Por comprobar: si `SetCursorPos` vuelve a pasar por el gancho, cómo distinguirlo de los movimientos del propio
+     Magpie, y cómo saber `destRect` (no se expone; hay que calcularlo como Magpie).
+   - Mientras tanto: Artemis en modo trackpad (movimiento relativo, sin coordenadas absolutas).
 
 **Tablet:**
 1. Soporte del paquete de Artemis (además de Moonlight).
