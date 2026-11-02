@@ -84,6 +84,14 @@ Si la prueba sale mal → seguimos con Sunshine y cambiamos la resolución del m
 4. Ocultar el cursor durante la sesión (si Apollo no lo hace ya) y restaurarlo siempre al terminar o al arrancar.
 5. La última sesión (juego, minutos, capturas, progreso de metas) en los eventos.
 
+6. **Magpie en la pantalla virtual** (novelas a menos resolución): el lanzador ya abre el juego en «su» monitor
+   (lo hace principal mientras dura la partida) y `magpie::on_launch` recalcula el perfil para el tamaño de ese
+   monitor. En una sesión de streaming el monitor objetivo pasa a ser **la pantalla virtual de Apollo** (la que
+   tiene la resolución del cliente, `SUNSHINE_CLIENT_WIDTH/HEIGHT`) en vez del monitor del visor; así el juego
+   sale allí y Magpie lo escala a la resolución de la tablet. Requisitos: lanzar **después** de conectar (punto 2)
+   y que la tablet mande ratón absoluto (Artemis sin «trackpad» y sin táctil nativo: Magpie traduce la posición
+   del ratón, no los toques nativos). Cuidar que el perfil de Magpie no oscile entre PC y tablet.
+
 **Tablet:**
 1. Soporte del paquete de Artemis (además de Moonlight).
 2. Volumen abajo = captura (ya hecho). **Volumen arriba = menú** superpuesto que desaparece solo: capturar, cerrar
