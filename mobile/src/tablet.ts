@@ -32,7 +32,7 @@ if (!server) {
   // «Jugar»: el PC ya ha lanzado el juego; la tablet abre Moonlight con el stream (igual que «Jugar en el PC» del móvil).
   setAfterLaunch(async () => {
     await stream.refresh();
-    if (!stream.moonlight) { toast('Moonlight no está instalado'); return; }
+    if (!stream.moonlight) { toast('No está instalado Artemis ni Moonlight'); return; }
     await Streaming.stream({ pc: stream.pcName(server.name || server.host), app: stream.appName.trim() || 'Desktop' });
   });
 

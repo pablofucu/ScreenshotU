@@ -53,6 +53,9 @@
     <queries>
         <package android:name="com.limelight" />
         <package android:name="com.limelight.root" />
+        <package android:name="com.limelight.noir" />
+        <package android:name="com.limelight.root.noir" />
+        <package android:name="com.limelight.noirdebug" />
     </queries>
 
     <!-- Permissions -->

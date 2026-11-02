@@ -38,7 +38,7 @@
   async function playOnPc() {
     const src = app.source;
     if (!T?.gameId || !(src instanceof RemoteSource) || launching) return;
-    if (!stream.moonlight) { app.toast('Moonlight no está instalado'); return; }
+    if (!stream.moonlight) { app.toast('No está instalado Artemis ni Moonlight'); return; }
     launching = true;
     try {
       await src.post('launch', { id: T.gameId });

@@ -23,8 +23,8 @@ import java.net.URL;
 /** Puente con Moonlight (streaming del PC) y con el servicio que captura con la tecla de bajar volumen. */
 @CapacitorPlugin(name = "Streaming")
 public class StreamingPlugin extends Plugin {
-    /** Moonlight normal y la variante con root. */
-    static final String[] MOONLIGHT = { "com.limelight", "com.limelight.root" };
+    /** Artemis (fork de Moonlight para Apollo) primero, luego Moonlight; con sus variantes root y debug. */
+    static final String[] MOONLIGHT = { "com.limelight.noir", "com.limelight.root.noir", "com.limelight.noirdebug", "com.limelight", "com.limelight.root" };
     static final String PREFS = "visor_streaming";
 
     static boolean isMoonlight(String pkg) {
@@ -66,7 +66,7 @@ public class StreamingPlugin extends Plugin {
         String app = call.getString("app", "Desktop");
         String pkg = installedMoonlight();
         if (pkg == null) {
-            call.reject("Moonlight no está instalado");
+            call.reject("No está instalado Artemis ni Moonlight");
             return;
         }
         // Moonlight busca el PC por nombre distinguiendo mayusculas; el que anuncia Sunshine es el que vale.
