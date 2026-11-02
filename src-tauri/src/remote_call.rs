@@ -73,6 +73,18 @@ pub fn dispatch(app: &AppHandle, cmd: &str, args: Value) -> Res {
         "prefetch_thumbs" => val(crate::prefetch_thumbs(app.clone(), st(), arg(a, "paths")?)),
         "get_favorites" => val(crate::get_favorites(st())),
         "set_favorite" => out(crate::set_favorite(st(), arg(a, "path")?, arg(a, "on")?)),
+        "launch_stream" => {
+            let id: String = arg(a, "id")?;
+            let state = st();
+            let mut game = state.games.lock().unwrap().iter().find(|g| g.id == id).cloned();
+            if game.is_none() {
+                // Aun no hay escaneo (o el juego es nuevo).
+                let (_, found, _) = crate::scan_full(&state);
+                game = found.iter().find(|g| g.id == id).cloned();
+                *state.games.lock().unwrap() = found;
+            }
+            out(crate::launcher::start_stream(app, game.ok_or("Juego no encontrado")?))
+        }
         "launch_game" => {
             let id: String = arg(a, "id")?;
             // El lanzador toca la ventana y la pantalla principal: va en el hilo principal.

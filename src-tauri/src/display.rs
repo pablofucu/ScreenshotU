@@ -69,6 +69,12 @@ pub fn monitors() -> Vec<Monitor> {
     imp::monitors()
 }
 
+/// La pantalla virtual de Apollo (adaptador SudoVDA), si esta activa: solo existe durante una sesion de streaming.
+pub fn virtual_monitor() -> Option<Monitor> {
+    let device = imp::virtual_device()?;
+    monitors().into_iter().find(|m| m.device.eq_ignore_ascii_case(&device))
+}
+
 /// Monitor donde esta una ventana (por su HWND).
 pub fn of_window(hwnd: isize) -> Option<Monitor> {
     imp::of_window(hwnd)
@@ -162,6 +168,22 @@ mod imp {
         let mut v: Vec<Monitor> = hs.into_iter().filter_map(info).collect();
         v.sort_by_key(|m| (m.x, m.y));
         v
+    }
+
+    /// Dispositivo del escritorio que sirve el adaptador virtual de Apollo.
+    pub fn virtual_device() -> Option<String> {
+        for i in 0.. {
+            let mut dd = DISPLAY_DEVICEW { cb: std::mem::size_of::<DISPLAY_DEVICEW>() as u32, ..Default::default() };
+            if !unsafe { EnumDisplayDevicesW(PCWSTR::null(), i, &mut dd, 0) }.as_bool() {
+                return None;
+            }
+            if dd.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP == DISPLAY_DEVICE_ATTACHED_TO_DESKTOP
+                && from_wide(&dd.DeviceString).to_ascii_lowercase().contains("sudomaker")
+            {
+                return Some(from_wide(&dd.DeviceName));
+            }
+        }
+        None
     }
 
     pub fn of_window(hwnd: isize) -> Option<Monitor> {
@@ -312,6 +334,9 @@ mod imp {
     use super::Monitor;
     pub fn monitors() -> Vec<Monitor> {
         Vec::new()
+    }
+    pub fn virtual_device() -> Option<String> {
+        None
     }
     pub fn of_window(_: isize) -> Option<Monitor> {
         None

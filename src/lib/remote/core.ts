@@ -116,7 +116,8 @@ export async function invoke<T = unknown>(cmd: string, args?: Record<string, unk
   const read = READS.has(cmd);
   if (isLive() || (await probe(ep))) {
     try {
-      const res = await callServer(ep, cmd, args, read ? 60000 : 180000);
+      // «Jugar» en la tablet: el PC espera a la pantalla virtual, que no existe hasta que Artemis conecta.
+      const res = await callServer(ep, cmd === 'launch_game' ? 'launch_stream' : cmd, args, read ? 60000 : 180000);
       if (read) void cachePut(readKey(ep, cmd, args), res);
       if (cmd === 'launch_game' && afterLaunch) void Promise.resolve(afterLaunch(args)).catch((e) => console.warn(e));
       return res as T;
