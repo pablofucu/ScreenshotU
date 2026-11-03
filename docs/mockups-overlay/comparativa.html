@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Overlay · Comparativa de las 4 propuestas</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'M PLUS Rounded 1c','Segoe UI',system-ui,sans-serif;background:#111319;color:#e8ebf2;padding:14px 18px}
+h1{margin:0 0 6px;font-size:20px}
+p{margin:0 0 12px;color:#aeb6c4;font-size:13.5px}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.bar button{font:inherit;font-size:13px;font-weight:700;border:0;border-radius:999px;padding:7px 14px;background:#262a35;color:#c9cfdb;cursor:pointer}
+.bar button.on{background:linear-gradient(100deg,#ff7a9c,#9d8bff);color:#fff}
+.bar .lab{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#7c8496;margin:0 4px 0 10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cell h2{font-size:15px;margin:0 0 6px;display:flex;gap:10px;align-items:baseline}
+.cell h2 a{color:#9d8bff;font-size:12.5px;font-weight:700}
+.frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+</style>
+</head>
+<body>
+<h1>Overlay sobre el juego · las 4 propuestas lado a lado</h1>
+<p>Cada mockup completo (con todos sus estados, navegación con teclado y ratón) se abre con su enlace. Aquí se ven a la vez en el mismo estado.</p>
+<div class="bar" id="bar"><span class="lab">Estado</span></div>
+<div class="grid">
+ <div class="cell"><h2>A · Plaza (rejilla de baldosas) <a href="overlay-a.html">abrir</a></h2><div class="frame"><iframe data-p="a"></iframe></div></div>
+ <div class="cell"><h2>B · Cristal lateral <a href="overlay-b.html">abrir</a></h2><div class="frame"><iframe data-p="b"></iframe></div></div>
+ <div class="cell"><h2>C · Dock con cajón <a href="overlay-c.html">abrir</a></h2><div class="frame"><iframe data-p="c"></iframe></div></div>
+ <div class="cell"><h2>D · Anillo radial <a href="overlay-d.html">abrir</a></h2><div class="frame"><iframe data-p="d"></iframe></div></div>
+</div>
+<script>
+const ST=[['abierto','Abierto'],['rendimiento','Rendimiento'],['audio','Audio'],['logros','Logros'],['salir','Salir del juego']];
+let st='abierto',bg='';
+const bar=document.getElementById('bar');
+function load(){document.querySelectorAll('iframe').forEach(f=>f.src=`overlay-${f.dataset.p}.html?embed${bg}#${st}`);bar.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.s===st||b.dataset.b===bg))}
+for(const [k,t] of ST){const b=document.createElement('button');b.textContent=t;b.dataset.s=k;b.onclick=()=>{st=k;load()};bar.appendChild(b)}
+bar.insertAdjacentHTML('beforeend','<span class="lab">Fondo del juego</span><button data-b="">Oscuro</button><button data-b="&claro">Claro</button>');
+bar.querySelectorAll('[data-b]').forEach(b=>b.onclick=()=>{bg=b.dataset.b;load()});
+load();
+</script>
+</body>
+</html>
