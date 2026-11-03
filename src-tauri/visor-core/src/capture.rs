@@ -124,6 +124,22 @@ pub fn is_magpie_scaling_window(class: &str, exe_name: &str) -> bool {
     e.contains("magpie") && c.contains("magpie") && (c.contains("scaling") || c.contains("swapchain"))
 }
 
+/// Texto del atajo para una tecla F1-F24 (VK 0x70..=0x87) y los modificadores pulsados: `"F6"`, `"Ctrl+F6"`.
+/// `None` si no es una tecla F.
+pub fn fkey_combo(vk: u32, ctrl: bool, alt: bool, shift: bool, win: bool) -> Option<String> {
+    if !(0x70..=0x87).contains(&vk) {
+        return None;
+    }
+    let mut parts: Vec<String> = Vec::new();
+    for (on, name) in [(ctrl, "Ctrl"), (alt, "Alt"), (shift, "Shift"), (win, "Super")] {
+        if on {
+            parts.push(name.into());
+        }
+    }
+    parts.push(format!("F{}", vk - 0x6F));
+    Some(parts.join("+"))
+}
+
 /// RGBA -> JPEG en memoria, reducido a `max_w` de ancho como mucho (para las capturas de lectura, que van a Anki).
 pub fn rgba_to_jpeg(width: u32, height: u32, rgba: &[u8], max_w: u32, quality: u8) -> Result<Vec<u8>> {
     use image::codecs::jpeg::JpegEncoder;
@@ -471,6 +487,18 @@ pub fn should_capture(only_games: bool, has_active: bool, fg: Option<&Foreground
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fkey_combo_names_f_keys_with_modifiers() {
+        assert_eq!(fkey_combo(0x70, false, false, false, false).as_deref(), Some("F1"));
+        assert_eq!(fkey_combo(0x75, false, false, false, false).as_deref(), Some("F6"));
+        assert_eq!(fkey_combo(0x87, false, false, false, false).as_deref(), Some("F24"));
+        assert_eq!(fkey_combo(0x75, true, false, false, false).as_deref(), Some("Ctrl+F6"));
+        assert_eq!(fkey_combo(0x7B, true, true, true, true).as_deref(), Some("Ctrl+Alt+Shift+Super+F12"));
+        assert_eq!(fkey_combo(0x6F, false, false, false, false), None);
+        assert_eq!(fkey_combo(0x88, false, false, false, false), None);
+        assert_eq!(fkey_combo(0x41, true, false, false, false), None);
+    }
 
     #[test]
     fn edge_detector_reports_both_edges() {

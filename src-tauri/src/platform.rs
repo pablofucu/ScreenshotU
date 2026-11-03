@@ -324,6 +324,11 @@ mod imp {
         })
     }
 
+    /// Magpie esta escalando ahora mismo (solo cuenta su ventana de escalado, no la de ajustes).
+    pub fn magpie_scaling() -> bool {
+        find_magpie().is_some()
+    }
+
     /// Primera ventana «normal» por debajo de `above` en el orden Z (la que Magpie esta escalando cuando el
     /// primer plano es la propia ventana de Magpie).
     fn window_below(above: HWND, skip_pids: &[u32]) -> Option<HWND> {
@@ -565,7 +570,7 @@ mod imp {
 }
 
 #[cfg(windows)]
-pub use imp::{foreground_info, grab, idle_ms, own_window_focused, play_shutter};
+pub use imp::{foreground_info, grab, idle_ms, magpie_scaling, own_window_focused, play_shutter};
 
 #[cfg(not(windows))]
 pub fn grab(_target_pids: &[u32], _magpie_scaled: bool) -> Result<Grabbed, String> {
@@ -573,6 +578,10 @@ pub fn grab(_target_pids: &[u32], _magpie_scaled: bool) -> Result<Grabbed, Strin
 }
 #[cfg(not(windows))]
 pub fn play_shutter() {}
+#[cfg(not(windows))]
+pub fn magpie_scaling() -> bool {
+    false
+}
 #[cfg(not(windows))]
 pub fn own_window_focused() -> bool {
     false

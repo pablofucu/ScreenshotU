@@ -289,6 +289,8 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
     let mut first_seen: Option<Instant> = None;
     let mut first_seen_ms: i64 = 0;
     let mut misses = 0u32;
+    // Cierre forzado: momento en que el vigilante lo vio. Con el, la sesion termina sin esperar a las 3 lecturas.
+    let mut forced_at: Option<Instant> = None;
     // Tiempo interactivo: cada segundo cuenta si el juego esta delante y ha habido entrada (teclado, raton o mando)
     // hace menos de `AFK_MS`. Lo demas (ventana en segundo plano, modo automatico, nadie delante) es pasivo.
     let mut last_tick = Instant::now();
@@ -315,6 +317,52 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
             if matches!(c.try_wait(), Ok(None)) && !found.contains(&c.id()) {
                 found.push(c.id());
             }
+        }
+        if crate::quickmenu::force_requested() {
+            if !found.is_empty() && first_seen.is_none() {
+                first_seen = Some(Instant::now());
+                first_seen_ms = now_ms();
+            }
+            let at = *forced_at.get_or_insert_with(|| {
+                crate::quickmenu::log("vigilante: cierre forzado visto");
+                Instant::now()
+            });
+            if found.is_empty() {
+                crate::quickmenu::log("vigilante: sin procesos del juego, la sesion termina");
+                break;
+            }
+            if at.elapsed() >= Duration::from_secs(2) {
+                for pid in &found {
+                    crate::quickmenu::log(&format!("sigue vivo a los 2 s: {pid} ({})", crate::snap::exe_of(*pid).unwrap_or_default()));
+                }
+                crate::quickmenu::log("vigilante: sale del bucle por tiempo (2 s), la sesion termina igualmente");
+                break;
+            }
+            // Otra vez todo lo que siga vivo, con sus descendientes (un proceso nacido despues de la lista).
+            let mut all = found.clone();
+            loop {
+                let before = all.len();
+                for (pid, p) in sys.processes() {
+                    let id = pid.as_u32();
+                    if id != own && !all.contains(&id) && p.parent().map(|pp| all.contains(&pp.as_u32())).unwrap_or(false) {
+                        all.push(id);
+                    }
+                }
+                if all.len() == before {
+                    break;
+                }
+            }
+            for pid in all {
+                if !crate::quickmenu::terminate_pid(pid) {
+                    crate::quickmenu::log(&format!("terminate {pid}: fallo"));
+                }
+            }
+            if let Some(c) = child.as_mut() {
+                if matches!(c.try_wait(), Ok(None)) {
+                    let _ = c.kill();
+                }
+            }
+            continue;
         }
         if found.is_empty() {
             if first_seen.is_some() {
@@ -343,8 +391,12 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
             *pids.lock().unwrap() = found;
         }
     }
+    if forced_at.is_none() {
+        crate::quickmenu::log("vigilante: la partida termino por si sola");
+    }
     crate::quickmenu::destroy(&app);
-    crate::perf::stop();
+    // En un hilo propio: nada del menu puede impedir guardar la sesion.
+    let _ = std::thread::Builder::new().name("perf-stop".into()).spawn(crate::perf::stop);
     tele.stop.store(true, Ordering::Relaxed);
     tele.game_fg.store(false, Ordering::Relaxed);
     let captured = match tele.input.lock().unwrap().take() {
@@ -355,7 +407,9 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
         }
         None => Default::default(),
     };
-    let seconds = first_seen.map(|t| t.elapsed().as_secs().saturating_sub(1)).unwrap_or(0);
+    // Con cierre forzado la sesion acaba cuando se pidio, no cuando acabo la espera.
+    let ended = forced_at.unwrap_or_else(Instant::now);
+    let seconds = first_seen.map(|t| ended.saturating_duration_since(t).as_secs().saturating_sub(1)).unwrap_or(0);
     let st = app.state::<AppState>();
     if seconds > 0 {
         let mut stats = st.stats.lock().unwrap();
@@ -370,11 +424,12 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
         crate::state::log_db_err("partida", st.db.with(|c| visor_core::db::data::stat_add_session(c, &game.id, first_seen_ms, end, active, &input)));
     }
     {
-        let mut a = st.active.lock().unwrap();
+        let mut a = st.active.lock().unwrap_or_else(|e| e.into_inner());
         if a.as_ref().map(|a| a.id == game.id).unwrap_or(false) {
             *a = None;
         }
     }
+    crate::quickmenu::clear_forced();
     // Primero se devuelve el monitor principal y despues se trae el visor: cambiar la pantalla con la ventana ya
     // delante deja la webview en negro y sin responder.
     crate::display::restore_primary(&st.config_dir);

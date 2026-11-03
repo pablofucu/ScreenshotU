@@ -145,6 +145,7 @@ async function tauriBackend(): Promise<Backend> {
     audioOutputs: () => invoke<AudioOutput[]>('audio_outputs'),
     setAudioOutput: (id: string) => invoke<AudioOutput[]>('set_audio_output', { id }),
     hotkeySuspend: (suspend: boolean) => invoke('hotkey_suspend', { suspend }),
+    learnKey: (on: boolean) => invoke('learn_key', { on }),
     launch: (id) => invoke('launch_game', { id }),
     goalNotice: (id, at, text, days, key) => invoke('goal_notice', { id, at, text, days, key }),
     openFolder: (path) => invoke('open_folder', { path }),
@@ -220,6 +221,7 @@ async function tauriBackend(): Promise<Backend> {
       void listen<string[]>('shots-trashed', (e) => cb({ type: 'shots-trashed', paths: e.payload }));
       void listen<AudioOutput[]>('audio-outputs', (e) => cb({ type: 'audio-outputs', outputs: e.payload }));
       void listen<{ combo: string; connected: boolean; done: boolean }>('learn-pad', (e) => cb({ type: 'learn-pad', ...e.payload }));
+      void listen<string>('learn-key', (e) => cb({ type: 'learn-key', key: String(e.payload) }));
       void listen<{ id: string; name: string }>('game-started', (e) => cb({ type: 'game-started', id: e.payload.id, name: e.payload.name }));
       void listen<{ id: string; name: string; seconds: number }>('game-exited', (e) =>
         cb({ type: 'game-exited', id: e.payload.id, name: e.payload.name, seconds: e.payload.seconds }));

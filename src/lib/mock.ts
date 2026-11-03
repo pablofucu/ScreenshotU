@@ -431,6 +431,7 @@ export async function mockBackend(): Promise<Backend> {
       return mockOuts;
     },
     async hotkeySuspend() {},
+    async learnKey() {},
     async quickmenuSetContext() {},
     async pickFolder(title) { return title ? 'D:\Juegos' : 'mock://biblioteca'; },
     async scan() {

@@ -9,6 +9,7 @@ mod display;
 mod glossary;
 mod input;
 mod launcher;
+mod learnkey;
 mod library;
 mod magpie;
 mod mixer;
@@ -883,6 +884,13 @@ fn learn_pad(state: State<'_, AppState>, on: bool) {
     state.learning_pad.store(on, Ordering::Relaxed);
 }
 
+/// Ajustes espera un atajo F1-F24 (`on`) o deja de esperarlo. Un gancho de teclado emite `learn-key` ("F6", "Ctrl+F6")
+/// sin tragarse la tecla; sirve para teclas inyectadas que la webview no recibe bien.
+#[tauri::command]
+fn learn_key(app: AppHandle, on: bool) {
+    learnkey::set(&app, on);
+}
+
 /// Suelta el atajo global mientras Ajustes espera una tecla (si no, Windows se la come) y lo vuelve a
 /// registrar despues.
 #[tauri::command]
@@ -1259,6 +1267,7 @@ pub fn run() {
             audio_outputs,
             set_audio_output,
             hotkey_suspend,
+            learn_key,
             exit_app,
             texthook::commands::th_status,
             texthook::commands::th_select_thread,

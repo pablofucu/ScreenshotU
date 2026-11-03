@@ -6,7 +6,7 @@ use crate::state::AppState;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Mutex, MutexGuard, OnceLock};
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 use visor_core::trigger::{TriggerAct, TriggerCtx, TriggerFsm};
@@ -51,6 +51,47 @@ static BACKGROUND: Mutex<Option<String>> = Mutex::new(None);
 /// Procesos que hay que reanudar.
 static SUSPENDED: Mutex<Vec<u32>> = Mutex::new(Vec::new());
 
+/// Cierre forzado pedido en esta partida: el vigilante deja de esperar y da la sesion por terminada.
+static FORCED: AtomicBool = AtomicBool::new(false);
+/// Ruta de `quickmenu.log` (se fija al empezar la partida).
+static LOG_PATH: Mutex<Option<std::path::PathBuf>> = Mutex::new(None);
+
+/// `lock()` que tolera un mutex envenenado: un fallo en otro hilo no debe impedir guardar la sesion.
+pub fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
+    m.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+/// Se ha pedido cerrar el juego a la fuerza.
+pub fn force_requested() -> bool {
+    FORCED.load(Ordering::SeqCst)
+}
+
+/// El vigilante termina: la proxima partida empieza sin cierre pendiente.
+pub fn clear_forced() {
+    FORCED.store(false, Ordering::SeqCst);
+}
+
+/// Vacia `quickmenu.log` (empieza la partida).
+fn log_reset(app: &AppHandle) {
+    let path = app.state::<AppState>().config_dir.join("quickmenu.log");
+    let _ = std::fs::write(&path, b"");
+    *lock(&LOG_PATH) = Some(path);
+}
+
+/// Una linea con hora en `quickmenu.log`. Un fallo al escribir no afecta a nada.
+pub fn log(msg: &str) {
+    use std::io::Write;
+    let Some(path) = lock(&LOG_PATH).clone() else { return };
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+        let _ = writeln!(f, "{} {msg}", chrono::Local::now().format("%H:%M:%S%.3f"));
+    }
+}
+
+/// Mata un proceso. `true` si Windows lo acepto.
+pub fn terminate_pid(pid: u32) -> bool {
+    proc::terminate(pid)
+}
+
 fn now_ms() -> u64 {
     EPOCH.get_or_init(Instant::now).elapsed().as_millis() as u64
 }
@@ -66,8 +107,8 @@ pub fn is_current(gen: u64) -> bool {
 
 fn active_pids(app: &AppHandle) -> Option<Vec<u32>> {
     let st = app.state::<AppState>();
-    let a = st.active.lock().unwrap();
-    a.as_ref().map(|a| a.pids.lock().unwrap().clone())
+    let a = lock(&st.active);
+    a.as_ref().map(|a| lock(&a.pids).clone())
 }
 
 /* ---------------- atajo ---------------- */
@@ -83,10 +124,11 @@ pub fn trigger_down(app: &AppHandle, src: Src, pads: u8) {
         (c.overlay_hold_force, c.overlay_hold_ms)
     };
     let open = is_open();
+    log(&format!("atajo pulsado (menu abierto: {open})"));
     let ctx = TriggerCtx { can_show: open || !exclusive_fullscreen(), is_open: open, hold_force, hold_ms };
     let now = now_ms();
     let act = {
-        let mut t = TRIG.lock().unwrap();
+        let mut t = lock(&TRIG);
         if t.fsm.is_active() {
             if now.saturating_sub(t.since) < STUCK_MS {
                 return;
@@ -104,7 +146,7 @@ pub fn trigger_down(app: &AppHandle, src: Src, pads: u8) {
         std::thread::sleep(Duration::from_millis(30));
         let now = now_ms();
         let (act, pads) = {
-            let mut t = TRIG.lock().unwrap();
+            let mut t = lock(&TRIG);
             if !t.fsm.is_active() || t.since + STUCK_MS < now {
                 return;
             }
@@ -117,7 +159,7 @@ pub fn trigger_down(app: &AppHandle, src: Src, pads: u8) {
 /// Se solto un disparador. La subida de uno que no es el de la pulsacion activa no cuenta.
 pub fn trigger_up(app: &AppHandle, src: Src) {
     let (act, pads) = {
-        let mut t = TRIG.lock().unwrap();
+        let mut t = lock(&TRIG);
         if t.src != Some(src) {
             return;
         }
@@ -189,15 +231,25 @@ fn beep() {
 #[cfg(not(windows))]
 fn beep() {}
 
-/// Ninguna ventana se ve encima de un juego en pantalla completa exclusiva de verdad.
-#[cfg(windows)]
+/// Ninguna ventana se ve encima de un juego en pantalla completa exclusiva de verdad. La ventana de escalado de Magpie
+/// (y algunos juegos sin bordes) hace que Windows diga «D3D a pantalla completa» sin serlo: con Magpie escalando no
+/// cuenta como exclusiva.
 fn exclusive_fullscreen() -> bool {
+    let d3d = d3d_fullscreen();
+    let magpie = crate::platform::magpie_scaling();
+    let exclusive = d3d && !magpie;
+    log(&format!("pantalla completa D3D: {d3d}; Magpie escalando: {magpie}; exclusiva: {exclusive}"));
+    exclusive
+}
+
+#[cfg(windows)]
+fn d3d_fullscreen() -> bool {
     use windows::Win32::UI::Shell::{SHQueryUserNotificationState, QUNS_RUNNING_D3D_FULL_SCREEN};
     unsafe { SHQueryUserNotificationState().map(|s| s == QUNS_RUNNING_D3D_FULL_SCREEN).unwrap_or(false) }
 }
 
 #[cfg(not(windows))]
-fn exclusive_fullscreen() -> bool {
+fn d3d_fullscreen() -> bool {
     false
 }
 
@@ -205,6 +257,9 @@ fn exclusive_fullscreen() -> bool {
 
 /// Crea la ventana oculta al empezar la partida, para que abrir sea inmediato.
 pub fn prewarm(app: &AppHandle) {
+    clear_forced();
+    log_reset(app);
+    log("partida empezada");
     let a = app.clone();
     let _ = app.run_on_main_thread(move || {
         if a.get_webview_window(LABEL).is_none() {
@@ -214,10 +269,22 @@ pub fn prewarm(app: &AppHandle) {
 }
 
 /// Al acabar la partida: cierra el menu y libera la ventana (WebView2 ocupa memoria).
+/// En un hilo propio: nada del menu puede impedir que el vigilante guarde la sesion.
 pub fn destroy(app: &AppHandle) {
+    let spawned = std::thread::Builder::new().name("qm-destroy".into()).spawn({
+        let app = app.clone();
+        move || destroy_now(&app)
+    });
+    if let Err(e) = spawned {
+        log(&format!("no se pudo lanzar el cierre del menu: {e}"));
+    }
+}
+
+fn destroy_now(app: &AppHandle) {
+    // `close_now` deshace la pausa (`resume_all`).
     close_now(app);
-    *CONTEXT.lock().unwrap() = None;
-    SHOTS.lock().unwrap().clear();
+    *lock(&CONTEXT) = None;
+    lock(&SHOTS).clear();
     let a = app.clone();
     let _ = app.run_on_main_thread(move || {
         if let Some(w) = a.get_webview_window(LABEL) {
@@ -273,7 +340,7 @@ fn keep_on_top(app: &AppHandle, gen: u64) {
 }
 
 fn open(app: &AppHandle) {
-    let _life = LIFE.lock().unwrap();
+    let _life = lock(&LIFE);
     if is_open() {
         return;
     }
@@ -287,13 +354,13 @@ fn open(app: &AppHandle) {
     match crate::platform::grab(&pids, scaled) {
         Ok(g) => {
             let jpeg = visor_core::capture::rgba_to_jpeg(g.width, g.height, &g.rgba, 960, 72).ok();
-            *BACKGROUND.lock().unwrap() = jpeg.map(|j| format!("data:image/jpeg;base64,{}", visor_core::capture::base64(&j)));
-            *FROZEN.lock().unwrap() = Some(g);
+            *lock(&BACKGROUND) = jpeg.map(|j| format!("data:image/jpeg;base64,{}", visor_core::capture::base64(&j)));
+            *lock(&FROZEN) = Some(g);
         }
         Err(e) => {
             eprintln!("menú del juego: sin foto de fondo ({e})");
-            *BACKGROUND.lock().unwrap() = None;
-            *FROZEN.lock().unwrap() = None;
+            *lock(&BACKGROUND) = None;
+            *lock(&FROZEN) = None;
         }
     }
     if pause {
@@ -310,7 +377,7 @@ fn open(app: &AppHandle) {
 
 /// Cierra con la animacion de salida de la pagina.
 fn close(app: &AppHandle) {
-    let _life = LIFE.lock().unwrap();
+    let _life = lock(&LIFE);
     if !teardown(app) {
         return;
     }
@@ -327,7 +394,7 @@ fn close(app: &AppHandle) {
 
 /// Cierra sin animacion (el juego ya no esta).
 fn close_now(app: &AppHandle) {
-    let _life = LIFE.lock().unwrap();
+    let _life = lock(&LIFE);
     if teardown(app) {
         let _ = app.emit_to(LABEL, "qm-close", ());
         hide_window(app);
@@ -341,8 +408,8 @@ fn teardown(app: &AppHandle) -> bool {
     }
     keyboard::stop();
     resume_all(app);
-    *FROZEN.lock().unwrap() = None;
-    *BACKGROUND.lock().unwrap() = None;
+    *lock(&FROZEN) = None;
+    *lock(&BACKGROUND) = None;
     true
 }
 
@@ -373,7 +440,7 @@ fn suspend(app: &AppHandle, pids: &[u32]) {
     if let Ok(b) = serde_json::to_vec(&entries) {
         let _ = std::fs::write(suspended_file(app), b);
     }
-    let mut done = SUSPENDED.lock().unwrap();
+    let mut done = lock(&SUSPENDED);
     for &pid in pids {
         if proc::suspend(pid) {
             done.push(pid);
@@ -382,7 +449,7 @@ fn suspend(app: &AppHandle, pids: &[u32]) {
 }
 
 fn resume_all(app: &AppHandle) {
-    let pids = std::mem::take(&mut *SUSPENDED.lock().unwrap());
+    let pids = std::mem::take(&mut *lock(&SUSPENDED));
     for pid in pids {
         proc::resume(pid);
     }
@@ -403,18 +470,22 @@ pub fn recover(app: &AppHandle) {
 
 /// Cierre forzado e inmediato. El vigilante de la partida ve que no quedan procesos y guarda la sesion.
 pub fn force_close_game(app: &AppHandle) {
+    FORCED.store(true, Ordering::SeqCst);
     let mut pids = active_pids(app).unwrap_or_default();
     {
         // `TerminateProcess` funciona igual con procesos suspendidos: no hace falta reanudarlos antes.
-        let mut s = SUSPENDED.lock().unwrap();
+        let mut s = lock(&SUSPENDED);
         for p in s.drain(..) {
             if !pids.contains(&p) {
                 pids.push(p);
             }
         }
     }
+    log(&format!("cierre forzado pedido; pids: {pids:?}"));
     for pid in pids {
-        proc::terminate(pid);
+        let exe = crate::snap::exe_of(pid).unwrap_or_default();
+        let ok = proc::terminate(pid);
+        log(&format!("terminate {pid} ({exe}): {}", if ok { "ok" } else { "fallo" }));
     }
     let _ = std::fs::remove_file(suspended_file(app));
     close(app);
@@ -456,12 +527,12 @@ mod proc {
         call(pid, nt(s!("NtResumeProcess")));
     }
 
-    pub fn terminate(pid: u32) {
+    pub fn terminate(pid: u32) -> bool {
         unsafe {
-            if let Ok(h) = OpenProcess(PROCESS_TERMINATE, false, pid) {
-                let _ = TerminateProcess(h, 1);
-                let _ = CloseHandle(h);
-            }
+            let Ok(h) = OpenProcess(PROCESS_TERMINATE, false, pid) else { return false };
+            let ok = TerminateProcess(h, 1).is_ok();
+            let _ = CloseHandle(h);
+            ok
         }
     }
 }
@@ -472,7 +543,9 @@ mod proc {
         false
     }
     pub fn resume(_pid: u32) {}
-    pub fn terminate(_pid: u32) {}
+    pub fn terminate(_pid: u32) -> bool {
+        false
+    }
 }
 
 /* ---------------- teclado ---------------- */
@@ -614,7 +687,7 @@ pub struct QmShot {
 pub fn push_shot(app: &AppHandle, path: String, jpeg: &[u8], at: i64) {
     let shot = QmShot { path, thumb: format!("data:image/jpeg;base64,{}", visor_core::capture::base64(jpeg)), at };
     {
-        let mut s = SHOTS.lock().unwrap();
+        let mut s = lock(&SHOTS);
         s.insert(0, shot.clone());
         s.truncate(MAX_SHOTS);
     }
@@ -632,16 +705,16 @@ fn state(app: &AppHandle) -> Value {
         let platform_name = c.platforms.iter().find(|p| p.id == a.platform).map(|p| p.name.clone()).unwrap_or_default();
         serde_json::json!({ "id": a.id, "name": a.name, "platform": a.platform, "platformName": platform_name, "since": a.since, "playSeconds": seconds })
     });
-    let paused = !SUSPENDED.lock().unwrap().is_empty();
+    let paused = !lock(&SUSPENDED).is_empty();
     serde_json::json!({
         "open": is_open(),
         "game": game,
         "paused": paused,
-        "background": BACKGROUND.lock().unwrap().clone(),
-        "context": CONTEXT.lock().unwrap().clone(),
+        "background": lock(&BACKGROUND).clone(),
+        "context": lock(&CONTEXT).clone(),
         "goals": { "vn": c.goal_vn, "jvn": c.goal_jvn },
         "holdMs": c.overlay_hold_ms,
-        "shots": SHOTS.lock().unwrap().clone(),
+        "shots": lock(&SHOTS).clone(),
         "audio": crate::mixer::state(active_pids(app).unwrap_or_default().as_slice()).ok(),
         "perf": crate::perf::snapshot(),
         "pads": crate::pad::connected_mask(),
@@ -670,17 +743,17 @@ pub fn quickmenu_close_game(app: AppHandle) {
 /// Datos para la baldosa de tiempo que solo tiene la ventana principal (ver `pushQuickmenuContext`).
 #[tauri::command]
 pub fn quickmenu_set_context(ctx: Value) {
-    *CONTEXT.lock().unwrap() = Some(ctx);
+    *lock(&CONTEXT) = Some(ctx);
 }
 
 /// Captura desde el menu. Con el juego en pausa se guarda la foto del momento de abrir: es lo que hay detras y no depende
 /// de capturar un proceso suspendido.
 #[tauri::command]
 pub fn quickmenu_capture(app: AppHandle) {
-    let frozen = if SUSPENDED.lock().unwrap().is_empty() {
+    let frozen = if lock(&SUSPENDED).is_empty() {
         None
     } else {
-        FROZEN.lock().unwrap().as_ref().map(|g| crate::platform::Grabbed { width: g.width, height: g.height, rgba: g.rgba.clone(), method: g.method.clone(), fg_pid: g.fg_pid })
+        lock(&FROZEN).as_ref().map(|g| crate::platform::Grabbed { width: g.width, height: g.height, rgba: g.rgba.clone(), method: g.method.clone(), fg_pid: g.fg_pid })
     };
     match frozen {
         Some(g) => crate::snap::save_frozen(&app, g),
@@ -692,7 +765,7 @@ pub fn quickmenu_capture(app: AppHandle) {
 #[tauri::command]
 pub async fn quickmenu_trash(app: AppHandle, state: tauri::State<'_, AppState>, paths: Vec<String>) -> Result<crate::TrashReport, String> {
     let rep = crate::trash_shots(state, paths).await?;
-    SHOTS.lock().unwrap().retain(|s| !rep.trashed.contains(&s.path));
+    lock(&SHOTS).retain(|s| !rep.trashed.contains(&s.path));
     let _ = app.emit("shots-trashed", &rep.trashed);
     Ok(rep)
 }

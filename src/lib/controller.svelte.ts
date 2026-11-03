@@ -14,7 +14,7 @@ import { shotLayout, type ShotLayout } from './shotlayout';
 import { tgrid, TZOOM_MAX } from './tgrid';
 import { EVO_KINDS, GMETRICS, STATS_KINDS } from './stats';
 import { editSgdbKey, openSgdbPicker, openSgdbTitles, sgdbAuto, sgdbCmd, sgdbTitlesCmd, toggleSgdbAuto } from './sgdb.svelte';
-import { AUDIO_COMBO_PRESETS, AUDIO_HOTKEY_PRESETS, COMBO_PRESETS, HOTKEY_PRESETS, MOUSE_PRESETS, OVERLAY_COMBO_PRESETS, OVERLAY_HOTKEY_PRESETS, learnKeydown, learnMouse, onLearnPad, startLearn } from './learn.svelte';
+import { AUDIO_COMBO_PRESETS, AUDIO_HOTKEY_PRESETS, COMBO_PRESETS, HOTKEY_PRESETS, MOUSE_PRESETS, OVERLAY_COMBO_PRESETS, OVERLAY_HOTKEY_PRESETS, learnKeydown, learnMouse, onLearnKey, onLearnPad, startLearn } from './learn.svelte';
 import { READING_CYCLE, READING_ROWS, isReadingId, readingAct, type ReadingId } from './reading.svelte';
 import { checkUpdate, updateAct } from './updater.svelte';
 import { REMOTE_CYCLE, isRemoteId, remoteAct, type RemoteId } from './remote.svelte';
@@ -1660,6 +1660,8 @@ function onBackendEvent(e: BackendEvent) {
     app.audioOutputs = e.outputs;
   } else if (e.type === 'learn-pad') {
     onLearnPad(e.combo, e.connected, e.done);
+  } else if (e.type === 'learn-key') {
+    onLearnKey(e.key);
   } else if (e.type === 'game-started') {
     if (app.playing?.id !== e.id) app.playing = { id: e.id, since: Date.now() };
     scheduleGoalNotice(e.id);

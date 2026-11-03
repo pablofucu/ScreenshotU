@@ -31,12 +31,12 @@ static STATE: Mutex<Option<PerfState>> = Mutex::new(None);
 static GEN: AtomicU64 = AtomicU64::new(0);
 
 pub fn snapshot() -> Option<PerfState> {
-    STATE.lock().unwrap().clone()
+    crate::quickmenu::lock(&STATE).clone()
 }
 
 pub fn stop() {
     GEN.fetch_add(1, Ordering::SeqCst);
-    *STATE.lock().unwrap() = None;
+    *crate::quickmenu::lock(&STATE) = None;
 }
 
 /// Arranca el muestreo de la partida.
@@ -47,7 +47,7 @@ pub fn start(app: AppHandle) {
         let (gpu_name, vram_total) = gpu::adapter();
         let temp = gpu::Temperature::new();
         let mut counters = gpu::Counters::new();
-        *STATE.lock().unwrap() = Some(PerfState {
+        *crate::quickmenu::lock(&STATE) = Some(PerfState {
             cpu_name: sys.cpus().first().map(|c| c.brand().trim().to_string()).unwrap_or_default(),
             cpu_threads: sys.cpus().len(),
             gpu_name,
@@ -59,7 +59,7 @@ pub fn start(app: AppHandle) {
             sys.refresh_cpu_usage();
             let sample = counters.as_mut().map(|c| c.sample()).unwrap_or_default();
             let snap = {
-                let mut g = STATE.lock().unwrap();
+                let mut g = crate::quickmenu::lock(&STATE);
                 let Some(s) = g.as_mut() else { return };
                 push(&mut s.cpu, sys.global_cpu_usage());
                 push(&mut s.gpu, sample.usage.unwrap_or(0.0));

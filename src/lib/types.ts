@@ -279,6 +279,7 @@ export type BackendEvent =
   | { type: 'capture-error'; message: string }
   | { type: 'shots-trashed'; paths: string[] }
   | { type: 'learn-pad'; combo: string; connected: boolean; done: boolean }
+  | { type: 'learn-key'; key: string }
   | { type: 'game-started'; id: string; name: string }
   | { type: 'game-exited'; id: string; name: string; seconds: number }
   | { type: 'magpie-status'; id: string; message: string; error: boolean }
@@ -326,6 +327,8 @@ export interface Backend {
   learnPad(on: boolean): Promise<void>;
   /** Suelta el atajo global de captura mientras se elige otro (y lo vuelve a registrar). */
   hotkeySuspend(suspend: boolean): Promise<void>;
+  /** Empieza (o deja) de esperar una tecla F1-F24 desde Rust; llegan eventos `learn-key`. */
+  learnKey(on: boolean): Promise<void>;
   /** Lanza un juego añadido (ejecutable o emulador). */
   launch(gameId: string): Promise<void>;
   /** Aviso sobre el juego a la hora `at` (ms) si la partida de `gameId` sigue en marcha (meta de lectura cumplida). */
