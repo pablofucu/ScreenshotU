@@ -28,6 +28,7 @@ export default defineConfig({
         rec: 'rec.html',
         peek: 'peek.html',
         ach: 'ach.html',
+        quickmenu: 'quickmenu.html',
       },
     },
   },

@@ -109,6 +109,18 @@ pub struct Config {
     pub audio_combo: String,
     /// Atajo global que cambia a la siguiente salida de audio ("" = desactivado).
     pub audio_hotkey: String,
+    /// Atajo global que abre el menu sobre el juego ("" = desactivado). Con DS4Windows, la tecla que manda el mando.
+    pub overlay_hotkey: String,
+    /// Combinacion de mando que abre el menu sobre el juego (como `capture_combo`), "off" = desactivada.
+    pub overlay_combo: String,
+    /// Boton del raton que abre el menu sobre el juego (como `capture_mouse`), "" = ninguno.
+    pub overlay_mouse: String,
+    /// Mantener el atajo del menu fuerza el cierre del juego.
+    pub overlay_hold_force: bool,
+    /// Milisegundos que hay que mantener el atajo (`trigger::HOLD_OPTIONS`).
+    pub overlay_hold_ms: u64,
+    /// Pausar el juego mientras el menu esta abierto.
+    pub overlay_pause: bool,
     /// Copia automatica de `visor.db` al arrancar si la ultima tiene 7 dias o mas (se conservan 5).
     pub auto_backup: bool,
     /// Copia las partidas guardadas de un juego al cerrarlo (si cambiaron desde la ultima copia).
@@ -213,6 +225,12 @@ impl Default for Config {
             record_hotkey: "F9".into(),
             audio_combo: "start+rb".into(),
             audio_hotkey: String::new(),
+            overlay_hotkey: "F24".into(),
+            overlay_combo: "off".into(),
+            overlay_mouse: String::new(),
+            overlay_hold_force: true,
+            overlay_hold_ms: crate::trigger::HOLD_MS,
+            overlay_pause: true,
             auto_backup: true,
             saves_auto: true,
             saves_dir: String::new(),
@@ -279,6 +297,13 @@ impl Config {
         if c.audio_combo != "off" && crate::capture::combo_mask(&c.audio_combo) == 0 {
             c.audio_combo = "start+rb".into();
         }
+        if c.overlay_combo != "off" && crate::capture::combo_mask(&c.overlay_combo) == 0 {
+            c.overlay_combo = "off".into();
+        }
+        if !c.overlay_mouse.is_empty() && crate::capture::mouse_button_index(&c.overlay_mouse) == 0 {
+            c.overlay_mouse.clear();
+        }
+        c.overlay_hold_ms = crate::trigger::normalize_hold_ms(c.overlay_hold_ms);
         if !c.capture_mouse.is_empty() && crate::capture::mouse_button_index(&c.capture_mouse) == 0 {
             c.capture_mouse.clear();
         }
@@ -463,6 +488,24 @@ mod tests {
         assert_eq!((c.anki_url.as_str(), c.anki_map.word.as_str(), c.anki_map.audio.as_str()), ("http://localhost:8765", "Expression", "SentenceAudio"));
         fs::write(&p, r#"{"ankiUrl":"  "}"#).unwrap();
         assert_eq!(Config::load(&p).anki_url, "http://127.0.0.1:8765");
+    }
+
+    #[test]
+    fn overlay_defaults_and_normalization() {
+        let d = tempfile::tempdir().unwrap();
+        let p = d.path().join("c.json");
+        let c = Config::load(&p);
+        assert_eq!((c.overlay_hotkey.as_str(), c.overlay_combo.as_str(), c.overlay_mouse.as_str()), ("F24", "off", ""));
+        assert!(c.overlay_hold_force && c.overlay_pause);
+        assert_eq!(c.overlay_hold_ms, 1500);
+        fs::write(&p, r#"{"overlayHotkey":"","overlayCombo":"nada","overlayMouse":"izq","overlayHoldMs":7,"overlayPause":false}"#).unwrap();
+        let c = Config::load(&p);
+        assert_eq!((c.overlay_hotkey.as_str(), c.overlay_combo.as_str(), c.overlay_mouse.as_str()), ("", "off", ""));
+        assert_eq!(c.overlay_hold_ms, 1500);
+        assert!(!c.overlay_pause);
+        fs::write(&p, r#"{"overlayCombo":"guide","overlayHoldMs":3000}"#).unwrap();
+        let c = Config::load(&p);
+        assert_eq!((c.overlay_combo.as_str(), c.overlay_hold_ms), ("guide", 3000));
     }
 
     #[test]

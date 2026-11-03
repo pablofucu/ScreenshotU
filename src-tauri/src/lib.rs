@@ -11,13 +11,16 @@ mod input;
 mod launcher;
 mod library;
 mod magpie;
+mod mixer;
 mod mouse;
 mod novel;
 mod outputs;
 mod overlay;
 mod pad;
 mod peek;
+mod perf;
 mod platform;
+mod quickmenu;
 mod reader;
 mod remote;
 mod remote_call;
@@ -36,7 +39,7 @@ use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
-use visor_core::capture::{combo_mask, mouse_button_index};
+use visor_core::capture::{combo_mask, combos_overlap, mouse_button_index};
 use visor_core::config::Config;
 use visor_core::db::{data as dbd, Db};
 use visor_core::art::ArtKind;
@@ -54,15 +57,15 @@ fn allow_root(app: &AppHandle, root: &str) {
     let _ = app.asset_protocol_scope().allow_directory(Path::new(root), true);
 }
 
-/// Registra (o quita) los atajos globales: captura de pantalla, grabacion del audio del juego y cambio de salida de
-/// audio. Si uno falla se sigue con los demas y se devuelven todos los errores. Un atajo repetido solo se registra una vez.
-fn apply_hotkeys(app: &AppHandle, capture: &str, record: &str, audio: &str) -> Result<(), String> {
+/// Registra (o quita) los atajos globales: captura de pantalla, grabacion del audio del juego, cambio de salida de
+/// audio y menu sobre el juego. Si uno falla se sigue con los demas y se devuelven todos los errores. Un atajo repetido solo se registra una vez.
+fn apply_hotkeys(app: &AppHandle, capture: &str, record: &str, audio: &str, overlay: &str) -> Result<(), String> {
     use tauri_plugin_global_shortcut::Shortcut;
     let gs = app.global_shortcut();
     let _ = gs.unregister_all();
     let mut errs = Vec::new();
     let mut done: Vec<Shortcut> = Vec::new();
-    for (key, what) in [(capture, "captura"), (record, "grabación"), (audio, "cambio de audio")] {
+    for (key, what) in [(capture, "captura"), (record, "grabación"), (audio, "cambio de audio"), (overlay, "menú del juego")] {
         if key.trim().is_empty() {
             continue;
         }
@@ -100,30 +103,49 @@ fn save_config(app: AppHandle, state: State<'_, AppState>, config: Config) -> Re
         allow_root(&app, r);
     }
     let mut config = config;
-    let (old_hotkey, old_record, old_audio) = {
+    let (old_hotkey, old_record, old_audio, old_overlay) = {
         let c = state.config.lock().unwrap();
-        (c.capture_hotkey.clone(), c.record_hotkey.clone(), c.audio_hotkey.clone())
+        (c.capture_hotkey.clone(), c.record_hotkey.clone(), c.audio_hotkey.clone(), c.overlay_hotkey.clone())
     };
     // Si el atajo nuevo no se puede registrar (otro programa lo usa), se mantiene el anterior y se avisa.
     let mut hotkey_err = None;
-    if old_hotkey != config.capture_hotkey || old_record != config.record_hotkey || old_audio != config.audio_hotkey {
+    if old_hotkey != config.capture_hotkey || old_record != config.record_hotkey || old_audio != config.audio_hotkey || old_overlay != config.overlay_hotkey {
         let clash = if hotkey_clash(&config.capture_hotkey, &config.record_hotkey) {
             Some("El atajo de grabación no puede ser el mismo que el de captura.")
         } else if hotkey_clash(&config.capture_hotkey, &config.audio_hotkey) || hotkey_clash(&config.record_hotkey, &config.audio_hotkey) {
             Some("El atajo de audio no puede repetir el de captura ni el de grabación.")
+        } else if [&config.capture_hotkey, &config.record_hotkey, &config.audio_hotkey].iter().any(|k| hotkey_clash(k, &config.overlay_hotkey)) {
+            Some("El atajo del menú no puede repetir el de captura, grabación ni audio.")
         } else {
             None
         };
         let r = match clash {
             Some(m) => Err(m.to_string()),
-            None => apply_hotkeys(&app, &config.capture_hotkey, &config.record_hotkey, &config.audio_hotkey),
+            None => apply_hotkeys(&app, &config.capture_hotkey, &config.record_hotkey, &config.audio_hotkey, &config.overlay_hotkey),
         };
         if let Err(e) = r {
-            let _ = apply_hotkeys(&app, &old_hotkey, &old_record, &old_audio);
+            let _ = apply_hotkeys(&app, &old_hotkey, &old_record, &old_audio, &old_overlay);
             config.capture_hotkey = old_hotkey;
             config.record_hotkey = old_record;
             config.audio_hotkey = old_audio;
+            config.overlay_hotkey = old_overlay;
             hotkey_err = Some(e);
+        }
+    }
+    // Una combinacion que contiene a otra las dispararia a la vez; lo mismo con el raton. Se mantiene lo anterior.
+    {
+        let c = state.config.lock().unwrap();
+        let menu = combo_mask(&config.overlay_combo);
+        if combos_overlap(menu, combo_mask(&config.capture_combo)) || combos_overlap(menu, combo_mask(&config.audio_combo)) {
+            config.overlay_combo = c.overlay_combo.clone();
+            config.capture_combo = c.capture_combo.clone();
+            config.audio_combo = c.audio_combo.clone();
+            hotkey_err = Some("La combinación del menú no puede compartir botones con la de captura ni con la de audio.".to_string());
+        }
+        if !config.overlay_mouse.is_empty() && config.overlay_mouse == config.capture_mouse {
+            config.overlay_mouse = c.overlay_mouse.clone();
+            config.capture_mouse = c.capture_mouse.clone();
+            hotkey_err = Some("El botón del ratón del menú no puede ser el mismo que el de captura.".to_string());
         }
     }
     // El codigo del movil lo gestiona el nucleo (`remote_new_code`): se ignora el que mande la interfaz.
@@ -139,7 +161,9 @@ fn save_config(app: AppHandle, state: State<'_, AppState>, config: Config) -> Re
     }
     state.combo_mask.store(combo_mask(&config.capture_combo), Ordering::Relaxed);
     state.audio_mask.store(combo_mask(&config.audio_combo), Ordering::Relaxed);
+    state.overlay_mask.store(combo_mask(&config.overlay_combo), Ordering::Relaxed);
     state.mouse_button.store(mouse_button_index(&config.capture_mouse), Ordering::Relaxed);
+    state.overlay_mouse.store(mouse_button_index(&config.overlay_mouse), Ordering::Relaxed);
     let root_changed = state.config.lock().unwrap().root != config.root;
     let new_root = config.root.clone();
     *state.config.lock().unwrap() = config;
@@ -656,7 +680,7 @@ fn move_shots(state: State<'_, AppState>, paths: Vec<String>, target_dir: String
 }
 
 #[derive(serde::Serialize)]
-struct TrashReport {
+pub(crate) struct TrashReport {
     /// Rutas que ya no estan (a la Papelera, o ya no existian).
     trashed: Vec<String>,
     failed: Vec<String>,
@@ -867,11 +891,11 @@ fn hotkey_suspend(app: AppHandle, state: State<'_, AppState>, suspend: bool) -> 
         let _ = app.global_shortcut().unregister_all();
         Ok(())
     } else {
-        let (key, rec, audio) = {
+        let (key, rec, audio, overlay) = {
             let c = state.config.lock().unwrap();
-            (c.capture_hotkey.clone(), c.record_hotkey.clone(), c.audio_hotkey.clone())
+            (c.capture_hotkey.clone(), c.record_hotkey.clone(), c.audio_hotkey.clone(), c.overlay_hotkey.clone())
         };
-        apply_hotkeys(&app, &key, &rec, &audio)
+        apply_hotkeys(&app, &key, &rec, &audio, &overlay)
     }
 }
 
@@ -933,15 +957,23 @@ pub fn run() {
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, shortcut, event| {
+                    let (rec, out, menu) = {
+                        let st = app.state::<AppState>();
+                        let c = st.config.lock().unwrap();
+                        (c.record_hotkey.clone(), c.audio_hotkey.clone(), c.overlay_hotkey.clone())
+                    };
+                    let is = |k: &str| k.parse::<tauri_plugin_global_shortcut::Shortcut>().map(|r| &r == shortcut).unwrap_or(false);
+                    // El del menu necesita tambien saber cuando se suelta: mantenerlo fuerza el cierre del juego.
+                    if is(&menu) {
+                        match event.state() {
+                            ShortcutState::Pressed => quickmenu::trigger_down(app, quickmenu::Src::Key, 0),
+                            ShortcutState::Released => quickmenu::trigger_up(app, quickmenu::Src::Key),
+                        }
+                        return;
+                    }
                     if event.state() == ShortcutState::Pressed {
                         // El atajo de grabacion empieza/para el audio del juego, el de audio cambia de salida;
                         // cualquier otro captura la pantalla.
-                        let (rec, out) = {
-                            let st = app.state::<AppState>();
-                            let c = st.config.lock().unwrap();
-                            (c.record_hotkey.clone(), c.audio_hotkey.clone())
-                        };
-                        let is = |k: &str| k.parse::<tauri_plugin_global_shortcut::Shortcut>().map(|r| &r == shortcut).unwrap_or(false);
                         if is(&rec) {
                             audio::toggle(app, None);
                         } else if is(&out) {
@@ -1049,6 +1081,9 @@ pub fn run() {
             let hotkey = config.capture_hotkey.clone();
             let rec_hotkey = config.record_hotkey.clone();
             let audio_hotkey = config.audio_hotkey.clone();
+            let overlay_hotkey = config.overlay_hotkey.clone();
+            let overlay_mask = combo_mask(&config.overlay_combo);
+            let overlay_mouse = mouse_button_index(&config.overlay_mouse);
             let mask = combo_mask(&config.capture_combo);
             let audio_mask = combo_mask(&config.audio_combo);
             let mouse = mouse_button_index(&config.capture_mouse);
@@ -1073,7 +1108,9 @@ pub fn run() {
                 active: Mutex::new(None),
                 combo_mask: std::sync::atomic::AtomicU32::new(mask),
                 audio_mask: std::sync::atomic::AtomicU32::new(audio_mask),
+                overlay_mask: std::sync::atomic::AtomicU32::new(overlay_mask),
                 mouse_button: std::sync::atomic::AtomicU8::new(mouse),
+                overlay_mouse: std::sync::atomic::AtomicU8::new(overlay_mouse),
                 learning_pad: std::sync::atomic::AtomicBool::new(false),
                 sgdb: Arc::new(Mutex::new(sgdb_store)),
                 sgdb_busy: Arc::new(std::sync::atomic::AtomicBool::new(false)),
@@ -1086,7 +1123,9 @@ pub fn run() {
             // Servidor para la app movil, si esta activado.
             remote::forward_events(app.handle());
             remote::apply(app.handle());
-            if let Err(e) = apply_hotkeys(app.handle(), &hotkey, &rec_hotkey, &audio_hotkey) {
+            // Si el visor se cerro con el juego en pausa, el juego sigue congelado.
+            quickmenu::recover(app.handle());
+            if let Err(e) = apply_hotkeys(app.handle(), &hotkey, &rec_hotkey, &audio_hotkey, &overlay_hotkey) {
                 eprintln!("{e}");
             }
             // Copia automatica de la base (cada 7 dias, se conservan 5), en segundo plano para no retrasar el arranque.
@@ -1202,6 +1241,21 @@ pub fn run() {
             sgdb::sgdb_local,
             sgdb::sgdb_clear,
             learn_pad,
+            quickmenu::quickmenu_state,
+            quickmenu::quickmenu_close,
+            quickmenu::quickmenu_close_game,
+            quickmenu::quickmenu_set_context,
+            quickmenu::quickmenu_capture,
+            quickmenu::quickmenu_trash,
+            quickmenu::quickmenu_rumble,
+            quickmenu::quickmenu_audio,
+            quickmenu::quickmenu_set_volume,
+            quickmenu::quickmenu_set_mute,
+            quickmenu::quickmenu_set_mic_mute,
+            quickmenu::quickmenu_select_output,
+            quickmenu::quickmenu_select_input,
+            quickmenu::quickmenu_set_app_volume,
+            quickmenu::quickmenu_set_app_mute,
             audio_outputs,
             set_audio_output,
             hotkey_suspend,

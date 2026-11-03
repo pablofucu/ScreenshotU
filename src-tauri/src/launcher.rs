@@ -184,6 +184,8 @@ fn start_at(app: &AppHandle, game: Game, screen: Option<crate::display::Monitor>
         pids: pids.clone(),
     });
     let _ = app.emit("game-started", GameEvent { id: game.id.clone(), name: game.name.clone(), seconds: 0 });
+    crate::quickmenu::prewarm(app);
+    crate::perf::start(app.clone());
     // El visor se queda abierto justo detras del juego (sin minimizar).
     {
         let (app2, id2, pids2) = (app.clone(), game.id.clone(), pids.clone());
@@ -250,7 +252,8 @@ fn pad_counter(t: Arc<Telemetry>) {
         if p.active {
             t.last_pad_ms.store(now_ms(), Ordering::Relaxed);
         }
-        if p.presses > 0 && t.game_fg.load(Ordering::Relaxed) {
+        // Lo que se pulsa en el menu sobre el juego no es jugar.
+        if p.presses > 0 && t.game_fg.load(Ordering::Relaxed) && !crate::quickmenu::is_open() {
             t.pad.fetch_add(p.presses as u64, Ordering::Relaxed);
             let now = Instant::now();
             recent.extend(std::iter::repeat(now).take(p.presses as usize));
@@ -333,13 +336,15 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
                 last_tick = Instant::now();
                 let front = game_in_front(&found);
                 tele.game_fg.store(front, Ordering::Relaxed);
-                if front && recent_input(&tele) {
+                if front && recent_input(&tele) && !crate::quickmenu::is_open() {
                     active_ms += dt;
                 }
             }
             *pids.lock().unwrap() = found;
         }
     }
+    crate::quickmenu::destroy(&app);
+    crate::perf::stop();
     tele.stop.store(true, Ordering::Relaxed);
     tele.game_fg.store(false, Ordering::Relaxed);
     let captured = match tele.input.lock().unwrap().take() {

@@ -1,5 +1,6 @@
 //! Lectura del mando con XInput desde un hilo propio (la webview no recibe mando sin foco). Dispara la
-//! combinacion de captura, la que cambia la salida de audio y, mientras Ajustes la esta aprendiendo, informa de lo que se pulsa.
+//! combinacion de captura, la que cambia la salida de audio, la del menu sobre el juego y, mientras Ajustes la esta
+//! aprendiendo, informa de lo que se pulsa. Con el menu abierto, tambien lo navega (`menu_nav`).
 //! XInput no es exclusivo: el juego sigue recibiendo el mando igual; aqui solo se lee (y se vibra un instante).
 use tauri::AppHandle;
 
@@ -196,6 +197,142 @@ pub fn rumble_n(pads: u8, n: u8) {
     });
 }
 
+/// Toque muy corto (mantener el atajo del menu sin que el menu se vea).
+#[cfg(windows)]
+pub fn rumble_tick(pads: u8) {
+    if pads == 0 {
+        return;
+    }
+    let _ = std::thread::Builder::new().name("pad-rumble".into()).spawn(move || {
+        let each = |r: u16| (0..4u32).filter(|i| pads & (1 << i) != 0).for_each(|i| xinput::vibrate(i, 0, r));
+        each(26000);
+        std::thread::sleep(std::time::Duration::from_millis(40));
+        each(0);
+    });
+}
+
+/// Vibracion larga con los dos motores: el juego se ha cerrado a la fuerza.
+#[cfg(windows)]
+pub fn rumble_long(pads: u8, ms: u64) {
+    if pads == 0 {
+        return;
+    }
+    let _ = std::thread::Builder::new().name("pad-rumble".into()).spawn(move || {
+        let each = |v: u16| (0..4u32).filter(|i| pads & (1 << i) != 0).for_each(|i| xinput::vibrate(i, v, v));
+        each(50000);
+        std::thread::sleep(std::time::Duration::from_millis(ms));
+        each(0);
+    });
+}
+
+/// Puertos con un mando conectado (bit `i` = puerto `i`). Preguntar por los vacios es lento: no llamarlo en bucle.
+#[cfg(windows)]
+pub fn connected_mask() -> u8 {
+    let r = xinput::Reader::new();
+    (0..4u32).filter(|i| r.read(*i).is_some()).fold(0, |m, i| m | (1 << i))
+}
+
+/// Navegacion del menu sobre el juego mientras siga abierto en la apertura `gen`: la webview no recibe el mando sin foco,
+/// asi que se leen los botones y se le mandan con `qm-pad`. Los que ya estaban pulsados al abrir no cuentan hasta soltarlos.
+#[cfg(windows)]
+pub fn menu_nav(app: AppHandle, gen: u64) {
+    use std::sync::atomic::Ordering;
+    use std::time::{Duration, Instant};
+    use tauri::{Emitter, Manager};
+    use visor_core::capture::{pad_mask, XI_A, XI_B, XI_DOWN, XI_LB, XI_LEFT, XI_LT, XI_RB, XI_RIGHT, XI_RT, XI_UP, XI_X, XI_Y};
+
+    /// (boton, nombre para la pagina, se repite al mantener)
+    const MAP: [(u32, &str, bool); 12] = [
+        (XI_UP, "up", true), (XI_DOWN, "down", true), (XI_LEFT, "left", true), (XI_RIGHT, "right", true),
+        (XI_A, "a", false), (XI_B, "b", false), (XI_X, "x", false), (XI_Y, "y", false),
+        (XI_LB, "lb", false), (XI_RB, "rb", false), (XI_LT, "lt", true), (XI_RT, "rt", true),
+    ];
+    const STICK: i32 = 16000;
+    const REPEAT_FIRST: Duration = Duration::from_millis(350);
+    const REPEAT_NEXT: Duration = Duration::from_millis(90);
+
+    let spawned = std::thread::Builder::new().name("qm-pad".into()).spawn(move || {
+        let reader = xinput::Reader::new();
+        let mut connected = [true; 4];
+        let mut last_rescan = Instant::now();
+        let mut ignore: Option<u32> = None;
+        let mut prev = 0u32;
+        let mut next = [Instant::now(); 12];
+        while crate::quickmenu::is_current(gen) {
+            std::thread::sleep(Duration::from_millis(16));
+            let rescan = last_rescan.elapsed() > Duration::from_secs(2);
+            if rescan {
+                last_rescan = Instant::now();
+            }
+            let mut buttons = 0u32;
+            for (i, c) in connected.iter_mut().enumerate() {
+                if !*c && !rescan {
+                    continue;
+                }
+                match reader.read_all(i as u32) {
+                    Some(s) => {
+                        *c = true;
+                        buttons |= pad_mask(s[0] as u16, s[1] as u8, s[2] as u8);
+                        // El stick izquierdo hace de cruceta.
+                        if s[3] < -STICK {
+                            buttons |= XI_LEFT;
+                        } else if s[3] > STICK {
+                            buttons |= XI_RIGHT;
+                        }
+                        if s[4] < -STICK {
+                            buttons |= XI_DOWN;
+                        } else if s[4] > STICK {
+                            buttons |= XI_UP;
+                        }
+                    }
+                    None => *c = false,
+                }
+            }
+            // Los botones del atajo son del atajo: una combinacion no debe navegar a la vez que cierra el menu.
+            buttons &= !app.state::<crate::state::AppState>().overlay_mask.load(Ordering::Relaxed);
+            let held = *ignore.get_or_insert(buttons) & buttons;
+            ignore = Some(held);
+            let eff = buttons & !held;
+            let now = Instant::now();
+            for (i, (bit, name, repeats)) in MAP.iter().enumerate() {
+                if eff & bit == 0 {
+                    continue;
+                }
+                let fire = if prev & bit == 0 {
+                    next[i] = now + REPEAT_FIRST;
+                    true
+                } else if *repeats && now >= next[i] {
+                    next[i] = now + REPEAT_NEXT;
+                    true
+                } else {
+                    false
+                };
+                if fire {
+                    let _ = app.emit_to("quickmenu", "qm-pad", serde_json::json!({ "btn": name }));
+                }
+            }
+            prev = eff;
+        }
+    });
+    if let Err(e) = spawned {
+        eprintln!("no se pudo arrancar la navegacion del menu: {e}");
+    }
+}
+
+#[cfg(not(windows))]
+pub fn rumble_tick(_pads: u8) {}
+
+#[cfg(not(windows))]
+pub fn rumble_long(_pads: u8, _ms: u64) {}
+
+#[cfg(not(windows))]
+pub fn connected_mask() -> u8 {
+    0
+}
+
+#[cfg(not(windows))]
+pub fn menu_nav(_app: AppHandle, _gen: u64) {}
+
 #[cfg(not(windows))]
 pub fn rumble(_pads: u8) {}
 
@@ -207,13 +344,15 @@ pub fn spawn(app: AppHandle) {
     use std::sync::atomic::Ordering;
     use std::time::{Duration, Instant};
     use tauri::{Emitter, Manager};
-    use visor_core::capture::{combo_id, pad_mask, ComboDetector, ComboLearner};
+    use crate::quickmenu::{self, Src};
+    use visor_core::capture::{combo_id, pad_mask, ComboDetector, ComboLearner, EdgeDetector};
 
     std::thread::spawn(move || {
         let reader = xinput::Reader::new();
         let t0 = Instant::now();
         let mut det = ComboDetector::new(0, 1200);
         let mut audio_det = ComboDetector::new(0, 800);
+        let mut menu_det = EdgeDetector::new(0);
         let mut learner = ComboLearner::default();
         let mut was_learning = false;
         let mut last_sent: Option<(u32, bool)> = None;
@@ -225,15 +364,17 @@ pub fn spawn(app: AppHandle) {
             let learning = st.learning_pad.load(Ordering::Relaxed);
             let mask = st.combo_mask.load(Ordering::Relaxed);
             let audio_mask = st.audio_mask.load(Ordering::Relaxed);
+            let menu_mask = st.overlay_mask.load(Ordering::Relaxed);
             if learning != was_learning {
                 was_learning = learning;
                 learner.reset();
                 last_sent = None;
             }
-            if mask == 0 && audio_mask == 0 && !learning {
+            if mask == 0 && audio_mask == 0 && menu_mask == 0 && !learning {
                 // Sin combinacion no hace falta consultar el mando.
                 det.mask = 0;
                 audio_det.mask = 0;
+                menu_det.mask = 0;
                 std::thread::sleep(Duration::from_millis(250));
                 continue;
             }
@@ -256,7 +397,7 @@ pub fn spawn(app: AppHandle) {
                         *c = true;
                         let m = pad_mask(b, lt, rt);
                         buttons |= m;
-                        if m & (mask | audio_mask) != 0 {
+                        if m & (mask | audio_mask | menu_mask) != 0 {
                             pressing |= 1 << i;
                         }
                     }
@@ -268,6 +409,7 @@ pub fn spawn(app: AppHandle) {
             if learning {
                 det.mask = 0;
                 audio_det.mask = 0;
+                menu_det.mask = 0;
                 let got = learner.update(buttons);
                 let cur = got.unwrap_or(learner.current());
                 if got.is_some() {
@@ -282,11 +424,18 @@ pub fn spawn(app: AppHandle) {
 
             det.mask = mask;
             audio_det.mask = audio_mask;
+            menu_det.mask = menu_mask;
+            match menu_det.update(buttons) {
+                // La ventana del menu nunca tiene el foco: «el visor delante» es la ventana principal.
+                Some(true) if !crate::platform::own_window_focused() => quickmenu::trigger_down(&app, Src::Pad, pressing),
+                Some(false) => quickmenu::trigger_up(&app, Src::Pad),
+                _ => {}
+            }
             let now = t0.elapsed().as_millis() as u64;
             // Con el visor delante el mando navega por los menus: ni captura ni cambia el audio.
             let fired = det.update(buttons, now);
             let audio_fired = audio_det.update(buttons, now);
-            if (fired || audio_fired) && !crate::platform::own_window_focused() {
+            if (fired || audio_fired) && !crate::platform::own_window_focused() && !quickmenu::is_open() {
                 // Si las dos combinaciones comparten botones, gana la mas especifica (la que tiene mas botones).
                 let audio_wins = audio_fired && (!fired || audio_mask.count_ones() > mask.count_ones());
                 if audio_wins {

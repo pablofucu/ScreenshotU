@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "quickmenu",
+  "description": "Permisos del menu sobre el juego",
+  "windows": ["quickmenu"],
+  "permissions": ["core:default"]
+}

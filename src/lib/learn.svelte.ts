@@ -13,6 +13,8 @@ const PAD_LABEL: Record<string, string> = {
 export const COMBO_PRESETS = ['back+rb', 'back+lb', 'lb+rb', 'back+start', 'l3+r3', 'off'];
 /** Combinaciones de serie para cambiar la salida de audio. */
 export const AUDIO_COMBO_PRESETS = ['start+rb', 'start+lb', 'back+start', 'l3+r3', 'off'];
+/** Combinaciones de serie para abrir el menú sobre el juego. */
+export const OVERLAY_COMBO_PRESETS = ['off', 'guide', 'back+start', 'l3+r3'];
 export const comboLabel = (id: string) =>
   !id || id === 'off' ? 'Desactivado' : id.split('+').map((b) => PAD_LABEL[b] ?? b).join(' + ');
 
@@ -24,12 +26,14 @@ export const mouseLabel = (id: string) => MOUSE_LABEL[id] ?? id;
 /** Atajos de teclado que se recorren con izquierda/derecha ("" = desactivado). */
 export const HOTKEY_PRESETS = ['F12', 'F10', 'F9', 'Ctrl+F12', 'Alt+F12', 'Ctrl+Shift+S', ''];
 export const AUDIO_HOTKEY_PRESETS = ['', 'F8', 'Ctrl+F8', 'Ctrl+Alt+A', 'Ctrl+Shift+A'];
+export const OVERLAY_HOTKEY_PRESETS = ['F24', 'F13', 'Ctrl+Alt+O', ''];
 export const hotkeyLabel = (k: string) => k || 'Desactivado';
 
 const SECONDS = 12;
+const OPEN_MENU = 'Abrir el menú con';
 let timer: ReturnType<typeof setInterval> | undefined;
 
-export function startLearn(kind: LearnKind, target: 'capture' | 'record' | 'audio' = 'capture') {
+export function startLearn(kind: LearnKind, target: 'capture' | 'record' | 'audio' | 'overlay' = 'capture') {
   if (kind === 'pad' && !backend.isTauri) { toast('El mando solo se puede asignar en la aplicación de escritorio', 2600); return; }
   app.learn = { kind, target, combo: 'off', connected: true, left: SECONDS };
   if (kind === 'pad') void backend.learnPad(true);
@@ -74,6 +78,7 @@ export function onLearnPad(combo: string, connected: boolean, done: boolean) {
   app.learn.combo = combo;
   if (done && combo !== 'off') {
     if (app.learn.target === 'audio') void finish({ audioCombo: combo }, comboLabel(combo), 'Cambiar el audio con');
+    else if (app.learn.target === 'overlay') void finish({ overlayCombo: combo }, comboLabel(combo), OPEN_MENU);
     else void finish({ captureCombo: combo }, comboLabel(combo));
   }
 }
@@ -120,6 +125,7 @@ export function learnKeydown(e: KeyboardEvent): boolean {
   const combo = [...mods, k].join('+');
   if (app.learn.target === 'record') void finish({ recordHotkey: combo }, combo, 'Grabar audio con');
   else if (app.learn.target === 'audio') void finish({ audioHotkey: combo }, combo, 'Cambiar el audio con');
+  else if (app.learn.target === 'overlay') void finish({ overlayHotkey: combo }, combo, OPEN_MENU);
   else void finish({ captureHotkey: combo }, combo);
   return true;
 }
@@ -142,7 +148,8 @@ export function learnMouse(e: MouseEvent): boolean {
   e.stopPropagation();
   if (e.type === 'mousedown') {
     swallow = e.button;
-    void finish({ captureMouse: id }, mouseLabel(id));
+    if (app.learn.target === 'overlay') void finish({ overlayMouse: id }, mouseLabel(id), OPEN_MENU);
+    else void finish({ captureMouse: id }, mouseLabel(id));
   }
   return true;
 }

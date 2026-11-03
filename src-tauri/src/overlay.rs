@@ -187,6 +187,24 @@ pub(crate) fn no_activate(w: &tauri::WebviewWindow) {
 #[cfg(not(windows))]
 pub(crate) fn no_activate(_w: &tauri::WebviewWindow) {}
 
+/// Como [`no_activate`], pero la ventana recibe el raton (el menu sobre el juego).
+#[cfg(windows)]
+pub(crate) fn no_activate_clickable(w: &tauri::WebviewWindow) {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::WindowsAndMessaging::{GetWindowLongPtrW, SetWindowDisplayAffinity, SetWindowLongPtrW, GWL_EXSTYLE, WDA_EXCLUDEFROMCAPTURE, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW};
+    if let Ok(h) = w.hwnd() {
+        let hwnd = HWND(h.0);
+        unsafe {
+            let ex = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+            SetWindowLongPtrW(hwnd, GWL_EXSTYLE, ex | (WS_EX_NOACTIVATE.0 | WS_EX_TOOLWINDOW.0) as isize);
+            let _ = SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE);
+        }
+    }
+}
+
+#[cfg(not(windows))]
+pub(crate) fn no_activate_clickable(_w: &tauri::WebviewWindow) {}
+
 /// Lo pone el primero de las ventanas «siempre encima», sin activarlo ni moverlo.
 #[cfg(windows)]
 pub(crate) fn to_top(w: &tauri::WebviewWindow) {

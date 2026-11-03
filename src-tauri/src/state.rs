@@ -79,8 +79,12 @@ pub struct AppState {
     pub combo_mask: AtomicU32,
     /// Lo mismo para la combinacion que cambia la salida de audio.
     pub audio_mask: AtomicU32,
+    /// Lo mismo para la combinacion que abre el menu sobre el juego.
+    pub overlay_mask: AtomicU32,
     /// Boton del raton que captura (`capture::mouse_button_index`, 0 = ninguno).
     pub mouse_button: AtomicU8,
+    /// Boton del raton que abre el menu sobre el juego (0 = ninguno).
+    pub overlay_mouse: AtomicU8,
     /// Ajustes esta esperando una combinacion del mando: el hilo del mando informa en vez de capturar.
     pub learning_pad: AtomicBool,
     /// Juego de SteamGridDB asociado a cada titulo (tabla `sgdb`).

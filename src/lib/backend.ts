@@ -191,6 +191,7 @@ async function tauriBackend(): Promise<Backend> {
     },
     moveShots: (paths: string[], targetDir: string) => invoke<MoveReport>('move_shots', { paths, targetDir }),
     trashShots: (paths: string[]) => invoke<TrashReport>('trash_shots', { paths }),
+    quickmenuSetContext: (ctx: unknown) => invoke('quickmenu_set_context', { ctx }),
     reveal: (path: string) => invoke('reveal_in_explorer', { path }),
     onFilesDropped(cb: (paths: string[]) => void) {
       void getCurrentWebview().onDragDropEvent((e) => { if (e.payload.type === 'drop') cb(e.payload.paths); });
@@ -216,6 +217,7 @@ async function tauriBackend(): Promise<Backend> {
     onEvent(cb) {
       void listen<{ path: string; name: string }>('capture-saved', (e) => cb({ type: 'capture-saved', name: e.payload.name }));
       void listen<string>('capture-error', (e) => cb({ type: 'capture-error', message: String(e.payload) }));
+      void listen<string[]>('shots-trashed', (e) => cb({ type: 'shots-trashed', paths: e.payload }));
       void listen<AudioOutput[]>('audio-outputs', (e) => cb({ type: 'audio-outputs', outputs: e.payload }));
       void listen<{ combo: string; connected: boolean; done: boolean }>('learn-pad', (e) => cb({ type: 'learn-pad', ...e.payload }));
       void listen<{ id: string; name: string }>('game-started', (e) => cb({ type: 'game-started', id: e.payload.id, name: e.payload.name }));

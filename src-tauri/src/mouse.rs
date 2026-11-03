@@ -1,5 +1,6 @@
 //! Boton del raton que captura, con un gancho global de bajo nivel (funciona aunque el juego tenga el foco).
-//! El clic no se bloquea: el juego lo sigue recibiendo.
+//! El clic no se bloquea: el juego lo sigue recibiendo. El mismo gancho sirve para el menu sobre el juego, que tambien
+//! necesita saber cuando se suelta el boton (mantenerlo fuerza el cierre).
 use tauri::AppHandle;
 
 #[cfg(windows)]
@@ -12,20 +13,28 @@ pub fn spawn(app: AppHandle) {
     use windows::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows::Win32::UI::WindowsAndMessaging::{
         CallNextHookEx, DispatchMessageW, GetMessageW, SetWindowsHookExW, TranslateMessage, HC_ACTION, MSG, MSLLHOOKSTRUCT,
-        WH_MOUSE_LL, WM_MBUTTONDOWN, WM_XBUTTONDOWN,
+        WH_MOUSE_LL, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_XBUTTONDOWN, WM_XBUTTONUP,
     };
 
+    /// Bit que marca que el boton se ha soltado.
+    const RELEASED: u8 = 0x80;
     // El gancho debe volver enseguida (si tarda, Windows lo quita): solo avisa a otro hilo.
     static TX: OnceLock<Mutex<Sender<u8>>> = OnceLock::new();
 
     unsafe extern "system" fn hook(code: i32, wp: WPARAM, lp: LPARAM) -> LRESULT {
         if code == HC_ACTION as i32 {
+            let x = || match (*(lp.0 as *const MSLLHOOKSTRUCT)).mouseData >> 16 {
+                1 => 2,
+                2 => 3,
+                _ => 0,
+            };
             let b = match wp.0 as u32 {
                 WM_MBUTTONDOWN => 1,
-                WM_XBUTTONDOWN => match (*(lp.0 as *const MSLLHOOKSTRUCT)).mouseData >> 16 {
-                    1 => 2,
-                    2 => 3,
-                    _ => 0,
+                WM_XBUTTONDOWN => x(),
+                WM_MBUTTONUP => 1 | RELEASED,
+                WM_XBUTTONUP => match x() {
+                    0 => 0,
+                    n => n | RELEASED,
                 },
                 _ => 0,
             };
@@ -44,9 +53,19 @@ pub fn spawn(app: AppHandle) {
     let _ = TX.set(Mutex::new(tx));
     std::thread::spawn(move || {
         for b in rx {
-            let want = app.state::<crate::state::AppState>().mouse_button.load(Ordering::Relaxed);
+            let st = app.state::<crate::state::AppState>();
+            let (want, menu) = (st.mouse_button.load(Ordering::Relaxed), st.overlay_mouse.load(Ordering::Relaxed));
+            let (button, released) = (b & !RELEASED, b & RELEASED != 0);
+            if menu != 0 && button == menu {
+                if released {
+                    crate::quickmenu::trigger_up(&app, crate::quickmenu::Src::Mouse);
+                } else if !crate::platform::own_window_focused() {
+                    crate::quickmenu::trigger_down(&app, crate::quickmenu::Src::Mouse, 0);
+                }
+                continue;
+            }
             // Con el visor delante el raton es para los menus.
-            if want != 0 && b == want && !crate::platform::own_window_focused() {
+            if !released && want != 0 && button == want && !crate::platform::own_window_focused() && !crate::quickmenu::is_open() {
                 crate::snap::trigger(&app);
             }
         }

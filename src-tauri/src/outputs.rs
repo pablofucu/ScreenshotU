@@ -54,11 +54,19 @@ mod win {
     const POLICY_CONFIG_CLIENT: windows::core::GUID = windows::core::GUID::from_u128(0x870af99c_171d_4f9e_af0d_e63df40c2bc9);
 
     pub fn list() -> Result<Vec<AudioOutput>, String> {
-        use wasapi::{initialize_mta, DeviceEnumerator, Direction};
+        list_dir(wasapi::Direction::Render)
+    }
+
+    pub fn list_inputs() -> Result<Vec<AudioOutput>, String> {
+        list_dir(wasapi::Direction::Capture)
+    }
+
+    fn list_dir(dir: wasapi::Direction) -> Result<Vec<AudioOutput>, String> {
+        use wasapi::{initialize_mta, DeviceEnumerator};
         let _ = initialize_mta();
         let en = DeviceEnumerator::new().map_err(|e| format!("No se pudo leer el audio de Windows: {e}"))?;
-        let default_id = en.get_default_device(&Direction::Render).and_then(|d| d.get_id()).ok();
-        let col = en.get_device_collection(&Direction::Render).map_err(|e| format!("No se pudo listar las salidas de audio: {e}"))?;
+        let default_id = en.get_default_device(&dir).and_then(|d| d.get_id()).ok();
+        let col = en.get_device_collection(&dir).map_err(|e| format!("No se pudo listar las salidas de audio: {e}"))?;
         let mut out = Vec::new();
         for d in &col {
             let Ok(d) = d else { continue };
@@ -86,12 +94,21 @@ mod win {
 pub fn list() -> Result<Vec<AudioOutput>, String> {
     win::list()
 }
+/// Microfonos activos, con el predeterminado marcado.
+#[cfg(windows)]
+pub fn list_inputs() -> Result<Vec<AudioOutput>, String> {
+    win::list_inputs()
+}
 #[cfg(windows)]
 pub fn set_default(id: &str) -> Result<(), String> {
     win::set_default(id)
 }
 #[cfg(not(windows))]
 pub fn list() -> Result<Vec<AudioOutput>, String> {
+    Ok(Vec::new())
+}
+#[cfg(not(windows))]
+pub fn list_inputs() -> Result<Vec<AudioOutput>, String> {
     Ok(Vec::new())
 }
 #[cfg(not(windows))]

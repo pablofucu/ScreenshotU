@@ -227,3 +227,7 @@ Ninguna fase es trabajo masivo; no hay nada que delegar en `agy` salvo, si se qu
 - **Capturar un proceso suspendido:** se evita guardando la foto completa al abrir; con «Pausar» desactivado se captura de verdad.
 - **Sin contexto del juego:** si la ventana principal no estuviera cargada al empezar la partida, el overlay enseñaría solo sesión, hoy y total, y la baldosa de Tiempo caería al caso c (sin racha).
 - **Forzar con el juego pausado:** `TerminateProcess` funciona igual con procesos suspendidos (v1 §4.3); además se borra el fichero de pids suspendidos.
+
+## Estado
+
+Implementado en la 1.8.1 (3-nov-2026). Probado: tests de `visor-core`, `svelte-check`, build y la página en el navegador con datos falsos. Falta probar en real: atajos con un juego delante, DS4Windows, foco y clics en WebView2 sin activar, pantalla completa exclusiva, pausa y mezclador.

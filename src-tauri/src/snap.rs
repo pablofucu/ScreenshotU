@@ -62,7 +62,37 @@ pub fn trigger_from_pad(app: &AppHandle, pads: u8) {
     });
 }
 
-fn exe_of(pid: u32) -> Option<String> {
+/// Guarda una imagen ya capturada (la foto del juego en pausa, desde el menu sobre el juego).
+pub fn save_frozen(app: &AppHandle, g: platform::Grabbed) {
+    if BUSY.swap(true, Ordering::SeqCst) {
+        return;
+    }
+    let app = app.clone();
+    std::thread::spawn(move || {
+        let r = {
+            let _busy = Busy;
+            let at = chrono::Local::now().naive_local();
+            let st = app.state::<AppState>();
+            let cfg = st.config.lock().unwrap().clone();
+            let active = st.active.lock().unwrap().clone();
+            if cfg.capture_sound {
+                platform::play_shutter();
+            }
+            save_grabbed(&app, &cfg, active, g, at)
+        };
+        match r {
+            Ok(s) => {
+                let _ = app.emit("capture-saved", s);
+            }
+            Err(e) => {
+                eprintln!("captura fallida: {e}");
+                let _ = app.emit("capture-error", e);
+            }
+        }
+    });
+}
+
+pub(crate) fn exe_of(pid: u32) -> Option<String> {
     let mut sys = System::new();
     let p = Pid::from_u32(pid);
     sys.refresh_processes_specifics(ProcessesToUpdate::Some(&[p]), true, ProcessRefreshKind::nothing().with_exe(UpdateKind::Always));
@@ -106,12 +136,26 @@ fn run(app: &AppHandle, pads: u8) -> Result<Option<Saved>, String> {
     if cfg.capture_rumble {
         crate::pad::rumble(pads);
     }
-    if cfg.capture_peek {
+    // Con el menu sobre el juego abierto, la captura nueva entra en su rejilla.
+    if cfg.capture_peek && !crate::quickmenu::is_open() {
         match capture::rgba_to_jpeg(g.width, g.height, &g.rgba, crate::peek::THUMB_W, 80) {
             Ok(jpeg) => crate::peek::show(app, &jpeg, g.width, g.height, g.fg_pid),
             Err(e) => eprintln!("miniatura de captura: {e}"),
         }
     }
+    save_grabbed(app, &cfg, active, g, at).map(Some)
+}
+
+/// Guarda una captura en la carpeta de su juego (o en la de emergencia) y la apunta para el menu sobre el juego.
+fn save_grabbed(app: &AppHandle, cfg: &visor_core::config::Config, active: Option<crate::state::Active>, g: platform::Grabbed, at: chrono::NaiveDateTime) -> Result<Saved, String> {
+    let st = app.state::<AppState>();
+    // Miniatura para el menu, antes de que el guardado se quede con la imagen.
+    let menu_thumb = active.is_some().then(|| capture::rgba_to_jpeg(g.width, g.height, &g.rgba, 320, 78).ok()).flatten();
+    let remember = |path: &str| {
+        if let Some(j) = &menu_thumb {
+            crate::quickmenu::push_shot(app, path.to_string(), j, chrono::Local::now().timestamp_millis());
+        }
+    };
 
     // A que juego pertenece: el lanzado desde el visor; si no, el del proceso capturado si esta dentro de
     // la carpeta de un juego conocido; si no, «Sin clasificar».
@@ -153,7 +197,9 @@ fn run(app: &AppHandle, pads: u8) -> Result<Option<Saved>, String> {
         match capture::save_rgba_png(&path, width, height, rgba.clone()) {
             Ok(()) => {
                 let _ = app.notification().builder().title("Visor de capturas").body(format!("Captura guardada: {display}")).show();
-                return Ok(Some(Saved { path: path.to_string_lossy().into_owned(), name: display, platform_id: plat_id, folder }));
+                let shown = path.to_string_lossy().into_owned();
+                remember(&shown);
+                return Ok(Saved { path: shown, name: display, platform_id: plat_id, folder });
             }
             Err(e) => why = format!("no se pudo guardar en la biblioteca: {e}"),
         }
@@ -169,5 +215,6 @@ fn run(app: &AppHandle, pads: u8) -> Result<Option<Saved>, String> {
         .title("Visor de capturas")
         .body(format!("Captura guardada en {} ({why})", dir.display()))
         .show();
-    Ok(Some(Saved { path: shown, name: format!("{display} (en {})", dir.display()), platform_id: platform_id.clone(), folder: wanted }))
+    remember(&shown);
+    Ok(Saved { path: shown, name: format!("{display} (en {})", dir.display()), platform_id: platform_id.clone(), folder: wanted })
 }

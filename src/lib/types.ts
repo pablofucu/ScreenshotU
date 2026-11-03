@@ -65,6 +65,13 @@ export interface Config {
   audioCombo: string;
   /** Atajo global que cambia a la siguiente salida de audio ("" = desactivado). */
   audioHotkey: string;
+  /** Menú sobre el juego: atajos (teclado, mando, ratón), mantener para forzar el cierre y pausa. */
+  overlayHotkey: string;
+  overlayCombo: string;
+  overlayMouse: string;
+  overlayHoldForce: boolean;
+  overlayHoldMs: number;
+  overlayPause: boolean;
   /** Copia automática de la base de datos al arrancar (cada 7 días, se conservan 5). */
   autoBackup: boolean;
   /** Abrir el visor en el monitor donde está el cursor al arrancar (en vez de en el último usado). */
@@ -270,6 +277,7 @@ export type BackendEvent =
   | { type: 'audio-outputs'; outputs: AudioOutput[] }
   | { type: 'capture-saved'; name: string }
   | { type: 'capture-error'; message: string }
+  | { type: 'shots-trashed'; paths: string[] }
   | { type: 'learn-pad'; combo: string; connected: boolean; done: boolean }
   | { type: 'game-started'; id: string; name: string }
   | { type: 'game-exited'; id: string; name: string; seconds: number }
@@ -360,6 +368,8 @@ export interface Backend {
   moveShots(paths: string[], targetDir: string): Promise<MoveReport>;
   /** Manda capturas a la Papelera de Windows (nunca borrado definitivo). */
   trashShots(paths: string[]): Promise<TrashReport>;
+  /** Datos de la partida en curso para el menú sobre el juego (así no recorre la biblioteca en mitad del juego). */
+  quickmenuSetContext(ctx: unknown): Promise<void>;
   reveal(path: string): Promise<void>;
   /** Archivos soltados sobre la ventana. */
   onFilesDropped(cb: (paths: string[]) => void): void;

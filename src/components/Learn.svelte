@@ -19,7 +19,7 @@
     <div class="face">
       <div class="lic">{@html ic}</div>
       <h2>{TITLE[l.kind]}</h2>
-      <p class="msub">{SUB[l.kind]}</p>
+      <p class="msub">{SUB[l.kind]}{#if l.kind === 'key' && l.target === 'overlay'} Si usas DS4Windows, pulsa ahora el botón del mando que convierte en tecla.{/if}</p>
       {#if l.kind === 'pad'}
         <div class="lcombo" class:on={l.combo !== 'off'}>{l.combo !== 'off' ? comboLabel(l.combo) : 'Esperando…'}</div>
         {#if !l.connected}

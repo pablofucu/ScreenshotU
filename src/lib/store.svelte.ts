@@ -49,6 +49,12 @@ export const DEFAULT_CONFIG: Config = {
   recordHotkey: 'F9',
   audioCombo: 'start+rb',
   audioHotkey: '',
+  overlayHotkey: 'F24',
+  overlayCombo: 'off',
+  overlayMouse: '',
+  overlayHoldForce: true,
+  overlayHoldMs: 1500,
+  overlayPause: true,
   autoBackup: true,
   openOnCursor: false,
   savesAuto: true,
@@ -129,7 +135,7 @@ export type LearnKind = 'pad' | 'mouse' | 'key';
 export interface LearnState {
   kind: LearnKind;
   /** Que atajo se asigna con la tecla: la captura de pantalla o la grabacion de audio. */
-  target: 'capture' | 'record' | 'audio';
+  target: 'capture' | 'record' | 'audio' | 'overlay';
   /** Combinación del mando pulsada hasta ahora. */
   combo: string;
   /** Hay un mando XInput conectado. */

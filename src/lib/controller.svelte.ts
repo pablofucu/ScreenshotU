@@ -14,7 +14,7 @@ import { shotLayout, type ShotLayout } from './shotlayout';
 import { tgrid, TZOOM_MAX } from './tgrid';
 import { EVO_KINDS, GMETRICS, STATS_KINDS } from './stats';
 import { editSgdbKey, openSgdbPicker, openSgdbTitles, sgdbAuto, sgdbCmd, sgdbTitlesCmd, toggleSgdbAuto } from './sgdb.svelte';
-import { AUDIO_COMBO_PRESETS, AUDIO_HOTKEY_PRESETS, COMBO_PRESETS, HOTKEY_PRESETS, MOUSE_PRESETS, learnKeydown, learnMouse, onLearnPad, startLearn } from './learn.svelte';
+import { AUDIO_COMBO_PRESETS, AUDIO_HOTKEY_PRESETS, COMBO_PRESETS, HOTKEY_PRESETS, MOUSE_PRESETS, OVERLAY_COMBO_PRESETS, OVERLAY_HOTKEY_PRESETS, learnKeydown, learnMouse, onLearnPad, startLearn } from './learn.svelte';
 import { READING_CYCLE, READING_ROWS, isReadingId, readingAct, type ReadingId } from './reading.svelte';
 import { checkUpdate, updateAct } from './updater.svelte';
 import { REMOTE_CYCLE, isRemoteId, remoteAct, type RemoteId } from './remote.svelte';
@@ -647,6 +647,22 @@ function streakSwitch(d: number) {
   blip(700);
 }
 
+/** Datos que el menú sobre el juego no puede sacar por sí mismo: se quedan en el núcleo para toda la partida. Solo
+ *  títulos de la categoría del juego (la racha y la hucha nunca mezclan categorías). */
+function pushQuickmenuContext(gameId: string) {
+  const plat = app.lib.platforms.find((p) => p.titles.some((t) => t.gameId === gameId));
+  const t = plat?.titles.find((x) => x.gameId === gameId);
+  if (!plat || !t) return;
+  const key = goalKeyOf(gameId) ?? null;
+  backend.quickmenuSetContext({
+    gameId,
+    key,
+    titles: key ? plat.titles.map((x) => ({ gameId: x.gameId, name: x.name, plays: x.plays ?? [] })) : [],
+    title: { playSeconds: t.playSeconds, sessions: t.sessions, week: t.week, plays: t.plays ?? [] },
+    shots: [...t.shots].sort((a, b) => b.mtime - a.mtime).slice(0, 24).map((s) => ({ path: s.path, at: s.mtime })),
+  }).catch((e) => console.error(e));
+}
+
 /** Al empezar una novela: pide al núcleo un aviso sobre el juego para cuando se llegue a la meta de hoy. */
 function scheduleGoalNotice(gameId: string) {
   const k = goalKeyOf(gameId);
@@ -1177,7 +1193,7 @@ export function wake() {
 /* ---------- ajustes ---------- */
 export type SettingId =
   | 'root' | 'rescan' | 'addgame' | 'hidden' | 'showhidden' | 'view' | 'shotsview' | 'shotsorder' | 'collstyle' | 'achcardvariant' | 'sound' | 'fullscreen' | 'monitor' | 'oncursor'
-  | 'audioout' | 'audiocombo' | 'audiohotkey' | 'hotkey' | 'combo' | 'mouse' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caponly' | 'caprumble' | 'quit'
+  | 'audioout' | 'audiocombo' | 'audiohotkey' | 'hotkey' | 'combo' | 'mouse' | 'qmkey' | 'qmpad' | 'qmmouse' | 'qmhold' | 'qmpause' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caponly' | 'caprumble' | 'quit'
   | 'sgdbkey' | 'sgdbauto' | 'sgdbnow' | 'sgdbgame'
   | 'backup' | 'backupmedia' | 'restore' | 'autobackup'
   | 'savesauto' | 'ludusavi' | 'inputmouse' | 'inputkeys' | 'update'
@@ -1210,6 +1226,7 @@ export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[
       ? ['capsound', 'cappeek', 'caprumble', 'caponly', 'magpie']
       : [
         'combo', 'mouse', 'hotkey',
+        'qmkey', 'qmpad', 'qmmouse', 'qmhold', 'qmpause',
         'capsound', 'cappeek', 'caprumble', 'caponly',
         'magpieexe', 'magpie',
         'remoteon', 'remoteaddr', 'remotecode', 'remotehelp',
@@ -1245,7 +1262,7 @@ export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[
   },
 ];
 /** Filas que cambian de valor con izquierda/derecha (se marcan con ‹ ›). Las demás son acciones: izquierda vuelve al menú. */
-export const CYCLE = new Set<SettingId>(['theme', 'showhidden', 'view', 'shotsview', 'shotsorder', 'collstyle', 'achcardvariant', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'inputmouse', 'inputkeys', 'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay']);
+export const CYCLE = new Set<SettingId>(['theme', 'showhidden', 'view', 'shotsview', 'shotsorder', 'collstyle', 'achcardvariant', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'qmkey', 'qmpad', 'qmmouse', 'qmhold', 'qmpause', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'inputmouse', 'inputkeys', 'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay']);
 export const rowHasArrows = (id: SettingId | undefined) => !!id && (CYCLE.has(id) || READING_CYCLE.has(id as never) || REMOTE_CYCLE.has(id as never));
 /** Zona de foco en Ajustes: el menú de secciones o la lista de opciones. */
 export const setNav = $state({ zone: 'menu' as 'menu' | 'body' });
@@ -1399,6 +1416,8 @@ export function closeSettings() {
   flushRefresh();
   blip(520);
 }
+/** Tiempos de mantener el atajo del menú para forzar el cierre (0 = no se fuerza). */
+const HOLD_CHOICES = [0, 1000, 1500, 2000, 3000];
 function cycleIn<T>(list: T[], cur: T, d: number): T {
   const i = Math.max(0, list.indexOf(cur));
   return list[(i + d + list.length) % list.length];
@@ -1459,6 +1478,15 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'mouse') { if (dir === 0) startLearn('mouse'); else void patchConfig({ captureMouse: cycleIn(MOUSE_PRESETS, app.config.captureMouse, dir) }); }
   else if (id === 'magpie') { void patchConfig({ captureMagpie: app.config.captureMagpie === 'source' ? 'scaled' : 'source' }); blip(1320); }
   else if (id === 'magpieexe') void chooseMagpieExe(dir);
+  else if (id === 'qmkey') { if (dir === 0) startLearn('key', 'overlay'); else void patchConfig({ overlayHotkey: cycleIn(OVERLAY_HOTKEY_PRESETS, app.config.overlayHotkey, dir) }); }
+  else if (id === 'qmpad') { if (dir === 0) startLearn('pad', 'overlay'); else void patchConfig({ overlayCombo: cycleIn(OVERLAY_COMBO_PRESETS, app.config.overlayCombo, dir) }); }
+  else if (id === 'qmmouse') { if (dir === 0) startLearn('mouse', 'overlay'); else void patchConfig({ overlayMouse: cycleIn(MOUSE_PRESETS, app.config.overlayMouse, dir) }); }
+  else if (id === 'qmhold') {
+    const ms = cycleIn(HOLD_CHOICES, app.config.overlayHoldForce ? app.config.overlayHoldMs : 0, dir || 1);
+    void patchConfig(ms ? { overlayHoldForce: true, overlayHoldMs: ms } : { overlayHoldForce: false });
+    blip(1320);
+  }
+  else if (id === 'qmpause') { void patchConfig({ overlayPause: !app.config.overlayPause }); blip(1320); }
   else if (id === 'capsound') { void patchConfig({ captureSound: !app.config.captureSound }); blip(1320); }
   else if (id === 'cappeek') { void patchConfig({ capturePeek: !app.config.capturePeek }); blip(1320); }
   else if (id === 'caponly') { void patchConfig({ captureOnlyGames: !app.config.captureOnlyGames }); blip(1320); }
@@ -1635,6 +1663,9 @@ function onBackendEvent(e: BackendEvent) {
   } else if (e.type === 'game-started') {
     if (app.playing?.id !== e.id) app.playing = { id: e.id, since: Date.now() };
     scheduleGoalNotice(e.id);
+    pushQuickmenuContext(e.id);
+  } else if (e.type === 'shots-trashed') {
+    void softRefresh();
   } else if (e.type === 'magpie-status') {
     toast(e.message, e.error ? 4200 : 3200);
     if (!e.error) {

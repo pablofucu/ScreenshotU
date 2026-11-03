@@ -22,6 +22,7 @@ pub mod saves;
 pub mod scan;
 pub mod sgdb;
 pub mod thumbs;
+pub mod trigger;
 pub mod userdata;
 
 pub use config::{Config, PlatformCfg};

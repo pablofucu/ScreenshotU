@@ -312,6 +312,33 @@ impl ComboDetector {
     }
 }
 
+/// Detecta los dos flancos de una combinacion (pulsar y soltar), para los gestos de mantener.
+#[derive(Debug, Default)]
+pub struct EdgeDetector {
+    pub mask: u32,
+    was_down: bool,
+}
+
+impl EdgeDetector {
+    pub fn new(mask: u32) -> Self {
+        EdgeDetector { mask, was_down: false }
+    }
+    /// `Some(true)` al completar la combinacion, `Some(false)` al romperla.
+    pub fn update(&mut self, buttons: u32) -> Option<bool> {
+        let down = self.mask != 0 && buttons & self.mask == self.mask;
+        if down == self.was_down {
+            return None;
+        }
+        self.was_down = down;
+        Some(down)
+    }
+}
+
+/// Dos combinaciones se disparan a la vez si una contiene a la otra.
+pub fn combos_overlap(a: u32, b: u32) -> bool {
+    a != 0 && b != 0 && (a & b == a || a & b == b)
+}
+
 /// Aprende una combinacion «esperando al mando»: espera a que se suelte todo (el boton con el que se abrio
 /// el dialogo no cuenta), acumula lo que se pulse y la da por buena al soltarlo todo.
 #[derive(Debug, Default)]
@@ -444,6 +471,29 @@ pub fn should_capture(only_games: bool, has_active: bool, fg: Option<&Foreground
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn edge_detector_reports_both_edges() {
+        let m = combo_mask("back+start");
+        let mut d = EdgeDetector::new(m);
+        assert_eq!(d.update(XI_BACK), None);
+        assert_eq!(d.update(m), Some(true));
+        assert_eq!(d.update(m | XI_A), None);
+        assert_eq!(d.update(XI_START), Some(false));
+        assert_eq!(d.update(0), None);
+        let mut off = EdgeDetector::new(0);
+        assert_eq!(off.update(m), None);
+    }
+
+    #[test]
+    fn combos_overlap_when_one_contains_the_other() {
+        let (a, b, ab) = (combo_mask("back"), combo_mask("start"), combo_mask("back+start"));
+        assert!(combos_overlap(a, a));
+        assert!(combos_overlap(a, ab) && combos_overlap(ab, b));
+        assert!(!combos_overlap(a, b));
+        assert!(!combos_overlap(0, ab) && !combos_overlap(ab, 0));
+        assert!(!combos_overlap(combo_mask("back+lb"), combo_mask("back+rb")));
+    }
 
     fn fgi(exe: &str, class: &str, fullscreen: bool, known: bool) -> ForegroundInfo {
         ForegroundInfo { own: false, exe_name: exe.into(), class: class.into(), fullscreen, known_game: known }
