@@ -129,21 +129,25 @@ pub fn sync_achievements_from_disk(
 }
 
 #[tauri::command]
-pub fn get_game_achievements(
+pub async fn get_game_achievements(
     app: AppHandle,
     game_id: String,
     app_id: Option<String>,
 ) -> Result<Vec<Achievement>, String> {
-    let state = app.state::<AppState>();
-    let (resolved_id, mut list) = sync_achievements_from_disk(&state, &game_id, app_id.as_deref())?;
-    for a in &mut list {
-        a.icon = inline_icon(a.icon.take());
-        a.icon_gray = inline_icon(a.icon_gray.take());
-    }
-    if !list.is_empty() {
-        refresh_rarity_in_background(&app, &resolved_id);
-    }
-    Ok(list)
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        let (resolved_id, mut list) = sync_achievements_from_disk(&state, &game_id, app_id.as_deref())?;
+        for a in &mut list {
+            a.icon = inline_icon(a.icon.take());
+            a.icon_gray = inline_icon(a.icon_gray.take());
+        }
+        if !list.is_empty() {
+            refresh_rarity_in_background(&app, &resolved_id);
+        }
+        Ok(list)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 /// AppIDs cuya rareza se esta descargando ahora mismo (evita hilos duplicados si se abre la ficha varias veces).
@@ -310,31 +314,35 @@ fn inline_icon(icon: Option<String>) -> Option<String> {
 }
 
 #[tauri::command]
-pub fn get_achievements_summary(
+pub async fn get_achievements_summary(
     app: AppHandle,
     game_id: String,
     app_id: Option<String>,
 ) -> Result<Option<AchievementSummary>, String> {
-    let state = app.state::<AppState>();
-    let (resolved_id, list) = match sync_achievements_from_disk(&state, &game_id, app_id.as_deref()) {
-        Ok(res) => res,
-        Err(_) => return Ok(None),
-    };
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        let (resolved_id, list) = match sync_achievements_from_disk(&state, &game_id, app_id.as_deref()) {
+            Ok(res) => res,
+            Err(_) => return Ok(None),
+        };
 
-    if list.is_empty() {
-        return Ok(None);
-    }
+        if list.is_empty() {
+            return Ok(None);
+        }
 
-    let variant = state
-        .db
-        .with(|c| {
-            core::card_pref_get(c, &game_id)
-                .or_else(|_| core::card_pref_get(c, &resolved_id))
-        })
-        .unwrap_or(1);
+        let variant = state
+            .db
+            .with(|c| {
+                core::card_pref_get(c, &game_id)
+                    .or_else(|_| core::card_pref_get(c, &resolved_id))
+            })
+            .unwrap_or(1);
 
-    let summary = calculate_summary(&resolved_id, &list, variant, chrono::Local::now());
-    Ok(Some(summary))
+        let summary = calculate_summary(&resolved_id, &list, variant, chrono::Local::now());
+        Ok(Some(summary))
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]

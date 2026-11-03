@@ -151,8 +151,8 @@ pub fn dispatch(app: &AppHandle, cmd: &str, args: Value) -> Res {
         "novel_save_prefs" => out(novel::novel_save_prefs(app.clone(), arg(a, "gameId")?, arg(a, "prefs")?)),
         "readstats_get" => val(novel::readstats::readstats_get(app.clone(), arg(a, "gameId")?)),
         "readstats_live" => val(novel::readstats::readstats_live()),
-        "get_game_achievements" => out(achievements::get_game_achievements(app.clone(), arg(a, "gameId")?, arg(a, "appId")?)),
-        "get_achievements_summary" => out(achievements::get_achievements_summary(app.clone(), arg(a, "gameId")?, arg(a, "appId")?)),
+        "get_game_achievements" => out(block(achievements::get_game_achievements(app.clone(), arg(a, "gameId")?, arg(a, "appId")?))),
+        "get_achievements_summary" => out(block(achievements::get_achievements_summary(app.clone(), arg(a, "gameId")?, arg(a, "appId")?))),
         "set_achievements_card_variant" => out(achievements::set_achievements_card_variant(app.clone(), arg(a, "gameId")?, arg(a, "variant")?)),
         "get_achievements_card_variant" => out(achievements::get_achievements_card_variant(app.clone(), arg(a, "gameId")?)),
 

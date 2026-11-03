@@ -227,14 +227,19 @@ pub(crate) fn current_foreground() -> Option<isize> {
 #[cfg(windows)]
 pub(crate) fn raise_menu(w: &tauri::WebviewWindow, x: i32, y: i32, width: u32, height: u32) -> (bool, Option<u32>) {
     use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::Input::KeyboardAndMouse::{keybd_event, KEYEVENTF_KEYUP};
     use windows::Win32::UI::WindowsAndMessaging::{
         BringWindowToTop, GetForegroundWindow, GetWindowThreadProcessId, SetForegroundWindow, SetWindowPos,
         HWND_TOPMOST, SWP_NOOWNERZORDER, SWP_SHOWWINDOW,
     };
     let Ok(h) = w.hwnd() else { return (false, None) };
     let hwnd = HWND(h.0);
+    no_activate_clickable(w);
     unsafe {
         let _ = SetWindowPos(hwnd, Some(HWND_TOPMOST), x, y, width as i32, height as i32, SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
+        // Cuando el atajo viene de XInput (mando), Windows no considera al proceso con entrada reciente y
+        // `SetForegroundWindow` falla sin soltar el bloqueo de primer plano con un evento inocuo (`vk = 0`).
+        keybd_event(0, 0, KEYEVENTF_KEYUP, 0);
         let fg_ok = SetForegroundWindow(hwnd).as_bool();
         let _ = BringWindowToTop(hwnd);
         let fg = GetForegroundWindow();
@@ -257,12 +262,14 @@ pub(crate) fn raise_menu(w: &tauri::WebviewWindow, _x: i32, _y: i32, _width: u32
 #[cfg(windows)]
 pub(crate) fn restore_foreground(prev: isize) {
     use windows::Win32::Foundation::HWND;
+    use windows::Win32::UI::Input::KeyboardAndMouse::{keybd_event, KEYEVENTF_KEYUP};
     use windows::Win32::UI::WindowsAndMessaging::{IsWindow, SetForegroundWindow};
     let hwnd = HWND(prev as *mut core::ffi::c_void);
     unsafe {
         if !IsWindow(Some(hwnd)).as_bool() {
             return;
         }
+        keybd_event(0, 0, KEYEVENTF_KEYUP, 0);
         let _ = SetForegroundWindow(hwnd);
     }
 }

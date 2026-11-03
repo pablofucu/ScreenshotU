@@ -283,6 +283,9 @@ fn d3d_fullscreen() -> bool {
 /* ---------------- ventana ---------------- */
 
 /// Crea la ventana oculta al empezar la partida, para que abrir sea inmediato.
+/// `WebviewWindowBuilder::build` debe llamarse siempre desde un hilo secundario: `tauri-runtime-wry` despacha
+/// `Message::CreateWindow` al bucle de eventos y, si se invoca dentro de `run_on_main_thread`, entra en un bombeo
+/// reentrante (`wait_with_pump`) mientras `EventLoopRunner` esta en modo buffer, pudiendo bloquear el hilo principal.
 pub fn prewarm(app: &AppHandle) {
     clear_forced();
     ENDING.store(false, Ordering::SeqCst);
@@ -290,14 +293,13 @@ pub fn prewarm(app: &AppHandle) {
     log_reset(app);
     log("partida empezada");
     let a = app.clone();
-    let _ = app.run_on_main_thread(move || {
-        if a.get_webview_window(LABEL).is_none() {
-            build(&a);
-        }
+    let _ = std::thread::Builder::new().name("qm-prewarm".into()).spawn(move || {
+        let _ = ensure_window(&a);
     });
 }
 
-/// Al acabar la partida: cierra el menu y libera la ventana (WebView2 ocupa memoria).
+/// Al acabar la partida: cierra el menu, reanuda cualquier proceso y oculta la ventana (se reutiliza entre
+/// partidas sin destruirla, igual que `recindicator`, evitando carreras entre `w.destroy()` y el bucle principal).
 /// En un hilo propio: nada del menu puede impedir que el vigilante guarde la sesion.
 pub fn destroy(app: &AppHandle) {
     // Sincrono y antes de lanzar nada: ningun atajo que llegue de aqui en adelante debe abrir el menu sobre una
@@ -314,30 +316,29 @@ pub fn destroy(app: &AppHandle) {
 
 fn destroy_now(app: &AppHandle) {
     let session = SESSION.load(Ordering::SeqCst);
-    // `close_now` deshace la pausa (`resume_all`).
+    // `close_now` deshace la pausa (`resume_all`) y oculta la ventana si estaba abierta.
     close_now(app);
     *lock(&CONTEXT) = None;
     lock(&SHOTS).clear();
-    // Un `open()` que llegase tarde (p. ej. el que lanza un cierre forzado) puede seguir mostrando/ocultando la
-    // ventana en el hilo principal un rato despues de este punto: esperar antes de destruirla evita destruirla a
-    // medio mostrar, que es lo que podia colgar el hilo principal o tirar la app entera.
-    std::thread::sleep(Duration::from_millis(CLOSE_ANIM_MS + 1500));
-    let a = app.clone();
-    let _ = app.run_on_main_thread(move || {
-        if is_open() || !ENDING.load(Ordering::SeqCst) || SESSION.load(Ordering::SeqCst) != session {
-            // Una partida nueva ya reutilizo la ventana: no es la nuestra que destruir.
-            return;
-        }
-        if let Some(w) = a.get_webview_window(LABEL) {
-            let _ = w.destroy();
-            log("ventana destruida");
-        }
-    });
+    if ENDING.load(Ordering::SeqCst) && SESSION.load(Ordering::SeqCst) == session && !is_open() {
+        hide_window(app);
+    }
+}
+
+/// Garantiza que la ventana `quickmenu` existe. Debe llamarse desde un hilo secundario (nunca en el hilo principal).
+fn ensure_window(app: &AppHandle) -> Option<tauri::WebviewWindow> {
+    if let Some(w) = app.get_webview_window(LABEL) {
+        return Some(w);
+    }
+    build(app)
 }
 
 fn build(app: &AppHandle) -> Option<tauri::WebviewWindow> {
+    let m = crate::reader::monitor::game_monitor(None);
     let w = WebviewWindowBuilder::new(app, LABEL, WebviewUrl::App("quickmenu.html".into()))
         .title("Menú del juego")
+        .position(m.x as f64, m.y as f64)
+        .inner_size(m.w as f64, m.h as f64)
         .decorations(false)
         .transparent(true)
         .always_on_top(true)
@@ -347,18 +348,28 @@ fn build(app: &AppHandle) -> Option<tauri::WebviewWindow> {
         .focused(false)
         .visible(false)
         .build()
-        .map_err(|e| eprintln!("No se pudo crear el menú del juego: {e}"))
+        .map_err(|e| {
+            log(&format!("no se pudo crear la ventana del menu: {e}"));
+            eprintln!("No se pudo crear el menú del juego: {e}");
+        })
         .ok()?;
+    if let Ok(h) = w.hwnd() {
+        *lock(&OWN_HWND) = Some(h.0 as isize);
+    }
     crate::overlay::no_activate_clickable(&w);
+    log("ventana creada");
     Some(w)
 }
 
-/// Muestra la ventana del menu, sin tomar el foco (el gancho de teclado y `pad::menu_nav` no lo necesitan).
-/// Devuelve `true` solo si el hilo principal de verdad llego a mostrarla dentro de los 800 ms de margen: si el
-/// hilo principal no responde (p. ej. acoplado a un hilo ajeno colgado) antes se devolvia `()` igualmente y el
-/// resto del codigo seguia como si se hubiera mostrado.
+/// Muestra la ventana del menu y la sube al primer plano con una unica llamada Win32 (`raise_menu`), sin pasar por
+/// `win.set_position`/`win.set_size`/`win.show()` de Tao (que sobrescribian `GWL_EXSTYLE` en `WindowState::apply_diff`
+/// y disparaban llamadas COM sincronas reentrantes a WebView2).
+/// Devuelve `true` solo si el hilo principal de verdad llego a mostrarla dentro de los 800 ms de margen.
 fn show_window(app: &AppHandle, pid: Option<u32>, gen: u64) -> bool {
-    let a = app.clone();
+    let Some(win) = ensure_window(app) else {
+        log("no se pudo obtener ni crear la ventana del menu");
+        return false;
+    };
     let (tx, rx) = std::sync::mpsc::sync_channel::<bool>(1);
     let t0 = Instant::now();
     log("pido mostrar");
@@ -368,27 +379,16 @@ fn show_window(app: &AppHandle, pid: Option<u32>, gen: u64) -> bool {
             return;
         }
         log("hp: empieza");
-        let shown = if let Some(win) = a.get_webview_window(LABEL).or_else(|| build(&a)) {
-            let m = crate::reader::monitor::game_monitor(pid);
-            let _ = win.set_position(tauri::PhysicalPosition::new(m.x, m.y));
-            let _ = win.set_size(tauri::PhysicalSize::new(m.w, m.h));
-            let _ = win.set_position(tauri::PhysicalPosition::new(m.x, m.y));
-            let _ = win.show();
-            log("hp: show hecho");
-            if let Ok(h) = win.hwnd() {
-                *lock(&OWN_HWND) = Some(h.0 as isize);
-            }
-            *lock(&LAST_RECT) = Some((m.x, m.y, m.w, m.h));
-            let (fg_ok, fg_pid) = crate::overlay::raise_menu(&win, m.x, m.y, m.w, m.h);
-            let fg_exe = fg_pid.and_then(crate::snap::exe_of).unwrap_or_default();
-            log(&format!("hp: encima hecho (SetForegroundWindow={fg_ok}, primer plano={fg_pid:?} {fg_exe})"));
-            log(&format!("ventana mostrada en ({}, {}) {}x{}", m.x, m.y, m.w, m.h));
-            true
-        } else {
-            log("no se pudo obtener ni crear la ventana del menu");
-            false
-        };
-        let _ = tx.send(shown);
+        let m = crate::reader::monitor::game_monitor(pid);
+        if let Ok(h) = win.hwnd() {
+            *lock(&OWN_HWND) = Some(h.0 as isize);
+        }
+        *lock(&LAST_RECT) = Some((m.x, m.y, m.w, m.h));
+        let (fg_ok, fg_pid) = crate::overlay::raise_menu(&win, m.x, m.y, m.w, m.h);
+        let fg_exe = fg_pid.and_then(crate::snap::exe_of).unwrap_or_default();
+        log(&format!("hp: encima hecho (SetForegroundWindow={fg_ok}, primer plano={fg_pid:?} {fg_exe})"));
+        log(&format!("ventana mostrada en ({}, {}) {}x{}", m.x, m.y, m.w, m.h));
+        let _ = tx.send(true);
     });
     match rx.recv_timeout(Duration::from_millis(800)) {
         Ok(shown) => shown,
@@ -467,8 +467,8 @@ fn open(app: &AppHandle) {
         suspend(app, &pids);
     }
 
-    let _ = app.emit_to(LABEL, "qm-open", state(app));
     let shown = show_window(app, pids.first().copied(), gen);
+    let _ = app.emit_to(LABEL, "qm-open", state(app));
     let (ok, painted, on_top, why) = confirm(app, gen, &pids, shown);
     if !ok {
         log(&format!(
@@ -611,7 +611,6 @@ fn hide_window(app: &AppHandle) {
     let a = app.clone();
     let _ = app.run_on_main_thread(move || {
         if let Some(w) = a.get_webview_window(LABEL) {
-            let _ = w.hide();
             crate::overlay::hide_quiet(&w);
             log("ventana oculta");
         }
