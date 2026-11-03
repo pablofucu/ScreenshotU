@@ -26,6 +26,7 @@
   import GameStats from './screens/GameStats.svelte';
   import Settings from './screens/Settings.svelte';
   import ActionMenu from './screens/ActionMenu.svelte';
+  import GameSettings from './screens/GameSettings.svelte';
   import GameForm from './screens/GameForm.svelte';
   import AddChooser from './screens/AddChooser.svelte';
   import GameDirWizard from './screens/GameDirWizard.svelte';
@@ -179,6 +180,7 @@
     {#if app.overlay === 'settings'}<Settings />{/if}
     {#if app.overlay === 'form'}<GameForm />{/if}
     {#if app.overlay === 'menu'}<ActionMenu />{/if}
+    {#if app.overlay === 'gameset'}<GameSettings />{/if}
     {#if app.overlay === 'add'}<AddChooser />{/if}
     {#if app.overlay === 'gdir'}<GameDirWizard />{/if}
     {#if app.overlay === 'hidden'}<HiddenList />{/if}

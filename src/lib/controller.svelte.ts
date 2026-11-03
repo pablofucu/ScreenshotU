@@ -19,6 +19,7 @@ import { READING_CYCLE, READING_ROWS, isReadingId, readingAct, type ReadingId } 
 import { checkUpdate, updateAct } from './updater.svelte';
 import { REMOTE_CYCLE, isRemoteId, remoteAct, type RemoteId } from './remote.svelte';
 import { openPhrases, phrasesCmd } from './phrases.svelte';
+import { gameSetCmd, openGameSettings } from './gameset.svelte';
 import { goalMinLeft, goalTrack, localDay, RESCUE_MIN_PLAY, type GoalKey } from './readgoals';
 import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
 import { libraryCmd, loadLibraryInfo, openLibrary } from './library.svelte';
@@ -342,51 +343,10 @@ export function go(v: View, anim: 'fwd' | 'back' | '' = '') {
   if (v !== 'viewer') flushRefresh();
 }
 
-/* ---------- ficha del juego y su menu «Grafismos y opciones» ---------- */
-export function menuItemsFor(t: Title): MenuItem[] {
-  const items: MenuItem[] = [];
-  if (t.launchable && !app.playing) items.push('play');
-  if (t.hasFolder && !IS_TABLET) items.push('folder');
-  items.push('reload');
-  items.push('sgdb');
-  if (t.gameId && (app.platform?.id === 'jvn' || app.platform?.id === 'vn' || app.platform?.icon === 'vn')) items.push('phrases');
-  if (app.config.root && t.dir && !IS_TABLET) items.push('addshots');
-  items.push('accent');
-  if (!t.members && t.id) items.push('status', 'release', 'addcoll');
-  if (t.gameId && !t.members) items.push('saves');
-  // Ejecutable y carpeta de trabajo: solo juegos .exe añadidos a mano (no emuladores). Se cambian cuando se quiera.
-  if (t.launchable && t.source === 'manual' && t.gameId && !IS_TABLET) items.push('setexe', 'setdir');
-  // Escalado con Magpie: solo juegos .exe (no emuladores).
-  if (t.launchable && t.source === 'manual' && t.gameId) items.push('magpie');
-  if (t.gameId && t.removable && !t.members && app.config.platforms.length > 1) items.push('category');
-  items.push(t.hidden ? 'unhide' : 'hide');
-  if (t.removable) items.push('remove');
-  // Orden por secciones: el que se ve en pantalla (de arriba abajo, columna izquierda y luego derecha).
-  const pos = (i: MenuItem) => MENU_GROUPS.findIndex(([, ids]) => ids.includes(i));
-  return items.map((it, n) => [it, n] as const).sort((a, b) => pos(a[0]) - pos(b[0]) || a[1] - b[1]).map(([it]) => it);
-}
-
-/** Secciones de la ficha del juego: 3 grupos limpios (Juego y Lanzamiento, Presentación, Biblioteca y Estado). */
-const MENU_GROUPS: Array<[string, MenuItem[]]> = [
-  ['Juego y Lanzamiento', ['play', 'magpie', 'setexe', 'setdir', 'folder', 'addshots', 'saves']],
-  ['Presentación', ['sgdb', 'accent', 'reload']],
-  ['Biblioteca y Estado', ['status', 'release', 'addcoll', 'phrases', 'category', 'hide', 'unhide', 'remove']],
-];
+/* ---------- menus de capturas y de la lista: lista plana de una columna ---------- */
 export type MenuGroup = { title: string; items: MenuItem[] };
-
-/** Columnas -> secciones del menu abierto. Fuera de la ficha (o en sus submenus) es una lista plana de una columna. */
 export function menuLayout(): MenuGroup[][] {
-  const its = app.menu.items;
-  const groups = MENU_GROUPS.map(([title, ids]) => ({ title, items: its.filter((i) => ids.includes(i)) })).filter((g) => g.items.length);
-  if (app.menu.kind !== 'detail' || groups.reduce((n, g) => n + g.items.length, 0) !== its.length) return [[{ title: '', items: its }]];
-  if (its.length <= 8) return [groups];
-  const h = (gs: MenuGroup[]) => gs.reduce((n, g) => n + g.items.length + 0.6, 0);
-  let best = 1, bestH = Infinity;
-  for (let k = 1; k < groups.length; k++) {
-    const m = Math.max(h(groups.slice(0, k)), h(groups.slice(k)));
-    if (m < bestH) { bestH = m; best = k; }
-  }
-  return [groups.slice(0, best), groups.slice(best)];
+  return [[{ title: '', items: app.menu.items }]];
 }
 
 /** Abre la ficha del título i de la plataforma actual. */
@@ -402,14 +362,6 @@ export function openTitle(i: number, fromView: typeof app.detailFrom = 'titles')
     go('detail', 'fwd');
   }, () => screenEl()?.querySelector<HTMLElement>('.dcover .face'));
   backend.prefetch(t.shots.slice(0, DETAIL_SHOTS + 1).map((s) => s.path));
-}
-
-export function openDetailMenu() {
-  const t = app.platform?.titles[app.t];
-  if (!t) return;
-  app.menu = { kind: 'detail', title: app.t, row: 0, items: menuItemsFor(t), confirm: false };
-  pushOverlay('menu');
-  blip(1320);
 }
 
 /* Paneles apilados: B vuelve al panel que abrió el actual. */
@@ -462,7 +414,6 @@ export async function menuAct(item: MenuItem) {
   if (!t) { closeOverlay(); return; }
   if (item === 'hide' || item === 'unhide') { await toggleHideTitle(t, item === 'hide'); return; }
   if (item === 'accent') { openAccentPicker(); return; }
-  if (item === 'magpie') { void cycleMagpie(t); return; }
   if (item === 'setexe' || item === 'setdir') { void changeGamePath(t, item); return; }
   if (item === 'status') { openStatusBar(app.menu.title); return; }
   if (item === 'release') { openRelease(app.menu.title); return; }
@@ -510,7 +461,7 @@ export async function menuAct(item: MenuItem) {
     backend.bustArt();
     app.artVer++;
     await softRefresh();
-    toast('Grafismos recargados');
+    toast('Imágenes recargadas');
   } else if (item === 'folder') {
     try { await backend.openFolder(t.dir); if (!backend.isTauri) toast('Abrir carpeta (simulado en el navegador)'); }
     catch (e) { toast(String(e), 3200); }
@@ -538,11 +489,10 @@ async function changeGamePath(t: Title, item: 'setexe' | 'setdir') {
 }
 
 export const MAGPIE_LABEL: Record<MagpieMode, string> = { off: 'Desactivado', auto: 'Automático', '2x': 'Forzar 2x', '4x': 'Forzar 4x' };
-const MAGPIE_ORDER: MagpieMode[] = ['off', 'auto', '2x', '4x'];
+export const MAGPIE_ORDER: MagpieMode[] = ['off', 'auto', '2x', '4x'];
 
-/** Recorre Desactivado → Automático → 2x → 4x. Se aplica (y Magpie se reinicia si hace falta) al lanzar el juego. */
-async function cycleMagpie(t: Title) {
-  const next = cycleIn(MAGPIE_ORDER, t.magpieMode ?? 'off', 1);
+/** Fija el modo de Magpie (Desactivado, Automático, 2x o 4x). Se aplica (y Magpie se reinicia si hace falta) al lanzar el juego. */
+export async function setMagpie(t: Title, next: MagpieMode) {
   try {
     await backend.setMagpieMode(t.gameId!, next);
     t.magpieMode = next;
@@ -640,7 +590,7 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
   } else if (a === 'release') {
     openRelease(app.t);
   } else if (a === 'options') {
-    openDetailMenu();
+    openGameSettings();
   } else if (a === 'phrases') {
     const t = app.platform?.titles[app.t];
     if (t?.gameId) void openPhrases(t.gameId, t.name);
@@ -1544,6 +1494,7 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
 function overlayCmd(c: string) {
   switch (app.overlay) {
     case 'menu': menuCmd(c); return;
+    case 'gameset': gameSetCmd(c); return;
     case 'form': formCmd(c); return;
     case 'add': addCmd(c); return;
     case 'gdir': gdirCmd(c); return;
@@ -1787,7 +1738,7 @@ export function cmd(c: string) {
           const t = app.platform?.titles[app.t];
           if (t) void cycleCardVariant(t.gameId ?? t.dir);
         } else {
-          openDetailMenu();
+          openGameSettings();
         }
       }
       else if (app.view === 'shots') cycleSort();
@@ -1798,7 +1749,7 @@ export function cmd(c: string) {
     case 'menu':
       if (app.view === 'shots' || app.view === 'viewer') openShotMenu();
       else if (app.view === 'titles') openTitlesMenu();
-      else if (app.view === 'detail') openDetailMenu();
+      else if (app.view === 'detail') openGameSettings();
       else openSettings();
       break;
   }
@@ -1885,7 +1836,7 @@ function onContextMenu(e: MouseEvent) {
   if (app.osk.open || app.overlay || app.audioMenu) { cmd('b'); return; }
   const f = (e.target as HTMLElement).closest<HTMLElement>('.fx');
   if (f && app.view === 'shots') { setFocus(f.dataset.k!, true); cmd('menu'); return; }
-  if (f && app.view === 'detail' && f.dataset.k !== 'play') { setFocus(f.dataset.k!); openDetailMenu(); return; }
+  if (f && app.view === 'detail' && f.dataset.k !== 'play') { setFocus(f.dataset.k!); openGameSettings(); return; }
   cmd('b');
 }
 

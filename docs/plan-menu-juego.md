@@ -1,6 +1,8 @@
 # Plan: rediseño del menú de opciones del juego («Grafismos y opciones»)
 
-Mockups (1280×720, tema v5): `mockups/menu-juego-a.html`, `-b.html`, `-c.html` y `mockups/menu-juego-comparativa.html` (hoy, A, B y C lado a lado; casos .exe / emulador / tablet). Cada página tiene botones para todos sus estados y acepta `#estado` en la URL.
+> **Decisión del usuario: propuesta C** (ficha + «Ajustes del juego» con 4 pestañas), con la píldora Colecciones y el botón Ajustes visible. El resto de decisiones abiertas se resuelve con las recomendaciones del §8. Los pasos a ejecutar están en el **§9 Implementación de C**.
+
+Mockups (1280×720, tema v5): `mockups/menu-juego-a.html`, `-b.html`, `-c.html` y `mockups/menu-juego-comparativa.html` (hoy, A, B y C lado a lado; casos .exe / emulador / tablet). Cada página tiene botones para todos sus estados y acepta `#estado` en la URL. **La referencia para implementar es `menu-juego-c.html`.**
 
 ## 1. El problema, en corto
 
@@ -9,15 +11,15 @@ Análisis completo en `docs/informe-menu-juego.md`. Resumen:
 - Hasta 17 filas en dos columnas, todas con el mismo peso: jugar, configurar una vez (ejecutable, Magpie, fecha) y peligroso (quitar).
 - El título («Grafismos y opciones») y las secciones («Juego y Lanzamiento», «Biblioteca y Estado») no describen lo que contienen.
 - Las filas hacen cosas distintas sin avisar (inmediata, abre panel, cicla en el sitio como Magpie, doble pulsación) y los «…» no son coherentes.
-- **Duplicidad comprobada con la ficha** (`Detail.svelte:157-212`): la ficha ya tiene el botón **Jugar** (y X), la píldora **Estado** (`dst`) y la píldora **Fecha de lanzamiento** (`drel`), las tres con mando y ratón. Las **colecciones no salen en la ficha**. El menú no tiene botón visible: solo Start o clic derecho (`controller.svelte.ts:1801`, `:1888`).
+- **Duplicidad comprobada con la ficha** (`Detail.svelte:157-212`): la ficha ya tiene el botón **Jugar** (y X), la píldora **Estado** (`dst`) y la píldora **Fecha de lanzamiento** (`drel`), las tres con mando y ratón. Las **colecciones no salen en la ficha**. El menú no tiene botón visible: solo Start, Y o clic derecho (`controller.svelte.ts:1790`, `:1801`, `:1888`).
 
 ## 2. Inventario (todas se conservan)
 
 | id | Hoy | Nombre nuevo | Se muestra si |
 |---|---|---|---|
 | play | Iniciar juego | — (ya en la ficha: botón Jugar y X) | launchable y nada en marcha |
-| status | Estado: X | — (ya en la ficha: píldora) | id y no agrupación |
-| release | Fecha de lanzamiento… | — (ya en la ficha: píldora) | id y no agrupación |
+| status | Estado: X | **Estado…** · valor = estado | id y no agrupación |
+| release | Fecha de lanzamiento… | **Fecha de lanzamiento…** · valor = fecha | id y no agrupación |
 | addcoll | Añadir a una colección… | **Colecciones…** · valor «En 2» / «Ninguna» | id y no agrupación |
 | saves | Partidas guardadas… | Partidas guardadas… | gameId y no agrupación |
 | phrases | Frases y repaso… | Frases y repaso… | gameId y categoría novela (jvn/vn) |
@@ -35,109 +37,179 @@ Análisis completo en `docs/informe-menu-juego.md`. Resumen:
 
 Las categorías no cambian: «Mover a otra categoría…» sigue listando `app.config.platforms` igual que hoy; solo cambia la etiqueta y el sitio.
 
-**Reglas comunes a las tres propuestas** (resuelven los problemas 4-6 del informe):
-- «…» = abre un panel o diálogo. Sin puntos = se hace al momento. «›» = entra en un submenú.
-- La etiqueta es siempre la acción; el valor actual va a la derecha, en gris (`.srow .sv`, ya existe en `app.css:240`).
+**Reglas comunes** (resuelven los problemas 4-6 del informe):
+- «…» = abre un panel o diálogo. Sin puntos = se hace al momento.
+- La etiqueta es siempre la acción; el valor actual va a la derecha, en gris.
 - Rojo = pide una segunda pulsación, y va al final, separado.
-- Magpie deja de ciclar con A: abre una lista de modos con ✓ (como «Filtrar»).
+- Magpie deja de ciclar con A: abre una lista de modos con ✓.
 
 ## 3. Las tres propuestas
 
 ### A · Menú corto con lo de siempre + «Más opciones» (`menu-juego-a.html`)
-- **Idea:** el menú de Start enseña en una columna lo que se usa a menudo (8 filas como mucho) y lo de configurar una vez o lo peligroso va detrás de «Más opciones ›». Jugar, Estado y Fecha salen del menú (ya están en la ficha).
-- **Nivel 1 «Opciones del juego»** (tres bloques sin título separados por una línea + cierre): Colecciones… · Partidas guardadas… · Frases y repaso… │ Imágenes del juego… · Color del juego… │ Abrir carpeta de capturas · Añadir capturas… │ Más opciones ›
-- **Nivel 2 «Más opciones»:** AL JUGAR (Escalado con Magpie…, Ejecutable…, Carpeta de trabajo…) · SI ALGO SE VE MAL (Volver a cargar las imágenes) · BIBLIOTECA (Mover a otra categoría…, Ocultar de la biblioteca, Quitar de la biblioteca).
-- **Nivel 3:** solo las listas de Magpie (4 modos) y de categorías (ya existe).
-- **Mando:** ↑/↓ y A, como hoy. B en nivel 2/3 vuelve al nivel anterior con el foco en la fila de origen; B en nivel 1 y Start cierran. Ratón: la ruta «Opciones › Más opciones» de la cabecera es pulsable para volver.
-- **.exe con todo (17):** 8 filas + 7 en «Más». **Emulador:** 7 + 2 (Volver a cargar, Ocultar). **Tablet:** 6 + 5. **Solo capturas (sin lanzador):** Imágenes, Color, Carpeta, Añadir + «Más» con 2.
-- **Pros:** una columna y filas de 54-58 px siempre (adiós a `tight/squeeze` y a las 2 columnas); orden estable; lo peligroso nunca está a un A despistado; coste bajo; reutiliza el mecanismo de submenú que ya usa «Cambiar de categoría».
-- **Contras:** Magpie/ejecutable quedan a dos pulsaciones; quien use mucho Magpie lo notará.
-- **Coste:** bajo. `store.svelte.ts`, `controller.svelte.ts` (`menuItemsFor`, `MENU_GROUPS`, `menuLayout`, `menuAct`, `menuCmd`, `cycleMagpie`), `ActionMenu.svelte`, `README.md`.
+Nivel 1 de 8 filas como mucho (Colecciones, Guardados, Frases │ Imágenes, Color │ Carpeta, Añadir capturas │ Más opciones ›); nivel 2 con Al jugar / Si algo se ve mal / Biblioteca. Coste bajo. *Descartada por el usuario.*
 
 ### B · Accesos rápidos arriba + lista por temas debajo (`menu-juego-b.html`)
-- **Idea:** una sola pantalla, sin submenús. Arriba 4-5 fichas grandes de posición fija (Colecciones, Imágenes, Color, Guardados, Frases). Debajo, dos columnas compactas: AL JUGAR + CAPTURAS | BIBLIOTECA + SI ALGO SE VE MAL.
-- **Mando:** ←/→ entre fichas; ↓ baja a la columna de debajo; ↑ desde la primera fila vuelve a las fichas; ←/→ en la lista cambia de columna. Magpie abre una lista flotante (←/→ quedan para cambiar de columna).
-- **.exe con todo:** 5 fichas + 9 filas, todo a la vista. **Emulador:** 4 fichas + 4 filas (panel más estrecho). **Tablet:** 5 fichas + 1 fila a la izquierda y 4 a la derecha (descompensado).
-- **Pros:** lo cotidiano se reconoce de un vistazo; nada escondido; muy «consola».
-- **Contras:** sigue habiendo 14 cosas a la vista; navegación 2D nueva dentro del menú (más código y más casos raros); el panel cambia mucho de forma entre juegos y en tablet.
-- **Coste:** medio. Lo de A + una rejilla de fichas y navegación por zonas en `menuCmd`, y CSS nuevo para las fichas en `ActionMenu.svelte`/`app.css`.
+5 fichas grandes (Colecciones, Imágenes, Color, Guardados, Frases) + dos columnas compactas. Navegación 2D dentro del menú; coste medio. *Descartada.*
 
-### C · Lo de cada día en la ficha + «Ajustes del juego» con pestañas (`menu-juego-c.html`)
-- **Idea:** separar «usar» de «configurar». La ficha gana una píldora **Colecciones** (junto a Estado y Fecha) y un botón **Ajustes** visible. Start abre un panel grande «Ajustes del juego», con el patrón de la pantalla de Ajustes (`.scats`): 4 pestañas fijas — Aspecto · Al jugar · Capturas y datos · Biblioteca — con todas las funciones (Estado y Fecha también, por completitud).
-- **Mando:** ↑/↓ en las pestañas (la derecha se actualiza al momento), → o A entra, ← o B vuelve a las pestañas, B en las pestañas cierra. Las pestañas vacías (Al jugar en un emulador) se ven apagadas y se saltan: no se mueven de sitio.
-- **.exe con todo:** 3 + 3 + 4 + 6 filas. **Emulador:** Al jugar vacía. **Tablet:** Al jugar con solo Magpie; Capturas y datos con 2.
-- **Pros:** categorías limpias y estables; la ficha se vuelve el sitio de lo cotidiano; se puede descubrir con ratón.
-- **Contras:** el más caro; un componente nuevo; más cosas en la ficha (un elemento más que enfocar); pestañas de 1 fila en tablet.
-- **Coste:** alto. `Detail.svelte` (píldora y botón, `validKey` en `controller.svelte.ts:110-119`), componente nuevo `GameSettings.svelte` con su estado y su navegación, overlay nuevo en `store.svelte.ts:77`, enrutado de mando.
+### C · Lo de cada día en la ficha + «Ajustes del juego» con pestañas (`menu-juego-c.html`) — **elegida**
+- **Ficha:** Jugar, Estado y Fecha (ya están) + píldora nueva **Colecciones** + botón **Ajustes** visible.
+- **Start / Y / clic derecho / botón Ajustes** abren el panel «Ajustes del juego»: pestañas a la izquierda (patrón `.scats` de Ajustes), filas a la derecha con valor actual.
+- **Pestañas fijas, siempre las 4 y en este orden:**
+  - **Aspecto:** Imágenes del juego…, Color del juego…, Volver a cargar las imágenes.
+  - **Al jugar:** Escalado con Magpie…, Ejecutable…, Carpeta de trabajo….
+  - **Capturas y datos:** Abrir carpeta de capturas, Añadir capturas…, Partidas guardadas…, Frases y repaso….
+  - **Biblioteca:** Colecciones…, Estado…, Fecha de lanzamiento…, (hueco) Mover a otra categoría…, Ocultar de la biblioteca, Quitar de la biblioteca.
+- Jugar no entra en el panel (está en la ficha).
 
-## 4. Recomendación: A
+## 4. Recomendación original y decisión
 
-A arregla lo que se queja el usuario (demasiadas opciones, categorías difusas, poco predecible) con el menor cambio: el menú baja de 17 a 8 filas como mucho y pasa a una sola columna con orden fijo; las secciones tienen nombres que dicen lo que hay; las reglas «… / › / valor a la derecha / rojo» hacen predecible cada fila. Se apoya en lo que ya existe (la ficha ya tiene Jugar, Estado y Fecha; el submenú de categorías ya reemplaza los `items` en el sitio), no toca los menús de capturas ni de la lista y no mete navegación nueva. B mantiene demasiado a la vista y obliga a una navegación 2D; C es la más ordenada, pero cuesta un componente nuevo y cambia la ficha. Las dos mejoras de C que salen baratas (píldora Colecciones y botón visible) quedan como pasos opcionales al final, para hacerlos si el usuario quiere.
+El planificador recomendó A por coste; el usuario eligió C por tener categorías limpias y estables y por llevar lo cotidiano a la ficha. Se implementa C.
 
-## 5. Pasos de implementación (A) — para Sonnet
+## 5-7. (Pasos, comprobación y riesgos de A: sustituidos por el §9.)
 
-Nada de esto es masivo: no delegar en `agy`.
+## 8. Decisiones (resueltas con la recomendación)
 
-1. **`src/lib/store.svelte.ts:72-76` (`MenuItem`)**: añadir `'more'` y `` `mag:${string}` ``.
-   **`:104-111` (`MenuState`)**: añadir `sub?: '' | 'more' | 'magpie' | 'category'` (opcional, para no tocar los `app.menu = {…}` de capturas y lista).
-2. **`src/lib/controller.svelte.ts:345-367`**: cambiar el comentario y sustituir `menuItemsFor` por dos funciones (mismas condiciones que hoy, ver la tabla del §2):
-   - `menuMainFor(t)`: `addcoll`, `saves`, `phrases`, `sgdb`, `accent`, `folder`, `addshots`, `more` (en este orden; `more` siempre, porque `reload` y `hide` siempre existen). **Sin** `play`, `status`, `release`.
-   - `menuMoreFor(t)`: `magpie`, `setexe`, `setdir`, `reload`, `category`, `hide|unhide`, `remove`.
-   - Ojo, `openTitlesMenu` (`:1018`) no se toca: sigue con su lista propia.
-3. **`:370-374` (`MENU_GROUPS`)** → dos tablas:
-   - `MAIN_GROUPS = [['', ['addcoll','saves','phrases']], ['', ['sgdb','accent']], ['', ['folder','addshots']], ['', ['more']]]` (grupos sin título = separador).
-   - `MORE_GROUPS = [['Al jugar', ['magpie','setexe','setdir']], ['Si algo se ve mal', ['reload']], ['Biblioteca', ['category','hide','unhide','remove']]]`.
-   **`menuLayout` (`:378-390`)**: si `kind === 'detail'` y `sub` es `''` o `'more'`, devolver **una sola columna** `[groups]` con la tabla que toque (quitar el reparto en 2 columnas). Para `'magpie'`/`'category'` y los otros menús, lista plana como hoy.
-4. **`openDetailMenu` (`:407-413`)**: `items: menuMainFor(t)`, `sub: ''`.
-5. **`menuAct` (`:448-519`)**:
-   - `'more'`: `app.menu.items = menuMoreFor(t); app.menu.sub = 'more'; row = 0; confirm = false; blip(1320)`.
-   - `'magpie'`: en vez de `cycleMagpie`, abrir la lista: `items = MAGPIE_ORDER.map(m => `mag:${m}`)`, `sub = 'magpie'`, `row` = índice del modo actual.
-   - `'mag:…'`: guardar el modo (reutilizar el cuerpo de `cycleMagpie`, `:544-553`, convertido en `setMagpie(t, mode)`: `backend.setMagpieMode`, `t.magpieMode`, `app.magpieTick++`, el mismo toast la primera vez) y volver a `'more'` con el foco en `magpie`. Borrar `cycleMagpie` si nadie más lo usa (grep: hoy solo `:465`).
-   - `'category'`: lo de hoy + `app.menu.sub = 'category'`.
-   - `:513`: toast «Imágenes recargadas».
-6. **`menuCmd` (`:555-570`)**: nueva `menuBack()` exportada. Si `kind === 'detail'` y `sub` es `'magpie'` o `'category'` → `items = menuMoreFor(t)`, `sub = 'more'`, foco en la fila de origen (`magpie`/`category`); si `sub === 'more'` → `items = menuMainFor(t)`, `sub = ''`, foco en `more`; si no, cerrar como hoy. En `:569`: `'b'` llama a `menuBack()` (con `blip(520)`); `'menu'` (Start) sigue cerrando del todo.
-7. **`src/screens/ActionMenu.svelte`**:
-   - **Etiquetas (`:43-80`)**: las de la tabla del §2. Se aplican también al menú de la lista (`openTitlesMenu` comparte ids: `sgdb`, `addcoll`, `accent`, `hide`, `remove`, `folder`, `status`) — es deseable por coherencia; `status` se queda como está. Nuevas: `'more'` → «Más opciones»; `` `mag:${m}` `` → `MAGPIE_LABEL[m]`.
-   - **Línea pequeña (`<small>`, como Magpie hoy en `:116`)**: `sgdb` «Portada, fondo, logo e icono»; `magpie` = `magpieSummary` si lo hay; `remove` «Pide confirmación · las capturas no se borran» (salvo cuando `confirm`); `more` = nombres de las secciones de `MORE_GROUPS` que tengan filas, unidos por « · ».
-   - **Valor a la derecha** (`<span class="sv">`): `addcoll` → «En N» / «Ninguna» (N = `platformCollections().filter(c => c.members.includes(t.id)).length`, de `coleccion.svelte.ts:459`; solo cuenta colecciones de la categoría actual); `accent` → un círculo de 18 px con `var(--acc)`; `magpie` → `MAGPIE_LABEL[modo]`; `category` → `app.platform?.name`; `more` → `ICON.chevR`.
-   - **Iconos (`:87-90`)**: `more` → `ICON.chevR` (o tres puntos si se añade a `icons.ts`); `mag:` → `ICON.check` en el modo actual, vacío en el resto (como `flt:`); `magpie` → `ICON.image` sigue valiendo (o `ICON.monitor`); `setexe` → `ICON.monitor`; `remove` → `ICON.trash`.
-   - **Título (`:105`)** en `detail`: `''` → «Opciones del juego», `'more'` → «Más opciones», `'magpie'` → «Escalado con Magpie», `'category'` → «Mover a otra categoría». Encima del `h2`, en los subniveles, una ruta pequeña pulsable («Opciones» / «Opciones › Más opciones») que llama a `menuBack()`.
-   - **Cabeceras y separadores (`:110-111`)**: grupo con título → `<h3 class="mhead">` como hoy; grupo sin título que no sea el primero → `<div class="msep">` (1 px, `var(--line)`, margen 5px 12px).
-   - **Alturas (`:27-41`)**: añadir `SEP = 11` y sumar `seps * SEP` en `H` y en el cálculo de `pitch` del caso agrupado. Comprobar que con 8 filas + 3 separadores el paso queda en 54-58 px; las clases `tight/tighter/squeeze` siguen sirviendo a los otros menús.
-   - **Hints (`:126`)**: B = «Volver» si `kind === 'detail' && app.menu.sub`, si no «Cerrar».
-   - Quitar `class:two` / `.menupanel.two` solo si ya no lo usa nadie (en `detail` ya no habrá 2 columnas).
-8. **`README.md:107` y `:126`**: cambiar «Grafismos y opciones» por «Opciones del juego» y la lista de acciones por la nueva.
-9. Commit y push (CLAUDE.md). Ojo con los finales de línea mezclados LF/CRLF: comprobar los CR antes del commit.
+1. Propuesta: **C**.
+2. Jugar no va en el panel; Estado y Fecha sí (además de en la ficha).
+3. Nombres: «Ajustes del juego», «Imágenes del juego», «Color del juego», pestañas «Aspecto / Al jugar / Capturas y datos / Biblioteca».
+4. Abrir carpeta y Añadir capturas: pestaña «Capturas y datos».
+5. «Volver a cargar las imágenes»: se queda como fila en Aspecto (no se fusiona con el selector).
+6. Píldora Colecciones y botón Ajustes: **sí**.
+7. **Sigue abierto (preguntar al usuario):** qué borra «Quitar de la biblioteca» además de la entrada en la base (`lib.rs:739`, `manual_remove`): ¿horas jugadas, estado? Mientras tanto, la subetiqueta dice solo «Pide confirmación · las capturas no se borran».
+8. Sin nombre del .exe a la derecha de «Ejecutable…»: el `Title` del frontend no trae la ruta (`types.ts`). En el mockup sale, pero no se implementa.
 
-**Opcionales (mejoras de C, baratas; solo si el usuario las aprueba):**
-- O1. Píldora **Colecciones** en `.dchips` (`Detail.svelte:157-201`): `data-k="dcol"`, `data-act="addcoll"`, texto «En N colecciones» / «Añadir a colección»; `validKey` (`controller.svelte.ts:110-119`): `dcol` si `t.id && !t.members`; `runAct` (`:583+`): `'addcoll'` → `openAddColl(app.t)`; hint A «Colecciones». La fila «Colecciones…» del menú se quedaría igualmente.
-- O2. Botón visible **Opciones** en la ficha (`data-act="options"`, que ya existe en `runAct` `:642`), para que el ratón lo descubra.
+## 9. Implementación de C — para Sonnet
 
-## 6. Comprobación
+**Todo lo hace Sonnet; nada es masivo ni repetitivo, así que no se delega en `agy`.** Orden recomendado: pasos 1→8, un commit al final (o uno tras el paso 6 y otro tras el 8).
 
+### Idea técnica
+- Overlay nuevo `'gameset'` con su propio estado `app.gameSet` y su componente `src/screens/GameSettings.svelte`.
+- Cada fila ejecuta la acción existente **a través de `menuAct`**, que ya sabe hacerlo todo. Para eso, antes de llamarla, se rellena `app.menu` con `{ kind: 'detail', title: app.t, … }` (`menuAct` lee `app.menu.title`, `app.menu.kind` y `app.menu.confirm`).
+- Excepciones que no pasan por `menuAct`: `magpie` y `category`, que se convierten en listas dentro del propio panel, y `remove`, que se confirma dentro del panel.
+- Los `closeOverlay()` que hace `menuAct` cierran el overlay de arriba (ahora `'gameset'`), igual que hoy cerraban `'menu'`. Los paneles que se apilan sin cerrar (sgdb, accent, saves, status, release) vuelven al panel al cerrarse, igual que hoy volvían al menú.
+
+### Paso 1 — `src/lib/store.svelte.ts`
+- `:77` (`Overlay`): añadir `'gameset'`.
+- Junto a `MenuState` (`:104-111`), nueva interfaz:
+  ```ts
+  export type GameTab = 'asp' | 'jug' | 'dat' | 'bib';
+  export interface GameSetState {
+    title: number;              // índice del juego en la categoría (app.t)
+    tab: GameTab;
+    inRows: boolean;            // false = foco en las pestañas; true = en las filas
+    row: number;
+    list: '' | 'magpie' | 'category';  // lista de opciones abierta dentro del panel
+    lrow: number;               // fila dentro de esa lista
+    confirm: boolean;           // «Quitar»: pulsa A otra vez
+  }
+  ```
+- En la clase del estado, junto a `menu` (`:314`): `gameSet = $state<GameSetState>({ title: 0, tab: 'asp', inRows: false, row: 0, list: '', lrow: 0, confirm: false });`.
+
+### Paso 2 — `src/lib/gameset.svelte.ts` (nuevo, lógica sin UI)
+- `GAME_TABS: Array<[GameTab, string, string /*icono*/]>` = `[['asp','Aspecto',ICON.image], ['jug','Al jugar',ICON.monitor], ['dat','Capturas y datos',ICON.import], ['bib','Biblioteca',ICON.saga]]`.
+- `gameTabItems(t: Title, tab: GameTab): MenuItem[]` con las **mismas condiciones** que `menuItemsFor` (`controller.svelte.ts:346-363`, tabla del §2):
+  - `asp`: `sgdb`, `accent`, `reload`.
+  - `jug`: `magpie` (`launchable && source==='manual' && gameId`); `setexe` y `setdir` (además `!IS_TABLET`).
+  - `dat`: `folder`, `addshots`, `saves`, `phrases`.
+  - `bib`: `addcoll`, `status`, `release`, `category`, `hide|unhide`, `remove`.
+- `openGameSettings()`: si no hay juego, nada. Si hay, `app.gameSet = { title: app.t, tab: primera pestaña con filas, inRows: false, row: 0, list: '', lrow: 0, confirm: false }`, `pushOverlay('gameset')`, `blip(1320)`.
+- `gameSetAct(item)`:
+  - `magpie` → `list = 'magpie'`, `lrow` = índice del modo actual en `MAGPIE_ORDER`.
+  - `category` → `list = 'category'`, `lrow = 0`.
+  - `remove` → primera A: `confirm = true`, `blip(520)`. Segunda A: seguir con la rama `remove` de abajo.
+  - Resto (y `remove` confirmado): `app.menu = { kind: 'detail', title: app.gameSet.title, row: 0, items: [], confirm: item === 'remove' }; void menuAct(item);`.
+- `gameSetListAct()`:
+  - `magpie`: `setMagpie(t, MAGPIE_ORDER[lrow])` y `list = ''`.
+  - `category`: rellenar `app.menu` como arriba y `void menuAct(`cat:${id}`)`. La rama `cat:` de `menuAct` (`:481-494`) ya cierra el overlay, mueve el juego y vuelve a la lista de juegos.
+- `gameSetCmd(c)`, la navegación de mando:
+  - **Lista abierta** (`list !== ''`): ↑/↓ mueve `lrow`; A llama a `gameSetListAct()`; B o ← → `list = ''`.
+  - **Foco en las pestañas** (`!inRows`): ↑/↓ va a la pestaña anterior/siguiente **saltando las vacías** (`gameTabItems(...).length === 0`), sin dar la vuelta; → o A → `inRows = true`, `row = 0` (solo si la pestaña tiene filas); B → `closeOverlay()`.
+  - **Foco en las filas**: ↑/↓ mueve `row` dentro de la pestaña; A → `gameSetAct(item)`; ← o B → `inRows = false`.
+  - Cualquier movimiento pone `confirm = false`.
+  - Start (`'menu'`) cierra siempre.
+  - Sonidos como `menuCmd`: `blip(880)` al mover y `blip(520)` al volver o cerrar.
+
+### Paso 3 — `src/lib/controller.svelte.ts`
+- **Magpie** (`:540-553`): exportar `MAGPIE_ORDER` y convertir `cycleMagpie(t)` en `export async function setMagpie(t: Title, mode: MagpieMode)`, con el mismo cuerpo pero `next = mode`. La línea `:465` (`'magpie'` en `menuAct`) ya no se alcanza desde la ficha; quitarla.
+- **`overlayCmd`** (`:1544-1565`): añadir `case 'gameset': gameSetCmd(c); return;`.
+- **Abrir el panel en lugar del menú**: en `:1790` (Y), `:1801` (Start), `:1888` (clic derecho) y en `runAct` `'options'` (`:642`), cambiar `openDetailMenu()` por `openGameSettings()`.
+- **Código del menú de la ficha que queda muerto**: borrar `openDetailMenu` (`:407-413`), `menuItemsFor` (`:346-367`) y `MENU_GROUPS` (`:370-374`). `menuLayout` (`:378-390`) queda como lista plana: `return [[{ title: '', items: app.menu.items }]]`. Antes de borrar, comprobar con grep que nadie más usa esas funciones (hoy solo las líneas citadas).
+- En `menuAct`, el toast de `:513` pasa a «Imágenes recargadas».
+- **Ficha** — `validKey` (`:110-119`): añadir `if (key === 'dcol') return t.id && !t.members ? key : undefined;` y `if (key === 'dopt') return key;`.
+- **Ficha** — `runAct` (`:583+`): `'addcoll'` → `openAddColl(app.t)` (de `coleccion.svelte.ts:462`). El botón Ajustes usa `data-act="options"`, que ya existe.
+
+### Paso 4 — `src/screens/GameSettings.svelte` (nuevo)
+- **Modelo visual:** la pantalla de Ajustes (`Settings.svelte`; CSS `.scats/.scat` en `app.css:532-537` y `.setpanel` en `:235-237`) y `mockups/menu-juego-c.html`.
+- **Panel:** `.glass` de 980×590 en `left:150px; top:56px`, dentro de `.scrim`. El clic en el fondo hace `closeOverlay()`, como `ActionMenu.svelte:102`.
+- **Columna izquierda** (`.scats`, 260 px): `h2` «Ajustes del juego», `p` con el nombre del juego y las 4 `.scat`.
+  - Pestaña activa: clase `on`. Pestaña activa con el foco en las pestañas: además `f` (relleno `--gf`, como `.srow.f`).
+  - Pestaña vacía: clase `dis` (`opacity:.45`, sin hover) con «—» a la derecha; las demás, el número de filas.
+- **Columna derecha:** `h3` con el nombre de la pestaña y una línea de ayuda:
+  - Aspecto: «Cómo se ve el juego en la biblioteca.»
+  - Al jugar: «Se aplica la próxima vez que lo lances desde aquí.»
+  - Capturas y datos: «Archivos del juego en este PC.»
+  - Biblioteca: «Dónde aparece y cómo se organiza, sin salir de su categoría.»
+- **Filas:** `button.srow` de 58 px con `.sl` (etiqueta + `<small>`) y `.sv` (valor), con las etiquetas y subetiquetas de la tabla del §2. Valores:
+  - `addcoll`: «En N» / «Ninguna» (N = `platformCollections().filter(c => c.members.includes(t.id)).length`, de `coleccion.svelte.ts:459`; solo cuenta colecciones de la categoría actual).
+  - `accent`: un círculo de 18 px con `var(--acc)`.
+  - `magpie`: `MAGPIE_LABEL[modo]`, con `magpieSummary` en el `<small>` (lo mismo que `ActionMenu.svelte:82-86`).
+  - `category`: `app.platform?.name`.
+  - `status`: `STATUS_LABEL[t.status ?? 'none']`.
+  - `release`: `fmtRelease(t.release)` o vacío.
+- **Filas especiales:** en Biblioteca, un margen de 14 px antes de `category`. `remove` lleva la clase `danger` y, con `confirm`, el texto «Pulsa A otra vez para quitar».
+- **Pestaña vacía** (no debería verse, porque se salta): texto «Este juego lo abre su emulador; aquí no hay nada que ajustar.» (Al jugar) o genérico.
+- **Lista abierta** (`list`): sustituye las filas de la pestaña.
+  - Magpie: 4 filas `MAGPIE_LABEL` con `ICON.check` en la actual y subetiqueta «Mide la ventana al lanzar y elige» en Automático.
+  - Category: «Mover a {nombre}» por cada `app.config.platforms` distinta de la actual.
+  - Encima, «‹ Escalado con Magpie» / «‹ Mover a otra categoría», pulsable para volver.
+- **Ratón:** hover con `makeMoved()` (como `ActionMenu.svelte:96-99`). Pasar por una pestaña la selecciona (`tab`, `inRows=false`). Pasar por una fila pone `inRows=true` y `row`. Clic en una fila → `gameSetAct`.
+- **Hints:**
+  - Foco en las pestañas: `[['A','Entrar'],['B','Cerrar']]`.
+  - Foco en las filas: `[['A','Elegir'],['B','Pestañas']]`.
+  - Con `confirm`: A = «Confirmar».
+- **Montarlo:** `src/App.svelte:181`, junto a `ActionMenu`: `{#if app.overlay === 'gameset'}<GameSettings />{/if}` (e importarlo).
+
+### Paso 5 — `src/screens/Detail.svelte`
+- En `.dchips` (`:157-201`), tras la píldora de fecha, nueva píldora Colecciones (solo si `T.id && !T.members`):
+  - clases `relpill pill fx`, `class:f={app.focus === 'dcol'}`, `data-k="dcol"`, `data-act="addcoll"`, `onclick={() => openAddColl(app.t)}`;
+  - icono `ICON.saga`; texto `<b>En {n} colecciones</b>`, o `<b>Añadir a colección</b>` si n = 0 (mismo cálculo de n que en el paso 4).
+- Botón Ajustes: `relpill pill fx`, `data-k="dopt"`, `data-act="options"`, icono `ICON.gear`, texto «Ajustes», `onclick={openGameSettings}`. Va con `position:absolute; top:108px; right:310px` (lado derecho del banner, fuera de `.dchips`, z-index 6).
+- La navegación espacial ya usa la posición de los `data-k`, así que no hace falta grafo. Comprobar a mano que ↑/↓/←/→ llega y sale de `dcol` y `dopt`.
+- Hints (`:261`): A = «Colecciones» si `focus === 'dcol'`, «Ajustes del juego» si `focus === 'dopt'`; la última pista pasa de `['Start','Opciones','menu']` a `['Start','Ajustes del juego','menu']`.
+- El estilo `.relpill` (`:274-277`) sirve para los dos; añadir el foco `.relpill.f` si no existe (ver cómo se enfoca hoy `drel`).
+
+### Paso 6 — `src/screens/ActionMenu.svelte`
+- Ya no se abre con `kind: 'detail'`. Los menús de capturas (`kind: 'shots'`) y de la lista (`kind: 'titles'`, `openTitlesMenu` `controller.svelte.ts:1018`) **no cambian de forma**.
+- `:105`: quitar la rama `'Grafismos y opciones'`. El último caso queda como el título que use el menú de la lista o de las capturas: `kind === 'detail'` ya no existe.
+- `menuLayout` es ahora plana, así que `grouped` siempre es `false` y desaparecen las dos columnas. Se puede dejar el código de grupos o limpiarlo (`HH`, `colHeads`, `.menupanel.two`, `.mhead`), siempre que el menú de la lista siga igual.
+- Etiquetas compartidas con el menú de la lista (`sgdb`, `addcoll`, `accent`, `reload`, `hide`, `unhide`, `remove`, `folder`): ponerles los nombres nuevos del §2 por coherencia. `status` se queda como «Estado: X» en ese menú. Opcional: que `GameSettings` reutilice una función `menuLabel(it)` exportada desde aquí o desde `gameset.svelte.ts`, en lugar de duplicar el `switch`.
+
+### Paso 7 — Tablet
+- No hace falta nada aparte: `gameTabItems` aplica `!IS_TABLET` a `folder`, `addshots`, `setexe` y `setdir`.
+- Resultado: Al jugar queda solo con Magpie; Capturas y datos con Partidas guardadas y Frases (o vacía y apagada si no es novela ni tiene gameId).
+- El botón Ajustes y la píldora Colecciones también salen en la tablet.
+
+### Paso 8 — Documentación y subida
+- `README.md:107` y `:126`: «Grafismos y opciones» → «Ajustes del juego» (Start, Y o el botón Ajustes de la ficha) y la lista de pestañas.
+- Commit y push (CLAUDE.md). Ojo con los finales de línea mezclados LF/CRLF: contar los CR de los ficheros tocados antes del commit.
+
+### Comprobación de C
 - `npm run check` (svelte-check) sin errores nuevos; no hace falta compilar Tauri.
-- En el navegador (datos de prueba, `src/lib/mock.ts`), ficha de un juego .exe añadido a mano en una categoría de novelas: Start → 8 filas en una columna, sin Jugar/Estado/Fecha; «Más opciones» → 3 secciones; B vuelve con el foco en «Más opciones»; B otra vez cierra; Start cierra desde cualquier nivel.
-- Magpie: A abre los 4 modos con ✓ en el actual; elegir otro lo guarda, vuelve a «Más opciones» y el valor de la derecha cambia.
-- Mover a otra categoría: lista igual que hoy; B vuelve a «Más opciones»; elegir una mueve el juego como hasta ahora.
-- Quitar: primera A → «Pulsa A otra vez para quitar»; mover el foco lo cancela; segunda A quita.
-- Juego de emulador: 7 filas + «Más» con 2. Título solo de capturas: sin Colecciones, Guardados ni Frases.
-- Tablet (`IS_TABLET`): sin Abrir carpeta, Añadir capturas, Ejecutable ni Carpeta de trabajo.
-- Menús de capturas y de la lista (Start en la lista de juegos): misma forma que antes, solo con las etiquetas nuevas.
-- Ratón: pasar por encima mueve el foco; clic en la ruta vuelve; clic fuera cierra.
+- **Navegador** (`npm run dev`, datos de `src/lib/mock.ts`), juego .exe añadido a mano en una categoría de novelas:
+  - **Ficha:** se ven las píldoras Estado, Fecha y Colecciones y el botón Ajustes. Con la cruceta se llega a las dos nuevas. A en Colecciones abre «Añadir a una colección» y al volver el número se actualiza. A en Ajustes abre el panel.
+  - **Abrir el panel:** Start, Y y clic derecho también lo abren.
+  - **Pestañas:** foco en la pestaña Aspecto; ↑/↓ recorre las 4 y la derecha cambia al momento; → o A entra; ← o B vuelve a las pestañas; B otra vez cierra; Start cierra desde cualquier sitio.
+  - **Acciones:** cada fila hace lo mismo que hacía en el menú viejo. Imágenes, Color, Guardados, Frases, Estado y Fecha se abren encima y al cerrarlos se vuelve al panel. Carpeta, Añadir capturas, Ejecutable y Carpeta de trabajo cierran el panel, como antes.
+  - **Magpie:** A abre los 4 modos con ✓; elegir uno lo guarda y el valor de la derecha cambia; B vuelve sin cambiar.
+  - **Mover a otra categoría:** lista con las categorías de siempre; elegir una mueve el juego y vuelve a la lista de juegos.
+  - **Quitar:** primera A → «Pulsa A otra vez para quitar»; moverse lo cancela; segunda A lo quita.
+  - **Ocultar / Volver a mostrar:** funciona y la etiqueta cambia.
+- **Juego de emulador:** Al jugar apagada con «—» y saltada al navegar. Título solo de capturas: Biblioteca sin Colecciones, Estado ni Fecha.
+- **Tablet** (`IS_TABLET`): sin Abrir carpeta, Añadir capturas, Ejecutable ni Carpeta de trabajo; las pestañas vacías, saltadas.
+- **Sin regresiones:** el menú de capturas (Start en capturas o visor) y el de la lista de juegos se ven y funcionan igual (salvo los textos renombrados).
+- **Ratón:** hover mueve el foco en pestañas y filas; clic en una fila la ejecuta; clic fuera cierra.
 
-## 7. Riesgos
-
-- **Hábito:** quien usaba Start → «Iniciar juego» o «Estado» en el menú tendrá que usar la ficha (X o el botón Jugar; la píldora de Estado). La pista de la ficha ya dice «X Jugar».
-- **Agrupaciones (`t.members`):** la píldora de Estado se ve pero avisa «Este elemento no tiene estado» (`milista.svelte.ts:507`); ya pasa hoy y el menú tampoco lo ofrecía. Sin cambio.
-- Al renombrar etiquetas compartidas, el menú de la lista también cambia de texto (intencionado).
-
-## 8. Decisiones abiertas (para el usuario)
-
-1. **¿A, B o C?** (recomendado A).
-2. **¿Quitar del menú Jugar, Estado y Fecha** porque ya están en la ficha, o dejarlos también en el nivel 1? (recomendado quitarlos; si se quedan, el nivel 1 pasa a 10-11 filas).
-3. **Nombres:** «Imágenes del juego» (o «Portada y fondos»), «Color del juego» (o «Color de acento»), «Más opciones» (o «Avanzado»), secciones «Al jugar / Si algo se ve mal / Biblioteca».
-4. **Abrir carpeta y Añadir capturas:** ¿en el nivel 1 (propuesto) o en «Más opciones»? Si van a «Más», el nivel 1 queda en 6.
-5. **«Volver a cargar las imágenes»:** ¿se queda en «Más opciones» o se mete en el selector de imágenes (`sgdb.svelte.ts`) como un botón? Lo segundo fusionaría dos funciones y quitaría una fila, pero toca otro panel.
-6. **Opcionales O1 (píldora Colecciones en la ficha) y O2 (botón Opciones visible).**
-7. **Comprobar con el usuario** qué borra «Quitar de la biblioteca»: el backend (`lib.rs:739`, `manual_remove`) borra el juego añadido a mano de la base; la subetiqueta propuesta dice «las capturas no se borran». Falta confirmar si se pierden también las horas jugadas o el estado: si es así, hay que decirlo en la subetiqueta.
-8. El valor de «Ejecutable…» (nombre del .exe a la derecha, como en el mockup C) necesitaría que el `Title` del frontend trajera la ruta del ejecutable, y hoy no la trae (`types.ts`): se deja fuera salvo que el usuario lo quiera.
+### Riesgos de C
+- **`menuAct` depende de `app.menu`:** si alguna rama lee `app.menu.row` o `app.menu.items` (hoy `category` y `remove`), está cubierta por las excepciones del paso 2. Revisar `:448-519` al implementar por si hay otra.
+- **Pila de overlays:** comprobar que `closeOverlay()` saca solo el de arriba (sgdb, status…) y vuelve a `'gameset'`, como hoy volvía a `'menu'`.
+- **Hábito:** «Iniciar juego» ya no está en el menú; queda el botón Jugar y X en la ficha.

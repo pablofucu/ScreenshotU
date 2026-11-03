@@ -104,7 +104,7 @@ Se guarda en la carpeta de configuración de la aplicación (en Windows, `%APPDA
 | Marcar favorita (en «Seguir jugando» de Inicio: jugar) | X | X | — |
 | Pestaña anterior/siguiente en la lista de juegos (Todos · Mi lista · Colecciones) · día anterior/siguiente (capturas por días) · sección de Ajustes | LT / RT | Z / C | Botones LT/RT |
 | Siguiente pestaña en la lista de juegos · cuadrícula de capturas continua o por días | View | V | — |
-| Vista de títulos (cuadrícula/carrusel) · orden de capturas (recientes, antiguas, favoritas, nombre) · menú «Grafismos y opciones» en la ficha | Y | Y | — |
+| Vista de títulos (cuadrícula/carrusel) · orden de capturas (recientes, antiguas, favoritas, nombre) · «Ajustes del juego» en la ficha | Y | Y | — |
 | Menú de capturas (mover, mostrar en el Explorador, seleccionar, salida de audio) en la cuadrícula de capturas y el visor | Start (Menú) | M | — |
 | Menú de la lista de juegos: filtrar «Todos» (con lanzador, solo capturas, con favoritas), tamaño de las portadas, estado del juego, salida de audio y Ajustes | Start (Menú) | M | — |
 | Salida de audio (desplegable de la barra superior): elegir · cambiar · cerrar | ↑↓ · A · B | Flechas · Intro · Esc | Clic en el icono del altavoz |
@@ -123,7 +123,7 @@ Los ajustes están en secciones (Biblioteca, Apariencia, Capturas propias, Siste
 - Botón grande **Jugar** (`Con <emulador>` o `Ejecutable propio`). Al pulsarlo lanza el juego con el lanzador existente; mientras corre muestra **Jugando** con un cronómetro de sesión y el icono pulsando. Al terminar la partida (evento `game-exited`) vuelve a **Jugar** y las estadísticas se refrescan.
 - Panel de **horas jugadas** con contador de dígitos rodantes (horas y minutos, y el número de sesiones) y panel con las **barras de la última semana** (7 días locales, minutos por día).
 - **Capturas**: las 5 más recientes y **Ver todas** (cuadrícula). Una baldosa abre el visor en esa captura. `B` en el visor vuelve a la ficha, `B` en la cuadrícula vuelve a la ficha y `B` en la ficha vuelve a los títulos.
-- `Y` abre el menú **Grafismos y opciones**: *Abrir carpeta*, *Recargar grafismos*, *Añadir capturas*, *Color de acento…*, *Ocultar juego* y *Quitar de la lista* (solo juegos añadidos a mano, pide confirmar).
+- `Y` (o Start, o clic derecho) abre **Ajustes del juego**, con cuatro pestañas: *Aspecto* (imágenes, color, volver a cargar), *Al jugar* (Magpie, ejecutable, carpeta de trabajo), *Capturas y datos* (carpeta, añadir capturas, partidas guardadas, frases) y *Biblioteca* (colecciones, estado, fecha, mover de categoría, ocultar y quitar de la biblioteca; quitar solo en juegos añadidos a mano y pide confirmar).
 - Sin lanzador (carpetas con capturas que no son un juego detectado): en lugar de Jugar aparece una píldora «Sin lanzador · Añádelo en Ajustes», las horas salen a 0 y no se dibuja la gráfica de la semana.
 - Faltas de arte: sin hero se usa una ampliación borrosa y oscurecida de la portada (o de la primera captura); sin logo se escribe el nombre del juego en grande, en blanco; sin portada se usa la primera captura o un recuadro con el nombre.
 

@@ -74,7 +74,7 @@ export type MenuItem =
   | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'addcoll' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'release' | 'saves' | 'category' | 'delshot' | 'delsel' | 'setexe' | 'setdir' | `cat:${string}`
   /* Menú de Start de la lista de juegos (y «Salida de audio», también en el de capturas). */
   | 'filter' | `flt:${string}` | 'tsize' | 'audio' | 'settings' | 'gstats' | 'play' | 'listopts' | 'copy';
-export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'collform' | 'picker' | 'addcoll' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library' | 'status' | 'release' | 'stalled' | 'achievements';
+export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'collform' | 'picker' | 'addcoll' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library' | 'status' | 'release' | 'stalled' | 'achievements' | 'gameset';
 /** «Nueva colección» / «Editar colección». */
 export interface CollFormState {
   /** null = colección nueva. */
@@ -101,6 +101,21 @@ export interface CollFormState {
 export interface PickerState { q: string; ids: string[]; filter: 'all' | 'sel'; at: number; start: string }
 /** «Añadir a una colección»: juego (índice en la categoría) y fila elegida. */
 export interface AddCollState { ti: number; row: number }
+/** Pestañas de «Ajustes del juego». */
+export type GameTab = 'asp' | 'jug' | 'dat' | 'bib';
+export interface GameSetState {
+  /** Índice del juego en la categoría (app.t). */
+  title: number;
+  tab: GameTab;
+  /** false = el foco está en las pestañas; true = en las filas. */
+  inRows: boolean;
+  row: number;
+  /** Lista de opciones abierta dentro del panel (Magpie o categorías). */
+  list: '' | 'magpie' | 'category';
+  lrow: number;
+  /** «Quitar»: pulsa A otra vez. */
+  confirm: boolean;
+}
 export interface MenuState {
   /** detail = ficha del juego; shots = cuadrícula o visor de capturas; titles = lista de juegos (Start). */
   kind: 'detail' | 'shots' | 'titles';
@@ -312,6 +327,7 @@ class Store {
   /** Pila de paneles anteriores: B vuelve al que abrió el actual. */
   overlayStack = $state<Overlay[]>([]);
   menu = $state<MenuState>({ kind: 'detail', title: 0, row: 0, items: [], confirm: false });
+  gameSet = $state<GameSetState>({ title: 0, tab: 'asp', inRows: false, row: 0, list: '', lrow: 0, confirm: false });
   form = $state<FormState>({ kind: 'exe', exe: '', rom: '', name: '', args: '', platform: 'pc', nameTouched: false, hero: '', logo: '', cover: '' });
   formRow = $state(0);
   addRow = $state(0);
