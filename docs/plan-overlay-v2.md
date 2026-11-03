@@ -1,6 +1,6 @@
 # Plan: overlay sobre el juego · versión 2 de la propuesta A «Plaza»
 
-> **Estado:** diseño cerrado salvo las preguntas del §3. Aún no hay nada implementado (no existe `quickmenu.rs`). Este documento **sustituye** a los §5 y §7 de [plan-overlay.md](plan-overlay.md) y **amplía** sus §1 (A) y §4. Lo que no se nombra aquí sigue igual que en el plan v1: ventana `quickmenu` sin foco (§4.1), foto congelada como fondo (§4.2), pausa por suspensión y entrada por hilo XInput + gancho de teclado (§4.3), fuentes de datos de rendimiento, batería y audio (§4.4) y comprobación general (§6).
+> **Estado:** diseño cerrado salvo lo que queda abierto en el §3 (el usuario ya contestó el resto el 3-nov-2026). Aún no hay nada implementado (no existe `quickmenu.rs`). Este documento **sustituye** a los §5 y §7 de [plan-overlay.md](plan-overlay.md) y **amplía** sus §1 (A) y §4. Lo que no se nombra aquí sigue igual que en el plan v1: ventana `quickmenu` sin foco (§4.1), foto congelada como fondo (§4.2), pausa por suspensión y entrada por hilo XInput + gancho de teclado (§4.3), fuentes de datos de rendimiento, batería y audio (§4.4) y comprobación general (§6).
 
 Mockup: `docs/mockups-overlay/overlay-a2.html` (1280×720, autocontenido, datos falsos). Barra de arriba: estados, **Datos** (novela con hucha / novela sin hucha / juego sin racha), **fondo claro/oscuro** y **modo Normal/Exclusiva**. Teclado: `Espacio` = atajo del menú (pulsar o **mantener 1,5 s**), flechas = cruceta, `Intro` = A, `Esc` = B, `X` = captura, `Y` = favorita, `Q`/`E` = LT/RT. Ratón: pasar enfoca, clic acciona, rueda sobre Audio = volumen, clic derecho = B. Estado `#ajustes`: las filas nuevas de Ajustes y su aprendizaje.
 
@@ -89,17 +89,27 @@ Manejo:
 - Vibración: si disparó el mando, solo ese mando (máscara `pressing` de `pad.rs:249-261`); si fue el teclado o el ratón, todos los mandos conectados (con DS4Windows la «tecla» viene de un mando). Sin mando, `MessageBeep` en el aviso y al forzar.
 - Mientras el disparador del mando está pulsado, el hilo de navegación ignora sus botones (para que una combinación como `back+start` no navegue).
 
-## 3. Decisiones abiertas para el usuario
+## 3. Decisiones del usuario (3-nov-2026) y lo que sigue abierto
 
-1. **Cerrar de un clic:** ¿el cierre amable (`WM_CLOSE`, el juego puede preguntar si guardar) o el forzado? Propuesto: amable + 3 s para deshacer; el forzado sigue siendo «mantener».
-2. **Mantener con el menú visible:** ¿también fuerza el cierre (propuesto, mismo gesto siempre) o solo en pantalla completa exclusiva?
-3. **1,5 s fijo** o ajustable en Ajustes (1 / 1,5 / 2 / 3 s).
-4. **«Marcar algo»:** propuesto Y = favorita en las capturas. ¿Quieres además cambiar el **estado del juego** (Jugando / Terminado / Abandonado) desde el overlay? Sería otra fila de chips en la baldosa de Tiempo (dentro de la categoría del juego, como manda CLAUDE.md).
-5. **Rescate de la otra categoría:** si juegas una novela visual y la hucha pendiente es de japonés, propuesto **no enseñarla** (no mezclar categorías). ¿O un aviso discreto en la cabecera?
-6. **Juegos sin racha:** ¿te vale semana + sesión récord, o prefieres otra cifra?
-7. **Botón Xbox/PS como atajo:** la Xbox Game Bar (y Steam si usa el mando) lo usan también. ¿Lo desactivas allí o eliges otra combinación? Por defecto el disparador del mando queda **desactivado** y el de teclado en F24.
-8. **Teclas multimedia** (Silencio, Play/Pausa) como atajo: ¿las quieres? Hay que ampliar `keyName` y comprobar que `global-hotkey` las registra.
-9. Siguen abiertas de la v1: §7.2 (pausar por defecto), §7.3 (DualSense/HidHide para la batería), §7.4 (sin juego en marcha), §7.5 (abrir en el visor), §7.6 (volumen por aplicación; en la hoja de audio está como opción).
+**Cerradas** (mandan sobre el resto del documento si hay contradicción):
+
+| Tema | Decisión |
+|---|---|
+| Cerrar con un clic | Es el cierre **forzado** (`TerminateProcess` de los pids del juego), no `WM_CLOSE`. Se mantiene la cuenta atrás de 3 s con «Deshacer» del §2.4 como protección (el juego sigue en pausa), salvo que el usuario pida quitarla. «Forzar» mantenido 1,5 s sigue como versión inmediata. |
+| Mantener el atajo | **Fuerza el cierre siempre** (menú visible o no, y en exclusiva). |
+| Segundos de mantener | **Ajustable**, por defecto **1,5 s** (opciones 1 / 1,5 / 2 / 3 s). `overlay_hold_ms` sustituye a la constante `HOLD_MS` (se pasa a `TriggerFsm`). |
+| «Marcar» en capturas | **Borrar**, no favorita. Y = borrar la captura enfocada, por el mismo camino que el visor (`trash_shots`, `lib.rs:668`, a la papelera), con un «Deshacer» de unos segundos mientras no se haya vaciado. Desaparece `favorites-changed` y `set_favorite` de este plan. |
+| Juegos sin racha | Se queda **semana + sesión récord**, como en el mockup. |
+| Pausa | **Se pausa el juego** al abrir y se reanuda al cerrar el menú (por defecto sí, `overlay_pause`). Los juegos que no se puedan pausar los gestiona el usuario por su cuenta (no hace falta ajuste por juego). |
+| Sin juego en marcha | **No hace nada** (sin menú reducido). |
+| Volumen por aplicación | **Sí, en la hoja ampliada de Audio**: volumen del juego y de otras aplicaciones por separado (mezclador por aplicación). La baldosa principal mantiene el volumen general. |
+
+**Siguen abiertas** (no bloquean la Fase 1):
+1. ¿Ocultar la hucha pendiente de la otra categoría de lectura (propuesto: sí, no mezclar categorías)?
+2. Botón Xbox como atajo: choca con Game Bar y Steam (por defecto el disparador del mando va desactivado).
+3. ¿Teclas multimedia como atajo? (ampliar `keyName`).
+4. De la v1: §7.3 (¿DualSense y HidHide? afecta a la batería) y §7.5 («Abrir en el visor» desde una captura).
+5. ¿Se quita la cuenta atrás de 3 s ahora que cerrar es forzado?
 
 ## 4. Modelo de ajustes y de atajos
 
