@@ -57,6 +57,7 @@ export const DEFAULT_CONFIG: Config = {
   overlayPause: true,
   autoBackup: true,
   openOnCursor: false,
+  keepInTray: false,
   savesAuto: true,
   savesDir: '',
   goalVn: 60,

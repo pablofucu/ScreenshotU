@@ -132,6 +132,8 @@ pub struct Config {
     pub goal_jvn: u32,
     /// Al arrancar, abrir el visor en el monitor donde esta el cursor (el del icono pulsado) en vez de en el ultimo usado.
     pub open_on_cursor: bool,
+    /// Al cerrar el visor, seguir en segundo plano con icono en la bandeja (si no, se sale del todo).
+    pub keep_in_tray: bool,
     /// Servidor para la app movil (ver `remote` y `docs/api-movil.md`): activado, puerto y codigo de emparejamiento
     /// (se genera la primera vez que se activa).
     pub remote_enabled: bool,
@@ -237,6 +239,7 @@ impl Default for Config {
             goal_vn: 60,
             goal_jvn: 30,
             open_on_cursor: false,
+            keep_in_tray: false,
             remote_enabled: false,
             remote_port: crate::remote::DEFAULT_PORT,
             remote_token: String::new(),

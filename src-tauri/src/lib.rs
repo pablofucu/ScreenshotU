@@ -31,6 +31,7 @@ mod shots;
 mod snap;
 mod state;
 mod texthook;
+mod tray;
 mod trash;
 mod voice;
 
@@ -167,11 +168,13 @@ fn save_config(app: AppHandle, state: State<'_, AppState>, config: Config) -> Re
     state.overlay_mouse.store(mouse_button_index(&config.overlay_mouse), Ordering::Relaxed);
     let root_changed = state.config.lock().unwrap().root != config.root;
     let new_root = config.root.clone();
+    let keep_in_tray = config.keep_in_tray;
     *state.config.lock().unwrap() = config;
     if root_changed {
         *state.favorites.lock().unwrap() = load_favorites(&state.db, new_root.as_deref().map(Path::new));
     }
     remote::apply(&app);
+    tray::sync(&app, keep_in_tray);
     hotkey_err.map_or(Ok(()), Err)
 }
 
@@ -951,6 +954,12 @@ fn exit_app(app: AppHandle) {
     app.exit(0);
 }
 
+/// Cierra "main" como si el usuario hubiera pulsado la X: a la bandeja si esta activado, si no, del todo.
+#[tauri::command]
+fn close_main(app: AppHandle) {
+    tray::close_main(&app);
+}
+
 /// Modo auxiliar (reiniciar Magpie elevado). Lo llama `main` antes de abrir la aplicacion.
 pub fn helper_main() -> Option<i32> {
     magpie::helper_main()
@@ -1163,17 +1172,37 @@ pub fn run() {
                 let _ = w.show();
                 let _ = w.set_focus();
             }
+            if st.config.lock().unwrap().keep_in_tray {
+                tray::ensure(app.handle());
+            }
             novel::init(app.handle());
             pad::spawn(app.handle().clone());
             mouse::spawn(app.handle().clone());
             Ok(())
         })
         .on_window_event(|w, e| {
-            // Recordar el monitor si el usuario mueve el visor (p. ej. Win+Mayus+flecha).
-            if let (tauri::WindowEvent::Moved(_), "main") = (e, w.label()) {
-                if let (Some(st), Some(m)) = (w.try_state::<AppState>(), display::of_window(launcher::main_hwnd(w.app_handle()))) {
-                    display::save_window_monitor(&st.config_dir, &m.device);
+            if w.label() != "main" {
+                return;
+            }
+            match e {
+                // Recordar el monitor si el usuario mueve el visor (p. ej. Win+Mayus+flecha).
+                tauri::WindowEvent::Moved(_) => {
+                    if let (Some(st), Some(m)) = (w.try_state::<AppState>(), display::of_window(launcher::main_hwnd(w.app_handle()))) {
+                        display::save_window_monitor(&st.config_dir, &m.device);
+                    }
                 }
+                // Cerrar "main" (Alt+F4, barra de tareas...) no sale de la app por si sola: hay otras
+                // ventanas (overlay, menu rapido...) que la mantendrian viva sin icono visible. Se decide
+                // aqui si se va a la bandeja o se sale del todo.
+                tauri::WindowEvent::CloseRequested { api, .. } => {
+                    api.prevent_close();
+                    tray::close_main(w.app_handle());
+                }
+                // Red de seguridad: sin "main" no debe quedar proceso en segundo plano sin icono.
+                tauri::WindowEvent::Destroyed => {
+                    w.app_handle().exit(0);
+                }
+                _ => {}
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -1269,6 +1298,7 @@ pub fn run() {
             hotkey_suspend,
             learn_key,
             exit_app,
+            close_main,
             texthook::commands::th_status,
             texthook::commands::th_select_thread,
             texthook::commands::th_select_name_thread,

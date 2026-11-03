@@ -141,6 +141,7 @@ async function tauriBackend(): Promise<Backend> {
     windowMonitor: () => invoke<string>('window_monitor'),
     nextMonitor: (dir: number) => invoke<string>('next_monitor', { dir }),
     exit: () => invoke('exit_app'),
+    closeMain: () => invoke('close_main'),
     learnPad: (on: boolean) => invoke('learn_pad', { on }),
     audioOutputs: () => invoke<AudioOutput[]>('audio_outputs'),
     setAudioOutput: (id: string) => invoke<AudioOutput[]>('set_audio_output', { id }),

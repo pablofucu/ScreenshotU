@@ -76,6 +76,8 @@ export interface Config {
   autoBackup: boolean;
   /** Abrir el visor en el monitor donde está el cursor al arrancar (en vez de en el último usado). */
   openOnCursor: boolean;
+  /** Al cerrar el visor, seguir en segundo plano con icono en la bandeja (si no, se sale del todo). */
+  keepInTray: boolean;
   /** Copiar las partidas guardadas de un juego al cerrarlo (si cambiaron). */
   savesAuto: boolean;
   /** Carpeta de las copias de partidas ("" = la de la configuración). */
@@ -319,6 +321,8 @@ export interface Backend {
   /** Pasa el visor al monitor siguiente (1) o anterior (-1); devuelve el nuevo. */
   nextMonitor(dir: number): Promise<string>;
   exit(): Promise<void>;
+  /** Cierra el visor: a la bandeja si `keepInTray` está activado, si no, del todo (como `exit`). */
+  closeMain(): Promise<void>;
   /** Salidas de audio de Windows (la predeterminada marcada). */
   audioOutputs(): Promise<AudioOutput[]>;
   /** Pone una salida como predeterminada; devuelve la lista actualizada. */

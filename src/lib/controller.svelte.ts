@@ -618,7 +618,7 @@ function dock(i: number) {
   else if (i === 2) openStats();
   else if (i === 3) openAdd();
   else if (i === 4) openSettings();
-  else if (i === 5) void quit();
+  else if (i === 5) void closeApp();
 }
 
 /* ---------- racha de lectura ---------- */
@@ -1193,7 +1193,7 @@ export function wake() {
 /* ---------- ajustes ---------- */
 export type SettingId =
   | 'root' | 'rescan' | 'addgame' | 'hidden' | 'showhidden' | 'view' | 'shotsview' | 'shotsorder' | 'collstyle' | 'achcardvariant' | 'sound' | 'fullscreen' | 'monitor' | 'oncursor'
-  | 'audioout' | 'audiocombo' | 'audiohotkey' | 'hotkey' | 'combo' | 'mouse' | 'qmkey' | 'qmpad' | 'qmmouse' | 'qmhold' | 'qmpause' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caponly' | 'caprumble' | 'quit'
+  | 'audioout' | 'audiocombo' | 'audiohotkey' | 'hotkey' | 'combo' | 'mouse' | 'qmkey' | 'qmpad' | 'qmmouse' | 'qmhold' | 'qmpause' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caponly' | 'caprumble' | 'bgtray' | 'quit'
   | 'sgdbkey' | 'sgdbauto' | 'sgdbnow' | 'sgdbgame'
   | 'backup' | 'backupmedia' | 'restore' | 'autobackup'
   | 'savesauto' | 'ludusavi' | 'inputmouse' | 'inputkeys' | 'update'
@@ -1258,11 +1258,11 @@ export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[
     name: 'Acerca de',
     t: 1,
     // En la tablet no hay actualizador ni cierre de la app: se enseña a qué PC está conectada.
-    rows: IS_TABLET ? ['tabpc', 'tabstate', 'tabdisc'] : ['update', 'quit'],
+    rows: IS_TABLET ? ['tabpc', 'tabstate', 'tabdisc'] : ['update', 'bgtray', 'quit'],
   },
 ];
 /** Filas que cambian de valor con izquierda/derecha (se marcan con ‹ ›). Las demás son acciones: izquierda vuelve al menú. */
-export const CYCLE = new Set<SettingId>(['theme', 'showhidden', 'view', 'shotsview', 'shotsorder', 'collstyle', 'achcardvariant', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'qmkey', 'qmpad', 'qmmouse', 'qmhold', 'qmpause', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'inputmouse', 'inputkeys', 'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay']);
+export const CYCLE = new Set<SettingId>(['theme', 'showhidden', 'view', 'shotsview', 'shotsorder', 'collstyle', 'achcardvariant', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'qmkey', 'qmpad', 'qmmouse', 'qmhold', 'qmpause', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'inputmouse', 'inputkeys', 'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay', 'bgtray']);
 export const rowHasArrows = (id: SettingId | undefined) => !!id && (CYCLE.has(id) || READING_CYCLE.has(id as never) || REMOTE_CYCLE.has(id as never));
 /** Zona de foco en Ajustes: el menú de secciones o la lista de opciones. */
 export const setNav = $state({ zone: 'menu' as 'menu' | 'body' });
@@ -1434,6 +1434,11 @@ async function quit() {
   if (backend.isTauri) await backend.exit();
   else toast('Salir solo funciona en la aplicación de escritorio');
 }
+/** Botón «Salir» de Inicio: respeta «Al cerrar, seguir en la bandeja» (a la bandeja si está activado). */
+async function closeApp() {
+  if (backend.isTauri) await backend.closeMain();
+  else toast('Salir solo funciona en la aplicación de escritorio');
+}
 
 export function setSection(i: number) {
   dropRestore();
@@ -1469,6 +1474,7 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'fullscreen') void toggleFullscreen();
   else if (id === 'monitor') { void refreshMonitor(dir || 1); blip(880); }
   else if (id === 'oncursor') { void patchConfig({ openOnCursor: !app.config.openOnCursor }); blip(1320); }
+  else if (id === 'bgtray') { void patchConfig({ keepInTray: !app.config.keepInTray }); blip(1320); }
   // Botones de captura: A / clic espera el input; izquierda/derecha recorren unos cuantos de serie.
   else if (id === 'audioout') void switchAudio(dir || 1);
   else if (id === 'audiocombo') { if (dir === 0) startLearn('pad', 'audio'); else void patchConfig({ audioCombo: cycleIn(AUDIO_COMBO_PRESETS, app.config.audioCombo, dir) }); }
