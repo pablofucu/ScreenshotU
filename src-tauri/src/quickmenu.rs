@@ -52,11 +52,23 @@ static BACKGROUND: Mutex<Option<String>> = Mutex::new(None);
 static SUSPENDED: Mutex<Vec<u32>> = Mutex::new(Vec::new());
 /// Ventana que tenia el primer plano antes de abrir el menu (se restaura al cerrar para que Magpie vuelva a escalar).
 static PREV_FG: Mutex<Option<isize>> = Mutex::new(None);
+/// HWND (como `isize`) de la ventana del menu, fijado por `show_window` tras mostrarla.
+static OWN_HWND: Mutex<Option<isize>> = Mutex::new(None);
+/// Posicion y tamano con los que se mostro la ventana la ultima vez (para el reintento de `confirm`).
+static LAST_RECT: Mutex<Option<(i32, i32, u32, u32)>> = Mutex::new(None);
 
 /// Cierre forzado pedido en esta partida: el vigilante deja de esperar y da la sesion por terminada.
 static FORCED: AtomicBool = AtomicBool::new(false);
 /// Ruta de `quickmenu.log` (se fija al empezar la partida).
 static LOG_PATH: Mutex<Option<std::path::PathBuf>> = Mutex::new(None);
+/// Ultimo `gen` que la pagina confirmo haber pintado (comando `quickmenu_painted`).
+static PAINTED: AtomicU64 = AtomicU64::new(0);
+/// La partida esta terminando: ningun atajo abre ni cierra nada mas.
+static ENDING: AtomicBool = AtomicBool::new(false);
+/// Sube en cada `prewarm`: la ventana solo se destruye al final si sigue siendo la de esa misma partida.
+static SESSION: AtomicU64 = AtomicU64::new(0);
+/// Hay un `to_top` encolado en el hilo principal sin ejecutar todavia (no se amontonan).
+static TOP_PENDING: AtomicBool = AtomicBool::new(false);
 
 /// `lock()` que tolera un mutex envenenado: un fallo en otro hilo no debe impedir guardar la sesion.
 pub fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -120,13 +132,18 @@ pub fn trigger_down(app: &AppHandle, src: Src, pads: u8) {
     if active_pids(app).is_none() {
         return;
     }
+    if ENDING.load(Ordering::SeqCst) || force_requested() {
+        log("atajo ignorado: la partida termina");
+        return;
+    }
     let (hold_force, hold_ms) = {
         let st = app.state::<AppState>();
         let c = st.config.lock().unwrap();
         (c.overlay_hold_force, c.overlay_hold_ms)
     };
     let open = is_open();
-    log(&format!("atajo pulsado (menu abierto: {open})"));
+    let thread = std::thread::current().name().unwrap_or("?").to_string();
+    log(&format!("atajo pulsado (src: {src:?}, hilo: {thread}, menu abierto: {open})"));
     let ctx = TriggerCtx { can_show: open || !exclusive_fullscreen(), is_open: open, hold_force, hold_ms };
     let now = now_ms();
     let act = {
@@ -174,9 +191,16 @@ pub fn trigger_up(app: &AppHandle, src: Src) {
 fn run_act(app: &AppHandle, act: TriggerAct, pads: u8) {
     match act {
         TriggerAct::None => {}
-        TriggerAct::Open => in_thread(app, open),
-        TriggerAct::Close => in_thread(app, close),
+        TriggerAct::Open => {
+            log("accion: abrir");
+            in_thread(app, open)
+        }
+        TriggerAct::Close => {
+            log("accion: cerrar");
+            in_thread(app, close)
+        }
         TriggerAct::Warn => {
+            log("accion: aviso (no se puede abrir)");
             if feedback_pads(pads) == 0 {
                 beep();
             } else {
@@ -188,6 +212,7 @@ fn run_act(app: &AppHandle, act: TriggerAct, pads: u8) {
         TriggerAct::HoldCancel => emit_hold(app, -1.0),
         TriggerAct::HoldTick => crate::pad::rumble_tick(feedback_pads(pads)),
         TriggerAct::Force => {
+            log("accion: forzar cierre");
             let fb = feedback_pads(pads);
             if fb == 0 {
                 beep();
@@ -260,6 +285,8 @@ fn d3d_fullscreen() -> bool {
 /// Crea la ventana oculta al empezar la partida, para que abrir sea inmediato.
 pub fn prewarm(app: &AppHandle) {
     clear_forced();
+    ENDING.store(false, Ordering::SeqCst);
+    SESSION.fetch_add(1, Ordering::SeqCst);
     log_reset(app);
     log("partida empezada");
     let a = app.clone();
@@ -273,6 +300,9 @@ pub fn prewarm(app: &AppHandle) {
 /// Al acabar la partida: cierra el menu y libera la ventana (WebView2 ocupa memoria).
 /// En un hilo propio: nada del menu puede impedir que el vigilante guarde la sesion.
 pub fn destroy(app: &AppHandle) {
+    // Sincrono y antes de lanzar nada: ningun atajo que llegue de aqui en adelante debe abrir el menu sobre una
+    // partida que ya se esta cerrando (era la fuente de la carrera con un `open()` que llegaba tarde).
+    ENDING.store(true, Ordering::SeqCst);
     let spawned = std::thread::Builder::new().name("qm-destroy".into()).spawn({
         let app = app.clone();
         move || destroy_now(&app)
@@ -283,14 +313,24 @@ pub fn destroy(app: &AppHandle) {
 }
 
 fn destroy_now(app: &AppHandle) {
+    let session = SESSION.load(Ordering::SeqCst);
     // `close_now` deshace la pausa (`resume_all`).
     close_now(app);
     *lock(&CONTEXT) = None;
     lock(&SHOTS).clear();
+    // Un `open()` que llegase tarde (p. ej. el que lanza un cierre forzado) puede seguir mostrando/ocultando la
+    // ventana en el hilo principal un rato despues de este punto: esperar antes de destruirla evita destruirla a
+    // medio mostrar, que es lo que podia colgar el hilo principal o tirar la app entera.
+    std::thread::sleep(Duration::from_millis(CLOSE_ANIM_MS + 1500));
     let a = app.clone();
     let _ = app.run_on_main_thread(move || {
+        if is_open() || !ENDING.load(Ordering::SeqCst) || SESSION.load(Ordering::SeqCst) != session {
+            // Una partida nueva ya reutilizo la ventana: no es la nuestra que destruir.
+            return;
+        }
         if let Some(w) = a.get_webview_window(LABEL) {
             let _ = w.destroy();
+            log("ventana destruida");
         }
     });
 }
@@ -313,37 +353,69 @@ fn build(app: &AppHandle) -> Option<tauri::WebviewWindow> {
     Some(w)
 }
 
-fn show_window(app: &AppHandle, pid: Option<u32>) {
+/// Muestra la ventana del menu, sin tomar el foco (el gancho de teclado y `pad::menu_nav` no lo necesitan).
+/// Devuelve `true` solo si el hilo principal de verdad llego a mostrarla dentro de los 800 ms de margen: si el
+/// hilo principal no responde (p. ej. acoplado a un hilo ajeno colgado) antes se devolvia `()` igualmente y el
+/// resto del codigo seguia como si se hubiera mostrado.
+fn show_window(app: &AppHandle, pid: Option<u32>, gen: u64) -> bool {
     let a = app.clone();
-    let (tx, rx) = std::sync::mpsc::sync_channel(1);
+    let (tx, rx) = std::sync::mpsc::sync_channel::<bool>(1);
+    let t0 = Instant::now();
+    log("pido mostrar");
     let _ = app.run_on_main_thread(move || {
-        if let Some(win) = a.get_webview_window(LABEL).or_else(|| build(&a)) {
+        if !is_current(gen) {
+            let _ = tx.send(false);
+            return;
+        }
+        log("hp: empieza");
+        let shown = if let Some(win) = a.get_webview_window(LABEL).or_else(|| build(&a)) {
             let m = crate::reader::monitor::game_monitor(pid);
             let _ = win.set_position(tauri::PhysicalPosition::new(m.x, m.y));
             let _ = win.set_size(tauri::PhysicalSize::new(m.w, m.h));
             let _ = win.set_position(tauri::PhysicalPosition::new(m.x, m.y));
             let _ = win.show();
-            let _ = win.set_focus();
-            crate::overlay::force_foreground(&win, m.x, m.y, m.w, m.h);
+            log("hp: show hecho");
+            if let Ok(h) = win.hwnd() {
+                *lock(&OWN_HWND) = Some(h.0 as isize);
+            }
+            *lock(&LAST_RECT) = Some((m.x, m.y, m.w, m.h));
+            let (fg_ok, fg_pid) = crate::overlay::raise_menu(&win, m.x, m.y, m.w, m.h);
+            let fg_exe = fg_pid.and_then(crate::snap::exe_of).unwrap_or_default();
+            log(&format!("hp: encima hecho (SetForegroundWindow={fg_ok}, primer plano={fg_pid:?} {fg_exe})"));
             log(&format!("ventana mostrada en ({}, {}) {}x{}", m.x, m.y, m.w, m.h));
+            true
         } else {
             log("no se pudo obtener ni crear la ventana del menu");
-        }
-        let _ = tx.send(());
+            false
+        };
+        let _ = tx.send(shown);
     });
-    let _ = rx.recv_timeout(Duration::from_millis(500));
+    match rx.recv_timeout(Duration::from_millis(800)) {
+        Ok(shown) => shown,
+        Err(_) => {
+            log(&format!("el hilo principal no respondio en {} ms", t0.elapsed().as_millis()));
+            false
+        }
+    }
 }
 
-/// Al hacer clic Windows podria subir el juego por encima (sobre todo si el mismo va «siempre encima»).
+/// Al hacer clic Windows podria subir el juego por encima (sobre todo si el mismo va «siempre encima»). No
+/// encola otro `to_top` si el anterior aun no ha corrido en el hilo principal (no se amontonan).
 fn keep_on_top(app: &AppHandle, gen: u64) {
     let app = app.clone();
     let _ = std::thread::Builder::new().name("qm-top".into()).spawn(move || {
         while is_current(gen) {
             std::thread::sleep(Duration::from_millis(250));
+            if !is_current(gen) || TOP_PENDING.swap(true, Ordering::SeqCst) {
+                continue;
+            }
             let a = app.clone();
             let _ = app.run_on_main_thread(move || {
-                if let Some(w) = a.get_webview_window(LABEL) {
-                    crate::overlay::to_top(&w);
+                TOP_PENDING.store(false, Ordering::SeqCst);
+                if is_current(gen) {
+                    if let Some(w) = a.get_webview_window(LABEL) {
+                        crate::overlay::to_top(&w);
+                    }
                 }
             });
         }
@@ -351,19 +423,26 @@ fn keep_on_top(app: &AppHandle, gen: u64) {
 }
 
 fn open(app: &AppHandle) {
-    let _life = lock(&LIFE);
-    if is_open() {
+    if ENDING.load(Ordering::SeqCst) || force_requested() || is_open() {
         return;
     }
     let Some(pids) = active_pids(app) else { return };
-    *lock(&PREV_FG) = crate::overlay::current_foreground();
     let (pause, scaled) = {
         let st = app.state::<AppState>();
         let c = st.config.lock().unwrap();
         (c.overlay_pause, c.capture_magpie != "source")
     };
-    // La foto antes de pausar y de enseñar nada.
-    match crate::platform::grab(&pids, scaled) {
+    let t0 = Instant::now();
+    // La foto puede tardar varios segundos si falla WGC: fuera de `LIFE`, para no bloquear un cierre mientras tanto.
+    let grabbed = crate::platform::grab(&pids, scaled);
+
+    let _life = lock(&LIFE);
+    if ENDING.load(Ordering::SeqCst) || force_requested() || is_open() || active_pids(app).is_none() {
+        log("apertura cancelada: la partida termino mientras se preparaba la captura");
+        return;
+    }
+    *lock(&PREV_FG) = crate::overlay::current_foreground();
+    match grabbed {
         Ok(g) => {
             log(&format!("captura de fondo {}x{} ({})", g.width, g.height, g.method));
             let jpeg = visor_core::capture::rgba_to_jpeg(g.width, g.height, &g.rgba, 960, 72).ok();
@@ -377,45 +456,119 @@ fn open(app: &AppHandle) {
             *lock(&FROZEN) = None;
         }
     }
+
     let magpie = crate::platform::magpie_scaling();
-    // Si Magpie NO escala, pausamos antes de mostrar la ventana para que un emulador a pantalla completa ya este
-    // congelado cuando pierda el foco. Si Magpie SI escala, primero mostramos el menu y le damos el foco para que
-    // Magpie compruebe `IsWindowHung(WM_NULL)` con el juego aun vivo y ceda `HWND_TOPMOST` sin cerrar el escalado.
+    let gen = GEN.fetch_add(1, Ordering::SeqCst) + 1;
+    IS_OPEN.store(true, Ordering::SeqCst);
+
+    // Si Magpie NO escala, pausamos antes de mostrar: un emulador a pantalla completa debe quedar ya congelado al
+    // perder el foco. Si Magpie SI escala, la pausa se decide mas abajo, solo si se confirma que el menu se ve.
     if pause && !magpie {
         suspend(app, &pids);
     }
-    let gen = GEN.fetch_add(1, Ordering::SeqCst) + 1;
-    IS_OPEN.store(true, Ordering::SeqCst);
-    show_window(app, pids.first().copied());
-    if magpie {
-        let t0 = Instant::now();
-        while crate::platform::magpie_topmost() && t0.elapsed() < Duration::from_millis(200) {
-            std::thread::sleep(Duration::from_millis(5));
-        }
+
+    let _ = app.emit_to(LABEL, "qm-open", state(app));
+    let shown = show_window(app, pids.first().copied(), gen);
+    let (ok, painted, on_top, why) = confirm(app, gen, &pids, shown);
+    if !ok {
         log(&format!(
-            "Magpie cedio topmost={} tras {} ms",
-            !crate::platform::magpie_topmost(),
+            "no confirmado tras {} ms (mostrada: {shown}, pintada: {painted}, encima: {on_top} — {why})",
             t0.elapsed().as_millis()
         ));
-        if pause {
-            suspend(app, &pids);
-            // Re-actualiza el estado de pausa que se envia a la pagina.
+        teardown(app);
+        let _ = app.emit_to(LABEL, "qm-close", ());
+        hide_window(app);
+        let fb = feedback_pads(0);
+        if fb == 0 {
+            beep();
+        } else {
+            crate::pad::rumble_n(fb, 2);
         }
-        let a = app.clone();
-        let _ = app.run_on_main_thread(move || {
-            if let Some(w) = a.get_webview_window(LABEL) {
-                crate::overlay::to_top(&w);
-            }
-        });
+        return;
     }
+    log(&format!("menu visible tras {} ms", t0.elapsed().as_millis()));
+
+    if pause && magpie {
+        // Con el primer plano propio, dar un momento a que Magpie termine su `IsWindowHung(WM_NULL)` con el juego
+        // aun vivo antes de suspenderlo: solo informativo ahora, ya no decide si se pausa o no.
+        if crate::platform::own_window_focused() {
+            let t1 = Instant::now();
+            while crate::platform::magpie_topmost() && t1.elapsed() < Duration::from_millis(300) {
+                std::thread::sleep(Duration::from_millis(5));
+            }
+            log(&format!(
+                "Magpie topmost={} tras confirmar ({} ms)",
+                crate::platform::magpie_topmost(),
+                t1.elapsed().as_millis()
+            ));
+        }
+        if ENDING.load(Ordering::SeqCst) || force_requested() || !is_current(gen) {
+            teardown(app);
+            let _ = app.emit_to(LABEL, "qm-close", ());
+            hide_window(app);
+            return;
+        }
+        suspend(app, &pids);
+        let _ = app.emit_to(LABEL, "qm-paused", serde_json::json!({ "paused": true }));
+    }
+
     keep_on_top(app, gen);
     crate::pad::menu_nav(app.clone(), gen);
-    keyboard::start(app);
-    let _ = app.emit_to(LABEL, "qm-open", state(app));
+    keyboard::start(app, gen);
+}
+
+/// Confirma que el menu de verdad se ve antes de fiarse de el: la pagina avisa de que pinto esta apertura
+/// (`PAINTED`) y la ventana esta por encima de Magpie y del juego en el orden Z. Sin esto, mejor avisar con una
+/// vibracion que dejar el juego pausado detras de una ventana que nadie ve (el fallo real reportado). Un solo
+/// reintento (volver a subir la ventana) antes de rendirse.
+fn confirm(app: &AppHandle, gen: u64, pids: &[u32], shown: bool) -> (bool, bool, bool, String) {
+    if !shown {
+        return (false, false, false, "ventana no mostrada".into());
+    }
+    let poll = |deadline: Duration| -> (bool, bool, String) {
+        let t0 = Instant::now();
+        loop {
+            if ENDING.load(Ordering::SeqCst) || force_requested() || !is_current(gen) {
+                return (false, false, "la partida termino mientras se confirmaba".into());
+            }
+            let painted = PAINTED.load(Ordering::SeqCst) >= gen;
+            let own = *lock(&OWN_HWND);
+            let (on_top, why) = match own {
+                Some(h) => crate::platform::menu_on_top(h, pids),
+                None => (false, "sin ventana propia".into()),
+            };
+            if painted && on_top {
+                return (true, true, why);
+            }
+            if t0.elapsed() >= deadline {
+                return (painted, on_top, why);
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+    };
+    let (painted, on_top, why) = poll(Duration::from_millis(1000));
+    if painted && on_top {
+        return (true, painted, on_top, why);
+    }
+    if ENDING.load(Ordering::SeqCst) || force_requested() || !is_current(gen) {
+        return (false, painted, on_top, why);
+    }
+    log(&format!("confirmar: reintento (pintada: {painted}, encima: {on_top} — {why})"));
+    let a = app.clone();
+    let _ = app.run_on_main_thread(move || {
+        if is_current(gen) {
+            if let (Some(w), Some(r)) = (a.get_webview_window(LABEL), *lock(&LAST_RECT)) {
+                let _ = crate::overlay::raise_menu(&w, r.0, r.1, r.2, r.3);
+            }
+        }
+    });
+    let (painted2, on_top2, why2) = poll(Duration::from_millis(300));
+    (painted2 && on_top2, painted2, on_top2, why2)
 }
 
 /// Cierra con la animacion de salida de la pagina.
 fn close(app: &AppHandle) {
+    log("cerrar");
     let _life = lock(&LIFE);
     if !teardown(app) {
         return;
@@ -433,6 +586,7 @@ fn close(app: &AppHandle) {
 
 /// Cierra sin animacion (el juego ya no esta).
 fn close_now(app: &AppHandle) {
+    log("cerrar ya");
     let _life = lock(&LIFE);
     if teardown(app) {
         let _ = app.emit_to(LABEL, "qm-close", ());
@@ -459,6 +613,7 @@ fn hide_window(app: &AppHandle) {
         if let Some(w) = a.get_webview_window(LABEL) {
             let _ = w.hide();
             crate::overlay::hide_quiet(&w);
+            log("ventana oculta");
         }
         if let Some(fg) = prev {
             crate::overlay::restore_foreground(fg);
@@ -479,6 +634,9 @@ fn suspended_file(app: &AppHandle) -> std::path::PathBuf {
 }
 
 fn suspend(app: &AppHandle, pids: &[u32]) {
+    if force_requested() {
+        return;
+    }
     // Primero el fichero: si el visor muere a medias, el juego no se queda congelado.
     let entries: Vec<SuspendedEntry> = pids.iter().filter_map(|&pid| crate::snap::exe_of(pid).map(|exe| SuspendedEntry { pid, exe })).collect();
     if let Ok(b) = serde_json::to_vec(&entries) {
@@ -599,7 +757,7 @@ mod proc {
 #[cfg(windows)]
 mod keyboard {
     use super::LABEL;
-    use std::sync::atomic::{AtomicU32, Ordering};
+    use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
     use std::sync::mpsc::{channel, Sender};
     use std::sync::{Mutex, OnceLock};
     use tauri::{AppHandle, Emitter};
@@ -608,7 +766,7 @@ mod keyboard {
     use windows::Win32::System::Threading::GetCurrentThreadId;
     use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_ADD, VK_BACK, VK_CONTROL, VK_DOWN, VK_E, VK_ESCAPE, VK_LEFT, VK_LWIN, VK_Q, VK_RETURN, VK_RIGHT, VK_RWIN, VK_SUBTRACT, VK_TAB, VK_UP, VK_X, VK_Y};
     use windows::Win32::UI::WindowsAndMessaging::{
-        CallNextHookEx, DispatchMessageW, GetMessageW, PostThreadMessageW, SetWindowsHookExW, TranslateMessage, UnhookWindowsHookEx, HC_ACTION, KBDLLHOOKSTRUCT, LLKHF_ALTDOWN, MSG, WH_KEYBOARD_LL, WM_KEYDOWN, WM_QUIT, WM_SYSKEYDOWN,
+        CallNextHookEx, DispatchMessageW, GetMessageW, PeekMessageW, PostThreadMessageW, SetWindowsHookExW, TranslateMessage, UnhookWindowsHookEx, HC_ACTION, KBDLLHOOKSTRUCT, LLKHF_ALTDOWN, MSG, PM_NOREMOVE, WH_KEYBOARD_LL, WM_KEYDOWN, WM_QUIT, WM_SYSKEYDOWN,
     };
 
     static TX: OnceLock<Mutex<Sender<&'static str>>> = OnceLock::new();
@@ -616,6 +774,8 @@ mod keyboard {
     static THREAD: AtomicU32 = AtomicU32::new(0);
     /// Teclas de un solo golpe que siguen pulsadas (Windows repite la pulsacion mientras se mantiene).
     static HELD: AtomicU32 = AtomicU32::new(0);
+    /// `gen` para el que se pidio el gancho: si cambia antes de instalarlo, se quita enseguida sin bucle de mensajes.
+    static WANT: AtomicU64 = AtomicU64::new(0);
 
     /// (boton del menu, se repite al mantener, bit en `HELD`)
     fn key(vk: u16) -> Option<(&'static str, bool, u32)> {
@@ -637,7 +797,7 @@ mod keyboard {
     }
 
     unsafe extern "system" fn hook(code: i32, wp: WPARAM, lp: LPARAM) -> LRESULT {
-        if code == HC_ACTION as i32 {
+        if code == HC_ACTION as i32 && super::is_open() {
             let k = &*(lp.0 as *const KBDLLHOOKSTRUCT);
             // Alt+Tab, Ctrl+algo y Win+algo son del sistema.
             let chord = k.flags.0 & LLKHF_ALTDOWN.0 != 0
@@ -663,7 +823,10 @@ mod keyboard {
         CallNextHookEx(None, code, wp, lp)
     }
 
-    pub fn start(app: &AppHandle) {
+    pub fn start(app: &AppHandle, gen: u64) {
+        // Por si quedaba uno de una apertura anterior (no deberia, pero sin fugas).
+        stop();
+        WANT.store(gen, Ordering::SeqCst);
         // El gancho debe volver enseguida (si tarda, Windows lo quita): solo avisa a otro hilo.
         if TX.get().is_none() {
             let (tx, rx) = channel::<&'static str>();
@@ -676,7 +839,12 @@ mod keyboard {
             });
         }
         HELD.store(0, Ordering::Relaxed);
-        let spawned = std::thread::Builder::new().name("qm-keyboard".into()).spawn(|| unsafe {
+        let spawned = std::thread::Builder::new().name("qm-keyboard".into()).spawn(move || unsafe {
+            // Crea la cola de mensajes del hilo antes de instalar el gancho: si no, un `stop()` que llegue
+            // enseguida puede fallar al enviarle `WM_QUIT` (la fuga que se tragaba flechas/Enter/Esc en todo
+            // el sistema).
+            let mut peek = MSG::default();
+            let _ = PeekMessageW(&mut peek, None, 0, 0, PM_NOREMOVE);
             let module = GetModuleHandleW(None).ok();
             let h = match SetWindowsHookExW(WH_KEYBOARD_LL, Some(hook), module.map(|m| m.into()), 0) {
                 Ok(h) => h,
@@ -685,13 +853,22 @@ mod keyboard {
                     return;
                 }
             };
-            THREAD.store(GetCurrentThreadId(), Ordering::SeqCst);
+            let tid = GetCurrentThreadId();
+            THREAD.store(tid, Ordering::SeqCst);
+            super::log(&format!("gancho teclado puesto ({tid})"));
+            if WANT.load(Ordering::SeqCst) != gen {
+                let _ = UnhookWindowsHookEx(h);
+                let _ = THREAD.compare_exchange(tid, 0, Ordering::SeqCst, Ordering::SeqCst);
+                super::log(&format!("gancho teclado quitado enseguida ({tid}): ya no hacia falta"));
+                return;
+            }
             let mut msg = MSG::default();
             while GetMessageW(&mut msg, None, 0, 0).as_bool() {
                 let _ = TranslateMessage(&msg);
                 DispatchMessageW(&msg);
             }
             let _ = UnhookWindowsHookEx(h);
+            super::log(&format!("gancho teclado quitado ({tid})"));
         });
         if let Err(e) = spawned {
             eprintln!("no se pudo arrancar el hilo del teclado: {e}");
@@ -699,11 +876,14 @@ mod keyboard {
     }
 
     pub fn stop() {
+        WANT.store(0, Ordering::SeqCst);
         let t = THREAD.swap(0, Ordering::SeqCst);
         if t != 0 {
             unsafe {
                 let _ = PostThreadMessageW(t, WM_QUIT, WPARAM(0), LPARAM(0));
             }
+        } else {
+            super::log("stop sin gancho que quitar");
         }
     }
 }
@@ -711,7 +891,7 @@ mod keyboard {
 #[cfg(not(windows))]
 mod keyboard {
     use tauri::AppHandle;
-    pub fn start(_app: &AppHandle) {}
+    pub fn start(_app: &AppHandle, _gen: u64) {}
     pub fn stop() {}
 }
 
@@ -752,6 +932,7 @@ fn state(app: &AppHandle) -> Value {
     let paused = !lock(&SUSPENDED).is_empty();
     serde_json::json!({
         "open": is_open(),
+        "gen": GEN.load(Ordering::SeqCst),
         "game": game,
         "paused": paused,
         "background": lock(&BACKGROUND).clone(),
@@ -776,6 +957,13 @@ pub async fn quickmenu_state(app: AppHandle) -> Result<Value, String> {
 #[tauri::command]
 pub fn quickmenu_close(app: AppHandle) {
     in_thread(&app, close);
+}
+
+/// La pagina avisa de que ha pintado esta apertura (dos `requestAnimationFrame` tras recibir `qm-open`): sin esto
+/// `open()` no se fia de que el menu se vea y no llega a pausar el juego.
+#[tauri::command]
+pub fn quickmenu_painted(gen: u64) {
+    PAINTED.store(gen, Ordering::SeqCst);
 }
 
 /// «Cerrar juego»: cierre forzado inmediato.

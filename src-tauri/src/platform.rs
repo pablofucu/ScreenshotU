@@ -341,6 +341,34 @@ mod imp {
             .unwrap_or(false)
     }
 
+    /// `own` (la ventana del menu) esta por encima de Magpie y de las ventanas del juego en el orden Z (de
+    /// arriba abajo que da `EnumWindows`). El `String` explica por que no, para el log.
+    pub fn menu_on_top(own: isize, game_pids: &[u32]) -> (bool, String) {
+        let own = HWND(own as *mut core::ffi::c_void);
+        let wins = top_windows();
+        let Some(own_idx) = wins.iter().position(|&h| h == own) else {
+            return (false, "ventana propia no encontrada".into());
+        };
+        if !showing(own) {
+            return (false, "ventana propia no visible".into());
+        }
+        for (i, &h) in wins.iter().enumerate() {
+            if i >= own_idx || h == own || !showing(h) || area(h) <= 10_000 {
+                continue;
+            }
+            let class = class_name(h);
+            let is_magpie = class.to_ascii_lowercase().contains("magpie") && is_magpie_scaling_window(&class, &pid_of(h).map(exe_name).unwrap_or_default());
+            let is_game = pid_of(h).map(|p| game_pids.contains(&p)).unwrap_or(false);
+            if is_magpie {
+                return (false, "Magpie sigue encima".into());
+            }
+            if is_game {
+                return (false, "el juego sigue encima".into());
+            }
+        }
+        (true, "encima".into())
+    }
+
     /// Primera ventana «normal» por debajo de `above` en el orden Z (la que Magpie esta escalando cuando el
     /// primer plano es la propia ventana de Magpie).
     fn window_below(above: HWND, skip_pids: &[u32]) -> Option<HWND> {
@@ -582,7 +610,7 @@ mod imp {
 }
 
 #[cfg(windows)]
-pub use imp::{foreground_info, grab, idle_ms, magpie_scaling, magpie_topmost, magpie_window, own_window_focused, play_shutter};
+pub use imp::{foreground_info, grab, idle_ms, magpie_scaling, magpie_topmost, magpie_window, menu_on_top, own_window_focused, play_shutter};
 
 #[cfg(not(windows))]
 pub fn grab(_target_pids: &[u32], _magpie_scaled: bool) -> Result<Grabbed, String> {
@@ -601,6 +629,10 @@ pub fn magpie_window() -> Option<isize> {
 #[cfg(not(windows))]
 pub fn magpie_topmost() -> bool {
     false
+}
+#[cfg(not(windows))]
+pub fn menu_on_top(_own: isize, _game_pids: &[u32]) -> (bool, String) {
+    (true, "sin comprobar (no windows)".into())
 }
 #[cfg(not(windows))]
 pub fn own_window_focused() -> bool {

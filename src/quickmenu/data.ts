@@ -28,6 +28,7 @@ export interface QuickMenuState {
   audio: AudioState | null;
   perf: PerfState | null;
   pads: number;
+  gen?: number;
 }
 
 export interface AudioState {
@@ -52,6 +53,14 @@ export interface PerfState {
 
 export const isTauri = (): boolean =>
   typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+
+// Avisa al backend de que esta apertura ya se pinto en pantalla; sin esto el juego nunca se pausa
+// (ver quickmenu.rs::confirm, que espera este aviso antes de suspender el proceso).
+export async function markPainted(gen: number | undefined): Promise<void> {
+  if (!isTauri() || gen === undefined) return;
+  const { invoke } = await import('@tauri-apps/api/core');
+  await invoke('quickmenu_painted', { gen });
+}
 
 function makeSvgThumb(color1: string, color2: string, label: string): string {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">
@@ -507,6 +516,7 @@ export interface QuickMenuEvents {
   onHold: (p: number) => void;
   onShot: (shot: { path: string; thumb: string; at: number }) => void;
   onPerf: (perf: PerfState) => void;
+  onPaused: (paused: boolean) => void;
 }
 
 export function setupQuickMenuListeners(events: QuickMenuEvents): () => void {
@@ -526,6 +536,7 @@ export function setupQuickMenuListeners(events: QuickMenuEvents): () => void {
     reg(listen<{ p: number }>('qm-hold', (e) => events.onHold(e.payload.p)));
     reg(listen<{ path: string; thumb: string; at: number }>('qm-shot', (e) => events.onShot(e.payload)));
     reg(listen<PerfState>('qm-perf', (e) => events.onPerf(e.payload)));
+    reg(listen<{ paused: boolean }>('qm-paused', (e) => events.onPaused(e.payload.paused)));
   }
 
   return () => {

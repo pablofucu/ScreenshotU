@@ -38,7 +38,7 @@ mod voice;
 use state::AppState;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
 use visor_core::capture::{combo_mask, combos_overlap, mouse_button_index};
@@ -55,6 +55,27 @@ use visor_core::{catalog, relpath, scan, thumbs, Library};
 
 /// El protocolo `asset:` solo sirve rutas dentro de un ambito. La raiz la elige el usuario en
 /// tiempo de ejecucion, asi que se autoriza aqui (solo lectura de imagenes por la webview).
+static PANIC_LOG: OnceLock<PathBuf> = OnceLock::new();
+
+/// Si algo entra en panico (p.ej. durante el overlay sobre el juego), `panic = "abort"` mata la
+/// app sin dejar rastro. Este gancho deja constancia en disco y en el log del menu antes de abortar.
+fn install_panic_hook(config_dir: PathBuf) {
+    let _ = PANIC_LOG.set(config_dir.join("panic.log"));
+    std::panic::set_hook(Box::new(|info| {
+        let thread = std::thread::current().name().unwrap_or("?").to_string();
+        let location = info.location().map(|l| l.to_string()).unwrap_or_else(|| "?".into());
+        let backtrace = std::backtrace::Backtrace::force_capture();
+        let msg = format!("PANIC [{thread}] en {location}: {info}\n{backtrace}\n");
+        quickmenu::log(&format!("panico [{thread}] en {location}: {info}"));
+        if let Some(p) = PANIC_LOG.get() {
+            use std::io::Write;
+            if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(p) {
+                let _ = f.write_all(format!("{} {msg}", chrono::Local::now().format("%H:%M:%S%.3f")).as_bytes());
+            }
+        }
+    }));
+}
+
 fn allow_root(app: &AppHandle, root: &str) {
     let _ = app.asset_protocol_scope().allow_directory(Path::new(root), true);
 }
@@ -1140,6 +1161,7 @@ pub fn run() {
             // Servidor para la app movil, si esta activado.
             remote::forward_events(app.handle());
             remote::apply(app.handle());
+            install_panic_hook(app.state::<AppState>().config_dir.clone());
             // Si el visor se cerro con el juego en pausa, el juego sigue congelado.
             quickmenu::recover(app.handle());
             if let Err(e) = apply_hotkeys(app.handle(), &hotkey, &rec_hotkey, &audio_hotkey, &overlay_hotkey) {
@@ -1281,6 +1303,7 @@ pub fn run() {
             quickmenu::quickmenu_state,
             quickmenu::quickmenu_close,
             quickmenu::quickmenu_close_game,
+            quickmenu::quickmenu_painted,
             quickmenu::quickmenu_set_context,
             quickmenu::quickmenu_capture,
             quickmenu::quickmenu_trash,

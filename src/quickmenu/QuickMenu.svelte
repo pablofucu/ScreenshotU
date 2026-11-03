@@ -7,6 +7,7 @@
   import { isTauri,
     fetchQuickmenuState,
     setupQuickMenuListeners,
+    markPainted,
     quickmenuClose,
     quickmenuCloseGame,
     quickmenuCapture,
@@ -218,6 +219,13 @@
         setFocus(initEl);
       }
     });
+    // Dos frames: el primero deja que el DOM pinte la nueva hoja, el segundo confirma que ya salio en pantalla.
+    // Sin este aviso el backend nunca sabe que puede pausar el juego (ver quickmenu.rs::confirm).
+    requestAnimationFrame(() => requestAnimationFrame(() => markPainted(newState.gen)));
+  }
+
+  function onPausedEvent(paused: boolean) {
+    if (qmState) qmState.paused = paused;
   }
 
   function onCloseEvent() {
@@ -396,6 +404,7 @@
       onHold: onHoldEvent,
       onShot: onShotEvent,
       onPerf: onPerfEvent,
+      onPaused: onPausedEvent,
     });
 
     // La ventana se precarga oculta al empezar la partida: sólo se monta el menú si ya está abierto.

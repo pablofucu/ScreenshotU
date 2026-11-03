@@ -295,7 +295,13 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
     // hace menos de `AFK_MS`. Lo demas (ventana en segundo plano, modo automatico, nadie delante) es pasivo.
     let mut last_tick = Instant::now();
     let mut active_ms: i64 = 0;
+    let mut last_lap = Instant::now();
     loop {
+        let lap = last_lap.elapsed();
+        if lap > Duration::from_secs(1) {
+            crate::quickmenu::log(&format!("vigilante: vuelta lenta {} ms", lap.as_millis()));
+        }
+        last_lap = Instant::now();
         std::thread::sleep(Duration::from_millis(250));
         sys.refresh_processes_specifics(
             ProcessesToUpdate::All,

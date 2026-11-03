@@ -219,63 +219,51 @@ pub(crate) fn current_foreground() -> Option<isize> {
     None
 }
 
-/// Coloca, muestra y lleva al primer plano la ventana del menu sobre el juego (incluso si el primer plano lo tiene otro
-/// hilo, acoplandose con `AttachThreadInput`). Al cambiar `GetForegroundWindow()` fuera del juego, Magpie cede su
-/// `HWND_TOPMOST` sin detener el escalado.
+/// Coloca, muestra y lleva al primer plano la ventana del menu sobre el juego, sin acoplar el hilo que llama
+/// (nunca el principal) al hilo del juego: con el juego suspendido o tardando, `AttachThreadInput` + `SetFocus`
+/// podian colgar a quien llamase para siempre, sin pintar nada. Si Windows niega el primer plano no pasa nada:
+/// el teclado entra por el gancho de bajo nivel y el mando por `pad::menu_nav`, el menu no necesita el foco.
+/// Devuelve si `SetForegroundWindow` lo acepto y el pid que quedo en primer plano (para el registro).
 #[cfg(windows)]
-pub(crate) fn force_foreground(w: &tauri::WebviewWindow, x: i32, y: i32, width: u32, height: u32) {
+pub(crate) fn raise_menu(w: &tauri::WebviewWindow, x: i32, y: i32, width: u32, height: u32) -> (bool, Option<u32>) {
     use windows::Win32::Foundation::HWND;
-    use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
-    use windows::Win32::UI::Input::KeyboardAndMouse::SetFocus;
     use windows::Win32::UI::WindowsAndMessaging::{
-        BringWindowToTop, GetForegroundWindow, GetWindowThreadProcessId, SetForegroundWindow, SetWindowPos, ShowWindow,
-        HWND_TOPMOST, SWP_NOOWNERZORDER, SWP_SHOWWINDOW, SW_SHOW,
+        BringWindowToTop, GetForegroundWindow, GetWindowThreadProcessId, SetForegroundWindow, SetWindowPos,
+        HWND_TOPMOST, SWP_NOOWNERZORDER, SWP_SHOWWINDOW,
     };
-    let Ok(h) = w.hwnd() else { return };
+    let Ok(h) = w.hwnd() else { return (false, None) };
     let hwnd = HWND(h.0);
     unsafe {
-        let fg = GetForegroundWindow();
-        let fg_tid = if !fg.is_invalid() && !fg.0.is_null() { GetWindowThreadProcessId(fg, None) } else { 0 };
-        let cur_tid = GetCurrentThreadId();
-        let attached = fg_tid != 0 && fg_tid != cur_tid && AttachThreadInput(cur_tid, fg_tid, true).as_bool();
-        let _ = ShowWindow(hwnd, SW_SHOW);
         let _ = SetWindowPos(hwnd, Some(HWND_TOPMOST), x, y, width as i32, height as i32, SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
-        let _ = SetForegroundWindow(hwnd);
+        let fg_ok = SetForegroundWindow(hwnd).as_bool();
         let _ = BringWindowToTop(hwnd);
-        let _ = SetFocus(Some(hwnd));
-        if attached {
-            let _ = AttachThreadInput(cur_tid, fg_tid, false);
+        let fg = GetForegroundWindow();
+        let mut pid = 0u32;
+        if !fg.is_invalid() && !fg.0.is_null() {
+            let _ = GetWindowThreadProcessId(fg, Some(&mut pid));
         }
+        (fg_ok, (pid != 0).then_some(pid))
     }
 }
 
 #[cfg(not(windows))]
-pub(crate) fn force_foreground(w: &tauri::WebviewWindow, _x: i32, _y: i32, _width: u32, _height: u32) {
+pub(crate) fn raise_menu(w: &tauri::WebviewWindow, _x: i32, _y: i32, _width: u32, _height: u32) -> (bool, Option<u32>) {
     let _ = w.show();
-    let _ = w.set_focus();
+    (true, None)
 }
 
-/// Devuelve el primer plano a la ventana que lo tenia antes de abrir el menu (si sigue existiendo).
+/// Devuelve el primer plano a la ventana que lo tenia antes de abrir el menu (si sigue existiendo). Sin acople:
+/// al cerrar, el primer plano ya es nuestro y Windows lo permite sin pedir ayuda al hilo ajeno.
 #[cfg(windows)]
 pub(crate) fn restore_foreground(prev: isize) {
     use windows::Win32::Foundation::HWND;
-    use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
-    use windows::Win32::UI::WindowsAndMessaging::{
-        GetForegroundWindow, GetWindowThreadProcessId, IsWindow, SetForegroundWindow,
-    };
+    use windows::Win32::UI::WindowsAndMessaging::{IsWindow, SetForegroundWindow};
     let hwnd = HWND(prev as *mut core::ffi::c_void);
     unsafe {
         if !IsWindow(Some(hwnd)).as_bool() {
             return;
         }
-        let fg = GetForegroundWindow();
-        let fg_tid = if !fg.is_invalid() && !fg.0.is_null() { GetWindowThreadProcessId(fg, None) } else { 0 };
-        let cur_tid = GetCurrentThreadId();
-        let attached = fg_tid != 0 && fg_tid != cur_tid && AttachThreadInput(cur_tid, fg_tid, true).as_bool();
         let _ = SetForegroundWindow(hwnd);
-        if attached {
-            let _ = AttachThreadInput(cur_tid, fg_tid, false);
-        }
     }
 }
 
