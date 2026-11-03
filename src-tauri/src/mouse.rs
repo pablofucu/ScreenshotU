@@ -59,7 +59,7 @@ pub fn spawn(app: AppHandle) {
             if menu != 0 && button == menu {
                 if released {
                     crate::quickmenu::trigger_up(&app, crate::quickmenu::Src::Mouse);
-                } else if !crate::platform::own_window_focused() {
+                } else if !crate::platform::own_window_focused() || crate::quickmenu::is_open() {
                     crate::quickmenu::trigger_down(&app, crate::quickmenu::Src::Mouse, 0);
                 }
                 continue;

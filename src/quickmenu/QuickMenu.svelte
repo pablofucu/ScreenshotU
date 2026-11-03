@@ -331,6 +331,7 @@
   }
 
   function handleKeydown(e: KeyboardEvent) {
+    if (isTauri()) return;
     if (e.key === ' ' && !e.repeat) {
       e.preventDefault();
       if (closing) return;
@@ -374,12 +375,19 @@
   let cleanupListeners: (() => void) | null = null;
   let clockTimer: ReturnType<typeof setInterval> | null = null;
 
+  function syncIfOpen() {
+    fetchQuickmenuState().then((init) => {
+      if (init.open) onOpenState(init);
+    });
+  }
+
   onMount(() => {
     fitStage();
     updateClock();
     clockTimer = setInterval(updateClock, 1000);
     window.addEventListener('resize', fitStage);
     window.addEventListener('keydown', handleKeydown);
+    window.addEventListener('focus', syncIfOpen);
 
     cleanupListeners = setupQuickMenuListeners({
       onOpen: onOpenState,
@@ -391,9 +399,7 @@
     });
 
     // La ventana se precarga oculta al empezar la partida: sólo se monta el menú si ya está abierto.
-    fetchQuickmenuState().then((init) => {
-      if (init.open) onOpenState(init);
-    });
+    syncIfOpen();
   });
 
   onDestroy(() => {
@@ -403,6 +409,7 @@
     if (typeof window !== 'undefined') {
       window.removeEventListener('resize', fitStage);
       window.removeEventListener('keydown', handleKeydown);
+      window.removeEventListener('focus', syncIfOpen);
     }
   });
 

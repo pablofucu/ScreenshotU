@@ -31,8 +31,8 @@ mod imp {
     use windows::Win32::Storage::Xps::{PrintWindow, PRINT_WINDOW_FLAGS};
     use windows::Win32::System::Threading::{OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION};
     use windows::Win32::UI::WindowsAndMessaging::{
-        EnumWindows, GetClassNameW, GetClientRect, GetForegroundWindow, GetWindow, GetWindowDisplayAffinity, GetWindowRect,
-        GetWindowThreadProcessId, IsIconic, IsWindowVisible, GW_HWNDNEXT,
+        EnumWindows, GetClassNameW, GetClientRect, GetForegroundWindow, GetWindow, GetWindowDisplayAffinity, GetWindowLongPtrW,
+        GetWindowRect, GetWindowThreadProcessId, IsIconic, IsWindowVisible, GWL_EXSTYLE, GW_HWNDNEXT, WS_EX_TOPMOST,
     };
     use windows::core::BOOL;
     use windows_capture::capture::{Context, GraphicsCaptureApiHandler};
@@ -329,6 +329,18 @@ mod imp {
         find_magpie().is_some()
     }
 
+    /// HWND de la ventana de escalado de Magpie, si esta activa.
+    pub fn magpie_window() -> Option<isize> {
+        find_magpie().map(|h| h.0 as isize)
+    }
+
+    /// La ventana de escalado de Magpie sigue con `WS_EX_TOPMOST` (aun no ha cedido el primer plano).
+    pub fn magpie_topmost() -> bool {
+        find_magpie()
+            .map(|h| unsafe { GetWindowLongPtrW(h, GWL_EXSTYLE) as u32 & WS_EX_TOPMOST.0 != 0 })
+            .unwrap_or(false)
+    }
+
     /// Primera ventana «normal» por debajo de `above` en el orden Z (la que Magpie esta escalando cuando el
     /// primer plano es la propia ventana de Magpie).
     fn window_below(above: HWND, skip_pids: &[u32]) -> Option<HWND> {
@@ -570,7 +582,7 @@ mod imp {
 }
 
 #[cfg(windows)]
-pub use imp::{foreground_info, grab, idle_ms, magpie_scaling, own_window_focused, play_shutter};
+pub use imp::{foreground_info, grab, idle_ms, magpie_scaling, magpie_topmost, magpie_window, own_window_focused, play_shutter};
 
 #[cfg(not(windows))]
 pub fn grab(_target_pids: &[u32], _magpie_scaled: bool) -> Result<Grabbed, String> {
@@ -580,6 +592,14 @@ pub fn grab(_target_pids: &[u32], _magpie_scaled: bool) -> Result<Grabbed, Strin
 pub fn play_shutter() {}
 #[cfg(not(windows))]
 pub fn magpie_scaling() -> bool {
+    false
+}
+#[cfg(not(windows))]
+pub fn magpie_window() -> Option<isize> {
+    None
+}
+#[cfg(not(windows))]
+pub fn magpie_topmost() -> bool {
     false
 }
 #[cfg(not(windows))]

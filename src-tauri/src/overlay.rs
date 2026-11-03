@@ -187,7 +187,8 @@ pub(crate) fn no_activate(w: &tauri::WebviewWindow) {
 #[cfg(not(windows))]
 pub(crate) fn no_activate(_w: &tauri::WebviewWindow) {}
 
-/// Como [`no_activate`], pero la ventana recibe el raton (el menu sobre el juego).
+/// Estilos para la ventana del menu sobre el juego: oculta en Alt+Tab y excluida de las capturas, pero sin
+/// `WS_EX_NOACTIVATE` para que pueda tomar el foco y hacer que Magpie ceda el `HWND_TOPMOST`.
 #[cfg(windows)]
 pub(crate) fn no_activate_clickable(w: &tauri::WebviewWindow) {
     use windows::Win32::Foundation::HWND;
@@ -196,7 +197,7 @@ pub(crate) fn no_activate_clickable(w: &tauri::WebviewWindow) {
         let hwnd = HWND(h.0);
         unsafe {
             let ex = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
-            SetWindowLongPtrW(hwnd, GWL_EXSTYLE, ex | (WS_EX_NOACTIVATE.0 | WS_EX_TOOLWINDOW.0) as isize);
+            SetWindowLongPtrW(hwnd, GWL_EXSTYLE, (ex | WS_EX_TOOLWINDOW.0 as isize) & !(WS_EX_NOACTIVATE.0 as isize));
             let _ = SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE);
         }
     }
@@ -204,6 +205,82 @@ pub(crate) fn no_activate_clickable(w: &tauri::WebviewWindow) {
 
 #[cfg(not(windows))]
 pub(crate) fn no_activate_clickable(_w: &tauri::WebviewWindow) {}
+
+/// Ventana que tiene ahora el primer plano (para devolverselo al cerrar el menu).
+#[cfg(windows)]
+pub(crate) fn current_foreground() -> Option<isize> {
+    use windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow;
+    let h = unsafe { GetForegroundWindow() };
+    (!h.is_invalid() && !h.0.is_null()).then_some(h.0 as isize)
+}
+
+#[cfg(not(windows))]
+pub(crate) fn current_foreground() -> Option<isize> {
+    None
+}
+
+/// Coloca, muestra y lleva al primer plano la ventana del menu sobre el juego (incluso si el primer plano lo tiene otro
+/// hilo, acoplandose con `AttachThreadInput`). Al cambiar `GetForegroundWindow()` fuera del juego, Magpie cede su
+/// `HWND_TOPMOST` sin detener el escalado.
+#[cfg(windows)]
+pub(crate) fn force_foreground(w: &tauri::WebviewWindow, x: i32, y: i32, width: u32, height: u32) {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
+    use windows::Win32::UI::Input::KeyboardAndMouse::SetFocus;
+    use windows::Win32::UI::WindowsAndMessaging::{
+        BringWindowToTop, GetForegroundWindow, GetWindowThreadProcessId, SetForegroundWindow, SetWindowPos, ShowWindow,
+        HWND_TOPMOST, SWP_NOOWNERZORDER, SWP_SHOWWINDOW, SW_SHOW,
+    };
+    let Ok(h) = w.hwnd() else { return };
+    let hwnd = HWND(h.0);
+    unsafe {
+        let fg = GetForegroundWindow();
+        let fg_tid = if !fg.is_invalid() && !fg.0.is_null() { GetWindowThreadProcessId(fg, None) } else { 0 };
+        let cur_tid = GetCurrentThreadId();
+        let attached = fg_tid != 0 && fg_tid != cur_tid && AttachThreadInput(cur_tid, fg_tid, true).as_bool();
+        let _ = ShowWindow(hwnd, SW_SHOW);
+        let _ = SetWindowPos(hwnd, Some(HWND_TOPMOST), x, y, width as i32, height as i32, SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
+        let _ = SetForegroundWindow(hwnd);
+        let _ = BringWindowToTop(hwnd);
+        let _ = SetFocus(Some(hwnd));
+        if attached {
+            let _ = AttachThreadInput(cur_tid, fg_tid, false);
+        }
+    }
+}
+
+#[cfg(not(windows))]
+pub(crate) fn force_foreground(w: &tauri::WebviewWindow, _x: i32, _y: i32, _width: u32, _height: u32) {
+    let _ = w.show();
+    let _ = w.set_focus();
+}
+
+/// Devuelve el primer plano a la ventana que lo tenia antes de abrir el menu (si sigue existiendo).
+#[cfg(windows)]
+pub(crate) fn restore_foreground(prev: isize) {
+    use windows::Win32::Foundation::HWND;
+    use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GetForegroundWindow, GetWindowThreadProcessId, IsWindow, SetForegroundWindow,
+    };
+    let hwnd = HWND(prev as *mut core::ffi::c_void);
+    unsafe {
+        if !IsWindow(Some(hwnd)).as_bool() {
+            return;
+        }
+        let fg = GetForegroundWindow();
+        let fg_tid = if !fg.is_invalid() && !fg.0.is_null() { GetWindowThreadProcessId(fg, None) } else { 0 };
+        let cur_tid = GetCurrentThreadId();
+        let attached = fg_tid != 0 && fg_tid != cur_tid && AttachThreadInput(cur_tid, fg_tid, true).as_bool();
+        let _ = SetForegroundWindow(hwnd);
+        if attached {
+            let _ = AttachThreadInput(cur_tid, fg_tid, false);
+        }
+    }
+}
+
+#[cfg(not(windows))]
+pub(crate) fn restore_foreground(_prev: isize) {}
 
 /// Lo pone el primero de las ventanas «siempre encima», sin activarlo ni moverlo.
 #[cfg(windows)]

@@ -1,6 +1,6 @@
 //! Menu sobre el juego: ventana a pantalla completa con una foto congelada del juego de fondo (`quickmenu.html`).
-//! Nunca toma el foco (un emulador a pantalla completa saldria y volveria a entrar en ella): el mando llega por XInput
-//! (`pad::menu_nav`), el teclado por un gancho y el raton porque la ventana cubre el monitor.
+//! Toma el primer plano al abrirse para que los escaladores como Magpie cedan `HWND_TOPMOST` sin detener el escalado,
+//! y devuelve el foco a la ventana anterior al cerrarse; cuando Magpie no escala se pausa el proceso antes de mostrarla.
 //! Teclado, mando y raton comparten el gesto de `visor_core::trigger`: pulsar abre o cierra, mantener fuerza el cierre.
 use crate::state::AppState;
 use serde::{Deserialize, Serialize};
@@ -50,6 +50,8 @@ static FROZEN: Mutex<Option<crate::platform::Grabbed>> = Mutex::new(None);
 static BACKGROUND: Mutex<Option<String>> = Mutex::new(None);
 /// Procesos que hay que reanudar.
 static SUSPENDED: Mutex<Vec<u32>> = Mutex::new(Vec::new());
+/// Ventana que tenia el primer plano antes de abrir el menu (se restaura al cerrar para que Magpie vuelva a escalar).
+static PREV_FG: Mutex<Option<isize>> = Mutex::new(None);
 
 /// Cierre forzado pedido en esta partida: el vigilante deja de esperar y da la sesion por terminada.
 static FORCED: AtomicBool = AtomicBool::new(false);
@@ -313,14 +315,23 @@ fn build(app: &AppHandle) -> Option<tauri::WebviewWindow> {
 
 fn show_window(app: &AppHandle, pid: Option<u32>) {
     let a = app.clone();
+    let (tx, rx) = std::sync::mpsc::sync_channel(1);
     let _ = app.run_on_main_thread(move || {
-        let Some(win) = a.get_webview_window(LABEL).or_else(|| build(&a)) else { return };
-        let m = crate::reader::monitor::game_monitor(pid);
-        let _ = win.set_position(tauri::PhysicalPosition::new(m.x, m.y));
-        let _ = win.set_size(tauri::PhysicalSize::new(m.w, m.h));
-        let _ = win.set_position(tauri::PhysicalPosition::new(m.x, m.y));
-        crate::overlay::show_quiet(&win);
+        if let Some(win) = a.get_webview_window(LABEL).or_else(|| build(&a)) {
+            let m = crate::reader::monitor::game_monitor(pid);
+            let _ = win.set_position(tauri::PhysicalPosition::new(m.x, m.y));
+            let _ = win.set_size(tauri::PhysicalSize::new(m.w, m.h));
+            let _ = win.set_position(tauri::PhysicalPosition::new(m.x, m.y));
+            let _ = win.show();
+            let _ = win.set_focus();
+            crate::overlay::force_foreground(&win, m.x, m.y, m.w, m.h);
+            log(&format!("ventana mostrada en ({}, {}) {}x{}", m.x, m.y, m.w, m.h));
+        } else {
+            log("no se pudo obtener ni crear la ventana del menu");
+        }
+        let _ = tx.send(());
     });
+    let _ = rx.recv_timeout(Duration::from_millis(500));
 }
 
 /// Al hacer clic Windows podria subir el juego por encima (sobre todo si el mismo va «siempre encima»).
@@ -345,6 +356,7 @@ fn open(app: &AppHandle) {
         return;
     }
     let Some(pids) = active_pids(app) else { return };
+    *lock(&PREV_FG) = crate::overlay::current_foreground();
     let (pause, scaled) = {
         let st = app.state::<AppState>();
         let c = st.config.lock().unwrap();
@@ -353,22 +365,49 @@ fn open(app: &AppHandle) {
     // La foto antes de pausar y de enseñar nada.
     match crate::platform::grab(&pids, scaled) {
         Ok(g) => {
+            log(&format!("captura de fondo {}x{} ({})", g.width, g.height, g.method));
             let jpeg = visor_core::capture::rgba_to_jpeg(g.width, g.height, &g.rgba, 960, 72).ok();
             *lock(&BACKGROUND) = jpeg.map(|j| format!("data:image/jpeg;base64,{}", visor_core::capture::base64(&j)));
             *lock(&FROZEN) = Some(g);
         }
         Err(e) => {
+            log(&format!("sin foto de fondo ({e})"));
             eprintln!("menú del juego: sin foto de fondo ({e})");
             *lock(&BACKGROUND) = None;
             *lock(&FROZEN) = None;
         }
     }
-    if pause {
+    let magpie = crate::platform::magpie_scaling();
+    // Si Magpie NO escala, pausamos antes de mostrar la ventana para que un emulador a pantalla completa ya este
+    // congelado cuando pierda el foco. Si Magpie SI escala, primero mostramos el menu y le damos el foco para que
+    // Magpie compruebe `IsWindowHung(WM_NULL)` con el juego aun vivo y ceda `HWND_TOPMOST` sin cerrar el escalado.
+    if pause && !magpie {
         suspend(app, &pids);
     }
     let gen = GEN.fetch_add(1, Ordering::SeqCst) + 1;
     IS_OPEN.store(true, Ordering::SeqCst);
     show_window(app, pids.first().copied());
+    if magpie {
+        let t0 = Instant::now();
+        while crate::platform::magpie_topmost() && t0.elapsed() < Duration::from_millis(200) {
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        log(&format!(
+            "Magpie cedio topmost={} tras {} ms",
+            !crate::platform::magpie_topmost(),
+            t0.elapsed().as_millis()
+        ));
+        if pause {
+            suspend(app, &pids);
+            // Re-actualiza el estado de pausa que se envia a la pagina.
+        }
+        let a = app.clone();
+        let _ = app.run_on_main_thread(move || {
+            if let Some(w) = a.get_webview_window(LABEL) {
+                crate::overlay::to_top(&w);
+            }
+        });
+    }
     keep_on_top(app, gen);
     crate::pad::menu_nav(app.clone(), gen);
     keyboard::start(app);
@@ -414,10 +453,15 @@ fn teardown(app: &AppHandle) -> bool {
 }
 
 fn hide_window(app: &AppHandle) {
+    let prev = lock(&PREV_FG).take();
     let a = app.clone();
     let _ = app.run_on_main_thread(move || {
         if let Some(w) = a.get_webview_window(LABEL) {
+            let _ = w.hide();
             crate::overlay::hide_quiet(&w);
+        }
+        if let Some(fg) = prev {
+            crate::overlay::restore_foreground(fg);
         }
     });
 }

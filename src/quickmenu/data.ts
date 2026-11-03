@@ -1,4 +1,5 @@
 // Puente de datos y comandos del menú sobre el juego (Tauri y modo navegador).
+import { listen } from '@tauri-apps/api/event';
 import type { Achievement } from '../lib/types';
 import { localDay, dayStart } from '../lib/readgoals';
 
@@ -513,15 +514,18 @@ export function setupQuickMenuListeners(events: QuickMenuEvents): () => void {
   const unlistens: Array<() => void> = [];
 
   if (isTauri()) {
-    import('@tauri-apps/api/event').then(({ listen }) => {
-      if (cleaned) return;
-      listen<QuickMenuState>('qm-open', (e) => events.onOpen(e.payload)).then((u) => unlistens.push(u));
-      listen('qm-close', () => events.onClose()).then((u) => unlistens.push(u));
-      listen<{ btn: string }>('qm-pad', (e) => events.onPad(e.payload.btn)).then((u) => unlistens.push(u));
-      listen<{ p: number }>('qm-hold', (e) => events.onHold(e.payload.p)).then((u) => unlistens.push(u));
-      listen<{ path: string; thumb: string; at: number }>('qm-shot', (e) => events.onShot(e.payload)).then((u) => unlistens.push(u));
-      listen<PerfState>('qm-perf', (e) => events.onPerf(e.payload)).then((u) => unlistens.push(u));
-    });
+    const reg = (p: Promise<() => void>) => {
+      p.then((u) => {
+        if (cleaned) u();
+        else unlistens.push(u);
+      });
+    };
+    reg(listen<QuickMenuState>('qm-open', (e) => events.onOpen(e.payload)));
+    reg(listen('qm-close', () => events.onClose()));
+    reg(listen<{ btn: string }>('qm-pad', (e) => events.onPad(e.payload.btn)));
+    reg(listen<{ p: number }>('qm-hold', (e) => events.onHold(e.payload.p)));
+    reg(listen<{ path: string; thumb: string; at: number }>('qm-shot', (e) => events.onShot(e.payload)));
+    reg(listen<PerfState>('qm-perf', (e) => events.onPerf(e.payload)));
   }
 
   return () => {

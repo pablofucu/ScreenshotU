@@ -153,8 +153,10 @@ mod imp {
     }
 
     pub fn game_monitor(game_pid: Option<u32>) -> Rect {
-        let h = game_pid
-            .and_then(game_window)
+        let win = crate::platform::magpie_window()
+            .map(|h| HWND(h as _))
+            .or_else(|| game_pid.and_then(game_window));
+        let h = win
             .map(|h| unsafe { MonitorFromWindow(h, MONITOR_DEFAULTTONEAREST) })
             .unwrap_or_else(|| unsafe { MonitorFromPoint(Default::default(), MONITOR_DEFAULTTOPRIMARY) });
         info(h).map(|(full, _)| full).unwrap_or(Rect { x: 0, y: 0, w: 1920, h: 1080 })
