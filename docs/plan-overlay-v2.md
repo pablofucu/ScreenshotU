@@ -2,7 +2,18 @@
 
 > **Estado:** diseño cerrado salvo lo que queda abierto en el §3 (el usuario ya contestó el resto el 3-nov-2026). Aún no hay nada implementado (no existe `quickmenu.rs`). Este documento **sustituye** a los §5 y §7 de [plan-overlay.md](plan-overlay.md) y **amplía** sus §1 (A) y §4. Lo que no se nombra aquí sigue igual que en el plan v1: ventana `quickmenu` sin foco (§4.1), foto congelada como fondo (§4.2), pausa por suspensión y entrada por hilo XInput + gancho de teclado (§4.3), fuentes de datos de rendimiento, batería y audio (§4.4) y comprobación general (§6).
 
-Mockup: `docs/mockups-overlay/overlay-a2.html` (1280×720, autocontenido, datos falsos). Barra de arriba: estados, **Datos** (novela con hucha / novela sin hucha / juego sin racha), **fondo claro/oscuro** y **modo Normal/Exclusiva**. Teclado: `Espacio` = atajo del menú (pulsar o **mantener 1,5 s**), flechas = cruceta, `Intro` = A, `Esc` = B, `X` = captura, `Y` = favorita, `Q`/`E` = LT/RT. Ratón: pasar enfoca, clic acciona, rueda sobre Audio = volumen, clic derecho = B. Estado `#ajustes`: las filas nuevas de Ajustes y su aprendizaje.
+> ## Cambios que mandan sobre el resto del documento (3-nov-2026, sesión de decisiones)
+> Resumen de lo decidido; el detalle está en el §3. Si algo del texto o del mockup contradice esta lista, vale la lista.
+> 1. **Cerrar** = cierre forzado inmediato con un clic. **Sin cuenta atrás, sin «Deshacer», sin `WM_CLOSE`, sin botón Forzar aparte.**
+> 2. **Mantener el atajo** = forzar cierre siempre; segundos ajustables (1 / 1,5 / 2 / 3 s, defecto 1,5) en `overlay_hold_ms`.
+> 3. **Capturas:** Y = **borrar** (papelera vía `trash_shots`), no favorita. Sin «Abrir en el visor».
+> 4. **Hucha y racha:** solo las de la categoría del juego en marcha; nada de otras categorías.
+> 5. **Pausa** del juego al abrir el overlay (por defecto sí). **Sin juego en marcha: no hace nada.**
+> 6. **Audio:** volumen general en la baldosa; volumen por aplicación (juego y otras apps) en la hoja ampliada.
+> 7. **Botón Xbox** permitido como atajo (desactivado por defecto). **Teclas multimedia: no.** **Batería del mando: aplazada.**
+> 8. **Tareas pendientes del mockup `overlay-a2.html`:** quitar la estrella de favorita (pasa a papelera), quitar la cuenta atrás y el botón Forzar de la baldosa Salir, añadir el control de segundos de mantener en `#ajustes`, y el mezclador por aplicación en la hoja de Audio.
+
+Mockup: `docs/mockups-overlay/overlay-a2.html` (1280×720, autocontenido, datos falsos). Barra de arriba: estados, **Datos** (novela con hucha / novela sin hucha / juego sin racha), **fondo claro/oscuro** y **modo Normal/Exclusiva**. **Ojo: el mockup aún refleja decisiones antiguas (favorita, cuenta atrás de 3 s, botón Forzar aparte) y hay que actualizarlo en la Fase 3** (ver «Cambios que mandan»). Teclado: `Espacio` = atajo del menú (pulsar o **mantener 1,5 s**), flechas = cruceta, `Intro` = A, `Esc` = B, `X` = captura, `Y` = borrar captura, `Q`/`E` = LT/RT. Ratón: pasar enfoca, clic acciona, rueda sobre Audio = volumen, clic derecho = B. Estado `#ajustes`: las filas nuevas de Ajustes y su aprendizaje.
 
 **Categorías:** nada cambia en plataformas, carpetas ni detección. El overlay solo enseña el juego en marcha y, si su categoría es una de las de lectura (`vn` o `jvn`), la racha **de esa categoría**; nunca mezcla datos de otra.
 
@@ -13,7 +24,7 @@ Mockup: `docs/mockups-overlay/overlay-a2.html` (1280×720, autocontenido, datos 
 | Rejilla | 4×3 filas iguales; Logros 2×2 | 4×3 con filas `1fr 1fr .78fr`. Fila 1: Rendimiento (2) · Tiempo y racha (2). Fila 2: Capturas (2) · Audio (2). Fila 3: Logros (1) · Mando (1) · Salir (2) |
 | Logros | Baldosa 2×2 con anillo grande y 3 últimos | **1×1 compacta**: anillo pequeño 23/48, último conseguido y el más cercano. A abre la hoja (sin cambios) |
 | Tiempo | 1×1: sesión y total | **2×1** con sesión/hoy/total + **racha y hucha** en novelas, o **semana y sesión récord** en el resto (§2.2) |
-| Capturas | Tira de 4 miniaturas; A abre la hoja | Botón **Capturar** (o X en cualquier sitio) + 4 miniaturas enfocables: A = ver en la hoja, **Y = favorita** |
+| Capturas | Tira de 4 miniaturas; A abre la hoja | Botón **Capturar** (o X en cualquier sitio) + 4 miniaturas enfocables: A = ver en la hoja, **Y = borrar** (a la papelera) |
 | Audio | 1×1 informativa; todo en la hoja | **2×1 interactiva**: silencio, barra de volumen (← → / arrastrar / rueda), chips de salida, silencio del micro, «Más…» |
 | Rendimiento | 2×1 con dos gráficas | **Igual** (decisión del usuario) |
 | Mando | 1×1 | Igual |
@@ -56,7 +67,7 @@ Regla: lo que se hace a menudo y con un solo gesto va en la baldosa; las hojas q
 |---|---|---|
 | Rendimiento | — (A abre) | Gráficas de 2 min (igual) |
 | Tiempo y racha | — (A abre) | Detalle §2.2 |
-| Capturas | **Capturar**; miniaturas: A = abrir en la hoja con ella elegida, **Y = favorita** (estrella) | Vista grande, 6 miniaturas, favorita, «Abrir en el visor» (si se aprueba, v1 §7.5) |
+| Capturas | **Capturar**; miniaturas: A = abrir en la hoja con ella elegida, **Y = borrar** (a la papelera) | Vista grande, 6 miniaturas, borrar (sin «Abrir en el visor»: descartado) |
 | Audio | **Silencio**, **volumen** (barra), **salida** (un chip por dispositivo, hasta 3; si hay más, «Más…»), **silenciar micro** | Entrada (micrófono), resto de salidas, opciones |
 | Logros | — (A abre) | Lista con pestañas (igual) |
 | Mando | — (A abre) | Batería y «Vibrar para reconocerlo» (igual) |
@@ -64,14 +75,12 @@ Regla: lo que se hace a menudo y con un solo gesto va en la baldosa; las hojas q
 
 Manejo:
 - **Mando:** la cruceta/stick se mueve entre todo lo enfocable (baldosas y controles de dentro; mismo `pick()` espacial del mockup). En la barra de volumen ← → ajustan ±2 % y ↑ ↓ salen. Globales en el inicio: **LT/RT volumen** (±5 %), **X captura**, B vuelve al juego. Y solo sobre una miniatura. La barra de ayuda de abajo cambia según el control enfocado.
-- **Teclado** (gancho `WH_KEYBOARD_LL`, solo con el menú abierto): flechas, Intro (A), Esc/Retroceso (B), Tab como en la v1, y además `X` (captura), `Y` (favorita), `Q`/`E` y `+`/`−` del teclado numérico (volumen). Todas se tragan mientras el menú está abierto; el resto pasan.
+- **Teclado** (gancho `WH_KEYBOARD_LL`, solo con el menú abierto): flechas, Intro (A), Esc/Retroceso (B), Tab como en la v1, y además `X` (captura), `Y` (borrar), `Q`/`E` y `+`/`−` del teclado numérico (volumen). Todas se tragan mientras el menú está abierto; el resto pasan.
 - **Ratón:** pasar enfoca, clic acciona, clic/arrastre en la barra fija el volumen, rueda sobre la baldosa de audio cambia el volumen, **clic derecho = B**, clic fuera de una hoja = volver.
 - Capturar desde el menú **no cierra el menú**: destello blanco y la miniatura nueva entra la primera con un rebote.
 
 ### 2.4 Cerrar con un clic
-- «Cerrar juego» (A o un clic) **no actúa al momento**: el botón pasa a una cuenta atrás de 3 s (anillo que se vacía) y arriba sale «Cerrando *juego* en 3 s · Deshacer». Mientras tanto el juego sigue en pausa: deshacer es real porque aún no se ha enviado nada. Cancelan: B/Esc, clic en «Deshacer», A/clic sobre el propio botón, o cerrar el menú con el atajo. A los 3 s: reanudar, ocultar y `WM_CLOSE` (v1 §4.4).
-- Por qué así y no un botón suelto sin confirmación: con navegación espacial es fácil pulsar A en la baldosa equivocada; los 3 s con el juego congelado protegen sin pedir un segundo gesto. El botón vive en la esquina inferior derecha, lejos de lo que se usa a menudo, y «Forzar» va al lado pero **solo funciona manteniendo** 1,5 s (gesto de la v1).
-- Descartado: «clic + diálogo de confirmación» (es la confirmación larga que el usuario no quiere) y «doble clic» (con mando no existe).
+**Decidido (3-nov-2026): sin cuenta atrás.** «Cerrar juego» (A o un clic) **fuerza el cierre al momento**: reanuda el juego si estaba en pausa y `TerminateProcess` a los pids del juego (v1 §4.3). No hay «Deshacer» ni diálogo de confirmación. El botón vive en la esquina inferior derecha de la baldosa Salir, lejos de lo que se usa a menudo, para evitar pulsarlo sin querer con la navegación espacial. «Forzar» mantenido (1,5 s, ajustable) sigue existiendo como gesto del atajo (§2.5), no como botón aparte: en la baldosa Salir solo queda el botón Cerrar. *(Lo anterior del plan —cuenta atrás de 3 s, `WM_CLOSE` y botón Forzar separado— queda descartado.)*
 
 ### 2.5 Atajo configurable, mantener y pantalla completa exclusiva
 **Disparadores** (modelo en §4): teclado, mando y ratón, los tres activos a la vez, como ya pasa con la captura (`capture_hotkey` / `capture_combo` / `capture_mouse`). Cualquiera abre y cierra el mismo menú.
@@ -104,12 +113,18 @@ Manejo:
 | Sin juego en marcha | **No hace nada** (sin menú reducido). |
 | Volumen por aplicación | **Sí, en la hoja ampliada de Audio**: volumen del juego y de otras aplicaciones por separado (mezclador por aplicación). La baldosa principal mantiene el volumen general. |
 
-**Siguen abiertas** (no bloquean la Fase 1):
-1. ¿Ocultar la hucha pendiente de la otra categoría de lectura (propuesto: sí, no mezclar categorías)?
-2. Botón Xbox como atajo: choca con Game Bar y Steam (por defecto el disparador del mando va desactivado).
-3. ¿Teclas multimedia como atajo? (ampliar `keyName`).
-4. De la v1: §7.3 (¿DualSense y HidHide? afecta a la batería) y §7.5 («Abrir en el visor» desde una captura).
-5. ¿Se quita la cuenta atrás de 3 s ahora que cerrar es forzado?
+Contestadas después (3-nov-2026):
+
+| Tema | Decisión |
+|---|---|
+| Cuenta atrás de 3 s | **Se quita.** Cerrar de un clic = cierre forzado inmediato (§2.4). |
+| Hucha y racha | **Se ocultan según la categoría del juego en marcha**: solo se enseñan la hucha y la racha de esa categoría (`vn` o `jvn`); nunca las de otra. En juegos de otras categorías no hay racha (caso semana + sesión récord). |
+| Botón Xbox como atajo | **Permitido**: Steam y la Game Bar no lo están usando ahora. Sigue desactivado por defecto; el usuario lo activa en Ajustes. |
+| Teclas multimedia como atajo | Al usuario le da igual: **no se implementan** por ahora (no ampliar `keyName`). |
+| Batería del mando | **Se decide más adelante** (¿DualSense/HidHide?). Fuera de las Fases 1-3: la baldosa de batería queda como «—» hasta entonces o se oculta. |
+| «Abrir en el visor» desde una captura | **No hace falta.** Las capturas solo se ven y se borran dentro del overlay. |
+
+**No queda ninguna decisión abierta que bloquee la implementación**; solo la batería, aplazada.
 
 ## 4. Modelo de ajustes y de atajos
 
@@ -173,18 +188,18 @@ Base: los pasos 1-12 de plan-overlay.md §5 siguen valiendo con estas diferencia
   - `trigger_down(app, src, pads)` / `trigger_up(app, src)`: dueños de la `TriggerFsm`. En `down` calculan `TriggerCtx` (`can_show` = hay `Active` y `SHQueryUserNotificationState` ≠ `QUNS_RUNNING_D3D_FULL_SCREEN`; feature `Win32_UI_Shell` si falta) y arrancan un hilo que llama a `tick` cada 30 ms hasta el `up` o el `Force`. Traducción de actos: `Open` → `open(app)` (el antiguo `toggle`), `Close` → `close(app)`, `Warn` → `pad::rumble_n(p, 2)`, `HoldStart`/`HoldProgress` → `emit_to("quickmenu","qm-hold",{p})` si está abierto, `HoldTick` → pulso corto, `HoldCancel` → `qm-hold {p:-1}`, `Force` → `force_close_game(app)` + `rumble_long(p, 400)`.
   - **Foto a resolución completa:** al abrir, guardar en memoria el `Grabbed` completo (además del JPEG reducido del fondo). `quickmenu_capture`: si el juego está pausado, guarda esa imagen (es idéntica a lo que hay detrás y no depende de capturar un proceso suspendido); si no está pausado, `snap::trigger(app)`. Reutilizar el guardado de `snap.rs:149-159` sacándolo a una función `save_grab(app, grabbed)`. Sin aviso `peek` con el menú abierto (`snap.rs:109`); en su lugar `emit_to("quickmenu","qm-shot",{path, jpeg})` y `push_shot`.
   - **Contexto del juego** (§5.3): `quickmenu_set_context(ctx: serde_json::Value)` lo guarda en un `Mutex<Option<Value>>`; se borra al acabar la partida; `quickmenu_state()` lo incluye tal cual.
-  - Comandos nuevos en `generate_handler!` (`lib.rs:1132`): `quickmenu_capture`, `quickmenu_set_context`, más los de v1 pasos 6 y 10. Favorita: la página llama al `set_favorite` existente (`lib.rs:327-335`) y Rust emite `favorites-changed` a la ventana principal.
+  - Comandos nuevos en `generate_handler!` (`lib.rs:1132`): `quickmenu_capture`, `quickmenu_set_context`, más los de v1 pasos 6 y 10. Borrar: la página llama a `trash_shots` (`lib.rs:668`) y Rust avisa a la ventana principal para que quite la captura de la biblioteca.
 - **Gancho de teclado** (v1 paso 5): añadir `X`, `Y`, `Q`, `E`, `Add`, `Subtract` a las teclas que se traducen a `qm-pad` y se tragan.
 
 ### 5.3 Frontend
 - **Contexto para la racha:** la página del menú no tiene la biblioteca (`app.lib`) y la biblioteca es grande; los anillos se calculan en el navegador (`readgoals.ts`). Por eso, como ya hace `scheduleGoalNotice` (`controller.svelte.ts:651-675`), la ventana principal manda al núcleo lo justo al empezar la partida: en `onBackendEvent` `game-started` (`controller.svelte.ts:1635-1637`) llamar a `pushQuickmenuContext(e.id)`:
   `{ gameId, key: goalKeyOf(gameId) ?? null, goal, titles: key ? títulos de esa plataforma → {gameId, name, plays} : [], title: {playSeconds, sessions, week, plays} }` (`goalKeyOf` en `:629`). Nuevo método `quickmenuSetContext` en `backend.ts` / `types.ts` (no-op en `mock.ts`). Volver a mandarlo si cambian `goalVn`/`goalJvn` con la partida en marcha.
 - **Funciones puras compartidas:** `readrings.svelte.ts` importa el store y no se puede usar en la página del menú. Mover `rescueDay`, `rescueLeft`, `rescueClose`, `rescueFailed`, `fmtMin` (`readrings.svelte.ts:14-36`) a un `src/lib/readfmt.ts` nuevo sin dependencias, y reexportarlos desde `readrings.svelte.ts` para no tocar a quien ya los importa. `readgoals.ts` (`goalTrack` `:175`, `readDetail` `:285`) y `stats.ts` (`titleStats` `:148`) ya son puros.
-- **Página del menú** (v1 paso 12) con los componentes del mockup v2: `TileTime.svelte` (usa `goalTrack(key, goal, [{id:key, titles}] as Platform[], {id: gameId, since}, Date.now())` y `readDetail(...).doneAt`; casos a/b/c/d del §2.2), `TileAudio.svelte`, `TileShots.svelte`, `TileExit.svelte` (cuenta atrás en la interfaz; al cerrar el menú se cancela), `TileAch.svelte`; banner `qm-hold`. Las piezas visuales de racha (anillo SVG, `.rmed`, hucha mini, mapa) se copian del CSS del mockup, que ya está adaptado a cristal oscuro.
+- **Página del menú** (v1 paso 12) con los componentes del mockup v2: `TileTime.svelte` (usa `goalTrack(key, goal, [{id:key, titles}] as Platform[], {id: gameId, since}, Date.now())` y `readDetail(...).doneAt`; casos a/b/c/d del §2.2), `TileAudio.svelte`, `TileShots.svelte`, `TileExit.svelte` (un solo botón Cerrar, forzado e inmediato), `TileAch.svelte`; banner `qm-hold`. Las piezas visuales de racha (anillo SVG, `.rmed`, hucha mini, mapa) se copian del CSS del mockup, que ya está adaptado a cristal oscuro.
 - **Config TS:** campos del §4.1 en `types.ts` (junto a `audioHotkey`, `:67`), `store.svelte.ts` (`:51`) y `mock.ts` (`:325`).
 - **Aprendizaje** (`learn.svelte.ts`): `target` (`:32` y `store.svelte.ts:132`) admite `'overlay'`; presets nuevos junto a `:13-26` (`OVERLAY_HOTKEY_PRESETS`, `OVERLAY_COMBO_PRESETS`); ramas en `onLearnPad` (`:76-77` → `overlayCombo`, «Abrir el menú con»), `learnKeydown` (`:121-123` → `overlayHotkey`) y `learnMouse` (`:145`, hoy siempre `captureMouse` → según `target`). `Learn.svelte:8-12`: si `target === 'overlay'` y `kind === 'key'`, añadir al subtítulo «Si usas DS4Windows, pulsa ahora el botón del mando que convierte en tecla».
 - **Ajustes:** `SettingId` (`controller.svelte.ts:1178-1186`) + los 5 ids; filas en Mando (`:1211-1216`); `CYCLE` (`:1248`) + `qmkey`, `qmpad`, `qmmouse`; acciones junto a `:1455-1458` (A aprende con `startLearn(kind,'overlay')`, ‹ › recorre presets; `qmhold`/`qmpause` alternan); textos en `Settings.svelte` junto a `:47-48`.
-- **Favoritas:** en `controller.svelte.ts` escuchar `favorites-changed` y recargar `app.favs` como en `:1663`.
+- **Capturas borradas:** en `controller.svelte.ts` escuchar el aviso de borrado y recargar la lista de capturas de ese juego.
 
 ## 6. Orden de implementación
 
@@ -197,11 +212,11 @@ Ninguna fase es trabajo masivo; no hay nada que delegar en `agy` salvo, si se qu
 4. Ajustes (§4.2) y aprendizaje.
 *Verificar:* el atajo de teclado, el del mando (incluido Xbox) y el del ratón abren y cierran; mantener 1,5 s fuerza el cierre con y sin menú; con un juego en exclusiva, pulsación corta = 2 toques y mantener = cierre + vibración larga; soltar a 1 s no hace nada; las reglas de choque avisan y conservan el valor anterior. `cargo test -p visor-core`.
 
-**Fase 2 · Datos** (v1 pasos 9-11) + contexto del juego (§5.3) + `quickmenu_capture` con la foto completa + favoritas.
-*Verificar:* `quickmenu_state` trae el contexto correcto en una novela visual, una japonesa y un juego normal; la captura desde el menú con el juego pausado guarda la imagen del juego (no el menú) en la carpeta del juego; marcar favorita se ve en el visor.
+**Fase 2 · Datos** (v1 pasos 9-11) + contexto del juego (§5.3) + `quickmenu_capture` con la foto completa + borrar capturas.
+*Verificar:* `quickmenu_state` trae el contexto correcto en una novela visual, una japonesa y un juego normal; la captura desde el menú con el juego pausado guarda la imagen del juego (no el menú) en la carpeta del juego; borrar una captura desde el menú la quita también del visor.
 
 **Fase 3 · Interfaz v2** (v1 paso 12 con el mockup `overlay-a2.html`).
-*Verificar con el mockup al lado:* las tres variantes de Tiempo (con hucha, sin hucha, juego) muestran las mismas cifras que Inicio y la pantalla de racha en ese momento; volumen/silencio/salida/micro cambian lo mismo que Windows; LT/RT, X, Y y el teclado (X, Y, Q, E, +, −) funcionan; Cerrar → 3 s → se puede deshacer con B, clic o el atajo; al acabar, el juego recibe `WM_CLOSE`.
+*Verificar con el mockup al lado:* las tres variantes de Tiempo (con hucha, sin hucha, juego) muestran las mismas cifras que Inicio y la pantalla de racha en ese momento; volumen/silencio/salida/micro cambian lo mismo que Windows; LT/RT, X, Y y el teclado (X, Y, Q, E, +, −) funcionan; Cerrar mata los procesos del juego al instante (también si estaba en pausa) y el visor cierra la partida con normalidad.
 
 ## 7. Riesgos
 
