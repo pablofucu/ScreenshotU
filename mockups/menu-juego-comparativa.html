@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Menú del juego · Comparativa</title>
+<style>
+body{margin:0;font-family:'M PLUS Rounded 1c','Segoe UI',system-ui,sans-serif;background:#d9dde4;color:#3a414e;padding:18px 20px}
+h1{margin:0 0 4px;font-size:22px}
+p.l{margin:0 0 16px;color:#5f6776;font-size:14px}
+.sw{display:flex;gap:8px;margin-bottom:14px}
+.sw button{font:inherit;font-size:13px;font-weight:700;border:0;border-radius:999px;padding:7px 14px;background:#fff;color:#5f6776;cursor:pointer}
+.sw button.on{background:#3a414e;color:#fff}
+.grid{display:grid;grid-template-columns:repeat(2,640px);gap:22px 22px;justify-content:center}
+.cell h2{margin:0 0 6px;font-size:15px;display:flex;justify-content:space-between;align-items:baseline}
+.cell h2 a{font-size:12.5px;color:#5f6776}
+.cell h2 small{font-weight:600;color:#8a92a1;font-size:12.5px}
+.fr{width:640px;height:360px;border-radius:12px;overflow:hidden;box-shadow:0 20px 40px -24px rgba(20,30,50,.6);background:#eceef2}
+.fr iframe{width:1280px;height:720px;border:0;transform:scale(.5);transform-origin:0 0;pointer-events:none}
+</style>
+</head>
+<body>
+<h1>Menú de opciones del juego · comparativa</h1>
+<p class="l">Mismo juego en las cuatro vistas. Cada propuesta tiene su página con todos los estados (pulsa «abrir»). Detalle y recomendación en <code>docs/plan-menu-juego.md</code>.</p>
+<div class="sw"><button data-c="exe" class="on">Juego .exe completo</button><button data-c="emu">Juego de emulador</button><button data-c="tab">Tablet</button></div>
+<div class="grid" id="g"></div>
+<script>
+const CASES={
+ exe:[['Hoy','menu-juego-a.html','actual','17 filas, 2 columnas'],['A · Menú corto + «Más opciones»','menu-juego-a.html','exe1','8 filas + submenú'],['B · Accesos rápidos + lista','menu-juego-b.html','exe','5 fichas + 9 filas'],['C · Ficha + «Ajustes del juego»','menu-juego-c.html','asp','4 pestañas']],
+ emu:[['Hoy','menu-juego-a.html','actual-emu','11 filas, 2 columnas'],['A · Menú corto + «Más opciones»','menu-juego-a.html','emu1','7 filas + submenú de 2'],['B · Accesos rápidos + lista','menu-juego-b.html','emu','4 fichas + 4 filas'],['C · Ficha + «Ajustes del juego»','menu-juego-c.html','emu','pestaña vacía apagada']],
+ tab:[['Hoy (sin carpeta ni ejecutable)','menu-juego-a.html','actual','en tablet faltan 4 filas'],['A · Menú corto + «Más opciones»','menu-juego-a.html','tab1','6 filas + submenú'],['B · Accesos rápidos + lista','menu-juego-b.html','tab','columna izquierda casi vacía'],['C · Ficha + «Ajustes del juego»','menu-juego-c.html','tab','pestañas más cortas']],
+};
+function show(c){
+ document.querySelectorAll('.sw button').forEach(b=>b.classList.toggle('on',b.dataset.c===c));
+ document.getElementById('g').innerHTML=CASES[c].map(([t,f,k,n])=>`<div class="cell"><h2><span>${t} <small>· ${n}</small></span><a href="${f}#${k}" target="_blank">abrir</a></h2><div class="fr"><iframe src="${f}?embed#${k}" loading="lazy"></iframe></div></div>`).join('');
+}
+document.querySelectorAll('.sw button').forEach(b=>b.onclick=()=>show(b.dataset.c));
+show('exe');
+</script>
+</body>
+</html>

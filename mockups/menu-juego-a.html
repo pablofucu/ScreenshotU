@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Menú del juego · Propuesta A · Menú corto + «Más opciones»</title>
+<style>
+:root{--ink:#3a414e;--ink-2:#5f6776;--ink-3:#8a92a1;--line:rgba(95,110,135,.22);--panel:rgba(255,255,255,.82);--scrim:rgba(20,26,36,.45);--bad:#E8384F;--face:#dfe3e9;--face-hi:rgba(247,249,252,.94)}
+*{box-sizing:border-box}
+body{margin:0;font-family:'M PLUS Rounded 1c','Segoe UI',system-ui,sans-serif;background:#d9dde4;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px 16px}
+body.embed{padding:0;background:transparent;gap:0;overflow:hidden}
+body.embed .bar,body.embed .info,body.embed h1{display:none}
+h1{margin:0;font-size:20px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:1280px;align-items:center}
+.bar button{font:inherit;font-size:13px;font-weight:700;border:0;border-radius:999px;padding:7px 14px;background:#fff;color:var(--ink-2);cursor:pointer;box-shadow:0 2px 6px -3px rgba(0,0,0,.25)}
+.bar button.on{background:var(--ink);color:#fff}
+.bar .lab{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:0 4px 0 10px}
+.info{max-width:1280px;width:100%;background:#fff;border-radius:14px;padding:12px 18px;font-size:13.5px;line-height:1.55;color:var(--ink-2)}
+.info b{color:var(--ink)}
+.info ul{margin:4px 0 0;padding-left:18px}
+#hold{position:relative;flex:none}
+#stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;border-radius:18px;background:#eceef2;box-shadow:0 30px 60px -30px rgba(20,30,50,.5);user-select:none}
+body.embed #stage{border-radius:0;box-shadow:none}
+/* ---------- ficha de fondo (posiciones de app.css) ---------- */
+.bg{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.amb i{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5}
+.amb .b1{left:-12%;top:-34%;width:62%;height:96%;background:var(--b1)}
+.amb .b2{right:-14%;bottom:-40%;width:64%;height:100%;background:var(--b2)}
+.glass{position:absolute;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.85);box-shadow:0 12px 30px -16px rgba(30,40,60,.35),inset 0 1px 0 rgba(255,255,255,.9);backdrop-filter:blur(18px) saturate(1.3);border-radius:var(--rad,18px)}
+.top{position:absolute;left:64px;right:64px;top:26px;display:flex;align-items:center}
+.crumb{font-weight:800;color:var(--ink-2);font-size:16px;padding:8px 18px;border-radius:999px;background:rgba(255,255,255,.6)}
+.crumb s{text-decoration:none;color:var(--ink-3);margin:0 6px;font-weight:500}
+.clock{margin-left:auto;font-weight:800;color:var(--ink-2);font-size:20px}
+.banner{left:64px;top:88px;width:922px;height:280px;--rad:32px;padding:10px}
+.hero{position:relative;width:100%;height:100%;border-radius:24px;overflow:hidden;background:radial-gradient(55% 80% at 78% 25%,color-mix(in srgb,var(--b2) 75%,white) 0,transparent 62%),radial-gradient(70% 90% at 15% 95%,var(--f2) 0,transparent 70%),linear-gradient(135deg,var(--f1),#1c1f3a)}
+.hero::after{content:'';position:absolute;inset:0;background:linear-gradient(0deg,rgba(8,10,18,.42),rgba(8,10,18,0) 50%)}
+.dlogo{position:absolute;left:100px;top:262px;font-size:50px;font-weight:800;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.5);z-index:3;white-space:nowrap}
+.dchips{position:absolute;left:100px;top:108px;display:flex;gap:10px;z-index:4}
+.pc{height:36px;padding:0 16px 0 12px;border-radius:999px;display:flex;align-items:center;gap:8px;font-size:17px;font-weight:800;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 6px 14px -6px rgba(0,0,0,.5);background:linear-gradient(180deg,rgba(60,68,84,.78),rgba(30,36,48,.82));white-space:nowrap}
+.pc small{font-size:15px;font-weight:700;opacity:.92}
+.pc.st{background:linear-gradient(180deg,color-mix(in srgb,var(--c) 70%,white),var(--c))}
+.pc svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.ach{left:1002px;top:88px;width:214px;height:280px;--rad:28px;padding:22px 20px}
+.lbl{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.ach b{display:block;font-size:40px;font-weight:800;margin:12px 0 4px}
+.prog{height:10px;border-radius:9px;background:rgba(95,110,135,.18);overflow:hidden;margin-top:14px}
+.prog i{display:block;height:100%;width:45%;background:var(--gf)}
+.play{left:64px;top:388px;width:290px;height:112px;--rad:30px;padding:8px}
+.play .in{height:100%;border-radius:22px;background:var(--gf);display:flex;align-items:center;gap:18px;padding:0 22px;color:#fff}
+.pi{flex:none;width:50px;height:50px;border-radius:50%;background:linear-gradient(180deg,#fff,#dfe3e9);display:grid;place-items:center;color:var(--f1)}
+.pi svg{width:22px;height:22px;margin-left:3px}
+.play b{font-size:34px;font-weight:800;display:block;line-height:1.05}
+.play small{font-size:15px;font-weight:600;opacity:.92}
+.dp{top:388px;height:112px;--rad:26px;padding:14px 22px}
+.dh{left:378px;width:400px}.dw{left:802px;width:414px}
+.hsub{font-size:15px;font-weight:700;color:var(--ink-2)}
+.odo{font-size:46px;font-weight:800;color:var(--ink);margin-top:2px}
+.odo u{text-decoration:none;font-size:20px;color:var(--ink-3);margin:0 12px 0 4px}
+.bars{display:flex;align-items:flex-end;gap:14px;height:56px;margin-top:10px}
+.bars i{flex:1;border-radius:6px;background:var(--gf);opacity:.85}
+.dsect{position:absolute;left:64px;top:514px;font-size:18px;font-weight:800;color:var(--ink-2)}
+.dsect span{font-weight:600;color:var(--ink-3);margin-left:8px}
+.dshot{top:548px;width:176px;height:99px;--rad:16px;padding:5px}
+.dshot i{display:block;width:100%;height:100%;border-radius:12px}
+.hints{position:absolute;right:22px;bottom:16px;display:flex;gap:16px;font-size:15px;color:var(--ink-2);font-weight:700;z-index:30}
+.hints span{display:flex;align-items:center;gap:7px}
+.hints b{display:inline-grid;place-items:center;min-width:26px;height:26px;padding:0 7px;border-radius:13px;background:#fff;color:var(--ink);font-size:12px;box-shadow:0 2px 6px -2px rgba(0,0,0,.3)}
+.scrim .hints{color:#fff}
+/* ---------- panel del menú ---------- */
+.scrim{position:absolute;inset:0;z-index:20;background:var(--scrim);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center}
+.mp{position:relative;padding:12px;border-radius:40px;background:rgba(255,255,255,.38);border:1px solid rgba(255,255,255,.7);box-shadow:0 30px 60px -20px rgba(0,0,0,.45)}
+.mp>.in{background:var(--panel);border-radius:30px;padding:20px 24px 18px;display:flex;flex-direction:column;gap:4px}
+.mp h2{margin:0 6px;font-size:26px;font-weight:800;color:var(--ink);white-space:nowrap}
+.mp .path{margin:0 6px;font-size:14px;font-weight:800;color:var(--ink-3);letter-spacing:.02em}
+.mp .path s{text-decoration:none;margin:0 5px;font-weight:500}
+.msub{margin:0 6px 10px;font-size:16px;font-weight:600;color:var(--ink-3)}
+.cols{display:grid;column-gap:18px}
+.col{display:flex;flex-direction:column;gap:4px;min-width:0}
+.row{display:flex;align-items:center;gap:14px;height:54px;padding:0 18px;border-radius:18px;font-size:19px;font-weight:700;color:var(--ink-2);flex:none}
+.row.tight{height:45px;font-size:18px}
+.row .sl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .sl small{display:block;font-size:13px;line-height:1.25;font-weight:600;margin-top:1px;color:var(--ink-3)}
+.row.two{height:60px}
+.row .v{flex:none;font-size:16px;font-weight:700;color:var(--ink-3)}
+.row .go svg{width:20px;height:20px;fill:none;stroke:var(--ink-3);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;display:block}
+.row .sw{display:flex;gap:4px}
+.row .sw i{width:18px;height:18px;border-radius:6px;box-shadow:0 0 0 2px #fff,0 1px 4px rgba(0,0,0,.3)}
+.row.f{background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 60%),var(--gf);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.28);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--f2) 75%,black),0 0 18px -2px color-mix(in srgb,var(--f1) 45%,transparent)}
+.row.f .v,.row.f .sl small{color:inherit;opacity:.92}
+.row.f .go svg{stroke:#fff}
+.mic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;flex:none;background:linear-gradient(180deg,color-mix(in srgb,var(--f1) 30%,white),var(--f1));box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--f1) 70%,black);color:#fff}
+.mic.no{background:none;box-shadow:none}
+.mic svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round}
+.row.f .mic{background:rgba(255,255,255,.92);box-shadow:none;color:var(--f1)}
+.row.f .mic.no{background:none;color:#fff}
+.row.danger{color:var(--bad)}
+.row.danger .mic{background:linear-gradient(180deg,color-mix(in srgb,var(--bad) 35%,white),var(--bad));box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--bad) 70%,black)}
+.row.danger.f{background:linear-gradient(115deg,#e8384f,#c22a68);color:#fff;box-shadow:0 0 0 1px #9b1d3b,0 0 18px -2px rgba(232,56,79,.5)}
+.row.danger.f .mic{color:var(--bad)}
+.mh{flex:none;margin:6px 0 2px;height:26px;line-height:26px;padding:0 6px;font-size:13px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);border-bottom:2px solid color-mix(in srgb,var(--f1) 35%,transparent)}
+.col>.mh:first-child{margin-top:0}
+.sep{flex:none;height:1px;background:var(--line);margin:5px 12px}
+.tag{position:absolute;z-index:40;background:#fff7c2;color:#5a4a00;font-size:13px;font-weight:700;line-height:1.35;padding:8px 12px;border-radius:12px;box-shadow:0 8px 20px -10px rgba(0,0,0,.5);max-width:230px}
+.tag::before{content:attr(data-n);display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#5a4a00;color:#fff7c2;font-size:11px;margin-right:6px}
+</style>
+</head>
+<body>
+<h1>Propuesta A · Menú corto con lo de siempre + «Más opciones»</h1>
+<div class="bar" id="bar"></div>
+<div id="hold"><div id="stage"></div></div>
+<div class="info" id="info"></div>
+<script>
+const I={
+ play:'<path d="M8 5l11 7-11 7z" fill="currentColor" stroke="none"/>',
+ folder:'<path d="M3 7h6l2 2h10v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/>',
+ image:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/>',
+ palette:'<circle cx="12" cy="12" r="9"/><circle cx="8" cy="10" r="1.2" fill="currentColor"/><circle cx="12" cy="7.5" r="1.2" fill="currentColor"/><circle cx="16" cy="10" r="1.2" fill="currentColor"/>',
+ coll:'<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><path d="M16.5 13v7M13 16.5h7"/>',
+ save:'<path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/>',
+ book:'<path d="M4 5c3-1 6-1 8 1 2-2 5-2 8-1v14c-3-1-6-1-8 1-2-2-5-2-8-1z"/><path d="M12 6v14"/>',
+ addimg:'<path d="M13 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><path d="M18 3v6M15 6h6"/><path d="M3 15l4-4 4 4"/>',
+ move:'<path d="M4 12h14M13 6l6 6-6 6"/>',
+ eyeoff:'<path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><path d="M4 4l16 16"/>',
+ eye:'<path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><circle cx="12" cy="12" r="2.5"/>',
+ trash:'<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>',
+ reload:'<path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/>',
+ scale:'<path d="M4 9V4h5M20 15v5h-5M4 4l6 6M20 20l-6-6"/>',
+ exe:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 13l3 2-3 2M12 17h5"/>',
+ dir:'<path d="M3 7h6l2 2h10v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><circle cx="12" cy="14" r="2"/>',
+ more:'<circle cx="5" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="19" cy="12" r="1.7" fill="currentColor"/>',
+ check:'<path d="M5 12l4 4 10-10"/>',
+ cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+ chev:'<path d="M9 5l7 7-7 7"/>',
+ gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+};
+const svg=k=>`<svg viewBox="0 0 24 24">${I[k]||''}</svg>`;
+const GAMES={
+ exe:{name:'Kanata no Hoshi',cat:'Novelas visuales',f1:'#7b4fd6',f2:'#d1457e',b1:'#a77bff',b2:'#ff8ab0',st:'Jugando',stc:'#3BB54A',rel:'12 mar 2021',h:'042',m:'17',ses:'23 sesiones',shots:128,via:'Ejecutable propio',pal:['#7b4fd6','#d1457e','#f2c14e']},
+ emu:{name:'Isla Brisa',cat:'Switch',f1:'#0e9f8a',f2:'#2f74d8',b1:'#3fd6b8',b2:'#5aa0ff',st:'Pendiente',stc:'#F2B807',rel:'2019',h:'011',m:'05',ses:'6 sesiones',shots:57,via:'Con Ryujinx',pal:['#0e9f8a','#2f74d8','#ffd166']},
+};
+function ficha(g,o={}){
+ const shots=[0,1,2,3,4].map(i=>`<div class="glass dshot" style="left:${64+i*192}px"><i style="background:linear-gradient(${120+i*40}deg,color-mix(in srgb,${i%2?g.f2:g.f1} 70%,white),${i%2?g.f1:g.f2})"></i></div>`).join('');
+ const bars=[3,5,0,2,6,4,7].map(v=>`<i style="height:${8+v*6}px"></i>`).join('');
+ return `<div class="bg"></div><div class="amb"><i class="b1"></i><i class="b2"></i></div>
+ <div class="top"><span class="crumb">Inicio<s>›</s>${g.cat}<s>›</s>${g.name}</span><span class="clock">21:47</span></div>
+ <div class="glass banner"><div class="hero"></div></div>
+ <div class="dlogo">${g.name}</div>
+ <div class="dchips"><span class="pc st" style="--c:${g.stc}">${svg('check')}${g.st}</span><span class="pc">${svg('cal')}<b>Salió ${g.rel.length>4?'el':'en'}</b><small>${g.rel}</small></span>${o.chips||''}</div>
+ ${o.extra||''}
+ <div class="glass ach"><div class="lbl">Logros</div><b>18<span style="font-size:20px;color:var(--ink-3)"> / 40</span></b><div class="hsub">Último: «Primera estrella»</div><div class="prog"><i></i></div></div>
+ <div class="glass play"><div class="in"><span class="pi">${svg('play')}</span><span><b>Jugar</b><small>${g.via}</small></span></div></div>
+ <div class="glass dp dh"><div class="hsub">Horas jugadas · ${g.ses}</div><div class="odo">${g.h}<u>h</u>${g.m}<u>min</u></div></div>
+ <div class="glass dp dw"><div class="hsub">Esta semana · 3 h 10 min</div><div class="bars">${bars}</div></div>
+ <div class="dsect">Capturas<span>${g.shots}</span></div>${shots}`;
+}
+function hints(list){return `<div class="hints">${list.map(([k,t])=>`<span><b>${k}</b>${t}</span>`).join('')}</div>`}
+function row(r,g,tight){
+ if(r.h) return `<div class="mh">${r.h}</div>`;
+ if(r.sep) return `<div class="sep"></div>`;
+ const c=['row',r.f?'f':'',r.danger?'danger':'',tight?'tight':'',r.s&&!tight?'two':''].join(' ');
+ let rt='';
+ if(r.v) rt+=`<span class="v">${r.v}</span>`;
+ if(r.sw) rt+=`<span class="sw">${g.pal.map(x=>`<i style="background:${x}"></i>`).join('')}</span>`;
+ if(r.chk) rt+=`<span class="v">${svg('check').replace('<svg','<svg style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:3"')}</span>`;
+ if(r.go) rt+=`<span class="go">${svg('chev')}</span>`;
+ return `<div class="${c}"><span class="mic${r.ic?'':' no'}">${r.ic?svg(r.ic):''}</span><span class="sl">${r.l}${r.s?`<small>${r.s}</small>`:''}</span>${rt}</div>`;
+}
+function panel(s,g){
+ const cols=s.cols||[s.rows];
+ return `<div class="scrim"><div class="mp" style="width:${s.w||470}px"><div class="in">
+  ${s.path?`<div class="path">${s.path.join('<s>›</s>')}</div>`:''}
+  <h2>${s.title}</h2><p class="msub">${s.sub??g.name}</p>
+  <div class="cols" style="grid-template-columns:repeat(${cols.length},minmax(0,1fr))">${cols.map(c=>`<div class="col">${c.map(r=>row(r,g,s.tight)).join('')}</div>`).join('')}</div>
+ </div></div>${hints(s.hints)}${s.tags||''}</div>`;
+}
+
+/* ---------- datos de la propuesta A ---------- */
+const MORE_EXE={ic:'more',l:'Más opciones',s:'Al jugar · Biblioteca · Si algo se ve mal',go:1};
+const S={
+ 'exe1':{g:'exe',grp:'Juego .exe completo (17 funciones)',btn:'Principal',title:'Opciones del juego',hints:[['A','Elegir'],['B','Cerrar']],
+  rows:[{ic:'coll',l:'Colecciones…',v:'En 2',f:1},{ic:'save',l:'Partidas guardadas…'},{ic:'book',l:'Frases y repaso…'},{sep:1},
+   {ic:'image',l:'Imágenes del juego…',s:'Portada, fondo, logo e icono'},{ic:'palette',l:'Color del juego…',sw:1},{sep:1},
+   {ic:'folder',l:'Abrir carpeta de capturas'},{ic:'addimg',l:'Añadir capturas…'},{sep:1},MORE_EXE],
+  tags:`<div class="tag" data-n="1" style="left:40px;top:140px">Jugar, Estado y Fecha ya están en la ficha (botón Jugar / X y las dos píldoras): salen del menú.</div>
+   <div class="tag" data-n="2" style="left:40px;top:300px">«…» abre un panel. Sin puntos = se hace al momento. «›» entra en un submenú.</div>
+   <div class="tag" data-n="3" style="right:40px;top:180px">El valor actual va a la derecha (En 2, los colores). La etiqueta siempre es la acción.</div>
+   <div class="tag" data-n="4" style="right:40px;top:470px">Lo de configurar una vez y lo peligroso vive detrás de «Más opciones».</div>`,
+  note:'<b>Nivel 1 (8 filas como mucho).</b> Orden fijo en tres bloques sin título: <i>organizar y datos</i> (Colecciones, Partidas guardadas, Frases), <i>aspecto</i> (Imágenes, Color), <i>capturas</i> (Abrir carpeta, Añadir). Siempre termina en «Más opciones». Si una fila no aplica, desaparece pero el resto conserva el orden.'},
+ 'exe2':{g:'exe',grp:'Juego .exe completo (17 funciones)',btn:'Más opciones',title:'Más opciones',path:['Opciones'],hints:[['A','Elegir'],['B','Volver']],
+  rows:[{h:'Al jugar'},{ic:'scale',l:'Escalado con Magpie…',s:'Último: 1280×720 → 2x',v:'Automático',f:1},{ic:'exe',l:'Ejecutable…'},{ic:'dir',l:'Carpeta de trabajo…'},
+   {h:'Si algo se ve mal'},{ic:'reload',l:'Volver a cargar las imágenes'},
+   {h:'Biblioteca'},{ic:'move',l:'Mover a otra categoría…',v:'Novelas visuales'},{ic:'eyeoff',l:'Ocultar de la biblioteca'},{ic:'trash',l:'Quitar de la biblioteca',s:'Pide confirmación · las capturas no se borran',danger:1}],
+  tags:`<div class="tag" data-n="5" style="left:40px;top:200px">Magpie deja de cambiar al pulsar A: abre una lista de 4 modos con ✓ (como «Filtrar»).</div>
+   <div class="tag" data-n="6" style="right:40px;top:520px">Quitar va al final, en rojo y separado de Ocultar; la explicación dice en qué se diferencia.</div>`,
+  note:'<b>Nivel 2.</b> Tres secciones con título claro: <i>Al jugar</i> (solo .exe añadidos a mano), <i>Si algo se ve mal</i> y <i>Biblioteca</i>. B vuelve al nivel 1 con el foco en «Más opciones»; no cierra.'},
+ 'exe3':{g:'exe',grp:'Juego .exe completo (17 funciones)',btn:'Magpie',title:'Escalado con Magpie',path:['Opciones','Más opciones'],hints:[['A','Elegir'],['B','Volver']],
+  rows:[{l:'Desactivado'},{l:'Automático',s:'Mide la ventana al lanzar y elige',chk:1,f:1},{l:'Forzar 2x'},{l:'Forzar 4x'}],
+  note:'<b>Nivel 3 (solo Magpie y «Mover a otra categoría»).</b> Lista de opciones con ✓ en la actual; A elige y vuelve a «Más opciones». Las categorías listadas son las de siempre, sin cambios.'},
+ 'emu1':{g:'emu',grp:'Juego de emulador (pocas funciones)',btn:'Principal',title:'Opciones del juego',hints:[['A','Elegir'],['B','Cerrar']],
+  rows:[{ic:'coll',l:'Colecciones…',v:'Ninguna',f:1},{ic:'save',l:'Partidas guardadas…'},{sep:1},
+   {ic:'image',l:'Imágenes del juego…',s:'Portada, fondo, logo e icono'},{ic:'palette',l:'Color del juego…',sw:1},{sep:1},
+   {ic:'folder',l:'Abrir carpeta de capturas'},{ic:'addimg',l:'Añadir capturas…'},{sep:1},{ic:'more',l:'Más opciones',s:'Biblioteca · Si algo se ve mal',go:1}],
+  note:'<b>Mismo esqueleto, menos filas.</b> No hay Frases (no es novela) ni nada de «Al jugar» (lo lanza el emulador). La posición relativa de cada fila no cambia respecto al juego .exe.'},
+ 'emu2':{g:'emu',grp:'Juego de emulador (pocas funciones)',btn:'Más opciones',title:'Más opciones',path:['Opciones'],hints:[['A','Elegir'],['B','Volver']],
+  rows:[{h:'Si algo se ve mal'},{ic:'reload',l:'Volver a cargar las imágenes',f:1},{h:'Biblioteca'},{ic:'eyeoff',l:'Ocultar de la biblioteca'}],
+  note:'Con un juego de emulador «Más opciones» queda en 2 filas. Se mantiene igualmente para que «Ocultar» nunca esté al alcance de un A despistado.'},
+ 'tab1':{g:'exe',grp:'Tablet',btn:'Principal',title:'Opciones del juego',hints:[['A','Elegir'],['B','Cerrar']],
+  rows:[{ic:'coll',l:'Colecciones…',v:'En 2',f:1},{ic:'save',l:'Partidas guardadas…'},{ic:'book',l:'Frases y repaso…'},{sep:1},
+   {ic:'image',l:'Imágenes del juego…',s:'Portada, fondo, logo e icono'},{ic:'palette',l:'Color del juego…',sw:1},{sep:1},{ic:'more',l:'Más opciones',s:'Al jugar · Biblioteca · Si algo se ve mal',go:1}],
+  note:'<b>Tablet:</b> desaparece el bloque de capturas (Abrir carpeta, Añadir capturas). Lo demás, igual.'},
+ 'tab2':{g:'exe',grp:'Tablet',btn:'Más opciones',title:'Más opciones',path:['Opciones'],hints:[['A','Elegir'],['B','Volver']],
+  rows:[{h:'Al jugar'},{ic:'scale',l:'Escalado con Magpie…',v:'Automático',f:1},{h:'Si algo se ve mal'},{ic:'reload',l:'Volver a cargar las imágenes'},
+   {h:'Biblioteca'},{ic:'move',l:'Mover a otra categoría…',v:'Novelas visuales'},{ic:'eyeoff',l:'Ocultar de la biblioteca'},{ic:'trash',l:'Quitar de la biblioteca',s:'Pide confirmación · las capturas no se borran',danger:1}],
+  note:'<b>Tablet:</b> sin Ejecutable ni Carpeta de trabajo; Magpie se queda (hoy también sale en la tablet).'},
+ 'actual':{g:'exe',grp:'Referencia: hoy',btn:'Juego .exe',title:'Grafismos y opciones',w:880,tight:1,hints:[['A','Seleccionar'],['B','Cerrar']],
+  cols:[[{h:'Juego y Lanzamiento'},{ic:'play',l:'Iniciar juego',f:1},{ic:'folder',l:'Abrir carpeta'},{ic:'image',l:'Añadir capturas'},{ic:'save',l:'Partidas guardadas…'},{ic:'folder',l:'Cambiar ejecutable…'},{ic:'folder',l:'Cambiar carpeta de trabajo…'},{ic:'image',l:'Magpie: Automático',s:'1280×720 → 2x'}],
+   [{h:'Presentación'},{ic:'reload',l:'Recargar grafismos'},{ic:'image',l:'Grafismos (SteamGridDB o del PC)…'},{ic:'palette',l:'Color de acento'},
+    {h:'Biblioteca y Estado'},{ic:'book',l:'Frases y repaso…'},{ic:'check',l:'Estado: Jugando'},{ic:'cal',l:'Fecha de lanzamiento: 12 mar 2021'},{ic:'coll',l:'Añadir a una colección…'},{ic:'move',l:'Cambiar de categoría…'},{ic:'eyeoff',l:'Ocultar juego'},{ic:'trash',l:'Quitar de la lista',danger:1}]],
+  note:'<b>Hoy</b> (orden real de <code>menuItemsFor</code> + <code>MENU_GROUPS</code>): 17 filas en dos columnas de 7 y 10, filas de ~45 px, mismo peso visual para «Iniciar juego» y «Quitar de la lista».'},
+ 'actual-emu':{g:'emu',grp:'Referencia: hoy',btn:'Emulador',title:'Grafismos y opciones',w:880,tight:1,hints:[['A','Seleccionar'],['B','Cerrar']],
+  cols:[[{h:'Juego y Lanzamiento'},{ic:'play',l:'Iniciar juego',f:1},{ic:'folder',l:'Abrir carpeta'},{ic:'image',l:'Añadir capturas'},{ic:'save',l:'Partidas guardadas…'}],
+   [{h:'Presentación'},{ic:'reload',l:'Recargar grafismos'},{ic:'image',l:'Grafismos (SteamGridDB o del PC)…'},{ic:'palette',l:'Color de acento'},
+    {h:'Biblioteca y Estado'},{ic:'check',l:'Estado: Pendiente'},{ic:'cal',l:'Fecha de lanzamiento: 2019'},{ic:'coll',l:'Añadir a una colección…'},{ic:'eyeoff',l:'Ocultar juego'}]],
+  note:'<b>Hoy, juego de emulador:</b> 11 filas, también en dos columnas (más de 8).'},
+};
+const INTRO='<b>Idea:</b> el menú que abre Start en la ficha enseña solo lo que se usa a menudo (máx. 8 filas, una columna, filas de 54 px) y manda lo de configurar una vez y lo peligroso a «Más opciones». Jugar, Estado y Fecha salen del menú porque la ficha ya los tiene. Reglas visibles: «…» abre panel, «›» entra en submenú, valor actual a la derecha, rojo = pide confirmación.';
+const stage=document.getElementById('stage'),bar=document.getElementById('bar'),info=document.getElementById('info');
+function render(k){
+ const s=S[k]||S[Object.keys(S)[0]],g=GAMES[s.g];
+ for(const [p,v] of Object.entries({'--f1':g.f1,'--f2':g.f2,'--gf':`linear-gradient(115deg,${g.f1},${g.f2})`,'--b1':g.b1,'--b2':g.b2})) stage.style.setProperty(p,v);
+ stage.innerHTML=ficha(g,s.ficha||{})+(s.rows||s.cols?panel(s,g):hints(s.hints));
+ info.innerHTML=INTRO+'<br><br>'+s.note;
+ bar.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+ if(location.hash.slice(1)!==k) history.replaceState(null,'','#'+k);
+}
+let last='';
+for(const [k,s] of Object.entries(S)){
+ if(s.grp!==last){bar.insertAdjacentHTML('beforeend',`<span class="lab">${s.grp}</span>`);last=s.grp}
+ const b=document.createElement('button');b.textContent=s.btn;b.dataset.k=k;b.onclick=()=>render(k);bar.appendChild(b);
+}
+if(location.search.includes('embed')) document.body.classList.add('embed');
+function fit(){const h=document.getElementById('hold');const sc=Math.min(1,(innerWidth-(document.body.classList.contains('embed')?0:32))/1280);stage.style.transform=`scale(${sc})`;h.style.width=1280*sc+'px';h.style.height=720*sc+'px'}
+addEventListener('resize',fit);addEventListener('hashchange',()=>render(location.hash.slice(1)));fit();
+render(location.hash.slice(1)||'exe1');
+</script>
+</body>
+</html>
