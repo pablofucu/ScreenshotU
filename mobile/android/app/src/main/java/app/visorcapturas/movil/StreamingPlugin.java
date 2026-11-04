@@ -9,15 +9,26 @@ import android.net.Uri;
 import android.provider.Settings;
 import android.text.TextUtils;
 
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
+import org.json.JSONObject;
+
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.net.URL;
 
 /** Puente con Moonlight (streaming del PC) y con el servicio que captura con la tecla de bajar volumen. */
@@ -50,6 +61,69 @@ public class StreamingPlugin extends Plugin {
         JSObject r = new JSObject();
         r.put("tablet", getContext().getResources().getConfiguration().smallestScreenWidthDp >= 600);
         call.resolve(r);
+    }
+
+    /**
+     * Busca visores en la red local: manda "VISOR?" por UDP a la difusion y recoge las respuestas
+     * ({id, name, host, port}) durante {timeoutMs}. Sin codigo: solo dice quien esta y donde.
+     */
+    @PluginMethod
+    public void discover(final PluginCall call) {
+        final int timeout = Math.max(500, Math.min(call.getInt("timeoutMs", 1800), 8000));
+        final int port = call.getInt("port", 47812);
+        new Thread(() -> {
+            JSArray found = new JSArray();
+            Set<String> seen = new HashSet<>();
+            try (DatagramSocket s = new DatagramSocket()) {
+                s.setBroadcast(true);
+                s.setSoTimeout(250);
+                byte[] q = "VISOR?".getBytes("UTF-8");
+                Set<InetAddress> targets = new HashSet<>();
+                targets.add(InetAddress.getByName("255.255.255.255"));
+                try {
+                    for (NetworkInterface ni : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+                        if (!ni.isUp() || ni.isLoopback()) continue;
+                        for (InterfaceAddress ia : ni.getInterfaceAddresses()) {
+                            if (ia.getBroadcast() != null) targets.add(ia.getBroadcast());
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+                long end = System.currentTimeMillis() + timeout;
+                long nextSend = 0;
+                byte[] buf = new byte[1024];
+                while (System.currentTimeMillis() < end) {
+                    if (System.currentTimeMillis() >= nextSend) {
+                        for (InetAddress t : targets) {
+                            try { s.send(new DatagramPacket(q, q.length, t, port)); } catch (Exception ignored) { }
+                        }
+                        nextSend = System.currentTimeMillis() + 600;
+                    }
+                    try {
+                        DatagramPacket p = new DatagramPacket(buf, buf.length);
+                        s.receive(p);
+                        JSONObject j = new JSONObject(new String(p.getData(), 0, p.getLength(), "UTF-8"));
+                        if (!"visor-capturas".equals(j.optString("app"))) continue;
+                        String host = p.getAddress().getHostAddress();
+                        String id = j.optString("id", "");
+                        if (!seen.add(id + "@" + host)) continue;
+                        JSObject o = new JSObject();
+                        o.put("id", id);
+                        o.put("name", j.optString("name", "PC"));
+                        o.put("host", host);
+                        o.put("port", j.optInt("port", 47811));
+                        found.put(o);
+                    } catch (java.net.SocketTimeoutException ignored) {
+                    } catch (Exception ignored) {
+                    }
+                }
+            } catch (Exception e) {
+                // sin red: lista vacia
+            }
+            JSObject r = new JSObject();
+            r.put("found", found);
+            call.resolve(r);
+        }, "visor-discover").start();
     }
 
     @PluginMethod

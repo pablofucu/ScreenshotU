@@ -4,11 +4,46 @@
   import { MI } from '../lib/icons';
   import { DEFAULT_PORT, fmtCode, hello, NetError, AuthError, normCode, parseAddress } from '../lib/source';
   import { app } from '../lib/store.svelte';
+  import { onMount } from 'svelte';
+  import { Streaming } from '../lib/streaming.svelte';
+  import QrScan from '../components/QrScan.svelte';
+  import { parsePairLink } from '../lib/source';
 
   let address = $state('');
   let code = $state('');
   let checking = $state(false);
-  let checkResult = $state<{ name: string; api: number } | null>(null);
+  let checkResult = $state<{ name: string; api: number; id: string } | null>(null);
+  let scanning = $state(false);
+  let nearby = $state<{ id: string; name: string; host: string; port: number }[]>([]);
+
+  onMount(() => {
+    Streaming.discover({ timeoutMs: 2000 }).then((r) => { nearby = r.found; }, () => { /* fuera de Android */ });
+  });
+
+  async function pick(f: { host: string; port: number }) {
+    address = `${f.host}:${f.port}`;
+    await handleCheck();
+  }
+
+  /** Lee el QR del visor: conecta directamente, sin escribir nada. */
+  async function onScan(text: string) {
+    scanning = false;
+    const cfg = parsePairLink(text);
+    if (!cfg) { connectError = 'Ese código QR no es del visor de capturas'; return; }
+    connectError = '';
+    app.error = '';
+    connecting = true;
+    try {
+      await app.connect(cfg);
+      if (!app.snap && app.error) { connectError = app.error; app.disconnect(app.error); }
+    } catch (e) {
+      connectError = e instanceof Error ? e.message : String(e);
+      app.disconnect(connectError);
+    } finally {
+      connecting = false;
+    }
+  }
+
   let checkError = $state('');
   let connecting = $state(false);
   let connectError = $state('');
@@ -86,6 +121,7 @@
         port: parsed.port,
         code: cleanCode,
         name: checkResult?.name,
+        id: checkResult?.id || undefined,
       });
 
       if (!app.snap && app.error) {
@@ -130,6 +166,26 @@
       <p class="muted subtitle">
         Conéctate al visor de tu ordenador para consultar tu biblioteca, capturas y estadísticas.
       </p>
+
+      <button type="button" class="bigbtn" onclick={() => (scanning = true)} disabled={connecting}>
+        Escanear QR del visor
+      </button>
+      {#if connectError && !address.trim()}
+        <div class="feedback err" style="margin-top:10px"><span>{connectError}</span></div>
+      {/if}
+      {#if nearby.length}
+        <div class="nearby">
+          <span class="label">Visores en esta red</span>
+          {#each nearby as f (f.id + f.host)}
+            <button type="button" class="bigbtn ghosty" onclick={() => pick(f)}>{f.name} · {f.host}</button>
+          {/each}
+        </div>
+      {/if}
+      <div class="sep">
+        <span class="sep-line"></span>
+        <span class="sep-text">o escribe los datos</span>
+        <span class="sep-line"></span>
+      </div>
 
       <form class="form" onsubmit={(e) => { e.preventDefault(); void handleConnect(); }}>
         <!-- Dirección IP:Puerto -->
@@ -223,7 +279,10 @@
   </div>
 </div>
 
+{#if scanning}<QrScan onresult={onScan} onclose={() => (scanning = false)} />{/if}
+
 <style>
+  .nearby { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; text-align: left; }
   .connect-wrap {
     display: flex;
     align-items: center;

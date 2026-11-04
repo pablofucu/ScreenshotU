@@ -34,7 +34,7 @@ export interface Source {
   file(path: string): Promise<string>;
 }
 
-export interface ServerCfg { host: string; port: number; code: string; name?: string }
+export interface ServerCfg { host: string; port: number; code: string; name?: string; /** Identificador fijo del PC (para volver a encontrarlo si cambia de IP). */ id?: string }
 export const DEFAULT_PORT = 47811;
 
 export class AuthError extends Error {}
@@ -68,13 +68,23 @@ async function get(url: string, init: RequestInit, ms: number): Promise<Response
 }
 
 /** Comprueba que en esa dirección hay un visor (sin código). */
-export async function hello(host: string, port: number): Promise<{ name: string; api: number }> {
-  const r = await get(`http://${host}:${port}/api/v1/hello`, {}, 5000);
+export async function hello(host: string, port: number, ms = 5000): Promise<{ name: string; api: number; id: string }> {
+  const r = await get(`http://${host}:${port}/api/v1/hello`, {}, ms);
   if (!r.ok) throw new NetError(`Respuesta inesperada (${r.status})`);
   const j = await r.json().catch(() => null);
   if (!j || j.app !== 'visor-capturas') throw new NetError('En esa dirección no hay un visor de capturas');
   if (j.api !== 1) throw new Error('El servidor usa una versión de API no compatible');
-  return { name: String(j.name ?? 'PC'), api: Number(j.api ?? 1) };
+  return { name: String(j.name ?? 'PC'), api: Number(j.api ?? 1), id: String(j.id ?? '') };
+}
+
+/** Enlace del QR del visor: `visor://pair?h=IP&p=PUERTO&k=CODIGO&i=ID&n=NOMBRE`. */
+export function parsePairLink(text: string): ServerCfg | null {
+  const m = text.trim().match(/^visor:\/\/pair\?(.*)$/i);
+  if (!m) return null;
+  const q = new URLSearchParams(m[1]);
+  const host = q.get('h') ?? '', port = Number(q.get('p')), code = normCode(q.get('k') ?? '');
+  if (!/^[\w.-]+$/.test(host) || !(port >= 1 && port <= 65535) || code.length !== 8) return null;
+  return { host, port, code, name: q.get('n') || undefined, id: q.get('i') || undefined };
 }
 
 export class RemoteSource implements Source {

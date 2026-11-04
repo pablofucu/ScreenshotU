@@ -2,6 +2,7 @@
 // Sin servidor guardado se enseña antes la pantalla de conexión del móvil y se recarga al conectar.
 import { loadServer } from './lib/cache';
 import { pushConnection } from './lib/streaming.svelte';
+import { relocate } from './lib/locate';
 
 const saved = loadServer();
 // El modo demostración no sirve para la interfaz de escritorio: cuenta como sin servidor.
@@ -43,4 +44,7 @@ if (!server) {
   });
 
   mount(App, { target: document.getElementById('app')! });
+
+  // Si el PC ha cambiado de IP, se busca por su identificador y se recarga con la dirección nueva (sin bloquear el arranque).
+  void relocate(server).then((n) => { if (n.host !== server.host || n.port !== server.port) location.reload(); });
 }

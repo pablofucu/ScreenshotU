@@ -7,6 +7,8 @@ interface StreamingPlugin {
   isTablet(): Promise<{ tablet: boolean }>;
   isMoonlightInstalled(): Promise<{ installed: boolean }>;
   stream(o: { pc: string; app: string }): Promise<void>;
+  /** Busca visores en la red local (UDP). Sin código: solo quién está y dónde. */
+  discover(o?: { timeoutMs?: number }): Promise<{ found: { id: string; name: string; host: string; port: number }[] }>;
   setConnection(o: { base: string; code: string }): Promise<void>;
   openAccessibilitySettings(): Promise<void>;
   isCaptureServiceEnabled(): Promise<{ enabled: boolean }>;
