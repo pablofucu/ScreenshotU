@@ -9,6 +9,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter, Listener, Manager};
+use visor_core::games::Game;
 
 /// Segundos en los que una segunda peticion de cierre fuerza el cierre.
 const CLOSE_AGAIN: Duration = Duration::from_secs(60);
@@ -16,6 +17,10 @@ const CLOSE_AGAIN: Duration = Duration::from_secs(60);
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Phase {
     Idle,
+    /// La tablet pidio jugar y aun no ha conectado: el juego no se ha abierto.
+    Pending,
+    /// Ya conecto: se esta abriendo el juego en la pantalla virtual.
+    Starting,
     Playing,
 }
 
@@ -40,9 +45,13 @@ struct Session {
     shots: u32,
     last: Option<Summary>,
     close_asked: Option<Instant>,
+    /// Juego que espera a la tablet (fase `Pending`).
+    pending: Option<Game>,
+    /// Cambia con cada pendiente nuevo o cancelado: los hilos de espera comprueban que siguen siendo suyos.
+    epoch: u64,
 }
 
-static SESSION: Mutex<Session> = Mutex::new(Session { phase: Phase::Idle, streamed: false, game: None, started_ms: 0, shots: 0, last: None, close_asked: None });
+static SESSION: Mutex<Session> = Mutex::new(Session { phase: Phase::Idle, streamed: false, game: None, started_ms: 0, shots: 0, last: None, close_asked: None, pending: None, epoch: 0 });
 
 fn session() -> std::sync::MutexGuard<'static, Session> {
     SESSION.lock().unwrap_or_else(|e| e.into_inner())
@@ -191,6 +200,127 @@ pub fn recover_cursor(dir: &Path) {
     }
 }
 
+/// Caducidad del juego pendiente cuando lanza el ayudante de Apollo.
+const PENDING_TTL: Duration = Duration::from_secs(120);
+/// Espera de la pantalla virtual en el respaldo sin ayudante.
+const FALLBACK_WAIT: Duration = Duration::from_secs(30);
+
+fn notice(app: &AppHandle, id: &str, message: &str, error: bool) {
+    let _ = app.emit("magpie-status", crate::magpie::MagpieEvent { id: id.to_string(), message: message.to_string(), error });
+}
+
+/// Si hay una app «Juego actual» al dia en Apollo (I5): con ella lanza el ayudante al conectar la tablet.
+fn app_installed() -> bool {
+    false
+}
+
+/// «Jugar» desde la tablet. Con el ayudante el juego queda pendiente hasta que la tablet conecte; sin el
+/// (app «Desktop» o Sunshine) se sondea la pantalla virtual y, si no aparece, se abre en el monitor del PC.
+/// Devuelve `{app}`: el nombre de la app de Apollo que debe abrir la tablet, o `null` para usar su ajuste.
+pub fn launch(app: &AppHandle, game: Game) -> Result<Value, String> {
+    if let Some(a) = app.state::<AppState>().active.lock().unwrap().as_ref() {
+        return Err(format!("Ya hay un juego en marcha: {}", a.name));
+    }
+    let epoch = {
+        let mut s = session();
+        if s.phase != Phase::Idle {
+            return Err("Ya se está abriendo un juego".to_string());
+        }
+        s.epoch += 1;
+        s.phase = Phase::Pending;
+        s.streamed = true;
+        s.game = Some((game.id.clone(), game.name.clone()));
+        s.pending = Some(game.clone());
+        s.epoch
+    };
+    let app = app.clone();
+    if app_installed() {
+        std::thread::spawn(move || {
+            let t0 = Instant::now();
+            while t0.elapsed() < PENDING_TTL {
+                std::thread::sleep(Duration::from_secs(1));
+                if session().epoch != epoch || session().phase != Phase::Pending {
+                    return;
+                }
+            }
+            if let Some(g) = take_pending(epoch) {
+                reset_idle();
+                notice(&app, &g.id, "La tablet no llegó a conectar; no se abre el juego", false);
+            }
+        });
+        return Ok(json!({ "app": "Juego actual" }));
+    }
+    std::thread::spawn(move || {
+        let t0 = Instant::now();
+        while crate::display::virtual_monitor().is_none() && t0.elapsed() < FALLBACK_WAIT {
+            std::thread::sleep(Duration::from_millis(500));
+            if session().epoch != epoch {
+                return;
+            }
+        }
+        if let Some(g) = take_pending(epoch) {
+            launch_now(&app, g, FALLBACK_WAIT);
+        }
+    });
+    Ok(json!({ "app": null }))
+}
+
+/// Quita el pendiente si sigue siendo el de `epoch` y pasa la fase a `Starting`.
+fn take_pending(epoch: u64) -> Option<Game> {
+    let mut s = session();
+    if s.epoch != epoch || s.phase != Phase::Pending {
+        return None;
+    }
+    s.phase = Phase::Starting;
+    s.pending.take()
+}
+
+fn reset_idle() {
+    let mut s = session();
+    s.phase = Phase::Idle;
+    s.streamed = false;
+    s.game = None;
+    s.pending = None;
+    s.epoch += 1;
+}
+
+/// Espera la pantalla virtual (hasta `wait`), la deja asentar y abre el juego en ella. Bloquea: va en un hilo.
+fn launch_now(app: &AppHandle, game: Game, wait: Duration) {
+    let t0 = Instant::now();
+    let mut screen = crate::display::virtual_monitor();
+    while screen.is_none() && t0.elapsed() < wait {
+        std::thread::sleep(Duration::from_millis(500));
+        screen = crate::display::virtual_monitor();
+    }
+    if screen.is_some() {
+        // Apollo aun ajusta la resolucion nada mas crearla.
+        std::thread::sleep(Duration::from_millis(1500));
+        screen = crate::display::virtual_monitor();
+    } else {
+        notice(app, &game.id, "No apareció la pantalla virtual: el juego se abre en el monitor del PC", false);
+    }
+    let (app2, id) = (app.clone(), game.id.clone());
+    // El lanzador toca la ventana y la pantalla principal: va en el hilo principal.
+    let (tx, rx) = std::sync::mpsc::channel();
+    let sent = app.run_on_main_thread(move || {
+        let _ = tx.send(crate::launcher::start_at(&app2, game, screen));
+    });
+    let r = sent.map_err(|e| e.to_string()).and_then(|_| rx.recv_timeout(Duration::from_secs(30)).map_err(|_| "El visor no respondió a tiempo".to_string()));
+    if let Err(e) = r.and_then(|r| r) {
+        reset_idle();
+        notice(app, &id, &e, true);
+    }
+}
+
+/// La tablet no llego a abrir Artemis: se descarta el juego pendiente.
+pub fn cancel() -> Value {
+    let was = session().phase == Phase::Pending;
+    if was {
+        reset_idle();
+    }
+    json!({ "cancelled": was })
+}
+
 /// Cierra el juego en marcha. `none` = no hay juego; `asked` = se le pidio cerrar; `forced` = se mato.
 pub fn close(app: &AppHandle, force: bool) -> Result<Value, String> {
     let pids = {
@@ -242,6 +372,8 @@ pub fn session_json() -> Value {
     let s = session();
     let state = match s.phase {
         Phase::Idle => "idle",
+        Phase::Pending => "pending",
+        Phase::Starting => "starting",
         Phase::Playing => "playing",
     };
     json!({ "state": state, "game": s.game.as_ref().map(|(id, name)| json!({ "id": id, "name": name })), "streamed": s.streamed, "last": s.last })

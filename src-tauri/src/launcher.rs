@@ -87,57 +87,8 @@ pub fn start(app: &AppHandle, game: Game) -> Result<(), String> {
     start_at(app, game, None)
 }
 
-/// Tiempo maximo esperando a que Apollo cree la pantalla virtual.
-const STREAM_WAIT: Duration = Duration::from_secs(30);
-static STREAM_WAITING: AtomicBool = AtomicBool::new(false);
-
-/// «Jugar» desde la tablet: la pantalla virtual no existe hasta que Artemis conecta, asi que se responde ya (la
-/// tablet abre Artemis) y el juego se lanza cuando aparece. Sin ella (Sunshine, app sin pantalla virtual), en el
-/// monitor del visor.
-pub fn start_stream(app: &AppHandle, game: Game) -> Result<(), String> {
-    let st = app.state::<AppState>();
-    if let Some(a) = st.active.lock().unwrap().as_ref() {
-        return Err(format!("Ya hay un juego en marcha: {}", a.name));
-    }
-    if STREAM_WAITING.swap(true, Ordering::SeqCst) {
-        return Err("Ya se está abriendo un juego".to_string());
-    }
-    let app = app.clone();
-    std::thread::spawn(move || {
-        let t0 = Instant::now();
-        let mut screen = crate::display::virtual_monitor();
-        while screen.is_none() && t0.elapsed() < STREAM_WAIT {
-            std::thread::sleep(Duration::from_millis(500));
-            screen = crate::display::virtual_monitor();
-        }
-        if screen.is_some() {
-            // Se deja asentar: Apollo aun ajusta la resolucion nada mas crearla.
-            std::thread::sleep(Duration::from_millis(1500));
-            screen = crate::display::virtual_monitor();
-        }
-        let notice = |message: String, error: bool| {
-            let _ = app.emit("magpie-status", crate::magpie::MagpieEvent { id: game.id.clone(), message, error });
-        };
-        if screen.is_none() {
-            notice("No apareció la pantalla virtual: el juego se abre en el monitor del PC".to_string(), false);
-        }
-        let (app2, game2) = (app.clone(), game.clone());
-        // El lanzador toca la ventana y la pantalla principal: va en el hilo principal.
-        let (tx, rx) = std::sync::mpsc::channel();
-        let sent = app.run_on_main_thread(move || {
-            let _ = tx.send(start_at(&app2, game2, screen));
-        });
-        let r = sent.map_err(|e| e.to_string()).and_then(|_| rx.recv_timeout(Duration::from_secs(30)).map_err(|_| "El visor no respondió a tiempo".to_string()));
-        if let Err(e) = r.and_then(|r| r) {
-            notice(e, true);
-        }
-        STREAM_WAITING.store(false, Ordering::SeqCst);
-    });
-    Ok(())
-}
-
 /// `screen`: monitor donde abrirlo; sin el, el del visor.
-fn start_at(app: &AppHandle, game: Game, screen: Option<crate::display::Monitor>) -> Result<(), String> {
+pub(crate) fn start_at(app: &AppHandle, game: Game, screen: Option<crate::display::Monitor>) -> Result<(), String> {
     let st = app.state::<AppState>();
     if let Some(a) = st.active.lock().unwrap().as_ref() {
         return Err(format!("Ya hay un juego en marcha: {}", a.name));

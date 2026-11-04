@@ -83,8 +83,9 @@ pub fn dispatch(app: &AppHandle, cmd: &str, args: Value) -> Res {
                 game = found.iter().find(|g| g.id == id).cloned();
                 *state.games.lock().unwrap() = found;
             }
-            out(crate::launcher::start_stream(app, game.ok_or("Juego no encontrado")?))
+            out(crate::stream::launch(app, game.ok_or("Juego no encontrado")?))
         }
+        "stream_cancel" => val(crate::stream::cancel()),
         "close_game" => out(crate::stream::close(app, arg(a, "force").unwrap_or(false))),
         "launch_game" => {
             let id: String = arg(a, "id")?;
