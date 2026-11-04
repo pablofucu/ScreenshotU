@@ -991,7 +991,7 @@ fn close_main(app: AppHandle) {
 
 /// Modo auxiliar (reiniciar Magpie elevado). Lo llama `main` antes de abrir la aplicacion.
 pub fn helper_main() -> Option<i32> {
-    magpie::helper_main()
+    stream::helper_main().or_else(magpie::helper_main)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

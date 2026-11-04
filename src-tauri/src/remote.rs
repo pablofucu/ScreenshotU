@@ -87,6 +87,10 @@ impl Provider for AppProvider {
         crate::stream::session_json()
     }
 
+    fn session_start(&self, w: u32, h: u32, fps: u32) -> anyhow::Result<serde_json::Value> {
+        crate::stream::session_start(&self.app, w, h, fps).map_err(|e| anyhow::anyhow!(e))
+    }
+
     fn call(&self, cmd: &str, args: serde_json::Value) -> Result<serde_json::Value, String> {
         crate::remote_call::dispatch(&self.app, cmd, args)
     }

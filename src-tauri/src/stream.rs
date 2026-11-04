@@ -312,6 +312,120 @@ fn launch_now(app: &AppHandle, game: Game, wait: Duration) {
     }
 }
 
+/// La tablet conecto (llama el ayudante de Apollo): abre el juego pendiente o reengancha el que ya esta en marcha.
+pub fn session_start(app: &AppHandle, _w: u32, _h: u32, _fps: u32) -> Result<Value, String> {
+    let (phase, epoch) = {
+        let s = session();
+        (s.phase, s.epoch)
+    };
+    match phase {
+        Phase::Pending => {
+            if let Some(g) = take_pending(epoch) {
+                let a = app.clone();
+                std::thread::spawn(move || launch_now(&a, g, Duration::from_secs(10)));
+            }
+        }
+        Phase::Starting | Phase::Playing => {}
+        Phase::Idle => {
+            if app.state::<AppState>().active.lock().unwrap().is_none() {
+                return Err("No hay ningún juego pendiente ni en marcha".to_string());
+            }
+            // Artemis se reconecto con el juego aun abierto en el PC.
+            let mut s = session();
+            s.phase = Phase::Playing;
+            s.streamed = true;
+            drop(s);
+            hide_cursor_if_enabled(app);
+        }
+    }
+    Ok(json!({ "ok": true, "state": session_json()["state"] }))
+}
+
+/// Modo auxiliar `visor.exe --stream-session --port N`: es la app «Juego actual» de Apollo. Avisa al visor de que la
+/// tablet conecto y no termina hasta que acaba la partida, para que Apollo cierre la sesion de streaming.
+/// Sin Tauri. Salida: 0 = fin normal, 1 = no habia juego / caduco, 2 = el visor no responde.
+pub fn helper_main() -> Option<i32> {
+    let args: Vec<String> = std::env::args().collect();
+    if args.get(1).map(String::as_str) != Some("--stream-session") {
+        return None;
+    }
+    let port: u16 = args.iter().position(|a| a == "--port").and_then(|i| args.get(i + 1)).and_then(|p| p.parse().ok()).unwrap_or(visor_core::remote::DEFAULT_PORT);
+    let env = |k: &str| std::env::var(k).ok().and_then(|v| v.trim().parse::<u32>().ok()).unwrap_or(0);
+    let body = json!({ "width": env("SUNSHINE_CLIENT_WIDTH"), "height": env("SUNSHINE_CLIENT_HEIGHT"), "fps": env("SUNSHINE_CLIENT_FPS") });
+    let log = |m: &str| {
+        use std::io::Write;
+        if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(std::env::temp_dir().join("visor-stream.log")) {
+            let _ = writeln!(f, "{} {m}", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"));
+        }
+    };
+    let base = format!("http://127.0.0.1:{port}/api/v1/session");
+    log(&format!("ayudante en marcha, puerto {port}, {body}"));
+    let agent = ureq::AgentBuilder::new().timeout(Duration::from_secs(5)).build();
+    // Arranque: el visor puede estar aun abriendose.
+    let t0 = Instant::now();
+    loop {
+        match agent.post(&format!("{base}/start")).send_json(body.clone()) {
+            Ok(_) => break,
+            Err(ureq::Error::Status(c, _)) => {
+                log(&format!("start rechazado: {c}"));
+                return Some(1);
+            }
+            Err(e) => {
+                if t0.elapsed() > Duration::from_secs(10) {
+                    log(&format!("el visor no responde: {e}"));
+                    return Some(2);
+                }
+                std::thread::sleep(Duration::from_secs(1));
+            }
+        }
+    }
+    let started = Instant::now();
+    let mut seen_active = false;
+    let mut down_since: Option<Instant> = None;
+    loop {
+        std::thread::sleep(Duration::from_secs(1));
+        let state = match agent.get(&base).call().ok().and_then(|r| r.into_json::<Value>().ok()) {
+            Some(v) => {
+                down_since = None;
+                v["state"].as_str().unwrap_or("idle").to_string()
+            }
+            None => {
+                if down_since.get_or_insert_with(Instant::now).elapsed() > Duration::from_secs(10) {
+                    log("el visor dejo de responder");
+                    return Some(2);
+                }
+                continue;
+            }
+        };
+        match state.as_str() {
+            "playing" => seen_active = true,
+            "starting" => {
+                seen_active = true;
+                if started.elapsed() > PENDING_TTL {
+                    log("el juego no llego a abrirse");
+                    return Some(1);
+                }
+            }
+            "idle" => {
+                if seen_active {
+                    log("partida terminada");
+                    return Some(0);
+                }
+                if started.elapsed() > Duration::from_secs(10) {
+                    log("sin partida");
+                    return Some(1);
+                }
+            }
+            _ => {
+                if started.elapsed() > PENDING_TTL {
+                    log("el juego sigue pendiente");
+                    return Some(1);
+                }
+            }
+        }
+    }
+}
+
 /// La tablet no llego a abrir Artemis: se descarta el juego pendiente.
 pub fn cancel() -> Value {
     let was = session().phase == Phase::Pending;
