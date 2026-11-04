@@ -79,6 +79,14 @@ impl Provider for AppProvider {
         Ok(())
     }
 
+    fn close(&self, force: bool) -> anyhow::Result<serde_json::Value> {
+        crate::stream::close(&self.app, force).map_err(|e| anyhow::anyhow!(e))
+    }
+
+    fn session(&self) -> serde_json::Value {
+        crate::stream::session_json()
+    }
+
     fn call(&self, cmd: &str, args: serde_json::Value) -> Result<serde_json::Value, String> {
         crate::remote_call::dispatch(&self.app, cmd, args)
     }
@@ -109,6 +117,7 @@ const FORWARDED_EVENTS: &[&str] = &[
     "library-progress",
     "magpie-status",
     "saves-copied",
+    "session-summary",
     "sgdb-art",
     "sgdb-done",
     "sgdb-progress",

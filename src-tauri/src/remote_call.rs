@@ -85,6 +85,7 @@ pub fn dispatch(app: &AppHandle, cmd: &str, args: Value) -> Res {
             }
             out(crate::launcher::start_stream(app, game.ok_or("Juego no encontrado")?))
         }
+        "close_game" => out(crate::stream::close(app, arg(a, "force").unwrap_or(false))),
         "launch_game" => {
             let id: String = arg(a, "id")?;
             // El lanzador toca la ventana y la pantalla principal: va en el hilo principal.

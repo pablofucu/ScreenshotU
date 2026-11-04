@@ -115,6 +115,11 @@ pub fn refocus_game(ours: isize, pids: &std::sync::Arc<std::sync::Mutex<Vec<u32>
     }
 }
 
+/// Ventana principal visible de esos procesos (para pedirle que cierre).
+pub fn game_window(pids: &[u32]) -> Option<isize> {
+    imp::main_window(pids)
+}
+
 #[cfg(windows)]
 mod imp {
     use super::Monitor;

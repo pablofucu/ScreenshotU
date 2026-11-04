@@ -31,6 +31,7 @@ mod sgdb;
 mod shots;
 mod snap;
 mod state;
+mod stream;
 mod texthook;
 mod tray;
 mod trash;
@@ -1163,6 +1164,7 @@ pub fn run() {
                 remote_error: Mutex::new(None),
             });
             // Servidor para la app movil, si esta activado.
+            stream::init(app.handle());
             remote::forward_events(app.handle());
             remote::apply(app.handle());
             install_panic_hook(app.state::<AppState>().config_dir.clone());

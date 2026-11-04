@@ -125,6 +125,18 @@ pub trait Provider: Send + Sync + 'static {
     fn call(&self, _cmd: &str, _args: serde_json::Value) -> std::result::Result<serde_json::Value, String> {
         Err(CALL_NOT_ALLOWED.into())
     }
+    /// Cierra el juego en marcha (`POST /close`). Devuelve `{ "closed": "none"|"asked"|"forced" }`.
+    fn close(&self, _force: bool) -> Result<serde_json::Value> {
+        anyhow::bail!("Este equipo no puede cerrar juegos")
+    }
+    /// Estado ligero de la sesion de juego (`GET /session`).
+    fn session(&self) -> serde_json::Value {
+        serde_json::json!({ "state": "idle" })
+    }
+    /// El ayudante avisa de que la tablet ha conectado (`POST /session/start`, solo loopback).
+    fn session_start(&self, _w: u32, _h: u32, _fps: u32) -> Result<serde_json::Value> {
+        anyhow::bail!("Este equipo no admite sesiones de streaming")
+    }
     /// Carpetas de las que sirve `GET /asset` (cualquier archivo dentro de ellas).
     fn asset_roots(&self) -> Vec<PathBuf> {
         vec![self.thumbs_dir(), self.previews_dir()]
@@ -622,14 +634,17 @@ fn route(inner: &Inner, req: &Req) -> Reply {
         "/api/v1/hello" => {
             return Reply::json(
                 200,
-                &serde_json::json!({ "app": "visor-capturas", "api": API_VERSION, "name": inner.provider.name(), "version": env!("CARGO_PKG_VERSION"), "id": inner.provider.id(), "features": ["launch", "capture", "call", "events", "asset", "discover"] }),
+                &serde_json::json!({ "app": "visor-capturas", "api": API_VERSION, "name": inner.provider.name(), "version": env!("CARGO_PKG_VERSION"), "id": inner.provider.id(), "features": ["launch", "capture", "call", "events", "asset", "discover", "close", "session"] }),
             )
         }
-        "/api/v1/launch" | "/api/v1/capture" | "/api/v1/call" if !post => return Reply::error(405, "Método no permitido"),
+        "/api/v1/launch" | "/api/v1/capture" | "/api/v1/call" | "/api/v1/close" | "/api/v1/session/start" if !post => return Reply::error(405, "Método no permitido"),
         "/api/v1/launch" => "launch",
+        "/api/v1/close" => "close",
+        "/api/v1/session/start" => "session_start",
         "/api/v1/call" => "call",
         "/api/v1/capture" => "capture",
         _ if post => return Reply::error(405, "Método no permitido"),
+        "/api/v1/session" => "session",
         "/api/v1/snapshot" => "snapshot",
         "/api/v1/thumb" => "thumb",
         "/api/v1/preview" => "preview",
@@ -642,9 +657,32 @@ fn route(inner: &Inner, req: &Req) -> Reply {
     if inner.throttle.blocked(req.ip, now) {
         return Reply::error(429, "Demasiados intentos con un código incorrecto. Espera un minuto.");
     }
-    if !inner.authorized(req) {
+    // El ayudante de streaming habla desde el propio PC: sin codigo desde loopback.
+    let local_ok = (ep == "session" || ep == "session_start") && req.ip.is_loopback();
+    if ep == "session_start" && !local_ok {
+        return Reply::error(403, "Solo desde el propio equipo");
+    }
+    if !local_ok && !inner.authorized(req) {
         inner.throttle.fail(req.ip, now);
         return Reply::error(401, "Falta el código de emparejamiento o no es correcto.");
+    }
+    if ep == "session" {
+        return Reply::json(200, &inner.provider.session()).with("Cache-Control", "no-store");
+    }
+    if ep == "session_start" {
+        let v = serde_json::from_slice::<serde_json::Value>(&req.body).unwrap_or(serde_json::Value::Null);
+        let n = |k: &str| v.get(k).and_then(|x| x.as_u64()).unwrap_or(0) as u32;
+        return match inner.provider.session_start(n("width"), n("height"), n("fps")) {
+            Ok(r) => Reply::json(200, &r),
+            Err(e) => Reply::error(409, &format!("{e:#}")),
+        };
+    }
+    if ep == "close" {
+        let force = serde_json::from_slice::<serde_json::Value>(&req.body).ok().and_then(|v| v.get("force").and_then(|f| f.as_bool())).unwrap_or(false);
+        return match inner.provider.close(force) {
+            Ok(r) => Reply::json(200, &r),
+            Err(e) => Reply::error(409, &format!("{e:#}")),
+        };
     }
     if ep == "launch" {
         let id = serde_json::from_slice::<serde_json::Value>(&req.body).ok().and_then(|v| v.get("id").and_then(|i| i.as_str().map(str::to_string))).filter(|i| !i.is_empty());
@@ -1113,6 +1151,15 @@ mod tests {
         fn capture(&self) -> Result<()> {
             Ok(())
         }
+        fn close(&self, force: bool) -> Result<serde_json::Value> {
+            Ok(serde_json::json!({ "closed": if force { "forced" } else { "asked" } }))
+        }
+        fn session(&self) -> serde_json::Value {
+            serde_json::json!({ "state": "idle", "game": null, "streamed": false, "last": null })
+        }
+        fn session_start(&self, _w: u32, _h: u32, _fps: u32) -> Result<serde_json::Value> {
+            anyhow::bail!("No hay juego pendiente")
+        }
         fn call(&self, cmd: &str, args: serde_json::Value) -> std::result::Result<serde_json::Value, String> {
             match cmd {
                 "ping" => Ok(serde_json::json!({ "pong": args["n"] })),
@@ -1299,6 +1346,14 @@ mod tests {
         assert_eq!(post(a, "/api/v1/launch", Some("ABCD-EFGH"), "no es json").0, 400);
         // por GET no se puede lanzar ni capturar
         assert_eq!(get(a, "GET", "/api/v1/capture", &[("Authorization", "Bearer ABCD-EFGH")]).status, 405);
+        // close: 401 sin codigo, 200 con codigo; session sin codigo desde loopback; session/start por GET = 405
+        assert_eq!(post(a, "/api/v1/close", None, "{}").0, 401);
+        let (st, text) = post(a, "/api/v1/close", Some("ABCD-EFGH"), "{\"force\":true}");
+        assert_eq!(st, 200);
+        assert!(text.contains("\"forced\""));
+        assert_eq!(get(a, "GET", "/api/v1/session", &[]).status, 200);
+        assert_eq!(post(a, "/api/v1/session/start", None, "{\"width\":1,\"height\":1,\"fps\":60}").0, 409);
+        assert_eq!(get(a, "GET", "/api/v1/session/start", &[]).status, 405);
     }
 
     #[test]
