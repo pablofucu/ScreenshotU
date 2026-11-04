@@ -209,9 +209,10 @@ fn notice(app: &AppHandle, id: &str, message: &str, error: bool) {
     let _ = app.emit("magpie-status", crate::magpie::MagpieEvent { id: id.to_string(), message: message.to_string(), error });
 }
 
-/// Si hay una app «Juego actual» al dia en Apollo (I5): con ella lanza el ayudante al conectar la tablet.
-fn app_installed() -> bool {
-    false
+/// Si hay una app «Juego actual» al dia en Apollo: con ella lanza el ayudante al conectar la tablet.
+fn app_installed(app: &AppHandle) -> bool {
+    let port = app.state::<AppState>().config.lock().unwrap().remote_port;
+    crate::apollo::app_installed(port)
 }
 
 /// «Jugar» desde la tablet. Con el ayudante el juego queda pendiente hasta que la tablet conecte; sin el
@@ -234,7 +235,7 @@ pub fn launch(app: &AppHandle, game: Game) -> Result<Value, String> {
         s.epoch
     };
     let app = app.clone();
-    if app_installed() {
+    if app_installed(&app) {
         std::thread::spawn(move || {
             let t0 = Instant::now();
             while t0.elapsed() < PENDING_TTL {

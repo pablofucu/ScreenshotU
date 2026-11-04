@@ -1,4 +1,4 @@
-import type { Achievement, AchievementSummary, GameDetection, AddReport, AudioOutput, Backend, BackupResult, GameStatsDb, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, MoveReport, TrashReport, RemoteInfo, NewGame, Collection, SortMode } from './types';
+import type { Achievement, AchievementSummary, GameDetection, AddReport, AudioOutput, Backend, BackupResult, GameStatsDb, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, StreamAppStatus, MoveReport, TrashReport, RemoteInfo, NewGame, Collection, SortMode } from './types';
 
 export const IS_TAURI = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 /** La UI de escritorio corre dentro del APK de la tablet (el arranque de `mobile/` lo marca antes de cargarla): habla con el PC por HTTP. */
@@ -163,6 +163,8 @@ async function tauriBackend(): Promise<Backend> {
     setPendingOrder: (ids: string[]) => invoke('set_pending_order', { ids }),
     snoozeStalled: (ids: string[]) => invoke('snooze_stalled', { ids }),
     magpieStatus: () => invoke<MagpieStatus>('magpie_status'),
+    streamAppStatus: () => invoke<StreamAppStatus>('stream_app_status'),
+    streamAppInstall: () => invoke<StreamAppStatus>('stream_app_install'),
     remoteInfo: () => invoke<RemoteInfo>('remote_info'),
     remoteNewCode: () => invoke<RemoteInfo>('remote_new_code'),
     async pickSaveZip(defaultName: string) {

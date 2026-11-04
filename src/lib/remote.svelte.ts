@@ -3,17 +3,17 @@ import { app } from './store.svelte';
 import { backend } from './backend';
 import { blip } from './sound';
 import { patchConfig, toast } from './controller.svelte';
-import type { RemoteInfo } from './types';
+import type { RemoteInfo, StreamAppStatus } from './types';
 
-export type RemoteId = 'remoteon' | 'remoteqr' | 'remoteaddr' | 'remotecode' | 'remotewin' | 'remotecursor' | 'remotehelp';
-export const REMOTE_ROWS: RemoteId[] = ['remoteon', 'remoteqr', 'remoteaddr', 'remotecode', 'remotewin', 'remotecursor', 'remotehelp'];
+export type RemoteId = 'remoteon' | 'remoteqr' | 'remoteaddr' | 'remotecode' | 'remotewin' | 'remotecursor' | 'remotestream' | 'remotehelp';
+export const REMOTE_ROWS: RemoteId[] = ['remoteon', 'remoteqr', 'remoteaddr', 'remotecode', 'remotewin', 'remotecursor', 'remotestream', 'remotehelp'];
 export const isRemoteId = (id: string): id is RemoteId => (REMOTE_ROWS as string[]).includes(id);
 export const REMOTE_CYCLE = new Set<RemoteId>(['remoteon', 'remotewin', 'remotecursor']);
 
 const HELP = 'Abre la app Visor en el móvil (misma red Wi-Fi) y escribe esta dirección y el código. La primera vez Windows puede pedir permiso en el cortafuegos: permite redes privadas.';
 
 /** Último estado que ha dado el núcleo (se pide al abrir Ajustes y tras cada cambio). */
-const rm = $state({ info: null as RemoteInfo | null, busy: false, qrOpen: false });
+const rm = $state({ info: null as RemoteInfo | null, busy: false, qrOpen: false, apollo: null as StreamAppStatus | null, apolloBusy: false });
 /** Para la pantalla de Ajustes: el QR de emparejamiento abierto y el último estado del servidor. */
 export const remoteView = rm;
 
@@ -27,6 +27,7 @@ function setInfo(i: RemoteInfo) {
 
 export async function refreshRemote() {
   try { setInfo(await backend.remoteInfo()); } catch { rm.info = null; }
+  try { rm.apollo = await backend.streamAppStatus(); } catch { rm.apollo = null; }
 }
 
 function addrLabel(i: RemoteInfo | null): string {
@@ -48,6 +49,11 @@ export function remoteRow(id: RemoteId): { l: string; v: string; d: string } {
       return { l: 'Arrancar con Windows', v: app.config.startWithWindows ? 'Sí' : 'No', d: 'Abre el visor en segundo plano al iniciar sesión en Windows (solo el icono junto al reloj, sin ventana) para que la tablet conecte sin abrir nada. Con esto activado, cerrar el visor lo deja en la bandeja; «Salir» del icono lo cierra del todo.' };
     case 'remotecursor':
       return { l: 'Ocultar el cursor en el streaming', v: app.config.streamHideCursor ? 'Sí' : 'No', d: 'Mientras juegas desde la tablet, el cursor del PC se vuelve transparente para que no salga sobre el juego. Desactívalo si usas el modo trackpad de Artemis, donde el puntero tiene que verse.' };
+    case 'remotestream': {
+      const a = rm.apollo;
+      const v = rm.apolloBusy ? 'Creando…' : !a ? '…' : !a.found ? 'Apollo no encontrado' : !a.installed ? 'Crear' : a.outdated ? 'Actualizar' : 'Creada';
+      return { l: 'Juego actual en Apollo', v, d: 'Crea en Apollo una app «Juego actual» (hace falta aceptar el permiso de administrador y reinicia su servicio). Con ella, el juego se abre en el PC al conectar la tablet y la sesión de streaming termina sola al cerrarse el juego. Sin ella funciona con «Desktop», pero la sesión no se cierra sola.' };
+    }
     case 'remoteaddr': {
       let d = 'Dirección (IP del PC y puerto) y código de emparejamiento que hay que escribir en el móvil.';
       if (i?.enabled && i.running && i.addresses.length > 1) d += ` Si no conecta, prueba con otra IP del PC: ${i.addresses.slice(1).map((a) => `${a}:${i.port}`).join(', ')}.`;
@@ -70,6 +76,15 @@ export function remoteAct(id: RemoteId, dir: number) {
     blip(1320);
   } else if (id === 'remotewin') {
     void patchConfig({ startWithWindows: !app.config.startWithWindows });
+    blip(1320);
+  } else if (id === 'remotestream') {
+    if (rm.apolloBusy) return;
+    if (!rm.apollo?.found) { toast('No se encontró Apollo ni Sunshine en este PC', 3600); return; }
+    rm.apolloBusy = true;
+    backend.streamAppInstall()
+      .then((s) => { rm.apollo = s; toast('«Juego actual» creada en Apollo', 3200); })
+      .catch((e) => toast(errText(e), 4200))
+      .finally(() => { rm.apolloBusy = false; });
     blip(1320);
   } else if (id === 'remotecursor') {
     void patchConfig({ streamHideCursor: !app.config.streamHideCursor });

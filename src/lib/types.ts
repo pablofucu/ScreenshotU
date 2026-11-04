@@ -144,6 +144,8 @@ export type GameSource = 'manual' | 'emulator';
 /** Estado de un juego; `none` = sin estado. */
 export type GameStatus = 'none' | 'pending' | 'playing' | 'finished' | 'dropped';
 export type MagpieMode = 'off' | 'auto' | '2x' | '4x';
+/** App «Juego actual» de Apollo: si se encontró Apollo/Sunshine, si está creada y si apunta a otro visor/puerto. */
+export interface StreamAppStatus { found: boolean; path: string; installed: boolean; outdated: boolean }
 export interface MagpieStatus { exe: string; running: boolean; cunny: boolean }
 /** Cifras de un juego guardadas en la base (no viajan con la biblioteca). `activeMs` solo cuenta las partidas en las que se midió (`measuredMs`). */
 export interface GameStatsDb {
@@ -363,6 +365,10 @@ export interface Backend {
   /** «Dejarlo» ante el aviso de juegos parados: no se vuelve a preguntar hasta que se jueguen otra vez. */
   snoozeStalled(ids: string[]): Promise<void>;
   magpieStatus(): Promise<MagpieStatus>;
+  /** App «Juego actual» en Apollo: si se encuentra, si está creada y si está al día. */
+  streamAppStatus(): Promise<StreamAppStatus>;
+  /** Crea o actualiza «Juego actual» en Apollo y reinicia su servicio (pide permisos de administrador). */
+  streamAppInstall(): Promise<StreamAppStatus>;
   /** Acceso desde el móvil: dirección, código y si el servidor está en marcha. */
   remoteInfo(): Promise<RemoteInfo>;
   /** Genera otro código de emparejamiento (el móvil tendrá que escribirlo de nuevo). */

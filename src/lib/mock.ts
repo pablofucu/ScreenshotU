@@ -588,6 +588,8 @@ export async function mockBackend(): Promise<Backend> {
       try { store()?.setItem(LS, JSON.stringify(cfg)); } catch {}
       return { enabled: cfg.remoteEnabled, running: cfg.remoteEnabled, port: cfg.remotePort, addresses: cfg.remoteEnabled ? ['192.168.1.20'] : [], code, id: 'mock', link: '', qr: '', error: null };
     },
+    async streamAppStatus() { return { found: true, path: 'C:\Program Files\Apollo\config\apps.json', installed: false, outdated: false }; },
+    async streamAppInstall() { return { found: true, path: 'C:\Program Files\Apollo\config\apps.json', installed: true, outdated: false }; },
     async magpieStatus() { return { exe: 'C:\\Magpie\\Magpie.exe (simulado)', running: true, cunny: true }; },
     async getCollections() { return load<Collection[]>('visor.mock.colls', seedCollections(lib)); },
     async saveCollections(list) {

@@ -31,6 +31,7 @@ mod sgdb;
 mod shots;
 mod snap;
 mod state;
+mod apollo;
 mod stream;
 mod texthook;
 mod tray;
@@ -639,6 +640,20 @@ async fn magpie_status(state: State<'_, AppState>) -> Result<magpie::MagpieStatu
     tauri::async_runtime::spawn_blocking(move || magpie::status(&configured)).await.map_err(|e| e.to_string())
 }
 
+/// Estado de la app «Juego actual» en Apollo (si se encuentra, si esta creada y si esta al dia).
+#[tauri::command]
+async fn stream_app_status(state: State<'_, AppState>) -> Result<apollo::ApolloStatus, String> {
+    let port = state.config.lock().unwrap().remote_port;
+    tauri::async_runtime::spawn_blocking(move || apollo::status(port)).await.map_err(|e| e.to_string())
+}
+
+/// Crea o actualiza «Juego actual» en Apollo y reinicia su servicio (pide permisos de administrador).
+#[tauri::command]
+async fn stream_app_install(state: State<'_, AppState>) -> Result<apollo::ApolloStatus, String> {
+    let port = state.config.lock().unwrap().remote_port;
+    tauri::async_runtime::spawn_blocking(move || apollo::install(port)).await.map_err(|e| e.to_string())?
+}
+
 /// Colecciones guardadas (agrupaciones virtuales de juegos de una categoria; antes sagas).
 #[tauri::command]
 fn get_collections(state: State<'_, AppState>) -> Vec<visor_core::sagas::Saga> {
@@ -991,7 +1006,7 @@ fn close_main(app: AppHandle) {
 
 /// Modo auxiliar (reiniciar Magpie elevado). Lo llama `main` antes de abrir la aplicacion.
 pub fn helper_main() -> Option<i32> {
-    stream::helper_main().or_else(magpie::helper_main)
+    stream::helper_main().or_else(magpie::helper_main).or_else(apollo::helper_main)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -1299,6 +1314,8 @@ pub fn run() {
             remote::remote_info,
             remote::remote_new_code,
             magpie_status,
+            stream_app_status,
+            stream_app_install,
             get_collections,
             save_collections,
             convert_collections,
