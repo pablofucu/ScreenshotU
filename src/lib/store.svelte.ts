@@ -67,6 +67,7 @@ export const DEFAULT_CONFIG: Config = {
   remoteToken: '',
   remoteId: '',
   startWithWindows: false,
+  streamHideCursor: true,
   titlesOrder: {},
   titlesZoom: 0,
   collectionsStyle: 'aurora',

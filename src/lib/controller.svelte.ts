@@ -1229,7 +1229,7 @@ export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[
         'qmkey', 'qmpad', 'qmmouse', 'qmhold', 'qmpause',
         'capsound', 'cappeek', 'caprumble', 'caponly',
         'magpieexe', 'magpie',
-        'remoteon', 'remoteqr', 'remoteaddr', 'remotecode', 'remotewin', 'remotehelp',
+        'remoteon', 'remoteqr', 'remoteaddr', 'remotecode', 'remotewin', 'remotecursor', 'remotehelp',
       ],
   },
   {

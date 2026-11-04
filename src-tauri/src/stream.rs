@@ -4,6 +4,8 @@
 use crate::state::AppState;
 use serde::Serialize;
 use serde_json::{json, Value};
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter, Listener, Manager};
@@ -52,7 +54,8 @@ fn now_ms() -> i64 {
 
 /// Escucha los eventos de la partida. Se llama una vez, antes de `remote::forward_events`.
 pub fn init(app: &AppHandle) {
-    app.listen_any("game-started", |ev| {
+    let h = app.clone();
+    app.listen_any("game-started", move |ev| {
         let p: Value = serde_json::from_str(ev.payload()).unwrap_or(Value::Null);
         let mut s = session();
         s.game = Some((p["id"].as_str().unwrap_or_default().to_string(), p["name"].as_str().unwrap_or_default().to_string()));
@@ -60,6 +63,11 @@ pub fn init(app: &AppHandle) {
         s.started_ms = now_ms();
         s.shots = 0;
         s.close_asked = None;
+        let hide = s.streamed;
+        drop(s);
+        if hide {
+            hide_cursor_if_enabled(&h);
+        }
     });
     app.listen_any("capture-saved", |_| {
         let mut s = session();
@@ -86,8 +94,101 @@ pub fn init(app: &AppHandle) {
             s.close_asked = None;
             sum
         };
+        restore_cursor(&cursor_dir(&a));
         let _ = a.emit("session-summary", summary);
     });
+}
+
+fn cursor_dir(app: &AppHandle) -> PathBuf {
+    app.state::<AppState>().config_dir.clone()
+}
+
+static CURSOR_HIDDEN: AtomicBool = AtomicBool::new(false);
+static WATCHING: AtomicBool = AtomicBool::new(false);
+
+fn marker(dir: &Path) -> PathBuf {
+    dir.join("cursor-oculto")
+}
+
+fn hide_cursor_if_enabled(app: &AppHandle) {
+    if !app.state::<AppState>().config.lock().unwrap().stream_hide_cursor {
+        return;
+    }
+    hide_cursor(&cursor_dir(app));
+    if !WATCHING.swap(true, Ordering::SeqCst) {
+        let a = app.clone();
+        std::thread::spawn(move || {
+            watch_cursor(&a);
+            WATCHING.store(false, Ordering::SeqCst);
+        });
+    }
+}
+
+/// Vigila la pantalla virtual mientras el cursor esta oculto: si desaparece mas de 5 s (Artemis se desconecto a
+/// mitad) lo restaura; si vuelve, lo oculta otra vez. Sin pantalla virtual (Sunshine) no hace nada.
+fn watch_cursor(app: &AppHandle) {
+    let dir = cursor_dir(app);
+    let (mut seen, mut missing) = (false, 0u32);
+    loop {
+        std::thread::sleep(Duration::from_secs(1));
+        if session().phase != Phase::Playing {
+            return;
+        }
+        if crate::display::virtual_monitor().is_some() {
+            seen = true;
+            missing = 0;
+            if !CURSOR_HIDDEN.load(Ordering::SeqCst) {
+                hide_cursor(&dir);
+            }
+        } else if seen {
+            missing += 1;
+            if missing >= 5 && CURSOR_HIDDEN.load(Ordering::SeqCst) {
+                restore_cursor(&dir);
+            }
+        }
+    }
+}
+
+/// Cursores del sistema transparentes. Deja un marcador para restaurarlos si el visor muere antes de acabar.
+#[cfg(windows)]
+pub fn hide_cursor(dir: &Path) {
+    use windows::Win32::UI::WindowsAndMessaging::*;
+    let _ = std::fs::write(marker(dir), b"1");
+    let ids = [OCR_NORMAL, OCR_IBEAM, OCR_WAIT, OCR_CROSS, OCR_UP, OCR_SIZENWSE, OCR_SIZENESW, OCR_SIZEWE, OCR_SIZENS, OCR_SIZEALL, OCR_NO, OCR_HAND, OCR_APPSTARTING];
+    let and = [0xFFu8; 128];
+    let xor = [0u8; 128];
+    for id in ids {
+        unsafe {
+            if let Ok(c) = CreateCursor(None, 0, 0, 32, 32, and.as_ptr().cast(), xor.as_ptr().cast()) {
+                let _ = SetSystemCursor(c, id);
+            }
+        }
+    }
+    CURSOR_HIDDEN.store(true, Ordering::SeqCst);
+}
+
+#[cfg(windows)]
+pub fn restore_cursor(dir: &Path) {
+    use windows::Win32::UI::WindowsAndMessaging::*;
+    unsafe {
+        let _ = SystemParametersInfoW(SPI_SETCURSORS, 0, None, SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS(0));
+    }
+    let _ = std::fs::remove_file(marker(dir));
+    CURSOR_HIDDEN.store(false, Ordering::SeqCst);
+}
+
+#[cfg(not(windows))]
+pub fn hide_cursor(_: &Path) {}
+#[cfg(not(windows))]
+pub fn restore_cursor(dir: &Path) {
+    let _ = std::fs::remove_file(marker(dir));
+}
+
+/// Al arrancar: si el visor murio con el cursor oculto, lo devuelve.
+pub fn recover_cursor(dir: &Path) {
+    if marker(dir).exists() {
+        restore_cursor(dir);
+    }
 }
 
 /// Cierra el juego en marcha. `none` = no hay juego; `asked` = se le pidio cerrar; `forced` = se mato.

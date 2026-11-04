@@ -93,6 +93,8 @@ export interface Config {
   remoteId: string;
   /** Arrancar con Windows en segundo plano (bandeja, sin ventana) para que la tablet conecte siempre. */
   startWithWindows: boolean;
+  /** Ocultar el cursor del PC mientras dura un juego lanzado por streaming. */
+  streamHideCursor: boolean;
   /** Orden de la lista de juegos por categoría (id de plataforma → orden; ausente = «last»). */
   titlesOrder: Record<string, TitleOrder>;
   /** Tamaño de las portadas: 0 = 5 por fila (por defecto) … 3 = 8 por fila. */

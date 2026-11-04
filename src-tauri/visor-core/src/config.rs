@@ -144,6 +144,8 @@ pub struct Config {
     pub remote_id: String,
     /// Arrancar con Windows en segundo plano (icono en la bandeja, sin ventana) para que la tablet conecte siempre.
     pub start_with_windows: bool,
+    /// Ocultar el cursor del PC mientras dura un juego lanzado por streaming (en modo trackpad de Artemis hay que verlo).
+    pub stream_hide_cursor: bool,
     /// Orden de la lista de juegos por categoria (id de plataforma -> "last" | "az" | "color"; ausente = "last").
     pub titles_order: std::collections::BTreeMap<String, String>,
     /// Tamano de las portadas de la lista de juegos: 0 = 5 por fila (por defecto) .. 3 = 8 por fila.
@@ -250,6 +252,7 @@ impl Default for Config {
             remote_token: String::new(),
             remote_id: String::new(),
             start_with_windows: false,
+            stream_hide_cursor: true,
             titles_order: Default::default(),
             titles_zoom: 0,
             collections_style: "aurora".into(),

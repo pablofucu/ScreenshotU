@@ -69,6 +69,9 @@ fn install_panic_hook(config_dir: PathBuf) {
         let backtrace = std::backtrace::Backtrace::force_capture();
         let msg = format!("PANIC [{thread}] en {location}: {info}\n{backtrace}\n");
         quickmenu::log(&format!("panico [{thread}] en {location}: {info}"));
+        if let Some(p) = PANIC_LOG.get().and_then(|p| p.parent()) {
+            stream::restore_cursor(p);
+        }
         if let Some(p) = PANIC_LOG.get() {
             use std::io::Write;
             if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(p) {
@@ -1170,6 +1173,7 @@ pub fn run() {
             install_panic_hook(app.state::<AppState>().config_dir.clone());
             // Si el visor se cerro con el juego en pausa, el juego sigue congelado.
             quickmenu::recover(app.handle());
+            stream::recover_cursor(&app.state::<AppState>().config_dir);
             if let Err(e) = apply_hotkeys(app.handle(), &hotkey, &rec_hotkey, &audio_hotkey, &overlay_hotkey) {
                 eprintln!("{e}");
             }
@@ -1371,6 +1375,13 @@ pub fn run() {
             achievements::get_achievements_card_variant,
             achievements::detect_game_steamworks
         ])
-        .run(tauri::generate_context!())
-        .expect("error al ejecutar la aplicacion");
+        .build(tauri::generate_context!())
+        .expect("error al ejecutar la aplicacion")
+        .run(|app, ev| {
+            if let tauri::RunEvent::Exit = ev {
+                if let Some(st) = app.try_state::<AppState>() {
+                    stream::restore_cursor(&st.config_dir);
+                }
+            }
+        });
 }

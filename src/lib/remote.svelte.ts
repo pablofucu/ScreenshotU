@@ -5,10 +5,10 @@ import { blip } from './sound';
 import { patchConfig, toast } from './controller.svelte';
 import type { RemoteInfo } from './types';
 
-export type RemoteId = 'remoteon' | 'remoteqr' | 'remoteaddr' | 'remotecode' | 'remotewin' | 'remotehelp';
-export const REMOTE_ROWS: RemoteId[] = ['remoteon', 'remoteqr', 'remoteaddr', 'remotecode', 'remotewin', 'remotehelp'];
+export type RemoteId = 'remoteon' | 'remoteqr' | 'remoteaddr' | 'remotecode' | 'remotewin' | 'remotecursor' | 'remotehelp';
+export const REMOTE_ROWS: RemoteId[] = ['remoteon', 'remoteqr', 'remoteaddr', 'remotecode', 'remotewin', 'remotecursor', 'remotehelp'];
 export const isRemoteId = (id: string): id is RemoteId => (REMOTE_ROWS as string[]).includes(id);
-export const REMOTE_CYCLE = new Set<RemoteId>(['remoteon', 'remotewin']);
+export const REMOTE_CYCLE = new Set<RemoteId>(['remoteon', 'remotewin', 'remotecursor']);
 
 const HELP = 'Abre la app Visor en el móvil (misma red Wi-Fi) y escribe esta dirección y el código. La primera vez Windows puede pedir permiso en el cortafuegos: permite redes privadas.';
 
@@ -46,6 +46,8 @@ export function remoteRow(id: RemoteId): { l: string; v: string; d: string } {
       return { l: 'Conectar la tablet con QR', v: rm.qrOpen ? 'Abierto' : 'Mostrar', d: 'Pulsa A para ver un código QR. En la tablet, abre el Visor y elige «Escanear QR»: se rellenan la dirección y el código solos. El PC queda guardado por su identificador, así que si cambia de IP la tablet lo vuelve a encontrar sin preguntar.' };
     case 'remotewin':
       return { l: 'Arrancar con Windows', v: app.config.startWithWindows ? 'Sí' : 'No', d: 'Abre el visor en segundo plano al iniciar sesión en Windows (solo el icono junto al reloj, sin ventana) para que la tablet conecte sin abrir nada. Con esto activado, cerrar el visor lo deja en la bandeja; «Salir» del icono lo cierra del todo.' };
+    case 'remotecursor':
+      return { l: 'Ocultar el cursor en el streaming', v: app.config.streamHideCursor ? 'Sí' : 'No', d: 'Mientras juegas desde la tablet, el cursor del PC se vuelve transparente para que no salga sobre el juego. Desactívalo si usas el modo trackpad de Artemis, donde el puntero tiene que verse.' };
     case 'remoteaddr': {
       let d = 'Dirección (IP del PC y puerto) y código de emparejamiento que hay que escribir en el móvil.';
       if (i?.enabled && i.running && i.addresses.length > 1) d += ` Si no conecta, prueba con otra IP del PC: ${i.addresses.slice(1).map((a) => `${a}:${i.port}`).join(', ')}.`;
@@ -68,6 +70,9 @@ export function remoteAct(id: RemoteId, dir: number) {
     blip(1320);
   } else if (id === 'remotewin') {
     void patchConfig({ startWithWindows: !app.config.startWithWindows });
+    blip(1320);
+  } else if (id === 'remotecursor') {
+    void patchConfig({ streamHideCursor: !app.config.streamHideCursor });
     blip(1320);
   } else if (id === 'remoteon') {
     void patchConfig({ remoteEnabled: !app.config.remoteEnabled }).then(async () => {
