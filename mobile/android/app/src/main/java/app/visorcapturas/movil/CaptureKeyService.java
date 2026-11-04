@@ -1,12 +1,17 @@
 package app.visorcapturas.movil;
 
 import android.accessibilityservice.AccessibilityService;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.VibrationEffect;
@@ -18,6 +23,8 @@ import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -47,7 +54,9 @@ public class CaptureKeyService extends AccessibilityService {
         CharSequence p = event.getPackageName();
         // El panel de volumen y las notificaciones son del sistema: no cambian la app en primer plano.
         if (p == null || p.toString().equals("com.android.systemui")) return;
+        boolean was = StreamingPlugin.isMoonlight(foreground);
         foreground = p.toString();
+        if (!was && StreamingPlugin.isMoonlight(foreground)) startWatch();
         // Si el menu estaba abierto y otra app pasa a primer plano, se quita.
         if (menu != null && !StreamingPlugin.isMoonlight(foreground)) ui.post(this::removeMenu);
     }
@@ -170,10 +179,119 @@ public class CaptureKeyService extends AccessibilityService {
         }
     }
 
+    /* ---------------------------------------------------- fin de sesion */
+
+    private volatile boolean watching = false;
+
+    /** Consulta la sesion del PC: {estado, endedMs de la ultima} o null si no hay respuesta. */
+    private Object[] sessionState() {
+        String body = get("/api/v1/session");
+        if (body == null) return null;
+        try {
+            JSONObject j = new JSONObject(body);
+            JSONObject last = j.optJSONObject("last");
+            return new Object[] { j.optString("state", "idle"), last == null ? -1L : last.optLong("endedMs", -1) };
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Mientras Artemis siga delante, pregunta al PC por la sesion. Cuando ve una partida y despues el reposo con un
+     * resumen nuevo, la partida acabo: se trae esta app al frente (o una notificacion si Android lo bloquea).
+     */
+    private void startWatch() {
+        if (watching) return;
+        watching = true;
+        new Thread(() -> {
+            try {
+                long baseline = -2;
+                boolean seen = false;
+                boolean done = false;
+                boolean front = true;
+                while (front) {
+                    front = StreamingPlugin.isMoonlight(foreground);
+                    Object[] s = sessionState();
+                    if (s != null) {
+                        String state = (String) s[0];
+                        long ended = (Long) s[1];
+                        if (baseline == -2) baseline = ended;
+                        if ("starting".equals(state) || "playing".equals(state)) seen = true;
+                        else if (seen && "idle".equals(state) && ended != baseline) {
+                            done = true;
+                            break;
+                        }
+                    }
+                    if (!front) break;
+                    try { Thread.sleep(2000); } catch (InterruptedException ignored) { }
+                }
+                // Artemis puede cerrarse solo al acabar la sesion: una consulta mas antes de irse.
+                if (!done && seen) {
+                    try { Thread.sleep(1500); } catch (InterruptedException ignored) { }
+                    Object[] s = sessionState();
+                    done = s != null && "idle".equals(s[0]) && (Long) s[1] != baseline;
+                }
+                if (done) ui.post(this::sessionEnded);
+            } finally {
+                watching = false;
+            }
+        }, "visor-watch").start();
+    }
+
+    private void sessionEnded() {
+        removeMenu();
+        returnToApp();
+        // Android bloquea en silencio el arranque desde segundo plano en algunos dispositivos: si no funciono, aviso.
+        ui.postDelayed(() -> {
+            if (!getPackageName().equals(foreground)) notifyEnded();
+        }, 1500);
+    }
+
+    private void notifyEnded() {
+        NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm == null) return;
+        if (Build.VERSION.SDK_INT >= 26) {
+            nm.createNotificationChannel(new NotificationChannel("session", "Fin de sesión", NotificationManager.IMPORTANCE_HIGH));
+        }
+        Intent i = getPackageManager().getLaunchIntentForPackage(getPackageName());
+        if (i == null) return;
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        PendingIntent pi = PendingIntent.getActivity(this, 0, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        Notification.Builder b = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(this, "session") : new Notification.Builder(this);
+        b.setSmallIcon(getApplicationInfo().icon).setContentTitle("Sesión terminada").setContentText("Toca para ver el resumen").setContentIntent(pi).setAutoCancel(true);
+        nm.notify(4101, b.build());
+    }
+
     /* ---------------------------------------------------------------- red */
 
     private void capture() {
         new Thread(() -> vibrate(post("/api/v1/capture", null) != null), "visor-capture").start();
+    }
+
+    /** GET al visor con el codigo guardado. Devuelve el cuerpo si fue 200, o null. Bloquea: hilo aparte. */
+    private String get(String path) {
+        SharedPreferences sp = getSharedPreferences(StreamingPlugin.PREFS, Context.MODE_PRIVATE);
+        String base = sp.getString("base", "");
+        String code = sp.getString("code", "");
+        if (base.isEmpty() || code.isEmpty()) return null;
+        HttpURLConnection c = null;
+        try {
+            c = (HttpURLConnection) new URL(base + path).openConnection();
+            c.setConnectTimeout(3000);
+            c.setReadTimeout(5000);
+            c.setRequestProperty("Authorization", "Bearer " + code);
+            if (c.getResponseCode() != 200) return null;
+            BufferedReader r = new BufferedReader(new InputStreamReader(c.getInputStream(), "UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = r.readLine()) != null) sb.append(line);
+            r.close();
+            return sb.toString();
+        } catch (Exception ignored) {
+            return null;
+        } finally {
+            if (c != null) c.disconnect();
+        }
     }
 
     /** POST al visor con el codigo guardado. Devuelve el cuerpo si fue 200, o null si fallo. Bloquea: hilo aparte. */

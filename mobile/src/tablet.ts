@@ -31,10 +31,35 @@ if (!server) {
   const { Streaming, stream } = await import('./lib/streaming.svelte');
 
   // «Jugar»: el PC ya ha lanzado el juego; la tablet abre Moonlight con el stream (igual que «Jugar en el PC» del móvil).
-  setAfterLaunch(async () => {
+  // Si el PC tiene la app «Juego actual» de Apollo, la responde en `app`; si no, vale el ajuste o «Desktop».
+  setAfterLaunch(async (_args, res) => {
+    const { invoke } = await import('@desk/lib/remote/core');
+    const cancel = (msg: string) => { void invoke('stream_cancel').catch(() => {}); toast(msg); };
     await stream.refresh();
-    if (!stream.moonlight) { toast('No está instalado Artemis ni Moonlight'); return; }
-    await Streaming.stream({ pc: stream.pcName(server.name || server.host), app: stream.appName.trim() || 'Desktop' });
+    if (!stream.moonlight) { cancel('No está instalado Artemis ni Moonlight'); return; }
+    try {
+      await Streaming.stream({ pc: stream.pcName(server.name || server.host), app: (res as { app?: string | null } | null)?.app || stream.appName.trim() || 'Desktop' });
+    } catch (e) {
+      cancel(typeof e === 'string' ? e : e instanceof Error ? e.message : 'No se pudo abrir Artemis');
+    }
+  });
+
+  // Resumen al acabar la partida: tiempo, capturas y meta de hoy (la meta se lee tras refrescar la biblioteca).
+  const { listen } = await import('@desk/lib/remote/event');
+  type Summary = { name: string; platform: string; seconds: number; shots: number };
+  void listen<Summary>('session-summary', (ev) => {
+    const s = ev.payload;
+    setTimeout(async () => {
+      let goal = '';
+      if (s.platform === 'vn' || s.platform === 'jvn') {
+        const { goalTrack } = await import('@desk/lib/readgoals');
+        const g = s.platform === 'vn' ? a.config.goalVn : a.config.goalJvn;
+        const t = goalTrack(s.platform, g, a.lib.platforms, null, Date.now());
+        goal = ` · Meta de hoy ${Math.round(t.today)}/${g} min`;
+      }
+      const mins = Math.max(1, Math.round(s.seconds / 60));
+      toast(`Has jugado ${s.name} ${mins} min · ${s.shots} ${s.shots === 1 ? 'captura' : 'capturas'}${goal}`, 5000);
+    }, 1500);
   });
 
   // Botón atrás de Android = atrás de la interfaz de escritorio (B del mando / Esc); en Inicio sin paneles, la app pasa a segundo plano.

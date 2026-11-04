@@ -10,7 +10,19 @@ export type UnlistenFn = () => void;
 const listeners = new Map<string, Set<EventCallback<any>>>();
 let nextId = 1;
 
+// Con la app oculta (la tablet esta en Artemis) se retienen el fin de partida y el resumen: asi, al volver, la
+// animacion del Detalle y el aviso se ven en vez de pasar sin que nadie mire.
+const HELD = new Set(['game-exited', 'session-summary']);
+const held: Array<[string, unknown]> = [];
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    for (const [n, p] of held.splice(0)) dispatch(n, p);
+  });
+}
+
 function dispatch(name: string, payload: unknown) {
+  if (HELD.has(name) && typeof document !== 'undefined' && document.hidden) { held.push([name, payload]); return; }
   const set = listeners.get(name);
   if (!set) return;
   for (const cb of [...set]) {
