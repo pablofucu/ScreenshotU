@@ -72,6 +72,16 @@ pub fn hide_main(app: &AppHandle) {
     let _ = w.hide();
 }
 
+/// Arranque en segundo plano: deja "main" oculta con el icono de la bandeja. `false` = no hay icono (se abre normal).
+pub fn start_hidden(app: &AppHandle) -> bool {
+    if !ensure(app) {
+        return false;
+    }
+    WAS_FULL.store(true, Ordering::SeqCst);
+    HIDDEN.store(true, Ordering::SeqCst);
+    true
+}
+
 /// Vuelve a mostrar "main" tal y como estaba (mismo monitor, pantalla completa si la tenia).
 pub fn show_main(app: &AppHandle) {
     HIDDEN.store(false, Ordering::SeqCst);
@@ -89,7 +99,7 @@ pub fn show_main(app: &AppHandle) {
 
 /// Cerrar el visor: a la bandeja si `keep_in_tray` esta activado, si no, sale del todo.
 pub fn close_main(app: &AppHandle) {
-    let keep = app.try_state::<AppState>().map(|s| s.config.lock().unwrap().keep_in_tray).unwrap_or(false);
+    let keep = app.try_state::<AppState>().map(|s| { let c = s.config.lock().unwrap(); c.keep_in_tray || c.start_with_windows }).unwrap_or(false);
     if keep {
         hide_main(app);
     } else {

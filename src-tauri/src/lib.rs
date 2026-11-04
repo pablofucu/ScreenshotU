@@ -4,6 +4,7 @@ mod achpop;
 mod ai;
 mod anki;
 mod audio;
+mod autostart;
 mod backup;
 mod display;
 mod glossary;
@@ -173,6 +174,7 @@ fn save_config(app: AppHandle, state: State<'_, AppState>, config: Config) -> Re
     }
     // El codigo del movil lo gestiona el nucleo (`remote_new_code`): se ignora el que mande la interfaz.
     config.remote_token = state.config.lock().unwrap().remote_token.clone();
+    config.remote_id = state.config.lock().unwrap().remote_id.clone();
     if config.remote_enabled && config.remote_token.is_empty() {
         config.remote_token = visor_core::remote::new_code();
     }
@@ -189,13 +191,15 @@ fn save_config(app: AppHandle, state: State<'_, AppState>, config: Config) -> Re
     state.overlay_mouse.store(mouse_button_index(&config.overlay_mouse), Ordering::Relaxed);
     let root_changed = state.config.lock().unwrap().root != config.root;
     let new_root = config.root.clone();
-    let keep_in_tray = config.keep_in_tray;
+    let keep_in_tray = config.keep_in_tray || config.start_with_windows;
+    let start_with_windows = config.start_with_windows;
     *state.config.lock().unwrap() = config;
     if root_changed {
         *state.favorites.lock().unwrap() = load_favorites(&state.db, new_root.as_deref().map(Path::new));
     }
     remote::apply(&app);
     tray::sync(&app, keep_in_tray);
+    autostart::sync(start_with_windows);
     hotkey_err.map_or(Ok(()), Err)
 }
 
@@ -1191,10 +1195,19 @@ pub fn run() {
                     let _ = w.set_position(tauri::PhysicalPosition::new(m.x + 40, m.y + 40));
                 }
                 let _ = w.set_fullscreen(true);
-                let _ = w.show();
-                let _ = w.set_focus();
+                // Arranque de Windows (`--background`): solo el icono de la bandeja; si no se pudo crear, se abre normal.
+                if autostart::is_background() && tray::start_hidden(app.handle()) {
+                    // la ventana se queda oculta
+                } else {
+                    let _ = w.show();
+                    let _ = w.set_focus();
+                }
             }
-            if st.config.lock().unwrap().keep_in_tray {
+            // Que la entrada de arranque apunte siempre a este ejecutable (el visor puede haberse movido o actualizado).
+            if st.config.lock().unwrap().start_with_windows {
+                autostart::sync(true);
+            }
+            if st.config.lock().unwrap().keep_in_tray || st.config.lock().unwrap().start_with_windows {
                 tray::ensure(app.handle());
             }
             novel::init(app.handle());

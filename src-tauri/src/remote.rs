@@ -4,9 +4,13 @@ use crate::state::{self, AppState};
 use serde::Serialize;
 use std::net::{Ipv4Addr, SocketAddr};
 use std::path::PathBuf;
+use std::sync::Mutex;
 use tauri::{AppHandle, Listener, Manager, State};
 use visor_core::db::data as dbd;
-use visor_core::remote::{self, Playing, Provider, RemoteConfig, RemoteServer, Snapshot};
+use visor_core::remote::{self, Discovery, Playing, Provider, RemoteConfig, RemoteServer, Snapshot};
+
+/// Respondedor UDP de "hay un visor por aqui?" (vive mientras el servidor esta activado).
+static DISCOVERY: Mutex<Option<Discovery>> = Mutex::new(None);
 
 struct AppProvider {
     app: AppHandle,
@@ -15,6 +19,10 @@ struct AppProvider {
 impl Provider for AppProvider {
     fn name(&self) -> String {
         remote::host_name()
+    }
+
+    fn id(&self) -> String {
+        self.app.state::<AppState>().config.lock().unwrap().remote_id.clone()
     }
 
     fn snapshot(&self) -> anyhow::Result<Snapshot> {
@@ -127,21 +135,30 @@ pub fn apply(app: &AppHandle) {
         return;
     }
     let st = app.state::<AppState>();
-    let (enabled, port, token) = {
+    let (enabled, port, token, id) = {
         let mut c = st.config.lock().unwrap();
+        let mut dirty = false;
         if c.remote_enabled && c.remote_token.is_empty() {
             c.remote_token = remote::new_code();
+            dirty = true;
+        }
+        if c.remote_id.is_empty() {
+            c.remote_id = remote::new_id();
+            dirty = true;
+        }
+        if dirty {
             if let Err(e) = c.save(&st.config_file()) {
                 eprintln!("config (codigo del movil): {e:#}");
             }
         }
-        (c.remote_enabled, c.remote_port, c.remote_token.clone())
+        (c.remote_enabled, c.remote_port, c.remote_token.clone(), c.remote_id.clone())
     };
     let mut cur = st.remote.lock().unwrap();
     if !enabled {
         if let Some(s) = cur.take() {
             s.stop();
         }
+        *DISCOVERY.lock().unwrap() = None;
         *st.remote_error.lock().unwrap() = None;
         return;
     }
@@ -154,11 +171,17 @@ pub fn apply(app: &AppHandle) {
     if let Some(s) = cur.take() {
         s.stop();
     }
+    *DISCOVERY.lock().unwrap() = None; // libera el puerto UDP antes de abrirlo con el puerto nuevo
     let bind = SocketAddr::from((Ipv4Addr::UNSPECIFIED, port));
     match RemoteServer::start(bind, token, AppProvider { app: app.clone() }) {
         Ok(s) => {
             *cur = Some(s);
             *st.remote_error.lock().unwrap() = None;
+            // Que la tablet pueda encontrar el PC por su identificador aunque cambie de IP.
+            match Discovery::start(SocketAddr::from((Ipv4Addr::UNSPECIFIED, remote::DISCOVERY_PORT)), id, remote::host_name(), port) {
+                Ok(d) => *DISCOVERY.lock().unwrap() = Some(d),
+                Err(e) => eprintln!("descubrimiento de la tablet: {e:#}"),
+            }
         }
         Err(e) => {
             eprintln!("servidor del movil: {e:#}");
@@ -176,22 +199,52 @@ pub struct RemoteInfo {
     /// IPv4 de la red local (la principal primero).
     addresses: Vec<String>,
     code: String,
+    /// Identificador fijo del PC.
+    id: String,
+    /// Enlace `visor://pair?...` que lleva el QR (vacio si no hay IP o no esta activado).
+    link: String,
+    /// El QR de `link` como imagen SVG.
+    qr: String,
     /// Ultimo error al abrir el puerto (p. ej. ya en uso).
     error: Option<String>,
 }
 
+fn encode(s: &str) -> String {
+    s.bytes().map(|b| if b.is_ascii_alphanumeric() || b"-_.~".contains(&b) { (b as char).to_string() } else { format!("%{b:02X}") }).collect()
+}
+
+/// Enlace de emparejamiento que lee la tablet: direccion, codigo e identificador del PC.
+fn pair_link(ip: &str, port: u16, code: &str, id: &str) -> String {
+    format!("visor://pair?h={}&p={port}&k={}&i={}&n={}", encode(ip), encode(code), encode(id), encode(&remote::host_name()))
+}
+
+fn qr_svg(text: &str) -> String {
+    if text.is_empty() {
+        return String::new();
+    }
+    qrcode::QrCode::new(text.as_bytes())
+        .map(|q| q.render::<qrcode::render::svg::Color>().min_dimensions(240, 240).quiet_zone(true).build())
+        .unwrap_or_default()
+}
+
 fn info(st: &AppState) -> RemoteInfo {
-    let (enabled, port, code) = {
+    let (enabled, port, code, id) = {
         let c = st.config.lock().unwrap();
-        (c.remote_enabled, c.remote_port, c.remote_token.clone())
+        (c.remote_enabled, c.remote_port, c.remote_token.clone(), c.remote_id.clone())
     };
     let running = st.remote.lock().unwrap().is_some();
+    let addresses = if running { remote::local_ipv4s() } else { Vec::new() };
+    let link = addresses.first().map(|ip| pair_link(ip, port, &code, &id)).unwrap_or_default();
+    let qr = qr_svg(&link);
     RemoteInfo {
         enabled,
         running,
         port,
-        addresses: if running { remote::local_ipv4s() } else { Vec::new() },
+        addresses,
         code,
+        id,
+        link,
+        qr,
         error: st.remote_error.lock().unwrap().clone(),
     }
 }

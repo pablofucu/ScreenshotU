@@ -89,6 +89,10 @@ export interface Config {
   remoteEnabled: boolean;
   remotePort: number;
   remoteToken: string;
+  /** Identificador fijo de este PC (lo genera el núcleo): la tablet lo guarda en lugar de la IP. */
+  remoteId: string;
+  /** Arrancar con Windows en segundo plano (bandeja, sin ventana) para que la tablet conecte siempre. */
+  startWithWindows: boolean;
   /** Orden de la lista de juegos por categoría (id de plataforma → orden; ausente = «last»). */
   titlesOrder: Record<string, TitleOrder>;
   /** Tamaño de las portadas: 0 = 5 por fila (por defecto) … 3 = 8 por fila. */
@@ -158,7 +162,7 @@ export interface GameStatsDb {
   peakPpm: number;
 }
 /** Estado del acceso desde el móvil. `error`: último fallo al abrir el puerto (p. ej. en uso). */
-export interface RemoteInfo { enabled: boolean; running: boolean; port: number; addresses: string[]; code: string; error: string | null }
+export interface RemoteInfo { enabled: boolean; running: boolean; port: number; addresses: string[]; code: string; id: string; link: string; qr: string; error: string | null }
 export interface Title {
   name: string;
   cover: string | null;

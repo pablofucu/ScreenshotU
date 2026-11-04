@@ -10,7 +10,7 @@
   import { lb } from '../lib/library.svelte';
   import { isReadingId, readingRow } from '../lib/reading.svelte';
   import { updateRow } from '../lib/updater.svelte';
-  import { isRemoteId, remoteRow } from '../lib/remote.svelte';
+  import { isRemoteId, remoteRow, remoteView } from '../lib/remote.svelte';
   import Learn from '../components/Learn.svelte';
   import Hints from '../components/Hints.svelte';
   import { makeMoved } from '../lib/pointer';
@@ -99,6 +99,8 @@
   const sec = $derived(SETTING_SECTIONS[app.setSec]);
   const rows = $derived(sec.rows.map((id) => ({ id, ...row(id) })));
   const focused = $derived(rows[app.setRow]);
+  // El QR solo se ve mientras la fila «Conectar la tablet» sigue enfocada; al moverse se cierra.
+  $effect(() => { if (focused?.id !== 'remoteqr' && remoteView.qrOpen) remoteView.qrOpen = false; });
 
   // Lista con desplazamiento: la fila enfocada siempre queda dentro de las VIS visibles.
   const VIS = 6, RH = 56;
@@ -142,6 +144,12 @@
       <div class="face">
         <h3>{sec.name}</h3>
         <div class="st-rows-wrap">
+        {#if remoteView.qrOpen && remoteView.info?.qr}
+          <div class="st-qr" role="presentation" onclick={() => (remoteView.qrOpen = false)}>
+            <div class="st-qr-img">{@html remoteView.info.qr}</div>
+            <p><b>Escanéalo con la tablet</b><br />Visor › Escanear QR. Pulsa A o B para cerrar.</p>
+          </div>
+        {/if}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div class="st-rows" style="height:{VIS * RH}px" onwheel={wheel}>
         <div class="st-track" style="transform:translateY({-off * RH}px)">
@@ -205,5 +213,11 @@
   .st-scroll { position: absolute; right: 0; top: 4px; width: 5px; border-radius: 3px; background: var(--line); }
   .st-scroll i { position: absolute; left: 0; right: 0; border-radius: 3px; background: var(--g2); }
   .st-desc { flex: none; margin: auto 0 0; height: 124px; overflow: hidden; border-radius: var(--r-m); padding: 12px 18px; background: var(--glass-in); font-size: var(--t-s); font-weight: 500; line-height: 1.45; color: var(--ink-2); }
+  .st-rows-wrap { position: relative; }
+  .st-qr { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; gap: 28px; padding: 0 26px; border-radius: var(--r-m); background: var(--face-hi); }
+  .st-qr-img { flex: none; line-height: 0; border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px var(--glass-in); }
+  .st-qr-img :global(svg) { width: 300px; height: 300px; display: block; }
+  .st-qr p { margin: 0; font-size: var(--t-s); line-height: 1.5; color: var(--ink-2); }
+  .st-qr p b { color: var(--ink); font-size: var(--t-m, 18px); }
   .st-desc b { color: var(--ink); font-weight: 800; }
 </style>

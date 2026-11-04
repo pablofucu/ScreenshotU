@@ -65,6 +65,8 @@ export const DEFAULT_CONFIG: Config = {
   remoteEnabled: false,
   remotePort: 47811,
   remoteToken: '',
+  remoteId: '',
+  startWithWindows: false,
   titlesOrder: {},
   titlesZoom: 0,
   collectionsStyle: 'aurora',

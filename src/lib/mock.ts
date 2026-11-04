@@ -322,7 +322,7 @@ export async function mockBackend(): Promise<Backend> {
     platforms: MOCK_PLATS.map((p) => ({ id: p.id, name: p.name, folder: p.folder, accent: p.accent, icon: p.icon })),
     captureHotkey: 'F12', captureCombo: 'back+rb', captureMouse: '', captureMagpie: 'scaled', captureSound: true, capturePeek: true, captureOnlyGames: true, captureRumble: true, magpieExe: '', showHidden: false,
     sgdbKey: q.has('sgdb') ? 'mock' : '', sgdbAuto: true, deepseekKey: '', deepseekModel: 'deepseek-chat',
-    ankiUrl: 'http://127.0.0.1:8765', ankiDeck: 'Japonés::Novelas', ankiModel: '', ankiStyle: 'limpio', ankiAutostart: true, ankiExe: '', recordHotkey: 'F9', audioCombo: 'start+rb', audioHotkey: '', overlayHotkey: 'F24', overlayCombo: 'off', overlayMouse: '', overlayHoldForce: true, overlayHoldMs: 1500, overlayPause: true, autoBackup: true, openOnCursor: false, keepInTray: false, savesAuto: true, savesDir: '', goalVn: 60, goalJvn: 30, remoteEnabled: false, remotePort: 47811, remoteToken: '', titlesOrder: {}, titlesZoom: 0, collectionsStyle: 'aurora', listStalled: true, listStalledDays: 30, listStalledAction: 'ask', listAutoPlay: true, inputMouse: true, inputKeys: false, ankiMap: { word: 'Word', reading: 'WordReading', meaning: 'PrimaryDefinition', sentence: 'Sentence', translation: 'SentenceTranslation', shot: 'Picture', audio: 'SentenceAudio' } };
+    ankiUrl: 'http://127.0.0.1:8765', ankiDeck: 'Japonés::Novelas', ankiModel: '', ankiStyle: 'limpio', ankiAutostart: true, ankiExe: '', recordHotkey: 'F9', audioCombo: 'start+rb', audioHotkey: '', overlayHotkey: 'F24', overlayCombo: 'off', overlayMouse: '', overlayHoldForce: true, overlayHoldMs: 1500, overlayPause: true, autoBackup: true, openOnCursor: false, keepInTray: false, savesAuto: true, savesDir: '', goalVn: 60, goalJvn: 30, remoteEnabled: false, remotePort: 47811, remoteToken: '', remoteId: '', startWithWindows: false, titlesOrder: {}, titlesZoom: 0, collectionsStyle: 'aurora', listStalled: true, listStalledDays: 30, listStalledAction: 'ask', listAutoPlay: true, inputMouse: true, inputKeys: false, ankiMap: { word: 'Word', reading: 'WordReading', meaning: 'PrimaryDefinition', sentence: 'Sentence', translation: 'SentenceTranslation', shot: 'Picture', audio: 'SentenceAudio' } };
   let cfg: Config = base;
   try { const s = store()?.getItem(LS); if (s) cfg = { ...base, ...JSON.parse(s) }; } catch {}
   if (q.has('empty')) cfg = { ...cfg, root: null };
@@ -579,14 +579,14 @@ export async function mockBackend(): Promise<Backend> {
     async remoteInfo() {
       const on = cfg.remoteEnabled;
       if (on && !cfg.remoteToken) cfg = { ...cfg, remoteToken: 'K7QM-4XTR' };
-      return { enabled: on, running: on, port: cfg.remotePort, addresses: on ? ['192.168.1.20'] : [], code: cfg.remoteToken, error: null };
+      return { enabled: on, running: on, port: cfg.remotePort, addresses: on ? ['192.168.1.20'] : [], code: cfg.remoteToken, id: 'mock', link: '', qr: '', error: null };
     },
     async remoteNewCode() {
       const abc = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
       const code = Array.from({ length: 8 }, (_, i) => (i === 4 ? '-' : '') + abc[Math.floor(Math.random() * abc.length)]).join('');
       cfg = { ...cfg, remoteToken: code };
       try { store()?.setItem(LS, JSON.stringify(cfg)); } catch {}
-      return { enabled: cfg.remoteEnabled, running: cfg.remoteEnabled, port: cfg.remotePort, addresses: cfg.remoteEnabled ? ['192.168.1.20'] : [], code, error: null };
+      return { enabled: cfg.remoteEnabled, running: cfg.remoteEnabled, port: cfg.remotePort, addresses: cfg.remoteEnabled ? ['192.168.1.20'] : [], code, id: 'mock', link: '', qr: '', error: null };
     },
     async magpieStatus() { return { exe: 'C:\\Magpie\\Magpie.exe (simulado)', running: true, cunny: true }; },
     async getCollections() { return load<Collection[]>('visor.mock.colls', seedCollections(lib)); },

@@ -103,6 +103,10 @@ struct SnapshotDoc<'a> {
 pub trait Provider: Send + Sync + 'static {
     /// Nombre del equipo que se muestra en el movil.
     fn name(&self) -> String;
+    /// Identificador fijo del equipo (vacio = sin identificador).
+    fn id(&self) -> String {
+        String::new()
+    }
     /// Escaneo nuevo de la biblioteca (ya sin ocultos).
     fn snapshot(&self) -> Result<Snapshot>;
     /// Cache de miniaturas (la misma del escritorio).
@@ -226,6 +230,15 @@ pub fn new_code() -> String {
         }
     }
     out
+}
+
+/// Identificador fijo de un equipo: 16 bytes aleatorios en hexadecimal.
+pub fn new_id() -> String {
+    let mut buf = [0u8; 32];
+    if getrandom::getrandom(&mut buf).is_err() {
+        fallback_random(&mut buf);
+    }
+    hex(&buf[..16])
 }
 
 /// Por si el generador del sistema fallara: hora, proceso y contador pasados por SHA-256.
@@ -609,7 +622,7 @@ fn route(inner: &Inner, req: &Req) -> Reply {
         "/api/v1/hello" => {
             return Reply::json(
                 200,
-                &serde_json::json!({ "app": "visor-capturas", "api": API_VERSION, "name": inner.provider.name(), "version": env!("CARGO_PKG_VERSION"), "features": ["launch", "capture", "call", "events", "asset"] }),
+                &serde_json::json!({ "app": "visor-capturas", "api": API_VERSION, "name": inner.provider.name(), "version": env!("CARGO_PKG_VERSION"), "id": inner.provider.id(), "features": ["launch", "capture", "call", "events", "asset", "discover"] }),
             )
         }
         "/api/v1/launch" | "/api/v1/capture" | "/api/v1/call" if !post => return Reply::error(405, "Método no permitido"),
@@ -897,6 +910,58 @@ impl Drop for RemoteServer {
     }
 }
 
+/* ---------- descubrimiento en la red local ---------- */
+
+/// Puerto UDP en el que el visor contesta a «¿hay un visor por aqui?».
+pub const DISCOVERY_PORT: u16 = 47812;
+/// Mensaje que manda la tablet (difusion a toda la red local).
+pub const DISCOVERY_QUERY: &[u8] = b"VISOR?";
+
+/// Respondedor UDP: a cada `VISOR?` contesta con un JSON `{app, api, id, name, port}` (sin el codigo).
+pub struct Discovery {
+    stop: Arc<AtomicBool>,
+    addr: SocketAddr,
+    thread: Option<std::thread::JoinHandle<()>>,
+}
+
+impl Discovery {
+    pub fn start(bind: SocketAddr, id: String, name: String, http_port: u16) -> Result<Discovery> {
+        let sock = UdpSocket::bind(bind).map_err(|e| anyhow!("No se pudo abrir el puerto UDP {}: {e}", bind.port()))?;
+        sock.set_read_timeout(Some(Duration::from_millis(200))).context("configurando el descubrimiento")?;
+        let addr = sock.local_addr().unwrap_or(bind);
+        let stop = Arc::new(AtomicBool::new(false));
+        let flag = stop.clone();
+        let reply = serde_json::json!({ "app": "visor-capturas", "api": API_VERSION, "id": id, "name": name, "port": http_port }).to_string();
+        let thread = std::thread::Builder::new()
+            .name("remote-discovery".into())
+            .spawn(move || {
+                let mut buf = [0u8; 64];
+                while !flag.load(Ordering::SeqCst) {
+                    if let Ok((n, from)) = sock.recv_from(&mut buf) {
+                        if buf[..n].starts_with(DISCOVERY_QUERY) {
+                            let _ = sock.send_to(reply.as_bytes(), from);
+                        }
+                    }
+                }
+            })
+            .context("creando el hilo de descubrimiento")?;
+        Ok(Discovery { stop, addr, thread: Some(thread) })
+    }
+
+    pub fn local_addr(&self) -> SocketAddr {
+        self.addr
+    }
+}
+
+impl Drop for Discovery {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::SeqCst);
+        if let Some(t) = self.thread.take() {
+            let _ = t.join();
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -951,6 +1016,29 @@ mod tests {
         assert!(!accepts_gzip(Some("gzip;q=0, deflate")));
         assert!(!accepts_gzip(Some("identity")));
         assert!(!accepts_gzip(None));
+    }
+
+    #[test]
+    fn discovery_answers_the_query_and_ignores_the_rest() {
+        let d = Discovery::start("127.0.0.1:0".parse().unwrap(), "abc123".into(), "MiPC".into(), 47811).unwrap();
+        let c = UdpSocket::bind("127.0.0.1:0").unwrap();
+        c.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
+        c.send_to(b"hola", d.local_addr()).unwrap();
+        c.send_to(DISCOVERY_QUERY, d.local_addr()).unwrap();
+        let mut buf = [0u8; 512];
+        let (n, _) = c.recv_from(&mut buf).unwrap();
+        let v: serde_json::Value = serde_json::from_slice(&buf[..n]).unwrap();
+        assert_eq!((v["app"].as_str(), v["id"].as_str(), v["name"].as_str(), v["port"].as_u64()), (Some("visor-capturas"), Some("abc123"), Some("MiPC"), Some(47811)));
+        assert!(v.get("code").is_none());
+        drop(d);
+    }
+
+    #[test]
+    fn ids_are_hex_and_unique() {
+        let (a, b) = (new_id(), new_id());
+        assert_eq!(a.len(), 32);
+        assert!(a.bytes().all(|c| c.is_ascii_hexdigit()));
+        assert_ne!(a, b);
     }
 
     #[test]

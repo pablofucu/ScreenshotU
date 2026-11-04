@@ -5,15 +5,17 @@ import { blip } from './sound';
 import { patchConfig, toast } from './controller.svelte';
 import type { RemoteInfo } from './types';
 
-export type RemoteId = 'remoteon' | 'remoteaddr' | 'remotecode' | 'remotehelp';
-export const REMOTE_ROWS: RemoteId[] = ['remoteon', 'remoteaddr', 'remotecode', 'remotehelp'];
+export type RemoteId = 'remoteon' | 'remoteqr' | 'remoteaddr' | 'remotecode' | 'remotewin' | 'remotehelp';
+export const REMOTE_ROWS: RemoteId[] = ['remoteon', 'remoteqr', 'remoteaddr', 'remotecode', 'remotewin', 'remotehelp'];
 export const isRemoteId = (id: string): id is RemoteId => (REMOTE_ROWS as string[]).includes(id);
-export const REMOTE_CYCLE = new Set<RemoteId>(['remoteon']);
+export const REMOTE_CYCLE = new Set<RemoteId>(['remoteon', 'remotewin']);
 
 const HELP = 'Abre la app Visor en el móvil (misma red Wi-Fi) y escribe esta dirección y el código. La primera vez Windows puede pedir permiso en el cortafuegos: permite redes privadas.';
 
 /** Último estado que ha dado el núcleo (se pide al abrir Ajustes y tras cada cambio). */
-const rm = $state({ info: null as RemoteInfo | null, busy: false });
+const rm = $state({ info: null as RemoteInfo | null, busy: false, qrOpen: false });
+/** Para la pantalla de Ajustes: el QR de emparejamiento abierto y el último estado del servidor. */
+export const remoteView = rm;
 
 const errText = (e: unknown) => (typeof e === 'string' ? e : e instanceof Error ? e.message : 'Error desconocido');
 
@@ -40,6 +42,10 @@ export function remoteRow(id: RemoteId): { l: string; v: string; d: string } {
   switch (id) {
     case 'remoteon':
       return { l: 'Acceso desde el móvil', v: app.config.remoteEnabled ? 'Activado' : 'Desactivado', d: `Deja que la app Visor del móvil vea la biblioteca, las estadísticas y las capturas por la red de casa (solo lectura: el móvil no puede cambiar ni borrar nada). ${HELP}` };
+    case 'remoteqr':
+      return { l: 'Conectar la tablet con QR', v: rm.qrOpen ? 'Abierto' : 'Mostrar', d: 'Pulsa A para ver un código QR. En la tablet, abre el Visor y elige «Escanear QR»: se rellenan la dirección y el código solos. El PC queda guardado por su identificador, así que si cambia de IP la tablet lo vuelve a encontrar sin preguntar.' };
+    case 'remotewin':
+      return { l: 'Arrancar con Windows', v: app.config.startWithWindows ? 'Sí' : 'No', d: 'Abre el visor en segundo plano al iniciar sesión en Windows (solo el icono junto al reloj, sin ventana) para que la tablet conecte sin abrir nada. Con esto activado, cerrar el visor lo deja en la bandeja; «Salir» del icono lo cierra del todo.' };
     case 'remoteaddr': {
       let d = 'Dirección (IP del PC y puerto) y código de emparejamiento que hay que escribir en el móvil.';
       if (i?.enabled && i.running && i.addresses.length > 1) d += ` Si no conecta, prueba con otra IP del PC: ${i.addresses.slice(1).map((a) => `${a}:${i.port}`).join(', ')}.`;
@@ -54,7 +60,16 @@ export function remoteRow(id: RemoteId): { l: string; v: string; d: string } {
 }
 
 export function remoteAct(id: RemoteId, dir: number) {
-  if (id === 'remoteon') {
+  if (id !== 'remoteqr') rm.qrOpen = false;
+  if (id === 'remoteqr') {
+    if (!rm.info?.enabled) { toast('Activa antes el acceso desde el móvil', 3200); return; }
+    if (!rm.info.qr) { toast('El servidor no está en marcha o no se encontró la IP del PC', 3600); return; }
+    rm.qrOpen = !rm.qrOpen;
+    blip(1320);
+  } else if (id === 'remotewin') {
+    void patchConfig({ startWithWindows: !app.config.startWithWindows });
+    blip(1320);
+  } else if (id === 'remoteon') {
     void patchConfig({ remoteEnabled: !app.config.remoteEnabled }).then(async () => {
       await refreshRemote();
       if (rm.info?.enabled && !rm.info.running && rm.info.error) toast(rm.info.error, 4200);

@@ -139,6 +139,11 @@ pub struct Config {
     pub remote_enabled: bool,
     pub remote_port: u16,
     pub remote_token: String,
+    /// Identificador fijo de este PC (se genera la primera vez): la tablet lo guarda en lugar de la IP para volver
+    /// a encontrarlo si cambia.
+    pub remote_id: String,
+    /// Arrancar con Windows en segundo plano (icono en la bandeja, sin ventana) para que la tablet conecte siempre.
+    pub start_with_windows: bool,
     /// Orden de la lista de juegos por categoria (id de plataforma -> "last" | "az" | "color"; ausente = "last").
     pub titles_order: std::collections::BTreeMap<String, String>,
     /// Tamano de las portadas de la lista de juegos: 0 = 5 por fila (por defecto) .. 3 = 8 por fila.
@@ -243,6 +248,8 @@ impl Default for Config {
             remote_enabled: false,
             remote_port: crate::remote::DEFAULT_PORT,
             remote_token: String::new(),
+            remote_id: String::new(),
+            start_with_windows: false,
             titles_order: Default::default(),
             titles_zoom: 0,
             collections_style: "aurora".into(),
@@ -280,6 +287,7 @@ impl Config {
         c.goal_jvn = c.goal_jvn.clamp(5, 600);
         c.remote_port = c.remote_port.max(1024);
         c.remote_token = c.remote_token.trim().to_string();
+        c.remote_id = c.remote_id.trim().to_string();
         c.titles_zoom = c.titles_zoom.min(3);
         if !["aurora", "multi"].contains(&c.collections_style.as_str()) {
             c.collections_style = "aurora".into();
