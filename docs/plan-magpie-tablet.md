@@ -8,7 +8,7 @@ Fecha: 2026-11-05. Sustituye al punto 7 del bloque 2 de `docs/plan-tablet.md`.
 |---|---|
 | A1 y A2, perfil de tablet | Hecho (`0d214c1`). Sin probar en la tablet |
 | Elegir la copia de Magpie con la versión más alta | Hecho (`5357e0b`) |
-| B0, soporte táctil de Magpie | **Probado: los toques siguen sin ir** (ver sección 3) |
+| B0, soporte táctil de Magpie | **Probado en multi-touch: cada toque cuenta doble**, uno bien y otro cerca (ver sección 3) |
 | B1, prototipo del gancho | **Siguiente fase**, detallada en la sección 3 |
 | A3, A4, A5, B2, B3 | Pendientes |
 
@@ -119,14 +119,17 @@ No sé si la conversión de Windows afecta a los toques que inyecta Apollo; por 
 
 ### Resultado de B0 (2026-11-05)
 
-El usuario informa de que los toques siguen sin ir con el soporte táctil activado. La prueba es válida en lo que se
-puede comprobar: a las 2:18:45 Magpie 0.12.1 escaló Tsukihime, `TouchHelper` estaba en marcha y no hubo errores de táctil
-en el registro.
+**La primera prueba no vale:** Artemis no estaba en multi-touch. Se repitió con multi-touch y soporte táctil activados.
 
-Sin confirmar: si los toques se desviaban o no respondían, y si Artemis estaba de verdad en «multi-touch». La prueba duró
-unos 40 segundos.
+**Resultado con multi-touch:** cada toque produce dos pulsaciones, una en el sitio correcto y otra cerca, en un punto
+equivocado. No sirve para jugar, pero es mejor que antes: una de las dos acierta, así que lo que falta podría ser
+eliminar la sobrante en vez de convertir coordenadas.
 
-Datos reales de esa sesión, para las pruebas (Tsukihime en la pantalla virtual de 2560×1600):
+**Hipótesis, sin confirmar:** la correcta es el toque corregido por `TouchHelper`. La otra es un evento de ratón con las
+coordenadas sin corregir, que Magpie desplaza como se describe arriba. Encaja con que caiga cerca: en Tsukihime el desvío
+calculado es de unas decenas de píxeles. No se sabe si ese ratón lo genera Windows a partir del toque o lo manda Apollo.
+
+Datos reales de la primera sesión, para las pruebas (Tsukihime en la pantalla virtual de 2560×1600):
 - `srcRect` va de (142, 171) a (2417, 1451), 2275×1280. `destRect` va de (0, 80) a (2560, 1520), 2560×1440.
 - Un toque en (1000, 800) debería llevar el cursor real a unos (1031, 811). Hoy Magpie lo toma como posición dentro de
   `srcRect` y lo pinta en unos (966, 788): 34 px a la izquierda y 12 px arriba.
@@ -140,6 +143,10 @@ observa y escribe un registro, sin bloquear ningún evento.
 **Duda principal.** De memoria, sin confirmar en el código de Sunshine: los toques se inyectan con
 `InjectSyntheticPointerInput` y el ratón con `SendInput`. Si es así, `WH_MOUSE_LL` no vería los toques como tales, solo el
 ratón que Windows genera a partir de ellos, con la firma `dwExtraInfo & 0xFFFFFF00 == 0xFF515700`. B2 depende de esto.
+
+**Foco tras la prueba con multi-touch:** identificar la segunda pulsación. Con el soporte táctil activado, B2 podría
+quedar en bloquear ese ratón sobrante, sin convertir coordenadas, y sería bastante más pequeño. Hay que hacer la pasada de
+multi-touch también con el soporte táctil desactivado, para comparar.
 
 **Código**
 
@@ -173,6 +180,8 @@ Con Tsukihime escalado y en cada modo de ratón de Artemis (multi-touch, trackpa
 
 | Pregunta | Qué se mira | Si la respuesta es mala |
 |---|---|---|
+| ¿Qué es la segunda pulsación? | Eventos de botón por cada toque, su posición y su firma | Si el gancho no la ve, no se puede bloquear desde él |
+| ¿Bloquearla dejaría intacta la correcta? | Si solo aparece un clic de ratón por toque y coincide con el punto equivocado | Si coincide con el correcto, la hipótesis falla: revisar |
 | ¿Los toques de multi-touch pasan por el gancho? | Si hay eventos al tocar, y con qué firma | B2 exigiría otro modo de Artemis |
 | ¿Se distinguen del ratón físico? | `LLMHF_INJECTED` y `dwExtraInfo` | B2 podría desviar el ratón del PC: no es viable tal cual |
 | ¿Se distinguen de los movimientos de Magpie? | Eventos tras cada toque, comparados con el `SetCursorPos` de prueba | Riesgo de bucle: hay que replantear B2 |
@@ -184,7 +193,8 @@ Con Tsukihime escalado y en cada modo de ratón de Artemis (multi-touch, trackpa
 
 | Resultado | Siguiente paso |
 |---|---|
-| Multi-touch llega al gancho y se distingue | B2 sobre multi-touch |
+| La pulsación sobrante es un ratón distinguible | B2 reducido: bloquearla con el soporte táctil activado |
+| Multi-touch llega al gancho y se distingue, pero no basta con bloquear | B2 completo sobre multi-touch |
 | Multi-touch no llega, pero otro modo manda posiciones absolutas distinguibles | B2 sobre ese modo |
 | Ningún modo sirve | Parar B2. Quedan el trackpad, o jugar sin Magpie cuando se quiera táctil directo |
 
@@ -226,7 +236,7 @@ ni al menú sobre el juego. Hasta entonces, el modo trackpad sigue siendo la alt
 | Paso | Quién | Depende de | Tamaño |
 |---|---|---|---|
 | A5, ajustes de Artemis y prueba de nitidez | Usuario | Nada | 20 min |
-| B0, prueba del táctil de Magpie (hecha, sin éxito) | Usuario | Nada | 15 min |
+| B0, prueba del táctil de Magpie (hecha: toque doble) | Usuario | Nada | 15 min |
 | A1 y A2, perfil de tablet (hecho, RCAS sigue en 0,45 hasta A5) | Código | Nitidez de A5 | Pequeño |
 | A3, selector por destino | Código | A2 | Pequeño |
 | A4, reconexión | Código | Comprobar si Apollo mueve el juego | Pequeño |
