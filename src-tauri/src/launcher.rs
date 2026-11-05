@@ -147,8 +147,9 @@ pub(crate) fn start_at(app: &AppHandle, game: Game, screen: Option<crate::displa
         });
     }
     let monitor = target.map(|t| t.size());
+    let magpie_target = if streaming { visor_core::magpie::Target::Tablet } else { visor_core::magpie::Target::Pc };
     let (app2, game2, pids2) = (app.clone(), game.clone(), pids.clone());
-    std::thread::spawn(move || crate::magpie::on_launch(app2, game2, pids2, monitor));
+    std::thread::spawn(move || crate::magpie::on_launch(app2, game2, pids2, monitor, magpie_target));
     if game.platform == visor_core::config::NOVELS_PLATFORM {
         let (app2, game2, pids2) = (app.clone(), game.clone(), pids.clone());
         std::thread::spawn(move || crate::novel::on_launch(app2, game2, pids2));

@@ -43,9 +43,17 @@ impl Plan {
     }
 }
 
-/// Modelo CuNNy (entrenado para novelas visuales) segun la altura nativa, para que vaya fluido.
-fn cunny_for(height: u32) -> &'static str {
-    if height <= 800 {
+/// Donde se ve el juego: en el monitor del PC o en la tablet por streaming.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Target {
+    Pc,
+    Tablet,
+}
+
+/// Modelo CuNNy (entrenado para novelas visuales) segun la altura nativa, para que vaya fluido. En la tablet
+/// la GPU del PC va sobrada (solo codifica el vídeo), asi que 1080p tambien usa 8x32.
+fn cunny_for(height: u32, target: Target) -> &'static str {
+    if height <= 800 || (target == Target::Tablet && height <= 1100) {
         "8x32"
     } else if height <= 1100 {
         "4x16"
@@ -67,7 +75,7 @@ fn rcas() -> Value {
 
 /// Decide el escalado. `forced`: `Some(2|4)` para imponerlo; `None` = automatico segun el factor.
 /// `has_cunny`: estan los efectos CuNNy2 (si no, se usa Anime4K).
-pub fn choose(native: (u32, u32), monitor: (u32, u32), forced: Option<u8>, has_cunny: bool) -> Plan {
+pub fn choose(native: (u32, u32), monitor: (u32, u32), forced: Option<u8>, has_cunny: bool, target: Target) -> Plan {
     let (w, h) = (native.0.max(1) as f64, native.1.max(1) as f64);
     let factor = (monitor.0 as f64 / w).min(monitor.1 as f64 / h);
     let scale = match forced {
@@ -77,7 +85,7 @@ pub fn choose(native: (u32, u32), monitor: (u32, u32), forced: Option<u8>, has_c
         _ => 4,
     };
     let (model, first, second) = if has_cunny {
-        let m = cunny_for(native.1);
+        let m = cunny_for(native.1, target);
         (format!("CuNNy {m}"), format!("CuNNy2\\CuNNy-{m}-NVL"), "CuNNy2\\CuNNy-3x12-NVL".to_string())
     } else {
         ("Anime4K".to_string(), "Anime4K\\Anime4K_Upscale_Denoise_L".to_string(), "Anime4K\\Anime4K_Upscale_S".to_string())
@@ -87,7 +95,11 @@ pub fn choose(native: (u32, u32), monitor: (u32, u32), forced: Option<u8>, has_c
         effects.push(json!({ "name": second }));
     }
     effects.extend([lanczos_fit(), rcas()]);
-    let mode_name = if scale == 0 { String::new() } else { format!("{MODE_PREFIX}{scale}x · {model}") };
+    let mode_name = match (scale, target) {
+        (0, _) => String::new(),
+        (_, Target::Pc) => format!("{MODE_PREFIX}{scale}x · {model}"),
+        (_, Target::Tablet) => format!("{MODE_PREFIX}Tablet · {scale}x · {model}"),
+    };
     Plan { factor, scale, model, mode_name, effects: Value::Array(effects) }
 }
 
@@ -262,34 +274,46 @@ mod tests {
     }
 
     #[test]
+    fn tablet_usa_8x32_en_1080p_y_otro_nombre() {
+        let mon = (2560, 1440);
+        let pc = choose((1920, 1080), mon, None, true, Target::Pc);
+        let tab = choose((1920, 1080), mon, None, true, Target::Tablet);
+        assert_eq!(pc.model, "CuNNy 4x16");
+        assert_eq!(tab.model, "CuNNy 8x32");
+        assert_eq!(tab.mode_name, "Visor · Tablet · 2x · CuNNy 8x32");
+        assert_ne!(pc.mode_name, tab.mode_name);
+        assert_eq!(choose((1280, 720), mon, None, true, Target::Tablet).model, "CuNNy 8x32");
+    }
+
+    #[test]
     fn decision_table_follows_native_resolution() {
         let mon = (2560, 1440);
-        let p = choose((1280, 720), mon, None, true);
+        let p = choose((1280, 720), mon, None, true, Target::Pc);
         assert_eq!((p.scale, p.model.as_str()), (2, "CuNNy 8x32"));
         assert!((p.factor - 2.0).abs() < 1e-9);
         assert_eq!(p.mode_name, "Visor · 2x · CuNNy 8x32");
         assert_eq!(p.effects.as_array().unwrap().len(), 3);
         // 800x600 en 1440p = 2,4: sobremuestreo 4x con dos pasos.
-        let p = choose((800, 600), mon, None, true);
+        let p = choose((800, 600), mon, None, true, Target::Pc);
         assert_eq!(p.scale, 4);
         let names: Vec<&str> = p.effects.as_array().unwrap().iter().map(|e| e["name"].as_str().unwrap()).collect();
         assert_eq!(names, ["CuNNy2\\CuNNy-8x32-NVL", "CuNNy2\\CuNNy-3x12-NVL", "Lanczos", "FSR\\FSR_RCAS"]);
         // 1080p: modelo mas ligero; 1440p: ya es nativa.
-        assert_eq!(choose((1920, 1080), mon, None, true).model, "CuNNy 4x16");
-        assert_eq!(choose((2560, 1440), mon, None, true).scale, 0);
+        assert_eq!(choose((1920, 1080), mon, None, true, Target::Pc).model, "CuNNy 4x16");
+        assert_eq!(choose((2560, 1440), mon, None, true, Target::Pc).scale, 0);
         // En un monitor 4K una 720p pasa a 4x; forzar manda sobre la tabla.
-        assert_eq!(choose((1280, 720), (3840, 2160), None, true).scale, 4);
-        assert_eq!(choose((1280, 720), mon, Some(4), true).scale, 4);
-        assert_eq!(choose((2560, 1440), mon, Some(2), true).scale, 2);
+        assert_eq!(choose((1280, 720), (3840, 2160), None, true, Target::Pc).scale, 4);
+        assert_eq!(choose((1280, 720), mon, Some(4), true, Target::Pc).scale, 4);
+        assert_eq!(choose((2560, 1440), mon, Some(2), true, Target::Pc).scale, 2);
         // Sin CuNNy2, Anime4K.
-        assert_eq!(choose((1280, 720), mon, None, false).model, "Anime4K");
-        assert_eq!(choose((1280, 720), mon, None, true).summary((1280, 720)), "1280×720 → 2x · CuNNy 8x32");
+        assert_eq!(choose((1280, 720), mon, None, false, Target::Pc).model, "Anime4K");
+        assert_eq!(choose((1280, 720), mon, None, true, Target::Pc).summary((1280, 720)), "1280×720 → 2x · CuNNy 8x32");
     }
 
     #[test]
     fn new_profile_copies_defaults_and_keeps_everything_else() {
         let mut c = sample();
-        let plan = choose((1280, 720), (2560, 1440), None, true);
+        let plan = choose((1280, 720), (2560, 1440), None, true, Target::Pc);
         assert!(apply(&mut c, "P:\\VN\\Nueva\\nueva.exe", "TVPMainWindow", "Nueva", &plan));
         let modes = c["scalingModes"].as_array().unwrap();
         assert_eq!(modes.len(), 3, "se anade el modo del visor sin tocar los del usuario");
@@ -308,7 +332,7 @@ mod tests {
     #[test]
     fn existing_profile_only_changes_scaling_fields() {
         let mut c = sample();
-        let plan = choose((800, 600), (2560, 1440), None, true);
+        let plan = choose((800, 600), (2560, 1440), None, true, Target::Pc);
         assert!(apply(&mut c, "p:\\visual novels\\ginka\\ginka.exe", "TVPMainWindow", "otro nombre", &plan));
         let p = &c["profiles"][1];
         assert_eq!(p["name"], "GINKA", "el nombre del usuario se respeta");
@@ -316,7 +340,7 @@ mod tests {
         assert_eq!(p["scalingMode"], 2);
         assert_eq!(c["profiles"].as_array().unwrap().len(), 3, "no se duplica el perfil");
         // Un perfil en modo ventana sigue en modo ventana.
-        let plan2 = choose((1280, 720), (2560, 1440), None, true);
+        let plan2 = choose((1280, 720), (2560, 1440), None, true, Target::Pc);
         apply(&mut c, "P:\\VN\\gss.exe", "bcyc", "Gore", &plan2);
         assert_eq!((c["profiles"][2]["autoScale"].as_i64(), c["profiles"][2]["scalingMode"].as_i64()), (Some(2), Some(3)));
     }
@@ -324,7 +348,7 @@ mod tests {
     #[test]
     fn native_resolution_and_disable_turn_autoscale_off() {
         let mut c = sample();
-        let native = choose((2560, 1440), (2560, 1440), None, true);
+        let native = choose((2560, 1440), (2560, 1440), None, true, Target::Pc);
         assert!(apply(&mut c, "P:\\Visual Novels\\Ginka\\GINKA.exe", "TVPMainWindow", "GINKA", &native));
         assert_eq!(c["profiles"][1]["autoScale"], 0);
         assert!(!apply(&mut c, "P:\\otra\\sin_perfil.exe", "X", "X", &native), "sin perfil y sin escalar: nada");

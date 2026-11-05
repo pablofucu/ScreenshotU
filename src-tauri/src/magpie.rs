@@ -137,7 +137,7 @@ fn store_pref(st: &AppState, id: &str, f: impl FnOnce(&mut MagpiePref)) {
 
 /// Lleva el perfil de Magpie del juego a lo que pide su preferencia y reinicia Magpie si hubo cambios. Con
 /// `ensure_running`, tambien lo abre si estaba cerrado.
-fn sync(st: &AppState, game: &Game, ensure_running: bool) -> Result<Outcome, String> {
+fn sync(st: &AppState, game: &Game, ensure_running: bool, target: magpie::Target) -> Result<Outcome, String> {
     let Some(pref) = pref_of(st, &game.id) else { return Ok(Outcome::Unchanged) };
     if !pref.enabled() && !pref.managed {
         return Ok(Outcome::Unchanged);
@@ -151,7 +151,7 @@ fn sync(st: &AppState, game: &Game, ensure_running: bool) -> Result<Outcome, Str
         let (Some(native), Some(monitor), Some(class), Some(wexe)) = (pref.native, pref.monitor, pref.class.clone(), pref.exe.clone()) else {
             return Ok(Outcome::Unchanged); // aun sin medir: se mide cuando aparezca la ventana
         };
-        let plan = magpie::choose(native, monitor, magpie::forced_scale(&pref.mode), magpie::has_cunny(&exe));
+        let plan = magpie::choose(native, monitor, magpie::forced_scale(&pref.mode), magpie::has_cunny(&exe), target);
         (magpie::apply(&mut cfg, &wexe, &class, &game.name, &plan), plan.summary(native))
     } else {
         let changed = pref.exe.as_deref().map(|e| magpie::disable(&mut cfg, e)).unwrap_or(false);
@@ -201,8 +201,8 @@ fn measure(pids: &Arc<Mutex<Vec<u32>>>, timeout: Duration) -> Option<GameWindow>
 /// Hilo de Magpie de una partida: aplica lo que ya se sabe del juego y, cuando aparece su ventana, la mide y
 /// corrige el perfil si la resolucion o la clase cambiaron. Nunca bloquea el juego: los errores solo se avisan.
 /// `monitor`: tamano del monitor donde se abrira el juego (el del visor); el perfil se calcula para ese
-/// monitor desde el principio, aunque la ultima vez se jugara en otro.
-pub fn on_launch(app: AppHandle, game: Game, pids: Arc<Mutex<Vec<u32>>>, monitor: Option<(u32, u32)>) {
+/// monitor desde el principio, aunque la ultima vez se jugara en otro. `target`: PC o tablet (streaming).
+pub fn on_launch(app: AppHandle, game: Game, pids: Arc<Mutex<Vec<u32>>>, monitor: Option<(u32, u32)>, target: magpie::Target) {
     let st = app.state::<AppState>();
     let Some(mut pref) = pref_of(&st, &game.id) else { return };
     if !pref.enabled() && !pref.managed {
@@ -220,7 +220,7 @@ pub fn on_launch(app: AppHandle, game: Game, pids: Arc<Mutex<Vec<u32>>>, monitor
         Ok(Outcome::Unchanged) => {}
         Err(e) => emit(e, true),
     };
-    report(sync(&st, &game, true));
+    report(sync(&st, &game, true, target));
     if !pref.enabled() {
         return;
     }
@@ -238,7 +238,7 @@ pub fn on_launch(app: AppHandle, game: Game, pids: Arc<Mutex<Vec<u32>>>, monitor
         m.class = Some(w.class.clone());
         m.exe = Some(w.exe.clone());
     });
-    report(sync(&st, &game, true));
+    report(sync(&st, &game, true, target));
 }
 
 #[derive(serde::Serialize)]
