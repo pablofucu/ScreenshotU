@@ -62,6 +62,28 @@ if (!server) {
     }, 1500);
   });
 
+  // El PC manda: si la partida acabó (cerrada desde fuera, evento perdido con la app en segundo plano), se corrige aquí.
+  const { endpoint } = await import('@desk/lib/remote/config');
+  const { softRefresh } = await import('@desk/lib/controller.svelte');
+  let syncing = false;
+  const syncPlaying = async () => {
+    if (syncing || document.hidden || !a.playing) return;
+    const ep = endpoint();
+    if (!ep) return;
+    syncing = true;
+    try {
+      const r = await fetch(`${ep.base}/api/v1/session`, { headers: { Authorization: `Bearer ${ep.code}` }, cache: 'no-store' });
+      if (!r.ok) return;
+      const j = (await r.json()) as { state?: string; game?: { id: string } | null };
+      if (j.state === 'idle' || !j.game || (a.playing && j.game.id !== a.playing.id)) {
+        a.playing = null;
+        void softRefresh();
+      }
+    } catch { /* sin conexión: se conserva lo que había */ } finally { syncing = false; }
+  };
+  document.addEventListener('visibilitychange', () => { void syncPlaying(); });
+  setInterval(() => { void syncPlaying(); }, 5000);
+
   // Botón atrás de Android = atrás de la interfaz de escritorio (B del mando / Esc); en Inicio sin paneles, la app pasa a segundo plano.
   void Cap.addListener('backButton', () => {
     if (a.view === 'home' && !a.overlay && !a.audioMenu && !a.osk.open) void Cap.minimizeApp();

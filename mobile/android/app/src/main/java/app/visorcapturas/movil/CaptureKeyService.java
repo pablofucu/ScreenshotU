@@ -54,6 +54,11 @@ public class CaptureKeyService extends AccessibilityService {
         CharSequence p = event.getPackageName();
         // El panel de volumen y las notificaciones son del sistema: no cambian la app en primer plano.
         if (p == null || p.toString().equals("com.android.systemui")) return;
+        // Nuestro propio menu flotante tambien genera un evento con este paquete: no es una app nueva en primer plano.
+        if (p.toString().equals(getPackageName())) {
+            CharSequence cn = event.getClassName();
+            if (menu != null || cn == null || !cn.toString().contains("Activity")) return;
+        }
         boolean was = StreamingPlugin.isMoonlight(foreground);
         foreground = p.toString();
         if (!was && StreamingPlugin.isMoonlight(foreground)) startWatch();
