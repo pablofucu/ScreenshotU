@@ -128,6 +128,15 @@ pub fn config_path(magpie_exe: &Path, local_appdata: &Path) -> Option<PathBuf> {
     best.or_else(|| Some(base.join("config.json")).filter(|p| p.is_file()))
 }
 
+/// Una instalacion encontrada: version del ejecutable (si se pudo leer), ultimo uso segun sus registros y ruta.
+pub type Install = (Option<[u16; 4]>, std::time::SystemTime, PathBuf);
+
+/// La instalacion a usar: la de version mas alta y, a igual version, la usada mas recientemente. Una copia cuya
+/// version no se pudo leer solo gana si no hay ninguna con version conocida.
+pub fn newest_install(list: Vec<Install>) -> Option<PathBuf> {
+    list.into_iter().max_by_key(|(version, used, _)| (*version, *used)).map(|(_, _, path)| path)
+}
+
 /// Estan los modelos CuNNy2 en la carpeta `effects` de Magpie.
 pub fn has_cunny(magpie_exe: &Path) -> bool {
     let Some(dir) = magpie_exe.parent().map(|d| d.join("effects").join("CuNNy2")) else { return false };
@@ -271,6 +280,23 @@ mod tests {
         }"#,
         )
         .unwrap()
+    }
+
+    #[test]
+    fn newest_install_prefers_version_over_recent_use() {
+        use std::time::{Duration, UNIX_EPOCH};
+        let (old, new) = (UNIX_EPOCH + Duration::from_secs(100), UNIX_EPOCH + Duration::from_secs(200));
+        let path = |s: &str| PathBuf::from(s);
+        // El caso real: la 0.10.3 se abrio despues que la 0.12.1, pero sigue ganando la nueva.
+        let list = vec![(Some([0, 10, 3, 0]), new, path("vieja")), (Some([0, 12, 1, 0]), old, path("nueva"))];
+        assert_eq!(newest_install(list), Some(path("nueva")));
+        // A igual version, la usada por ultima vez.
+        let list = vec![(Some([0, 12, 1, 0]), old, path("a")), (Some([0, 12, 1, 0]), new, path("b"))];
+        assert_eq!(newest_install(list), Some(path("b")));
+        // Sin version conocida no gana a una con version.
+        let list = vec![(None, new, path("sin")), (Some([0, 9, 1, 0]), old, path("con"))];
+        assert_eq!(newest_install(list), Some(path("con")));
+        assert_eq!(newest_install(vec![]), None);
     }
 
     #[test]

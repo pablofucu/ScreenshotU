@@ -22,16 +22,21 @@ pub struct GameWindow {
     pub monitor: (u32, u32),
 }
 
-/// `Magpie.exe` a usar: el configurado, el que esta abierto o el primero que se encuentre en las carpetas
-/// habituales (si hay varios, el usado mas recientemente segun sus registros).
+/// `Magpie.exe` a usar: el configurado o, entre el que esta abierto y los de las carpetas habituales, el de version
+/// mas alta (a igual version, el usado mas recientemente segun sus registros). Una copia antigua no lee los perfiles
+/// del visor, asi que nunca debe ganar a una nueva solo por haberse abierto la ultima.
 pub fn find_exe(configured: &str) -> Option<PathBuf> {
     let c = configured.trim();
     if !c.is_empty() {
         return Some(PathBuf::from(c)).filter(|p| p.is_file());
     }
-    if let Some(p) = imp::running_exe() {
-        return Some(p);
-    }
+    let candidate = |exe: PathBuf| {
+        let used = std::fs::metadata(exe.with_file_name("logs").join("magpie.log"))
+            .and_then(|m| m.modified())
+            .unwrap_or(std::time::UNIX_EPOCH);
+        (imp::file_version(&exe), used, exe)
+    };
+    let mut found: Vec<magpie::Install> = imp::running_exe().into_iter().map(candidate).collect();
     let env = |k: &str| std::env::var_os(k).map(PathBuf::from);
     let mut roots: Vec<PathBuf> = Vec::new();
     if let Some(h) = env("USERPROFILE") {
@@ -48,7 +53,6 @@ pub fn find_exe(configured: &str) -> Option<PathBuf> {
             roots.push(p);
         }
     }
-    let mut found: Vec<(std::time::SystemTime, PathBuf)> = Vec::new();
     for r in roots {
         let Ok(rd) = std::fs::read_dir(&r) else { continue };
         for e in rd.flatten() {
@@ -58,16 +62,12 @@ pub fn find_exe(configured: &str) -> Option<PathBuf> {
             // `scoop\apps\magpie\current\Magpie.exe` o `<carpeta>\Magpie.exe`.
             for exe in [e.path().join("Magpie.exe"), e.path().join("current").join("Magpie.exe")] {
                 if exe.is_file() {
-                    let used = std::fs::metadata(exe.with_file_name("logs").join("magpie.log"))
-                        .and_then(|m| m.modified())
-                        .unwrap_or(std::time::UNIX_EPOCH);
-                    found.push((used, exe));
+                    found.push(candidate(exe));
                 }
             }
         }
     }
-    found.sort_by_key(|a| std::cmp::Reverse(a.0));
-    found.into_iter().map(|(_, p)| p).next()
+    magpie::newest_install(found)
 }
 
 /// `config.json` de esa instalacion de Magpie.
@@ -169,7 +169,9 @@ fn sync(st: &AppState, game: &Game, ensure_running: bool, target: magpie::Target
         restart(&exe)?;
         return Ok(Outcome::Applied(summary));
     }
-    if enabled && ensure_running && !is_running() {
+    // Tambien si esta abierta otra copia: no leeria el perfil que acabamos de comprobar.
+    let other_copy = imp::running_exe().map(|r| !r.as_os_str().eq_ignore_ascii_case(exe.as_os_str())).unwrap_or(false);
+    if enabled && ensure_running && (!is_running() || other_copy) {
         restart(&exe)?;
     }
     Ok(Outcome::Unchanged)
@@ -269,6 +271,7 @@ mod imp {
     use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
     use windows::core::{BOOL, PCWSTR, PWSTR};
     use windows::Win32::Foundation::{CloseHandle, ERROR_CANCELLED, HWND, LPARAM, RECT, WAIT_OBJECT_0};
+    use windows::Win32::Storage::FileSystem::{GetFileVersionInfoSizeW, GetFileVersionInfoW, VerQueryValueW, VS_FIXEDFILEINFO};
     use windows::Win32::Graphics::Gdi::{GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST};
     use windows::Win32::System::Threading::{
         GetExitCodeProcess, OpenProcess, QueryFullProcessImageNameW, TerminateProcess, WaitForSingleObject, PROCESS_NAME_WIN32,
@@ -310,6 +313,26 @@ mod imp {
 
     pub fn running_exe() -> Option<PathBuf> {
         magpie_pids().find_map(exe_path).map(PathBuf::from).filter(|p| p.is_file())
+    }
+
+    /// Version del ejecutable segun sus recursos (mayor, menor, revision, compilacion).
+    pub fn file_version(exe: &Path) -> Option<[u16; 4]> {
+        let path = wide(&exe.to_string_lossy());
+        unsafe {
+            let size = GetFileVersionInfoSizeW(PCWSTR(path.as_ptr()), None);
+            if size == 0 {
+                return None;
+            }
+            let mut data = vec![0u8; size as usize];
+            GetFileVersionInfoW(PCWSTR(path.as_ptr()), None, size, data.as_mut_ptr().cast()).ok()?;
+            let root = wide("\\");
+            let (mut info, mut len) = (std::ptr::null_mut(), 0u32);
+            if !VerQueryValueW(data.as_ptr().cast(), PCWSTR(root.as_ptr()), &mut info, &mut len).as_bool() || info.is_null() || (len as usize) < std::mem::size_of::<VS_FIXEDFILEINFO>() {
+                return None;
+            }
+            let i = &*(info as *const VS_FIXEDFILEINFO);
+            Some([(i.dwFileVersionMS >> 16) as u16, i.dwFileVersionMS as u16, (i.dwFileVersionLS >> 16) as u16, i.dwFileVersionLS as u16])
+        }
     }
 
     fn top_windows() -> Vec<HWND> {
@@ -453,6 +476,9 @@ mod imp {
     pub fn running_exe() -> Option<PathBuf> {
         None
     }
+    pub fn file_version(_: &Path) -> Option<[u16; 4]> {
+        None
+    }
     pub fn find_game_window(_: &[u32]) -> Option<GameWindow> {
         None
     }
@@ -462,5 +488,18 @@ mod imp {
     pub fn kill_magpie() {}
     pub fn restart_elevated(_: &Path) -> Result<(), String> {
         Err("Magpie solo existe en Windows".into())
+    }
+}
+
+#[cfg(all(test, windows))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn file_version_reads_the_resources_of_an_exe() {
+        let dir = std::env::var_os("SystemRoot").map(PathBuf::from).unwrap();
+        let v = imp::file_version(&dir.join("System32").join("kernel32.dll")).unwrap();
+        assert!(v[0] >= 6, "{v:?}");
+        assert_eq!(imp::file_version(&dir.join("no-existe.exe")), None);
     }
 }
