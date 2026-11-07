@@ -3,6 +3,7 @@
 //! Aqui viven las constantes de las APIs de Nintendo (un solo sitio), la normalizacion de ids y
 //! nombres de titulo, y el login PKCE ([`pkce`]). Ver `docs/plan-switch*.md` y `docs/nintendo-api.md`.
 
+pub mod merge;
 pub mod models;
 pub mod pkce;
 pub mod store;
