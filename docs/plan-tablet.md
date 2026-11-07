@@ -90,7 +90,7 @@ Si la prueba sale mal → seguimos con Sunshine y cambiamos la resolución del m
    tiene la resolución del cliente, `SUNSHINE_CLIENT_WIDTH/HEIGHT`) en vez del monitor del visor; así el juego
    sale allí y Magpie lo escala a la resolución de la tablet. Requisito: lanzar **después** de conectar (punto 2).
    Hecho en `launch_stream` (1.7.9) y confirmado por el usuario: el juego carga bien.
-7. **Toques con Magpie (sin resolver).** Probado por el usuario: con ratón absoluto el puntero acierta en unas zonas
+7. **Toques con Magpie (sin resolver; plan vigente en `docs/plan-magpie-tablet.md`).** Probado por el usuario: con ratón absoluto el puntero acierta en unas zonas
    y se desvía en otras. Causa (`Magpie.Core/CursorManager.cpp`): mientras escala, el cursor real vive dentro de la
    ventana del juego (`srcRect`) y Magpie lo convierte a la imagen grande (`destRect`) con `SrcToScaling`. Apollo
    manda coordenadas de la pantalla completa, y las que caen dentro de `srcRect` se leen como posiciones del juego.
