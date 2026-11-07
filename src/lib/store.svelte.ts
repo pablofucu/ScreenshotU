@@ -73,6 +73,7 @@ export const DEFAULT_CONFIG: Config = {
   collectionsStyle: 'aurora',
   listStalled: true,
   listStalledDays: 30,
+  nintendoMinMinutes: 60,
   listStalledAction: 'ask',
   listAutoPlay: true,
   inputMouse: true,

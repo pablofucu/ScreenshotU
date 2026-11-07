@@ -13,6 +13,7 @@ import {
 import { shotLayout, type ShotLayout } from './shotlayout';
 import { tgrid, TZOOM_MAX } from './tgrid';
 import { EVO_KINDS, GMETRICS, STATS_KINDS } from './stats';
+import { importNow, nintendoCycleMin, nintendoToggleAccount } from './nintendo.svelte';
 import { editSgdbKey, openSgdbPicker, openSgdbTitles, sgdbAuto, sgdbCmd, sgdbTitlesCmd, toggleSgdbAuto } from './sgdb.svelte';
 import { AUDIO_COMBO_PRESETS, AUDIO_HOTKEY_PRESETS, COMBO_PRESETS, HOTKEY_PRESETS, MOUSE_PRESETS, OVERLAY_COMBO_PRESETS, OVERLAY_HOTKEY_PRESETS, learnKeydown, learnMouse, onLearnKey, onLearnPad, startLearn } from './learn.svelte';
 import { READING_CYCLE, READING_ROWS, isReadingId, readingAct, type ReadingId } from './reading.svelte';
@@ -1195,6 +1196,7 @@ export type SettingId =
   | 'root' | 'rescan' | 'addgame' | 'hidden' | 'showhidden' | 'view' | 'shotsview' | 'shotsorder' | 'collstyle' | 'achcardvariant' | 'sound' | 'fullscreen' | 'monitor' | 'oncursor'
   | 'audioout' | 'audiocombo' | 'audiohotkey' | 'hotkey' | 'combo' | 'mouse' | 'qmkey' | 'qmpad' | 'qmmouse' | 'qmhold' | 'qmpause' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caponly' | 'caprumble' | 'bgtray' | 'quit'
   | 'sgdbkey' | 'sgdbauto' | 'sgdbnow' | 'sgdbgame'
+  | 'ntaccount' | 'ntmin' | 'ntimport'
   | 'backup' | 'backupmedia' | 'restore' | 'autobackup'
   | 'savesauto' | 'ludusavi' | 'inputmouse' | 'inputkeys' | 'update'
   | 'liststalled' | 'liststalleddays' | 'liststalledact' | 'listautoplay' | 'theme'
@@ -1254,6 +1256,8 @@ export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[
     t: 0.8,
     rows: ['liststalled', 'liststalleddays', 'liststalledact', 'listautoplay'],
   },
+  // Solo en el PC: la cuenta y la sincronización viven allí.
+  ...(IS_TABLET ? [] : [{ name: 'Nintendo', t: 0.9, rows: ['ntaccount', 'ntmin', 'ntimport'] as SettingId[] }]),
   {
     name: 'Acerca de',
     t: 1,
@@ -1262,7 +1266,7 @@ export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[
   },
 ];
 /** Filas que cambian de valor con izquierda/derecha (se marcan con ‹ ›). Las demás son acciones: izquierda vuelve al menú. */
-export const CYCLE = new Set<SettingId>(['theme', 'showhidden', 'view', 'shotsview', 'shotsorder', 'collstyle', 'achcardvariant', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'qmkey', 'qmpad', 'qmmouse', 'qmhold', 'qmpause', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'inputmouse', 'inputkeys', 'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay', 'bgtray']);
+export const CYCLE = new Set<SettingId>(['theme', 'showhidden', 'view', 'shotsview', 'shotsorder', 'collstyle', 'achcardvariant', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'qmkey', 'qmpad', 'qmmouse', 'qmhold', 'qmpause', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'inputmouse', 'inputkeys', 'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay', 'bgtray', 'ntmin']);
 export const rowHasArrows = (id: SettingId | undefined) => !!id && (CYCLE.has(id) || READING_CYCLE.has(id as never) || REMOTE_CYCLE.has(id as never));
 /** Zona de foco en Ajustes: el menú de secciones o la lista de opciones. */
 export const setNav = $state({ zone: 'menu' as 'menu' | 'body' });
@@ -1521,6 +1525,9 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'sgdbauto') toggleSgdbAuto();
   else if (id === 'sgdbnow' && dir === 0) void sgdbAuto(true);
   else if (id === 'sgdbgame' && dir === 0) openSgdbTitles();
+  else if (id === 'ntaccount' && dir === 0) void nintendoToggleAccount();
+  else if (id === 'ntmin') nintendoCycleMin(dir);
+  else if (id === 'ntimport' && dir === 0) void importNow();
   else if (id && isReadingId(id)) readingAct(id, dir);
   else if (id && isRemoteId(id)) remoteAct(id, dir);
 }

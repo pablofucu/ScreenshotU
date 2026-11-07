@@ -6,6 +6,7 @@
   } from '../lib/controller.svelte';
   import { comboLabel, hotkeyLabel, mouseLabel } from '../lib/learn.svelte';
   import { sg, sgdbKeyLabel } from '../lib/sgdb.svelte';
+  import { nt, nintendoInit, nintendoStateLabel, minLabel } from '../lib/nintendo.svelte';
   import { ludusaviLabel } from '../lib/saves.svelte';
   import { lb } from '../lib/library.svelte';
   import { isReadingId, readingRow } from '../lib/reading.svelte';
@@ -87,6 +88,9 @@
     sgdbkey: () => ({ l: 'Clave de API', v: sgdbKeyLabel(), d: 'Clave gratuita de steamgriddb.com (inicia sesión → Preferencias → API). Pulsa A para escribirla o pegarla con Ctrl+V.' }),
     sgdbauto: () => ({ l: 'Descargar grafismos que falten', v: yn(app.config.sgdbAuto), d: 'Al escanear, busca cada juego por su nombre y descarga la portada, el hero y el logo que falten. Se guardan en la carpeta Grafismos de la biblioteca: la carpeta de capturas del juego no se toca y sus grafismos propios siempre ganan.' }),
     sgdbnow: () => ({ l: 'Buscar ahora los que faltan', v: sg.status, d: 'Vuelve a buscar los grafismos que faltan en todos los juegos, también en los que ya se revisaron antes.' }),
+    ntaccount: () => ({ l: 'Cuenta de Nintendo', v: nintendoStateLabel(), d: nt.error || (nt.connected ? 'Cuenta conectada: el visor baja el historial de juego de tu Switch cada 30 minutos (solo lectura). Pulsa A para desconectarla: se borran los permisos guardados en este PC y los tiempos ya descargados se quedan.' : 'Pulsa A para iniciar sesión en tu cuenta de Nintendo en una ventana propia. El visor solo lee el historial de juego; tu contraseña no pasa por la app.') }),
+    ntmin: () => ({ l: 'Mínimo para importar un juego', v: minLabel(app.config.nintendoMinMinutes ?? 60), d: 'Los juegos de la consola con menos tiempo que este no se ofrecen al importar (las demos nunca). ‹ › lo cambia; con «Todos» se ofrece todo lo que tenga algo de tiempo. Los que ya tienen ficha siempre se enlazan.' }),
+    ntimport: () => ({ l: 'Importar juegos ahora', v: nt.busy === 'import' ? 'Descargando…' : nt.pending ? `${nt.pending} nuevos` : '', d: 'Baja ya el historial de la consola y cuenta cuántos juegos hay por importar. Las fichas nuevas solo se crean en la categoría Switch; ninguna otra categoría se toca.' }),
     sgdbgame: () => ({ l: 'Cambiar grafismos de un juego…', v: '', d: 'Elige otra portada, hero o logo de SteamGridDB o una imagen del PC (View) para un juego, o corrige el juego que se encontró si no era el bueno.' }),
   };
 
@@ -96,6 +100,7 @@
     return ROWS[id]?.() ?? { l: '', v: '', d: '' };
   }
 
+  $effect(() => { void nintendoInit(); });
   const sec = $derived(SETTING_SECTIONS[app.setSec]);
   const rows = $derived(sec.rows.map((id) => ({ id, ...row(id) })));
   const focused = $derived(rows[app.setRow]);

@@ -105,6 +105,8 @@ export interface Config {
   listStalled: boolean;
   /** Días sin jugar (7 a 180). */
   listStalledDays: number;
+  /** Nintendo: minutos mínimos de juego para ofrecer importar un juego de la consola (0 = todos). */
+  nintendoMinMinutes: number;
   /** Qué hacer con ellos: preguntar, pasarlos a Pendiente o a Abandonado. */
   listStalledAction: 'ask' | 'pending' | 'dropped';
   /** Al lanzar un pendiente desde el visor, pasa a «Jugando». */
