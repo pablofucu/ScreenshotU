@@ -234,7 +234,7 @@
     {
       "id": "SW-02",
       "title": "Investigar Control Parental (Moon)",
-      "state": "proposed",
+      "state": "todo",
       "group": "SW",
       "deps": ["SW-01"],
       "at": "2026-11-07T01:09:13Z",
@@ -244,7 +244,7 @@
     {
       "id": "SW-03",
       "title": "Fixtures anonimizadas de las respuestas",
-      "state": "proposed",
+      "state": "todo",
       "group": "SW",
       "deps": ["SW-01", "SW-02"],
       "at": "2026-11-07T01:09:13Z",
@@ -263,7 +263,7 @@
     {
       "id": "SW-05",
       "title": "Migración 15 de la base de datos",
-      "state": "review",
+      "state": "done",
       "group": "SW",
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
@@ -296,9 +296,10 @@
     {
       "id": "SW-07",
       "title": "Modelos serde con tests de fixtures",
-      "state": "proposed",
+      "state": "todo",
       "group": "SW",
       "deps": ["SW-03"],
+      "yolo": true,
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
       "desc": "visor-core/src/nintendo/models.rs."
@@ -306,12 +307,19 @@
     {
       "id": "SW-08",
       "title": "Store de tablas switch_*",
-      "state": "todo",
+      "state": "review",
       "group": "SW",
       "deps": ["SW-05"],
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "Upserts y lecturas en visor-core/src/nintendo/store.rs."
+      "desc": "Upserts y lecturas en visor-core/src/nintendo/store.rs.",
+      "notes": [
+        {
+          "at": "2026-11-07T14:17:03Z",
+          "by": "agent",
+          "text": "visor-core/src/nintendo/store.rs: upserts idempotentes de switch_titles (conserva enlace, ignored y seen_ms), switch_daily y switch_players (conserva counted); lecturas, juegos sin enlazar, enlace y descartar. 4 tests nuevos, 11 del módulo OK."
+        }
+      ]
     },
     {
       "id": "SW-09",

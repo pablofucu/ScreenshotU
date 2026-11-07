@@ -4,6 +4,7 @@
 //! nombres de titulo, y el login PKCE ([`pkce`]). Ver `docs/plan-switch*.md` y `docs/nintendo-api.md`.
 
 pub mod pkce;
+pub mod store;
 
 /// `client_id` de la app Nintendo Switch Online usado para el historial de juego.
 pub const HISTORY_CLIENT_ID: &str = "5c38e31cd085304b";
