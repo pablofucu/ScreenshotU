@@ -198,7 +198,7 @@
     {
       "id": "SW-01",
       "title": "Investigar el historial de juego con la cuenta real",
-      "state": "review",
+      "state": "done",
       "group": "SW",
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
@@ -263,11 +263,18 @@
     {
       "id": "SW-05",
       "title": "Migración 15 de la base de datos",
-      "state": "todo",
+      "state": "review",
       "group": "SW",
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "Tablas switch_* en visor-core/src/db.rs, con test de migración."
+      "desc": "Tablas switch_* en visor-core/src/db.rs, con test de migración.",
+      "notes": [
+        {
+          "at": "2026-11-07T14:10:38Z",
+          "by": "agent",
+          "text": "Migración 15 con switch_titles, switch_daily y switch_players en visor-core/src/db.rs; test de migración 14→15 y tablas esperadas actualizadas. cargo test db:: pasa (25/25)."
+        }
+      ]
     },
     {
       "id": "SW-06",

@@ -242,6 +242,42 @@ pub const MIGRATIONS: &[&str] = &[
     crate::achievements::SCHEMA,
     // 14: rareza real de los logros (porcentaje global de Steam) y cuando se consulto cada juego.
     crate::achievements::RARITY_SCHEMA,
+    // 15: tiempo de juego de Nintendo Switch (juegos de la cuenta, minutos por dia y usuarios del Control Parental).
+    r#"
+    CREATE TABLE switch_titles (
+        nx_id           TEXT PRIMARY KEY,
+        name            TEXT NOT NULL,
+        image_url       TEXT,
+        device_type     TEXT,
+        first_played_ms INTEGER,
+        last_played_ms  INTEGER,
+        total_minutes   INTEGER NOT NULL DEFAULT 0,
+        history_ms      INTEGER,
+        game_id         TEXT,
+        folder          TEXT,
+        ignored         INTEGER NOT NULL DEFAULT 0,
+        seen_ms         INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE switch_daily (
+        day        TEXT NOT NULL,
+        nx_id      TEXT NOT NULL,
+        source     TEXT NOT NULL,
+        device_id  TEXT NOT NULL DEFAULT '',
+        player_id  TEXT NOT NULL DEFAULT '',
+        minutes    INTEGER NOT NULL,
+        updated_ms INTEGER NOT NULL,
+        PRIMARY KEY (day, nx_id, source, device_id, player_id)
+    );
+    CREATE INDEX switch_daily_title ON switch_daily(nx_id, day);
+    CREATE TABLE switch_players (
+        device_id   TEXT NOT NULL,
+        player_id   TEXT NOT NULL,
+        nickname    TEXT NOT NULL DEFAULT '',
+        device_name TEXT NOT NULL DEFAULT '',
+        counted     INTEGER NOT NULL DEFAULT 1,
+        PRIMARY KEY (device_id, player_id)
+    );
+    "#,
 ];
 
 /// Version del esquema que entiende esta compilacion.
@@ -422,7 +458,7 @@ mod tests {
         let d = tempfile::tempdir().unwrap();
         let c = open_connection(&d.path().join("sub/visor.db")).unwrap();
         let t = tables(&c);
-        for want in ["favorites", "games", "play_stats", "sessions", "hidden", "title_prefs", "title_magpie", "sagas", "saga_members", "sgdb", "novel_prefs", "known_words", "phrases", "phrase_tags", "title_status", "save_paths", "meta", "achievements", "achievement_unlocks", "title_achievements_pref"] {
+        for want in ["favorites", "games", "play_stats", "sessions", "hidden", "title_prefs", "title_magpie", "sagas", "saga_members", "sgdb", "novel_prefs", "known_words", "phrases", "phrase_tags", "title_status", "save_paths", "meta", "achievements", "achievement_unlocks", "title_achievements_pref", "switch_titles", "switch_daily", "switch_players"] {
             assert!(t.iter().any(|x| x == want), "falta la tabla {want}: {t:?}");
         }
         let v: i64 = c.query_row("PRAGMA user_version", [], |r| r.get(0)).unwrap();
@@ -488,6 +524,27 @@ mod tests {
         let copy = Db::open_path(&dest).unwrap();
         assert_eq!(copy.with(favorites_load).unwrap(), vec!["x.png", "y.png"]);
         assert_eq!(copy.with(stats_load).unwrap()["manual:1"].seconds, 60);
+    }
+
+    #[test]
+    fn migration_15_adds_switch_tables_keeping_data() {
+        let d = tempfile::tempdir().unwrap();
+        let p = d.path().join("visor.db");
+        {
+            let mut c = Connection::open(&p).unwrap();
+            migrate(&mut c, &MIGRATIONS[..14]).unwrap();
+            c.execute("INSERT INTO favorites (path) VALUES ('a.png')", []).unwrap();
+        }
+        let db = Db::open_path(&p).unwrap();
+        db.with(|c| {
+            assert_eq!(c.query_row::<i64, _, _>("PRAGMA user_version", [], |r| r.get(0)).unwrap(), 15);
+            assert_eq!(c.query_row::<i64, _, _>("SELECT count(*) FROM favorites", [], |r| r.get(0)).unwrap(), 1);
+            c.execute("INSERT INTO switch_titles (nx_id, name) VALUES ('0100000000010000', 'Juego')", []).unwrap();
+            let ins = "INSERT INTO switch_daily (day, nx_id, source, minutes, updated_ms) VALUES ('2026-01-01', '0100000000010000', 'history', 30, 1)";
+            c.execute(ins, []).unwrap();
+            assert!(c.execute(ins, []).is_err(), "la clave completa es unica");
+            c.execute("INSERT INTO switch_players (device_id, player_id) VALUES ('d', 'p')", []).unwrap();
+        });
     }
 
     #[test]
