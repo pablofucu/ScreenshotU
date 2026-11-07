@@ -65,6 +65,27 @@ pub fn normalize_name(name: &str) -> String {
     cleaned.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
+/// Nombre sin ™ ® © y sin el sufijo «Nintendo Switch 2 Edition» / «Switch 2 Edition» (con `–`, `-` o `:` delante).
+/// Sirve para unir las versiones de un mismo juego en una sola ficha.
+pub fn base_name(name: &str) -> String {
+    let s: String = name.chars().filter(|c| !matches!(c, '\u{2122}' | '\u{00AE}' | '\u{00A9}')).collect();
+    let mut s = s.split_whitespace().collect::<Vec<_>>().join(" ");
+    let lower = s.to_lowercase();
+    for suffix in ["nintendo switch 2 edition", "switch 2 edition"] {
+        if lower.ends_with(suffix) {
+            let keep = s.chars().count().saturating_sub(suffix.chars().count());
+            s = s.chars().take(keep).collect();
+            break;
+        }
+    }
+    s.trim_end_matches(|c: char| c.is_whitespace() || matches!(c, '\u{2013}' | '\u{2014}' | '-' | ':')).to_string()
+}
+
+/// Clave normalizada del nombre base (ver [`base_name`]).
+pub fn base_key(name: &str) -> String {
+    crate::games::norm_key(&base_name(name))
+}
+
 /// Las demos llegan mezcladas con los juegos: se reconocen por la palabra «demo» en el nombre.
 pub fn is_demo(name: &str) -> bool {
     let n: String = normalize_name(name).chars().map(|c| if c.is_alphanumeric() || c == ' ' { c } else { ' ' }).collect();
@@ -92,6 +113,16 @@ mod tests {
         assert_eq!(normalize_name("The Legend of Zelda™: Breath of the Wild"), "the legend of zelda breath of the wild");
         assert_eq!(normalize_name("  Mario  Kart® 8 – Deluxe "), "mario kart 8 deluxe");
         assert_eq!(normalize_name("Zelda - Tears"), normalize_name("Zelda: Tears"));
+    }
+
+    #[test]
+    fn base_names_drop_marks_and_switch2_suffix() {
+        assert_eq!(base_name("Mina the Hollower \u{2013} Nintendo Switch 2 Edition"), "Mina the Hollower");
+        assert_eq!(base_name("Xenoblade Chronicles X: Definitive Edition \u{2013} Nintendo Switch 2 Edition"), "Xenoblade Chronicles X: Definitive Edition");
+        assert_eq!(base_name("Super Mario\u{2122} Party: Switch 2 Edition"), "Super Mario Party");
+        assert_eq!(base_name("Hades"), "Hades");
+        assert!(is_demo("Yoshi and the Mysterious Book Demo"));
+        assert_ne!(base_key("Yoshi and the Mysterious Book Demo"), base_key("Yoshi and the Mysterious Book"));
     }
 
     #[test]

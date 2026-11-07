@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use super::link::{self, Candidate};
 use super::store::{self, SwitchTitle};
-use super::{is_demo, SWITCH_PLATFORM};
+use super::{base_key, base_name, is_demo, SWITCH_PLATFORM};
 use crate::db::data as dbd;
 use crate::games::ManualGame;
 
@@ -130,12 +130,25 @@ pub fn preview(titles: &[SwitchTitle], cands: &[Candidate], min_minutes: i64) ->
             out.dudosos.push(DoubtItem { item: Item::from(t), options: d.options.clone() });
         }
     }
+    // Las versiones de un mismo juego (Switch 1 y «Switch 2 Edition») van a una sola ficha nueva.
+    let mut keys: Vec<String> = Vec::new();
     for it in items(&real, &p.nuevos) {
-        if it.minutes >= min_minutes {
-            out.nuevos.push(NewGroup { name: it.name.clone(), items: vec![it] });
-        } else {
+        if it.minutes < min_minutes {
             out.excluidos.push(it);
+            continue;
         }
+        let k = base_key(&it.name);
+        match keys.iter().position(|x| !k.is_empty() && *x == k) {
+            Some(i) => out.nuevos[i].items.push(it),
+            None => {
+                keys.push(k);
+                out.nuevos.push(NewGroup { name: String::new(), items: vec![it] });
+            }
+        }
+    }
+    for g in out.nuevos.iter_mut() {
+        g.items.sort_by(|a, b| b.minutes.cmp(&a.minutes));
+        g.name = base_name(&g.items[0].name);
     }
     out
 }
@@ -165,6 +178,8 @@ pub fn apply(conn: &Connection, choices: &[Choice], cands: &[Candidate], mut new
     let tx = conn.unchecked_transaction()?;
     let mut rep = Report::default();
     let mut used: Vec<String> = Vec::new();
+    // (nombre base, posicion en `rep.created`) de las fichas creadas en esta tanda.
+    let mut made: Vec<(String, usize)> = Vec::new();
     for ch in choices {
         match ch {
             Choice::Create { nx_ids, name } => {
@@ -185,8 +200,30 @@ pub fn apply(conn: &Connection, choices: &[Choice], cands: &[Candidate], mut new
                     rep.skipped.push(format!("{}: sin nombre", ok[0].name));
                     continue;
                 }
+                let bk = base_key(name);
+                // Ya hay una ficha con ese nombre base en la categoria: se enlaza en vez de crear otra.
+                if !bk.is_empty() {
+                    if let Some(c) = cands.iter().find(|c| base_key(&c.name) == bk || base_key(&c.folder) == bk) {
+                        for t in &ok {
+                            store::title_set_link(&tx, &t.nx_id, c.game_id.as_deref(), if c.game_id.is_some() { None } else { Some(c.folder.as_str()) })?;
+                        }
+                        rep.linked += ok.len();
+                        rep.skipped.push(format!("{name}: ya existía, se ha enlazado con {}", c.name));
+                        continue;
+                    }
+                    // Dos decisiones de la misma tanda con el mismo nombre base: una sola ficha.
+                    if let Some(i) = made.iter().position(|(k, _)| *k == bk) {
+                        let gid = rep.created[made[i].1].game_id.clone();
+                        for t in &ok {
+                            store::title_set_link(&tx, &t.nx_id, Some(&gid), None)?;
+                            rep.created[made[i].1].nx_ids.push(t.nx_id.clone());
+                        }
+                        continue;
+                    }
+                }
                 let id = unique_id(&tx, &used, &mut new_id)?;
                 used.push(id.clone());
+                made.push((bk, rep.created.len()));
                 dbd::manual_add(
                     &tx,
                     &ManualGame {
@@ -337,6 +374,56 @@ mod tests {
         let p = preview(&t, &cands, 60);
         assert!(!p.nuevos.iter().any(|g| g.name.starts_with("Super Smash")));
         assert_eq!(p.ignorados.len(), 1);
+    }
+
+    #[test]
+    fn editions_are_grouped_and_make_one_card() {
+        let (_d, c) = setup();
+        let mut titles = store::titles_load(&c).unwrap();
+        let mina = titles.iter().find(|t| t.name.starts_with("Mina")).unwrap().clone();
+        let mut twin = mina.clone();
+        twin.nx_id = "0400DCD01F306000".into();
+        twin.name = "Mina the Hollower".into();
+        twin.total_minutes = 100;
+        titles.push(twin.clone());
+        let p = preview(&titles, &[], 60);
+        let g = p.nuevos.iter().find(|g| g.name == "Mina the Hollower").unwrap();
+        assert_eq!(g.items.len(), 2);
+        assert_eq!(g.items[0].nx_id, mina.nx_id, "el de mas minutos primero");
+        assert_eq!(p.nuevos.len(), 5);
+        // Dos Create de la misma tanda con el mismo nombre base -> una ficha.
+        c.execute("INSERT INTO switch_titles(nx_id, name, total_minutes, seen_ms) VALUES (?1, ?2, 100, 1)", [&twin.nx_id, &twin.name]).unwrap();
+        let ch = [
+            Choice::Create { nx_ids: vec![mina.nx_id.clone()], name: "Mina the Hollower".into() },
+            Choice::Create { nx_ids: vec![twin.nx_id.clone()], name: "Mina the Hollower".into() },
+        ];
+        let mut n = 0;
+        let rep = apply(&c, &ch, &[], || {
+            n += 1;
+            format!("manual:{n}")
+        })
+        .unwrap();
+        assert_eq!((rep.created.len(), dbd::manual_load(&c).unwrap().len()), (1, 1));
+        assert_eq!(rep.created[0].nx_ids.len(), 2);
+    }
+
+    #[test]
+    fn existing_card_is_doubtful_and_create_links_instead() {
+        let (_d, c) = setup();
+        let titles = store::titles_load(&c).unwrap();
+        let mina = id_of(&titles, "Mina");
+        let cands = vec![
+            Candidate { game_id: None, folder: "Mina the Hollower (2)".into(), name: "Mina the Hollower (2)".into() },
+            Candidate { game_id: Some("manual:7".into()), folder: "Mina the Hollower".into(), name: "Mina the Hollower".into() },
+        ];
+        let p = preview(&titles, &cands, 60);
+        assert_eq!(p.dudosos.len(), 1);
+        assert_eq!(p.dudosos[0].options[0].game_id.as_deref(), Some("manual:7"), "la ficha con juego primero");
+        assert!(!p.nuevos.iter().any(|g| g.name.starts_with("Mina")));
+        let rep = apply(&c, &[Choice::Create { nx_ids: vec![mina.clone()], name: "Mina the Hollower".into() }], &cands, || "manual:1".into()).unwrap();
+        assert!(rep.created.is_empty() && dbd::manual_load(&c).unwrap().is_empty());
+        assert_eq!(rep.linked, 1);
+        assert_eq!(store::title_get(&c, &mina).unwrap().unwrap().game_id.as_deref(), Some("manual:7"));
     }
 
     #[test]

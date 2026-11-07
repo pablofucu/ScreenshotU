@@ -6,7 +6,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::store::SwitchTitle;
-use super::SWITCH_PLATFORM;
+use super::{base_key, SWITCH_PLATFORM};
 use crate::games::{norm_key, Game};
 
 /// Ficha de la categoria Switch con la que se puede enlazar.
@@ -80,7 +80,28 @@ pub fn propose(titles: &[SwitchTitle], candidates: &[Candidate]) -> Proposal {
                 }
             }
         }
+        // Sin coincidencia exacta: se mira el nombre base (p. ej. «… Switch 2 Edition»); lo confirma el usuario.
+        let mut by_base = false;
+        if hits.is_empty() {
+            let bk = base_key(&t.name);
+            if !bk.is_empty() {
+                for c in candidates {
+                    if (base_key(&c.name) == bk || base_key(&c.folder) == bk) && !hits.contains(&c) {
+                        hits.push(c);
+                    }
+                }
+                by_base = !hits.is_empty();
+            }
+        }
+        if hits.len() > 1 || by_base {
+            hits.sort_by(|a, b| b.game_id.is_some().cmp(&a.game_id.is_some()).then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())));
+        }
         match hits.as_slice() {
+            _ if by_base => out.dudosos.push(Doubtful {
+                nx_id: t.nx_id.clone(),
+                name: t.name.clone(),
+                options: hits.iter().map(|c| (*c).clone()).collect(),
+            }),
             [] => out.nuevos.push(t.nx_id.clone()),
             [c] => out.enlazados.push(Linked {
                 nx_id: t.nx_id.clone(),
