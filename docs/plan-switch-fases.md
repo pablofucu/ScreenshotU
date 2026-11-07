@@ -28,6 +28,8 @@ Ordena las tareas SW del tablero Kanvas (detalle de diseño en `plan-switch-play
 
 ## Fase 4 — Importación y sincronización (backend)
 - **SW-17** Vista previa e importación: nunca demos; mínimo por defecto 60 min; importación explícita; enlace manual.
+- **SW-24** Fusión con fichas repetidas: al importar, detectar títulos que ya existen (a veces duplicados en la biblioteca Switch) y ofrecer fusionarlos con la ficha existente en vez de crear otra; el enlace manual cubre los dudosos. Sin tocar categorías.
+- **SW-25** Grafismos de los juegos importados: portada/logo/hero compatibles con la biblioteca, reutilizando el flujo de SteamGridDB (`sgdb.rs`) y la caché de arte; buscar por nombre del juego y titleId.
 - **SW-18** `sync.rs`: cada 30 min, evento `nintendo-synced`; solo actualiza tiempos, nunca crea fichas.
 
 ## Fase 5 — Interfaz
