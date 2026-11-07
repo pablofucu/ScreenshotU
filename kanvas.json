@@ -279,7 +279,7 @@
     {
       "id": "SW-06",
       "title": "Constantes, ids, nombres y PKCE",
-      "state": "review",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-01"],
       "at": "2026-11-07T01:09:13Z",
@@ -364,7 +364,7 @@
     {
       "id": "SW-13",
       "title": "Llavero de Windows para los tokens",
-      "state": "review",
+      "state": "done",
       "group": "SW",
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
@@ -380,12 +380,20 @@
     {
       "id": "SW-14",
       "title": "Autenticación Nintendo",
-      "state": "todo",
+      "state": "review",
       "group": "SW",
       "deps": ["SW-06", "SW-13"],
+      "yolo": true,
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "auth.rs: session token y access token con renovación."
+      "desc": "auth.rs: session token y access token con renovación.",
+      "notes": [
+        {
+          "at": "2026-11-07T14:34:35Z",
+          "by": "agent",
+          "text": "src-tauri/src/nintendo/auth.rs: connect (canje del código → session_token al llavero), Session::access con renovación del access_token en memoria y borrado del llavero si Nintendo lo revoca, disconnect/is_connected, AuthError (NotConnected/Revoked/Transient). 4 tests OK (parseo de respuestas, margen de caducidad, rechazo de redirecciones ajenas). Sin probar contra la red real: eso llega con la ventana de login (SW-15)."
+        }
+      ]
     },
     {
       "id": "SW-15",
