@@ -1267,6 +1267,8 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            #[cfg(windows)]
+            nintendo::nintendo_refresh,
             window_monitor,
             next_monitor,
             get_config,

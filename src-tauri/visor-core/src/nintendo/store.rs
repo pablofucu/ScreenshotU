@@ -153,6 +153,58 @@ pub fn daily_since(conn: &Connection, since_day: &str) -> Result<Vec<DailyRow>> 
     Ok(rows)
 }
 
+/// Resultado de guardar una descarga del historial.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct HistorySaved {
+    pub titles: usize,
+    pub days: usize,
+    /// Juegos que no estaban guardados.
+    pub new: Vec<String>,
+    /// Juegos cuyo total, ultima vez o minutos de algun dia han cambiado (incluye los nuevos con tiempo en dias).
+    pub changed: Vec<String>,
+}
+
+/// Guarda el historial en una transaccion. Solo escribe `switch_*`: nunca crea fichas ni toca `games`.
+pub fn save_history(conn: &Connection, titles: &[TitleUpsert], days: &[DailyRow], now_ms: i64) -> Result<HistorySaved> {
+    let tx = conn.unchecked_transaction()?;
+    let mut out = HistorySaved { titles: titles.len(), days: days.len(), ..Default::default() };
+    let mark = |list: &mut Vec<String>, id: &str| {
+        if !list.iter().any(|x| x == id) {
+            list.push(id.to_string());
+        }
+    };
+    for t in titles {
+        match title_get(&tx, &t.nx_id)? {
+            None => {
+                mark(&mut out.new, &t.nx_id);
+                mark(&mut out.changed, &t.nx_id);
+            }
+            Some(old) => {
+                if old.total_minutes != t.total_minutes || (t.last_played_ms.is_some() && old.last_played_ms != t.last_played_ms) {
+                    mark(&mut out.changed, &t.nx_id);
+                }
+            }
+        }
+        // Siempre se escribe: asi `history_ms` refleja cuando se leyo el total.
+        upsert_title(&tx, t, now_ms)?;
+    }
+    for d in days {
+        let old: Option<i64> = tx
+            .query_row(
+                "SELECT minutes FROM switch_daily WHERE day = ?1 AND nx_id = ?2 AND source = ?3 AND device_id = ?4 AND player_id = ?5",
+                params![d.day, d.nx_id, d.source, d.device_id, d.player_id],
+                |r| r.get(0),
+            )
+            .optional()?;
+        if old != Some(d.minutes) {
+            daily_upsert(&tx, d, now_ms)?;
+            mark(&mut out.changed, &d.nx_id);
+        }
+    }
+    tx.commit()?;
+    Ok(out)
+}
+
 /// Guarda un usuario del Control Parental. Si ya existia se actualizan los nombres y se
 /// **respeta** `counted` (lo decide el usuario).
 pub fn player_upsert(conn: &Connection, device_id: &str, player_id: &str, nickname: &str, device_name: &str) -> Result<()> {
@@ -244,6 +296,55 @@ mod tests {
         let all = daily_since(&c, "2026-11-01").unwrap();
         assert_eq!(all.iter().map(|r| (r.day.as_str(), r.minutes)).collect::<Vec<_>>(), vec![("2026-11-01", 25), ("2026-11-03", 5)]);
         assert_eq!(daily_since(&c, "2026-11-02").unwrap().len(), 1);
+    }
+
+    #[test]
+    fn save_history_is_idempotent_and_reports_changes() {
+        use crate::nintendo::models::parse_play_histories;
+        let (_d, c) = conn();
+        let ph = parse_play_histories(include_str!("fixtures/play_histories.json")).unwrap();
+        let (titles, days) = (ph.title_upserts(), ph.daily_rows());
+        assert!(!titles.is_empty());
+        let games_before: i64 = c.query_row("SELECT count(*) FROM games", [], |r| r.get(0)).unwrap();
+
+        let first = save_history(&c, &titles, &days, 1000).unwrap();
+        assert_eq!(first.new.len(), titles.len());
+        assert_eq!((first.titles, first.days), (titles.len(), days.len()));
+        let rows = |c: &Connection| -> (i64, i64) {
+            (
+                c.query_row("SELECT count(*) FROM switch_titles", [], |r| r.get(0)).unwrap(),
+                c.query_row("SELECT count(*) FROM switch_daily", [], |r| r.get(0)).unwrap(),
+            )
+        };
+        let counts = rows(&c);
+        assert_eq!(counts, (titles.len() as i64, days.len() as i64));
+
+        // Repetir con los mismos datos: nada nuevo ni cambiado, mismas filas.
+        let again = save_history(&c, &titles, &days, 2000).unwrap();
+        assert!(again.new.is_empty() && again.changed.is_empty(), "{again:?}");
+        assert_eq!(rows(&c), counts);
+
+        // Un enlace y un descarte sobreviven a otra descarga y subir un total solo marca ese juego.
+        let id = titles[0].nx_id.clone();
+        title_set_link(&c, &id, Some("manual:9"), None).unwrap();
+        title_set_ignored(&c, &id, true).unwrap();
+        let mut more = titles.clone();
+        more[0].total_minutes += 15;
+        let third = save_history(&c, &more, &days, 3000).unwrap();
+        assert_eq!(third.changed, vec![id.clone()]);
+        assert!(third.new.is_empty());
+        let t = title_get(&c, &id).unwrap().unwrap();
+        assert_eq!((t.game_id.as_deref(), t.ignored, t.history_ms), (Some("manual:9"), true, Some(3000)));
+
+        // Un dia con minutos distintos tambien marca el juego.
+        let mut days2 = days.clone();
+        if let Some(d) = days2.first_mut() {
+            d.minutes += 5;
+            let nx = d.nx_id.clone();
+            assert_eq!(save_history(&c, &more, &days2, 4000).unwrap().changed, vec![nx]);
+        }
+        // Nunca crea fichas.
+        assert_eq!(c.query_row::<i64, _, _>("SELECT count(*) FROM games", [], |r| r.get(0)).unwrap(), games_before);
     }
 
     #[test]

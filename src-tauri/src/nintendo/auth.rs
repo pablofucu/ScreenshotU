@@ -1,3 +1,4 @@
+#![allow(dead_code)] // connect/disconnect/is_connected los usa la ventana de login (SW-15)
 //! Autenticacion con la cuenta de Nintendo: canjea el `session_token_code` del login por un
 //! `session_token` (que se guarda en el Administrador de credenciales) y pide `access_token`s de
 //! corta vida, que solo viven en memoria y se renuevan solos.

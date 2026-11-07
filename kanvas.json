@@ -234,27 +234,51 @@
     {
       "id": "SW-02",
       "title": "Investigar Control Parental (Moon)",
-      "state": "todo",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-01"],
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "Lo mismo para Moon con pynintendoparental: Switch 2, ventana de días y usuarios. Hecho cuando docs/nintendo-api.md lo recoge."
+      "desc": "Lo mismo para Moon con pynintendoparental: Switch 2, ventana de días y usuarios. Hecho cuando docs/nintendo-api.md lo recoge.",
+      "notes": [
+        {
+          "at": "2026-11-07T16:39:03Z",
+          "by": "agent",
+          "text": "Plan: investigar Moon en la documentación de pynintendoparental"
+        },
+        {
+          "at": "2026-11-07T16:39:03Z",
+          "by": "agent",
+          "text": "Moon documentado en docs/nintendo-api.md (client_id, scopes, host, endpoints, cabeceras). No probado en vivo: exige un segundo login con otro client_id y una cuenta con Control Parental. Aplazado."
+        }
+      ]
     },
     {
       "id": "SW-03",
       "title": "Fixtures anonimizadas de las respuestas",
-      "state": "todo",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-01", "SW-02"],
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "Guardar respuestas reales anonimizadas en visor-core/src/nintendo/fixtures/*.json para los tests."
+      "desc": "Guardar respuestas reales anonimizadas en visor-core/src/nintendo/fixtures/*.json para los tests.",
+      "notes": [
+        {
+          "at": "2026-11-07T16:39:29Z",
+          "by": "agent",
+          "text": "Plan: subconjunto de la respuesta real, sin datos de cuenta"
+        },
+        {
+          "at": "2026-11-07T16:40:34Z",
+          "by": "agent",
+          "text": "Fixture play_histories.json: 10 juegos reales (Switch 1, 2, id 0100 en BEE, demos) y 6 días; sin datos de cuenta."
+        }
+      ]
     },
     {
       "id": "SW-04",
       "title": "Probar la ventana de login (WebView2)",
-      "state": "todo",
+      "state": "doing",
       "group": "SW",
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
@@ -296,18 +320,29 @@
     {
       "id": "SW-07",
       "title": "Modelos serde con tests de fixtures",
-      "state": "todo",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-03"],
-      "yolo": true,
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "visor-core/src/nintendo/models.rs."
+      "desc": "visor-core/src/nintendo/models.rs.",
+      "notes": [
+        {
+          "at": "2026-11-07T16:40:35Z",
+          "by": "agent",
+          "text": "Plan: models.rs"
+        },
+        {
+          "at": "2026-11-07T16:40:35Z",
+          "by": "agent",
+          "text": "models.rs: parse del historial + title_upserts/daily_rows hacia el store; 7 tests con la fixture, pasan."
+        }
+      ]
     },
     {
       "id": "SW-08",
       "title": "Store de tablas switch_*",
-      "state": "review",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-05"],
       "at": "2026-11-07T01:09:13Z",
@@ -324,7 +359,7 @@
     {
       "id": "SW-09",
       "title": "Mezcla de tiempos consola/PC",
-      "state": "proposed",
+      "state": "todo",
       "group": "SW",
       "deps": ["SW-08"],
       "at": "2026-11-07T01:09:13Z",
@@ -334,7 +369,7 @@
     {
       "id": "SW-10",
       "title": "Emparejamiento automático con fichas",
-      "state": "proposed",
+      "state": "todo",
       "group": "SW",
       "deps": ["SW-08"],
       "at": "2026-11-07T01:09:13Z",
@@ -344,7 +379,7 @@
     {
       "id": "SW-11",
       "title": "Aplicar el tiempo de consola en el escaneo",
-      "state": "proposed",
+      "state": "todo",
       "group": "SW",
       "deps": ["SW-09"],
       "at": "2026-11-07T01:09:13Z",
@@ -380,7 +415,7 @@
     {
       "id": "SW-14",
       "title": "Autenticación Nintendo",
-      "state": "review",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-06", "SW-13"],
       "yolo": true,
@@ -408,17 +443,24 @@
     {
       "id": "SW-16",
       "title": "Cliente del historial y guardado",
-      "state": "proposed",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-07", "SW-08", "SW-14"],
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "history.rs: descarga y guarda totales, primera y última vez."
+      "desc": "history.rs: descarga y guarda totales, primera y última vez.",
+      "notes": [
+        {
+          "at": "2026-11-07T18:00:04Z",
+          "by": "agent",
+          "text": "store::save_history (transacción, new/changed, no toca games) con test sobre la fixture; nintendo/history.rs (fetch con reintento id_token/renovación, SyncError); nintendo::refresh con límite de 2 min y meta last_sync_ms/last_error; comando nintendo_refresh registrado. Tests OK (30 core, 5 app); live_history #[ignore] sin ejecutar contra la red real."
+        }
+      ]
     },
     {
       "id": "SW-17",
       "title": "Vista previa e importación de la lista de juegos",
-      "state": "proposed",
+      "state": "todo",
       "group": "SW",
       "deps": ["SW-10", "SW-16"],
       "at": "2026-11-07T01:09:13Z",
@@ -428,7 +470,7 @@
     {
       "id": "SW-18",
       "title": "Hilo de sincronización periódica",
-      "state": "proposed",
+      "state": "todo",
       "group": "SW",
       "deps": ["SW-11", "SW-16"],
       "at": "2026-11-07T01:09:13Z",
@@ -448,7 +490,7 @@
     {
       "id": "SW-20",
       "title": "Sección «Nintendo» de Ajustes",
-      "state": "proposed",
+      "state": "todo",
       "group": "SW",
       "deps": ["SW-15", "SW-18"],
       "at": "2026-11-07T01:09:13Z",
@@ -458,9 +500,10 @@
     {
       "id": "SW-21",
       "title": "Pantalla de importación",
-      "state": "proposed",
+      "state": "todo",
       "group": "SW",
       "deps": ["SW-17", "SW-20"],
+      "yolo": true,
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
       "desc": "Vista previa de títulos a importar y de los excluidos por el mínimo; añadir a mano."
@@ -483,6 +526,26 @@
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
       "desc": "Fase posterior, sin código: MTP, microSD, hash → id de título."
+    },
+    {
+      "id": "SW-24",
+      "title": "Fusionar juegos importados con fichas repetidas",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-10"],
+      "at": "2026-11-07T16:43:28Z",
+      "by": "agent",
+      "desc": "Al importar de Nintendo, detectar fichas ya existentes (incluidas duplicadas en la categoria Switch) y ofrecer fusionarlas en vez de crear otra. Sin tocar categorias."
+    },
+    {
+      "id": "SW-25",
+      "title": "Grafismos para los juegos importados",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-17"],
+      "at": "2026-11-07T16:43:28Z",
+      "by": "agent",
+      "desc": "Portada/logo/hero compatibles con la biblioteca, reutilizando SteamGridDB (sgdb.rs) y la cache de arte; busqueda por nombre y titleId."
     }
   ]
 }

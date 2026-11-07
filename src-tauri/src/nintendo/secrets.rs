@@ -15,6 +15,7 @@ pub enum Secret {
     /// Session token de la cuenta del historial de juego.
     History,
     /// Session token del Control Parental (Moon), si se conecta.
+    #[allow(dead_code)] // lo usara el Control Parental (SW-19)
     Parental,
 }
 
