@@ -198,7 +198,7 @@
     {
       "id": "SW-01",
       "title": "Investigar el historial de juego con la cuenta real",
-      "state": "doing",
+      "state": "review",
       "group": "SW",
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
@@ -223,6 +223,11 @@
           "at": "2026-11-07T14:05:16Z",
           "by": "agent",
           "text": "Resuelto: el historial vive ahora en app-api.znej.nintendo.com/api/v2.0/users/me/play_histories (mismo login y client_id; cabecera Gentry-Locale obligatoria). 200 OK: 87 juegos con total de toda la vida, 6 días desglosados, Switch 1 (HAC/0100) y Switch 2 (BEE/0400) juntos. Detalles en docs/nintendo-api.md."
+        },
+        {
+          "at": "2026-11-07T14:05:32Z",
+          "by": "agent",
+          "text": "Historial verificado con la cuenta real en el host nuevo; formato, Switch 2 y ventana de 6 días en docs/nintendo-api.md. Pendiente (SW-03): fixtures anonimizadas. Zona horaria de los días sin confirmar."
         }
       ]
     },
