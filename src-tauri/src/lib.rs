@@ -1269,6 +1269,10 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             #[cfg(windows)]
             nintendo::nintendo_refresh,
+            nintendo::import::nintendo_import_preview,
+            nintendo::import::nintendo_import_apply,
+            nintendo::import::nintendo_link,
+            nintendo::import::nintendo_set_ignored,
             nintendo::login::nintendo_login_start,
             nintendo::login::nintendo_login_paste,
             nintendo::login::nintendo_status,

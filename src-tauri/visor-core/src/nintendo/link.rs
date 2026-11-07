@@ -6,7 +6,8 @@
 use serde::{Deserialize, Serialize};
 
 use super::store::SwitchTitle;
-use crate::games::norm_key;
+use super::SWITCH_PLATFORM;
+use crate::games::{norm_key, Game};
 
 /// Ficha de la categoria Switch con la que se puede enlazar.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -43,6 +44,24 @@ pub struct Proposal {
     pub nuevos: Vec<String>,
     pub enlazados: Vec<Linked>,
     pub dudosos: Vec<Doubtful>,
+}
+
+/// Candidatos de la categoria Switch: sus fichas (`platform == switch`) y las carpetas sueltas de
+/// `Raiz/<carpeta Switch>` que no son la de ninguna ficha. Nunca mira otras plataformas.
+pub fn candidates(games: &[Game], folders: &[String]) -> Vec<Candidate> {
+    let mut out: Vec<Candidate> = games
+        .iter()
+        .filter(|g| g.platform == SWITCH_PLATFORM)
+        .map(|g| Candidate { game_id: Some(g.id.clone()), folder: g.folder.clone(), name: g.name.clone() })
+        .collect();
+    let taken: Vec<String> = out.iter().map(|c| norm_key(&c.folder)).collect();
+    for f in folders {
+        let k = norm_key(f);
+        if !k.is_empty() && !taken.contains(&k) && !out.iter().any(|c| c.game_id.is_none() && norm_key(&c.folder) == k) {
+            out.push(Candidate { game_id: None, folder: f.clone(), name: f.clone() });
+        }
+    }
+    out
 }
 
 /// Empareja los titulos sin enlazar y no ignorados por nombre normalizado (contra el nombre de la

@@ -267,7 +267,7 @@ pub(crate) fn mtime_ms(md: &fs::Metadata) -> i64 {
 }
 
 /// Busca `folder` dentro de `root` sin distinguir mayusculas (Windows ya no lo hace; Linux si).
-fn find_dir_ci(root: &Path, folder: &str) -> Option<PathBuf> {
+pub fn find_dir_ci(root: &Path, folder: &str) -> Option<PathBuf> {
     let exact = root.join(folder);
     if exact.is_dir() {
         return Some(exact);

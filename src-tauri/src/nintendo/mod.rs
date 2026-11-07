@@ -3,6 +3,7 @@
 
 pub mod auth;
 pub mod history;
+pub mod import;
 pub mod login;
 pub mod secrets;
 

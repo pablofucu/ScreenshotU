@@ -88,6 +88,8 @@ pub struct Config {
     pub sgdb_key: String,
     /// Descargar solos los grafismos que falten.
     pub sgdb_auto: bool,
+    /// Minutos minimos de juego para crear una ficha al importar de Nintendo.
+    pub nintendo_min_minutes: u32,
     /// Clave de DeepSeek para traducir y explicar frases ("" = sin IA). Solo la usa la app, nunca la pagina.
     pub deepseek_key: String,
     pub deepseek_model: String,
@@ -222,6 +224,7 @@ impl Default for Config {
             show_hidden: false,
             sgdb_key: String::new(),
             sgdb_auto: true,
+            nintendo_min_minutes: 60,
             deepseek_key: String::new(),
             deepseek_model: "deepseek-chat".into(),
             anki_url: "http://127.0.0.1:8765".into(),
