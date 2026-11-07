@@ -476,10 +476,36 @@ pub struct AutoTitle {
 }
 
 /// Un titulo que de verdad se va a buscar y los tipos que le faltan de verdad.
-struct Pending {
-    id: String,
-    name: String,
-    kinds: Vec<ArtKind>,
+pub(crate) struct Pending {
+    pub(crate) id: String,
+    pub(crate) name: String,
+    /// Texto con el que se busca en SteamGridDB (si no da resultado se prueba con `name`).
+    pub(crate) term: String,
+    pub(crate) kinds: Vec<ArtKind>,
+    /// Caratula de reserva (CDN de Nintendo) si SteamGridDB no deja ninguna.
+    pub(crate) fallback_cover: Option<String>,
+}
+
+/// Solo se bajan caratulas de reserva por https del CDN de Nintendo.
+pub(crate) fn nintendo_cdn_allowed(url: &str) -> bool {
+    let Some(rest) = url.strip_prefix("https://") else { return false };
+    let host = rest.split(['/', '?', '#']).next().unwrap_or("");
+    host.ends_with(".cdn.nintendo.net") && !host.contains('@') && !host.contains(':')
+}
+
+/// Baja la caratula de reserva si el titulo sigue sin ninguna.
+fn fallback_cover(base: &Path, t: &Pending, images: &mut usize) {
+    let Some(url) = t.fallback_cover.as_deref() else { return };
+    if sgdb::find_cached(base, &t.id).cover.is_some() || !nintendo_cdn_allowed(url) {
+        return;
+    }
+    match fetch_bytes(url) {
+        Ok((mime, bytes)) => match sgdb::store_image(base, &t.id, ArtKind::Cover, 0, sgdb::ext_for(&mime, url), &bytes) {
+            Ok(_) => *images += 1,
+            Err(e) => eprintln!("Caratula de reserva {}: {e}", t.name),
+        },
+        Err((_, m)) => eprintln!("Caratula de reserva {}: {m}", t.name),
+    }
 }
 
 #[derive(Clone, Serialize)]
@@ -562,9 +588,23 @@ enum Found {
 /// resultado); el que llama lo guarda. `images` cuenta cada imagen bajada, aunque el titulo acabe fallando.
 /// `year` recibe el año de lanzamiento si se ha buscado el juego (sale gratis en la busqueda).
 fn run_title(key: &str, base: &Path, t: &Pending, e: &mut SgdbEntry, images: &mut usize, year: &mut Option<i32>) -> Result<Found, ApiError> {
+    let r = run_title_sgdb(key, base, t, e, images, year);
+    if t.fallback_cover.is_some() && !matches!(&r, Err(err) if err.kind == ErrKind::Auth) {
+        fallback_cover(base, t, images);
+    }
+    r
+}
+
+fn run_title_sgdb(key: &str, base: &Path, t: &Pending, e: &mut SgdbEntry, images: &mut usize, year: &mut Option<i32>) -> Result<Found, ApiError> {
     let gid = match e.game_id {
         Some(g) => g,
-        None => match search_with(key, &t.name, BATCH)?.into_iter().next() {
+        None => match {
+            let mut hit = search_with(key, &t.term, BATCH)?.into_iter().next();
+            if hit.is_none() && t.term != t.name {
+                hit = search_with(key, &t.name, BATCH)?.into_iter().next();
+            }
+            hit
+        } {
             Some(h) => {
                 *year = h.year;
                 e.game_id = Some(h.id);
@@ -657,17 +697,26 @@ pub fn sgdb_auto(app: AppHandle, state: State<'_, AppState>, titles: Vec<AutoTit
             .filter(|t| !t.missing.is_empty() && (force || !failed.contains(&t.id)))
             .filter_map(|t| {
                 let kinds = pending_kinds(&t, store.get(&t.id), &base, force);
-                (!kinds.is_empty()).then_some(Pending { id: t.id, name: t.name, kinds })
+                (!kinds.is_empty()).then(|| Pending { term: t.name.clone(), id: t.id, name: t.name, kinds, fallback_cover: None })
             })
             .collect()
     };
     if todo.is_empty() {
         return Ok(0);
     }
+    run_batch(app, todo)
+}
+
+/// Lanza en un hilo la busqueda de grafismos de `todo`. Devuelve cuantos titulos revisara.
+pub(crate) fn run_batch(app: AppHandle, todo: Vec<Pending>) -> Result<usize, String> {
+    let state = app.state::<AppState>();
+    let key = key_of(&state);
+    let base = state.sgdb_dir();
     if state.sgdb_busy.swap(true, Ordering::SeqCst) {
         return Err("Ya se estan buscando grafismos en SteamGridDB".into());
     }
     let (store, busy, db) = (state.sgdb.clone(), state.sgdb_busy.clone(), state.db.clone());
+    drop(state);
     let total = todo.len();
     std::thread::spawn(move || {
         let _guard = BusyGuard(busy);
@@ -950,5 +999,19 @@ mod tests {
         assert!(pending_kinds(&t(&["logo"]), Some(&e), d, true).is_empty());
         // Duplicados y tipos desconocidos.
         assert_eq!(pending_kinds(&t(&["hero", "hero", "xx"]), None, d, true), vec![ArtKind::Hero]);
+    }
+}
+
+#[cfg(test)]
+mod nintendo_cdn_tests {
+    use super::nintendo_cdn_allowed;
+
+    #[test]
+    fn only_https_nintendo_cdn_hosts() {
+        assert!(nintendo_cdn_allowed("https://atum-img-lp1.cdn.nintendo.net/i/abc.jpg"));
+        assert!(!nintendo_cdn_allowed("http://atum-img-lp1.cdn.nintendo.net/i/abc.jpg"));
+        assert!(!nintendo_cdn_allowed("https://example.com/a.jpg"));
+        assert!(!nintendo_cdn_allowed("https://cdn.nintendo.net.evil.com/a.jpg"));
+        assert!(!nintendo_cdn_allowed("https://x.cdn.nintendo.net@evil.com/a.jpg"));
     }
 }

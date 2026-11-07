@@ -4,7 +4,7 @@
 use std::path::Path;
 
 use serde::Serialize;
-use tauri::State;
+use tauri::{AppHandle, State};
 use visor_core::db::data as dbd;
 use visor_core::games;
 use visor_core::nintendo::import::{self, Choice, Preview, Report};
@@ -69,12 +69,15 @@ pub async fn nintendo_import_preview(
 
 /// Aplica las decisiones del usuario. El frontend vuelve a escanear una vez despues.
 #[tauri::command]
-pub async fn nintendo_import_apply(state: State<'_, AppState>, choices: Vec<Choice>) -> Result<Report, String> {
+pub async fn nintendo_import_apply(app: AppHandle, state: State<'_, AppState>, choices: Vec<Choice>) -> Result<Report, String> {
     let cands = switch_candidates(&state)?;
     let db = state.db.clone();
-    tauri::async_runtime::spawn_blocking(move || db.with(|c| import::apply(c, &choices, &cands, new_id)).map_err(|e| e.to_string()))
-        .await
-        .map_err(|e| e.to_string())?
+    let report: Report =
+        tauri::async_runtime::spawn_blocking(move || db.with(|c| import::apply(c, &choices, &cands, new_id)).map_err(|e| e.to_string()))
+            .await
+            .map_err(|e| e.to_string())??;
+    super::art::spawn(app, report.created.clone());
+    Ok(report)
 }
 
 /// Enlaza (o desenlaza con `(None, None)`) un juego de Nintendo con una ficha o carpeta de la categoria Switch.
