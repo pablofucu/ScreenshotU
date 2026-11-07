@@ -169,6 +169,40 @@ export interface GameStatsDb {
 }
 /** Estado del acceso desde el móvil. `error`: último fallo al abrir el puerto (p. ej. en uso). */
 export interface RemoteInfo { enabled: boolean; running: boolean; port: number; addresses: string[]; code: string; id: string; link: string; qr: string; error: string | null }
+/** Tiempo de consola (Nintendo) ya sumado al del juego; solo en fichas de la categoría Switch. */
+export interface ConsoleTime {
+  seconds: number;
+  firstPlayed: number | null;
+  lastPlayed: number | null;
+  /** `[inicio_del_día_ms, minutos]` de los últimos 28 días con tiempo. */
+  days: Array<[number, number]>;
+  /** De dónde salen la mayoría de los días recientes: `history` o `parental`. */
+  source: string;
+}
+
+/** Un juego de la cuenta Nintendo (importación). */
+export interface NxItem { nxId: string; name: string; minutes: number; lastPlayed: number | null; imageUrl: string | null; platform: string | null }
+/** Ficha o carpeta de la categoría Switch con la que se puede enlazar. */
+export interface NxCandidate { gameId: string | null; folder: string; name: string }
+export interface NxNewGroup { name: string; items: NxItem[] }
+export interface NxLinkItem { item: NxItem; target: NxCandidate }
+export interface NxDoubtItem { item: NxItem; options: NxCandidate[] }
+export interface NxPreview {
+  nuevos: NxNewGroup[];
+  enlazados: NxLinkItem[];
+  dudosos: NxDoubtItem[];
+  /** Sin ficha y por debajo del mínimo: se pueden añadir a mano. */
+  excluidos: NxItem[];
+  ignorados: NxItem[];
+  demos: number;
+  minMinutes: number;
+}
+export type NxChoice =
+  | { action: 'create'; nxIds: string[]; name: string }
+  | { action: 'link'; nxId: string; gameId: string | null; folder: string | null }
+  | { action: 'ignore'; nxId: string };
+export interface NxReport { created: Array<{ gameId: string; name: string; nxIds: string[]; imageUrl: string | null }>; linked: number; ignored: number; skipped: string[] }
+
 export interface Title {
   name: string;
   cover: string | null;
@@ -222,6 +256,8 @@ export interface Title {
   release?: ReleaseDate | null;
   /** Solo en la vista de capturas de una colección: los juegos que la forman. */
   members?: SagaMember[];
+  /** Tiempo de la consola ya incluido en `playSeconds` (solo Switch, con cuenta de Nintendo). */
+  console?: ConsoleTime | null;
 }
 export interface HiddenEntry { id: string; name: string; platform: string }
 /** Fecha de lanzamiento: año siempre; mes (1-12) y día opcionales. `auto` = sacada de SteamGridDB (se puede sustituir sola). */

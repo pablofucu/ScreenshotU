@@ -31,6 +31,7 @@
   import AddChooser from './screens/AddChooser.svelte';
   import GameDirWizard from './screens/GameDirWizard.svelte';
   import HiddenList from './screens/HiddenList.svelte';
+  import NintendoImport from './screens/NintendoImport.svelte';
   import MoveTo from './screens/MoveTo.svelte';
   import AccentPicker from './screens/AccentPicker.svelte';
   import CollForm from './screens/CollForm.svelte';
@@ -184,6 +185,7 @@
     {#if app.overlay === 'add'}<AddChooser />{/if}
     {#if app.overlay === 'gdir'}<GameDirWizard />{/if}
     {#if app.overlay === 'hidden'}<HiddenList />{/if}
+    {#if app.overlay === 'ntimport'}<NintendoImport />{/if}
     {#if app.overlay === 'moveto'}<MoveTo />{/if}
     {#if app.overlay === 'accent'}<AccentPicker />{/if}
     {#if app.overlay === 'collform'}<CollForm />{/if}

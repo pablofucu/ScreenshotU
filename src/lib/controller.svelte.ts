@@ -13,7 +13,7 @@ import {
 import { shotLayout, type ShotLayout } from './shotlayout';
 import { tgrid, TZOOM_MAX } from './tgrid';
 import { EVO_KINDS, GMETRICS, STATS_KINDS } from './stats';
-import { importNow, nintendoCycleMin, nintendoToggleAccount } from './nintendo.svelte';
+import { nintendoCycleMin, nintendoImportCmd, nintendoToggleAccount, openNintendoImport } from './nintendo.svelte';
 import { editSgdbKey, openSgdbPicker, openSgdbTitles, sgdbAuto, sgdbCmd, sgdbTitlesCmd, toggleSgdbAuto } from './sgdb.svelte';
 import { AUDIO_COMBO_PRESETS, AUDIO_HOTKEY_PRESETS, COMBO_PRESETS, HOTKEY_PRESETS, MOUSE_PRESETS, OVERLAY_COMBO_PRESETS, OVERLAY_HOTKEY_PRESETS, learnKeydown, learnMouse, onLearnKey, onLearnPad, startLearn } from './learn.svelte';
 import { READING_CYCLE, READING_ROWS, isReadingId, readingAct, type ReadingId } from './reading.svelte';
@@ -1527,7 +1527,7 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'sgdbgame' && dir === 0) openSgdbTitles();
   else if (id === 'ntaccount' && dir === 0) void nintendoToggleAccount();
   else if (id === 'ntmin') nintendoCycleMin(dir);
-  else if (id === 'ntimport' && dir === 0) void importNow();
+  else if (id === 'ntimport' && dir === 0) void openNintendoImport();
   else if (id && isReadingId(id)) readingAct(id, dir);
   else if (id && isRemoteId(id)) remoteAct(id, dir);
 }
@@ -1540,6 +1540,7 @@ function overlayCmd(c: string) {
     case 'add': addCmd(c); return;
     case 'gdir': gdirCmd(c); return;
     case 'hidden': hiddenCmd(c); return;
+    case 'ntimport': nintendoImportCmd(c); return;
     case 'moveto': moveCmd(c); return;
     case 'accent': accentCmd(c); return;
     case 'collform': collFormCmd(c); return;
