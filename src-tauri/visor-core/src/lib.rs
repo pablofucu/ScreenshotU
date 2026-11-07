@@ -14,6 +14,7 @@ pub mod importer;
 pub mod jp;
 pub mod library;
 pub mod magpie;
+pub mod nintendo;
 pub mod palette;
 pub mod relpath;
 pub mod remote;

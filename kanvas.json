@@ -254,7 +254,7 @@
     {
       "id": "SW-04",
       "title": "Probar la ventana de login (WebView2)",
-      "state": "proposed",
+      "state": "todo",
       "group": "SW",
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
@@ -279,12 +279,19 @@
     {
       "id": "SW-06",
       "title": "Constantes, ids, nombres y PKCE",
-      "state": "proposed",
+      "state": "review",
       "group": "SW",
       "deps": ["SW-01"],
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "visor-core/src/nintendo/{mod,pkce}.rs con tests; añadir base64. Ids de título como 16 hex mayúsculas."
+      "desc": "visor-core/src/nintendo/{mod,pkce}.rs con tests; añadir base64. Ids de título como 16 hex mayúsculas.",
+      "notes": [
+        {
+          "at": "2026-11-07T14:14:26Z",
+          "by": "agent",
+          "text": "visor-core/src/nintendo/{mod,pkce}.rs: constantes, ids a 16 hex mayúsculas (id base), normalización de nombres, detección de demos, PKCE S256 (RFC 7636 verificado), URL de login y parseo de la redirección con comprobación de state. base64 añadido. 7 tests OK."
+        }
+      ]
     },
     {
       "id": "SW-07",
@@ -299,7 +306,7 @@
     {
       "id": "SW-08",
       "title": "Store de tablas switch_*",
-      "state": "proposed",
+      "state": "todo",
       "group": "SW",
       "deps": ["SW-05"],
       "at": "2026-11-07T01:09:13Z",
@@ -349,7 +356,7 @@
     {
       "id": "SW-13",
       "title": "Llavero de Windows para los tokens",
-      "state": "proposed",
+      "state": "todo",
       "group": "SW",
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
@@ -358,7 +365,7 @@
     {
       "id": "SW-14",
       "title": "Autenticación Nintendo",
-      "state": "proposed",
+      "state": "todo",
       "group": "SW",
       "deps": ["SW-06", "SW-13"],
       "at": "2026-11-07T01:09:13Z",
@@ -368,7 +375,7 @@
     {
       "id": "SW-15",
       "title": "Ventana de login y comandos de estado",
-      "state": "proposed",
+      "state": "todo",
       "group": "SW",
       "deps": ["SW-04", "SW-14"],
       "at": "2026-11-07T01:09:13Z",
