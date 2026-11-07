@@ -15,6 +15,8 @@ mod library;
 mod magpie;
 mod mixer;
 mod mouse;
+#[cfg(windows)]
+mod nintendo;
 mod novel;
 mod outputs;
 mod overlay;

@@ -364,11 +364,18 @@
     {
       "id": "SW-13",
       "title": "Llavero de Windows para los tokens",
-      "state": "todo",
+      "state": "review",
       "group": "SW",
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "src-tauri/src/nintendo/secrets.rs con el Administrador de credenciales; los tokens nunca en config.json ni en copias de seguridad."
+      "desc": "src-tauri/src/nintendo/secrets.rs con el Administrador de credenciales; los tokens nunca en config.json ni en copias de seguridad.",
+      "notes": [
+        {
+          "at": "2026-11-07T14:19:48Z",
+          "by": "agent",
+          "text": "src-tauri/src/nintendo/secrets.rs: set/get/delete en el Administrador de credenciales (CRED_TYPE_GENERIC, LOCAL_MACHINE, destinos VisorCapturas/nintendo/history|parental). Feature Win32_Security_Credentials. Test de ida y vuelta real contra Windows OK; cargo check sin avisos nuevos."
+        }
+      ]
     },
     {
       "id": "SW-14",
