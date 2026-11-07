@@ -10,6 +10,15 @@ pub mod models;
 pub mod pkce;
 pub mod store;
 
+/// Espera antes de la primera sincronizacion tras arrancar la app.
+pub const FIRST_SYNC_DELAY: std::time::Duration = std::time::Duration::from_secs(60);
+
+/// Espera hasta la proxima sincronizacion: 30 min sin fallos; con fallos seguidos 1, 2, 4, 8, 16 y 30 min (tope).
+pub fn next_delay(fail_streak: u32) -> std::time::Duration {
+    let mins = if fail_streak == 0 { 30 } else { (1u64 << (fail_streak - 1).min(5)).min(30) };
+    std::time::Duration::from_secs(mins * 60)
+}
+
 /// Id de la plataforma Switch de la biblioteca (las fichas importadas solo viven aqui).
 pub const SWITCH_PLATFORM: &str = "switch";
 
@@ -83,6 +92,12 @@ mod tests {
         assert_eq!(normalize_name("The Legend of Zelda™: Breath of the Wild"), "the legend of zelda breath of the wild");
         assert_eq!(normalize_name("  Mario  Kart® 8 – Deluxe "), "mario kart 8 deluxe");
         assert_eq!(normalize_name("Zelda - Tears"), normalize_name("Zelda: Tears"));
+    }
+
+    #[test]
+    fn retry_delay_backs_off_and_caps() {
+        let m = |n| next_delay(n).as_secs() / 60;
+        assert_eq!((m(0), m(1), m(2), m(3), m(5), m(6), m(10)), (30, 1, 2, 4, 16, 30, 30));
     }
 
     #[test]

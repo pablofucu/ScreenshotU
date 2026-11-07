@@ -6,6 +6,7 @@ pub mod history;
 pub mod import;
 pub mod login;
 pub mod secrets;
+pub mod sync;
 
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};

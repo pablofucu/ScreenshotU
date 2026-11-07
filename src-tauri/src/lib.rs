@@ -1204,6 +1204,9 @@ pub fn run() {
                 });
             }
             overlay::init(app.handle());
+            if !is_test_env {
+                nintendo::sync::spawn(app.handle().clone());
+            }
             // Si el visor se cerro a mitad de partida, el monitor principal sigue cambiado: se restaura.
             let st = app.state::<AppState>();
             display::restore_primary(&st.config_dir);
@@ -1273,6 +1276,8 @@ pub fn run() {
             nintendo::import::nintendo_import_apply,
             nintendo::import::nintendo_link,
             nintendo::import::nintendo_set_ignored,
+            nintendo::sync::nintendo_sync_now,
+            nintendo::sync::nintendo_title_times,
             nintendo::login::nintendo_login_start,
             nintendo::login::nintendo_login_paste,
             nintendo::login::nintendo_status,

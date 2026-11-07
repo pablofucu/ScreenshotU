@@ -251,6 +251,53 @@ fn apply_console(t: &mut Title, map: &crate::nintendo::merge::ConsoleMap) {
     t.console = Some(c.clone());
 }
 
+/// Tiempo de un titulo de Switch tal como lo deja el escaneo, para parchear la interfaz sin releer el disco.
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct TitleTimes {
+    pub id: String,
+    pub play_seconds: u64,
+    pub week: Vec<u32>,
+    pub last_played: Option<i64>,
+    pub first_played: Option<i64>,
+    pub console: Option<crate::nintendo::merge::ConsoleTime>,
+}
+
+/// Mismos numeros que `scan_library_ex` para los titulos de Switch con tiempo de consola: los juegos de la
+/// categoria `switch` y las carpetas sueltas enlazadas (`folders`, las de `switch_titles.folder`). No toca el disco.
+pub fn title_times(games: &[Game], stats: &Stats, map: &crate::nintendo::merge::ConsoleMap, folders: &[String]) -> Vec<TitleTimes> {
+    let pack = |id: String, t: Title| TitleTimes {
+        id,
+        play_seconds: t.play_seconds,
+        week: t.week,
+        last_played: t.last_played,
+        first_played: t.first_played,
+        console: t.console,
+    };
+    let mut out = Vec::new();
+    let mut seen: HashSet<String> = HashSet::new();
+    for g in games.iter().filter(|g| g.platform == crate::nintendo::SWITCH_PLATFORM) {
+        seen.insert(norm_key(&g.folder));
+        let mut t = Title { folder: g.folder.clone(), ..Title::blank() };
+        link_game(&mut t, g, stats);
+        apply_console(&mut t, map);
+        if t.console.is_some() {
+            out.push(pack(g.id.clone(), t));
+        }
+    }
+    for f in folders {
+        if !seen.insert(norm_key(f)) {
+            continue;
+        }
+        let mut t = Title { folder: f.clone(), ..Title::blank() };
+        apply_console(&mut t, map);
+        if t.console.is_some() {
+            out.push(pack(title_id(None, crate::nintendo::SWITCH_PLATFORM, f), t));
+        }
+    }
+    out
+}
+
 pub fn is_image(p: &Path) -> bool {
     p.extension()
         .and_then(|e| e.to_str())
@@ -804,6 +851,37 @@ mod tests {
         assert!(t.hero.as_deref().unwrap().ends_with("hero.png"), "el hero de la carpeta gana");
         assert!(t.cover.as_deref().unwrap().ends_with("cover-2.png"), "sin portada propia, la de SteamGridDB");
         assert!(t.logo.is_none());
+    }
+
+    #[test]
+    fn title_times_match_the_scan_for_switch_only() {
+        use crate::games::{Launch, Source};
+        use crate::nintendo::merge::{ConsoleMap, ConsoleTime};
+        let mk = |id: &str, name: &str, plat: &str| Game {
+            id: id.into(),
+            name: name.into(),
+            source: Source::Manual,
+            platform: plat.into(),
+            folder: name.into(),
+            launch: Launch::None,
+            install_dir: None,
+            cover: None,
+            hero: None,
+            logo: None,
+            removable: true,
+        };
+        let games = vec![mk("manual:1", "Hades", "switch"), mk("manual:2", "Hades", "pc")];
+        let c = ConsoleTime { seconds: 600, first_played: Some(100), last_played: Some(9000), days: vec![], source: "history".into() };
+        let mut map = ConsoleMap::default();
+        map.by_game.insert("manual:1".into(), c.clone());
+        map.by_folder.insert(norm_key("Suelta"), c);
+        let tt = title_times(&games, &Stats::new(), &map, &["Suelta".into(), "hades".into()]);
+        assert_eq!(tt.len(), 2, "el de PC con el mismo nombre no cuenta; 'hades' ya es la ficha");
+        let lib = scan_library_ex(None, &default_platforms(), &games, &Stats::new(), &ScanOpts { console: Some(&map), ..Default::default() });
+        let sw = lib.platforms.iter().find(|p| p.id == "switch").unwrap().titles.iter().find(|t| t.game_id.as_deref() == Some("manual:1")).unwrap();
+        let mine = tt.iter().find(|t| t.id == "manual:1").unwrap();
+        assert_eq!((mine.play_seconds, mine.last_played, mine.first_played, &mine.week), (sw.play_seconds, sw.last_played, sw.first_played, &sw.week));
+        assert!(tt.iter().any(|t| t.id == "switch/suelta"));
     }
 
     #[test]
