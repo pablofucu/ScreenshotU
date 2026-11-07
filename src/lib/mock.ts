@@ -424,6 +424,8 @@ export async function mockBackend(): Promise<Backend> {
     async loadConfig() { return cfg; },
     async saveConfig(c) { cfg = c; try { store()?.setItem(LS, JSON.stringify(c)); } catch {} },
     async learnPad() {},
+    async shutdownPc() {},
+    async pcMac() { return null; },
     async audioOutputs() { return mockOuts; },
     async setAudioOutput(id) {
       mockOuts = mockOuts.map((o) => ({ ...o, default: o.id === id }));

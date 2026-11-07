@@ -918,6 +918,41 @@ fn capture_now(app: AppHandle) {
     snap::trigger(&app);
 }
 
+/// Apaga el PC (cuenta atras corta para que la respuesta llegue a quien lo pidio).
+#[tauri::command]
+fn shutdown_pc() -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        std::process::Command::new("shutdown")
+            .args(["/s", "/t", "3"])
+            .creation_flags(0x0800_0000) // CREATE_NO_WINDOW
+            .spawn()
+            .map_err(|e| format!("No se pudo apagar el PC: {e}"))?;
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    Err("Apagar el PC solo funciona en Windows".into())
+}
+
+/// MAC de la tarjeta de red fisica activa (para que la tablet pueda despertar el PC con Wake-on-LAN).
+#[tauri::command]
+fn pc_mac() -> Option<String> {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        let o = std::process::Command::new("powershell")
+            .args(["-NoProfile", "-Command", "(Get-NetAdapter -Physical | Where-Object Status -eq 'Up' | Sort-Object ifIndex | Select-Object -First 1).MacAddress"])
+            .creation_flags(0x0800_0000)
+            .output()
+            .ok()?;
+        let m = String::from_utf8_lossy(&o.stdout).trim().replace('-', ":").to_lowercase();
+        if m.len() == 17 { Some(m) } else { None }
+    }
+    #[cfg(not(windows))]
+    None
+}
+
 /// Salidas de audio de Windows (reproduccion) activas, con la predeterminada marcada.
 #[tauri::command]
 async fn audio_outputs() -> Result<Vec<outputs::AudioOutput>, String> {
@@ -1373,6 +1408,8 @@ pub fn run() {
             quickmenu::quickmenu_set_app_volume,
             quickmenu::quickmenu_set_app_mute,
             audio_outputs,
+            shutdown_pc,
+            pc_mac,
             set_audio_output,
             hotkey_suspend,
             learn_key,

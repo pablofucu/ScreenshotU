@@ -9,6 +9,8 @@ interface StreamingPlugin {
   stream(o: { pc: string; app: string }): Promise<void>;
   /** Busca visores en la red local (UDP). Sin código: solo quién está y dónde. */
   discover(o?: { timeoutMs?: number }): Promise<{ found: { id: string; name: string; host: string; port: number }[] }>;
+  /** Wake-on-LAN: paquete mágico por difusión a la MAC dada. */
+  wake(o: { mac: string }): Promise<void>;
   setConnection(o: { base: string; code: string }): Promise<void>;
   openAccessibilitySettings(): Promise<void>;
   isCaptureServiceEnabled(): Promise<{ enabled: boolean }>;

@@ -114,6 +114,8 @@ pub fn dispatch(app: &AppHandle, cmd: &str, args: Value) -> Res {
         "remove_game" => out(crate::remove_game(st(), arg(a, "id")?)),
         "move_game_platform" => out(crate::move_game_platform(st(), arg(a, "id")?, arg(a, "platform")?)),
         "capture_now" => val(crate::capture_now(app.clone())),
+        "shutdown_pc" => out(crate::shutdown_pc()),
+        "pc_mac" => val(crate::pc_mac()),
         "audio_outputs" => out(block(crate::audio_outputs())),
         "set_audio_output" => out(block(crate::set_audio_output(app.clone(), arg(a, "id")?))),
 

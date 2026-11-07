@@ -1,7 +1,7 @@
 // Modo tablet: la interfaz de escritorio (src/App.svelte) tal cual, hablando con el PC por HTTP (src/lib/remote/).
 // Sin servidor guardado se enseña antes la pantalla de conexión del móvil y se recarga al conectar.
 import { loadServer } from './lib/cache';
-import { pushConnection } from './lib/streaming.svelte';
+import { pushConnection, Streaming } from './lib/streaming.svelte';
 import { relocate } from './lib/locate';
 
 const saved = loadServer();
@@ -17,6 +17,8 @@ if (!server) {
   const w = window as unknown as Record<string, unknown>;
   w.__TAURI_INTERNALS__ = {};
   w.__VISOR_TABLET__ = true;
+  w.__VISOR_WAKE__ = (mac: string) => Streaming.wake({ mac }); // Wake-on-LAN para el botón del menú
+
   pushConnection(server); // el servicio de la tecla de volumen necesita saber dónde está el PC
 
   await import('@desk/app.css');
@@ -28,7 +30,7 @@ if (!server) {
     import('@desk/lib/store.svelte'),
     import('@desk/lib/controller.svelte'),
   ]);
-  const { Streaming, stream } = await import('./lib/streaming.svelte');
+  const { stream } = await import('./lib/streaming.svelte');
 
   // «Jugar»: el PC ya ha lanzado el juego; la tablet abre Moonlight con el stream (igual que «Jugar en el PC» del móvil).
   // Si el PC tiene la app «Juego actual» de Apollo, la responde en `app`; si no, vale el ajuste o «Desktop».

@@ -143,6 +143,8 @@ async function tauriBackend(): Promise<Backend> {
     exit: () => invoke('exit_app'),
     closeMain: () => invoke('close_main'),
     learnPad: (on: boolean) => invoke('learn_pad', { on }),
+    shutdownPc: () => invoke('shutdown_pc'),
+    pcMac: () => invoke<string | null>('pc_mac'),
     audioOutputs: () => invoke<AudioOutput[]>('audio_outputs'),
     setAudioOutput: (id: string) => invoke<AudioOutput[]>('set_audio_output', { id }),
     hotkeySuspend: (suspend: boolean) => invoke('hotkey_suspend', { suspend }),

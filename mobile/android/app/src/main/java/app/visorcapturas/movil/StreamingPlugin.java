@@ -126,6 +126,45 @@ public class StreamingPlugin extends Plugin {
         }, "visor-discover").start();
     }
 
+    /** Wake-on-LAN: manda el paquete magico a {mac} por difusion (puertos 9 y 7) a todas las redes locales. */
+    @PluginMethod
+    public void wake(final PluginCall call) {
+        final String mac = call.getString("mac", "");
+        new Thread(() -> {
+            try {
+                String[] h = mac.replace('-', ':').split(":");
+                if (h.length != 6) { call.reject("MAC no valida"); return; }
+                byte[] m = new byte[6];
+                for (int i = 0; i < 6; i++) m[i] = (byte) Integer.parseInt(h[i], 16);
+                byte[] pkt = new byte[102];
+                for (int i = 0; i < 6; i++) pkt[i] = (byte) 0xFF;
+                for (int i = 1; i <= 16; i++) System.arraycopy(m, 0, pkt, i * 6, 6);
+                Set<InetAddress> targets = new HashSet<>();
+                targets.add(InetAddress.getByName("255.255.255.255"));
+                try {
+                    for (NetworkInterface ni : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+                        if (!ni.isUp() || ni.isLoopback()) continue;
+                        for (InterfaceAddress ia : ni.getInterfaceAddresses()) {
+                            if (ia.getBroadcast() != null) targets.add(ia.getBroadcast());
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+                try (DatagramSocket s = new DatagramSocket()) {
+                    s.setBroadcast(true);
+                    for (InetAddress t : targets) {
+                        for (int port : new int[] { 9, 7 }) {
+                            try { s.send(new DatagramPacket(pkt, pkt.length, t, port)); } catch (Exception ignored) { }
+                        }
+                    }
+                }
+                call.resolve();
+            } catch (Exception e) {
+                call.reject("No se pudo mandar el paquete: " + e.getMessage());
+            }
+        }, "visor-wake").start();
+    }
+
     @PluginMethod
     public void isMoonlightInstalled(PluginCall call) {
         JSObject r = new JSObject();
