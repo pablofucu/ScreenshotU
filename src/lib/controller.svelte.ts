@@ -2110,8 +2110,8 @@ function poll(t: number) {
   } catch { pads = []; }
   const hasPad = pads.length > 0;
   if (app.padConnected !== hasPad) app.padConnected = hasPad;
-  if (!hasPad) {
-    // Sin mandos se olvida lo pulsado: al volver uno, sus botones cuentan como pulsaciones nuevas.
+  if (!hasPad || (typeof document !== 'undefined' && !document.hasFocus())) {
+    // Sin mandos o sin foco en la ventana se olvida lo pulsado: no se ejecutan comandos en segundo plano.
     for (const k in held) delete held[k];
     triggerState.lt = false;
     triggerState.rt = false;
@@ -2147,6 +2147,11 @@ export function startGamepad() {
   requestAnimationFrame(poll);
   window.addEventListener('gamepadconnected', () => toast('Mando conectado'));
   window.addEventListener('gamepaddisconnected', () => toast('Mando desconectado'));
+  window.addEventListener('blur', () => {
+    for (const k in held) delete held[k];
+    triggerState.lt = false;
+    triggerState.rt = false;
+  });
   // Al volver a la ventana se reescanea: así una portada nueva o cambiada a mano actualiza su acento automático.
   window.addEventListener('focus', () => { if (!app.scanning) { pendingRefresh = true; flushRefresh(); } });
 }

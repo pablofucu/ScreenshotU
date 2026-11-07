@@ -426,7 +426,10 @@ fn open(app: &AppHandle) {
     if ENDING.load(Ordering::SeqCst) || force_requested() || is_open() {
         return;
     }
-    let Some(pids) = active_pids(app) else { return };
+    let Some(pids) = active_pids(app).filter(|p| !p.is_empty()) else {
+        log("open cancelado: sin PIDs activos");
+        return;
+    };
     let (pause, scaled) = {
         let st = app.state::<AppState>();
         let c = st.config.lock().unwrap();
@@ -508,7 +511,8 @@ fn open(app: &AppHandle) {
             hide_window(app);
             return;
         }
-        suspend(app, &pids);
+        let current_pids = active_pids(app).unwrap_or_else(|| pids.clone());
+        suspend(app, &current_pids);
         let _ = app.emit_to(LABEL, "qm-paused", serde_json::json!({ "paused": true }));
     }
 
@@ -636,21 +640,25 @@ fn suspend(app: &AppHandle, pids: &[u32]) {
     if force_requested() {
         return;
     }
+    log(&format!("suspend: pausando procesos {pids:?}"));
     // Primero el fichero: si el visor muere a medias, el juego no se queda congelado.
     let entries: Vec<SuspendedEntry> = pids.iter().filter_map(|&pid| crate::snap::exe_of(pid).map(|exe| SuspendedEntry { pid, exe })).collect();
     if let Ok(b) = serde_json::to_vec(&entries) {
         let _ = std::fs::write(suspended_file(app), b);
     }
     let mut done = lock(&SUSPENDED);
+    done.clear();
     for &pid in pids {
         if proc::suspend(pid) {
             done.push(pid);
         }
     }
+    log(&format!("suspend: pausados con exito {:?}", *done));
 }
 
 fn resume_all(app: &AppHandle) {
     let pids = std::mem::take(&mut *lock(&SUSPENDED));
+    log(&format!("resume_all: reanudando procesos {pids:?}"));
     for pid in pids {
         proc::resume(pid);
     }
@@ -710,22 +718,36 @@ mod proc {
         }
     }
 
-    fn call(pid: u32, f: Option<NtProc>) -> bool {
-        let Some(f) = f else { return false };
+    fn call(pid: u32, op: &str, f: Option<NtProc>) -> bool {
+        let Some(f) = f else {
+            super::log(&format!("proc::{op}({pid}): ntdll export no encontrado"));
+            return false;
+        };
         unsafe {
-            let Ok(h) = OpenProcess(PROCESS_SUSPEND_RESUME, false, pid) else { return false };
-            let ok = f(h) >= 0;
+            let h = match OpenProcess(PROCESS_SUSPEND_RESUME, false, pid) {
+                Ok(h) => h,
+                Err(e) => {
+                    super::log(&format!("proc::{op}({pid}): OpenProcess fallo ({e})"));
+                    return false;
+                }
+            };
+            let status = f(h);
             let _ = CloseHandle(h);
-            ok
+            if status < 0 {
+                super::log(&format!("proc::{op}({pid}): llamada fallo (status {status:#x})"));
+                false
+            } else {
+                true
+            }
         }
     }
 
     pub fn suspend(pid: u32) -> bool {
-        call(pid, nt(s!("NtSuspendProcess")))
+        call(pid, "suspend", nt(s!("NtSuspendProcess")))
     }
 
     pub fn resume(pid: u32) {
-        call(pid, nt(s!("NtResumeProcess")));
+        call(pid, "resume", nt(s!("NtResumeProcess")));
     }
 
     pub fn terminate(pid: u32) -> bool {

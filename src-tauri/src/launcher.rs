@@ -276,6 +276,18 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
                 found.push(c.id());
             }
         }
+        loop {
+            let before = found.len();
+            for (pid, p) in sys.processes() {
+                let id = pid.as_u32();
+                if id != own && !found.contains(&id) && p.parent().map(|pp| found.contains(&pp.as_u32())).unwrap_or(false) {
+                    found.push(id);
+                }
+            }
+            if found.len() == before {
+                break;
+            }
+        }
         if crate::quickmenu::force_requested() {
             if !found.is_empty() && first_seen.is_none() {
                 first_seen = Some(Instant::now());
