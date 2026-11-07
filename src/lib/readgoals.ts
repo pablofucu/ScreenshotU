@@ -32,8 +32,8 @@ export interface MapCell {
 
 /** Solo las partidas de al menos esto (minutos) cuentan como extra para pagar un rescate. */
 export const RESCUE_MIN_PLAY = 10;
-/** Un día fallado es rescatable si tiene al menos esta parte de la meta, tras esta racha previa mínima (días seguidos). */
-export const RESCUE_MIN_FRAC = 0.5;
+/** Un día fallado es rescatable si tiene al menos estos minutos, tras esta racha previa mínima (días seguidos). */
+export const RESCUE_MIN_DAY = 10;
 export const RESCUE_PRIOR_DAYS = 3;
 /** Días de la ventana tras el día fallado; los rescates son ilimitados (cada uno exige `RESCUE_PRIOR_DAYS` días cumplidos antes, así que nunca van seguidos); `RESCUE_PERIOD` solo es el periodo del contador. */
 export const RESCUE_WINDOW = 3;
@@ -186,14 +186,14 @@ export function goalTrack(key: GoalKey, goal: number, platforms: Platform[], liv
   const met = (d: number) => metGoal(mins.get(d) ?? 0, goal);
   const today = localDay(now);
 
-  // Rescates (retroactivo, sobre todo el historial): un día fallado D con 3 días cumplidos antes, al menos la mitad
-  // de la meta, (sin tope de rescates), se recupera leyendo de más en D+1..D+3.
+  // Rescates (retroactivo, sobre todo el historial): un día fallado D con 3 días cumplidos antes y al menos 10 min jugados
+  // (sin tope de rescates) se recupera leyendo de más en D+1..D+3.
   const repaired = new Set<number>();
   const paidDays: number[] = [];
   let rescue: Rescue | null = null;
   let paidDay: number | null = null;
   if (goal > 0) {
-    const cands = [...mins.keys()].filter((d) => d < today && !met(d) && Math.round(mins.get(d)!) >= goal * RESCUE_MIN_FRAC
+    const cands = [...mins.keys()].filter((d) => d < today && !met(d) && Math.round(mins.get(d)!) >= RESCUE_MIN_DAY
       &&Array.from({ length: RESCUE_PRIOR_DAYS }, (_, i) => met(d - 1 - i)).every(Boolean)).sort((p, q) => p - q);
     for (const D of cands) {
       const recent = paidDays.filter((p) => D - p <= RESCUE_PERIOD).length;

@@ -181,3 +181,15 @@ test('dos categorías pendientes a la vez, cada una por su cuenta', () => {
   assert.equal(a.rescue!.key, 'vn');
   assert.equal(b.rescue!.key, 'jvn');
 });
+
+test('mínimo de rescate: 10 min bastan, 9 no', () => {
+  for (const [played, ok] of [[10, true], [9, false]] as const) {
+    const p: Plays = [];
+    fill(p, 5, 3, 60);
+    day(p, 2, played);
+    day(p, 1, 60 + (60 - played)); // el extra cubre el déficit
+    day(p, 0, 60);
+    const t = vn(p);
+    assert.equal(cell(t, 2).rescued, ok, `${played} min`);
+  }
+});
