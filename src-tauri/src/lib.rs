@@ -226,6 +226,8 @@ pub(crate) fn scan_full(state: &AppState) -> (Library, Vec<games::Game>, Config)
     // El catalogo hace de cache: solo se abren las imagenes nuevas o modificadas para leer sus dimensiones.
     let cache = root.map(|r| state::log_db("catalogo", state.db.with(|c| catalog::load_cache(c, r))));
     let t1 = t0.elapsed();
+    let console = state::log_db("nintendo", state.db.with(|c| visor_core::nintendo::merge::console_times(c, chrono::Local::now())));
+    let console = (!console.is_empty()).then_some(console);
     let opts = ScanOpts {
         hidden: &hidden,
         // Se escanea todo (tambien lo oculto) para que el catalogo este completo; se filtra despues.
@@ -234,6 +236,7 @@ pub(crate) fn scan_full(state: &AppState) -> (Library, Vec<games::Game>, Config)
         palettes: Some(&state.palettes),
         sgdb_dir: Some(&sgdb_dir),
         shot_cache: cache.as_ref(),
+        console: console.as_ref(),
     };
     let lib = scan::scan_library_ex(root, &cfg.platforms, &found, &stats, &opts);
     let t2 = t0.elapsed();

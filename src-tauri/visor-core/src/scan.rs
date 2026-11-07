@@ -79,6 +79,9 @@ pub struct Title {
     /// Partidas `[inicio, fin]` en ms desde epoch (de la mas antigua a la mas reciente), para las estadisticas.
     #[serde(default)]
     pub plays: Vec<[i64; 2]>,
+    /// Tiempo de la consola (Nintendo), ya sumado a `play_seconds` y compañia. Solo en la categoria Switch.
+    #[serde(default)]
+    pub console: Option<crate::nintendo::merge::ConsoleTime>,
     /// Id estable (id del lanzador o `plataforma/carpeta`), clave de «oculto» y de las preferencias.
     #[serde(default)]
     pub id: String,
@@ -141,6 +144,7 @@ impl Title {
             first_played: None,
             week: vec![0; 7],
             plays: Vec::new(),
+            console: None,
             id: String::new(),
             hidden: false,
             accent: None,
@@ -220,6 +224,31 @@ pub struct ScanOpts<'a> {
     pub palettes: Option<&'a PaletteCache>,
     /// Cache de grafismos de SteamGridDB: rellena los que falten (la carpeta y Steam ganan).
     pub sgdb_dir: Option<&'a Path>,
+    /// Tiempo de consola de Nintendo: se suma al del PC en la categoria Switch.
+    pub console: Option<&'a crate::nintendo::merge::ConsoleMap>,
+}
+
+/// Suma el tiempo de consola al titulo: total, ultima/primera vez y semana. Con `console` ya aplicado no repite.
+fn apply_console(t: &mut Title, map: &crate::nintendo::merge::ConsoleMap) {
+    if t.console.is_some() {
+        return;
+    }
+    let found = t.game_id.as_deref().and_then(|g| map.for_game(g)).or_else(|| map.for_folder(&t.folder));
+    let Some(c) = found else { return };
+    t.play_seconds += c.seconds;
+    t.last_played = t.last_played.max(c.last_played);
+    t.first_played = match (t.first_played, c.first_played) {
+        (Some(a), Some(b)) => Some(a.min(b)),
+        (a, b) => a.or(b),
+    };
+    let w = c.week_minutes(chrono::Local::now());
+    if t.week.len() != 7 {
+        t.week = vec![0; 7];
+    }
+    for (slot, m) in t.week.iter_mut().zip(w) {
+        *slot += m;
+    }
+    t.console = Some(c.clone());
 }
 
 pub fn is_image(p: &Path) -> bool {
@@ -361,6 +390,13 @@ pub fn scan_library_ex(root: Option<&Path>, platforms: &[PlatformCfg], games: &[
                     link_game(&mut t, g, stats);
                     title_keys.push(key);
                     titles.push(t);
+                }
+            }
+            if cfg.id == "switch" {
+                if let Some(map) = opts.console {
+                    for t in titles.iter_mut() {
+                        apply_console(t, map);
+                    }
                 }
             }
             // Jugados recientemente primero; despues la captura mas reciente; desempate por nombre.
@@ -768,5 +804,20 @@ mod tests {
         assert!(t.hero.as_deref().unwrap().ends_with("hero.png"), "el hero de la carpeta gana");
         assert!(t.cover.as_deref().unwrap().ends_with("cover-2.png"), "sin portada propia, la de SteamGridDB");
         assert!(t.logo.is_none());
+    }
+
+    #[test]
+    fn console_time_is_added_once() {
+        use crate::nintendo::merge::{ConsoleMap, ConsoleTime};
+        let mut map = ConsoleMap::default();
+        let c = ConsoleTime { seconds: 600, first_played: Some(100), last_played: Some(9000), days: vec![], source: "history".into() };
+        map.by_folder.insert(norm_key("Hades"), c);
+        let mut t = Title { folder: "Hades".into(), play_seconds: 60, last_played: Some(5000), first_played: Some(500), ..Title::blank() };
+        apply_console(&mut t, &map);
+        assert_eq!((t.play_seconds, t.last_played, t.first_played), (660, Some(9000), Some(100)));
+        assert!(t.console.is_some());
+        let before = t.play_seconds;
+        apply_console(&mut t, &map);
+        assert_eq!(t.play_seconds, before, "no se suma dos veces");
     }
 }
