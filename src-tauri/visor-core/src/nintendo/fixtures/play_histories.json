@@ -1,0 +1,210 @@
+{
+  "playHistories": [
+    {
+      "titleId": "01008d300c50c000",
+      "titleName": "Super Nintendo Entertainment System – Nintendo Classics",
+      "platform": "HAC",
+      "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/bb734025c9bf47f7b0321053d18c8df2_512",
+      "lastUpdatedAt": "2026-11-03T00:00:00Z",
+      "firstPlayedAt": "2026-06-10T11:44:14Z",
+      "lastPlayedAt": "2026-11-02T15:45:32Z",
+      "totalPlayedDays": 5,
+      "totalPlayedMinutes": 52
+    },
+    {
+      "titleId": "010012f017576000",
+      "titleName": "Game Boy Advance – Nintendo Classics",
+      "platform": "HAC",
+      "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/4dcadf4d6d0646098e1b132dd128528d_512",
+      "lastUpdatedAt": "2026-11-03T00:00:00Z",
+      "firstPlayedAt": "2026-03-30T14:42:00Z",
+      "lastPlayedAt": "2026-11-02T15:41:58Z",
+      "totalPlayedDays": 6,
+      "totalPlayedMinutes": 43
+    },
+    {
+      "titleId": "01006a800016e000",
+      "titleName": "Super Smash Bros. Ultimate",
+      "platform": "HAC",
+      "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/e7f648306f8442e097217ff4aafb0e0d_512",
+      "lastUpdatedAt": "2026-10-25T00:00:00Z",
+      "firstPlayedAt": "2026-02-28T18:36:26Z",
+      "lastPlayedAt": "2026-10-24T18:09:43Z",
+      "totalPlayedDays": 3,
+      "totalPlayedMinutes": 151
+    },
+    {
+      "titleId": "0400486024dec000",
+      "titleName": "The Legend of Zelda: Ocarina of Time",
+      "platform": "BEE",
+      "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/3969135091ab4852bc34e238e8e193ff_512",
+      "lastUpdatedAt": "2026-11-07T14:04:35Z",
+      "firstPlayedAt": "2026-11-05T18:59:09Z",
+      "lastPlayedAt": "2026-11-07T02:25:46Z",
+      "totalPlayedDays": 3,
+      "totalPlayedMinutes": 189
+    },
+    {
+      "titleId": "0400245021d2c000",
+      "titleName": "Yoshi and the Mysterious Book",
+      "platform": "BEE",
+      "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/864d1e9e934f454fbafb4ef574caf325_512",
+      "lastUpdatedAt": "2026-11-06T00:00:00Z",
+      "firstPlayedAt": "2026-08-18T19:03:24Z",
+      "lastPlayedAt": "2026-11-05T17:47:37Z",
+      "totalPlayedDays": 41,
+      "totalPlayedMinutes": 2378
+    },
+    {
+      "titleId": "0100dcd01f306000",
+      "titleName": "Mina the Hollower – Nintendo Switch 2 Edition",
+      "platform": "BEE",
+      "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/6422da3358234297a6401a26e64daf41_512",
+      "lastUpdatedAt": "2026-09-10T00:00:00Z",
+      "firstPlayedAt": "2026-06-30T20:18:12Z",
+      "lastPlayedAt": "2026-09-09T13:46:06Z",
+      "totalPlayedDays": 9,
+      "totalPlayedMinutes": 339
+    },
+    {
+      "titleId": "0100453019aa8000",
+      "titleName": "Xenoblade Chronicles X: Definitive Edition – Nintendo Switch 2 Edition",
+      "platform": "BEE",
+      "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/6b8a2219e57941d4b2df44155c10dee5_512",
+      "lastUpdatedAt": "2026-07-10T00:00:00Z",
+      "firstPlayedAt": "2026-02-20T18:47:31Z",
+      "lastPlayedAt": "2026-07-09T11:57:06Z",
+      "totalPlayedDays": 7,
+      "totalPlayedMinutes": 263
+    },
+    {
+      "titleId": "04001430235a0000",
+      "titleName": "The Adventures of Elliot: The Millennium Tales Prologue Demo",
+      "platform": "BEE",
+      "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/c5ff1e149aec4ce1a6823b0076167c86_512",
+      "lastUpdatedAt": "2026-09-10T00:00:00Z",
+      "firstPlayedAt": "2026-05-20T17:06:40Z",
+      "lastPlayedAt": "2026-09-09T13:44:23Z",
+      "totalPlayedDays": 4,
+      "totalPlayedMinutes": 210
+    },
+    {
+      "titleId": "04007c6028aa8000",
+      "titleName": "Yoshi and the Mysterious Book Demo",
+      "platform": "BEE",
+      "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/cd855da83ea5473f80d8e7c3c4cb3648_512",
+      "lastUpdatedAt": "2026-08-02T00:00:00Z",
+      "firstPlayedAt": "2026-07-16T11:24:12Z",
+      "lastPlayedAt": "2026-08-01T16:59:02Z",
+      "totalPlayedDays": 3,
+      "totalPlayedMinutes": 44
+    },
+    {
+      "titleId": "010092a0172e4000",
+      "titleName": "It Takes Two",
+      "platform": "HAC",
+      "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/ba2df355e66a424ea1c2d9d6df188bbc_512",
+      "lastUpdatedAt": "2026-10-19T00:00:00Z",
+      "firstPlayedAt": "2026-10-18T21:48:18Z",
+      "lastPlayedAt": "2026-10-18T22:14:16Z",
+      "totalPlayedDays": 1,
+      "totalPlayedMinutes": 4
+    }
+  ],
+  "hiddenTitleList": [],
+  "recentPlayHistories": [
+    {
+      "playedDate": "2026-11-07T00:00:00Z",
+      "dailyPlayHistories": [
+        {
+          "titleId": "0400486024dec000",
+          "titleName": "The Legend of Zelda: Ocarina of Time",
+          "platform": "BEE",
+          "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/3969135091ab4852bc34e238e8e193ff_512",
+          "totalPlayedMinutes": 56
+        }
+      ]
+    },
+    {
+      "playedDate": "2026-11-06T00:00:00Z",
+      "dailyPlayHistories": [
+        {
+          "titleId": "0400486024dec000",
+          "titleName": "The Legend of Zelda: Ocarina of Time",
+          "platform": "BEE",
+          "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/3969135091ab4852bc34e238e8e193ff_512",
+          "totalPlayedMinutes": 81
+        }
+      ]
+    },
+    {
+      "playedDate": "2026-11-05T00:00:00Z",
+      "dailyPlayHistories": [
+        {
+          "titleId": "0400486024dec000",
+          "titleName": "The Legend of Zelda: Ocarina of Time",
+          "platform": "BEE",
+          "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/3969135091ab4852bc34e238e8e193ff_512",
+          "totalPlayedMinutes": 53
+        },
+        {
+          "titleId": "0400245021d2c000",
+          "titleName": "Yoshi and the Mysterious Book",
+          "platform": "BEE",
+          "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/864d1e9e934f454fbafb4ef574caf325_512",
+          "totalPlayedMinutes": 34
+        }
+      ]
+    },
+    {
+      "playedDate": "2026-11-04T00:00:00Z",
+      "dailyPlayHistories": [
+        {
+          "titleId": "0400245021d2c000",
+          "titleName": "Yoshi and the Mysterious Book",
+          "platform": "BEE",
+          "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/864d1e9e934f454fbafb4ef574caf325_512",
+          "totalPlayedMinutes": 56
+        }
+      ]
+    },
+    {
+      "playedDate": "2026-11-02T00:00:00Z",
+      "dailyPlayHistories": [
+        {
+          "titleId": "0400245021d2c000",
+          "titleName": "Yoshi and the Mysterious Book",
+          "platform": "BEE",
+          "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/864d1e9e934f454fbafb4ef574caf325_512",
+          "totalPlayedMinutes": 33
+        },
+        {
+          "titleId": "010012f017576000",
+          "titleName": "Game Boy Advance – Nintendo Classics",
+          "platform": "HAC",
+          "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/4dcadf4d6d0646098e1b132dd128528d_512",
+          "totalPlayedMinutes": 7
+        },
+        {
+          "titleId": "01008d300c50c000",
+          "titleName": "Super Nintendo Entertainment System – Nintendo Classics",
+          "platform": "HAC",
+          "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/bb734025c9bf47f7b0321053d18c8df2_512",
+          "totalPlayedMinutes": 4
+        }
+      ]
+    },
+    {
+      "playedDate": "2026-11-01T00:00:00Z",
+      "dailyPlayHistories": [
+        {
+          "titleId": "0400245021d2c000",
+          "titleName": "Yoshi and the Mysterious Book",
+          "platform": "BEE",
+          "imageUrl": "https://atum-img-lp1.cdn.nintendo.net/i/c/864d1e9e934f454fbafb4ef574caf325_512",
+          "totalPlayedMinutes": 87
+        }
+      ]
+    }
+  ]
+}
