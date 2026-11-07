@@ -103,6 +103,7 @@ pub fn init(app: &AppHandle) {
             s.close_asked = None;
             sum
         };
+        crate::stream_touch::stop();
         restore_cursor(&cursor_dir(&a));
         let _ = a.emit("session-summary", summary);
     });
@@ -283,6 +284,8 @@ fn reset_idle() {
     s.game = None;
     s.pending = None;
     s.epoch += 1;
+    drop(s);
+    crate::stream_touch::stop();
 }
 
 /// Espera la pantalla virtual (hasta `wait`), la deja asentar y abre el juego en ella. Bloquea: va en un hilo.
@@ -339,6 +342,7 @@ pub fn session_start(app: &AppHandle, _w: u32, _h: u32, _fps: u32) -> Result<Val
             hide_cursor_if_enabled(app);
         }
     }
+    crate::stream_touch::start();
     Ok(json!({ "ok": true, "state": session_json()["state"] }))
 }
 

@@ -9,7 +9,7 @@ Fecha: 2026-11-05. Sustituye al punto 7 del bloque 2 de `docs/plan-tablet.md`.
 | A1 y A2, perfil de tablet | Hecho (`0d214c1`). Sin probar en la tablet |
 | Elegir la copia de Magpie con la versión más alta | Hecho (`5357e0b`) |
 | B0, soporte táctil de Magpie | **Probado en multi-touch: cada toque cuenta doble**, uno bien y otro cerca (ver sección 3) |
-| B1, prototipo del gancho | **Siguiente fase**, detallada en la sección 3 |
+| B1, prototipo del gancho | **Código hecho** (`stream_touch.rs`), falta la prueba con la tablet (sección 3) |
 | A3, A4, A5, B2, B3 | Pendientes |
 
 Tablet: POCO Pad M1, 2560×1600 (16:10), 120 Hz. Novelas a 720p y 1080p. La GPU va sobrada.

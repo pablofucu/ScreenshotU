@@ -35,6 +35,7 @@ mod snap;
 mod state;
 mod apollo;
 mod stream;
+mod stream_touch;
 mod texthook;
 mod tray;
 mod trash;
