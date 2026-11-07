@@ -8,3 +8,5 @@ src-tauri/gen
 .claude/settings.local.json
 
 prueba-logros-bin/
+
+.claude-scratch/

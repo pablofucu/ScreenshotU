@@ -1,0 +1,183 @@
+{
+  "kanvas": 1,
+  "title": "App capturas",
+  "groups": [
+    {
+      "id": "VP",
+      "name": "Volver a la partida"
+    },
+    {
+      "id": "MG",
+      "name": "Magpie y táctil tablet"
+    },
+    {
+      "id": "TB",
+      "name": "App de Tablet"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "VP-01",
+      "title": "P0. Pruebas previas de desconexión en tablet",
+      "state": "todo",
+      "group": "VP",
+      "at": "2026-11-05T01:34:37Z",
+      "by": "antigravity",
+      "desc": "Probar en la tablet el comportamiento al pulsar atrás, desconectar y salir de Artemis, comprobando si el juego permanece en la pantalla virtual.",
+      "notes": [
+        {
+          "at": "2026-11-05T03:26:38Z",
+          "by": "agent",
+          "text": "Pausado para pasar al bloque de tablet (TB-01)"
+        }
+      ]
+    },
+    {
+      "id": "VP-02",
+      "title": "P1. PC: ampliar estado de la sesión",
+      "state": "todo",
+      "group": "VP",
+      "deps": ["VP-01"],
+      "yolo": true,
+      "at": "2026-11-05T01:34:37Z",
+      "by": "antigravity",
+      "desc": "Añadir stream_app y elapsedSeconds a la sesión y a GET /api/v1/session en src-tauri/src/stream.rs."
+    },
+    {
+      "id": "VP-03",
+      "title": "P2. Tablet: recuperar la partida en syncPlaying",
+      "state": "proposed",
+      "group": "VP",
+      "deps": ["VP-02"],
+      "at": "2026-11-05T01:34:37Z",
+      "by": "antigravity",
+      "desc": "Actualizar mobile/src/tablet.ts para que syncPlaying consulte al PC y recupere a.playing si la app se reinicia con la partida en marcha."
+    },
+    {
+      "id": "VP-04",
+      "title": "P3. Interfaz: botón y píldora de volver",
+      "state": "proposed",
+      "group": "VP",
+      "deps": ["VP-03"],
+      "at": "2026-11-05T01:34:37Z",
+      "by": "antigravity",
+      "desc": "Añadir setResumeHandler, botón Volver en Detail.svelte y ActionMenu, y componente flotante ResumePill.svelte para volver o cerrar la partida."
+    },
+    {
+      "id": "VP-05",
+      "title": "P4. Android: regreso automático al visor",
+      "state": "proposed",
+      "group": "VP",
+      "deps": ["VP-01", "VP-04"],
+      "at": "2026-11-05T01:34:37Z",
+      "by": "antigravity",
+      "desc": "Interceptar en CaptureKeyService (onAccessibilityEvent) la salida de Artemis hacia la lista para traer el visor al frente automáticamente."
+    },
+    {
+      "id": "VP-06",
+      "title": "P5. Android: notificación Partida en curso",
+      "state": "proposed",
+      "group": "VP",
+      "deps": ["VP-05"],
+      "at": "2026-11-05T01:34:37Z",
+      "by": "antigravity",
+      "desc": "Notificación fija mientras Artemis no esté en primer plano, con botón Volver vía ResumeActivity e intención directa a Artemis."
+    },
+    {
+      "id": "VP-07",
+      "title": "P6. Publicar versión y compilar APK",
+      "state": "proposed",
+      "group": "VP",
+      "deps": ["VP-06"],
+      "at": "2026-11-05T01:34:37Z",
+      "by": "antigravity",
+      "desc": "Incrementar versión del visor de PC, compilar la nueva APK de la tablet y comprobar el flujo de reconexión completo."
+    },
+    {
+      "id": "MG-01",
+      "title": "B1. Prototipo de diagnóstico táctil (stream_touch)",
+      "state": "proposed",
+      "group": "MG",
+      "at": "2026-11-05T01:34:37Z",
+      "by": "antigravity",
+      "desc": "Crear stream_touch.rs con gancho WH_MOUSE_LL y registro en stream_touch.log para capturar eventos de ratón/toque inyectados por Artemis/Apollo."
+    },
+    {
+      "id": "MG-02",
+      "title": "B2. Filtrado o corrección del toque duplicado",
+      "state": "proposed",
+      "group": "MG",
+      "deps": ["MG-01"],
+      "at": "2026-11-05T01:34:37Z",
+      "by": "antigravity",
+      "desc": "A partir de los registros de B1, filtrar el evento de ratón erróneo secundario producido en multi-touch o corregir coordenadas para Magpie."
+    },
+    {
+      "id": "MG-03",
+      "title": "A3. Selector de modo Magpie por juego y destino",
+      "state": "proposed",
+      "group": "MG",
+      "at": "2026-11-05T01:34:37Z",
+      "by": "antigravity",
+      "desc": "Permitir configurar modo de Magpie independiente para PC y Tablet en los ajustes del juego."
+    },
+    {
+      "id": "MG-04",
+      "title": "A4. Recálculo de perfil Magpie en reconexión",
+      "state": "proposed",
+      "group": "MG",
+      "deps": ["MG-03"],
+      "at": "2026-11-05T01:34:37Z",
+      "by": "antigravity",
+      "desc": "En session_start al reconectar con la partida ya abierta, comprobar si el juego está en la pantalla virtual y regenerar el perfil de tablet."
+    },
+    {
+      "id": "MG-05",
+      "title": "A5. Ajustes y pruebas de streaming",
+      "state": "proposed",
+      "group": "MG",
+      "at": "2026-11-05T01:34:37Z",
+      "by": "antigravity",
+      "desc": "Pruebas de streaming en Artemis a 2560x1600 60fps, comparar códec HEVC vs AV1 y calibrar nitidez RCAS (0.45, 0.25, sin RCAS)."
+    },
+    {
+      "id": "TB-01",
+      "title": "T1. RemoteBackend y eventos en tiempo real",
+      "state": "doing",
+      "group": "TB",
+      "at": "2026-11-05T01:34:37Z",
+      "by": "antigravity",
+      "desc": "Implementar backend-remote.ts para que la tablet ejecute la interfaz completa de escritorio vía POST /api/v1/call y GET /api/v1/events (SSE)."
+    },
+    {
+      "id": "TB-02",
+      "title": "T2. Capacidades de backend y filtrado de opciones PC",
+      "state": "proposed",
+      "group": "TB",
+      "deps": ["TB-01"],
+      "at": "2026-11-05T01:34:37Z",
+      "by": "antigravity",
+      "desc": "Definir backend.caps para ocultar funciones que solo aplican a PC (abrir carpetas, selección de ejecutables, backups, monitores)."
+    },
+    {
+      "id": "TB-03",
+      "title": "T3. Adaptación táctil de la interfaz",
+      "state": "proposed",
+      "group": "TB",
+      "deps": ["TB-02"],
+      "at": "2026-11-05T01:34:37Z",
+      "by": "antigravity",
+      "desc": "Objetivos táctiles >= 44px, gestos táctiles en listas/capturas, pulsación larga para menú contextual y márgenes seguros de Android."
+    },
+    {
+      "id": "TB-04",
+      "title": "T5. Descubrimiento y emparejamiento PC-Tablet",
+      "state": "proposed",
+      "group": "TB",
+      "deps": ["TB-01"],
+      "at": "2026-11-05T01:34:37Z",
+      "by": "antigravity",
+      "desc": "Descubrimiento de visores en la red local mediante mDNS y simplificación del emparejamiento sin introducir IP manual."
+    }
+  ]
+}
