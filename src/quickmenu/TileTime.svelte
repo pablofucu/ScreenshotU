@@ -332,7 +332,7 @@
               </div>
               <div class="rcnt">
                 <span style="opacity:.7;text-transform:uppercase;letter-spacing:.05em">Rescates · 30 días</span>
-                <b>{r.used} <small style="opacity:.7">de 2</small></b>
+                <b>{r.used}</b>
               </div>
             </div>
           </div>

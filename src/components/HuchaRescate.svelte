@@ -3,7 +3,7 @@
   // Una casilla por minuto que faltó el día fallado (macizas las leídas en días anteriores, claras las de hoy,
   // rayadas las que faltan), las partidas de la ventana (las de menos de 10 min, tachadas) y la cuenta atrás.
   // `wide`: un solo rescate (pestañas LB/RB y columna lateral); si no, mitad del hueco (371×352) para dos a la vez.
-  import { GOAL_COL, rescueCls, RESCUE_MAX, RESCUE_MIN_PLAY, type GoalKey, type Rescue } from '../lib/readgoals';
+  import { GOAL_COL, rescueCls, RESCUE_MIN_PLAY, type GoalKey, type Rescue } from '../lib/readgoals';
   import { rescueClose, rescueDay, rescueFailed, rescueLeft } from '../lib/readrings.svelte';
 
   let { r, now, wide = true, tabs = [], style = '' }: { r: Rescue; now: number; wide?: boolean; tabs?: GoalKey[]; style?: string } = $props();
@@ -38,7 +38,7 @@
   </div>
   <div class="jarl">
     {#if wide}
-      <span>{rescueFailed(r).replace(/^./, (c) => c.toUpperCase())} {r.played} de {r.goal} min · 1 casilla = 1 min{r.repeat ? ' (×1,5)' : ' que faltó'}<span class="sw2"></span>antes<span class="sw2 d2"></span>hoy</span>
+      <span>{rescueFailed(r).replace(/^./, (c) => c.toUpperCase())} {r.played} de {r.goal} min · 1 casilla = 1 min que faltó<span class="sw2"></span>antes<span class="sw2 d2"></span>hoy</span>
       <b>Recuperado {r.got} de {r.need} min</b>
     {:else}
       <span>{r.played} de {r.goal} min</span>
@@ -55,14 +55,14 @@
           <small>{rescueClose(r, true)}</small>
           <small>{r.last ? `Hoy: ${r.next} min más` : `Mañana: ${r.next} min`} en partidas de {RESCUE_MIN_PLAY} min o más</small>
         </div>
-        <div class="rcnt"><span class="k">Rescates · 30 días</span><b>{r.used} <small>de {RESCUE_MAX}</small></b></div>
+        <div class="rcnt"><span class="k">Rescates · 30 días</span><b>{r.used}</b></div>
       </div>
     </div>
   {:else}
     {@render list()}
     <div class="hfoot">
       <span>{r.last ? `Hoy ${r.next} min` : `Mañana ${r.next} min`} · cierra {rescueClose(r)}</span>
-      <span class="rc2">Rescates <b>{r.used}/{RESCUE_MAX}</b></span>
+      <span class="rc2">Rescates <b>{r.used}</b></span>
     </div>
   {/if}
 </div>

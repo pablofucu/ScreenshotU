@@ -35,12 +35,9 @@ export const RESCUE_MIN_PLAY = 10;
 /** Un día fallado es rescatable si tiene al menos esta parte de la meta, tras esta racha previa mínima (días seguidos). */
 export const RESCUE_MIN_FRAC = 0.5;
 export const RESCUE_PRIOR_DAYS = 3;
-/** Días de la ventana tras el día fallado; máximo de rescates pagados en cualquier periodo móvil de `RESCUE_PERIOD` días. */
+/** Días de la ventana tras el día fallado; los rescates son ilimitados (cada uno exige `RESCUE_PRIOR_DAYS` días cumplidos antes, así que nunca van seguidos); `RESCUE_PERIOD` solo es el periodo del contador. */
 export const RESCUE_WINDOW = 3;
-export const RESCUE_MAX = 2;
 export const RESCUE_PERIOD = 30;
-/** Un segundo rescate dentro del periodo exige este múltiplo del déficit. */
-export const RESCUE_REPEAT_MULT = 1.5;
 
 /** Partida (unida) dentro de la ventana de un rescate. */
 export interface RescuePlay {
@@ -63,14 +60,13 @@ export interface Rescue {
   /** Minutos leídos ese día (redondeados) y lo que faltó. */
   played: number;
   deficit: number;
-  /** Extra que hay que reunir (el déficit, o ×1,5 si es el segundo rescate en 30 días). */
+  /** Extra que hay que reunir (el déficit). */
   need: number;
-  repeat: boolean;
   /** Extra reunido (limitado a `need`), repartido en lo de días anteriores a hoy y lo de hoy. */
   got: number;
   gotBefore: number;
   gotToday: number;
-  /** Rescates (incluido este) en el periodo de 30 días, de un máximo de `RESCUE_MAX`. */
+  /** Rescates (incluido este) en el periodo de 30 días, (sin tope). */
   used: number;
   /** Ventana: primer y último día (D+1 a D+3). */
   from: number;
@@ -191,7 +187,7 @@ export function goalTrack(key: GoalKey, goal: number, platforms: Platform[], liv
   const today = localDay(now);
 
   // Rescates (retroactivo, sobre todo el historial): un día fallado D con 3 días cumplidos antes, al menos la mitad
-  // de la meta, y sin 2 rescates pagados en los 30 días anteriores, se recupera leyendo de más en D+1..D+3.
+  // de la meta, (sin tope de rescates), se recupera leyendo de más en D+1..D+3.
   const repaired = new Set<number>();
   const paidDays: number[] = [];
   let rescue: Rescue | null = null;
@@ -201,11 +197,9 @@ export function goalTrack(key: GoalKey, goal: number, platforms: Platform[], liv
       &&Array.from({ length: RESCUE_PRIOR_DAYS }, (_, i) => met(d - 1 - i)).every(Boolean)).sort((p, q) => p - q);
     for (const D of cands) {
       const recent = paidDays.filter((p) => D - p <= RESCUE_PERIOD).length;
-      if (recent >= RESCUE_MAX) continue;
       const played = Math.round(mins.get(D)!);
       const deficit = goal - played;
-      const repeat = recent >= 1;
-      const need = Math.ceil(deficit * (repeat ? RESCUE_REPEAT_MULT : 1) - 1e-9);
+      const need = deficit;
       let sum = 0, before = 0, tod = 0, state: 'pending' | 'paid' | 'failed' = 'pending', payDay = NaN;
       for (let w = D + 1; w <= D + RESCUE_WINDOW && w <= today; w++) {
         if (w < today && !met(w)) { state = 'failed'; break; }
@@ -224,7 +218,7 @@ export function goalTrack(key: GoalKey, goal: number, platforms: Platform[], liv
         const gotBefore = Math.min(got, Math.round(before));
         const to = D + RESCUE_WINDOW;
         rescue = {
-          key, day: D, goal, played, deficit, need, repeat, got, gotBefore, gotToday: got - gotBefore,
+          key, day: D, goal, played, deficit, need, got, gotBefore, gotToday: got - gotBefore,
           used: recent + 1, from: D + 1, to, last: today >= to, closeAt: dayStart(to + 1),
           next: today >= to ? need - got : goal + need - got,
           plays: pieces.filter((p) => p.day > D && p.day <= Math.min(to, today)).sort((p, q) => p.at - q.at),

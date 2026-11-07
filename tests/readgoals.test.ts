@@ -126,40 +126,36 @@ test('una partida de 9 min no suma al extra; una de 10 min sí', () => {
   assert.equal(tb.rescue!.got, 10);
 });
 
-test('tope de 2 rescates en 30 días y el segundo exige 1,5x', () => {
+test('rescates ilimitados: el tercero en 30 días también se paga', () => {
   const p: Plays = [];
   fill(p, 45, 38, 60);
   day(p, 37, 38); // D1
-  day(p, 36, 90); // +30 >= 22: pagado
+  day(p, 36, 90); // pagado
   fill(p, 35, 34, 60);
-  day(p, 33, 38); // D2 (segundo en 30 días: exige 33)
-  day(p, 32, 100); // +40 >= 33: pagado
+  day(p, 33, 38); // D2
+  day(p, 32, 90); // pagado
   fill(p, 31, 21, 60);
-  day(p, 20, 38); // D3: ya hay 2 pagados en los 30 días anteriores
-  fill(p, 19, 0, 120);
+  day(p, 20, 38); // D3: sin tope, se rescata igual
+  day(p, 19, 90); // pagado
+  fill(p, 18, 0, 120);
   const t = vn(p, 12);
   assert.equal(cell(t, 37).rescued, true);
   assert.equal(cell(t, 33).rescued, true);
-  assert.equal(cell(t, 20).rescued, false);
-  assert.equal(t.rescue, null);
+  assert.equal(cell(t, 20).rescued, true);
 });
 
-test('segundo rescate: necesita el déficit x 1,5', () => {
+test('segundo rescate: necesita solo el déficit (sin multiplicador)', () => {
   const p: Plays = [];
   fill(p, 14, 10, 60);
   day(p, 9, 38); // D1
   day(p, 8, 90); // pagado
   fill(p, 7, 3, 60);
-  day(p, 2, 38); // D2: déficit 22, hay que reunir 33
-  day(p, 1, 85); // +25: no basta
+  day(p, 2, 38); // D2: déficit 22
+  day(p, 1, 85); // +25 >= 22: pagado
   const t = vn(p);
-  assert.ok(t.rescue);
-  assert.equal(t.rescue!.repeat, true);
-  assert.equal(t.rescue!.need, 33);
-  assert.equal(t.rescue!.got, 25);
-  assert.equal(t.rescue!.used, 2);
+  assert.equal(t.rescue, null);
   assert.equal(cell(t, 9).rescued, true);
-  assert.equal(cell(t, 2).rescued, false);
+  assert.equal(cell(t, 2).rescued, true);
 });
 
 test('dos categorías pendientes a la vez, cada una por su cuenta', () => {
