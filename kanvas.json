@@ -13,6 +13,10 @@
     {
       "id": "TB",
       "name": "App de Tablet"
+    },
+    {
+      "id": "SW",
+      "name": "Switch: tiempo de juego"
     }
   ],
   "tasks": [
@@ -143,11 +147,23 @@
     {
       "id": "TB-01",
       "title": "T1. RemoteBackend y eventos en tiempo real",
-      "state": "doing",
+      "state": "review",
       "group": "TB",
       "at": "2026-11-05T01:34:37Z",
       "by": "antigravity",
-      "desc": "Implementar backend-remote.ts para que la tablet ejecute la interfaz completa de escritorio vía POST /api/v1/call y GET /api/v1/events (SSE)."
+      "desc": "Implementar backend-remote.ts para que la tablet ejecute la interfaz completa de escritorio vía POST /api/v1/call y GET /api/v1/events (SSE).",
+      "notes": [
+        {
+          "at": "2026-11-07T01:01:45Z",
+          "by": "claude-code",
+          "text": "Revisado el código: lo pedido ya está en main. POST /api/v1/call con lista blanca (src-tauri/src/remote_call.rs), GET /api/v1/events por espera larga (remote.rs, src/lib/remote/event.ts) y el sustituto de invoke con caché offline y buzón (src/lib/remote/core.ts). No existe backend-remote.ts: el papel lo hace src/lib/remote/. No he podido ejecutar svelte-check (node no está en el PATH de esta shell)."
+        },
+        {
+          "at": "2026-11-07T01:03:42Z",
+          "by": "claude-code",
+          "text": "La tablet ya habla con el PC: llamadas por POST /api/v1/call (lista blanca) y eventos en tiempo real por GET /api/v1/events (espera larga). Código en src/lib/remote/ y src-tauri/src/remote_call.rs; ya estaba en main. Comprobado: svelte-check, 272 ficheros, 0 errores y 0 avisos. No he probado en una tablet real contra el PC: conviene que lo veas tú (Inicio, Biblioteca, Mi lista y Estadísticas iguales que en el PC)."
+        }
+      ]
     },
     {
       "id": "TB-02",
@@ -178,6 +194,231 @@
       "at": "2026-11-05T01:34:37Z",
       "by": "antigravity",
       "desc": "Descubrimiento de visores en la red local mediante mDNS y simplificación del emparejamiento sin introducir IP manual."
+    },
+    {
+      "id": "SW-01",
+      "title": "Investigar el historial de juego con la cuenta real",
+      "state": "proposed",
+      "group": "SW",
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "Script de prueba contra la API del historial. Anotar client_id, scopes, URLs, cabeceras y formato en docs/nintendo-api.md; confirmar si trae Switch 2 y los últimos días desglosados."
+    },
+    {
+      "id": "SW-02",
+      "title": "Investigar Control Parental (Moon)",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-01"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "Lo mismo para Moon con pynintendoparental: Switch 2, ventana de días y usuarios. Hecho cuando docs/nintendo-api.md lo recoge."
+    },
+    {
+      "id": "SW-03",
+      "title": "Fixtures anonimizadas de las respuestas",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-01", "SW-02"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "Guardar respuestas reales anonimizadas en visor-core/src/nintendo/fixtures/*.json para los tests."
+    },
+    {
+      "id": "SW-04",
+      "title": "Probar la ventana de login (WebView2)",
+      "state": "proposed",
+      "group": "SW",
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "Rama aparte, no se fusiona: comprobar que on_navigation ve npf…://auth y que el login de Nintendo carga."
+    },
+    {
+      "id": "SW-05",
+      "title": "Migración 15 de la base de datos",
+      "state": "proposed",
+      "group": "SW",
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "Tablas switch_* en visor-core/src/db.rs, con test de migración."
+    },
+    {
+      "id": "SW-06",
+      "title": "Constantes, ids, nombres y PKCE",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-01"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "visor-core/src/nintendo/{mod,pkce}.rs con tests; añadir base64. Ids de título como 16 hex mayúsculas."
+    },
+    {
+      "id": "SW-07",
+      "title": "Modelos serde con tests de fixtures",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-03"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "visor-core/src/nintendo/models.rs."
+    },
+    {
+      "id": "SW-08",
+      "title": "Store de tablas switch_*",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-05"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "Upserts y lecturas en visor-core/src/nintendo/store.rs."
+    },
+    {
+      "id": "SW-09",
+      "title": "Mezcla de tiempos consola/PC",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-08"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "merge.rs con tests: emulador + consola se suman, entre APIs de Nintendo cuenta el máximo por día, DST."
+    },
+    {
+      "id": "SW-10",
+      "title": "Emparejamiento automático con fichas",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-08"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "link.rs con tests: enlaza título de Nintendo con juego o carpeta de la categoría Switch sin cambiar ids."
+    },
+    {
+      "id": "SW-11",
+      "title": "Aplicar el tiempo de consola en el escaneo",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-09"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "Title.console antes de ordenar; scan.rs, src-tauri/src/lib.rs, examples/serve.rs."
+    },
+    {
+      "id": "SW-12",
+      "title": "Tipos y mock del frontend",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-11"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "src/lib/types.ts y mock.ts."
+    },
+    {
+      "id": "SW-13",
+      "title": "Llavero de Windows para los tokens",
+      "state": "proposed",
+      "group": "SW",
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "src-tauri/src/nintendo/secrets.rs con el Administrador de credenciales; los tokens nunca en config.json ni en copias de seguridad."
+    },
+    {
+      "id": "SW-14",
+      "title": "Autenticación Nintendo",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-06", "SW-13"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "auth.rs: session token y access token con renovación."
+    },
+    {
+      "id": "SW-15",
+      "title": "Ventana de login y comandos de estado",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-04", "SW-14"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "login.rs: captura de la redirección, pegar enlace como respaldo, estado conectado/caducado."
+    },
+    {
+      "id": "SW-16",
+      "title": "Cliente del historial y guardado",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-07", "SW-08", "SW-14"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "history.rs: descarga y guarda totales, primera y última vez."
+    },
+    {
+      "id": "SW-17",
+      "title": "Vista previa e importación de la lista de juegos",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-10", "SW-16"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "Comandos de vista previa, importar y enlace manual. Filtra: nunca demos; solo juegos con tiempo mínimo (por defecto 60 min). La importación es explícita, con vista previa de lo excluido."
+    },
+    {
+      "id": "SW-18",
+      "title": "Hilo de sincronización periódica",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-11", "SW-16"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "sync.rs: cada 30 min, errores, evento nintendo-synced; solo actualiza tiempos, nunca crea fichas."
+    },
+    {
+      "id": "SW-19",
+      "title": "Control Parental opcional (Moon)",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-02", "SW-18"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "parental.rs: consolas y resúmenes diarios; cuenta solo el primer usuario. Se activa aparte; sin él todo funciona con el historial."
+    },
+    {
+      "id": "SW-20",
+      "title": "Sección «Nintendo» de Ajustes",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-15", "SW-18"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "Conectar cuenta, estado, vincular Control Parental (opcional), ajuste del mínimo de tiempo, importar ahora."
+    },
+    {
+      "id": "SW-21",
+      "title": "Pantalla de importación",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-17", "SW-20"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "Vista previa de títulos a importar y de los excluidos por el mínimo; añadir a mano."
+    },
+    {
+      "id": "SW-22",
+      "title": "Ficha del juego: consola / PC",
+      "state": "proposed",
+      "group": "SW",
+      "deps": ["SW-12", "SW-18"],
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "Desglose de tiempo, panel de semana; se actualiza tras nintendo-synced. Switch 1 y 2 juntos."
+    },
+    {
+      "id": "SW-23",
+      "title": "Estudiar importar capturas al conectar la Switch",
+      "state": "proposed",
+      "group": "SW",
+      "at": "2026-11-07T01:09:13Z",
+      "by": "claude-code",
+      "desc": "Fase posterior, sin código: MTP, microSD, hash → id de título."
     }
   ]
 }

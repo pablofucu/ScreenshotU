@@ -310,15 +310,15 @@ Comprobación a mano: conectar la cuenta, importar, ver un juego de Switch con h
 - **Una ficha importada se borra y Nintendo la sigue trayendo:** queda como «sin importar», no vuelve sola.
 - **WebView2 y el esquema `npf`:** si `on_navigation` no lo ve, solo queda el pegado del enlace (peor, pero funciona).
 
-## Preguntas abiertas para Pablo
+## Respuestas de Pablo (2026-11-07)
 
-1. ¿Aceptas el riesgo de la API no oficial con tu cuenta Nintendo principal?
-2. ¿Quieres vincular la consola al Control Parental (pide PIN para cambiar sus ajustes) o te basta con el historial si
-   da los últimos días desglosados?
-3. Al importar, ¿se crean fichas para todos los juegos jugados, también los de 5 minutos y las demos, o solo a partir de
-   un mínimo (p. ej. 30 min)?
-4. ¿Hay más usuarios en tus consolas cuyo tiempo no deba contar?
-5. En la ficha, ¿basta con el desglose «consola X h · PC Y h» o quieres ver por separado Switch 1 y Switch 2?
+1. **Riesgo de la API no oficial:** aceptado, con su cuenta principal.
+2. **Control Parental:** se vincula la consola, pero la función es **opcional**: el historial funciona solo, y Moon (SW-20) entra en la v1 como complemento activable.
+3. **Qué se importa:** las demos **no** se importan nunca. De los demás, solo los que pasen un **mínimo de tiempo jugado** (ajuste, por defecto 60 min; Pablo habló de «una o dos horas»). La vista previa muestra lo que queda fuera por el mínimo y permite añadirlo a mano.
+4. **Usuarios de la consola:** cuenta solo el **primer usuario**.
+5. **Switch 1 y 2:** **juntos**, sin separar dentro de la pestaña Switch (Pablo lo prefiere por simplicidad). La ficha muestra «consola / PC»; el id de título ya distingue la generación si algún día se quiere separar.
+
+Consecuencias en las tareas: SW-5 queda resuelta; SW-20 pasa a la v1 (opcional); SW-18 filtra demos y mínimo; SW-20 solo suma el primer usuario; SW-21 añade el ajuste del mínimo.
 
 ## Tareas para Kanvas (grupo «SW»)
 
