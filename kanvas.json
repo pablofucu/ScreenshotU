@@ -198,11 +198,33 @@
     {
       "id": "SW-01",
       "title": "Investigar el historial de juego con la cuenta real",
-      "state": "proposed",
+      "state": "doing",
       "group": "SW",
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "Script de prueba contra la API del historial. Anotar client_id, scopes, URLs, cabeceras y formato en docs/nintendo-api.md; confirmar si trae Switch 2 y los últimos días desglosados."
+      "desc": "Script de prueba contra la API del historial. Anotar client_id, scopes, URLs, cabeceras y formato en docs/nintendo-api.md; confirmar si trae Switch 2 y los últimos días desglosados.",
+      "notes": [
+        {
+          "at": "2026-11-07T13:51:15Z",
+          "by": "claude-code",
+          "text": "Plan: script de prueba"
+        },
+        {
+          "at": "2026-11-07T13:51:30Z",
+          "by": "claude-code",
+          "text": "Question: Necesito dos cosas tuyas: 1) tu documento de investigación (client_id, scopes y URLs de la API del historial, o dime dónde está en el PC); 2) hacer tú el login de Nintendo y pasarme el session token solo en un fichero local fuera del repo (yo no escribo contraseñas ni tokens). ¿Lo tienes a mano?"
+        },
+        {
+          "at": "2026-11-07T14:01:50Z",
+          "by": "claude-code",
+          "text": "Hallazgo: el login de Nintendo funciona (session_token y token de acceso, ambos 200), pero el endpoint del historial `mypage-api.entry.nintendo.co.jp` ya no existe (NXDOMAIN) y, según nxapi#8, solo daba datos a cuentas japonesas. Es la «puerta» del plan: la fuente principal de totales está en duda. Detalles en docs/nintendo-api.md. Falta probar Moon (SW-02) antes de decidir el alcance."
+        },
+        {
+          "at": "2026-11-07T14:05:16Z",
+          "by": "agent",
+          "text": "Resuelto: el historial vive ahora en app-api.znej.nintendo.com/api/v2.0/users/me/play_histories (mismo login y client_id; cabecera Gentry-Locale obligatoria). 200 OK: 87 juegos con total de toda la vida, 6 días desglosados, Switch 1 (HAC/0100) y Switch 2 (BEE/0400) juntos. Detalles en docs/nintendo-api.md."
+        }
+      ]
     },
     {
       "id": "SW-02",
@@ -236,7 +258,7 @@
     {
       "id": "SW-05",
       "title": "Migración 15 de la base de datos",
-      "state": "proposed",
+      "state": "todo",
       "group": "SW",
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
