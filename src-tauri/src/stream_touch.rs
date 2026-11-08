@@ -9,7 +9,7 @@
 #[cfg(windows)]
 mod imp {
     use std::io::Write;
-    use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicU32, Ordering};
+    use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicU32, AtomicU64, Ordering};
     use std::sync::mpsc::{channel, Sender};
     use std::sync::Mutex;
     use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -56,6 +56,17 @@ mod imp {
     /// Copia de los rectangulos de Magpie (src y dest), refrescada por un hilo: el gancho no puede enumerar ventanas.
     static RECTS_OK: AtomicBool = AtomicBool::new(false);
     static RECTS: [AtomicIsize; 8] = [const { AtomicIsize::new(0) }; 8];
+    /// Ultimo punto corregido de un movimiento tactil, empaquetado (x alto, y bajo).
+    static LAST: AtomicU64 = AtomicU64::new(NO_LAST);
+    const NO_LAST: u64 = u64::MAX;
+
+    fn pack((x, y): (i32, i32)) -> u64 {
+        ((x as u32 as u64) << 32) | (y as u32 as u64)
+    }
+
+    fn unpack(v: u64) -> (i32, i32) {
+        ((v >> 32) as u32 as i32, v as u32 as i32)
+    }
 
     fn is_touch(extra: usize) -> bool {
         (extra as u64) & 0xFFFF_FF00 == 0xFF51_5700
@@ -121,7 +132,18 @@ mod imp {
             let mut fixed = None;
             if FIX.load(Ordering::Relaxed) && is_touch(m.dwExtraInfo) && matches!(msg, 0x200 | 0x201 | 0x202 | 0x204 | 0x205) {
                 if let Some(r) = cached_rects() {
-                    let (x, y) = dest_to_src(m.pt.x, m.pt.y, r);
+                    // Solo los movimientos traen el punto del toque. Las pulsaciones traen la posicion del cursor,
+                    // que ya es la corregida: van al punto corregido del ultimo movimiento, sin convertir otra vez.
+                    let (x, y) = if msg == 0x200 {
+                        let p = dest_to_src(m.pt.x, m.pt.y, r);
+                        LAST.store(pack(p), Ordering::Relaxed);
+                        p
+                    } else {
+                        match LAST.load(Ordering::Relaxed) {
+                            NO_LAST => dest_to_src(m.pt.x, m.pt.y, r),
+                            v => unpack(v),
+                        }
+                    };
                     if let Ok(g) = FIX_TX.try_lock() {
                         if let Some(tx) = g.as_ref() {
                             if tx.send(Cmd { msg, x, y }).is_ok() {
@@ -210,6 +232,7 @@ mod imp {
         if fix {
             let (ctx, crx) = channel::<Cmd>();
             *FIX_TX.lock().unwrap() = Some(ctx);
+            LAST.store(NO_LAST, Ordering::SeqCst);
             FIX.store(true, Ordering::SeqCst);
             // Refresca los rectangulos de Magpie mientras dure la sesion.
             std::thread::spawn(|| {
