@@ -203,22 +203,28 @@ public class CaptureKeyService extends AccessibilityService {
 
     private volatile boolean watching = false;
 
-    /** Consulta la sesion del PC: {estado, endedMs de la ultima} o null si no hay respuesta. */
+    /** Consulta la sesion del PC: {estado, endedMs de la ultima, nombre del juego, app de Apollo} o null si no hay respuesta. */
     private Object[] sessionState() {
         String body = get("/api/v1/session");
         if (body == null) return null;
         try {
             JSONObject j = new JSONObject(body);
             JSONObject last = j.optJSONObject("last");
-            return new Object[] { j.optString("state", "idle"), last == null ? -1L : last.optLong("endedMs", -1) };
+            JSONObject game = j.optJSONObject("game");
+            String app = j.isNull("app") ? "" : j.optString("app", "");
+            return new Object[] { j.optString("state", "idle"), last == null ? -1L : last.optLong("endedMs", -1), game == null ? "" : game.optString("name", ""), app };
         } catch (Exception e) {
             return null;
         }
     }
 
+    /** Ultima vez que Artemis estuvo delante (ms): decide si al acabar la partida se trae el visor al frente. */
+    private volatile long moonlightMs = 0;
+
     /**
-     * Mientras Artemis siga delante, pregunta al PC por la sesion. Cuando ve una partida y despues el reposo con un
-     * resumen nuevo, la partida acabo: se trae esta app al frente (o una notificacion si Android lo bloquea).
+     * Mientras la partida siga en marcha pregunta al PC por la sesion: cada 2 s con Artemis delante y cada 5 s fuera.
+     * Con Artemis fuera (y el visor tambien) muestra la notificacion de partida en curso. Cuando ve una partida y despues el
+     * reposo con un resumen nuevo, la partida acabo. Si el PC no responde unos 2,5 min seguidos, se rinde.
      */
     private void startWatch() {
         if (watching) return;
@@ -228,29 +234,35 @@ public class CaptureKeyService extends AccessibilityService {
                 long baseline = -2;
                 boolean seen = false;
                 boolean done = false;
-                boolean front = true;
-                while (front) {
-                    front = StreamingPlugin.isMoonlight(foreground);
+                int fails = 0;
+                while (true) {
+                    boolean front = StreamingPlugin.isMoonlight(foreground);
+                    if (front) moonlightMs = System.currentTimeMillis();
                     Object[] s = sessionState();
-                    if (s != null) {
+                    if (s == null) {
+                        if (++fails >= 30) break;
+                    } else {
+                        fails = 0;
                         String state = (String) s[0];
                         long ended = (Long) s[1];
+                        boolean active = "starting".equals(state) || "playing".equals(state);
                         if (baseline == -2) baseline = ended;
-                        if ("starting".equals(state) || "playing".equals(state)) seen = true;
-                        else if (seen && "idle".equals(state) && ended != baseline) {
-                            done = true;
-                            break;
+                        String app = (String) s[3];
+                        if (!app.isEmpty()) getSharedPreferences(StreamingPlugin.PREFS, Context.MODE_PRIVATE).edit().putString("r_app", app).apply();
+                        if (active) {
+                            seen = true;
+                            final String name = (String) s[2];
+                            final boolean show = !front && !getPackageName().equals(foreground);
+                            ui.post(() -> { if (show) showOngoing(name); else hideOngoing(); });
+                        } else {
+                            if (seen && "idle".equals(state) && ended != baseline) { done = true; break; }
+                            // Sin partida en marcha y Artemis fuera: no hay nada que vigilar.
+                            if (!front) break;
                         }
                     }
-                    if (!front) break;
-                    try { Thread.sleep(2000); } catch (InterruptedException ignored) { }
+                    try { Thread.sleep(front ? 2000 : 5000); } catch (InterruptedException ignored) { }
                 }
-                // Artemis puede cerrarse solo al acabar la sesion: una consulta mas antes de irse.
-                if (!done && seen) {
-                    try { Thread.sleep(1500); } catch (InterruptedException ignored) { }
-                    Object[] s = sessionState();
-                    done = s != null && "idle".equals(s[0]) && (Long) s[1] != baseline;
-                }
+                ui.post(this::hideOngoing);
                 if (done) ui.post(this::sessionEnded);
             } finally {
                 watching = false;
@@ -260,11 +272,39 @@ public class CaptureKeyService extends AccessibilityService {
 
     private void sessionEnded() {
         removeMenu();
+        // Solo se trae el visor al frente si Artemis estaba delante o acababa de salir; en otra app, solo el aviso.
+        boolean recent = StreamingPlugin.isMoonlight(foreground) || System.currentTimeMillis() - moonlightMs < 10000;
+        if (!recent) { notifyEnded(); return; }
         returnToApp();
         // Android bloquea en silencio el arranque desde segundo plano en algunos dispositivos: si no funciono, aviso.
         ui.postDelayed(() -> {
             if (!getPackageName().equals(foreground)) notifyEnded();
         }, 1500);
+    }
+
+    private void showOngoing(String name) {
+        NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        Intent open = getPackageManager().getLaunchIntentForPackage(getPackageName());
+        if (nm == null || open == null) return;
+        if (Build.VERSION.SDK_INT >= 26) {
+            NotificationChannel ch = new NotificationChannel("partida", "Partida en curso", NotificationManager.IMPORTANCE_LOW);
+            ch.setSound(null, null);
+            nm.createNotificationChannel(ch);
+        }
+        open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        int fl = PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE;
+        PendingIntent pi = PendingIntent.getActivity(this, 1, open, fl);
+        PendingIntent resume = PendingIntent.getActivity(this, 2, new Intent(this, ResumeActivity.class), fl);
+        Notification.Builder b = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(this, "partida") : new Notification.Builder(this);
+        b.setSmallIcon(getApplicationInfo().icon).setContentTitle(name.isEmpty() ? "Partida en curso" : name + " · Partida en curso")
+                .setContentText("Toca para abrir el visor").setContentIntent(pi).setOngoing(true)
+                .addAction(0, "Volver a la partida", resume);
+        nm.notify(4102, b.build());
+    }
+
+    private void hideOngoing() {
+        NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm != null) nm.cancel(4102);
     }
 
     private void notifyEnded() {

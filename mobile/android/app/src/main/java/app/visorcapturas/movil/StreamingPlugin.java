@@ -191,17 +191,28 @@ public class StreamingPlugin extends Plugin {
             return;
         }
         try {
-            Intent i = new Intent();
-            i.setComponent(new ComponentName(pkg, "com.limelight.ShortcutTrampoline"));
-            if (!uuid.isEmpty()) i.putExtra("UUID", uuid);
-            else i.putExtra("Name", pc);
-            i.putExtra("AppName", app);
-            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            getContext().startActivity(i);
+            saveResume(getContext(), pkg, uuid, pc, app);
+            launchStream(getContext(), pkg, uuid, pc, app);
             call.resolve();
         } catch (Exception e) {
             call.reject("No se pudo abrir Moonlight: " + e.getMessage());
         }
+    }
+
+    /** Lo necesario para volver a abrir el stream sin red (lo usa la notificacion de partida en curso). */
+    static void saveResume(Context c, String pkg, String uuid, String pc, String app) {
+        c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString("r_pkg", pkg).putString("r_uuid", uuid).putString("r_pc", pc).putString("r_app", app).apply();
+    }
+
+    /** Abre el stream de {app} con el atajo de Moonlight/Artemis. */
+    static void launchStream(Context c, String pkg, String uuid, String pc, String app) {
+        Intent i = new Intent();
+        i.setComponent(new ComponentName(pkg, "com.limelight.ShortcutTrampoline"));
+        if (!uuid.isEmpty()) i.putExtra("UUID", uuid);
+        else i.putExtra("Name", pc);
+        i.putExtra("AppName", app);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        c.startActivity(i);
     }
 
     /** Nombre e identificador del PC tal como los anuncia Sunshine (puerto HTTP 47989); null si no responde. */
