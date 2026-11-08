@@ -64,7 +64,11 @@ impl Provider for AppProvider {
                     *st.games.lock().unwrap() = found;
                 }
                 let r = match game {
-                    Some(g) => crate::launcher::start(&app, g),
+                    Some(g) => {
+                        // Diagnostico del tactil (solo si existe `stream_touch_diag`): tambien cuando se lanza desde la tablet.
+                        crate::stream_touch::start();
+                        crate::launcher::start(&app, g)
+                    }
                     None => Err("Juego no encontrado".to_string()),
                 };
                 let _ = tx.send(r);
