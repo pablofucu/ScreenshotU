@@ -244,15 +244,38 @@ mod imp {
             });
             // Repite cada evento bloqueado en su sitio corregido, en el mismo orden en que llego.
             std::thread::spawn(move || {
+                // Un toque llega como movimiento, bajar y soltar casi en el mismo milisegundo. El juego lee el cursor
+                // una vez por fotograma: si el clic llega antes, cae en el sitio anterior, y si dura 1 ms se pierde.
+                // Por eso se espera a que vea el cursor nuevo y se mantiene el boton pulsado un poco.
+                const SETTLE: Duration = Duration::from_millis(40);
+                const HOLD: Duration = Duration::from_millis(60);
+                let mut moved = Instant::now() - SETTLE;
+                let mut pressed = Instant::now() - HOLD;
+                let mut at = (i32::MIN, i32::MIN);
+                let wait_until = |t: Instant| {
+                    let now = Instant::now();
+                    if t > now {
+                        std::thread::sleep(t - now);
+                    }
+                };
                 while let Ok(c) = crx.recv() {
-                    unsafe {
-                        let _ = SetCursorPos(c.x, c.y);
+                    if (c.x, c.y) != at {
+                        unsafe {
+                            let _ = SetCursorPos(c.x, c.y);
+                        }
+                        at = (c.x, c.y);
+                        moved = Instant::now();
                     }
                     match c.msg {
-                        0x201 => send_button(MOUSEEVENTF_LEFTDOWN),
-                        0x202 => send_button(MOUSEEVENTF_LEFTUP),
-                        0x204 => send_button(MOUSEEVENTF_RIGHTDOWN),
-                        0x205 => send_button(MOUSEEVENTF_RIGHTUP),
+                        0x201 | 0x204 => {
+                            wait_until(moved + SETTLE);
+                            send_button(if c.msg == 0x201 { MOUSEEVENTF_LEFTDOWN } else { MOUSEEVENTF_RIGHTDOWN });
+                            pressed = Instant::now();
+                        }
+                        0x202 | 0x205 => {
+                            wait_until(pressed + HOLD);
+                            send_button(if c.msg == 0x202 { MOUSEEVENTF_LEFTUP } else { MOUSEEVENTF_RIGHTUP });
+                        }
                         _ => {}
                     }
                 }
