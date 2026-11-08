@@ -919,21 +919,25 @@ fn capture_now(app: AppHandle) {
     snap::trigger(&app);
 }
 
-/// Apaga el PC (cuenta atras corta para que la respuesta llegue a quien lo pidio).
+/// Suspende el PC (espera corta para que la respuesta llegue a quien lo pidio).
+/// Se despierta con Wake-on-LAN desde la tablet.
 #[tauri::command]
-fn shutdown_pc() -> Result<(), String> {
+fn suspend_pc() -> Result<(), String> {
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
-        std::process::Command::new("shutdown")
-            .args(["/s", "/t", "3"])
-            .creation_flags(0x0800_0000) // CREATE_NO_WINDOW
-            .spawn()
-            .map_err(|e| format!("No se pudo apagar el PC: {e}"))?;
+        std::thread::spawn(|| {
+            std::thread::sleep(std::time::Duration::from_secs(3));
+            // SetSuspendState(Hibernate=0, ForceCritical=1, DisableWakeEvent=0): suspende, no hiberna.
+            let _ = std::process::Command::new("rundll32.exe")
+                .args(["powrprof.dll,SetSuspendState", "0,1,0"])
+                .creation_flags(0x0800_0000) // CREATE_NO_WINDOW
+                .spawn();
+        });
         Ok(())
     }
     #[cfg(not(windows))]
-    Err("Apagar el PC solo funciona en Windows".into())
+    Err("Suspender el PC solo funciona en Windows".into())
 }
 
 /// MAC de la tarjeta de red fisica activa (para que la tablet pueda despertar el PC con Wake-on-LAN).
@@ -1409,7 +1413,7 @@ pub fn run() {
             quickmenu::quickmenu_set_app_volume,
             quickmenu::quickmenu_set_app_mute,
             audio_outputs,
-            shutdown_pc,
+            suspend_pc,
             pc_mac,
             set_audio_output,
             hotkey_suspend,

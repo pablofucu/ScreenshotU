@@ -370,7 +370,7 @@ export interface Backend {
   /** Cierra el visor: a la bandeja si `keepInTray` está activado, si no, del todo (como `exit`). */
   closeMain(): Promise<void>;
   /** Apaga el PC. */
-  shutdownPc(): Promise<void>;
+  suspendPc(): Promise<void>;
   /** MAC del PC (para Wake-on-LAN desde la tablet). */
   pcMac(): Promise<string | null>;
   /** Salidas de audio de Windows (la predeterminada marcada). */

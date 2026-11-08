@@ -16,7 +16,7 @@
     if (app.audioMenu) closeAudioMenu(); else void openAudioMenu();
   }
 
-  // Apagar el PC (dos pulsaciones para evitar accidentes) y, en la tablet, despertarlo con Wake-on-LAN.
+  // Suspender el PC (dos pulsaciones para evitar accidentes) y, en la tablet, despertarlo con Wake-on-LAN.
   const MAC_KEY = 'visor-pc-mac';
   let armed = $state(false);
   let armT: ReturnType<typeof setTimeout> | undefined;
@@ -25,17 +25,17 @@
     // Con el PC encendido se guarda su MAC para poder despertarlo luego, cuando esté apagado.
     void backend.pcMac().then((m) => { if (m) try { localStorage.setItem(MAC_KEY, m); } catch { /* sin almacenamiento */ } }).catch(() => {});
   }
-  async function powerOff() {
+  async function suspend() {
     if (!armed) {
       armed = true;
       clearTimeout(armT);
       armT = setTimeout(() => (armed = false), 4000);
-      toast('Pulsa otra vez para apagar el PC', 3000);
+      toast('Pulsa otra vez para suspender el PC', 3000);
       return;
     }
     clearTimeout(armT);
     armed = false;
-    try { await backend.shutdownPc(); toast('Apagando el PC…', 3000); } catch (e) { toast(String(e), 3000); }
+    try { await backend.suspendPc(); toast('Suspendiendo el PC…', 3000); } catch (e) { toast(String(e), 3000); }
   }
   async function wakePc() {
     const mac = readMac();
@@ -68,7 +68,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v7"/><path d="M5.6 7.2a8 8 0 0 0 0 11.3 8 8 0 0 0 12.8 0"/><path d="M18.4 18.5a8 8 0 0 0-3-13.3" stroke-dasharray="1 3.2"/></svg>
       </button>
     {/if}
-    <button type="button" class="audbtn" class:armed={armed} title={armed ? 'Pulsa otra vez para confirmar' : 'Apagar el PC'} aria-label="Apagar el PC" onclick={powerOff}>
+    <button type="button" class="audbtn" class:armed={armed} title={armed ? 'Pulsa otra vez para confirmar' : 'Suspender el PC'} aria-label="Suspender el PC" onclick={suspend}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v9"/><path d="M6.4 6.9a8 8 0 1 0 11.2 0"/></svg>
     </button>
     {#if app.audioOutputs.length}
