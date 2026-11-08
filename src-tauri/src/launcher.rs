@@ -97,6 +97,8 @@ pub(crate) fn start_at(app: &AppHandle, game: Game, screen: Option<crate::displa
     if !std::path::Path::new(&exe).is_file() {
         return Err(format!("No existe el ejecutable: {exe}"));
     }
+    // Diagnostico del tactil (solo si existe `stream_touch_diag`); se para en `game-exited`.
+    crate::stream_touch::start();
     // El juego se abre en el monitor del visor: si no es el principal, pasa a serlo mientras dure la partida
     // (los juegos a pantalla completa siempre salen en el principal).
     let ours = main_hwnd(app);
