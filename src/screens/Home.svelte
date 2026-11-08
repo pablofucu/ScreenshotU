@@ -7,6 +7,7 @@
   import Hints from '../components/Hints.svelte';
   import RecentCard from '../components/RecentCard.svelte';
   import ReadRings from '../components/ReadRings.svelte';
+  import { GOAL_GROUPS } from '../lib/readgoals';
 
   const DOCK = [
     { n: 'Buscar', ic: ICON.search, c: 0 },
@@ -106,14 +107,14 @@
     {/each}
     {#if app.readCard}
       <div class="hsect" style="left:{rx}px">Lectura de hoy</div>
-      <div class="glass rcard rread fx" class:f={app.focus === 'read'} data-k="read" data-act="read" style="left:{rx}px;width:{RW}px;--acc:var(--acc)"><div class="face"><ReadRings /></div></div>
+      <div class="glass rcard rread fx" class:f={app.focus === 'read'} data-k="read" data-act="read" style="left:{rx}px;width:{RW}px;--acc:var(--acc)"><div class="face"><ReadRings keys={GOAL_GROUPS.read} /></div></div>
       <div class="rmeta" style="left:{rx + 4}px;width:{RW - 4}px">Meta diaria<span>&nbsp;· {metaGoal(app.config.goalVn)} novelas · {metaGoal(app.config.goalJvn)} japonés</span></div>
     {/if}
   {:else if totalTitles > 0}
     <div class="hsect" style="left:96px">Seguir jugando</div>
     {#if app.readCard}
       <div class="hsect" style="left:{1280 - 96 - RW}px">Lectura de hoy</div>
-      <div class="glass rcard rread fx" class:f={app.focus === 'read'} data-k="read" data-act="read" style="left:{1280 - 96 - RW}px;width:{RW}px;--acc:var(--acc)"><div class="face"><ReadRings /></div></div>
+      <div class="glass rcard rread fx" class:f={app.focus === 'read'} data-k="read" data-act="read" style="left:{1280 - 96 - RW}px;width:{RW}px;--acc:var(--acc)"><div class="face"><ReadRings keys={GOAL_GROUPS.read} /></div></div>
       <div class="rmeta" style="left:{1280 - 96 - RW + 4}px;width:{RW - 4}px">Meta diaria<span>&nbsp;· {metaGoal(app.config.goalVn)} novelas · {metaGoal(app.config.goalJvn)} japonés</span></div>
     {/if}
     <div class="rnone" style={app.readCard ? `max-width:${1280 - 96 - RW - 96 - 34}px;white-space:normal` : ''}>Aquí aparecerán los juegos a los que juegues desde el visor y los que tengan capturas nuevas.</div>

@@ -1,16 +1,18 @@
 <script lang="ts">
-  // Tarjeta «Lectura de hoy» de Inicio: anillos concéntricos con los minutos de hoy (azul = novelas visuales,
-  // rosa = novelas japonesas), una medalla con la racha de cada una y el mapa de las últimas semanas.
+  // Cara de la ficha de Inicio: anillos concéntricos de las metas `keys` con los minutos de hoy, una medalla con la
+  // racha de cada una y el mapa de las últimas semanas.
   // Al entrar se dibuja en cascada; al cumplir una meta «se enciende la racha» (una vez por día y anillo).
   import { GOAL_COL, rescueCls, type GoalKey } from '../lib/readgoals';
   import HuchaMini from './HuchaMini.svelte';
   import { createReadRings, fmtMin } from '../lib/readrings.svelte';
 
+  let { keys, active = true }: { keys: GoalKey[]; active?: boolean } = $props();
+
   const COL = GOAL_COL;
   const S = 112, SW = 11;
 
   // Geometría, pistas y «racha pendiente» compartidas con la pantalla de racha (Streak).
-  const rr = createReadRings({ size: S, stroke: SW, gap: 1.15, empty: 'var(--face)' });
+  const rr = createReadRings({ keys: () => keys, size: S, stroke: SW, gap: 1.15, empty: 'var(--face)' });
   const tracks = $derived(rr.tracks);
   const rings = $derived(rr.rings);
   const { pending, cellBg } = rr;
@@ -18,20 +20,32 @@
   let root: HTMLDivElement | undefined = $state();
 
   const scheduled = new Set<string>();
+  const waiting = new Map<string, ReturnType<typeof setTimeout>>();
+  let wasOff = false;
   $effect(() => {
+    if (!active) {
+      // Cara oculta: nada pendiente de encender; se reprograma al volver a estar activa.
+      for (const [id, h] of waiting) { clearTimeout(h); scheduled.delete(id); }
+      waiting.clear();
+      wasOff = true;
+      return;
+    }
     for (const t of tracks) {
       const id = `${t.key}:${rr.today}`;
       if (!pending(t) || scheduled.has(id)) continue;
       scheduled.add(id);
-      // Tras la cascada de entrada si acaba de abrirse Inicio.
-      const wait = Math.max(150, 1500 - (Date.now() - rr.mountedAt));
-      rr.timers.push(setTimeout(() => light(t.key), wait));
+      // Tras la cascada de entrada si acaba de abrirse Inicio, o tras el fundido si la cara acaba de activarse.
+      const wait = Math.max(wasOff ? 450 : 150, 1500 - (Date.now() - rr.mountedAt));
+      const h = setTimeout(() => { waiting.delete(id); light(t.key); }, wait);
+      waiting.set(id, h);
+      rr.timers.push(h);
     }
+    wasOff = false;
   });
 
   /** «La racha se enciende»: el número gira, la casilla de hoy se rellena y un brillo recorre la racha. */
   function light(k: GoalKey) {
-    if (!root?.isConnected) return;
+    if (!root?.isConnected || !active) return;
     rr.light(k, root, {
       box: '[data-g="{k}"]',
       num: '.rnum',
@@ -53,8 +67,8 @@
   <div class="rr-ring" style="width:{S}px;height:{S}px">
     <svg width={S} height={S} viewBox="0 0 {S} {S}">
       {#each rings as g, i (g.t.key)}
-        <circle cx={S / 2} cy={S / 2} r={g.r} fill="none" stroke={COL[g.t.key].soft} stroke-width={SW} />
-        <circle class="arc" cx={S / 2} cy={S / 2} r={g.r} fill="none" stroke={COL[g.t.key].c} stroke-width={SW} stroke-linecap="round"
+        <circle cx={S / 2} cy={S / 2} r={g.r} fill="none" stroke={COL[g.t.key].soft} stroke-width={rr.stroke} />
+        <circle class="arc" cx={S / 2} cy={S / 2} r={g.r} fill="none" stroke={COL[g.t.key].c} stroke-width={rr.stroke} stroke-linecap="round"
           stroke-dasharray={g.C} stroke-dashoffset={rr.drawn ? g.C * (1 - g.t.frac) : g.C}
           style="transition-delay:{i * 0.2}s" transform="rotate(-90 {S / 2} {S / 2})" />
       {/each}

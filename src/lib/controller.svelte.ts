@@ -21,7 +21,7 @@ import { checkUpdate, updateAct } from './updater.svelte';
 import { REMOTE_CYCLE, isRemoteId, remoteAct, type RemoteId } from './remote.svelte';
 import { openPhrases, phrasesCmd } from './phrases.svelte';
 import { gameSetCmd, openGameSettings } from './gameset.svelte';
-import { goalMinLeft, goalTrack, localDay, RESCUE_MIN_PLAY, type GoalKey } from './readgoals';
+import { GOAL_TXT, goalMin, goalMinLeft, goalTrack, groupOf, localDay, RESCUE_MIN_PLAY, type GoalGroup, type GoalKey } from './readgoals';
 import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
 import { libraryCmd, loadLibraryInfo, openLibrary } from './library.svelte';
 import { addCollCmd, collCmd, collFirst, collFormCmd, collKey, collReveal, collTab, collValid, loadCollections, openAddColl, openCollForm, pickerCmd, resetColl, setCollFocus } from './coleccion.svelte';
@@ -588,7 +588,7 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
   } else if (a === 'rec') {
     openRecent(+b);
   } else if (a === 'read') {
-    openStreak();
+    openStreak(app.goalKeys.find((k) => groupOf(k) === app.readFace));
   } else if (a === 'sr') {
     // Juego de la clasificación: su ficha (B vuelve a las estadísticas).
     app.p = +b;
@@ -636,12 +636,11 @@ function dock(i: number) {
 }
 
 /* ---------- racha de lectura ---------- */
-const GOAL_KEYS: GoalKey[] = ['vn', 'jvn'];
-const goalOf = (k: GoalKey) => (k === 'vn' ? app.config.goalVn : app.config.goalJvn);
-const goalKeys = () => GOAL_KEYS.filter((k) => app.lib.platforms.some((p) => p.id === k));
-/** Anillo (categoría de novelas) de un juego, si es de una. */
+const goalOf = (k: GoalKey) => goalMin(app.config, k);
+const goalKeys = () => app.goalKeys;
+/** Anillo (categoría con meta activa) de un juego, si es de una. */
 function goalKeyOf(gameId: string): GoalKey | undefined {
-  return GOAL_KEYS.find((k) => app.lib.platforms.some((p) => p.id === k && p.titles.some((t) => t.gameId === gameId)));
+  return app.goalKeys.find((k) => app.lib.platforms.some((p) => p.id === k && p.titles.some((t) => t.gameId === gameId)));
 }
 
 /** Pantalla «Racha de lectura» (B vuelve a la pantalla desde la que se abrió). */
@@ -651,6 +650,23 @@ export function openStreak(k?: GoalKey) {
   app.streakKey = k && keys.includes(k) ? k : keys.includes(app.streakKey) ? app.streakKey : keys[0];
   app.streakFrom = app.view === 'streak' || app.view === 'viewer' ? 'home' : app.view;
   go('streak', 'fwd');
+}
+/** Salta a la pestaña de una meta (clic). */
+export function pickStreak(k: GoalKey) {
+  if (!goalKeys().includes(k) || k === app.streakKey) return;
+  app.streakKey = k;
+  blip(700);
+}
+/** Cambia la cara de la ficha de Inicio. */
+function setReadFace(g: GoalGroup) {
+  if (!app.goalFaces.includes(g) || g === app.readFace) return;
+  app.readFace = g;
+  blip(700);
+}
+/** LB/RB en Inicio sobre la ficha: la otra cara. */
+function stepReadFace(d: number) {
+  if (app.goalFaces.length < 2) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+  setReadFace(app.goalFaces.find((g) => g !== app.readFace) ?? app.readFace);
 }
 /** LB/RB en la racha: el otro anillo. */
 function streakSwitch(d: number) {
@@ -677,7 +693,7 @@ function pushQuickmenuContext(gameId: string) {
   }).catch((e) => console.error(e));
 }
 
-/** Al empezar una novela: pide al núcleo un aviso sobre el juego para cuando se llegue a la meta de hoy. */
+/** Al empezar un juego con meta: pide al núcleo un aviso sobre el juego para cuando se llegue a la meta de hoy. */
 function scheduleGoalNotice(gameId: string) {
   const k = goalKeyOf(gameId);
   if (!k) return;
@@ -700,7 +716,7 @@ function scheduleGoalNotice(gameId: string) {
   const at = now + goalMinLeft(t2.today, goal) * 60000 + 15000;
   if (localDay(at) !== localDay(now)) return;
   const n = t.streak + 1;
-  const text = n > 1 ? '¡Meta cumplida!' : '¡Meta de lectura cumplida!';
+  const text = n > 1 ? '¡Meta cumplida!' : GOAL_TXT[groupOf(k)].notice1;
   backend.goalNotice(gameId, at, text, n, k).catch((e) => console.error(e));
 }
 
@@ -903,6 +919,7 @@ export function back() {
 export const goBack = back;
 
 export function page(d: number) {
+  if (app.view === 'home') { if (app.focus === 'read') stepReadFace(d); return; }
   if (app.view === 'viewer') { stepViewer(d * 10); return; }
   if (app.view === 'streak') { streakSwitch(d); return; }
   if (app.view === 'stats' || app.view === 'evo') { statsKind(d); return; }
@@ -1756,11 +1773,14 @@ export function cmd(c: string) {
   // Mientras Ajustes espera un botón de captura, el mando y el teclado no navegan.
   if (app.learn) return;
   wake();
+  app.inputAt = Date.now();
   if (app.audioMenu) { audioCmd(c); return; }
   if (app.osk.open) { oskCmd(c); return; }
   if (app.overlay) { overlayCmd(c); return; }
   if (listTab() && listCmd(c)) return;
   if (collTab() && collCmd(c)) return;
+  if (c.startsWith('goal:')) { pickStreak(c.slice(5) as GoalKey); return; }
+  if (c.startsWith('face:')) { setReadFace(c.slice(5) as GoalGroup); return; }
   switch (c) {
     case 'left': move(-1, 0); break;
     case 'right': move(1, 0); break;

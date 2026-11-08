@@ -1,6 +1,6 @@
 // Indicador de grabacion sobre el juego (ver src-tauri/src/overlay.rs). La app lo actualiza con `window.__rec(estado, segundos, texto)`.
-// En el estado `goal` (meta de lectura cumplida) el texto llega como `clave|dias|titular` y sale una tarjeta con la llama.
-import { GOAL_COL } from '../lib/readgoals';
+// En el estado `goal` (meta diaria cumplida) el texto llega como `clave|dias|titular` y sale una tarjeta con la llama.
+import { GOAL_COL, GOAL_TXT, groupOf, type GoalKey } from '../lib/readgoals';
 
 export {};
 const p = document.getElementById('p')!;
@@ -16,9 +16,9 @@ const ROLL = 'cubic-bezier(.5,-.4,.3,1.4)';
 const SHEEN = 'cubic-bezier(.4,0,.2,1)';
 
 /** Segunda linea de la tarjeta segun el titular. */
-function subtitle(title: string, days: number): string {
+function subtitle(title: string, days: number, key: GoalKey): string {
   if (title.includes('recuperada')) return 'Recuperaste el día que faltaba';
-  return days > 1 ? 'Hoy ya cuenta para tu racha' : 'Hoy cuenta para tu racha de lectura';
+  return days > 1 ? 'Hoy ya cuenta para tu racha' : GOAL_TXT[groupOf(key)].sub1;
 }
 
 function track(el: Element, frames: [number, Keyframe][]): Animation {
@@ -38,7 +38,7 @@ function playGoal(raw: string) {
   g.style.setProperty('--a', c.edge);
   g.style.setProperty('--b', c.c);
   document.getElementById('gt')!.textContent = title;
-  document.getElementById('gs')!.textContent = subtitle(title, days);
+  document.getElementById('gs')!.textContent = subtitle(title, days, (key in GOAL_COL ? key : 'vn') as GoalKey);
   document.getElementById('gc')!.innerHTML = `<span>${days - 1}</span><span>${days}</span>`;
   document.getElementById('gd')!.textContent = days === 1 ? 'día' : 'días';
 

@@ -5,7 +5,7 @@ import type { AudioOutput, Config, GameStatsDb, GameStatus, Library, MagpieStatu
 import { hexToLch, hexToRgb, hueOf } from './oklch';
 import { gamePair, INK, pair, variablesCSS } from './atmos';
 import { collItems, collectionTitle } from './collections';
-import { GOAL_COL, type GoalKey } from './readgoals';
+import { GOAL_COL, GOAL_KEYS, goalMin, groupOf, type GoalGroup, type GoalKey } from './readgoals';
 import { calendar, categoryStats, evoBuckets, playedPlatforms, playYears, rankPeriod, titleStats, yearReview, type EvoKind, type GMetric, type PeriodKind } from './stats';
 
 export type View = 'home' | 'titles' | 'detail' | 'shots' | 'viewer' | 'stats' | 'evo' | 'streak' | 'gstats';
@@ -433,6 +433,9 @@ class Store {
   /** Pantalla de racha: anillo elegido (mapa y cifras) y pantalla a la que vuelve B. */
   streakKey = $state<GoalKey>('vn');
   streakFrom = $state<View>('home');
+  /** Cara visible de la ficha de Inicio y última entrada (reinicia su ciclo). */
+  readFace = $state<GoalGroup>('read');
+  inputAt = $state(0);
   /** Desde dónde se abrió la ficha (B vuelve allí). */
   detailFrom = $state<'home' | 'titles' | 'stats' | 'gstats'>('titles');
   /** Estadísticas de juego: de un título (desde Evolución) o de la categoría abierta (desde Start en la lista), métrica elegida y pantalla de origen. */
@@ -557,8 +560,11 @@ class Store {
     return sortTitles(titles, v, this.titleOrder, this.secPair(this.p).h1);
   });
 
-  /** Tarjeta «Lectura de hoy» en Inicio (si existe alguna categoría de novelas). */
-  readCard = $derived(!!this.config.root && this.lib.platforms.some((p) => p.id === 'vn' || p.id === 'jvn'));
+  /** Metas diarias activas: plataforma presente y meta > 0, en orden fijo. */
+  goalKeys = $derived(GOAL_KEYS.filter((k) => this.lib.platforms.some((p) => p.id === k) && goalMin(this.config, k) > 0));
+  goalFaces = $derived((['read', 'play'] as GoalGroup[]).filter((g) => this.goalKeys.some((k) => groupOf(k) === g)));
+  /** Ficha de metas en Inicio (si hay alguna meta activa). */
+  readCard = $derived(!!this.config.root && this.goalKeys.length > 0);
 
   /** «Seguir jugando»: los juegos jugados (o con capturas) más recientemente, de todas las plataformas. */
   recent = $derived.by((): RecentRef[] => {

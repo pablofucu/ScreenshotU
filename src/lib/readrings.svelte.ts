@@ -1,10 +1,10 @@
-// Lógica compartida de los anillos de lectura: la tarjeta «Lectura de hoy» de Inicio (ReadRings) y la pantalla
+// Lógica compartida de los anillos de las metas diarias: las caras de la ficha de Inicio (ReadRings) y la pantalla
 // completa de racha (Streak). Cada una conserva su aspecto y sus animaciones; aquí vive lo común: las pistas
-// (anillos de novelas visuales / japonesas), la geometría de los anillos, qué racha está «pendiente de encender»,
+// (anillos de las metas activas `keys`), la geometría de los anillos, qué racha está «pendiente de encender»,
 // el color de las casillas del mapa y el esqueleto de la animación «la racha se enciende».
 import { onDestroy, onMount, tick } from 'svelte';
 import { app } from './store.svelte';
-import { GOAL_COL, dayDate, goalLit, goalTrack, localDay, markGoalLit, type GoalKey, type GoalTrack, type Rescue } from './readgoals';
+import { GOAL_COL, dayDate, goalLit, goalMin, goalTrack, localDay, markGoalLit, type GoalKey, type GoalTrack, type Rescue } from './readgoals';
 import { blip } from './sound';
 
 export * from './readfmt';
@@ -19,6 +19,10 @@ export interface ReadRingsOpts {
   gap: number;
   /** Color de una casilla del mapa sin lectura. */
   empty: string;
+  /** Metas que dibuja (por defecto, todas las activas). */
+  keys?: () => GoalKey[];
+  /** Grosor y separación según el número de anillos (por defecto, los fijos). */
+  strokeFor?: (n: number) => { stroke: number; gap: number };
 }
 
 /** Cómo se anima el número de la racha al encenderse (lo único que cambia entre pantallas). */
@@ -39,14 +43,16 @@ export interface LightSpec {
 export function createReadRings(o: ReadRingsOpts) {
   const now = $derived(app.now.getTime());
   const today = $derived(localDay(now));
-  const goalOf = (k: GoalKey) => (k === 'vn' ? app.config.goalVn : app.config.goalJvn);
+  const goalOf = (k: GoalKey) => goalMin(app.config, k);
   const tracks = $derived(
-    (['vn', 'jvn'] as GoalKey[])
-      .filter((k) => app.lib.platforms.some((p) => p.id === k))
+    (o.keys?.() ?? app.goalKeys)
+      .filter((k) => app.goalKeys.includes(k))
       .map((k) => goalTrack(k, goalOf(k), app.lib.platforms, app.playing, now, o.weeks)),
   );
+  const sg = $derived(o.strokeFor?.(tracks.length) ?? { stroke: o.stroke, gap: o.gap });
   const rings = $derived(tracks.map((t, i) => {
-    const r = o.size / 2 - o.stroke / 2 - 1 - i * o.stroke * o.gap;
+    const { stroke, gap } = sg;
+    const r = o.size / 2 - stroke / 2 - 1 - i * stroke * gap;
     return { t, r, C: 2 * Math.PI * r };
   }));
 
@@ -101,6 +107,7 @@ export function createReadRings(o: ReadRingsOpts) {
     get today() { return today; },
     get tracks() { return tracks; },
     get rings() { return rings; },
+    get stroke() { return sg.stroke; },
     get drawn() { return drawn; },
     get mountedAt() { return mountedAt; },
     timers,

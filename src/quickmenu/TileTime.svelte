@@ -1,8 +1,8 @@
 <script lang="ts">
-  // Baldosa y hoja de tiempo de juego y racha de novelas visuales o récord de sesión.
+  // Baldosa y hoja de tiempo de juego y racha de la meta diaria (novelas, PC o Switch) o récord de sesión.
   import { onDestroy } from 'svelte';
   import type { QuickMenuState } from './data';
-  import { goalTrack, readDetail, GOAL_COL, RESCUE_COL, localDay, type GoalKey } from '../lib/readgoals';
+  import { goalTrack, readDetail, GOAL_COL, RESCUE_COL, localDay, rescueCls, type GoalKey } from '../lib/readgoals';
   import type { Platform, Title } from '../lib/types';
   import { rescueDay, rescueLeft, rescueClose, rescueFailed, fmtMin } from '../lib/readfmt';
   import { titleStats } from '../lib/stats';
@@ -41,18 +41,18 @@
   const totalSec = $derived((context?.title.playSeconds ?? game?.playSeconds ?? 0) + sessionSec);
   const totalStr = $derived(fmtDur(totalSec));
 
-  const isReading = $derived(!!context?.key && (context.key === 'vn' || context.key === 'jvn'));
+  const hasGoal = $derived(!!context?.key && context.key in GOAL_COL);
   const goalKey = $derived((context?.key ?? 'vn') as GoalKey);
   const goalMinutes = $derived(goals[goalKey] ?? 60);
 
   const track = $derived.by(() => {
-    if (!isReading || !context) return null;
+    if (!hasGoal || !context) return null;
     const live = { id: gameId, since };
     return goalTrack(goalKey, goalMinutes, [{ id: goalKey, titles: context.titles as unknown as Title[] }] as Platform[], live, now);
   });
 
   const detail = $derived.by(() => {
-    if (!isReading || !context) return null;
+    if (!hasGoal || !context) return null;
     const live = { id: gameId, since };
     return readDetail(goalKey, goalMinutes, [{ id: goalKey, titles: context.titles as unknown as Title[] }] as Platform[], live, now);
   });
@@ -126,10 +126,8 @@
 
 {#if view === 'tile'}
   <div
-    class="glass tile t-time"
-    class:r-vn={isReading && goalKey === 'vn'}
-    class:r-jv={isReading && goalKey === 'jvn'}
-    style="--i:1;{isReading ? `--c:${GOAL_COL[goalKey].c}` : ''}"
+    class="glass tile t-time {hasGoal ? rescueCls(goalKey) : ''}"
+    style="--i:1;{hasGoal ? `--c:${GOAL_COL[goalKey].c}` : ''}"
     data-f
     data-id="time"
     onclick={onOpenSheet}
@@ -139,9 +137,9 @@
   >
     <div class="lbl">
       <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-      {isReading ? 'Tiempo y racha' : 'Tiempo de juego'}
+      {hasGoal ? 'Tiempo y racha' : 'Tiempo de juego'}
       <em class="rnote" class:ok={track?.done || beatsRecord}>
-        {#if isReading}
+        {#if hasGoal}
           {timeNote}
         {:else}
           {game?.platformName || 'Juegos'} · desde las {sinceTime}
@@ -157,7 +155,7 @@
         <small class="sub">Total&nbsp;<b>{totalStr}</b></small>
       </div>
 
-      {#if isReading && track}
+      {#if hasGoal && track}
         {@const rd = ringDash(track.today / track.goal, 104, 11)}
         <div class="gring" style="width:104px;height:104px">
           <svg width="104" height="104" viewBox="0 0 104 104">
@@ -282,7 +280,7 @@
       </div>
     </div>
 
-    {#if isReading && track}
+    {#if hasGoal && track}
       {#if track.rescue}
         {@const r = track.rescue}
         <div class="resc r-vn" style="--c:{GOAL_COL[goalKey].c};--rc:{RESCUE_COL[goalKey].rc};--rmid:{RESCUE_COL[goalKey].rmid}">
