@@ -3,7 +3,7 @@
   import { backend, decodeImg, thumbNow } from '../lib/backend';
   import { ICON } from '../lib/icons';
   import { fmtDur, nCapturas, z } from '../lib/format';
-  import { DETAIL_SHOTS } from '../lib/controller.svelte';
+  import { DETAIL_SHOTS, canResume } from '../lib/controller.svelte';
   import { openStatusBar } from '../lib/milista.svelte';
   import { openPhrases } from '../lib/phrases.svelte';
   import { fmtRelease, openRelease } from '../lib/release.svelte';
@@ -204,7 +204,7 @@
     <div class="glass play fx" class:f={app.focus === 'play'} class:on={playing} data-k="play" data-act="play">
       <div class="face">
         <span class="pi">{@html ICON.play}</span>
-        <span><b>{playing ? 'Jugando' : 'Jugar'}</b><small>{playing ? `Sesión ${sess}` : via}</small></span>
+        <span><b>{playing ? (canResume(T?.gameId) ? 'Volver a la partida' : 'Jugando') : 'Jugar'}</b><small>{playing ? `Sesión ${sess}` : via}</small></span>
       </div>
     </div>
   {:else}
@@ -258,7 +258,7 @@
   {/if}
 
   <Hints list={[
-    ['A', app.focus === 'play' ? (playing ? 'En marcha' : 'Jugar') : app.focus === 'dach' ? 'Ver logros' : app.focus === 'dst' ? 'Cambiar estado' : app.focus === 'drel' ? 'Cambiar fecha' : app.focus === 'dhrs' || app.focus === 'dwk' ? 'Estadísticas' : 'Seleccionar', 'a'],
+    ['A', app.focus === 'play' ? (playing ? (canResume(T?.gameId) ? 'Volver' : 'En marcha') : 'Jugar') : app.focus === 'dach' ? 'Ver logros' : app.focus === 'dst' ? 'Cambiar estado' : app.focus === 'drel' ? 'Cambiar fecha' : app.focus === 'dhrs' || app.focus === 'dwk' ? 'Estadísticas' : 'Seleccionar', 'a'],
     ...(app.focus === 'dach' ? [['Y', 'Cambiar diseño (' + (VARIANT_NAMES[app.config.achievementsCardVariant ?? achState.summary?.variant ?? 1] ?? '') + ')', 'y'] as [string, string, string]] : []),
     ...(T.launchable && !playing ? [['X', 'Jugar', 'x'] as [string, string, string]] : []),
     ['B', 'Volver', 'b'],

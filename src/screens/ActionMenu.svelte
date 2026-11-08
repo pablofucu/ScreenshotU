@@ -1,7 +1,7 @@
 <script lang="ts">
   import { app, STATUS_LABEL, TITLE_FILTERS, type MenuItem, type TitleFilter } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
-  import { closeOverlay, MAGPIE_LABEL, menuAct, menuLayout } from '../lib/controller.svelte';
+  import { canResume, closeOverlay, MAGPIE_LABEL, menuAct, menuLayout } from '../lib/controller.svelte';
   import { fmtRelease } from '../lib/release.svelte';
   import Hints from '../components/Hints.svelte';
   import { tgrid } from '../lib/tgrid';
@@ -70,7 +70,7 @@
       case 'audio': return audioOut ? `Salida de audio: ${audioOut}` : 'Salida de audio…';
       case 'settings': return 'Ajustes';
       case 'gstats': return 'Estadísticas de la categoría';
-      case 'play': return 'Iniciar juego';
+      case 'play': return canResume() ? 'Volver a la partida' : 'Iniciar juego';
       case 'listopts': return 'Opciones de la lista…';
       case 'copy': return 'Copiar captura';
       case 'tsize': return `Portadas: ${tgrid(app.config.titlesZoom).cols} por fila`;

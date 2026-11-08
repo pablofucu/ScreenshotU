@@ -22,7 +22,7 @@ if (!server) {
   pushConnection(server); // el servicio de la tecla de volumen necesita saber dónde está el PC
 
   await import('@desk/app.css');
-  const [{ mount }, { default: App }, { App: Cap }, { setAfterLaunch }, { app: a }, { toast, back }] = await Promise.all([
+  const [{ mount }, { default: App }, { App: Cap }, { setAfterLaunch }, { app: a }, { toast, back, setResumeHandler }] = await Promise.all([
     import('svelte'),
     import('@desk/App.svelte'),
     import('@capacitor/app'),
@@ -44,6 +44,24 @@ if (!server) {
     } catch (e) {
       cancel(typeof e === 'string' ? e : e instanceof Error ? e.message : 'No se pudo abrir Artemis');
     }
+  });
+
+  // Volver a la partida en marcha: abre el stream otra vez (Apollo retoma la sesión; nunca se relanza el juego).
+  let streamApp = '';
+  const openStream = async () => {
+    await stream.refresh();
+    if (!stream.moonlight) throw 'No está instalado Artemis ni Moonlight';
+    await Streaming.stream({ pc: stream.pcName(server.name || server.host), app: streamApp || stream.appName.trim() || 'Desktop' });
+  };
+  setResumeHandler({
+    resume: openStream,
+    close: async (force) => {
+      const ep = endpoint();
+      if (!ep) throw 'Sin servidor configurado';
+      const r = await fetch(`${ep.base}/api/v1/close`, { method: 'POST', headers: { Authorization: `Bearer ${ep.code}`, 'Content-Type': 'application/json' }, body: force ? '{"force":true}' : '{}' });
+      if (!r.ok) throw 'No se pudo cerrar el juego';
+      return (await r.text()).includes('"asked"');
+    },
   });
 
   // Resumen al acabar la partida: tiempo, capturas y meta de hoy (la meta se lee tras refrescar la biblioteca).
@@ -69,20 +87,25 @@ if (!server) {
   const { softRefresh } = await import('@desk/lib/controller.svelte');
   let syncing = false;
   const syncPlaying = async () => {
-    if (syncing || document.hidden || !a.playing) return;
+    if (syncing || document.hidden) return;
     const ep = endpoint();
     if (!ep) return;
     syncing = true;
     try {
       const r = await fetch(`${ep.base}/api/v1/session`, { headers: { Authorization: `Bearer ${ep.code}` }, cache: 'no-store' });
       if (!r.ok) return;
-      const j = (await r.json()) as { state?: string; game?: { id: string } | null };
-      if (j.state === 'idle' || !j.game || (a.playing && j.game.id !== a.playing.id)) {
+      const j = (await r.json()) as { state?: string; game?: { id: string } | null; app?: string | null; elapsedSeconds?: number };
+      if (j.app) streamApp = j.app;
+      if (!a.playing && j.game && (j.state === 'starting' || j.state === 'playing')) {
+        // La app se reinició (o la partida empezó sin ella): se recupera lo que dice el PC.
+        a.playing = { id: j.game.id, since: Date.now() - (j.elapsedSeconds ?? 0) * 1000 };
+      } else if (a.playing && (j.state === 'idle' || !j.game || j.game.id !== a.playing.id)) {
         a.playing = null;
         void softRefresh();
       }
     } catch { /* sin conexión: se conserva lo que había */ } finally { syncing = false; }
   };
+  void syncPlaying();
   document.addEventListener('visibilitychange', () => { void syncPlaying(); });
   setInterval(() => { void syncPlaying(); }, 5000);
 

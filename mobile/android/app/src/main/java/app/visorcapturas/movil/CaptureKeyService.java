@@ -48,6 +48,9 @@ public class CaptureKeyService extends AccessibilityService {
     private TextView closeBtn;
     private final Runnable hideMenu = this::removeMenu;
 
+    /** Se acaba de ver la pantalla del stream de Artemis: si ahora sale su lista, el usuario ha salido con atras. */
+    private boolean leftStream;
+
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
@@ -58,6 +61,18 @@ public class CaptureKeyService extends AccessibilityService {
         if (p.toString().equals(getPackageName())) {
             CharSequence cn = event.getClassName();
             if (menu != null || cn == null || !cn.toString().contains("Activity")) return;
+        }
+        // Atras desde el stream: si lo que aparece justo despues es la lista de Artemis, se vuelve al visor.
+        // Solo se arma tras ver la pantalla del stream; abrir Artemis a mano no saca de el.
+        if (StreamingPlugin.isMoonlight(p.toString())) {
+            String cls = String.valueOf(event.getClassName());
+            if (cls.endsWith(".Game")) leftStream = true;
+            else if (leftStream && (cls.endsWith(".PcView") || cls.endsWith(".AppView"))) {
+                leftStream = false;
+                ui.post(this::returnToApp);
+            }
+        } else {
+            leftStream = false;
         }
         boolean was = StreamingPlugin.isMoonlight(foreground);
         foreground = p.toString();

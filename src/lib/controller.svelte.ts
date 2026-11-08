@@ -382,9 +382,22 @@ export function closeOverlay() {
 /** Hay que reescanear en cuanto se cierren los paneles. */
 export function markRefresh() { pendingRefresh = true; }
 
+/** Tablet: abre otra vez el stream de la partida en marcha (lo registra `mobile/src/tablet.ts`; en el escritorio queda vacío). */
+type ResumeHandler = { resume: () => Promise<void>; close: (force: boolean) => Promise<boolean> };
+let resumeHandler: ResumeHandler | null = null;
+export function setResumeHandler(h: ResumeHandler | null) { resumeHandler = h; }
+/** Cierra el juego en marcha; devuelve `true` si el PC pide forzar el cierre. */
+export async function closeRunning(force: boolean) { return resumeHandler ? resumeHandler.close(force) : false; }
+export function canResume(gameId?: string | null) { return !!resumeHandler && !!app.playing && (!gameId || app.playing.id === gameId); }
+export async function resumeGame() {
+  if (!resumeHandler) return;
+  try { await resumeHandler.resume(); } catch (e) { toast(typeof e === 'string' ? e : e instanceof Error ? e.message : 'No se pudo volver a la partida', 3200); }
+}
+
 export async function playTitle(t: Title) {
   if (!t.gameId) return;
   if (app.playing) {
+    if (canResume(t.gameId)) { await resumeGame(); return; }
     toast(app.playing.id === t.gameId ? `Ya estás jugando a ${t.name}` : 'Ya hay un juego en marcha', 2200);
     return;
   }
@@ -987,7 +1000,7 @@ export function openTitlesMenu() {
   const t = app.platform?.titles[app.t];
   items.push('listopts');
   if (t) {
-    if (t.launchable && !app.playing) items.push('play');
+    if (t.launchable && (!app.playing || canResume(t.gameId))) items.push('play');
     if (!t.members && t.id) items.push('status');
     items.push('sgdb', 'addcoll', 'accent');
     if (t.gameId && !t.members) items.push('saves');

@@ -49,9 +49,11 @@ struct Session {
     pending: Option<Game>,
     /// Cambia con cada pendiente nuevo o cancelado: los hilos de espera comprueban que siguen siendo suyos.
     epoch: u64,
+    /// App de Apollo con la que se lanzó el stream (la tablet la necesita para volver a la partida).
+    stream_app: Option<String>,
 }
 
-static SESSION: Mutex<Session> = Mutex::new(Session { phase: Phase::Idle, streamed: false, game: None, started_ms: 0, shots: 0, last: None, close_asked: None, pending: None, epoch: 0 });
+static SESSION: Mutex<Session> = Mutex::new(Session { phase: Phase::Idle, streamed: false, game: None, started_ms: 0, shots: 0, last: None, close_asked: None, pending: None, epoch: 0, stream_app: None });
 
 fn session() -> std::sync::MutexGuard<'static, Session> {
     SESSION.lock().unwrap_or_else(|e| e.into_inner())
@@ -99,6 +101,7 @@ pub fn init(app: &AppHandle) {
             s.phase = Phase::Idle;
             s.game = None;
             s.streamed = false;
+            s.stream_app = None;
             s.shots = 0;
             s.close_asked = None;
             sum
@@ -250,6 +253,7 @@ pub fn launch(app: &AppHandle, game: Game) -> Result<Value, String> {
                 notice(&app, &g.id, "La tablet no llegó a conectar; no se abre el juego", false);
             }
         });
+        session().stream_app = Some("Juego actual".to_string());
         return Ok(json!({ "app": "Juego actual" }));
     }
     std::thread::spawn(move || {
@@ -282,6 +286,7 @@ fn reset_idle() {
     s.phase = Phase::Idle;
     s.streamed = false;
     s.game = None;
+    s.stream_app = None;
     s.pending = None;
     s.epoch += 1;
     drop(s);
@@ -495,5 +500,6 @@ pub fn session_json() -> Value {
         Phase::Starting => "starting",
         Phase::Playing => "playing",
     };
-    json!({ "state": state, "game": s.game.as_ref().map(|(id, name)| json!({ "id": id, "name": name })), "streamed": s.streamed, "last": s.last })
+    let elapsed = if s.started_ms > 0 && matches!(s.phase, Phase::Starting | Phase::Playing) { ((now_ms() - s.started_ms) / 1000).max(0) } else { 0 };
+    json!({ "state": state, "game": s.game.as_ref().map(|(id, name)| json!({ "id": id, "name": name })), "streamed": s.streamed, "last": s.last, "app": s.stream_app, "elapsedSeconds": elapsed })
 }

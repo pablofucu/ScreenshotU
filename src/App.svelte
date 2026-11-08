@@ -47,6 +47,7 @@
   import AchievementsModal from './screens/AchievementsModal.svelte';
   import Osk from './components/Osk.svelte';
   import AudioMenu from './components/AudioMenu.svelte';
+  import ResumePill from './components/ResumePill.svelte';
 
   let w = $state(1280);
   let h = $state(720);
@@ -203,6 +204,7 @@
     {#if app.osk.open}<Osk />{/if}
   {/if}
   {#if error}<div class="note pill" style="left:50%;top:330px">No se pudo iniciar: {error}</div>{/if}
+  {#if IS_TABLET}<ResumePill />{/if}
   {#if IS_TABLET && !remoteStatus.online}
     <!-- Tablet: el PC no responde; se enseñan los últimos datos guardados y los cambios esperan para enviarse. -->
     <div class="offpill" role="status" style="position:absolute;left:50%;top:12px;transform:translateX(-50%);padding:6px 16px;border-radius:999px;background:rgba(40,46,58,.78);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 10px 24px -10px rgba(0,0,0,.5);color:var(--on);font-size:15px;font-weight:700;z-index:49;pointer-events:none;white-space:nowrap">Sin conexión{lastSyncLabel() ? ` · datos de ${lastSyncLabel()}` : ''}{remoteStatus.pending ? ` · ${remoteStatus.pending} cambio${remoteStatus.pending === 1 ? '' : 's'} por enviar` : ''}</div>
