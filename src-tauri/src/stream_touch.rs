@@ -139,7 +139,8 @@ mod imp {
             let msg = wp.0 as u32;
             let mut fixed = None;
             if FIX.load(Ordering::Relaxed) && is_touch(m.dwExtraInfo) && matches!(msg, 0x200 | 0x201 | 0x202 | 0x204 | 0x205) {
-                if let Some(r) = cached_rects() {
+                // Sin conversion no hacen falta los rectangulos de Magpie: tambien corrige con Magpie apagado.
+                if let Some(r) = cached_rects().or((!CONVERT.load(Ordering::Relaxed)).then_some([0; 8])) {
                     // Solo los movimientos traen el punto del toque. Las pulsaciones traen la posicion del cursor,
                     // que ya es la corregida: van al punto corregido del ultimo movimiento, sin convertir otra vez.
                     let (x, y) = if msg == 0x200 {
