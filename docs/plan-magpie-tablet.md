@@ -10,7 +10,7 @@ Fecha: 2026-11-05. Sustituye al punto 7 del bloque 2 de `docs/plan-tablet.md`.
 | Elegir la copia de Magpie con la versión más alta | Hecho (`5357e0b`) |
 | B0, soporte táctil de Magpie | **Probado en multi-touch: cada toque cuenta doble**, uno bien y otro cerca (ver sección 3) |
 | B1, prototipo del gancho | Hecho y probado (2026-11-08): un contacto por toque; los clics de toque llegan con coordenadas de la imagen escalada sin convertir, y los botones no entran |
-| B2, corrección | **Código hecho** en `stream_touch.rs`, se activa con el archivo `stream_touch_fix`; falta probarlo en la tablet |
+| B2, corrección | **Funciona** en Tsukihime (2026-11-08), con y sin Magpie. Se activa con el archivo `stream_touch_fix`. Ver «Resultado de B2» |
 | A3, A4, A5, B3 | Pendientes |
 
 Tablet: POCO Pad M1, 2560×1600 (16:10), 120 Hz. Novelas a 720p y 1080p. La GPU va sobrada.
@@ -265,3 +265,18 @@ Las categorías de la biblioteca no se tocan: todo esto afecta solo al lanzamien
 - [Magpie, TouchHelper](https://github.com/Blinue/Magpie/blob/main/src/TouchHelper/App.cpp)
 - [Artemis para Android](https://github.com/ClassicOldSong/moonlight-android)
 - [Ficha oficial de la POCO Pad M1](https://www.po.co/global/product/poco-pad-m1/specs)
+
+## Resultado de B2 (2026-11-08)
+
+- **Causa real:** Tsukihime (port de PC con SDL3, `P:\Visual Novels\tsukire-pc-port`) convierte el clic izquierdo en un
+  toque de la Switch y lo recibía siempre en el sitio correcto, pero ignoraba las pulsaciones cortas. Un toque llega como
+  movimiento, bajar y soltar en el mismo milisegundo; el juego necesita el dedo «puesto» más tiempo.
+- **Arreglo:** el gancho bloquea los eventos con firma táctil y un hilo los repite con `SetCursorPos` y un `SendInput`
+  marcado (`0x56495300`): espera 40 ms a que el juego vea el cursor y mantiene el botón 200 ms. Con 60 ms no entraba.
+- **Sin conversión:** las coordenadas del toque ya llegan bien; convertir de imagen escalada a ventana llevaba el clic
+  hacia el centro. La conversión queda apagada y solo se enciende escribiendo `convert` en `stream_touch_fix`.
+- **Ajustes** en `stream_touch_fix`, separados por espacios: `convert` y `hold=NNN` (ms, por defecto 200).
+- **Diagnóstico:** `NX_INPUT_TRACE=1` hace que el juego apunte cada toque en `data\nx.log` («hid: toque en…»). Si se
+  compara con `stream_touch.log` se ve si el toque llega y dónde.
+- **Pendiente (cosmético):** la onda del toque se ve desplazada hacia el centro de la pantalla, aunque el toque entra
+  en su sitio. No se ha investigado.
