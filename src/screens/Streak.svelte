@@ -1,10 +1,10 @@
 <script lang="ts">
-  // Pantalla «Racha de lectura»: la tarjeta «Lectura de hoy» de Inicio a pantalla completa. Arriba, los anillos de hoy,
-  // una medalla con la racha de cada anillo y el mapa de 6 meses del anillo elegido (LB/RB); abajo, qué novelas se han
-  // leído este mes, a qué horas y el resumen del año. Si hay una racha cumplida sin «encender», se enciende aquí.
+  // Pantalla de racha: la ficha de metas de Inicio a pantalla completa. Arriba, los anillos de hoy, una medalla con la
+  // racha de cada meta activa (hasta cuatro) y el mapa de 6 meses de la meta elegida (pestañas, LB/RB); abajo, qué títulos
+  // se han leído o jugado este mes, a qué horas y el resumen del año. Si hay una racha cumplida sin «encender», se enciende aquí.
   import { onMount } from 'svelte';
   import { app } from '../lib/store.svelte';
-  import { GOAL_COL, dayDate, markRescueSeen, readDetail, rescueCls, rescueSeen, type GoalKey, type GoalTrack } from '../lib/readgoals';
+  import { GOAL_COL, GOAL_TXT, groupOf, dayDate, markRescueSeen, readDetail, rescueCls, rescueSeen, type GoalKey, type GoalTrack } from '../lib/readgoals';
   import { createReadRings, fmtMin as fmtMinShared, rescueClose, rescueDay } from '../lib/readrings.svelte';
   import { blip } from '../lib/sound';
   import { fmtClock, fmtHM } from '../lib/stats';
@@ -20,7 +20,7 @@
 
   // Pistas, anillos y «racha pendiente» compartidos con la tarjeta de Inicio (ReadRings).
   const S = 150, SW = 16;
-  const rr = createReadRings({ weeks: WEEKS, size: S, stroke: SW, gap: 1.18, empty: 'var(--face)' });
+  const rr = createReadRings({ weeks: WEEKS, size: S, stroke: SW, gap: 1.18, empty: 'var(--face)', strokeFor: (n) => (n > 2 ? { stroke: 10, gap: 1.25 } : { stroke: SW, gap: 1.18 }) });
   const now = $derived(rr.now);
   const today = $derived(rr.today);
   const tracks = $derived(rr.tracks);
@@ -28,6 +28,8 @@
   const { pending, cellBg } = rr;
   const sel = $derived(tracks.find((t) => t.key === app.streakKey) ?? tracks[0]);
   const C = $derived(GOAL_COL[sel?.key ?? 'vn']);
+  const T = $derived(GOAL_TXT[groupOf(sel?.key ?? 'vn')]);
+  const many = $derived(tracks.length > 2);
   const det = $derived(sel ? readDetail(sel.key, sel.goal, app.lib.platforms, app.playing, now) : null);
 
   const shown = rr.shown;
@@ -35,7 +37,8 @@
   /* ---------- rescate de racha ---------- */
   // La hucha ocupa el hueco del mapa SOLO mientras hay un rescate pendiente: entera si es el del anillo que se ve,
   // partida en dos si lo hay en las dos categorías; sin rescate (o con el rescate en el otro anillo) sigue el mapa.
-  const resc = $derived(tracks.filter((t) => t.rescue));
+  const resc = $derived(
+    tracks.filter((t) => t.rescue).sort((a, b) => (a.key === sel?.key ? -1 : b.key === sel?.key ? 1 : a.rescue!.closeAt - b.rescue!.closeAt)).slice(0, 2));
   const huch = $derived(resc.length > 1 ? 'duo' : sel?.rescue ? 'wide' : '');
   // Aviso «¡Hucha llena!» (2,6 s, una vez por rescate pagado): uno tras otro si se pagan dos a la vez.
   let toast = $state<{ k: GoalKey; text: string } | null>(null);
@@ -143,10 +146,10 @@
   }
 </script>
 
-<TopBar crumbs={['Inicio', 'Racha de lectura']} />
+<TopBar crumbs={['Inicio', T.crumb]} />
 
 {#if sel && det}
-  <div class="streak" class:calm={calm()} class:huch={!!huch} bind:this={root}>
+  <div class="streak" class:calm={calm()} class:huch={!!huch} class:many bind:this={root}>
     <!-- Hoy -->
     <div class="stpanel shoy in" style="--d:0s">
       <div class="sth">Hoy <small>{todayLabel}</small></div>
@@ -154,8 +157,8 @@
         <div class="sring" style="width:{S}px;height:{S}px">
           <svg width={S} height={S} viewBox="0 0 {S} {S}">
             {#each rings as g, i (g.t.key)}
-              <circle cx={S / 2} cy={S / 2} r={g.r} fill="none" stroke={GOAL_COL[g.t.key].soft} stroke-width={SW} />
-              <circle class="sarc" cx={S / 2} cy={S / 2} r={g.r} fill="none" stroke={GOAL_COL[g.t.key].c} stroke-width={SW} stroke-linecap="round"
+              <circle cx={S / 2} cy={S / 2} r={g.r} fill="none" stroke={GOAL_COL[g.t.key].soft} stroke-width={rr.stroke} />
+              <circle class="sarc" cx={S / 2} cy={S / 2} r={g.r} fill="none" stroke={GOAL_COL[g.t.key].c} stroke-width={rr.stroke} stroke-linecap="round"
                 stroke-dasharray={g.C} stroke-dashoffset={drawn ? g.C * (1 - g.t.frac) : g.C}
                 style="transition-delay:{0.25 + i * 0.25}s" transform="rotate(-90 {S / 2} {S / 2})" />
             {/each}
@@ -165,8 +168,12 @@
           {#each tracks as t (t.key)}
             {@const c = GOAL_COL[t.key]}
             <div class="sli {rescueCls(t.key)}" style="--c:{c.c};--soft:{c.soft};--ink:{c.ink}">
-              <div class="sln"><i></i>{c.full}</div>
-              <div class="slv"><b>{fmtMin(t.today)}</b> / {goalLabel(t.goal)}</div>
+              {#if many}
+                <div class="sln"><i></i>{c.tab}<span class="slv"><b>{fmtMin(t.today)}</b> / {goalLabel(t.goal)}</span></div>
+              {:else}
+                <div class="sln"><i></i>{c.full}</div>
+                <div class="slv"><b>{fmtMin(t.today)}</b> / {goalLabel(t.goal)}</div>
+              {/if}
               <div class="sgoal"><b style="width:{drawn ? t.frac * 100 : 0}%"></b></div>
               <div class="sln2" class:ok={t.done}>{todayNote(t)}{#if t.rescue && t.done}<b class="shu"> · +{t.rescue.gotToday} min a la hucha</b>{/if}</div>
             </div>
@@ -187,7 +194,7 @@
           </span>
           <div class="smt">
             <div class="snw"><span class="snum">{n}</span><small>{n === 1 ? 'día' : 'días'}</small>{#if t.rescue}<span class="spend">Pendiente</span>{:else if n > 0 && n >= t.best}<span class="srec">Récord</span>{/if}</div>
-            <div class="ssub">{n > 0 ? `Racha de ${c.full.toLowerCase()}` : `Sin racha de ${c.full.toLowerCase()}`}</div>
+            <div class="ssub">{n > 0 ? `Racha de ${(many ? c.tab : c.full).toLowerCase()}` : `Sin racha de ${(many ? c.tab : c.full).toLowerCase()}`}</div>
             <div class="ssub b">{#if t.rescue}Recuperado {t.rescue.got} de {t.rescue.need} min · hasta el {rescueClose(t.rescue, true)}{:else}{t.best > 0 ? `Mejor: ${t.best} ${t.best === 1 ? 'día' : 'días'} · ${range(t.bestFrom, t.bestTo)}` : `Cumple ${goalLabel(t.goal)} hoy para empezarla`}{/if}</div>
           </div>
         </div>
@@ -206,11 +213,11 @@
     {:else}
     <div class="stpanel smap in {rescueCls(sel.key)}" style="--c:{C.c};--edge:{C.edge};--d:.3s">
       <div class="sth">
-        <span>Últimos 6 meses <small>meta {goalLabel(sel.goal)} al día</small></span>
+        <span>Últimos 6 meses{#if !many} <small>meta {goalLabel(sel.goal)} al día</small>{/if}</span>
         {#if tracks.length > 1}
           <span class="stabs pill">
             <span class="btn sh" data-hact="lb">LB</span>
-            {#each tracks as t (t.key)}<span class="t" class:on={t.key === sel.key} style="--c:{GOAL_COL[t.key].c}" data-hact={t.key === sel.key ? '' : t.key === tracks[0].key ? 'lb' : 'rb'}>{GOAL_COL[t.key].full}</span>{/each}
+            {#each tracks as t (t.key)}<span class="t" class:on={t.key === sel.key} style="--c:{GOAL_COL[t.key].c}" data-hact={t.key === sel.key ? '' : 'goal:' + t.key}>{many ? GOAL_COL[t.key].tab : GOAL_COL[t.key].full}</span>{/each}
             <span class="btn sh" data-hact="rb">RB</span>
           </span>
         {/if}
@@ -239,7 +246,7 @@
 
     <!-- Qué has leído este mes -->
     <div class="stpanel sgames in" style="--c:{C.c};--d:.42s">
-      <div class="sth">Qué has leído este mes</div>
+      <div class="sth">{T.what}</div>
       {#if det.games.length}
         {#each det.games.slice(0, 4) as g (g.t.id)}
           <div class="sgr">
@@ -251,18 +258,18 @@
         {/each}
         {#if det.games.length > 4}<div class="smore">y {det.games.length - 4} más</div>{/if}
       {:else}
-        <div class="snone">Este mes aún no has leído {sel.key === 'vn' ? 'novelas visuales' : 'novelas japonesas'}.</div>
+        <div class="snone">{({ vn: 'Este mes aún no has leído novelas visuales.', jvn: 'Este mes aún no has leído novelas japonesas.', pc: 'Este mes aún no has jugado a juegos de PC.', switch: 'Este mes aún no has jugado a la Switch.' })[sel.key]}</div>
       {/if}
     </div>
 
     <!-- A qué hora lees -->
     <div class="stpanel shours in" style="--c:{C.c};--d:.5s">
-      <div class="sth">A qué hora lees <small>30 días</small></div>
+      <div class="sth">{T.when} <small>30 días</small></div>
       <div class="shb">
         {#each det.hours as h, i}<i class:pk={h > 0 && h === hmax} style="height:{drawn ? Math.max(h > 0 ? 4 : 2, (h / hmax) * 100) : 0}%;transition-delay:{0.5 + i * 0.02}s"></i>{/each}
       </div>
       <div class="shl"><span>7:00</span><span>13:00</span><span>19:00</span><span>1:00</span></div>
-      <div class="speak">{peak || 'Sin lecturas en los últimos 30 días'}</div>
+      <div class="speak">{peak || T.none30}</div>
     </div>
 
     <!-- Este año -->
@@ -271,7 +278,7 @@
       <div class="syg">
         <div><span>Horas</span><b>{Math.round(det.year.min / 60)}</b></div>
         <div><span>Días cumplidos</span><b>{det.year.met}</b></div>
-        <div><span>Novelas</span><b>{det.year.titles}</b></div>
+        <div><span>{T.titles}</span><b>{det.year.titles}</b></div>
         <div><span>Partidas</span><b>{det.year.sessions}</b></div>
       </div>
     </div>
@@ -283,9 +290,9 @@
       </div>
     {/if}
   </div>
-  <Hints list={[...(tracks.length > 1 ? [['LB/RB', 'Novelas / japonés', 'lb'] as [string, string, string]] : []), ['B', 'Volver', 'b']]} />
+  <Hints list={[...(tracks.length > 1 ? [['LB/RB', 'Cambiar meta', 'lb'] as [string, string, string]] : []), ['B', 'Volver', 'b']]} />
 {:else}
-  <div class="stnone">No hay categorías de novelas en la biblioteca.</div>
+  <div class="stnone">No hay metas diarias en la biblioteca.</div>
   <Hints list={[['B', 'Volver', 'b']]} />
 {/if}
 
@@ -362,6 +369,23 @@
   .huch .shours,.huch .syear{display:none}
   .huch .sgames{width:400px}
   .huch .sgr{grid-template-columns:28px minmax(0,1fr) 64px 56px}
+  /* modo compacto: más de dos metas */
+  .many .sleg{gap:8px}
+  .many .sln{font-size:14px;gap:6px}
+  .many .sln .slv{margin:0 0 0 auto;font-size:12.5px}
+  .many .slv b{font-size:16px}
+  .many .sgoal{height:5px}
+  .many .sln2{margin-top:2px;font-size:12px}
+  .many .smeds{gap:8px}
+  .many .smed{padding:0 12px;gap:8px}
+  .many .sflw{width:40px;height:40px}
+  .many .snw{height:38px}
+  .many .snum{font-size:34px;line-height:38px}
+  .many .snw small{font-size:14px}
+  .many .srec,.many .spend{font-size:9px;padding:1px 6px;margin-left:0}
+  .many .ssub{font-size:12px}
+  .many .ssub.b{font-size:11px}
+  .many .stabs .t{padding:0 8px;font-size:13px}
   .stoast{position:absolute;z-index:25;left:50%;top:300px;transform:translate(-50%,0);display:flex;align-items:center;gap:16px;padding:18px 28px;border-radius:26px;
     background:linear-gradient(180deg,var(--face-hi),var(--rsoft));animation:stoast .45s cubic-bezier(.3,1.4,.4,1) both;
     box-shadow:inset 0 1.5px 0 var(--glass-top),0 0 0 2px var(--rc),0 0 40px 6px color-mix(in srgb,var(--rc) 45%,transparent),0 30px 50px -20px color-mix(in srgb,var(--rc) 60%,black)}

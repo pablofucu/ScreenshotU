@@ -6,8 +6,7 @@
   import { dayKey, fmtAgo, fmtDur, fmtShort, naiveNow, nCapturas, nTitulos } from '../lib/format';
   import Hints from '../components/Hints.svelte';
   import RecentCard from '../components/RecentCard.svelte';
-  import ReadRings from '../components/ReadRings.svelte';
-  import { GOAL_GROUPS } from '../lib/readgoals';
+  import ReadCard from '../components/ReadCard.svelte';
 
   const DOCK = [
     { n: 'Buscar', ic: ICON.search, c: 0 },
@@ -25,14 +24,13 @@
   const step = $derived(shown.length > 1 ? Math.min(shown.length > 3 ? 232 : 270, (1280 - 80 - size) / (shown.length - 1)) : 270);
   const x0 = $derived((1280 - (shown.length - 1) * step - size) / 2);
   const lw = $derived(Math.min(size + 40, step - 4));
-  const metaGoal = (m: number) => (m % 60 === 0 ? `${m / 60} h` : m > 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`);
   const totalTitles = $derived(plats.reduce((n, p) => n + p.titles.length, 0));
   const count = (p: (typeof plats)[number]) => p.titles.reduce((s, t) => s + t.shots.length, 0);
 
   // «Seguir jugando»
   const CW = 350, CGAP = 34, RW = 440;
   const recent = $derived(app.recent.map((r) => ({ ...r, t: app.lib.platforms[r.pi].titles[r.ti] })));
-  // La fila se centra entera: recientes + (si hay) la tarjeta «Lectura de hoy».
+  // La fila se centra entera: recientes + (si hay) la ficha de metas.
   const rowW = $derived(recent.length * (CW + CGAP) - CGAP + (app.readCard ? CGAP + RW : 0));
   const cx0 = $derived((1280 - rowW) / 2);
   const rx = $derived(cx0 + recent.length * (CW + CGAP));
@@ -106,16 +104,12 @@
       <div class="rmeta" style="left:{x + 4}px">{m.when}{#if m.rest}<span>{m.when ? ' · ' : ''}{m.rest}</span>{/if}</div>
     {/each}
     {#if app.readCard}
-      <div class="hsect" style="left:{rx}px">Lectura de hoy</div>
-      <div class="glass rcard rread fx" class:f={app.focus === 'read'} data-k="read" data-act="read" style="left:{rx}px;width:{RW}px;--acc:var(--acc)"><div class="face"><ReadRings keys={GOAL_GROUPS.read} /></div></div>
-      <div class="rmeta" style="left:{rx + 4}px;width:{RW - 4}px">Meta diaria<span>&nbsp;· {metaGoal(app.config.goalVn)} novelas · {metaGoal(app.config.goalJvn)} japonés</span></div>
+      <ReadCard left={rx} w={RW} />
     {/if}
   {:else if totalTitles > 0}
     <div class="hsect" style="left:96px">Seguir jugando</div>
     {#if app.readCard}
-      <div class="hsect" style="left:{1280 - 96 - RW}px">Lectura de hoy</div>
-      <div class="glass rcard rread fx" class:f={app.focus === 'read'} data-k="read" data-act="read" style="left:{1280 - 96 - RW}px;width:{RW}px;--acc:var(--acc)"><div class="face"><ReadRings keys={GOAL_GROUPS.read} /></div></div>
-      <div class="rmeta" style="left:{1280 - 96 - RW + 4}px;width:{RW - 4}px">Meta diaria<span>&nbsp;· {metaGoal(app.config.goalVn)} novelas · {metaGoal(app.config.goalJvn)} japonés</span></div>
+      <ReadCard left={1280 - 96 - RW} w={RW} />
     {/if}
     <div class="rnone" style={app.readCard ? `max-width:${1280 - 96 - RW - 96 - 34}px;white-space:normal` : ''}>Aquí aparecerán los juegos a los que juegues desde el visor y los que tengan capturas nuevas.</div>
   {/if}
@@ -131,7 +125,7 @@
   {/each}
 </div>
 
-<Hints list={[['A', app.focus === 'read' ? 'Ver racha' : 'Abrir', 'a'], ...(focusRec?.t.launchable ? [['X', 'Jugar', 'x'] as [string, string, string]] : []), ['Start', 'Ajustes', 'menu']]} />
+<Hints list={[['A', app.focus === 'read' ? 'Ver racha' : 'Abrir', 'a'], ...(app.focus === 'read' && app.goalFaces.length > 1 ? [['LB/RB', 'Cambiar', 'lb'] as [string, string, string]] : []), ...(focusRec?.t.launchable ? [['X', 'Jugar', 'x'] as [string, string, string]] : []), ['Start', 'Ajustes', 'menu']]} />
 
 <style>
   /* Plataformas: el color del foco entra fundido (colores registrados, que sí se interpolan) y la

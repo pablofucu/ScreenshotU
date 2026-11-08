@@ -23,7 +23,7 @@
       {#if tabs.length > 1}
         <span class="stabs pill">
           <span class="btn sh" data-hact="lb">LB</span>
-          {#each tabs as k (k)}<span class="t" class:on={k === r.key} style="--c:{GOAL_COL[k].c}" data-hact={k === r.key ? '' : k === tabs[0] ? 'lb' : 'rb'}>{GOAL_COL[k].full}</span>{/each}
+          {#each tabs as k (k)}<span class="t" class:on={k === r.key} style="--c:{GOAL_COL[k].c}" data-hact={k === r.key ? '' : 'goal:' + k}>{tabs.length > 2 ? GOAL_COL[k].tab : GOAL_COL[k].full}</span>{/each}
           <span class="btn sh" data-hact="rb">RB</span>
         </span>
       {/if}

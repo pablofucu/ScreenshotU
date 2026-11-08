@@ -28,3 +28,6 @@ export function fmtMin(m: number, long = false) {
   if (long) return n < 60 ? `${n} min` : `${Math.floor(n / 60)} h ${String(n % 60).padStart(2, '0')}`;
   return n < 60 ? `${n}m` : `${Math.floor(n / 60)}h ${String(n % 60).padStart(2, '0')}m`;
 }
+
+/** Meta en minutos como texto corto: «1 h», «1 h 30 min», «45 min». */
+export const fmtGoal = (m: number) => (m % 60 === 0 ? `${m / 60} h` : m > 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`);
