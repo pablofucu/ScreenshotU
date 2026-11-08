@@ -52,6 +52,10 @@ mod imp {
     static HOOK_THREAD: AtomicU32 = AtomicU32::new(0);
     static TX: Mutex<Option<Sender<Ev>>> = Mutex::new(None);
     static FIX: AtomicBool = AtomicBool::new(false);
+    /// Convertir de imagen escalada a ventana real. Apagado por defecto: en la prueba de la tablet el movimiento del
+    /// toque ya llegaba en su sitio y convertirlo desviaba el clic hacia el centro. Se enciende escribiendo `convert`
+    /// dentro de `stream_touch_fix`.
+    static CONVERT: AtomicBool = AtomicBool::new(false);
     static FIX_TX: Mutex<Option<Sender<Cmd>>> = Mutex::new(None);
     /// Copia de los rectangulos de Magpie (src y dest), refrescada por un hilo: el gancho no puede enumerar ventanas.
     static RECTS_OK: AtomicBool = AtomicBool::new(false);
@@ -86,6 +90,10 @@ mod imp {
             (s0 + (num + den / 2) / den) as i32
         };
         (axis(x, r[0], r[2], r[4], r[6]), axis(y, r[1], r[3], r[5], r[7]))
+    }
+
+    fn map(x: i32, y: i32, r: [isize; 8]) -> (i32, i32) {
+        if CONVERT.load(Ordering::Relaxed) { dest_to_src(x, y, r) } else { (x, y) }
     }
 
     fn cached_rects() -> Option<[isize; 8]> {
@@ -135,12 +143,12 @@ mod imp {
                     // Solo los movimientos traen el punto del toque. Las pulsaciones traen la posicion del cursor,
                     // que ya es la corregida: van al punto corregido del ultimo movimiento, sin convertir otra vez.
                     let (x, y) = if msg == 0x200 {
-                        let p = dest_to_src(m.pt.x, m.pt.y, r);
+                        let p = map(m.pt.x, m.pt.y, r);
                         LAST.store(pack(p), Ordering::Relaxed);
                         p
                     } else {
                         match LAST.load(Ordering::Relaxed) {
-                            NO_LAST => dest_to_src(m.pt.x, m.pt.y, r),
+                            NO_LAST => map(m.pt.x, m.pt.y, r),
                             v => unpack(v),
                         }
                     };
@@ -225,7 +233,12 @@ mod imp {
     pub fn start() {
         let Some(dir) = dir() else { return };
         let diag = dir.join("stream_touch_diag").exists();
-        let fix = dir.join("stream_touch_fix").exists();
+        let fix_path = dir.join("stream_touch_fix");
+        let fix = fix_path.exists();
+        CONVERT.store(
+            std::fs::read_to_string(&fix_path).map(|t| t.contains("convert")).unwrap_or(false),
+            Ordering::SeqCst,
+        );
         if !(diag || fix) || ACTIVE.swap(true, Ordering::SeqCst) {
             return;
         }
