@@ -1,7 +1,7 @@
 // Puente de datos y comandos del menú sobre el juego (Tauri y modo navegador).
 import { listen } from '@tauri-apps/api/event';
 import type { Achievement } from '../lib/types';
-import { localDay, dayStart } from '../lib/readgoals';
+import { localDay, dayStart, type GoalKey } from '../lib/readgoals';
 
 export interface QuickMenuState {
   open: boolean;
@@ -17,12 +17,12 @@ export interface QuickMenuState {
   background: string | null;
   context: null | {
     gameId: string;
-    key: 'vn' | 'jvn' | null;
+    key: GoalKey | null;
     titles: { gameId: string; name: string; plays: Array<[number, number]> }[];
     title: { playSeconds: number; sessions: number; week: number[]; plays: Array<[number, number]> };
     shots: { path: string; at: number }[];
   };
-  goals: { vn: number; jvn: number };
+  goals: Record<GoalKey, number>;
   holdMs: number;
   shots: { path: string; thumb: string; at: number }[];
   audio: AudioState | null;
@@ -184,7 +184,7 @@ export function buildMockState(): QuickMenuState {
           { path: 'C:/shots/ctx-2.jpg', at: now - 240 * 60 * 1000 },
         ],
       },
-      goals: { vn: 60, jvn: 45 },
+      goals: { vn: 60, jvn: 45, pc: 60, switch: 30 },
       holdMs: 1500,
       shots: [...mockShots],
       audio: { ...mockAudio },
@@ -227,7 +227,7 @@ export function buildMockState(): QuickMenuState {
         },
         shots: [],
       },
-      goals: { vn: 60, jvn: 45 },
+      goals: { vn: 60, jvn: 45, pc: 60, switch: 30 },
       holdMs: 1500,
       shots: [...mockShots],
       audio: { ...mockAudio },
@@ -275,7 +275,7 @@ export function buildMockState(): QuickMenuState {
         },
         shots: [],
       },
-      goals: { vn: 60, jvn: 45 },
+      goals: { vn: 60, jvn: 45, pc: 60, switch: 30 },
       holdMs: 1500,
       shots: [...mockShots],
       audio: { ...mockAudio },
@@ -325,7 +325,7 @@ export function buildMockState(): QuickMenuState {
       },
       shots: [],
     },
-    goals: { vn: 60, jvn: 45 },
+    goals: { vn: 60, jvn: 45, pc: 60, switch: 30 },
     holdMs: 1500,
     shots: [...mockShots],
     audio: { ...mockAudio },

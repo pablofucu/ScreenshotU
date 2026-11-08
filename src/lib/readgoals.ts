@@ -1,20 +1,36 @@
-// Anillos de lectura de Inicio: minutos leídos cada día en las novelas visuales y en las japonesas,
+// Anillos de Inicio: minutos leídos o jugados cada día en las novelas visuales, las japonesas, los juegos de PC y Switch,
 // la meta diaria de cada una, la racha de días cumplidos y el mapa de las últimas semanas.
-import type { Platform, Title } from './types';
+import type { Config, Platform, Title } from './types';
 
-export type GoalKey = 'vn' | 'jvn';
-/** Colores de cada anillo: azul = novelas visuales, rosa = novelas japonesas. */
-export const GOAL_COL: Record<GoalKey, { c: string; soft: string; ink: string; edge: string; name: string; full: string }> = {
-  vn: { c: '#00A0D8', soft: '#cfe6f1', ink: '#00739c', edge: '#0073a0', name: 'novelas', full: 'Novelas visuales' },
-  jvn: { c: '#E5487A', soft: '#f6d3df', ink: '#a82b58', edge: '#b02c5c', name: 'japonés', full: 'Novelas japonesas' },
+export type GoalKey = 'vn' | 'jvn' | 'pc' | 'switch';
+export const GOAL_KEYS: GoalKey[] = ['vn', 'jvn', 'pc', 'switch'];
+export type GoalGroup = 'read' | 'play';
+export const GOAL_GROUPS: Record<GoalGroup, GoalKey[]> = { read: ['vn', 'jvn'], play: ['pc', 'switch'] };
+export const groupOf = (k: GoalKey): GoalGroup => (k === 'pc' || k === 'switch' ? 'play' : 'read');
+const GOAL_CFG = { vn: 'goalVn', jvn: 'goalJvn', pc: 'goalPc', switch: 'goalSwitch' } as const;
+export const goalMin = (cfg: Pick<Config, 'goalVn' | 'goalJvn' | 'goalPc' | 'goalSwitch'>, k: GoalKey) => cfg[GOAL_CFG[k]] ?? 0;
+export const goalCfgKey = (k: GoalKey) => GOAL_CFG[k];
+/** Colores de cada anillo: azul = novelas visuales, rosa = novelas japonesas, verde = juegos de PC, naranja = Switch. */
+export const GOAL_COL: Record<GoalKey, { c: string; soft: string; ink: string; edge: string; name: string; full: string; tab: string }> = {
+  vn: { c: '#00A0D8', soft: '#cfe6f1', ink: '#00739c', edge: '#0073a0', name: 'novelas', full: 'Novelas visuales', tab: 'Novelas' },
+  jvn: { c: '#E5487A', soft: '#f6d3df', ink: '#a82b58', edge: '#b02c5c', name: 'japonés', full: 'Novelas japonesas', tab: 'Japonés' },
+  pc: { c: '#1DB37A', soft: '#cdeedd', ink: '#11804f', edge: '#14875a', name: 'PC', full: 'Juegos de PC', tab: 'PC' },
+  switch: { c: '#F25C2A', soft: '#fbd9cb', ink: '#b33a12', edge: '#c0431a', name: 'Switch', full: 'Switch', tab: 'Switch' },
 };
-/** Colores del rescate de racha de cada categoría (nunca el de la categoría): ámbar para novelas, violeta para japonés. */
+/** Colores del rescate de racha de cada categoría (nunca el de la categoría): ámbar para novelas, violeta para japonés, magenta para PC, lima para Switch. */
 export const RESCUE_COL: Record<GoalKey, { rc: string; rsoft: string; rink: string; rmid: string }> = {
   vn: { rc: '#E9A100', rsoft: '#fcefc7', rink: '#8a5d00', rmid: '#f1dca0' },
   jvn: { rc: '#6E56CF', rsoft: '#e8e3fb', rink: '#4a3aa0', rmid: '#cdc3f2' },
+  pc: { rc: '#B44FD6', rsoft: '#f1e0f8', rink: '#7a2a99', rmid: '#dfbdeb' },
+  switch: { rc: '#8DB92E', rsoft: '#eaf3d3', rink: '#557514', rmid: '#cfe2a3' },
 };
-/** Clase global (`.r-vn` / `.r-jv`, en app.css) que da las variables --rc, --rsoft, --rink y --rmid del rescate. */
-export const rescueCls = (k: GoalKey) => (k === 'vn' ? 'r-vn' : 'r-jv');
+/** Clase global (`.r-vn` / `.r-jv` / `.r-pc` / `.r-sw`, en app.css) que da las variables --rc, --rsoft, --rink y --rmid del rescate. */
+export const rescueCls = (k: GoalKey) => ({ vn: 'r-vn', jvn: 'r-jv', pc: 'r-pc', switch: 'r-sw' } as const)[k];
+/** Textos de cada grupo de metas (lectura / juego). */
+export const GOAL_TXT: Record<GoalGroup, { card: string; crumb: string; what: string; when: string; none30: string; titles: string; notice1: string; sub1: string }> = {
+  read: { card: 'Lectura de hoy', crumb: 'Racha de lectura', what: 'Qué has leído este mes', when: 'A qué hora lees', none30: 'Sin lecturas en los últimos 30 días', titles: 'Novelas', notice1: '¡Meta de lectura cumplida!', sub1: 'Hoy cuenta para tu racha de lectura' },
+  play: { card: 'Juego de hoy', crumb: 'Racha de juego', what: 'Qué has jugado este mes', when: 'A qué hora juegas', none30: 'Sin partidas en los últimos 30 días', titles: 'Juegos', notice1: '¡Meta de juego cumplida!', sub1: 'Hoy cuenta para tu racha de juego' },
+};
 export const MAP_WEEKS = 10;
 
 export interface MapCell {
@@ -162,6 +178,19 @@ function eachSpan(key: GoalKey, platforms: Platform[], live: Live, now: number, 
       for (const [a, b] of mergeSpans(spans)) f(t, a, b);
     }
   }
+}
+
+/** Última vez que se jugó a algo de las plataformas `keys`: el mayor fin de partida, o `now` si la partida en curso es de ellas; 0 si nada. */
+export function lastPlayAt(keys: GoalKey[], platforms: Platform[], live: Live, now: number): number {
+  let best = 0;
+  for (const p of platforms) {
+    if (!(keys as string[]).includes(p.id)) continue;
+    for (const t of p.titles) {
+      if (live && t.gameId === live.id) return now;
+      for (const pl of t.plays ?? []) if (pl[1] > best) best = pl[1];
+    }
+  }
+  return best;
 }
 
 /**

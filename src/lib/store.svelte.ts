@@ -62,6 +62,8 @@ export const DEFAULT_CONFIG: Config = {
   savesDir: '',
   goalVn: 60,
   goalJvn: 30,
+  goalPc: 60,
+  goalSwitch: 60,
   remoteEnabled: false,
   remotePort: 47811,
   remoteToken: '',

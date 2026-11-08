@@ -41,7 +41,7 @@ Todo lo que necesita la app móvil, de una vez:
   "api": 1,
   "generatedAt": 1760980000000,
   "name": "PC-SALON",
-  "config": { "goalVn": 60, "goalJvn": 30, "accentMode": "art", "accentFixed": 4 },
+  "config": { "goalVn": 60, "goalJvn": 30, "goalPc": 60, "goalSwitch": 60, "accentMode": "art", "accentFixed": 4 },
   "library": { "platforms": [ /* Platform[] con sus Title[] y Shot[] */ ], "hidden": [] },
   "favorites": [ "D:\\Capturas\\PC\\Elden Ring\\2024-03-09 21-05-44.png" ],
   "sagas": [ { "id": "s1", "name": "Zelda", "members": ["switch/Zelda TOTK"], "platform": "switch", "color": 2 } ],

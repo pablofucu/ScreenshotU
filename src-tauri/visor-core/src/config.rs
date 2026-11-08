@@ -132,6 +132,9 @@ pub struct Config {
     /// Meta diaria de lectura (minutos) de las novelas visuales y de las japonesas (anillos de Inicio).
     pub goal_vn: u32,
     pub goal_jvn: u32,
+    /// Metas diarias de juego (minutos); 0 = desactivada.
+    pub goal_pc: u32,
+    pub goal_switch: u32,
     /// Al arrancar, abrir el visor en el monitor donde esta el cursor (el del icono pulsado) en vez de en el ultimo usado.
     pub open_on_cursor: bool,
     /// Al cerrar el visor, seguir en segundo plano con icono en la bandeja (si no, se sale del todo).
@@ -248,6 +251,8 @@ impl Default for Config {
             saves_dir: String::new(),
             goal_vn: 60,
             goal_jvn: 30,
+            goal_pc: 60,
+            goal_switch: 60,
             open_on_cursor: false,
             keep_in_tray: false,
             remote_enabled: false,
@@ -291,6 +296,12 @@ impl Config {
         c.accent_fixed = c.accent_fixed.min(6);
         c.goal_vn = c.goal_vn.clamp(5, 600);
         c.goal_jvn = c.goal_jvn.clamp(5, 600);
+        if c.goal_pc > 0 {
+            c.goal_pc = c.goal_pc.clamp(5, 600);
+        }
+        if c.goal_switch > 0 {
+            c.goal_switch = c.goal_switch.clamp(5, 600);
+        }
         c.remote_port = c.remote_port.max(1024);
         c.remote_token = c.remote_token.trim().to_string();
         c.remote_id = c.remote_id.trim().to_string();

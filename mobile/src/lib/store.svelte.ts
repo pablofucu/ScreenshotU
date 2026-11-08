@@ -29,7 +29,7 @@ export const sortByName = (a: string, b: string) => byName.compare(a, b);
 export const accentOf = (c: string, dark: boolean, n = 'Personalizado'): Accent => ({ n, c, dark });
 
 const EMPTY_LIB: Library = { platforms: [], hidden: [] };
-const DEFAULT_CFG: RemoteConfig = { goalVn: 60, goalJvn: 30, accentMode: 'art', accentFixed: 4 };
+const DEFAULT_CFG: RemoteConfig = { goalVn: 60, goalJvn: 30, goalPc: 60, goalSwitch: 60, accentMode: 'art', accentFixed: 4 };
 
 const EMPTY_SAGA: Omit<Title, 'name' | 'cover' | 'shots' | 'id' | 'members'> = {
   hero: null, logo: null, folder: '', dir: '', hasFolder: false, gameId: null, source: null, launchable: false,

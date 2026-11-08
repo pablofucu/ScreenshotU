@@ -85,6 +85,8 @@ export interface Config {
   /** Meta diaria de lectura en minutos: novelas visuales y novelas japonesas (anillos de Inicio). */
   goalVn: number;
   goalJvn: number;
+  goalPc: number;
+  goalSwitch: number;
   /** Servidor para la app del móvil (misma red): activado, puerto y código de emparejamiento (lo gestiona el núcleo). */
   remoteEnabled: boolean;
   remotePort: number;

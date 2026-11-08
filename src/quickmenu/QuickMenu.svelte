@@ -532,7 +532,7 @@
         <TileTime
           context={qmState?.context ?? null}
           game={qmState?.game ?? null}
-          goals={qmState?.goals ?? { vn: 60, jvn: 45 }}
+          goals={qmState?.goals ?? { vn: 60, jvn: 45, pc: 60, switch: 30 }}
           view="tile"
           onOpenSheet={() => openSheet('tiempo')}
         />
@@ -669,7 +669,7 @@
             <TileTime
               context={qmState?.context ?? null}
               game={qmState?.game ?? null}
-              goals={qmState?.goals ?? { vn: 60, jvn: 45 }}
+              goals={qmState?.goals ?? { vn: 60, jvn: 45, pc: 60, switch: 30 }}
               view="sheet"
             />
           {:else if sheet === 'capturas'}

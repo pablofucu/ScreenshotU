@@ -56,13 +56,15 @@ pub const CODE_ALPHABET: &[u8] = b"ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 pub struct RemoteConfig {
     pub goal_vn: u32,
     pub goal_jvn: u32,
+    pub goal_pc: u32,
+    pub goal_switch: u32,
     pub accent_mode: String,
     pub accent_fixed: u8,
 }
 
 impl RemoteConfig {
     pub fn from_config(c: &Config) -> RemoteConfig {
-        RemoteConfig { goal_vn: c.goal_vn, goal_jvn: c.goal_jvn, accent_mode: c.accent_mode.clone(), accent_fixed: c.accent_fixed }
+        RemoteConfig { goal_vn: c.goal_vn, goal_jvn: c.goal_jvn, goal_pc: c.goal_pc, goal_switch: c.goal_switch, accent_mode: c.accent_mode.clone(), accent_fixed: c.accent_fixed }
     }
 }
 
@@ -1131,7 +1133,7 @@ mod tests {
         fn snapshot(&self) -> Result<Snapshot> {
             self.scans.fetch_add(1, Ordering::SeqCst);
             Ok(Snapshot {
-                config: RemoteConfig { goal_vn: 60, goal_jvn: 30, accent_mode: "art".into(), accent_fixed: 4 },
+                config: RemoteConfig { goal_vn: 60, goal_jvn: 30, goal_pc: 60, goal_switch: 60, accent_mode: "art".into(), accent_fixed: 4 },
                 library: self.lib.clone(),
                 favorites: vec![],
                 sagas: vec![Saga { id: "s1".into(), name: "Saga".into(), members: vec!["pc/A".into()], platform: None, color: None }],

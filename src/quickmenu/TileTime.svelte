@@ -11,7 +11,7 @@
   let {
     context = null,
     game = null,
-    goals = { vn: 60, jvn: 45 },
+    goals = { vn: 60, jvn: 45, pc: 60, switch: 30 },
     view = 'tile',
     onOpenSheet,
   }: {

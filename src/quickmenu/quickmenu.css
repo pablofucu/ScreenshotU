@@ -1336,6 +1336,16 @@ svg.ch {
   --rmid: #cdc3f2;
 }
 
+.r-pc {
+  --rc: #B44FD6;
+  --rmid: #dfbdeb;
+}
+
+.r-sw {
+  --rc: #8DB92E;
+  --rmid: #cfe2a3;
+}
+
 .tt {
   display: flex;
   gap: 16px;

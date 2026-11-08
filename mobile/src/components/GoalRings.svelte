@@ -10,6 +10,8 @@
   const COL: Record<GoalKey, { c: string; soft: string; ink: string; edge: string; name: string; long: string }> = {
     vn: { c: '#00A0D8', soft: '#cfe6f1', ink: '#00739c', edge: '#0073a0', name: 'Novelas', long: 'Novelas visuales' },
     jvn: { c: '#E5487A', soft: '#f6d3df', ink: '#a82b58', edge: '#b02c5c', name: 'Japonés', long: 'Novelas japonesas' },
+    pc: { c: '#1DB37A', soft: '#cdeedd', ink: '#11804f', edge: '#14875a', name: 'PC', long: 'Juegos de PC' },
+    switch: { c: '#F25C2A', soft: '#fbd9cb', ink: '#b33a12', edge: '#c0431a', name: 'Switch', long: 'Switch' },
   };
   const S = 128, SW = 13;
 
