@@ -1194,7 +1194,7 @@ export function wake() {
 /* ---------- ajustes ---------- */
 export type SettingId =
   | 'root' | 'rescan' | 'addgame' | 'hidden' | 'showhidden' | 'view' | 'shotsview' | 'shotsorder' | 'collstyle' | 'achcardvariant' | 'sound' | 'fullscreen' | 'monitor' | 'oncursor'
-  | 'audioout' | 'audiocombo' | 'audiohotkey' | 'hotkey' | 'combo' | 'mouse' | 'qmkey' | 'qmpad' | 'qmmouse' | 'qmhold' | 'qmpause' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caponly' | 'caprumble' | 'bgtray' | 'quit'
+  | 'audioout' | 'audiocombo' | 'audiohotkey' | 'hotkey' | 'combo' | 'mouse' | 'qmkey' | 'qmpad' | 'qmmouse' | 'qmhold' | 'qmpause' | 'magpie' | 'magpieexe' | 'capsound' | 'cappeek' | 'caponly' | 'caprumble' | 'bgtray' | 'bgstart' | 'quit'
   | 'sgdbkey' | 'sgdbauto' | 'sgdbnow' | 'sgdbgame'
   | 'ntaccount' | 'ntmin' | 'ntimport'
   | 'backup' | 'backupmedia' | 'restore' | 'autobackup'
@@ -1231,7 +1231,7 @@ export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[
         'qmkey', 'qmpad', 'qmmouse', 'qmhold', 'qmpause',
         'capsound', 'cappeek', 'caprumble', 'caponly',
         'magpieexe', 'magpie',
-        'remoteon', 'remoteqr', 'remoteaddr', 'remotecode', 'remotewin', 'remotecursor', 'remotestream', 'remotehelp',
+        'remoteon', 'remoteqr', 'remoteaddr', 'remotecode', 'remotecursor', 'remotestream', 'remotehelp',
       ],
   },
   {
@@ -1262,11 +1262,11 @@ export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[
     name: 'Acerca de',
     t: 1,
     // En la tablet no hay actualizador ni cierre de la app: se enseña a qué PC está conectada.
-    rows: IS_TABLET ? ['tabpc', 'tabstate', 'tabdisc'] : ['update', 'bgtray', 'quit'],
+    rows: IS_TABLET ? ['tabpc', 'tabstate', 'tabdisc'] : ['update', 'bgtray', 'bgstart', 'quit'],
   },
 ];
 /** Filas que cambian de valor con izquierda/derecha (se marcan con ‹ ›). Las demás son acciones: izquierda vuelve al menú. */
-export const CYCLE = new Set<SettingId>(['theme', 'showhidden', 'view', 'shotsview', 'shotsorder', 'collstyle', 'achcardvariant', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'qmkey', 'qmpad', 'qmmouse', 'qmhold', 'qmpause', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'inputmouse', 'inputkeys', 'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay', 'bgtray', 'ntmin']);
+export const CYCLE = new Set<SettingId>(['theme', 'showhidden', 'view', 'shotsview', 'shotsorder', 'collstyle', 'achcardvariant', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'qmkey', 'qmpad', 'qmmouse', 'qmhold', 'qmpause', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'inputmouse', 'inputkeys', 'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay', 'bgtray', 'bgstart', 'ntmin']);
 export const rowHasArrows = (id: SettingId | undefined) => !!id && (CYCLE.has(id) || READING_CYCLE.has(id as never) || REMOTE_CYCLE.has(id as never));
 /** Zona de foco en Ajustes: el menú de secciones o la lista de opciones. */
 export const setNav = $state({ zone: 'menu' as 'menu' | 'body' });
@@ -1479,6 +1479,7 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'monitor') { void refreshMonitor(dir || 1); blip(880); }
   else if (id === 'oncursor') { void patchConfig({ openOnCursor: !app.config.openOnCursor }); blip(1320); }
   else if (id === 'bgtray') { void patchConfig({ keepInTray: !app.config.keepInTray }); blip(1320); }
+  else if (id === 'bgstart') { void patchConfig({ startWithWindows: !app.config.startWithWindows }); blip(1320); }
   // Botones de captura: A / clic espera el input; izquierda/derecha recorren unos cuantos de serie.
   else if (id === 'audioout') void switchAudio(dir || 1);
   else if (id === 'audiocombo') { if (dir === 0) startLearn('pad', 'audio'); else void patchConfig({ audioCombo: cycleIn(AUDIO_COMBO_PRESETS, app.config.audioCombo, dir) }); }

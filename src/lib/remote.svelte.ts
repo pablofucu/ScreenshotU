@@ -6,7 +6,7 @@ import { patchConfig, toast } from './controller.svelte';
 import type { RemoteInfo, StreamAppStatus } from './types';
 
 export type RemoteId = 'remoteon' | 'remoteqr' | 'remoteaddr' | 'remotecode' | 'remotewin' | 'remotecursor' | 'remotestream' | 'remotehelp';
-export const REMOTE_ROWS: RemoteId[] = ['remoteon', 'remoteqr', 'remoteaddr', 'remotecode', 'remotewin', 'remotecursor', 'remotestream', 'remotehelp'];
+export const REMOTE_ROWS: RemoteId[] = ['remoteon', 'remoteqr', 'remoteaddr', 'remotecode', 'remotecursor', 'remotestream', 'remotehelp'];
 export const isRemoteId = (id: string): id is RemoteId => (REMOTE_ROWS as string[]).includes(id);
 export const REMOTE_CYCLE = new Set<RemoteId>(['remoteon', 'remotewin', 'remotecursor']);
 
