@@ -243,6 +243,10 @@ mod imp {
         if !(diag || fix) || ACTIVE.swap(true, Ordering::SeqCst) {
             return;
         }
+        let hold_ms: u64 = std::fs::read_to_string(&fix_path)
+            .ok()
+            .and_then(|t| t.split_whitespace().find_map(|w| w.strip_prefix("hold=")?.parse().ok()))
+            .unwrap_or(200);
         if fix {
             let (ctx, crx) = channel::<Cmd>();
             *FIX_TX.lock().unwrap() = Some(ctx);
@@ -261,10 +265,11 @@ mod imp {
                 // Un toque llega como movimiento, bajar y soltar casi en el mismo milisegundo. El juego lee el cursor
                 // una vez por fotograma: si el clic llega antes, cae en el sitio anterior, y si dura 1 ms se pierde.
                 // Por eso se espera a que vea el cursor nuevo y se mantiene el boton pulsado un poco.
+                // Tsukihime recibe toques de 60 ms pero no los acepta; uno de 500 ms si. `hold=NNN` en el archivo lo ajusta.
                 const SETTLE: Duration = Duration::from_millis(40);
-                const HOLD: Duration = Duration::from_millis(60);
+                let hold: Duration = Duration::from_millis(hold_ms);
                 let mut moved = Instant::now() - SETTLE;
-                let mut pressed = Instant::now() - HOLD;
+                let mut pressed = Instant::now() - hold;
                 let mut at = (i32::MIN, i32::MIN);
                 let wait_until = |t: Instant| {
                     let now = Instant::now();
@@ -287,7 +292,7 @@ mod imp {
                             pressed = Instant::now();
                         }
                         0x202 | 0x205 => {
-                            wait_until(pressed + HOLD);
+                            wait_until(pressed + hold);
                             send_button(if c.msg == 0x202 { MOUSEEVENTF_LEFTUP } else { MOUSEEVENTF_RIGHTUP });
                         }
                         _ => {}
