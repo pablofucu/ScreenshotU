@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Revisión de interfaces</title><style>
+:root{--bg:#f4f5f8;--card:#fff;--ink:#1f2430;--ink2:#5b6475;--line:#e2e5ec;--acc:#d9534f;--code:#eef0f5;--th:#f0f2f7}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#14161c;--card:#1d2028;--ink:#e6e9f0;--ink2:#a3abba;--line:#2c313c;--acc:#ff7a70;--code:#262a33;--th:#232731}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 system-ui,-apple-system,'Segoe UI',sans-serif}
+main{max-width:980px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:28px;line-height:1.25;margin:0 0 12px}
+h2{font-size:21px;margin:40px 0 12px;padding-top:8px;border-top:3px solid transparent;border-image:linear-gradient(90deg,#e74c3c,#f39c12,#f1c40f,#2ecc71,#3498db,#9b59b6) 1}
+h3{font-size:17px;margin:28px 0 8px}
+p,li{color:var(--ink)}
+a{color:var(--acc)}
+code{background:var(--code);padding:1px 5px;border-radius:5px;font-size:.88em;font-family:ui-monospace,Consolas,monospace;word-break:break-word}
+hr{border:0;border-top:1px solid var(--line);margin:32px 0}
+.tw{overflow-x:auto;margin:12px 0;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:var(--th);font-weight:600}
+tr:last-child td{border-bottom:0}
+td ul{margin:0;padding-left:18px}
+ol,ul{padding-left:22px}
+li{margin:3px 0}
+strong{font-weight:650}
+</style></head>
+<body><main><h1>Revisión de interfaces y flujos (v1.10.0, 9 nov 2026)</h1>
+<p>Recorrido completo en modo mock (<code>?mock</code>) a 1280×720, usando el teclado como mando (Enter = A, Retroceso = B, m = Start, q/e = LB/RB, z/c = LT/RT, v = View).</p>
+<p>Pantallas revisadas:
+- <strong>Inicio:</strong> dock, «Seguir jugando», «Juego de hoy» y la racha.
+- <strong>Por categoría:</strong> Mi lista, Colecciones, Catálogo (cuadrícula y carrusel), ficha del juego, Ajustes del juego, Capturas, visor y menú Start de una captura.
+- <strong>Globales:</strong> Favoritas, Estadísticas (Clasificación, Calendario y Resumen anual), Añadir juego, Ajustes globales en los dos temas.
+- <strong>Ventanas aparte:</strong> menú dentro del juego (<code>quickmenu.html</code>) y lector (<code>reader.html</code>).</p>
+<p>Las categorías no se tocan en ninguna propuesta: todo lo que sigue vive dentro de cada categoría.</p>
+<hr />
+<h2>1. Fallos (corregir)</h2>
+<h3>Prioridad alta</h3>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dónde</th>
+<th>Qué pasa</th>
+<th>Arreglo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Tema «Noche ahumada»: <code>app.css:88-90</code></td>
+<td><code>.pill</code> tiene el fondo blanco fijo (<code>rgba(255,255,255,.80→.52)</code>), y el bloque oscuro (<code>app.css:28-35</code>) no lo redefine. El texto pasa a <code>#b4bccb</code> sobre blanco y no se lee. Afecta al dock de Inicio, a las pistas de mando, a las migas de pan y a las tarjetas de racha. Hay otros 41 blancos fijos en <code>app.css</code> y aparecen en 9 pantallas más.</td>
+<td>Crear los tokens <code>--pill-top</code> / <code>--pill-bot</code> (y uno para el blanco de los chips) en <code>:root</code> y en <code>#stage[data-theme=dark]</code>. Repasar las pantallas en oscuro una por una.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Catálogo: <code>Titles.svelte:355</code></td>
+<td>La pista dice <strong>«X Jugar»</strong>, pero X llama a <code>cycleTitleOrder()</code> (toast «Orden: A-Z»). Además, el chip «X Por color/A-Z» de arriba contradice la pista.</td>
+<td>X = Jugar, igual que en la ficha y en Colecciones. El orden pasa al chip, o a View/Start.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Catálogo: <code>Titles.svelte:356</code> y <code>:202-215</code></td>
+<td>La pista dice <strong>«Y Buscar / Vista»</strong>, pero Y solo cambia entre cuadrícula y carrusel. El campo «Buscar juego…» no tiene <code>fx</code> ni <code>data-k</code>, así que con el mando no se puede llegar a él. Ya estaba en informe-flujo-navegacion §2.3.4 y sigue pendiente.</td>
+<td>Hacer enfocable el campo de búsqueda y separar las funciones: Y = Buscar, View = Vista.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Inicio, dock «Buscar»: <code>controller.svelte.ts:631</code></td>
+<td>Es el primer botón del dock y solo saca el toast «Buscar: próximamente».</td>
+<td>Implementarlo (ver diseño B) u ocultarlo hasta que exista.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Visor</td>
+<td>La píldora de información («1/50 Elden Ring 07/09/2022 00:00 3840x2160») se monta sobre la de pistas («LB/RB ±10»), y la resolución sale cortada.</td>
+<td>Ver diseño D (pistas abajo, información bajo demanda).</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Estadísticas</td>
+<td>Resumen anual 2026: <strong>513 h, 11 juegos</strong>. Clasificación «Siempre»: <strong>449 h, 6 juegos</strong>. Parece que el año es mayor que el total histórico. La causa es que la Clasificación filtra por la categoría (la etiqueta pequeña «Juegos PC») y el resumen anual no.</td>
+<td>Mostrar el ámbito bien visible en las dos vistas («Juegos PC · Siempre» frente a «Todas · 2026»), o hacer que el resumen respete la categoría (LT/RT).</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Mi lista: <code>MiListaDual.svelte:16</code></td>
+<td>«hace <strong>1 meses</strong>». Además, <code>Math.round(d/30)</code> da «hace 12 meses» entre 345 y 364 días.</td>
+<td>Usar el singular «mes» y pasar a «hace 1 año» desde 345 días.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Mi lista</td>
+<td>El carril «A medias» se desborda: Outer Wilds sale cortado y «Se aparca d…» truncado.</td>
+<td>Ver diseño E.</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Prioridad media</h3>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Dónde</th>
+<th>Qué pasa</th>
+<th>Arreglo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>9</td>
+<td>Racha: <code>Streak.svelte:293</code></td>
+<td>La pista dice «LB/RB <strong>Cambiar meta</strong>», pero lo que cambia es la categoría del mapa (chip Novelas → PC → Switch).</td>
+<td>Cambiar la pista a «Categoría».</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Inicio → tarjeta «Juego de hoy»</td>
+<td>La tarjeta rota sola entre «Juego de hoy» y «Lectura de hoy». Al pulsarla abrió «Racha de lectura» (textos de <code>readgoals.ts:31</code>: «A qué hora lees», «Qué has leído este mes») aunque mostraba «Juego de hoy».</td>
+<td>Comprobarlo. La rotación automática ya es suficiente motivo para quitarla (ver diseño A).</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Avatar arriba a la izquierda: <code>TopBar.svelte:56</code></td>
+<td>Por su cristal y su tamaño parece un botón, pero es <code>aria-hidden</code> y no hace nada.</td>
+<td>Darle una función (perfil, racha, perfil de tablet) o reducirlo a un adorno discreto.</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Barra superior ⏻ y dock «Salir»</td>
+<td>Llevan iconos parecidos y hacen cosas muy distintas: el ⏻ de arriba <strong>suspende el PC</strong> (pide dos pulsaciones) y «Salir» cierra la app.</td>
+<td>Usar una luna o «Suspender» para el de arriba y reservar ⏻ para «Salir».</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Añadir juego (.exe)</td>
+<td>«Guardar» está activo con el formulario vacío y solo avisa con el toast «Elige primero el ejecutable». Hero, Logo y Portada son tres filas de «Ninguno».</td>
+<td>Desactivar «Guardar» hasta tener el ejecutable y marcar los campos obligatorios. Ofrecer SteamGridDB (ya existe <code>SgdbPicker</code>) en vez de tres selectores vacíos.</td>
+</tr>
+</tbody>
+</table></div>
+<h3>Prioridad baja (aspecto)</h3>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Pantalla</th>
+<th>Problemas y propuesta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ficha</td>
+<td><ul><li>El odómetro («0 0 9 h 1 2 min») muestra ceros a la izquierda y se reanima desde 0 cada vez que vuelves. Propuesta: quitar los ceros y animar solo en la primera visita.</li><li>El chip «Fecha de lanzamiento···» parece un marcador de posición en pleno hero.</li><li>El nombre del logro sale truncado y «Y · cambiar» es diminuto.</li></ul></td>
+</tr>
+<tr>
+<td>Ajustes del juego</td>
+<td>«Capturas y datos» va pegado al contador («datos3»).</td>
+</tr>
+<tr>
+<td>Ajustes globales</td>
+<td><ul><li>Solo «Sonido de navegación» muestra las flechas ‹ ›; las demás filas no indican que se pueden cambiar.</li><li>El cuadro de descripción queda medio vacío.</li></ul></td>
+</tr>
+<tr>
+<td>Toasts</td>
+<td>Aparecen encima del contenido: «Vista: carrusel» tapa la línea de datos. Propuesta: un sitio fijo, arriba al centro, bajo la barra superior.</td>
+</tr>
+<tr>
+<td>Capturas «Por días»</td>
+<td>Si hay una captura por día, la agrupación solo añade ruido. Propuesta: agrupar por semana o mes cuando los grupos sean de 1.</td>
+</tr>
+<tr>
+<td>Favoritas vacía</td>
+<td>Solo sale un toast. Propuesta: una pantalla vacía que explique cómo marcar favoritas.</td>
+</tr>
+<tr>
+<td>Menú del juego (quickmenu)</td>
+<td><ul><li>«Esta sesión <strong>20:08</strong>», junto al reloj «20:32», se lee como una hora. Mejor «20 min».</li><li>«13 novelas RÉCORD» y «13 días seguidos sin rescates pendientes» no se entienden a la primera.</li><li>En mock tardó unos 2-3 s en pintarse. Comprobarlo en real: el menú pausa el juego.</li></ul></td>
+</tr>
+<tr>
+<td>Lector</td>
+<td><ul><li>«Sin conexión…» en rojo junto a «Esperando texto…», sin decir qué hacer (por ejemplo «Abre Texthook»).</li><li>No sigue el tema oscuro.</li></ul></td>
+</tr>
+<tr>
+<td>Accesibilidad</td>
+<td>El dock (<code>Home.svelte:121</code>) y muchas filas son <code>div</code>. Con ratón funcionan por <code>data-act</code>, pero no hay rol ni nombre accesible.</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2>2. Coherencia de flujos</h2>
+<ol>
+<li><strong>Start tiene tres nombres.</strong><ul>
+<li>Situación actual:<ul>
+<li>En Inicio se llama «Ajustes».</li>
+<li>En Catálogo y Colecciones, «Menú».</li>
+<li>En la ficha, «Opciones» (<code>Detail.svelte:265</code>), y abre un panel titulado «Ajustes», que también es el nombre de los ajustes globales.</li>
+</ul>
+</li>
+<li>Propuesta:<ul>
+<li>Start = <strong>«Menú»</strong> en todas las pantallas.</li>
+<li>El panel del juego se titula <strong>«Ajustes del juego»</strong>.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>La ficha muestra «A Jugar» y «X Jugar» a la vez</strong>, y A pasa a «Seleccionar» cuando el foco sale de Jugar. Propuesta: X = Jugar siempre y A = la acción del elemento enfocado.</li>
+<li><strong>Colecciones: «X Jugar / Capturas»</strong> asigna dos funciones a un mismo botón. Elegir una de las dos.</li>
+<li><strong>Pistas de mando arriba en el visor y abajo en el resto.</strong> informe-interfaz §1.5 ya fijaba que las pistas van «solo en la barra inferior».</li>
+<li><strong>La barra de pestañas cambia de altura.</strong><ul>
+<li>En Mi lista está a y≈55 (sin cabecera).</li>
+<li>En Colecciones y Catálogo, a y≈99.</li>
+<li>En carrusel se centra.</li>
+<li>Propuesta: misma posición en las tres pestañas.</li>
+</ul>
+</li>
+<li><strong>Doble indicador de página en el Catálogo:</strong> «Página 2 de 2» arriba y «Página 2/2 · Azules-Grises» a la derecha. Dejar solo uno.</li>
+<li><strong>El menú Start mezcla acciones de contexto con acciones globales.</strong><ul>
+<li>En una captura salen «Salida de audio» (<code>ActionMenu.svelte:70</code>) y «Añadir capturas», que es una acción del juego.</li>
+<li>Falta «Favorita».</li>
+<li>Propuesta: primero las acciones del elemento, luego un separador y después las globales.</li>
+</ul>
+</li>
+<li><strong>Duplicados en Inicio.</strong><ul>
+<li>«Ajustes» en el dock repite la pista «Start Ajustes».</li>
+<li>La etiqueta «Últimos 7 días: 15 h · 0 capturas» flota sin quedar claro a qué tarjeta pertenece.</li>
+<li>Las tarjetas recientes mezclan la fecha de la última partida con el tiempo total («13 oct · 120 h 14 min»).</li>
+</ul>
+</li>
+<li><strong>Estadísticas.</strong><ul>
+<li>Se abre en el mes actual aunque esté vacío («Sin partidas · Noviembre 2026»).</li>
+<li>Las vistas quedan escondidas tras «•••».</li>
+<li>Muestra «A Ver juego» cuando no hay nada que abrir.</li>
+</ul>
+</li>
+</ol>
+<hr />
+<h2>3. Diseños alternativos</h2>
+<h3>A. Inicio más limpio</h3>
+<ul>
+<li><strong>Dock de 4 elementos:</strong> Buscar (de verdad), Favoritas, Estadísticas y Añadir juego.<ul>
+<li>«Ajustes» se queda en Start.</li>
+<li>«Salir» pasa a un elemento del menú Start o a mantener ⏻ pulsado.</li>
+</ul>
+</li>
+<li><strong>«Juego de hoy» sin rotación automática.</strong><ul>
+<li>Una tarjeta fija con el anillo de la categoría que toca.</li>
+<li>LB/RB dentro de la tarjeta para pasar de una categoría a otra.</li>
+<li>Al abrirla, la racha de esa misma categoría.</li>
+</ul>
+</li>
+<li><strong>El avatar muestra la racha</strong> (llama + días) y abre la pantalla de Racha.</li>
+<li><strong>«Últimos 7 días»</strong> baja a la línea de datos de «Seguir jugando», o se integra en la tarjeta de racha.</li>
+</ul>
+<h3>B. Buscador global (el «Buscar» del dock)</h3>
+<ul>
+<li>Una capa a pantalla completa con un solo campo, que se escribe con el teclado o con el teclado en pantalla.</li>
+<li>Los resultados salen <strong>agrupados por categoría</strong>, en una fila por categoría, sin mezclar títulos.</li>
+<li>A abre la ficha y X juega.</li>
+<li>Se puede reutilizar <code>catalogSearch</code> y el filtrado del Catálogo.</li>
+</ul>
+<h3>C. Contrato de botones (una sola gramática)</h3>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Botón</th>
+<th>Siempre significa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>Abrir o confirmar lo enfocado</td>
+</tr>
+<tr>
+<td>B</td>
+<td>Volver</td>
+</tr>
+<tr>
+<td>X</td>
+<td>Jugar (si el título se puede lanzar)</td>
+</tr>
+<tr>
+<td>Y</td>
+<td>Acción secundaria del contexto (Buscar en el Catálogo, Editar en Colecciones, cambiar logro en la ficha)</td>
+</tr>
+<tr>
+<td>View</td>
+<td>Vista, orden o filtro, y modo desnudo en el visor</td>
+</tr>
+<tr>
+<td>Start</td>
+<td>Menú contextual (siempre «Menú»)</td>
+</tr>
+<tr>
+<td>LB/RB · LT/RT</td>
+<td>Página o fecha · pestaña o categoría</td>
+</tr>
+</tbody>
+</table></div>
+<p>Con esto se resuelven los fallos 2 y 3 y los puntos 1-3 de §2.</p>
+<h3>D. Visor a pantalla completa</h3>
+<ul>
+<li>Por defecto, el modo desnudo (el de <code>v</code>): ahora el marco de cristal con márgenes desperdicia un tercio de la pantalla.</li>
+<li>Al pulsar A o mover el stick, aparece la información <strong>abajo</strong> durante 2 s (juego, fecha, n/N), con las pistas en la barra inferior como en el resto de la app.</li>
+<li>La resolución pasa a la hoja de información (Y).</li>
+</ul>
+<h3>E. Mi lista con carriles adaptativos</h3>
+<ul>
+<li>La altura de cada carril depende de cuántos títulos tiene.</li>
+<li>Los carriles vacíos se pliegan a una línea («Pendiente · 0 · A para añadir»).</li>
+<li>«A medias» deja de desbordarse y «Pendiente» y «Aparcado» ya no quedan vacíos.</li>
+<li>Alternativa: estantes horizontales, uno por estado, con desplazamiento lateral (ya hay soporte de rueda horizontal).</li>
+</ul>
+<h3>F. Estadísticas con pestañas visibles</h3>
+<ul>
+<li>Un segmentado <strong>Clasificación · Calendario · Resumen anual</strong> en lugar de «•••».</li>
+<li>Se abre en el último periodo con datos.</li>
+<li>El ámbito siempre visible: «Juegos PC · Siempre».</li>
+<li>Sin «A Ver juego» cuando no hay ninguna fila.</li>
+</ul>
+<h3>G. Pasada de tokens para el tema oscuro</h3>
+<ul>
+<li>Inventario de los blancos fijos: 41 en <code>app.css</code> y 9 pantallas más.</li>
+<li>Convertirlos en tokens.</li>
+<li>Revisar cada pantalla en «Noche ahumada»: Inicio, Racha (las tarjetas pastel quedan claras sobre fondo oscuro), migas de pan, pistas y lector.</li>
+</ul>
+<hr />
+<h2>4. Orden propuesto</h2>
+<ol>
+<li><strong>Rápidos</strong> (menos de 1 h cada uno): fallos 1 (<code>.pill</code> oscuro), 2-3 (pistas X/Y del Catálogo), 4 (ocultar «Buscar»), 7 (plural), 9 (pista de Racha) y 13 (Guardar desactivado).</li>
+<li><strong>Coherencia:</strong> contrato de botones (C), Start = «Menú» siempre, pistas abajo en el visor (D), ámbito visible en Estadísticas (fallo 6, diseño F), carriles de Mi lista (E).</li>
+<li><strong>Diseño:</strong> Inicio de 4 elementos y tarjeta fija (A), buscador global (B), repaso completo del tema oscuro (G).</li>
+</ol>
+<h2>5. Estado de los informes anteriores</h2>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Informe</th>
+<th>Punto</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>informe-flujo-navegacion §2.1</td>
+<td>«Seguir jugando» volvía al Catálogo</td>
+<td><strong>Resuelto</strong>: <code>openRecent</code> llama a <code>openTitle(r.ti, 'home')</code></td>
+</tr>
+<tr>
+<td>informe-flujo-navegacion §2.3.1</td>
+<td>Pistas que contradicen al controlador</td>
+<td><strong>Persiste</strong> en las pistas X e Y del Catálogo</td>
+</tr>
+<tr>
+<td>informe-flujo-navegacion §2.3.4</td>
+<td>Buscador del Catálogo inaccesible con mando</td>
+<td><strong>Persiste</strong></td>
+</tr>
+<tr>
+<td>informe-menu-juego</td>
+<td>Reorganizar Ajustes del juego</td>
+<td><strong>Resuelto</strong>: 4 secciones</td>
+</tr>
+<tr>
+<td>informe-interfaz §1.5</td>
+<td>Pistas solo abajo</td>
+<td><strong>Incumplido</strong> en el visor</td>
+</tr>
+<tr>
+<td>design-handoff</td>
+<td>Modo oscuro «Noche ahumada»</td>
+<td><strong>Existe, pero incompleto</strong> (fallo 1, diseño G)</td>
+</tr>
+</tbody>
+</table></div>
+<h2>6. Lo que funciona bien (mantener)</h2>
+<ul>
+<li>Las migas de pan clicables, la atmósfera de color de cada juego y la barra arcoíris del Catálogo, que sirve de minimapa.</li>
+<li>La línea temporal por años en Colecciones y la Clasificación con barras hechas de portadas.</li>
+<li>El Calendario de Estadísticas (mapa de calor, barras mensuales y el día elegido) y el Resumen anual.</li>
+<li>El menú dentro del juego («Plaza»): está claro, los mosaicos tienen tamaños bien jerarquizados y «Cerrar juego» va aparte.</li>
+<li>Los Ajustes globales en dos columnas, con la descripción de cada fila.</li>
+<li>El asistente «Añadir juego», con sus cuatro orígenes bien explicados.</li>
+</ul></main></body></html>
