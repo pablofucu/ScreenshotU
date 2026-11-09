@@ -85,9 +85,9 @@
   <div class="varrow" class:dis={app.s === 0} data-hact="left" style="left:30px">{@html ICON.chevL}</div>
   <div class="varrow" class:dis={app.s >= n - 1} data-hact="right" style="right:30px">{@html ICON.chevR}</div>
   {#if cur}
-    <div class="vinfo pill">
+    <div class="vinfo pill" class:more={app.vinfoMore}>
       <span class="n">{app.s + 1} / {n}</span><span class="vt">{cur.game ? `${app.cur.name} · ${cur.game}` : app.cur.name}</span>
-      <span class="dim">{fmt(cur.date)}</span><span class="dim">{resText(cur.width, cur.height)}</span>
+      <span class="dim">{fmt(cur.date)}</span>{#if app.vinfoMore}<span class="dim">{resText(cur.width, cur.height)}</span>{/if}
       <span class="vstar" class:on={app.favs.has(cur.path)}>{@html ICON.starY}</span>
     </div>
   {/if}
@@ -101,5 +101,5 @@
   <!-- Con zoom hay menos pistas para no tapar los datos de la captura. -->
   <Hints list={zoomed
     ? [['Stick I', 'Mover'], ['Stick D', `Zoom ${Math.round(app.vz.k * 100)} %`], ['View', 'Solo imagen', 'view'], ['B', '100 %', 'b']]
-    : [['LB/RB', '±10', 'rb'], ['Stick D', 'Zoom'], ['X', 'Favorita', 'x'], ['View', 'Solo imagen', 'view'], ['Start', 'Menú', 'menu'], ['B', 'Volver', 'b']]} />
+    : [['LB/RB', '±10', 'rb'], ['X', 'Favorita', 'x'], ['Y', app.vinfoMore ? 'Menos datos' : 'Detalles', 'y'], ['View', app.vbare ? 'Marco' : 'Solo imagen', 'view'], ['Start', 'Menú', 'menu'], ['B', 'Volver', 'b']]} />
 </div>
