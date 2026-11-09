@@ -14,7 +14,8 @@
     exe: '', rom: 'Juego o ROM', name: 'Nombre', args: 'Argumentos', platform: 'Plataforma',
     hero: 'Hero (opcional)', logo: 'Logo (opcional)', cover: 'Portada (opcional)', save: 'Guardar',
   };
-  const label = (r: FormRow) => (r === 'exe' ? (app.form.kind === 'emu' ? 'Emulador (.exe)' : 'Ejecutable (.exe)') : L[r]);
+  const label = (r: FormRow) => (r === 'exe' ? (app.form.kind === 'emu' ? 'Emulador (.exe) *' : 'Ejecutable (.exe) *') : L[r]);
+  const blocked = $derived((app.form.kind === 'exe' || app.form.kind === 'emu') && !app.form.exe);
   const short = (p: string, empty = 'Elegir…') => (p ? (p.length > 34 ? '…' + p.slice(-33) : p) : empty);
   const text = (r: FormRow): string => {
     const f = app.form;
@@ -43,7 +44,9 @@
       <h2>{TITLE[app.form.kind]}</h2>
       {#each rows as r, i}
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-        <div class="srow frow" class:f={app.formRow === i} class:save={r === 'save'} style="height:{RH}px" data-frow={r}
+        <div class="srow frow" class:f={app.formRow === i} class:save={r === 'save'} class:disabled={r === 'save' && blocked}
+          aria-disabled={r === 'save' && blocked ? 'true' : undefined}
+          style="height:{RH}px{r === 'save' && blocked ? ';opacity:.45' : ''}" data-frow={r}
           onmousemove={(e) => hover(e, i)} onclick={() => { app.formRow = i; void formAct(i, 0); }}>
           <span class="sl fl">{label(r)}</span>
           {#if r !== 'save'}<span class="sv" class:ph={empty(r)}>{text(r)}</span>{/if}

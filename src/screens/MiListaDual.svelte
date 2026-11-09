@@ -13,7 +13,10 @@
 
   const hours = (sec: number) => (sec < 3600 ? fmtDur(sec) : `${Math.round(sec / 3600)} h`);
   const ago = (d: number) =>
-    d <= 0 ? 'hoy' : d === 1 ? 'ayer' : d < 30 ? `hace ${d} días` : d < 365 ? `hace ${Math.round(d / 30)} meses` : `hace ${Math.round(d / 365)} ${Math.round(d / 365) === 1 ? 'año' : 'años'}`;
+    d <= 0 ? 'hoy' : d === 1 ? 'ayer' : d < 30 ? `hace ${d} días`
+      : d < 45 ? 'hace 1 mes'
+      : d < 345 ? `hace ${Math.min(11, Math.round(d / 30))} meses`
+      : `hace ${Math.max(1, Math.round(d / 365))} ${Math.max(1, Math.round(d / 365)) === 1 ? 'año' : 'años'}`;
 
   /** Mantiene a la vista la portada enfocada dentro de su franja (cada franja se desplaza sola). */
   $effect(() => {

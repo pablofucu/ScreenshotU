@@ -290,7 +290,7 @@
       </div>
     {/if}
   </div>
-  <Hints list={[...(tracks.length > 1 ? [['LB/RB', 'Cambiar meta', 'lb'] as [string, string, string]] : []), ['B', 'Volver', 'b']]} />
+  <Hints list={[...(tracks.length > 1 ? [['LB/RB', 'Categoría', 'lb'] as [string, string, string]] : []), ['B', 'Volver', 'b']]} />
 {:else}
   <div class="stnone">No hay metas diarias en la biblioteca.</div>
   <Hints list={[['B', 'Volver', 'b']]} />
