@@ -1,7 +1,7 @@
 <script lang="ts">
-  // Ficha de metas de Inicio, de dos caras: «Lectura de hoy» (vn + jvn) y «Juego de hoy» (pc + switch). Alterna sola cada
-  // 12 s con fundido; se para con la ficha enfocada, se reinicia con cualquier entrada y se queda fija en la cara con algo urgente.
-  import { onDestroy, untrack } from 'svelte';
+  // Ficha de metas de Inicio, de dos caras: «Lectura de hoy» (vn + jvn) y «Juego de hoy» (pc + switch). No alterna sola:
+  // la cara inicial es la urgente o la de la partida más reciente, y se cambia con LB/RB o el anillo pequeño.
+  import { untrack } from 'svelte';
   import { app } from '../lib/store.svelte';
   import { GOAL_COL, GOAL_GROUPS, GOAL_TXT, goalMin, lastPlayAt, type GoalGroup } from '../lib/readgoals';
   import { createReadRings } from '../lib/readrings.svelte';
@@ -10,7 +10,6 @@
 
   let { left, w }: { left: number; w: number } = $props();
 
-  const ROT = 12000;
   const faces = $derived(app.goalFaces);
   const keysOf = (g: GoalGroup) => GOAL_GROUPS[g].filter((k) => app.goalKeys.includes(k));
 
@@ -41,39 +40,8 @@
   });
   $effect(() => {
     if (!faces.length) return;
-    if (pinned && pinned !== app.readFace && app.focus !== 'read') app.readFace = pinned;
-    else if (!faces.includes(app.readFace)) app.readFace = faces[0];
+    if (!faces.includes(app.readFace)) app.readFace = faces[0];
   });
-
-  // Ciclo: `remain` y `t0` son variables normales (no estado) para no encadenar efectos.
-  let cycle = $state(0);
-  let remain = ROT, t0 = 0;
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const paused = $derived(faces.length < 2 || app.focus === 'read' || app.view !== 'home' || pinned === app.readFace);
-
-  function flip() {
-    timer = undefined;
-    app.readFace = pinned ?? (faces.find((g) => g !== app.readFace) ?? app.readFace);
-  }
-  function arm() {
-    clearTimeout(timer);
-    timer = undefined;
-    if (!paused) { t0 = Date.now(); timer = setTimeout(flip, remain); }
-  }
-  // Cualquier entrada o cambio de cara reinicia el contador.
-  $effect(() => {
-    app.inputAt; app.readFace;
-    untrack(() => { remain = ROT; cycle++; arm(); });
-  });
-  $effect(() => {
-    const p = paused;
-    untrack(() => {
-      if (p) {
-        if (timer) { clearTimeout(timer); timer = undefined; remain = Math.max(0, remain - (Date.now() - t0)); }
-      } else if (!timer) { t0 = Date.now(); timer = setTimeout(flip, remain); }
-    });
-  });
-  onDestroy(() => clearTimeout(timer));
 
   const other = $derived<GoalGroup>(app.readFace === 'read' ? 'play' : 'read');
   const accOf = (g: GoalGroup) => GOAL_COL[keysOf(g)[0] ?? GOAL_GROUPS[g][0]].c;
@@ -94,9 +62,6 @@
     <span class="rdots">
       {#each faces as g (g)}
         <i class:on={g === app.readFace} style="--c:{accOf(g)}">
-          {#if g === app.readFace}
-            {#key cycle}<b class:fix={pinned === g} style="animation-duration:{ROT}ms;animation-play-state:{paused ? 'paused' : 'running'}"></b>{/key}
-          {/if}
         </i>
       {/each}
     </span>
@@ -120,8 +85,5 @@
   .rmini svg{display:block;overflow:visible}
   .rdots{display:flex;align-items:center;gap:6px}
   .rdots i{display:block;position:relative;width:7px;height:7px;border-radius:999px;overflow:hidden;background:color-mix(in srgb,var(--ink-3) 45%,transparent);transition:width .3s ease}
-  .rdots i.on{width:20px;background:color-mix(in srgb,var(--c) 30%,transparent)}
-  .rdots b{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--c);animation:rfill linear forwards}
-  .rdots b.fix{width:100%;animation:none}
-  @keyframes rfill{from{width:0}to{width:100%}}
+  .rdots i.on{width:20px;background:var(--c)}
 </style>

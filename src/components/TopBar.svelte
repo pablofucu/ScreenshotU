@@ -4,6 +4,7 @@
   import { ICON, audioKind, audioSvg } from '../lib/icons';
   import { closeAudioMenu, openAudioMenu, toast } from '../lib/controller.svelte';
   import { backend, IS_TABLET } from '../lib/backend';
+  import { createReadRings } from '../lib/readrings.svelte';
 
   // `pad`: el botón de audio entra en la navegación del mando (arriba desde el contenido de la pantalla).
   let { crumbs, dots = 0, dot = 0, pad = false }: { crumbs: string[]; dots?: number; dot?: number; pad?: boolean } = $props();
@@ -44,6 +45,11 @@
     try { await w?.(mac); toast('Despertando el PC…', 3000); } catch (e) { toast(String(e), 3000); }
   }
 
+  // Racha más larga de las metas; solo cuenta en Inicio con mando (`pad`). Se llama siempre porque usa la inicialización.
+  const rr = createReadRings({ keys: () => (pad ? app.goalKeys : []), size: 22, stroke: 3, gap: 1.3, empty: '' });
+  const best = $derived(Math.max(0, ...rr.tracks.map((t) => t.streak)));
+  const streakAvatar = $derived(pad && app.readCard);
+
   const DAYS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
   const clock = $derived({
     d: `${z(app.now.getDate())}/${z(app.now.getMonth() + 1)}`,
@@ -53,7 +59,16 @@
 </script>
 
 <div class="top">
-  <div class="glass avatar" aria-hidden="true"><div class="face">{@html ICON.person}</div></div>
+  {#if streakAvatar}
+    <div class="glass avatar fx" class:f={app.focus === 'avatar'} data-k="avatar" data-act="avatar" aria-label="Racha">
+      <div class="face streak">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c.6 3.2-1.2 4.8-2.7 6.6C7.8 10.400 7 11.800 7 13.600A5 5 0 0 0 12 19a5 5 0 0 0 5-5.400c0-1.800-.9-3.200-1.700-4.200-.3 1.100-.9 1.800-1.600 2.100.5-3.300-.3-6.700-1.700-9.500z"/></svg>
+        <b>{best}</b>
+      </div>
+    </div>
+  {:else}
+    <div class="avatar mini" aria-hidden="true"><div class="face">{@html ICON.person}</div></div>
+  {/if}
   <div class="crumb pill" class:withp={dots > 1}>
     {#each crumbs as x, i}
       {#if i === crumbs.length - 1}<span class="cur">{x}</span>{:else}<span>{x}</span><span class="sep">›</span>{/if}
@@ -69,7 +84,7 @@
       </button>
     {/if}
     <button type="button" class="audbtn" class:armed={armed} title={armed ? 'Pulsa otra vez para confirmar' : 'Suspender el PC'} aria-label="Suspender el PC" onclick={suspend}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v9"/><path d="M6.4 6.9a8 8 0 1 0 11.2 0"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
     </button>
     {#if app.audioOutputs.length}
       <div class="aud">
@@ -89,6 +104,11 @@
 </div>
 
 <style>
+  .avatar.mini { width: 44px; height: 44px; top: 20px; left: 30px; opacity: 0.6; box-shadow: none; }
+  .avatar.mini :global(.face) { box-shadow: none; }
+  .avatar .streak { flex-direction: column; gap: 0; color: #fff; }
+  .avatar .streak svg { width: 22px; height: 22px; }
+  .avatar .streak b { font-size: 16px; font-weight: 800; line-height: 1; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
   .aud { position: relative; display: flex; }
   .audbtn {
     width: 34px; height: 30px; padding: 0; display: grid; place-items: center; cursor: pointer;

@@ -125,7 +125,7 @@
   {/each}
 </div>
 
-<Hints list={[['A', app.focus === 'read' ? 'Ver racha' : 'Abrir', 'a'], ...(app.focus === 'read' && app.goalFaces.length > 1 ? [['LB/RB', 'Cambiar', 'lb'] as [string, string, string]] : []), ...(focusRec?.t.launchable ? [['X', 'Jugar', 'x'] as [string, string, string]] : []), ['Start', 'Ajustes', 'menu']]} />
+<Hints list={[['A', app.focus === 'read' ? 'Ver racha' : 'Abrir', 'a'], ...(app.focus === 'read' && app.goalFaces.length > 1 ? [['LB/RB', 'Cambiar', 'lb'] as [string, string, string]] : []), ...(focusRec?.t.launchable ? [['X', 'Jugar', 'x'] as [string, string, string]] : []), ['Start', 'Menú', 'menu']]} />
 
 <style>
   /* Plataformas: el color del foco entra fundido (colores registrados, que sí se interpolan) y la
