@@ -66,9 +66,9 @@
 
 <div class="sx">
   {#if app.statsTab === 'rank'}
-    <span class="cat">{pname(app.statsPlat) || 'Sin partidas'}</span>
+    <span class="cat">{app.statsPlat != null && pname(app.statsPlat) ? `${pname(app.statsPlat)} · ${KIND_LABEL[app.statsKind]}` : 'Sin partidas'}</span>
     <span class="dot"></span>
-    <span class="gl" data-hact="x">{#each STATS_KINDS as k}<span class="o" class:gem={app.statsKind === k}>{KIND_LABEL[k]}</span>{/each}</span>
+    <span class="gl" data-hact="view">{#each STATS_KINDS as k}<span class="o" class:gem={app.statsKind === k}>{KIND_LABEL[k]}</span>{/each}</span>
     <span class="gl" class:off={all}>
       <span class="chev" class:dis={!canOlder} data-hact="lb">{@render chev(true)}</span>
       <span class="lbl">{R.range.label}</span>
@@ -76,23 +76,24 @@
     </span>
   {:else if app.statsTab === 'year'}
     {@const yi = app.years.indexOf(app.yearNow)}
-    <span class="cat">Resumen anual</span>
+    <span class="cat">Todas las categorías</span>
     <span class="gl">
       <span class="chev" class:dis={yi <= 0} data-hact="lb">{@render chev(true)}</span>
       <span class="lbl">{app.yearNow}</span>
       <span class="chev" class:dis={yi < 0 || yi >= app.years.length - 1} data-hact="rb">{@render chev(false)}</span>
     </span>
   {:else}
-    <span class="cat">Calendario</span>
+    <span class="cat">Todas las categorías</span>
     <span class="gl">
       <span class="chev" class:dis={!C.older} data-hact="lb">{@render chev(true)}</span>
       <span class="lbl cal">{calRange}</span>
       <span class="chev" class:dis={app.calOff >= 0} data-hact="rb">{@render chev(false)}</span>
     </span>
   {/if}
-  <span class="gl vsw" data-hact="y">
-    <span class="gem">{VIEW_LABEL[app.statsTab]}</span>
-    <span class="dots">{#each ['rank', 'cal', 'year'] as v}<i class:on={app.statsTab === v}></i>{/each}</span>
+  <span class="gl vsw">
+    {#each ['rank', 'cal', 'year'] as v}
+      <span class="o" class:gem={app.statsTab === v} data-hact="stab:{v}">{VIEW_LABEL[v as 'rank' | 'cal' | 'year']}</span>
+    {/each}
   </span>
 </div>
 
@@ -160,7 +161,7 @@
     {/if}
   {/if}
 
-  <Hints list={[['A', 'Ver juego', 'a'], ['LB/RB', 'Fecha', 'rb'], ['X', 'Periodo', 'x'], ['LT/RT', 'Categoría', 'rt'], ['Y', 'Calendario', 'y'], ['B', 'Volver', 'b']]} />
+  <Hints list={[...(rows.length ? [['A', 'Ver juego', 'a'] as [string, string, string]] : []),['LB/RB', 'Fecha', 'rb'], ['View', 'Periodo', 'view'], ['LT/RT', 'Categoría', 'rt'], ['Y', 'Calendario', 'y'], ['B', 'Volver', 'b']]} />
 {:else}
   <div class="stsum">
     <div class="rbox"><div class="k">Días con partida</div><div class="v acc">{C.played} <small>de {C.elapsed}</small></div></div>
@@ -218,3 +219,8 @@
 
   <Hints list={[['LB/RB', 'Fecha', 'rb'], ['Y', 'Resumen anual', 'y'], ['B', 'Volver', 'b']]} />
 {/if}
+
+<style>
+  :global(.sx .vsw) { margin-left: auto; gap: 3px; padding: 4px; cursor: default; }
+  :global(.sx .vsw .o) { display: grid; place-items: center; padding: 0 16px; height: 36px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+</style>
