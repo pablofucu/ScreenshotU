@@ -659,7 +659,7 @@
     color: white;
     background: radial-gradient(
       120% 100% at 30% 15%,
-      color-mix(in srgb, var(--c) 30%, white),
+      color-mix(in srgb, var(--c) 30%, var(--tint-base)),
       var(--c) 65%,
       color-mix(in srgb, var(--c) 75%, black)
     );

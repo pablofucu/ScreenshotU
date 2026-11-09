@@ -184,7 +184,7 @@
 <style>
   /* Línea de 96 px: el icono del rótulo, la primera portada, la cabecera y la barra de pestañas empiezan en x=96. */
   .shelf{position:absolute;left:80px;width:1120px;transition:top .3s cubic-bezier(.25,1,.4,1),opacity .25s;
-    --hi:color-mix(in srgb,var(--acc) 35%,white);--lo:color-mix(in srgb,var(--acc) 70%,black);--tsh:0 1px 2px rgba(0,0,0,.28)}
+    --hi:color-mix(in srgb,var(--acc) 35%,var(--tint-base));--lo:color-mix(in srgb,var(--acc) 70%,black);--tsh:0 1px 2px rgba(0,0,0,.28)}
   .shelf.dk{--tsh:none}
   .shelf.dim .scov{opacity:.86}
   .shelf.dim .scov.hid{opacity:.5}
@@ -198,8 +198,8 @@
   .bsh .m{font-size:15px;font-weight:600;color:var(--ink-2)}
   .bsh :global(.hint){height:32px;font-size:15px;background:var(--glass-chip);box-shadow:none;text-shadow:none;color:color-mix(in srgb,var(--ink),var(--ink-2))}
   /* Colecciones: botón de cristal con anillo del par de tonos; al pulsarlo se llena con el degradado (como el rótulo). */
-  .tinted .bsh :global(.hint){padding:0 14px 0 4px;color:var(--ink);background:rgba(255,255,255,.55);
-    box-shadow:inset 0 1px 0 #fff,0 0 0 1.5px color-mix(in srgb,var(--g1) 55%,transparent);transition:transform .12s,background .12s,color .12s,box-shadow .12s}
+  .tinted .bsh :global(.hint){padding:0 14px 0 4px;color:var(--ink);background:var(--soft-top);
+    box-shadow:inset 0 1px 0 var(--hl),0 0 0 1.5px color-mix(in srgb,var(--g1) 55%,transparent);transition:transform .12s,background .12s,color .12s,box-shadow .12s}
   .tinted .bsh :global(.hint .btn){background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;text-shadow:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
   .tinted .bsh :global(.hint:active){transform:scale(.95);color:#fff;background:linear-gradient(115deg,var(--g1),var(--g2));box-shadow:inset 0 2px 6px rgba(0,0,0,.25)}
   .tinted .bsh :global(.hint:active .btn){background:#fff;color:var(--g2)}
@@ -209,8 +209,8 @@
   .aur.multi{opacity:.5}
   .soft .aur{opacity:.38}
   .lit .aur{opacity:.5}
-  .soft{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 22%,white),color-mix(in srgb,var(--acc) 38%,#eef1f5));
-    box-shadow:inset 0 1px 0 #fff,inset 0 -6px 10px -6px rgba(255,255,255,.75),0 0 0 1px color-mix(in srgb,var(--acc) 50%,rgba(95,110,135,.3)),0 10px 20px -12px color-mix(in srgb,var(--acc) 55%,rgba(40,50,70,.5))}
+  .soft{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 22%,var(--tint-base)),color-mix(in srgb,var(--acc) 38%,var(--tint-base)));
+    box-shadow:inset 0 1px 0 var(--hl),inset 0 -6px 10px -6px var(--hl-bot),0 0 0 1px color-mix(in srgb,var(--acc) 50%,rgba(95,110,135,.3)),0 10px 20px -12px color-mix(in srgb,var(--acc) 55%,rgba(40,50,70,.5))}
   .soft h3{color:color-mix(in srgb,var(--acc) 50%,var(--ink))}
   .shelf.dk .soft h3{color:color-mix(in srgb,var(--acc) 30%,var(--ink))}
   .lit{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 84%,white),var(--acc) 70%,color-mix(in srgb,var(--acc) 88%,black));
@@ -271,7 +271,7 @@
   .rline{position:absolute;left:0;top:9px;height:2px;border-radius:2px;background:rgba(60,70,90,.16)}
   .rail{position:absolute;top:8px;height:4px;border-radius:4px}
   .rstem{position:absolute;top:0;width:2px;height:9px;margin-left:-1px;background:rgba(60,70,90,.2)}
-  .rdot{position:absolute;top:10px;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:#fff;
+  .rdot{position:absolute;top:10px;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--tint-base);
     box-shadow:0 0 0 2.5px var(--dc,var(--f1)),0 1px 3px rgba(40,50,70,.3);transition:width .2s,height .2s,margin .2s,box-shadow .2s}
   .rdot.on{width:14px;height:14px;margin:-7px 0 0 -7px;box-shadow:0 0 0 3px var(--dc,var(--f1)),0 0 0 5px rgba(255,255,255,.85),0 0 10px 3px color-mix(in srgb,var(--dc,var(--f1)) 55%,transparent)}
   .slip.railed .slab{top:17px;height:22px;font-size:15px;font-weight:800;color:var(--ink)}
@@ -284,20 +284,20 @@
   .tinted .bsh.noic{padding-left:18px}
   .tinted .bsh{-webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);
     background:linear-gradient(180deg,var(--glass-top),var(--glass-mid) 55%,var(--glass-bot));
-    box-shadow:inset 0 1px 0 var(--glass-top),inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+    box-shadow:inset 0 1px 0 var(--glass-top),inset 0 -6px 10px -6px var(--hl-bot),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
   .tinted .bsh.hasaur{overflow:visible}
   .tinted .bsh::before{content:'';position:absolute;inset:-3px;border-radius:999px;padding:2.5px;box-sizing:border-box;pointer-events:none;z-index:2;
     background:linear-gradient(115deg,var(--g1),var(--g2),var(--g1));background-size:200% 100%;
     -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
     opacity:.45;transition:opacity .3s}
   .tinted .bsh.lit::before{opacity:1;animation:shelfSheen 4s linear infinite}
-  .tinted .bsh.lit{box-shadow:inset 0 1px 0 var(--glass-top),inset 0 -6px 10px -6px rgba(255,255,255,.9),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.18),0 10px 22px -10px color-mix(in srgb,var(--f2) 65%,rgba(40,50,70,.5))}
+  .tinted .bsh.lit{box-shadow:inset 0 1px 0 var(--glass-top),inset 0 -6px 10px -6px var(--hl-bot),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.18),0 10px 22px -10px color-mix(in srgb,var(--f2) 65%,rgba(40,50,70,.5))}
   .tinted .aur{opacity:.5}
   .tinted .lit .aur{opacity:.9}
   .tinted .bsh h3,.tinted .bsh.lit h3{color:var(--ink);text-shadow:none}
   .tinted .bsh .m,.tinted .bsh.lit .m{color:var(--ink-2);text-shadow:none}
   .tinted .chip{background:var(--gf);color:var(--on);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 0 1px color-mix(in srgb,var(--f2) 70%,black)}
-  .tinted .bsh .mic,.tinted .bsh.lit .mic{background:rgba(255,255,255,.92);box-shadow:inset 0 1px 0 #fff,0 0 0 1px color-mix(in srgb,var(--f1) 45%,transparent),0 4px 10px -5px var(--f2)}
+  .tinted .bsh .mic,.tinted .bsh.lit .mic{background:rgba(255,255,255,.92);box-shadow:inset 0 1px 0 var(--hl),0 0 0 1px color-mix(in srgb,var(--f1) 45%,transparent),0 4px 10px -5px var(--f2)}
   .tinted .bsh .mic :global(svg[fill=none] *),.tinted .bsh.lit .mic :global(svg[fill=none] *){stroke:var(--f2)}
   .tinted .bsh .mic :global(svg:not([fill=none]) *),.tinted .bsh.lit .mic :global(svg:not([fill=none]) *){fill:var(--f2)}
   .tinted .bsh .mic :global(svg[fill=none] rect),.tinted .bsh.lit .mic :global(svg[fill=none] rect){fill:none}

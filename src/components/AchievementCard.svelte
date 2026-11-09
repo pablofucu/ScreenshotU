@@ -303,10 +303,10 @@
     --rar-ultra: #e8384f;
     --rar-legendary: #9a4bd8;
     --gold: var(--warn);
-    --gold-hi: color-mix(in srgb, var(--warn) 55%, white);
+    --gold-hi: color-mix(in srgb, var(--warn) 55%, var(--tint-base));
     --gold-lo: var(--warn);
     --gold-ink: color-mix(in srgb, var(--warn) 60%, black);
-    --gold-pale: color-mix(in srgb, var(--warn) 12%, white);
+    --gold-pale: color-mix(in srgb, var(--warn) 12%, var(--tint-base));
     --night: var(--g2, var(--ink-2));
     cursor: pointer;
     user-select: none;

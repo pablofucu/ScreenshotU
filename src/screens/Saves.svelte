@@ -328,7 +328,7 @@
   .pin { color: var(--warn); display: inline-flex; flex: none; }
   .pin :global(svg) { width: 15px; height: 15px; }
   .li.s { background: var(--face); }
-  .li.s.fo { background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 30%, rgba(255, 255, 255, 0.85)), var(--acc)); box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.8), 0 0 0 1px color-mix(in srgb, var(--acc) 75%, black), 0 8px 16px -8px color-mix(in srgb, var(--acc) 70%, black); }
+  .li.s.fo { background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 30%, var(--tint-base)), var(--acc)); box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.8), 0 0 0 1px color-mix(in srgb, var(--acc) 75%, black), 0 8px 16px -8px color-mix(in srgb, var(--acc) 70%, black); }
   .li.s.fo .t, .li.s.fo .n, .li.s.fo .z { color: var(--on); }
   .li.s.fo .kdot { box-shadow: 0 0 0 2px var(--on); }
 
@@ -337,14 +337,14 @@
   .bt:hover { filter: brightness(1.04); transform: translateY(-1px); }
   .bt:active { transform: translateY(1px); }
   .bt:disabled { opacity: 0.55; cursor: default; transform: none; }
-  .bt.pri { color: var(--acc-ink); background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 45%, white), var(--acc) 60%); box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.7), 0 0 0 1px color-mix(in srgb, var(--acc) 75%, black), 0 8px 16px -8px var(--acc); }
+  .bt.pri { color: var(--acc-ink); background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 45%, var(--tint-base)), var(--acc) 60%); box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.7), 0 0 0 1px color-mix(in srgb, var(--acc) 75%, black), 0 8px 16px -8px var(--acc); }
   .bt.dan { color: var(--on); background: var(--bad); box-shadow: inset 0 1.5px 0 rgba(255, 255, 255, 0.6), 0 0 0 1px color-mix(in srgb, var(--bad) 75%, black), 0 8px 16px -8px var(--bad); }
   .bt :global(svg) { width: 19px; height: 19px; flex: none; }
   .bt.sm { height: 36px; font-size: 14px; padding: 0 13px; gap: 6px; }
   .bt.sm :global(svg) { width: 16px; height: 16px; }
   .bt.ic { width: 36px; padding: 0; }
   .btn.mini { min-width: 20px; height: 20px; font-size: 11px; border-radius: 10px; padding: 0 5px; }
-  .badge { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12.5px; font-weight: 800; white-space: nowrap; background: color-mix(in srgb, var(--k) 16%, white); color: color-mix(in srgb, var(--k) 62%, black); }
+  .badge { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12.5px; font-weight: 800; white-space: nowrap; background: color-mix(in srgb, var(--k) 16%, var(--tint-base)); color: color-mix(in srgb, var(--k) 62%, black); }
   .badge::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--k); }
 
   /* cabecera de la copia */
@@ -380,15 +380,15 @@
   .fr { height: 38px; border-top: 1px solid var(--line); font-size: 14px; font-weight: 700; color: var(--ink-2); cursor: pointer; position: relative; }
   .fr:first-child { border-top: 0; }
   .fr:hover { background: var(--glass-in); }
-  .fr.s { background: color-mix(in srgb, var(--acc) 12%, white); box-shadow: inset 3px 0 0 var(--acc); }
+  .fr.s { background: color-mix(in srgb, var(--acc) 12%, var(--tint-base)); box-shadow: inset 3px 0 0 var(--acc); }
   .fr .ico { width: 20px; height: 20px; color: var(--ink-3); display: grid; place-items: center; }
   .fr .ico :global(svg) { width: 100%; height: 100%; }
   .fr .fn, .fr .loc, .fr .md { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .fr .loc, .fr .md { font-size: 12.5px; color: var(--ink-3); }
   .fr .zz { font-size: 13px; color: var(--ink-3); text-align: right; }
   .fst { font-size: 12px; font-weight: 800; height: 22px; border-radius: 999px; display: inline-flex; align-items: center; padding: 0 9px; justify-self: start; white-space: nowrap; }
-  .fst.same { background: var(--face); color: var(--ink-3); } .fst.changed { background: color-mix(in srgb, var(--warn) 20%, white); color: var(--warn); }
-  .fst.onlyCopy { background: color-mix(in srgb, var(--bad) 18%, white); color: var(--bad); } .fst.newNow { background: color-mix(in srgb, var(--ok) 18%, white); color: var(--ok); }
+  .fst.same { background: var(--face); color: var(--ink-3); } .fst.changed { background: color-mix(in srgb, var(--warn) 20%, var(--tint-base)); color: var(--warn); }
+  .fst.onlyCopy { background: color-mix(in srgb, var(--bad) 18%, var(--tint-base)); color: var(--bad); } .fst.newNow { background: color-mix(in srgb, var(--ok) 18%, var(--tint-base)); color: var(--ok); }
   .fr .one { position: absolute; right: 10px; top: 1px; display: none; }
   .fr:hover .one, .fr.s .one, .fr.arm .one { display: inline-flex; }
   .fr:hover .fst, .fr.s .fst, .fr.arm .fst { visibility: hidden; }

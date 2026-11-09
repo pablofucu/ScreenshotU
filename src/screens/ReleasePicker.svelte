@@ -62,12 +62,12 @@
   .fbox button{position:absolute;left:50%;transform:translateX(-50%);border:0;background:none;font:800 12px var(--round);color:var(--ink-3);cursor:pointer;padding:0 14px;line-height:1}
   .fbox .inc{top:6px}
   .fbox .dec{bottom:6px}
-  .fbox.f{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 80%,white),var(--acc));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 8px 16px -8px var(--acc);transform:scale(1.04)}
+  .fbox.f{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 80%,var(--tint-base)),var(--acc));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black),0 8px 16px -8px var(--acc);transform:scale(1.04)}
   .fbox.f b,.fbox.f button{color:var(--on);text-shadow:0 1px 2px rgba(0,0,0,.25)}
   .rhint{margin:10px 4px 0;font-size:15px;font-weight:600;color:var(--ink-2);text-align:center}
   .fbtns{margin-top:auto;margin-bottom:2px;align-self:center;display:flex;gap:14px}
   .fsave{display:flex;align-items:center;gap:10px;height:44px;padding:0 22px 0 8px;border-radius:999px;cursor:pointer;font-size:18px;font-weight:800;color:var(--on);
-    background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 80%,white),var(--acc));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black)}
+    background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 80%,var(--tint-base)),var(--acc));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--acc) 75%,black)}
   .fsave.alt{background:linear-gradient(180deg,var(--glass-chip),var(--face));color:var(--ink-2);box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px var(--line)}
   .fsave.dis{opacity:.5}
 </style>

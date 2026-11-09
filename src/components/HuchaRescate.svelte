@@ -84,7 +84,7 @@
 
 <style>
   .resc{padding:18px 26px;
-    box-shadow:inset 0 1.5px 0 var(--glass-top),0 0 0 2px color-mix(in srgb,var(--rc) 60%,white),0 18px 30px -18px color-mix(in srgb,var(--rc) 55%,black)}
+    box-shadow:inset 0 1.5px 0 var(--glass-top),0 0 0 2px color-mix(in srgb,var(--rc) 60%,var(--tint-base)),0 18px 30px -18px color-mix(in srgb,var(--rc) 55%,black)}
   .ptitle{font-size:20px;font-weight:800;color:var(--ink-2);display:flex;align-items:center;gap:10px;white-space:nowrap}
   .ptitle small{font-size:15px;font-weight:600;color:var(--ink-3)}
   .rdot{width:14px;height:14px;border-radius:50%;background:var(--rc);flex:none}
@@ -95,13 +95,13 @@
   .jar{display:flex;gap:3px;height:36px;margin:12px 0 6px;padding:4px;border-radius:14px;background:var(--face);box-shadow:inset 0 1px 3px rgba(0,0,0,.12)}
   .jar i{flex:1;min-width:0;border-radius:5px;background:repeating-linear-gradient(135deg,var(--face) 0 3px,var(--face-hi) 3px 6px)}
   .jar i.d1{background:var(--rc)}
-  .jar i.d2{background:color-mix(in srgb,var(--rc) 60%,white)}
+  .jar i.d2{background:color-mix(in srgb,var(--rc) 60%,var(--tint-base))}
   .jarl{display:flex;justify-content:space-between;align-items:baseline;gap:10px;line-height:20px;font-size:14px;font-weight:800;color:var(--ink-3)}
   .jarl>*{white-space:nowrap}
   .jarl>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
   .jarl b{color:var(--rink);font-size:18px}
   .jarl .sw2{display:inline-block;width:11px;height:11px;border-radius:3px;margin:0 4px 0 10px;vertical-align:-1px;background:var(--rc)}
-  .jarl .sw2.d2{background:color-mix(in srgb,var(--rc) 60%,white)}
+  .jarl .sw2.d2{background:color-mix(in srgb,var(--rc) 60%,var(--tint-base))}
   .hrow{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:16px;margin-top:12px}
   .plist{border-radius:18px;padding:8px 16px;background:var(--face-hi);box-shadow:0 0 0 1px var(--line);min-width:0;overflow:hidden}
   .plist .k{font-size:13px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em}
@@ -116,7 +116,7 @@
   .pr.no .pg>em{font-style:normal;margin-left:8px;font-size:11.5px;font-weight:800;color:var(--rink);background:var(--rsoft);border-radius:999px;padding:2px 8px}
   .pnone{padding:10px 0;font-size:14px;font-weight:700;color:var(--ink-3)}
   .hside{display:flex;flex-direction:column;gap:10px}
-  .cd{flex:1;border-radius:18px;padding:8px 16px;background:var(--rsoft);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--rc) 45%,white);color:var(--rink);font-size:13px;font-weight:800}
+  .cd{flex:1;border-radius:18px;padding:8px 16px;background:var(--rsoft);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--rc) 45%,var(--tint-base));color:var(--rink);font-size:13px;font-weight:800}
   .cd .k{color:var(--rink);font-size:13px;text-transform:uppercase;letter-spacing:.05em}
   .cd b{display:block;font-size:34px;line-height:1.05;margin:1px 0}
   .cd small{display:block;font-size:12.5px;font-weight:700;line-height:1.35;opacity:.9}
@@ -130,7 +130,7 @@
   .half .ptitle{font-size:17px;gap:8px}
   .half .ptitle small{font-size:13px}
   .half .ttl{overflow:hidden;text-overflow:ellipsis;min-width:0}
-  .cdc{margin-left:auto;background:var(--rsoft);color:var(--rink);border-radius:999px;padding:2px 12px;font-size:17px;font-weight:800;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--rc) 45%,white)}
+  .cdc{margin-left:auto;background:var(--rsoft);color:var(--rink);border-radius:999px;padding:2px 12px;font-size:17px;font-weight:800;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--rc) 45%,var(--tint-base))}
   .half .jar{height:36px;margin:12px 0 4px;gap:2px;padding:3px;border-radius:11px}
   .half .jar i{border-radius:4px}
   .half .jarl b{font-size:16px}

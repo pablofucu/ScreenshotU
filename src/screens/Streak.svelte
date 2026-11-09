@@ -323,8 +323,8 @@
   /* medallas */
   .smeds{position:absolute;left:464px;top:88px;width:768px;height:120px;display:grid;gap:16px}
   .smed{position:relative;display:flex;align-items:center;gap:14px;padding:0 20px;border-radius:24px;min-width:0;
-    background:linear-gradient(180deg,color-mix(in srgb,var(--soft) 40%,white),var(--soft));
-    box-shadow:inset 0 1.5px 0 var(--glass-top),0 0 0 1.5px color-mix(in srgb,var(--c) 40%,white),0 16px 26px -18px color-mix(in srgb,var(--c) 70%,black)}
+    background:linear-gradient(180deg,color-mix(in srgb,var(--soft) 35%,var(--tint-base)),color-mix(in srgb,var(--soft) 35%,var(--tint-base)));
+    box-shadow:inset 0 1.5px 0 var(--glass-top),0 0 0 1.5px color-mix(in srgb,var(--c) 40%,var(--tint-base)),0 16px 26px -18px color-mix(in srgb,var(--c) 70%,black)}
   .smed.on{box-shadow:inset 0 1.5px 0 var(--glass-top),0 0 0 2.5px var(--c),0 16px 26px -18px color-mix(in srgb,var(--c) 70%,black)}
   .sflw{position:relative;flex:none;width:62px;height:62px}
   .sfl{width:100%;height:100%;display:block}
@@ -407,7 +407,7 @@
   .smore{font-size:13px;font-weight:700;color:var(--ink-3);margin-top:0;line-height:15px}
   .snone{margin-top:40px;font-size:15px;font-weight:700;color:var(--ink-3);text-align:center}
   .shb{display:flex;align-items:flex-end;gap:3px;height:120px;margin-top:12px;border-bottom:2px solid var(--line)}
-  .shb i{flex:1;border-radius:3px 3px 1px 1px;background:color-mix(in srgb,var(--c) 45%,white);transition:height .7s cubic-bezier(.3,.8,.3,1)}
+  .shb i{flex:1;border-radius:3px 3px 1px 1px;background:color-mix(in srgb,var(--c) 45%,var(--tint-base));transition:height .7s cubic-bezier(.3,.8,.3,1)}
   .shb i.pk{background:var(--c)}
   .shl{display:flex;justify-content:space-between;margin-top:4px;font-size:11.5px;font-weight:700;color:var(--ink-3)}
   .speak{margin-top:6px;font-size:13.5px;font-weight:800;color:var(--ink-2)}
