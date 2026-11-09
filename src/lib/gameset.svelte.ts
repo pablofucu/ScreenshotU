@@ -3,6 +3,7 @@
 import { app, type GameTab, type MenuItem } from './store.svelte';
 import { IS_TABLET } from './backend';
 import { blip } from './sound';
+import { confirmTwice } from './confirm';
 import { ICON } from './icons';
 import { closeOverlay, MAGPIE_ORDER, menuAct, pushOverlay, setMagpie } from './controller.svelte';
 import type { Title } from './types';
@@ -83,7 +84,7 @@ export function gameSetAct(item: MenuItem) {
     g.list = 'category'; g.lrow = 0;
     blip(1320);
   } else if (item === 'remove') {
-    if (!g.confirm) { g.confirm = true; blip(520); return; }
+    if (!confirmTwice(g)) return;
     viaMenu('remove', true);
   } else {
     viaMenu(item);

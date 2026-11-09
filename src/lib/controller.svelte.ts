@@ -3,6 +3,7 @@ import { app, SORT_LABEL, SORT_ORDER, TITLE_FILTERS, TITLE_ORDERS, TITLE_ORDER_L
 import { backend, initBackend, IS_TABLET } from './backend';
 import { clearServer } from './remote/config';
 import { blip } from './sound';
+import { confirmTwice } from './confirm';
 import type { BackendEvent, Config, Library, MagpieMode, Shot, Title, TitlesTab } from './types';
 import { fmtDur } from './format';
 import { oskCmd, oskKeydown } from './osk.svelte';
@@ -458,7 +459,7 @@ export async function menuAct(item: MenuItem) {
     return;
   }
   if (item === 'remove') {
-    if (!app.menu.confirm) { app.menu.confirm = true; blip(520); return; }
+    if (!confirmTwice(app.menu)) return;
     app.overlay = ''; app.overlayStack = [];
     try {
       await backend.removeGame(t.gameId!);

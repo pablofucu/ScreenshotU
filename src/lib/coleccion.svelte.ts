@@ -4,6 +4,7 @@
 import { app, accentOf } from './store.svelte';
 import { backend } from './backend';
 import { blip } from './sound';
+import { confirmTwice } from './confirm';
 import { RAINBOW, type Accent } from './icons';
 import { hueOf, inkDark } from './oklch';
 import { variablesCSS } from './atmos';
@@ -275,7 +276,7 @@ export async function saveCollForm() {
 async function deleteColl() {
   const f = app.collForm;
   if (!f.id) return;
-  if (!f.confirm) { f.confirm = true; blip(520); return; }
+  if (!confirmTwice(f)) return;
   if (!(await saveColls(app.collections.filter((c) => c.id !== f.id)))) return;
   closeOverlay();
   toast('Colección borrada · tus capturas no se han tocado');

@@ -3,6 +3,7 @@
 // (ubicaciones detectadas con Ludusavi o por el motor, o añadidas a mano) es un cajón que se abre desde la cabecera.
 import { IS_TAURI, IS_TABLET, backend } from './backend';
 import { blip } from './sound';
+import { CONFIRM_MS } from './confirm';
 import { fmtBytes, popOverlay, pushOverlay, toast } from './controller.svelte';
 import { fmtAgo } from './format';
 import { openOsk } from './osk.svelte';
@@ -251,7 +252,7 @@ function arm(key: string) {
   sv.confirm = key;
   blip(520);
   clearTimeout(confirmTimer);
-  confirmTimer = setTimeout(() => { if (sv.confirm === key) sv.confirm = ''; }, 3500);
+  confirmTimer = setTimeout(() => { if (sv.confirm === key) sv.confirm = ''; }, CONFIRM_MS);
 }
 function disarm() { sv.confirm = ''; clearTimeout(confirmTimer); }
 

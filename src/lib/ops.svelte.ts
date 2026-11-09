@@ -3,6 +3,7 @@
 import { app, type FormKind, type MenuItem, type MoveTarget } from './store.svelte';
 import { backend, IS_TABLET } from './backend';
 import { blip } from './sound';
+import { confirmTwice } from './confirm';
 import { openOsk } from './osk.svelte';
 import { RAINBOW } from './icons';
 import { accentForHue, hueOf, inkDark } from './oklch';
@@ -432,7 +433,7 @@ export async function shotMenuAct(item: MenuItem) {
     const paths = item === 'delsel' ? [...app.sel] : focused ? [focused.path] : [];
     if (!paths.length) return;
     // Primera pulsación: confirmar; la segunda las manda a la Papelera.
-    if (!app.menu.confirm) { app.menu.confirm = true; blip(520); return; }
+    if (!confirmTwice(app.menu)) return;
     await trashShots(paths);
   } else if (item === 'copy') {
     closeOverlay();
@@ -567,7 +568,7 @@ export function moveCmd(c: string) {
   else if (c === 'lb') { m.row = Math.max(0, m.row - 6); m.confirm = false; blip(700); }
   else if (c === 'rb') { m.row = Math.min(n - 1, m.row + 6); m.confirm = false; blip(700); }
   else if (c === 'a') {
-    if (!m.confirm) { m.confirm = true; blip(520); } else void doMove();
+    if (confirmTwice(m)) void doMove();
   } else if (c === 'b' || c === 'menu') { popOverlay(); blip(520); }
 }
 
