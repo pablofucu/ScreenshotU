@@ -1635,6 +1635,7 @@ async function libraryGate() {
 
 export async function rescan() {
   app.scanning = true;
+  pendingRefresh = false; // este escaneo cubre lo pendiente; lo que llegue durante él se lanza al acabar
   toast('Buscando capturas…', 0);
   try {
     app.lib = await scanLib();
@@ -1656,6 +1657,7 @@ export async function rescan() {
   app.animKey++;
   setFocus(defaultKey('home'));
   void sgdbAuto();
+  flushRefresh();
 }
 
 /** Reescanea sin perder el sitio: mantiene plataforma, título y captura seleccionados. */
@@ -1665,10 +1667,31 @@ export function flushRefresh() {
 }
 const titleKey = (t: Title | undefined) => (t ? (t.gameId ?? t.dir ?? t.name) : '');
 
-export async function softRefresh() {
-  if (app.scanning) return;
-  if (app.overlay || app.view === 'viewer') { pendingRefresh = true; return; }
-  pendingRefresh = false;
+/**
+ * Reescaneo suave: una sola pasada a la vez y las peticiones que llegan mientras tanto se juntan
+ * en una más al terminar (una ráfaga de capturas no lanza varios escaneos del disco en paralelo).
+ *   - con paneles abiertos o en el visor: queda pendiente y `flushRefresh` lo lanza al salir;
+ *   - durante un `rescan` completo: queda pendiente y se lanza al acabar.
+ * Quien hace `await softRefresh()` espera a una pasada que empezó después de su llamada.
+ */
+let refreshing: Promise<void> | null = null;
+let refreshAgain = false;
+export function softRefresh(): Promise<void> {
+  if (app.scanning || app.overlay || app.view === 'viewer') { pendingRefresh = true; return refreshing ?? Promise.resolve(); }
+  if (refreshing) { refreshAgain = true; return refreshing; }
+  refreshing = (async () => {
+    do {
+      refreshAgain = false;
+      pendingRefresh = false;
+      await refreshOnce();
+    } while (refreshAgain && !app.scanning && !app.overlay && app.view !== 'viewer');
+    if (refreshAgain) pendingRefresh = true;
+    refreshAgain = false;
+  })().finally(() => { refreshing = null; });
+  return refreshing;
+}
+
+async function refreshOnce() {
   const pid = app.platform?.id;
   const tkey = titleKey(app.platform?.titles[app.t]);
   const spath = app.cur.shots[app.s]?.path;
