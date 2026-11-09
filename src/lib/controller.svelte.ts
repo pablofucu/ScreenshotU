@@ -22,7 +22,8 @@ import { checkUpdate, updateAct } from './updater.svelte';
 import { REMOTE_CYCLE, isRemoteId, remoteAct, type RemoteId } from './remote.svelte';
 import { openPhrases, phrasesCmd } from './phrases.svelte';
 import { gameSetCmd, openGameSettings } from './gameset.svelte';
-import { GOAL_TXT, goalMin, goalMinLeft, goalTrack, groupOf, localDay, RESCUE_MIN_PLAY, type GoalGroup, type GoalKey } from './readgoals';
+import { GOAL_TXT, goalMin, goalMinLeft, goalTrack, groupOf, localDay, RESCUE_MIN_PLAY, type GoalKey } from './readgoals';
+import { openSearch, searchCmd } from './search.svelte';
 import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
 import { libraryCmd, loadLibraryInfo, openLibrary } from './library.svelte';
 import { addCollCmd, collCmd, collFirst, openCollShots, collFormCmd, collKey, collReveal, collTab, collValid, loadCollections, openAddColl, openCollForm, pickerCmd, resetColl, setCollFocus } from './coleccion.svelte';
@@ -42,8 +43,8 @@ export const DETAIL_SHOTS = 5;
 export const RANK_VIEW_H = 384;
 export const rankH = (i: number) => (i < 3 ? 76 : 64);
 export const rankY = (i: number) => (i < 3 ? i * 84 : 252 + (i - 3) * 72);
-/** Entradas del dock de Inicio (Buscar, Favoritas, Estadísticas, Añadir, Ajustes, Salir). */
-export const DOCK_N = 6;
+/** Entradas del dock de Inicio (Buscar, Favoritas, Estadísticas, Añadir). */
+export const DOCK_N = 4;
 
 const screenEl = () => document.getElementById('screen');
 
@@ -95,8 +96,8 @@ function validKey(view: View, key: string | undefined): string | undefined {
   if (view === 'home') {
     if (key === 'welcome') return app.config.root || IS_TABLET ? undefined : key;
     if (/^plat\d+$/.test(key)) return app.config.root && n < app.lib.platforms.length ? key : undefined;
-    // En la tablet no existen «Añadir juego» (dock3) ni «Salir» (dock5): solo funcionan en el PC.
-    if (/^dock\d+$/.test(key)) return n >= 1 && n < DOCK_N && !(IS_TABLET && (n === 3 || n === 5)) ? key : undefined;
+    // En la tablet no existe «Añadir juego» (dock3): solo funciona en el PC.
+    if (/^dock\d+$/.test(key)) return n >= 0 && n < DOCK_N && !(IS_TABLET && n === 3) ? key : undefined;
     if (/^rec\d+$/.test(key)) return app.config.root && n < app.recent.length ? key : undefined;
     if (key === 'read') return app.readCard ? key : undefined;
     if (key === 'avatar') return app.readCard ? key : undefined;
@@ -592,7 +593,7 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
   } else if (a === 'rec') {
     openRecent(+b);
   } else if (a === 'read') {
-    openStreak(app.goalKeys.find((k) => groupOf(k) === app.readFace));
+    openStreak(app.homeGoal || undefined);
   } else if (a === 'avatar') {
     openStreak();
   } else if (a === 'sr') {
@@ -633,12 +634,10 @@ function openRecent(i: number) {
 }
 
 function dock(i: number) {
-  if (i === 0) toast('Buscar: próximamente');
+  if (i === 0) openSearch();
   else if (i === 1) openFavs();
   else if (i === 2) openStats();
   else if (i === 3) openAdd();
-  else if (i === 4) openSettings();
-  else if (i === 5) void closeApp();
 }
 
 /* ---------- racha de lectura ---------- */
@@ -663,16 +662,18 @@ export function pickStreak(k: GoalKey) {
   app.streakKey = k;
   blip(700);
 }
-/** Cambia la cara de la ficha de Inicio. */
-function setReadFace(g: GoalGroup) {
-  if (!app.goalFaces.includes(g) || g === app.readFace) return;
-  app.readFace = g;
+/** Cambia la meta de la ficha de Inicio. */
+function setHomeGoal(k: GoalKey) {
+  if (!app.goalKeys.includes(k) || k === app.homeGoal) return;
+  app.homeGoal = k;
   blip(700);
 }
-/** LB/RB en Inicio sobre la ficha: la otra cara. */
+/** LB/RB en Inicio sobre la ficha: la meta siguiente/anterior, con vuelta. */
 function stepReadFace(d: number) {
-  if (app.goalFaces.length < 2) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
-  setReadFace(app.goalFaces.find((g) => g !== app.readFace) ?? app.readFace);
+  const keys = app.goalKeys;
+  if (keys.length < 2) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+  const i = Math.max(0, keys.indexOf(app.homeGoal || keys[0]));
+  setHomeGoal(keys[(i + (d < 0 ? -1 : 1) + keys.length) % keys.length]);
 }
 /** LB/RB en la racha: el otro anillo. */
 function streakSwitch(d: number) {
@@ -1491,11 +1492,6 @@ async function quit() {
   if (backend.isTauri) await backend.exit();
   else toast('Salir solo funciona en la aplicación de escritorio');
 }
-/** Botón «Salir» de Inicio: respeta «Al cerrar, seguir en la bandeja» (a la bandeja si está activado). */
-async function closeApp() {
-  if (backend.isTauri) await backend.closeMain();
-  else toast('Salir solo funciona en la aplicación de escritorio');
-}
 
 export function setSection(i: number) {
   dropRestore();
@@ -1589,6 +1585,7 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
 function overlayCmd(c: string) {
   switch (app.overlay) {
     case 'menu': menuCmd(c); return;
+    case 'search': searchCmd(c); return;
     case 'gameset': gameSetCmd(c); return;
     case 'form': formCmd(c); return;
     case 'add': addCmd(c); return;
@@ -1826,7 +1823,7 @@ export function cmd(c: string) {
   if (listTab() && listCmd(c)) return;
   if (collTab() && collCmd(c)) return;
   if (c.startsWith('goal:')) { pickStreak(c.slice(5) as GoalKey); return; }
-  if (c.startsWith('face:')) { setReadFace(c.slice(5) as GoalGroup); return; }
+  if (c.startsWith('hgoal:')) { setHomeGoal(c.slice(6) as GoalKey); return; }
   if (c.startsWith('stab:')) { setStatsTab(c.slice(5) as typeof app.statsTab); return; }
   switch (c) {
     case 'left': move(-1, 0); break;
@@ -1902,7 +1899,8 @@ export function onKeyDown(e: KeyboardEvent) {
   if (e.ctrlKey || e.altKey || e.metaKey) return;
   const tag = (e.target as HTMLElement | null)?.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') {
-    if (e.key === 'Escape' || (e.key === 'Enter' && tag === 'INPUT' && (e.target as HTMLElement).closest('.tsearch'))) { (e.target as HTMLElement).blur(); e.preventDefault(); }
+    if (e.key === 'Escape' || (e.key === 'Enter' && tag === 'INPUT' && (e.target as HTMLElement).closest('.tsearch, .gsearch'))) { (e.target as HTMLElement).blur(); e.preventDefault(); }
+    else if (e.key === 'ArrowDown' && tag === 'INPUT' && (e.target as HTMLElement).closest('.gsearch')) { (e.target as HTMLElement).blur(); e.preventDefault(); cmd('down'); }
     return;
   }
   if (app.view === 'viewer' && !app.overlay && !app.audioMenu && (e.key === '+' || e.key === '=' || e.key === '-')) {

@@ -9,12 +9,10 @@
   import ReadCard from '../components/ReadCard.svelte';
 
   const DOCK = [
-    { n: 'Buscar', ic: ICON.search, c: 0, hide: true }, // oculto hasta que exista el buscador global
+    { n: 'Buscar', ic: ICON.search, c: 0 },
     { n: 'Favoritas', ic: ICON.star, c: 1 },
     { n: 'Estadísticas', ic: ICON.chart, c: 3 },
     { n: 'Añadir juego', ic: ICON.plus, c: 4 },
-    { n: 'Ajustes', ic: ICON.gear, c: 5 },
-    { n: 'Salir', ic: ICON.power, c: 6 },
   ];
 
   const plats = $derived(app.lib.platforms);
@@ -34,11 +32,10 @@
   const rowW = $derived(recent.length * (CW + CGAP) - CGAP + (app.readCard ? CGAP + RW : 0));
   const cx0 = $derived((1280 - rowW) / 2);
   const rx = $derived(cx0 + recent.length * (CW + CGAP));
-  const lastR = $derived(cx0 + recent.length * CW + (recent.length - 1) * CGAP);
   const focusRec = $derived(app.focus.startsWith('rec') ? recent[+app.focus.slice(3)] : undefined);
   function meta(t: (typeof recent)[number]['t'], pname: string) {
-    const when = t.lastPlayed ? fmtAgo(t.lastPlayed) : t.shots[0] ? `Captura del ${fmtShort(t.shots[0].date)}` : '';
-    const rest = [t.playSeconds >= 60 ? fmtDur(t.playSeconds) : pname, t.shots.length ? nCapturas(t.shots.length) : ''].filter(Boolean);
+    const when = t.lastPlayed ? `Jugado ${fmtAgo(t.lastPlayed)}` : t.shots[0] ? `Captura del ${fmtShort(t.shots[0].date)}` : '';
+    const rest = [t.playSeconds >= 60 ? `${fmtDur(t.playSeconds)} en total` : pname, t.shots.length ? nCapturas(t.shots.length) : ''].filter(Boolean);
     return { when, rest: rest.join(' · ') };
   }
 
@@ -91,10 +88,7 @@
   {/if}
 
   {#if recent.length}
-    <div class="hsect" style="left:{cx0}px">Seguir jugando</div>
-    {#if week.min > 0 || week.shots > 0}
-      <div class="hweek" style={lastR - cx0 < 520 ? `left:${cx0 + 190}px` : `right:${1280 - lastR}px`}>Últimos 7 días: <b>{week.min > 0 ? fmtDur(week.min * 60) : 'sin partidas'}</b> · <b>{nCapturas(week.shots)}</b></div>
-    {/if}
+    <div class="hsect" style="left:{cx0}px">Seguir jugando{#if week.min > 0 || week.shots > 0}<small> · Últimos 7 días: <b>{week.min > 0 ? fmtDur(week.min * 60) : 'sin partidas'}</b> · <b>{nCapturas(week.shots)}</b></small>{/if}</div>
     {#each recent as r, i (r.t.id)}
       {@const x = cx0 + i * (CW + CGAP)}
       {@const m = meta(r.t, app.lib.platforms[r.pi].name)}
@@ -117,7 +111,7 @@
 
 <div class="hdock">
   {#each DOCK as d, i}
-    {#if !d.hide && !(IS_TABLET && (i === 3 || i === 5))}
+    {#if !(IS_TABLET && i === 3)}
     <div class="dpill pill fx" class:f={app.focus === 'dock' + i} data-k="dock{i}" data-act="dock:{i}" style="--dc:{RAINBOW[d.c].c}">
       <i>{@html d.ic}</i>{d.n}
     </div>
@@ -125,9 +119,11 @@
   {/each}
 </div>
 
-<Hints list={[['A', app.focus === 'read' ? 'Ver racha' : 'Abrir', 'a'], ...(app.focus === 'read' && app.goalFaces.length > 1 ? [['LB/RB', 'Cambiar', 'lb'] as [string, string, string]] : []), ...(focusRec?.t.launchable ? [['X', 'Jugar', 'x'] as [string, string, string]] : []), ['Start', 'Menú', 'menu']]} />
+<Hints list={[['A', app.focus === 'read' ? 'Ver racha' : 'Abrir', 'a'], ...(app.focus === 'read' && app.goalKeys.length > 1 ? [['LB/RB', 'Categoría', 'lb'] as [string, string, string]] : []), ...(focusRec?.t.launchable ? [['X', 'Jugar', 'x'] as [string, string, string]] : []), ['Start', 'Menú', 'menu']]} />
 
 <style>
+  .hsect small{font-size:15px;font-weight:600;letter-spacing:0}
+  .hsect small :global(b){color:var(--ink);font-weight:800}
   /* Plataformas: el color del foco entra fundido (colores registrados, que sí se interpolan) y la
      escala va sin rebote, para que color y tamaño lleguen a la vez. */
   @property --pt { syntax: '<color>'; inherits: false; initial-value: transparent; }

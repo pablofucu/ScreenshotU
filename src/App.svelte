@@ -45,6 +45,7 @@
   import StatusBar from './screens/StatusBar.svelte';
   import ReleasePicker from './screens/ReleasePicker.svelte';
   import AchievementsModal from './screens/AchievementsModal.svelte';
+  import Search from './screens/Search.svelte';
   import Osk from './components/Osk.svelte';
   import AudioMenu from './components/AudioMenu.svelte';
   import ResumePill from './components/ResumePill.svelte';
@@ -200,6 +201,7 @@
     {#if app.overlay === 'status'}<StatusBar />{/if}
     {#if app.overlay === 'release'}<ReleasePicker />{/if}
     {#if app.overlay === 'achievements'}<AchievementsModal />{/if}
+    {#if app.overlay === 'search'}<Search />{/if}
     {#if app.audioMenu}<AudioMenu />{/if}
     {#if app.osk.open}<Osk />{/if}
   {/if}

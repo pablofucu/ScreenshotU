@@ -5,7 +5,7 @@ import type { AudioOutput, Config, GameStatsDb, GameStatus, Library, MagpieStatu
 import { hexToLch, hexToRgb, hueOf } from './oklch';
 import { gamePair, INK, pair, variablesCSS } from './atmos';
 import { collItems, collectionTitle } from './collections';
-import { GOAL_COL, GOAL_KEYS, goalMin, groupOf, type GoalGroup, type GoalKey } from './readgoals';
+import { GOAL_COL, GOAL_KEYS, goalMin, type GoalKey } from './readgoals';
 import { calendar, categoryStats, evoBuckets, playedPlatforms, playYears, rankPeriod, titleStats, yearReview, type EvoKind, type GMetric, type PeriodKind } from './stats';
 
 export type View = 'home' | 'titles' | 'detail' | 'shots' | 'viewer' | 'stats' | 'evo' | 'streak' | 'gstats';
@@ -87,7 +87,8 @@ export type MenuItem =
   | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'addcoll' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'release' | 'saves' | 'category' | 'delshot' | 'delsel' | 'setexe' | 'setdir' | `cat:${string}`
   /* Menú de Start de la lista de juegos (y «Salida de audio», también en el de capturas). */
   | 'filter' | `flt:${string}` | 'order' | 'tsize' | 'audio' | 'settings' | 'gstats' | 'play' | 'listopts' | 'copy' | 'pin' | 'collshots';
-export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'collform' | 'picker' | 'addcoll' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library' | 'status' | 'release' | 'stalled' | 'achievements' | 'gameset' | 'ntimport';
+export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'collform' | 'picker' | 'addcoll' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library' | 'status' | 'release' | 'stalled' | 'achievements' | 'gameset' | 'ntimport' | 'search';
+export const titleMatches = (name: string, q: string): boolean => name.toLowerCase().includes(q.toLowerCase().trim());
 /** «Nueva colección» / «Editar colección». */
 export interface CollFormState {
   /** null = colección nueva. */
@@ -435,8 +436,8 @@ class Store {
   /** Pantalla de racha: anillo elegido (mapa y cifras) y pantalla a la que vuelve B. */
   streakKey = $state<GoalKey>('vn');
   streakFrom = $state<View>('home');
-  /** Cara visible de la ficha de Inicio y última entrada (reinicia su ciclo). */
-  readFace = $state<GoalGroup>('read');
+  /** Meta elegida en la ficha de Inicio ('' = la primera). */
+  homeGoal = $state<GoalKey | ''>('');
   inputAt = $state(0);
   /** Desde dónde se abrió la ficha (B vuelve allí). */
   detailFrom = $state<'home' | 'titles' | 'stats' | 'gstats'>('titles');
@@ -553,8 +554,8 @@ class Store {
       default: v = all;
     }
     if (this.catalogSearch.trim()) {
-      const q = this.catalogSearch.toLowerCase().trim();
-      v = v.filter((i) => titles[i].name.toLowerCase().includes(q));
+      const q = this.catalogSearch;
+      v = v.filter((i) => titleMatches(titles[i].name, q));
     }
     if (this.catalogLetter) {
       v = v.filter((i) => titles[i].name.toUpperCase().startsWith(this.catalogLetter));
@@ -564,7 +565,6 @@ class Store {
 
   /** Metas diarias activas: plataforma presente y meta > 0, en orden fijo. */
   goalKeys = $derived(GOAL_KEYS.filter((k) => this.lib.platforms.some((p) => p.id === k) && goalMin(this.config, k) > 0));
-  goalFaces = $derived((['read', 'play'] as GoalGroup[]).filter((g) => this.goalKeys.some((k) => groupOf(k) === g)));
   /** Ficha de metas en Inicio (si hay alguna meta activa). */
   readCard = $derived(!!this.config.root && this.goalKeys.length > 0);
 
