@@ -260,9 +260,9 @@
   <Hints list={[
     ['A', app.focus === 'play' ? (playing ? (canResume(T?.gameId) ? 'Volver' : 'En marcha') : 'Jugar') : app.focus === 'dach' ? 'Ver logros' : app.focus === 'dst' ? 'Cambiar estado' : app.focus === 'drel' ? 'Cambiar fecha' : app.focus === 'dhrs' || app.focus === 'dwk' ? 'Estadísticas' : 'Seleccionar', 'a'],
     ...(app.focus === 'dach' ? [['Y', 'Cambiar diseño (' + (VARIANT_NAMES[app.config.achievementsCardVariant ?? achState.summary?.variant ?? 1] ?? '') + ')', 'y'] as [string, string, string]] : []),
-    ...(T.launchable && !playing ? [['X', 'Jugar', 'x'] as [string, string, string]] : []),
+    ...(T.launchable && !playing && app.focus !== 'play' ? [['X', 'Jugar', 'x'] as [string, string, string]] : []),
+    ['Start', 'Menú', 'menu'],
     ['B', 'Volver', 'b'],
-    ['Start', 'Opciones', 'menu'],
   ]} />
 {/if}
 

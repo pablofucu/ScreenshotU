@@ -331,8 +331,8 @@
   {:else}
     <Hints list={[
       ['A', 'Abrir', 'a'],
-      ['X', 'Fijar', 'x'],
-      ['Y', 'Opciones', 'y'],
+      ...(app.platform?.titles[app.t]?.launchable ? [['X', 'Jugar', 'x'] as H] : []),
+      ['Y', 'Estado', 'y'],
       ['LT/RT', 'Pestaña', 'rt'],
       ['Start', 'Menú', 'menu'],
       ['B', 'Volver', 'b'],
@@ -341,7 +341,7 @@
 {:else if tab === 'coll'}
   <Hints list={[
     ['A', app.collAt.c >= app.collShelves.length ? 'Nueva colección' : 'Abrir', 'a'],
-    ...(app.collAt.c < app.collShelves.length ? [['X', 'Jugar / Capturas', 'x'] as H, ['Y', 'Editar', 'y'] as H] : []),
+    ...(app.collAt.c < app.collShelves.length ? [...(app.platform?.titles[app.collShelves[app.collAt.c]?.items[app.collAt.i]]?.launchable ? [['X', 'Jugar', 'x'] as H] : []), ['Y', 'Editar', 'y'] as H] : []),
     ['LT/RT', 'Pestaña', 'rt'],
     ['Start', 'Menú', 'menu'],
     ['B', 'Volver', 'b'],

@@ -73,7 +73,7 @@
   <div class="gs-wrap">
     <div class="glass gs-menu">
       <div class="face">
-        <h2>Ajustes</h2>
+        <h2>Ajustes del juego</h2>
         <p class="msub">{t?.name ?? ''}</p>
         {#each tabs as tb (tb.k)}
           <button type="button" class="gs-tab" class:on={g.tab === tb.k} class:f={g.tab === tb.k && !g.inRows && !g.list} class:dis={!tb.n}
@@ -127,7 +127,7 @@
   .gs-tab i { flex: none; width: 26px; height: 26px; display: grid; place-items: center; }
   .gs-tab i :global(svg) { width: 100%; height: 100%; }
   .gs-tab span { flex: 1; white-space: nowrap; }
-  .gs-tab em { font-style: normal; font-size: 15px; opacity: .7; }
+  .gs-tab em { font-style: normal; font-size: 15px; opacity: .7; margin-left: auto; padding-left: 10px; }
   .gs-tab.on { background: var(--gf); color: var(--on); }
   .gs-tab.f { box-shadow: var(--ring); }
   .gs-tab.dis { opacity: .45; cursor: default; }
