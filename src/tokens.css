@@ -1,0 +1,86 @@
+/* ---------- Tokens del sistema ----------
+   Fuente única de la guía de diseño (docs/guia-diseno.md). Lo importa app.css; el menú del juego,
+   el lector y el hook lo adoptan en sus fases de migración.
+   Superficies, texto, radios, tipografía, espaciado, movimiento, alturas y cristal. Las pantallas usan
+   estas variables en vez de valores fijos; el color de cada sección / juego llega por --g1 --g2 --grad
+   (suaves) y --f1 --f2 --gf --on (rellenos), que App.svelte calcula desde la atmósfera.
+   --acc = --f1 para todo lo antiguo. */
+#stage{
+  /* Tinta: --ink-3 es solo adorno (3,6:1); el texto que se lee usa --ink o --ink-2 */
+  --ink:#3a414e;--ink-2:#5f6776;--ink-3:#757d8c;--line:rgba(95,110,135,.24);--line-2:rgba(150,160,180,.35);
+  --face:#dfe3e9;--face-hi:rgba(247,249,252,.94);--panel:rgba(255,255,255,.75);--scrim:rgba(20,26,36,.45);
+  --glass-top:rgba(255,255,255,.72);--glass-mid:rgba(255,255,255,.30);--glass-bot:rgba(225,234,246,.22);
+  --glass-in:rgba(255,255,255,.55);--glass-chip:rgba(255,255,255,.80);
+  --pill-top:rgba(255,255,255,.80);--pill-bot:rgba(255,255,255,.52);--pill-glow:rgba(255,255,255,.9);
+  --soft-top:rgba(255,255,255,.55);--soft-bot:rgba(214,220,230,.4);--bub-bg:rgba(255,255,255,.72);--bub-line:rgba(255,255,255,.9);--tile-bg:rgba(255,255,255,.62);
+  --hl:rgba(255,255,255,1);--hl-ring:rgba(255,255,255,.55);--hl-bot:rgba(255,255,255,.95);--tint-base:#fff;
+
+  /* Significados reservados; --ok-f y --bad-f son los rellenos con texto blanco encima (AA) */
+  --ok:#3BB54A;--bad:#E8384F;--warn:#F2B807;--ok-f:#27833a;--bad-f:#d92c44;
+
+  --r-xs:6px;--r-s:12px;--r-m:18px;--r-l:28px;--r-pill:999px;
+  --t-xs:11px;--t-s:13px;--t-m:15px;--t-l:17px;--t-xl:20px;--t-2xl:28px;--t-3xl:44px;
+
+  /* Espaciado: escala de 4 */
+  --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:24px;--s-6:32px;
+
+  /* Movimiento: tres duraciones, dos curvas */
+  --d-1:120ms;--d-2:200ms;--d-3:300ms;
+  --e-soft:cubic-bezier(.2,.8,.3,1);
+  --e-bounce:cubic-bezier(.34,1.32,.64,1);
+
+  /* Desenfoque: uno por cristal (el panel interior no desenfoca) */
+  --blur-panel:blur(14px) saturate(1.7);
+  --blur-pill:blur(16px) saturate(1.7);
+
+  /* Foco y alturas: apoyado, enfocado, flotante */
+  --ring:0 0 0 3px var(--f1),0 0 22px 2px color-mix(in srgb,var(--f2) 45%,transparent);
+  --sh-1:0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42);
+  --sh-2:0 0 0 1px color-mix(in srgb,var(--f2) 75%,black),0 0 26px 2px color-mix(in srgb,var(--f1) 45%,transparent),0 22px 34px -16px color-mix(in srgb,var(--f2) 70%,black);
+  --sh-3:0 0 0 1px rgba(95,110,135,.24),0 8px 14px -6px rgba(20,26,36,.22),0 36px 64px -22px rgba(20,26,36,.55);
+
+  /* Iconos */
+  --i-s:16px;--i-m:20px;--i-l:28px;
+}
+/* «Noche ahumada»: modo oscuro oficial (neón). Solo redefine tokens; las reglas no cambian. */
+#stage[data-theme=dark]{color-scheme:dark;color:#e6e9f0;background:#14161c;
+  --ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#8f98a9;--line:rgba(200,210,235,.16);--line-2:rgba(200,210,235,.24);
+  --face:#262a33;--face-hi:rgba(30,33,41,.94);--panel:rgba(30,34,43,.78);--scrim:rgba(0,0,0,.6);
+  --glass-top:rgba(60,66,80,.62);--glass-mid:rgba(36,40,50,.42);--glass-bot:rgba(20,22,28,.38);
+  --glass-in:rgba(255,255,255,.08);--glass-chip:rgba(40,44,56,.82);
+  --pill-top:rgba(52,57,70,.88);--pill-bot:rgba(36,40,50,.82);--pill-glow:rgba(255,255,255,.06);
+  --soft-top:rgba(52,57,70,.62);--soft-bot:rgba(30,34,43,.5);--bub-bg:rgba(40,44,56,.82);--bub-line:rgba(200,210,235,.16);--tile-bg:rgba(40,44,56,.62);
+  --hl:rgba(255,255,255,.10);--hl-ring:rgba(255,255,255,.06);--hl-bot:rgba(255,255,255,.04);--tint-base:#262a33;
+  --ring:0 0 0 3px var(--g1),0 0 26px 4px color-mix(in srgb,var(--g2) 60%,transparent);
+  --sh-1:0 0 0 1px rgba(200,210,235,.14),0 2px 3px rgba(0,0,0,.30),0 18px 30px -16px rgba(0,0,0,.70);
+  --sh-2:0 0 0 1px color-mix(in srgb,var(--g1) 70%,black),0 0 30px 4px color-mix(in srgb,var(--g1) 50%,transparent),0 22px 34px -16px rgba(0,0,0,.8);
+  --sh-3:0 0 0 1px rgba(200,210,235,.16),0 8px 14px -6px rgba(0,0,0,.5),0 36px 64px -22px rgba(0,0,0,.85);
+}
+
+/* ---------- Componentes comunes nuevos ----------
+   .chip, .empty e .ic de la guía todavía no son globales: chocan con clases locales del mismo nombre
+   (Shelf, Saves, AchievementsModal…) y entran cuando se migre cada una de esas pantallas. */
+
+/* Cristal 2: panel interior (sin desenfoque propio) */
+.glass-in{border-radius:var(--r-m);background:var(--glass-in);box-shadow:inset 0 1px 0 var(--hl-ring),inset 0 0 0 1px var(--line)}
+
+/* Botón principal: uno por pantalla */
+.b-main{display:inline-flex;align-items:center;gap:var(--s-2);height:44px;padding:0 var(--s-5);border:0;border-radius:var(--r-pill);
+  font:800 var(--t-l)/1 var(--round);color:var(--on);background:var(--gf);cursor:pointer;
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.55),inset 0 -8px 12px -8px rgba(0,0,0,.25),0 0 0 1px color-mix(in srgb,var(--f2) 75%,black),0 12px 20px -12px color-mix(in srgb,var(--f2) 70%,black);
+  transition:transform var(--d-2) var(--e-bounce),box-shadow var(--d-2) var(--e-soft)}
+.b-main.f,.b-main:hover{transform:scale(1.06);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.55),var(--ring)}
+.b-main:active{transform:scale(.97);transition-duration:var(--d-1)}
+/* Botón secundario: se usa junto a .pill */
+.b-soft{display:inline-flex;align-items:center;gap:var(--s-2);height:44px;padding:0 var(--s-5);border:0;border-radius:var(--r-pill);
+  font:700 var(--t-l)/1 var(--round);color:var(--ink);cursor:pointer;
+  transition:transform var(--d-2) var(--e-bounce),box-shadow var(--d-2) var(--e-soft)}
+.b-soft.f,.b-soft:hover{transform:scale(1.06);box-shadow:var(--ring)}
+.b-soft:active{transform:scale(.97);transition-duration:var(--d-1)}
+.b-main[disabled],.b-soft[disabled]{opacity:.45;pointer-events:none;box-shadow:none}
+
+/* Carga: siluetas de cristal */
+.skel{position:relative;overflow:hidden;border-radius:var(--r-m);background:var(--glass-in);box-shadow:inset 0 0 0 1px var(--line)}
+.skel::after{content:'';position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(100deg,transparent 20%,var(--hl-ring) 50%,transparent 80%);animation:skel 1.4s var(--e-soft) infinite}
+@keyframes skel{to{transform:translateX(100%)}}

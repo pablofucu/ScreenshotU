@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Guía de diseño · Visor de capturas</title>
+<!-- La página usa el app.css REAL de la aplicación. Lo que se ve aquí es lo que hay en src/. -->
+<link rel="stylesheet" href="../../src/app.css">
+<link rel="stylesheet" href="propuesta.css">
+<style>
+  html,body{margin:0;height:auto;overflow:auto;background:#eceef2}
+  /* El escenario de la app mide 1280x720 fijo; aquí se deja crecer para poder hacer scroll. */
+  #stage.guia{position:relative;width:auto;height:auto;min-height:100vh;overflow:hidden;transform:none;user-select:text;-webkit-user-select:text}
+  .guia .bg{position:fixed}
+  .guia .glass,.guia .pill{position:relative;cursor:default}
+  .wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:var(--s-5) var(--s-5) 96px}
+  header.gh{display:flex;align-items:center;gap:var(--s-4);flex-wrap:wrap;margin-bottom:var(--s-5)}
+  header.gh h1{margin:0;font:800 var(--t-2xl)/1.2 var(--round);flex:1}
+  header.gh .sw7{display:flex;gap:var(--s-2)}
+  header.gh .sw7 i{width:28px;height:28px;border-radius:50%;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 1px var(--line)}
+  header.gh .sw7 i.on{box-shadow:0 0 0 3px var(--ink)}
+  section{margin-top:var(--s-6)}
+  section>h2{margin:0 0 var(--s-1);font:800 var(--t-xl)/1.2 var(--round)}
+  section>p.lead{margin:0 0 var(--s-4);font:500 var(--t-m)/1.35 var(--round);color:var(--ink-2);max-width:780px}
+  .panel{--bw:10px;display:block}
+  .panel>.face{background:var(--panel);padding:var(--s-5);height:auto}
+  .row{display:flex;flex-wrap:wrap;gap:var(--s-4);align-items:flex-end}
+  .col{display:flex;flex-direction:column;gap:var(--s-2)}
+  .grid{display:grid;gap:var(--s-4)}
+  .lab{font:700 var(--t-s)/1.2 var(--round);color:var(--ink-2)}
+  .lab code,.tag{font:700 var(--t-xs)/1 ui-monospace,Consolas,monospace;color:var(--ink-2);background:var(--glass-in);border-radius:var(--r-xs);padding:3px 6px}
+  .new{font:800 var(--t-xs)/1 var(--round);letter-spacing:.06em;text-transform:uppercase;color:var(--on);background:var(--gf);border-radius:var(--r-xs);padding:3px 6px;margin-left:var(--s-2);vertical-align:middle}
+  .swatch{width:132px}
+  .swatch b{display:block;height:56px;border-radius:var(--r-s);box-shadow:inset 0 0 0 1px var(--line)}
+  .swatch span{display:block;margin-top:6px}
+  .sub{margin:var(--s-5) 0 var(--s-3);font:800 var(--t-l)/1.2 var(--round)}
+  .sub:first-child{margin-top:0}
+  .type div{display:flex;align-items:baseline;gap:var(--s-4);padding:var(--s-2) 0;border-bottom:1px solid var(--line)}
+  .type div:last-child{border:0}
+  .type code{width:150px;flex:none}
+  .type small{margin-left:auto;font:500 var(--t-s)/1.2 var(--round);color:var(--ink-2);text-align:right}
+  .rad b{display:block;width:92px;height:64px;background:var(--face);box-shadow:inset 0 0 0 1px var(--line-2)}
+  .spc b{display:block;height:20px;background:var(--gf);border-radius:3px}
+  .lv{width:230px;height:130px;display:grid;place-items:center;font:700 var(--t-m)/1.3 var(--round);text-align:center;color:var(--ink)}
+  .lv.glass>.face{display:grid;place-items:center;background:var(--panel)}
+  .mot{width:150px;height:74px;display:grid;place-items:center;font:700 var(--t-s)/1.2 var(--round);text-align:center;border-radius:var(--r-m);background:var(--glass-chip);box-shadow:var(--sh-1);cursor:pointer}
+  .mot:hover{transform:scale(1.06) translateY(-4px)}
+  /* Plantilla a media escala */
+  .tpl{position:relative;width:640px;height:360px;border-radius:var(--r-s);background:var(--glass-in);box-shadow:inset 0 0 0 1px var(--line-2);font:700 var(--t-xs)/1.2 var(--round);color:var(--ink-2);flex:none}
+  .tpl>i{position:absolute;display:grid;place-items:center;text-align:center;font-style:normal;border-radius:6px}
+  .tpl .z-top{left:0;top:0;right:0;height:38px;background:color-mix(in srgb,var(--g1) 30%,transparent)}
+  .tpl .z-av{left:11px;top:6px;width:30px;height:30px;border-radius:50%;background:var(--gf)}
+  .tpl .z-cr{left:49px;top:11px;width:170px;height:20px;border-radius:99px;background:var(--glass-chip);box-shadow:inset 0 0 0 1px var(--line)}
+  .tpl .z-ck{right:12px;top:11px;width:70px;height:20px;border-radius:99px;background:var(--glass-chip);box-shadow:inset 0 0 0 1px var(--line)}
+  .tpl .z-ct{left:12px;right:12px;top:44px;bottom:38px;border:1.5px dashed var(--ink-3);font-size:var(--t-s)}
+  .tpl .z-bt{left:0;right:0;bottom:0;height:32px;background:color-mix(in srgb,var(--g2) 30%,transparent)}
+  .tpl .z-h{bottom:6px;height:19px;border-radius:99px;background:var(--glass-chip);box-shadow:inset 0 0 0 1px var(--line);width:74px}
+  .legend{font:500 var(--t-m)/1.5 var(--round);color:var(--ink-2);max-width:420px}
+  .legend b{color:var(--ink)}
+  .chart{width:330px}
+  .chart svg{display:block;width:100%;height:150px}
+  .chart p{margin:var(--s-2) 0 0;font:500 var(--t-s)/1.35 var(--round);color:var(--ink-2)}
+  .chart h4{margin:0 0 var(--s-2);font:800 var(--t-m)/1.2 var(--round)}
+  .chart text{font:700 11px var(--round);fill:var(--ink-2)}
+  .tbl{width:100%;border-collapse:collapse;font:500 var(--t-m)/1.35 var(--round)}
+  .tbl th{text-align:left;font:700 var(--t-s)/1.2 var(--round);color:var(--ink-2);padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--line-2)}
+  .tbl td{padding:var(--s-2) var(--s-3);border-bottom:1px solid var(--line);vertical-align:middle}
+  .dot{display:inline-block;width:14px;height:14px;border-radius:50%;vertical-align:-2px;margin-right:var(--s-2)}
+  .rbbar{height:10px;border-radius:99px;background:var(--rbx)}
+</style>
+</head>
+<body>
+<div id="stage" class="guia" data-theme="light">
+  <div class="bg">
+    <div class="blob" style="left:-120px;top:-160px;width:620px;height:620px;--b:var(--b1)"></div>
+    <div class="blob" style="right:-160px;top:120px;width:560px;height:560px;--b:var(--b2)"></div>
+    <div class="blob" style="left:30%;bottom:-260px;width:640px;height:640px;--b:var(--b3)"></div>
+  </div>
+
+  <div class="wrap">
+    <header class="gh">
+      <h1>Guía de diseño</h1>
+      <div class="sw7" id="sw7" title="Acento de la sección"></div>
+      <button class="b-soft pill" id="tema">Tema: claro</button>
+    </header>
+    <p class="lead" style="font:500 var(--t-l)/1.4 var(--round);color:var(--ink-2);max-width:820px;margin:0">
+      Muestra viva de los tokens y componentes. Carga el <span class="tag">src/app.css</span> real, así que no puede desviarse de la aplicación.
+      Lo marcado como <span class="new">nuevo</span> está en <span class="tag">propuesta.css</span> y entra en la app en la fase 0 de la migración.
+      Las reglas están en <span class="tag">docs/guia-diseno.md</span>.
+    </p>
+
+    <!-- COLOR -->
+    <section>
+      <h2>Color</h2>
+      <p class="lead">Tinta y superficies salen de tokens. El acento lo da la atmósfera de la sección o del juego; cambia de acento arriba para verlo.</p>
+      <div class="glass panel"><div class="face">
+        <h3 class="sub">Tinta</h3>
+        <div class="row">
+          <div class="swatch"><b style="background:var(--ink)"></b><span class="lab"><code>--ink</code> texto</span></div>
+          <div class="swatch"><b style="background:var(--ink-2)"></b><span class="lab"><code>--ink-2</code> secundario</span></div>
+          <div class="swatch"><b style="background:var(--ink-3)"></b><span class="lab"><code>--ink-3</code> solo adorno</span></div>
+          <div class="swatch"><b style="background:var(--line-2)"></b><span class="lab"><code>--line-2</code></span></div>
+          <div class="swatch"><b style="background:var(--line)"></b><span class="lab"><code>--line</code></span></div>
+        </div>
+        <h3 class="sub">Superficies</h3>
+        <div class="row">
+          <div class="swatch"><b style="background:var(--face)"></b><span class="lab"><code>--face</code></span></div>
+          <div class="swatch"><b style="background:var(--face-hi)"></b><span class="lab"><code>--face-hi</code></span></div>
+          <div class="swatch"><b style="background:var(--panel)"></b><span class="lab"><code>--panel</code></span></div>
+          <div class="swatch"><b style="background:var(--glass-in)"></b><span class="lab"><code>--glass-in</code></span></div>
+          <div class="swatch"><b style="background:var(--glass-chip)"></b><span class="lab"><code>--glass-chip</code></span></div>
+          <div class="swatch"><b style="background:var(--scrim)"></b><span class="lab"><code>--scrim</code></span></div>
+        </div>
+        <h3 class="sub">Acento (de la atmósfera)</h3>
+        <div class="row">
+          <div class="swatch"><b style="background:var(--grad)"></b><span class="lab"><code>--grad</code> suave</span></div>
+          <div class="swatch"><b style="background:var(--gf)"></b><span class="lab"><code>--gf</code> relleno</span></div>
+          <div class="swatch"><b style="background:var(--f1)"></b><span class="lab"><code>--f1</code> = <code>--acc</code></span></div>
+          <div class="swatch"><b style="background:var(--g1)"></b><span class="lab"><code>--g1</code></span></div>
+          <div class="swatch" style="width:280px"><b style="background:var(--rbx)"></b><span class="lab"><code>--rby</code> arcoíris en orden</span></div>
+        </div>
+        <h3 class="sub">Colores con significado reservado</h3>
+        <table class="tbl">
+          <tr><th>Color</th><th>Significa</th><th>Dónde</th></tr>
+          <tr><td><i class="dot" style="background:var(--ok)"></i><span class="tag">--ok</span></td><td>Hecho, correcto, confirmar</td><td>Marca de completado, aviso de éxito, botón A</td></tr>
+          <tr><td><i class="dot" style="background:var(--bad)"></i><span class="tag">--bad</span></td><td>Peligro, borrar, error</td><td>Borrar, aviso de error, botón B</td></tr>
+          <tr><td><i class="dot" style="background:var(--warn)"></i><span class="tag">--warn</span></td><td>Aviso, atención, oro</td><td>Avisos, favorito, platino, botón Y</td></tr>
+        </table>
+        <h3 class="sub">Posiciones fijas en el arcoíris</h3>
+        <table class="tbl">
+          <tr><th>Mi lista</th><th>Rareza de logros</th></tr>
+          <tr><td><i class="dot" style="background:#E8384F"></i>En marcha</td><td><i class="dot" style="background:#00A0D8"></i>Común</td></tr>
+          <tr><td><i class="dot" style="background:#F27A1A"></i>A medias</td><td><i class="dot" style="background:#3BB54A"></i>Poco común</td></tr>
+          <tr><td><i class="dot" style="background:#3BB54A"></i>Pendiente</td><td><i class="dot" style="background:#F27A1A"></i>Rara</td></tr>
+          <tr><td><i class="dot" style="background:#00A0D8"></i>Aparcado</td><td><i class="dot" style="background:#E8384F"></i>Ultra rara</td></tr>
+          <tr><td><i class="dot" style="background:#9A4BD8"></i>Terminado</td><td><i class="dot" style="background:#9A4BD8"></i>Legendaria</td></tr>
+        </table>
+      </div></div>
+    </section>
+
+    <!-- TIPOGRAFIA -->
+    <section>
+      <h2>Tipografía</h2>
+      <p class="lead">Una fuente, siete tamaños, tres pesos. 13 es el mínimo para leer; 11 solo para adorno.</p>
+      <div class="glass panel"><div class="face type">
+        <div><span class="lab"><code>--t-3xl</code> 44 / 800</span><span style="font:800 var(--t-3xl)/1.1 var(--round)">128 h</span><small>Cifra protagonista</small></div>
+        <div><span class="lab"><code>--t-2xl</code> 28 / 800</span><span style="font:800 var(--t-2xl)/1.2 var(--round)">Título de pantalla</span><small>Uno por pantalla</small></div>
+        <div><span class="lab"><code>--t-xl</code> 20 / 800</span><span style="font:800 var(--t-xl)/1.2 var(--round)">Título de panel y migas</span><small>Cabeceras</small></div>
+        <div><span class="lab"><code>--t-l</code> 17 / 700</span><span style="font:700 var(--t-l)/1.3 var(--round)">Texto destacado, botones y pistas</span><small>Filas, acciones</small></div>
+        <div><span class="lab"><code>--t-m</code> 15 / 500</span><span style="font:500 var(--t-m)/1.35 var(--round)">Texto normal de la interfaz, descripciones y valores.</span><small>Cuerpo</small></div>
+        <div><span class="lab"><code>--t-s</code> 13 / 500</span><span style="font:500 var(--t-s)/1.35 var(--round);color:var(--ink-2)">Texto secundario: fechas, recuentos, ayudas.</span><small>Mínimo legible</small></div>
+        <div><span class="lab"><code>--t-xs</code> 11 / 800</span><span style="font:800 var(--t-xs)/1 var(--round);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Etiqueta · 12</span><small>Solo adorno</small></div>
+      </div></div>
+    </section>
+
+    <!-- RADIOS Y ESPACIADO -->
+    <section>
+      <h2>Radios y espaciado</h2>
+      <p class="lead">Cinco radios y una escala de espaciado de 4.</p>
+      <div class="glass panel"><div class="face">
+        <div class="row rad">
+          <div class="col"><b style="border-radius:var(--r-xs)"></b><span class="lab"><code>--r-xs</code> 6</span></div>
+          <div class="col"><b style="border-radius:var(--r-s)"></b><span class="lab"><code>--r-s</code> 12</span></div>
+          <div class="col"><b style="border-radius:var(--r-m)"></b><span class="lab"><code>--r-m</code> 18</span></div>
+          <div class="col"><b style="border-radius:var(--r-l)"></b><span class="lab"><code>--r-l</code> 28</span></div>
+          <div class="col"><b style="border-radius:var(--r-pill)"></b><span class="lab"><code>--r-pill</code></span></div>
+        </div>
+        <h3 class="sub">Espaciado <span class="new">nuevo</span></h3>
+        <div class="row spc">
+          <div class="col"><b style="width:4px"></b><span class="lab"><code>--s-1</code> 4</span></div>
+          <div class="col"><b style="width:8px"></b><span class="lab"><code>--s-2</code> 8</span></div>
+          <div class="col"><b style="width:12px"></b><span class="lab"><code>--s-3</code> 12</span></div>
+          <div class="col"><b style="width:16px"></b><span class="lab"><code>--s-4</code> 16</span></div>
+          <div class="col"><b style="width:24px"></b><span class="lab"><code>--s-5</code> 24</span></div>
+          <div class="col"><b style="width:32px"></b><span class="lab"><code>--s-6</code> 32</span></div>
+        </div>
+      </div></div>
+    </section>
+
+    <!-- CRISTAL -->
+    <section>
+      <h2>Cristal y alturas</h2>
+      <p class="lead">Tres cristales y tres alturas. Cualquier superficie es uno de estos; no se inventan fondos ni sombras.</p>
+      <div class="row" style="align-items:center;gap:var(--s-6)">
+        <div class="glass lv"><div class="face">1 · Panel<br><span class="tag">.glass</span></div></div>
+        <div class="glass lv"><div class="face" style="padding:var(--s-4);box-sizing:border-box"><div class="glass-in" style="width:100%;height:100%;display:grid;place-items:center">2 · Interior<br><span class="tag">.glass-in</span><span class="new">nuevo</span></div></div></div>
+        <div class="pill" style="height:44px;padding:0 var(--s-5);border-radius:999px;display:flex;align-items:center;gap:var(--s-2);font:700 var(--t-l)/1 var(--round)">3 · Pastilla <span class="tag">.pill</span></div>
+      </div>
+      <h3 class="sub">Alturas <span class="new">nuevo</span></h3>
+      <div class="row" style="align-items:center;gap:var(--s-6);padding:var(--s-3) var(--s-2) var(--s-5)">
+        <div class="glass lv"><div class="face">Apoyado<br><span class="tag">--sh-1</span></div></div>
+        <div class="glass lv f" style="margin:0 var(--s-3)"><div class="face">Enfocado<br><span class="tag">--sh-2</span> · <span class="tag">.f</span></div></div>
+        <div class="glass lv" style="box-shadow:inset 0 1.5px 0 var(--hl),inset 0 0 0 1px var(--hl-ring),var(--sh-3)"><div class="face">Flotante<br><span class="tag">--sh-3</span></div></div>
+      </div>
+    </section>
+
+    <!-- BOTONES -->
+    <section>
+      <h2>Botones</h2>
+      <p class="lead">Tres familias. Una acción principal por pantalla. Las pistas del mando van solo en la banda inferior.</p>
+      <div class="glass panel"><div class="face">
+        <div class="row" style="align-items:center">
+          <div class="col"><button class="b-main">Jugar</button><span class="lab">Principal <code>.b-main</code><span class="new">nuevo</span></span></div>
+          <div class="col"><button class="b-soft pill">Cambiar portada</button><span class="lab">Secundario <code>.b-soft.pill</code><span class="new">nuevo</span></span></div>
+          <div class="col"><button class="b-soft pill" disabled>Desactivado</button><span class="lab">Opacidad .45</span></div>
+        </div>
+        <h3 class="sub">Selector <span class="new">nuevo</span></h3>
+        <div class="row" style="align-items:center;gap:var(--s-2)" id="chips">
+          <span class="chip on">Todos</span><span class="chip">Conseguidos</span><span class="chip">Pendientes</span><span class="chip">Raros</span>
+        </div>
+        <h3 class="sub">Pistas del mando</h3>
+        <div class="row" style="align-items:center;gap:var(--s-3)">
+          <div class="hint pill"><span class="btn a">A</span> Abrir</div>
+          <div class="hint pill"><span class="btn b">B</span> Volver</div>
+          <div class="hint pill"><span class="btn x">X</span> Jugar</div>
+          <div class="hint pill"><span class="btn y">Y</span> Favorito</div>
+          <div class="hint pill"><span class="btn sh">LB</span><span class="btn sh">RB</span> Página</div>
+        </div>
+      </div></div>
+    </section>
+
+    <!-- MOVIMIENTO -->
+    <section>
+      <h2>Movimiento <span class="new">nuevo</span></h2>
+      <p class="lead">Tres duraciones y dos curvas. Pasa el ratón por cada pieza.</p>
+      <div class="row" style="gap:var(--s-5)">
+        <div class="mot" style="transition:transform var(--d-1) var(--e-soft)">120 ms · suave<br>pulsar, color</div>
+        <div class="mot" style="transition:transform var(--d-2) var(--e-bounce)">200 ms · rebote<br>foco</div>
+        <div class="mot" style="transition:transform var(--d-3) var(--e-soft)">300 ms · suave<br>pantallas, paneles</div>
+        <div class="mot" style="transition:transform var(--d-3) var(--e-bounce)">300 ms · rebote<br>aparecer un modal</div>
+      </div>
+    </section>
+
+    <!-- ICONOS -->
+    <section>
+      <h2>Iconos <span class="new">nuevo</span></h2>
+      <p class="lead">Trazo redondeado sobre rejilla de 24, grosor 2, extremos redondos. Tres tamaños: 16, 20 y 28. Heredan el color del texto.</p>
+      <div class="glass panel"><div class="face">
+        <div class="row" style="align-items:center;gap:var(--s-5)">
+          <svg class="ic s" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+          <svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+          <svg class="ic l" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+          <svg class="ic l" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9 6.8 19.7l1-5.9L3.5 9.7l5.9-.8z"/></svg>
+          <svg class="ic l" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></svg>
+          <svg class="ic l" viewBox="0 0 24 24"><path d="M12 4v10M8 10l4 4 4-4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          <svg class="ic l" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="12" cy="12" r="3.5"/></svg>
+          <svg class="ic l" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+          <svg class="ic l" viewBox="0 0 24 24" style="color:var(--f1)"><path d="M8 5l10 7-10 7z"/></svg>
+        </div>
+      </div></div>
+    </section>
+
+    <!-- PLANTILLA -->
+    <section>
+      <h2>Plantilla de pantalla</h2>
+      <p class="lead">Todas las pantallas comparten esqueleto sobre el escenario de 1280 × 720. Solo el visor y el lector a pantalla completa se salen.</p>
+      <div class="glass panel"><div class="face">
+        <div class="row" style="align-items:flex-start;gap:var(--s-6)">
+          <div class="tpl">
+            <i class="z-top"></i><i class="z-av"></i><i class="z-cr">Migas</i><i class="z-ck">Reloj</i>
+            <i class="z-ct">Contenido<br>x 24 a 1256 · y 88 a 644</i>
+            <i class="z-bt"></i>
+            <i class="z-h" style="right:12px">A Abrir</i><i class="z-h" style="right:92px">B Volver</i>
+          </div>
+          <div class="legend">
+            <p><b>Barra superior, 76 px.</b> Avatar de 60 a la izquierda, migas de 40 de alto en 20/800, reloj a la derecha.</p>
+            <p><b>Márgenes de 24 px</b> a izquierda y derecha. El contenido empieza en y = 88.</p>
+            <p><b>Banda inferior, 64 px.</b> Reservada a las pistas del mando, alineadas a la derecha. El contenido no entra en ella; las listas largas se desvanecen antes.</p>
+            <p><b>Una protagonista.</b> Cada pantalla tiene un elemento principal y, como mucho, una acción principal.</p>
+          </div>
+        </div>
+      </div></div>
+    </section>
+
+    <!-- ESTADOS -->
+    <section>
+      <h2>Estados: vacío y carga <span class="new">nuevo</span></h2>
+      <p class="lead">Vacío: icono, una frase que explica y una acción. Carga: siluetas de cristal con la forma de lo que va a llegar, sin ruedas.</p>
+      <div class="row" style="align-items:stretch">
+        <div class="glass panel" style="flex:1;min-width:360px"><div class="face">
+          <div class="empty">
+            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 15l5-4 4 3 3-2 6 4"/><circle cx="16" cy="9.5" r="1.5"/></svg>
+            <h3>Aún no hay capturas</h3>
+            <p>Haz una captura mientras juegas y aparecerá aquí.</p>
+            <div class="hint pill" style="margin-top:var(--s-2)"><span class="btn x">X</span> Jugar</div>
+          </div>
+        </div></div>
+        <div class="glass panel" style="flex:1;min-width:360px"><div class="face">
+          <div class="skel" style="height:22px;width:45%;border-radius:var(--r-xs)"></div>
+          <div class="row" style="margin-top:var(--s-4);gap:var(--s-3);align-items:stretch">
+            <div class="skel" style="width:120px;height:160px"></div>
+            <div class="skel" style="width:120px;height:160px"></div>
+            <div class="skel" style="width:120px;height:160px"></div>
+          </div>
+          <div class="skel" style="height:14px;width:70%;margin-top:var(--s-4);border-radius:var(--r-xs)"></div>
+        </div></div>
+      </div>
+    </section>
+
+    <!-- GRAFICOS -->
+    <section>
+      <h2>Gráficos</h2>
+      <p class="lead">El color de un gráfico dice de quién es el dato, nunca si es bueno o malo.</p>
+      <div class="glass panel"><div class="face">
+        <div class="row" style="align-items:flex-start;gap:var(--s-5)">
+          <div class="chart">
+            <h4>Una serie: acento de la sección</h4>
+            <svg viewBox="0 0 330 150"><g fill="var(--f1)"><rect x="10" y="80" width="34" height="50" rx="6"/><rect x="56" y="50" width="34" height="80" rx="6"/><rect x="102" y="95" width="34" height="35" rx="6"/><rect x="148" y="30" width="34" height="100" rx="6"/><rect x="194" y="62" width="34" height="68" rx="6"/><rect x="240" y="74" width="34" height="56" rx="6"/><rect x="286" y="44" width="34" height="86" rx="6"/></g><path d="M0 130.500h330" stroke="var(--line-2)"/><g text-anchor="middle"><text x="27" y="146">L</text><text x="73" y="146">M</text><text x="119" y="146">X</text><text x="165" y="146">J</text><text x="211" y="146">V</text><text x="257" y="146">S</text><text x="303" y="146">D</text></g></svg>
+            <p>Horas por día dentro de una sección.</p>
+          </div>
+          <div class="chart">
+            <h4>Categorías: su color fijo</h4>
+            <svg viewBox="0 0 330 150"><rect x="92" y="14" width="210" height="20" rx="6" fill="#E8384F"/><rect x="92" y="48" width="150" height="20" rx="6" fill="#F2B807"/><rect x="92" y="82" width="96" height="20" rx="6" fill="#00A0D8"/><rect x="92" y="116" width="54" height="20" rx="6" fill="#9A4BD8"/><g text-anchor="end"><text x="84" y="28">Juegos</text><text x="84" y="62">Switch</text><text x="84" y="96">Novelas</text><text x="84" y="130">Japonés</text></g></svg>
+            <p>Cada categoría conserva el tramo de arcoíris que tiene en Inicio.</p>
+          </div>
+          <div class="chart">
+            <h4>Destacar: acento sobre gris</h4>
+            <svg viewBox="0 0 330 150"><g fill="var(--line-2)"><rect x="10" y="80" width="34" height="50" rx="6"/><rect x="56" y="50" width="34" height="80" rx="6"/><rect x="102" y="95" width="34" height="35" rx="6"/><rect x="194" y="62" width="34" height="68" rx="6"/><rect x="240" y="74" width="34" height="56" rx="6"/><rect x="286" y="44" width="34" height="86" rx="6"/></g><rect x="148" y="30" width="34" height="100" rx="6" fill="var(--f1)"/><path d="M0 130.500h330" stroke="var(--line-2)"/><text x="165" y="22" text-anchor="middle" style="fill:var(--ink);font-weight:800">5 h</text></svg>
+            <p>Para señalar un dato, lo demás se apaga a gris.</p>
+          </div>
+        </div>
+      </div></div>
+    </section>
+  </div>
+
+  <!-- Banda de pistas, como en la app -->
+  <div class="hints" style="position:fixed">
+    <div class="hint pill"><span class="btn y">Y</span> Cambiar tema</div>
+    <div class="hint pill"><span class="btn b">B</span> Volver</div>
+  </div>
+</div>
+
+<script>
+// Tonos OKLCH aproximados del arcoíris de la app (src/lib/icons.ts → RAINBOW).
+const RB = [['#E8384F',20],['#F27A1A',52],['#F2B807',88],['#3BB54A',146],['#00A0D8',232],['#3F63E0',268],['#9A4BD8',308]];
+const stage = document.getElementById('stage');
+const sw = document.getElementById('sw7');
+// App.svelte inyecta estas variables desde la atmósfera; aquí se imitan para la muestra.
+function acento(i){
+  const h1 = RB[i][1], h2 = RB[(i + 1) % RB.length][1];
+  const s = stage.style, g = h => `oklch(0.80 0.12 ${h})`, f = h => `oklch(0.52 0.15 ${h})`;
+  s.setProperty('--g1', g(h1)); s.setProperty('--g2', g(h2));
+  s.setProperty('--f1', f(h1)); s.setProperty('--f2', f(h2));
+  s.setProperty('--grad', `linear-gradient(115deg,${g(h1)},${g(h2)})`);
+  s.setProperty('--gf', `linear-gradient(115deg,${f(h1)},${f(h2)})`);
+  s.setProperty('--b1', g(h1)); s.setProperty('--b2', g(h2)); s.setProperty('--b3', g((h1 + h2) / 2));
+  s.setProperty('--acc', 'var(--f1)'); s.setProperty('--on', '#fff');
+  [...sw.children].forEach((c, k) => c.classList.toggle('on', k === i));
+}
+stage.style.setProperty('--rbx', `linear-gradient(90deg,${RB.map(r => r[0]).join(',')})`);
+RB.forEach((r, i) => { const b = document.createElement('i'); b.style.background = r[0]; b.onclick = () => acento(i); sw.appendChild(b); });
+acento(4);
+const tema = document.getElementById('tema');
+function cambiaTema(){
+  const d = stage.dataset.theme !== 'dark';
+  stage.dataset.theme = d ? 'dark' : 'light';
+  document.body.style.background = d ? '#14161c' : '#eceef2';
+  tema.textContent = 'Tema: ' + (d ? 'oscuro' : 'claro');
+}
+tema.onclick = cambiaTema;
+addEventListener('keydown', e => { if (e.key.toLowerCase() === 'y') cambiaTema(); });
+document.getElementById('chips').onclick = e => { if (e.target.classList.contains('chip')) [...e.currentTarget.children].forEach(c => c.classList.toggle('on', c === e.target)); };
+</script>
+</body>
+</html>

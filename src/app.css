@@ -1,4 +1,5 @@
 @import './assets/fonts.css';
+@import './tokens.css';
 
 :root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI','Yu Gothic UI','Meiryo UI','Hiragino Maru Gothic ProN',system-ui,sans-serif;color-scheme:light}
 *{box-sizing:border-box}
@@ -11,34 +12,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 #stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;outline:none;
   font-family:var(--round);color:var(--ink);background:#eceef2;--acc:#00A0D8;--acc-ink:#fff;--b1:#00A0D8;--b2:#3F63E0;--b3:#00A0D8;--g1:#00A0D8;--g2:#3F63E0;--grad:linear-gradient(115deg,#00A0D8,#3F63E0);--f1:#0089be;--f2:#3253c5;--gf:linear-gradient(115deg,#0089be,#3253c5);--on:#ffffff;user-select:none;-webkit-user-select:none}
 #stage:focus-visible{box-shadow:inset 0 0 0 4px var(--acc)}
-/* ---------- Tokens del sistema (v5) ----------
-   Superficies, texto, radios, tipografía y cristal. Las pantallas usan estas variables en vez de hex fijos;
-   el color de cada sección / juego llega por --g1 --g2 --grad (suaves) y --f1 --f2 --gf --on (rellenos),
-   que App.svelte calcula desde la atmósfera. --acc = --f1 para todo lo antiguo. */
-#stage{
-  --ink:#3a414e;--ink-2:#5f6776;--ink-3:#8a92a1;--line:rgba(95,110,135,.24);--line-2:rgba(150,160,180,.35);
-  --face:#dfe3e9;--face-hi:rgba(247,249,252,.94);--panel:rgba(255,255,255,.75);--scrim:rgba(20,26,36,.45);
-  --glass-top:rgba(255,255,255,.72);--glass-mid:rgba(255,255,255,.30);--glass-bot:rgba(225,234,246,.22);
-  --glass-in:rgba(255,255,255,.55);--glass-chip:rgba(255,255,255,.80);
-  --pill-top:rgba(255,255,255,.80);--pill-bot:rgba(255,255,255,.52);--pill-glow:rgba(255,255,255,.9);
-  --soft-top:rgba(255,255,255,.55);--soft-bot:rgba(214,220,230,.4);--bub-bg:rgba(255,255,255,.72);--bub-line:rgba(255,255,255,.9);--tile-bg:rgba(255,255,255,.62);
-  --hl:rgba(255,255,255,1);--hl-ring:rgba(255,255,255,.55);--hl-bot:rgba(255,255,255,.95);--tint-base:#fff;
-  --ok:#3BB54A;--bad:#E8384F;--warn:#F2B807;
-  --r-xs:6px;--r-s:12px;--r-m:18px;--r-l:28px;--r-pill:999px;
-  --t-xs:11px;--t-s:13px;--t-m:15px;--t-l:17px;--t-xl:20px;--t-2xl:28px;--t-3xl:44px;
-  --ring:0 0 0 3px var(--f1),0 0 22px 2px color-mix(in srgb,var(--f2) 45%,transparent);
-}
-/* «Noche ahumada»: modo oscuro oficial (neón). Solo redefine tokens; las reglas no cambian. */
-#stage[data-theme=dark]{color-scheme:dark;color:#e6e9f0;background:#14161c;
-  --ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#7f8899;--line:rgba(200,210,235,.16);--line-2:rgba(200,210,235,.24);
-  --face:#262a33;--face-hi:rgba(30,33,41,.94);--panel:rgba(30,34,43,.78);--scrim:rgba(0,0,0,.6);
-  --glass-top:rgba(60,66,80,.62);--glass-mid:rgba(36,40,50,.42);--glass-bot:rgba(20,22,28,.38);
-  --glass-in:rgba(255,255,255,.08);--glass-chip:rgba(40,44,56,.82);
-  --pill-top:rgba(52,57,70,.88);--pill-bot:rgba(36,40,50,.82);--pill-glow:rgba(255,255,255,.06);
-  --soft-top:rgba(52,57,70,.62);--soft-bot:rgba(30,34,43,.5);--bub-bg:rgba(40,44,56,.82);--bub-line:rgba(200,210,235,.16);--tile-bg:rgba(40,44,56,.62);
-  --hl:rgba(255,255,255,.10);--hl-ring:rgba(255,255,255,.06);--hl-bot:rgba(255,255,255,.04);--tint-base:#262a33;
-  --ring:0 0 0 3px var(--g1),0 0 26px 4px color-mix(in srgb,var(--g2) 60%,transparent);
-}
+/* Los tokens del sistema (claro y «Noche ahumada») y los componentes comunes nuevos viven en tokens.css. */
 #stage[data-theme=dark] .bg{background:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
 #stage[data-theme=dark] .blob{opacity:.38}
 .bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
