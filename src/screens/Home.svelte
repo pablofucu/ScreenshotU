@@ -9,7 +9,7 @@
   import ReadCard from '../components/ReadCard.svelte';
 
   const DOCK = [
-    { n: 'Buscar', ic: ICON.search, c: 0 },
+    { n: 'Buscar', ic: ICON.search, c: 0, hide: true }, // oculto hasta que exista el buscador global
     { n: 'Favoritas', ic: ICON.star, c: 1 },
     { n: 'Estadísticas', ic: ICON.chart, c: 3 },
     { n: 'Añadir juego', ic: ICON.plus, c: 4 },
@@ -117,7 +117,7 @@
 
 <div class="hdock">
   {#each DOCK as d, i}
-    {#if !(IS_TABLET && (i === 3 || i === 5))}
+    {#if !d.hide && !(IS_TABLET && (i === 3 || i === 5))}
     <div class="dpill pill fx" class:f={app.focus === 'dock' + i} data-k="dock{i}" data-act="dock:{i}" style="--dc:{RAINBOW[d.c].c}">
       <i>{@html d.ic}</i>{d.n}
     </div>

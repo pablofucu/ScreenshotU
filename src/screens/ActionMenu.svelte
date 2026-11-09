@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { app, STATUS_LABEL, TITLE_FILTERS, type MenuItem, type TitleFilter } from '../lib/store.svelte';
+  import { app, STATUS_LABEL, TITLE_FILTERS, TITLE_ORDER_LABEL, type MenuItem, type TitleFilter } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { canResume, closeOverlay, MAGPIE_LABEL, menuAct, menuLayout } from '../lib/controller.svelte';
   import { fmtRelease } from '../lib/release.svelte';
@@ -73,6 +73,7 @@
       case 'play': return canResume() ? 'Volver a la partida' : 'Iniciar juego';
       case 'listopts': return 'Opciones de la lista…';
       case 'copy': return 'Copiar captura';
+      case 'order': return `Orden: ${TITLE_ORDER_LABEL[app.titleOrder]}`;
       case 'tsize': return `Portadas: ${tgrid(app.config.titlesZoom).cols} por fila`;
       default:
         if (it.startsWith('flt:')) return fltName(it.slice(4)); return `Mover a ${app.config.platforms.find((p) => p.id === it.slice(4))?.name ?? it.slice(4)}`;
@@ -86,7 +87,7 @@
   });
   const icon = (it: MenuItem) => it.startsWith('flt:') ? (app.titleFilter === it.slice(4) ? ICON.check : '') : it === 'category' || it.startsWith('cat:') ? ICON.move : ({
     folder: ICON.folder, reload: ICON.reload, remove: ICON.power, addshots: ICON.image, accent: ICON.palette, hide: ICON.eyeOff,
-    unhide: ICON.eye, setexe: ICON.folder, setdir: ICON.folder, magpie: ICON.image, select: ICON.check, unselect: ICON.check, selall: ICON.checks, move: ICON.move, reveal: ICON.folder, delshot: ICON.trash, delsel: ICON.trash, addcoll: ICON.saga, sgdb: ICON.search, phrases: ICON.jvn, status: ICON.checks, release: ICON.calendar, saves: ICON.import, filter: ICON.search, tsize: ICON.image, audio: ICON.speaker, settings: ICON.gear, gstats: ICON.checks, play: ICON.play, listopts: ICON.gear, copy: ICON.camera,
+    unhide: ICON.eye, setexe: ICON.folder, setdir: ICON.folder, magpie: ICON.image, select: ICON.check, unselect: ICON.check, selall: ICON.checks, move: ICON.move, reveal: ICON.folder, delshot: ICON.trash, delsel: ICON.trash, addcoll: ICON.saga, sgdb: ICON.search, phrases: ICON.jvn, status: ICON.checks, release: ICON.calendar, saves: ICON.import, filter: ICON.search, order: ICON.checks, tsize: ICON.image, audio: ICON.speaker, settings: ICON.gear, gstats: ICON.checks, play: ICON.play, listopts: ICON.gear, copy: ICON.camera,
   } as Record<string, string>)[it];
   const sub = $derived(
     list ? (app.menu.items[0]?.startsWith('flt:') ? 'Qué juegos se ven en «Todos»' : [app.platform?.name, t?.name].filter(Boolean).join(' · '))

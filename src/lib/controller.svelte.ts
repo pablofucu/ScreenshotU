@@ -96,7 +96,7 @@ function validKey(view: View, key: string | undefined): string | undefined {
     if (key === 'welcome') return app.config.root || IS_TABLET ? undefined : key;
     if (/^plat\d+$/.test(key)) return app.config.root && n < app.lib.platforms.length ? key : undefined;
     // En la tablet no existen «Añadir juego» (dock3) ni «Salir» (dock5): solo funcionan en el PC.
-    if (/^dock\d+$/.test(key)) return n < DOCK_N && !(IS_TABLET && (n === 3 || n === 5)) ? key : undefined;
+    if (/^dock\d+$/.test(key)) return n >= 1 && n < DOCK_N && !(IS_TABLET && (n === 3 || n === 5)) ? key : undefined;
     if (/^rec\d+$/.test(key)) return app.config.root && n < app.recent.length ? key : undefined;
     if (key === 'read') return app.readCard ? key : undefined;
     if (key === 'audio') return app.audioOutputs.length ? key : undefined;
@@ -133,7 +133,7 @@ function validKey(view: View, key: string | undefined): string | undefined {
   return undefined;
 }
 function defaultKey(view: View): string {
-  if (view === 'home') return app.config.root ? validKey('home', 'plat' + Math.min(app.hp, Math.max(0, app.lib.platforms.length - 1))) ?? 'plat0' : IS_TABLET ? 'dock0' : 'welcome';
+  if (view === 'home') return app.config.root ? validKey('home', 'plat' + Math.min(app.hp, Math.max(0, app.lib.platforms.length - 1))) ?? 'plat0' : IS_TABLET ? 'dock1' : 'welcome';
   if (view === 'titles') {
     if (app.titlesTab === 'coll') return collFirst();
     return listTab() ? (listFirst() === undefined ? 'list-empty' : 'tit' + listFirst()) : 'tit' + atPos(0);
@@ -420,7 +420,7 @@ export async function menuAct(item: MenuItem) {
     if (t) void playTitle(t);
     return;
   }
-  if (item === 'listopts' || item === 'filter' || item.startsWith('flt:') || item === 'tsize' || item === 'gstats' || item === 'settings') {
+  if (item === 'listopts' || item === 'filter' || item.startsWith('flt:') || item === 'order' || item === 'tsize' || item === 'gstats' || item === 'settings') {
     titlesMenuAct(item);
     return;
   }
@@ -990,7 +990,7 @@ export function toggleShotsView() {
   blip(700);
 }
 
-/** X en la lista de juegos: recorre los órdenes (se recuerda por categoría) conservando el juego enfocado. */
+/** Start › Opciones de la lista › Orden (o clic en el chip): recorre los órdenes (se recuerda por categoría) conservando el juego enfocado. */
 export function cycleTitleOrder() {
   const p = app.platform;
   if (!p || !onAllTab()) { bump(screenEl()?.querySelector('.fx.f'), 0, 0); return; }
@@ -1035,6 +1035,7 @@ function titlesMenuAct(item: MenuItem) {
     const opts: MenuItem[] = [];
     if (onAllTab() && app.platform?.titles.length) {
       opts.push('filter');
+      if ((app.platform?.titles.length ?? 0) > 1) opts.push('order');
       if (app.config.titlesView === 'grid') opts.push('tsize');
     }
     if (app.platform?.titles.some((x) => x.plays?.length || x.playSeconds > 0)) opts.push('gstats');
@@ -1053,6 +1054,9 @@ function titlesMenuAct(item: MenuItem) {
   } else if (item.startsWith('flt:')) {
     closeOverlay();
     setTitleFilter(item.slice(4) as TitleFilter);
+  } else if (item === 'order') {
+    // A recorre los órdenes; el menú sigue abierto para ver el cambio.
+    cycleTitleOrder();
   } else if (item === 'tsize') {
     // A recorre los tamaños (de más grandes a más pequeñas y vuelta); el menú sigue abierto para ver el cambio.
     void patchConfig({ titlesZoom: (app.config.titlesZoom + 1) % (TZOOM_MAX + 1) });
@@ -1821,7 +1825,10 @@ export function cmd(c: string) {
         const r = app.recent[+app.focus.slice(3)];
         const t = r && app.lib.platforms[r.pi]?.titles[r.ti];
         if (t?.launchable) void playTitle(t); else bump(screenEl()?.querySelector('.fx.f'), 0, 0);
-      } else if (app.view === 'titles') cycleTitleOrder();
+      } else if (app.view === 'titles') {
+        const t = app.platform?.titles[app.t];
+        if (app.focus.startsWith('tit') && t?.launchable) void playTitle(t); else bump(screenEl()?.querySelector('.fx.f'), 0, 0);
+      }
       else if (app.view === 'stats' && app.statsTab === 'rank') cycleStatsKind();
       else toggleFav();
       break;
@@ -1832,11 +1839,12 @@ export function cmd(c: string) {
     case 'view':
       if (app.view === 'shots') toggleShotsView();
       else if (app.view === 'viewer') toggleBare();
-      else if (app.view === 'titles') cycleTitlesTab();
+      else if (app.view === 'titles' && app.titlesTab === 'all') toggleTitlesView();
       break;
     case 'y':
       if (app.view === 'titles') {
-        if (app.titlesTab === 'all') toggleTitlesView(); else openTitlesMenu();
+        const inp = app.titlesTab === 'all' ? screenEl()?.querySelector<HTMLInputElement>('.tsearch input') : null;
+        if (inp) { inp.focus(); inp.select(); } else openTitlesMenu();
       }
       else if (app.view === 'detail') {
         if (app.focus === 'dach') {
@@ -1874,7 +1882,7 @@ export function onKeyDown(e: KeyboardEvent) {
   if (e.ctrlKey || e.altKey || e.metaKey) return;
   const tag = (e.target as HTMLElement | null)?.tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') {
-    if (e.key === 'Escape') { (e.target as HTMLElement).blur(); e.preventDefault(); }
+    if (e.key === 'Escape' || (e.key === 'Enter' && tag === 'INPUT' && (e.target as HTMLElement).closest('.tsearch'))) { (e.target as HTMLElement).blur(); e.preventDefault(); }
     return;
   }
   if (app.view === 'viewer' && !app.overlay && !app.audioMenu && (e.key === '+' || e.key === '=' || e.key === '-')) {

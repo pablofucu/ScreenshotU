@@ -194,7 +194,6 @@
   {/each}
   <span class="btn sh" data-hact="rt">RT</span>
   {#if tab === 'all' && titles.length > 1}
-    <button type="button" class="btn x" data-hact="x" onclick={cycleTitleOrder}>X</button>
     <button type="button" class="tflt tord" onclick={cycleTitleOrder}>{TITLE_ORDER_LABEL[app.titleOrder]}</button>
   {/if}
   {#if tab === 'all' && filtered}<span class="tflt tchip" data-hact="nofilter" title="Quitar el filtro">{filterName}<small>{vis.length}</small><b aria-label="Quitar el filtro">✕</b></span>{/if}
@@ -353,7 +352,7 @@
   <Hints list={[
     ['A', 'Abrir', 'a'],
     ...(cur?.launchable ? [['X', 'Jugar', 'x'] as H] : []),
-    ['Y', 'Buscar / Vista', 'y'],
+    ...(tab === 'all' ? [['Y', 'Buscar', 'y'] as H, ['View', 'Vista', 'view'] as H] : [['Y', 'Menú', 'y'] as H]),
     ['LB/RB', 'Página', 'rb'],
     ['LT/RT', 'Pestaña', 'rt'],
     ['Start', 'Menú', 'menu'],
