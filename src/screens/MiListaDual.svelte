@@ -1,6 +1,6 @@
 <script lang="ts">
   import { app } from '../lib/store.svelte';
-  import { buildBoard } from '../lib/milista.svelte';
+  import { buildBoard, BAND_DEF } from '../lib/milista.svelte';
   import { setTitlesTab } from '../lib/controller.svelte';
   import { fmtDur } from '../lib/format';
   import Thumb from '../components/Thumb.svelte';
@@ -8,6 +8,35 @@
   const titles = $derived(app.platform?.titles ?? []);
   // Las franjas se recalculan al cambiar estados, fijados o la categoría (nunca mezclan categorías).
   const bands = $derived(buildBoard());
+
+  // Carriles fijos (todos los de BAND_DEF, aunque estén vacíos).
+  const lanes = $derived(
+    BAND_DEF.map((d: any) => bands.find((b) => b.key === d.key) ?? { ...d, compact: d.key === 'done', items: [] as any[] })
+  );
+
+  // Filas por carril: 1 por carril no vacío y el resto al que más lo necesita.
+  const rowsOf = $derived.by(() => {
+    const H = 564, EMPTY = 30, GAP = 6, ROW = 108;
+    const need = lanes.map((l: any) => {
+      const per = l.key === 'done' ? 6 : 5;
+      const n = l.items.length + (l.key === 'done' ? l.items.filter((i: any) => i.yearStart).length : 0);
+      return { n, per, want: Math.ceil(n / per) };
+    });
+    const rows: number[] = need.map((x) => (x.n ? 1 : 0));
+    const empties = rows.filter((r) => !r).length;
+    let spare = Math.floor((H - empties * EMPTY - GAP * (lanes.length - 1)) / ROW) - rows.reduce((a, b) => a + b, 0);
+    while (spare > 0) {
+      let best = -1, bestGap = 0;
+      need.forEach((x, i) => {
+        const g = x.want - rows[i];
+        if (rows[i] && g > bestGap) { best = i; bestGap = g; }
+      });
+      if (best < 0) break;
+      rows[best]++;
+      spare--;
+    }
+    return rows;
+  });
 
   const coverOf = (i: number) => titles[i]?.cover ?? titles[i]?.shots[0]?.path ?? null;
 
@@ -30,15 +59,27 @@
       const pad = 24 * k;
       if (e.left < b.left + pad) box.scrollTo({ left: box.scrollLeft - (b.left + pad - e.left) / k, behavior: 'smooth' });
       else if (e.right > b.right - pad) box.scrollTo({ left: box.scrollLeft + (e.right - (b.right - pad)) / k, behavior: 'smooth' });
+      if (e.top < b.top) box.scrollTo({ top: box.scrollTop - (b.top - e.top) / k, behavior: 'smooth' });
+      else if (e.bottom > b.bottom) box.scrollTo({ top: box.scrollTop + (e.bottom - b.bottom) / k, behavior: 'smooth' });
     });
   });
 </script>
 
 <div class="board">
-  {#each bands as band (band.key)}
-    <section class="band st-{band.key}" data-band={band.key} style="--c:{band.color}">
+  {#each lanes as band, li (band.key)}
+    {@const rows = rowsOf[li]}
+    {#if !band.items.length}
+    <section class="band empty st-{band.key}" data-band={band.key} style="--c:{band.color}; height:30px">
+      <span class="et">{band.label} · 0</span>
+    </section>
+    {:else}
+    <section class="band st-{band.key}" data-band={band.key} style="--c:{band.color}; height:{rows * 108}px">
       <div class="vt"><span>{band.label}</span></div>
-      <div class="its" onwheel={(e) => { if (e.deltaY) { e.currentTarget.scrollLeft += e.deltaY; e.preventDefault(); } }}>
+      <div class="its" onwheel={(e) => {
+        if (!e.deltaY) return;
+        if (rows > 1) e.currentTarget.scrollTop += e.deltaY; else e.currentTarget.scrollLeft += e.deltaY;
+        e.preventDefault();
+      }}>
         {#each band.items as it (it.ti)}
           {@const t = titles[it.ti]}
           {#if band.key === 'done' && it.yearStart}
@@ -83,7 +124,7 @@
               {#if it.warn}
                 <span class="wtxt">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4" /><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></svg>
-                  Se aparca en {it.warn} d
+                  Aparca en {it.warn} d
                 </span>
               {:else if it.pin}
                 <span class="ptxt">Fijado</span>
@@ -93,6 +134,7 @@
         {/each}
       </div>
     </section>
+    {/if}
   {/each}
   {#if !bands.length}
     <button
@@ -127,7 +169,6 @@
   .band {
     position: relative;
     flex: none;
-    height: 108px;
     border-radius: var(--r-m);
     overflow: hidden;
     background: linear-gradient(180deg,
@@ -190,10 +231,16 @@
     top: 0;
     bottom: 0;
     display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
     align-items: center;
     gap: 8px;
+    padding: 4px 0;
+    box-sizing: border-box;
     overflow: hidden;
   }
+  .band.empty { display: flex; align-items: center; padding: 0 14px; }
+  .band.empty .et { font-size: 13px; font-weight: 700; color: var(--ink-3); }
   .it {
     display: flex;
     flex: none;
@@ -292,6 +339,7 @@
   .tx small { font-size: 12px; font-weight: 700; color: var(--ink-2); }
   .wtxt, .ptxt {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 3px;
     font-size: 11.5px;
