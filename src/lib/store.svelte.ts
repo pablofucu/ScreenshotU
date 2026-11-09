@@ -86,7 +86,7 @@ export type MenuItem =
   | 'folder' | 'reload' | 'remove' | 'hide' | 'unhide' | 'addshots' | 'accent'
   | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'addcoll' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'release' | 'saves' | 'category' | 'delshot' | 'delsel' | 'setexe' | 'setdir' | `cat:${string}`
   /* Menú de Start de la lista de juegos (y «Salida de audio», también en el de capturas). */
-  | 'filter' | `flt:${string}` | 'order' | 'tsize' | 'audio' | 'settings' | 'gstats' | 'play' | 'listopts' | 'copy';
+  | 'filter' | `flt:${string}` | 'order' | 'tsize' | 'audio' | 'settings' | 'gstats' | 'play' | 'listopts' | 'copy' | 'pin' | 'collshots';
 export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'collform' | 'picker' | 'addcoll' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library' | 'status' | 'release' | 'stalled' | 'achievements' | 'gameset' | 'ntimport';
 /** «Nueva colección» / «Editar colección». */
 export interface CollFormState {
@@ -393,6 +393,8 @@ class Store {
   vz = $state({ k: 1, x: 0, y: 0 });
   /** Visor en modo «solo imagen»: sin barra, pistas ni datos. */
   vbare = $state(false);
+  /** Visor: detalles ampliados (tecla Y). */
+  vinfoMore = $state(false);
   vdir = $state(0); // sentido de la ultima animacion del visor
   padConnected = $state(false);
   /** Ajustes espera un botón para capturar (mando, ratón o tecla). */

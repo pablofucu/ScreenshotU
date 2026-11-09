@@ -25,11 +25,11 @@ import { gameSetCmd, openGameSettings } from './gameset.svelte';
 import { GOAL_TXT, goalMin, goalMinLeft, goalTrack, groupOf, localDay, RESCUE_MIN_PLAY, type GoalGroup, type GoalKey } from './readgoals';
 import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
 import { libraryCmd, loadLibraryInfo, openLibrary } from './library.svelte';
-import { addCollCmd, collCmd, collFirst, collFormCmd, collKey, collReveal, collTab, collValid, loadCollections, openAddColl, openCollForm, pickerCmd, resetColl, setCollFocus } from './coleccion.svelte';
+import { addCollCmd, collCmd, collFirst, openCollShots, collFormCmd, collKey, collReveal, collTab, collValid, loadCollections, openAddColl, openCollForm, pickerCmd, resetColl, setCollFocus } from './coleccion.svelte';
 import { makeMoved } from './pointer';
 import { openRelease, releaseCmd } from './release.svelte';
 import { achievementsCmd, cycleCardVariant, openAchievementsModal } from './achievements.svelte';
-import { buildBoard, checkStalled, listCmd, listFirst, listHas, listReveal, listTab, onLaunched, openStatusBar, resetList, stalledCmd, statusBarCmd } from './milista.svelte';
+import { buildBoard, checkStalled, listCmd, listFirst, listHas, listReveal, listTab, onLaunched, togglePin, openStatusBar, resetList, stalledCmd, statusBarCmd } from './milista.svelte';
 
 export const GRID_VIEW_H = 480;
 /** Medidas de la cuadrícula de juegos según el tamaño elegido (portadas por fila, filas, página). */
@@ -99,6 +99,7 @@ function validKey(view: View, key: string | undefined): string | undefined {
     if (/^dock\d+$/.test(key)) return n >= 1 && n < DOCK_N && !(IS_TABLET && (n === 3 || n === 5)) ? key : undefined;
     if (/^rec\d+$/.test(key)) return app.config.root && n < app.recent.length ? key : undefined;
     if (key === 'read') return app.readCard ? key : undefined;
+    if (key === 'avatar') return app.readCard ? key : undefined;
     if (key === 'audio') return app.audioOutputs.length ? key : undefined;
   } else if (view === 'titles') {
     if (key === 'list-empty') return listTab() && !buildBoard().length ? key : undefined;
@@ -333,7 +334,7 @@ export function go(v: View, anim: 'fwd' | 'back' | '' = '') {
   app.animKey++;
   app.goff = 0;
   resetZoom();
-  app.vbare = false;
+  app.vbare = v === 'viewer'; app.vinfoMore = false;
   if (v !== 'shots' && v !== 'viewer') { exitSel(); app.collOpen = null; }
   if (v === 'viewer') {
     app.vdir = 0;
@@ -424,6 +425,8 @@ export async function menuAct(item: MenuItem) {
     titlesMenuAct(item);
     return;
   }
+  if (item === 'collshots') { closeOverlay(); openCollShots(app.collAt.c); return; }
+  if (item === 'pin') { closeOverlay(); togglePin(); return; }
   if (app.menu.kind === 'shots') { await shotMenuAct(item); return; }
   const t = app.platform?.titles[app.menu.title];
   if (!t) { closeOverlay(); return; }
@@ -590,6 +593,8 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
     openRecent(+b);
   } else if (a === 'read') {
     openStreak(app.goalKeys.find((k) => groupOf(k) === app.readFace));
+  } else if (a === 'avatar') {
+    openStreak();
   } else if (a === 'sr') {
     // Juego de la clasificación: su ficha (B vuelve a las estadísticas).
     app.p = +b;
@@ -741,6 +746,7 @@ function openGameStats(scope: 'title' | 'cat') {
 
 export function openStats() {
   app.statsOff = 0; app.calOff = 0; app.yearSel = null; app.yearCard = 0;
+  for (let k = 0; k < 240 && !app.rank.rows.length && app.rank.older; k++) app.statsOff--;
   delete app.fk.stats;
   go('stats', 'fwd');
 }
@@ -767,6 +773,17 @@ function yearShift(d: number) {
 function toggleStatsTab() {
   app.statsTab = app.statsTab === 'rank' ? 'cal' : app.statsTab === 'cal' ? 'year' : 'rank';
   if (app.statsTab === 'year') { app.yearCard = 0; app.yearSel = null; }
+  app.goff = 0;
+  delete app.fk.stats;
+  setFocus(defaultKey('stats'));
+  blip(700);
+}
+
+/** Pestaña de estadísticas con destino fijo (órdenes «stab:…»). */
+export function setStatsTab(t: typeof app.statsTab) {
+  if (app.statsTab === t) return;
+  app.statsTab = t;
+  if (t === 'year') { app.yearCard = 0; app.yearSel = null; }
   app.goff = 0;
   delete app.fk.stats;
   setFocus(defaultKey('stats'));
@@ -863,7 +880,6 @@ export function back() {
   if (app.overlay) { overlayCmd('b'); return; }
   if (app.view === 'shots' && app.selMode) { exitSel(); toast('Selección terminada'); blip(520); return; }
   if (app.view === 'viewer') {
-    if (app.vbare) { app.vbare = false; blip(520); return; }
     if (app.vz.k > 1) { resetZoom(); blip(520); return; }
     const frame = screenEl()?.querySelector<HTMLElement>('.vframe');
     if (app.viewerFrom === 'detail') {
@@ -1017,7 +1033,9 @@ export function openTitlesMenu() {
   const items: MenuItem[] = [];
   const t = app.platform?.titles[app.t];
   items.push('listopts');
+  if (app.titlesTab === 'coll' && app.collShelves[app.collAt.c]) items.push('collshots');
   if (t) {
+    if (app.titlesTab === 'list' && t.id && t.status === 'playing') items.push('pin');
     if (t.launchable && (!app.playing || canResume(t.gameId))) items.push('play');
     if (!t.members && t.id) items.push('status');
     items.push('sgdb', 'addcoll', 'accent');
@@ -1223,7 +1241,7 @@ let idleT: ReturnType<typeof setTimeout> | undefined;
 export function wake() {
   app.idle = false;
   clearTimeout(idleT);
-  if (app.view === 'viewer') idleT = setTimeout(() => (app.idle = true), 3200);
+  if (app.view === 'viewer') idleT = setTimeout(() => (app.idle = true), 2000);
 }
 
 /* ---------- ajustes ---------- */
@@ -1809,6 +1827,7 @@ export function cmd(c: string) {
   if (collTab() && collCmd(c)) return;
   if (c.startsWith('goal:')) { pickStreak(c.slice(5) as GoalKey); return; }
   if (c.startsWith('face:')) { setReadFace(c.slice(5) as GoalGroup); return; }
+  if (c.startsWith('stab:')) { setStatsTab(c.slice(5) as typeof app.statsTab); return; }
   switch (c) {
     case 'left': move(-1, 0); break;
     case 'right': move(1, 0); break;
@@ -1829,7 +1848,6 @@ export function cmd(c: string) {
         const t = app.platform?.titles[app.t];
         if (app.focus.startsWith('tit') && t?.launchable) void playTitle(t); else bump(screenEl()?.querySelector('.fx.f'), 0, 0);
       }
-      else if (app.view === 'stats' && app.statsTab === 'rank') cycleStatsKind();
       else toggleFav();
       break;
     case 'lt': trigger(-1); break;
@@ -1840,6 +1858,7 @@ export function cmd(c: string) {
       if (app.view === 'shots') toggleShotsView();
       else if (app.view === 'viewer') toggleBare();
       else if (app.view === 'titles' && app.titlesTab === 'all') toggleTitlesView();
+      else if (app.view === 'stats' && app.statsTab === 'rank') cycleStatsKind();
       break;
     case 'y':
       if (app.view === 'titles') {
@@ -1851,9 +1870,10 @@ export function cmd(c: string) {
           const t = app.platform?.titles[app.t];
           if (t) void cycleCardVariant(t.gameId ?? t.dir);
         } else {
-          openGameSettings();
+          bump(screenEl()?.querySelector('.fx.f'), 0, 0);
         }
       }
+      else if (app.view === 'viewer') { app.vinfoMore = !app.vinfoMore; wake(); blip(700); }
       else if (app.view === 'shots') cycleSort();
       else if (app.view === 'stats') toggleStatsTab();
       else if (app.view === 'evo') openGameStats('title');
@@ -1932,7 +1952,7 @@ export function onScreenClick(e: MouseEvent) {
   const th = t.closest<HTMLElement>('.vthumb');
   if (th) { jumpViewer(+th.dataset.vi!); wake(); return; }
   // Visor: clic en el tercio izquierdo/derecho = anterior/siguiente sin ir a las flechas.
-  if (app.view === 'viewer' && app.vz.k === 1 && !app.vbare && performance.now() - goT > 400) { const z = viewerZone(e); if (z !== 1) stepViewer(z === 0 ? -1 : 1); }
+  if (app.view === 'viewer' && app.vz.k === 1 && performance.now() - goT > 400) { const z = viewerZone(e); if (z !== 1) stepViewer(z === 0 ? -1 : 1); }
   wake();
 }
 

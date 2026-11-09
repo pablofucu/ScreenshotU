@@ -140,7 +140,7 @@ export const RUN_DAYS = 14;
 export const PARK_DAYS = 90;
 export const WARN_DAYS = 10;
 
-const BAND_DEF: Array<{ key: BandKind; label: string; color: string }> = [
+export const BAND_DEF: Array<{ key: BandKind; label: string; color: string }> = [
   { key: 'run', label: 'En marcha', color: RAINBOW[0].c },
   { key: 'mid', label: 'A medias', color: RAINBOW[1].c },
   { key: 'pend', label: 'Pendiente', color: RAINBOW[3].c },
@@ -204,7 +204,7 @@ export const listHas = (ti: number) => onBoard() ? boardAt(ti) !== null : app.sh
 export const listFirst = (): number | undefined => onBoard() ? buildBoard()[0]?.items[0]?.ti : app.shelves[0]?.items[0];
 
 /** X en el tablero: fija o suelta un juego (solo los que se están jugando; los fijados se quedan en «En marcha»). */
-function togglePin() {
+export function togglePin() {
   const t = app.platform?.titles[app.t];
   if (!t || !t.id || t.status !== 'playing') {
     toast('Solo se pueden fijar los juegos que estás jugando', 2400);
@@ -234,18 +234,22 @@ function boardMove(dx: number, dy: number) {
     blip(880);
     return;
   }
-  const nb = at.b + dy;
-  if (nb < 0 || nb >= bands.length) { bump(document.querySelector('#screen .fx.f'), dx, dy); return; }
-  // Se cae en la portada de la franja de destino más cercana en horizontal a la actual.
-  const cur = document.querySelector<HTMLElement>('#screen .it.f');
-  const cx = cur ? cur.getBoundingClientRect().left + cur.getBoundingClientRect().width / 2 : 0;
-  let best = bands[nb].items[0].ti, bd = Infinity;
-  for (const el of document.querySelectorAll<HTMLElement>(`#screen [data-band="${bands[nb].key}"] .it`)) {
-    const r = el.getBoundingClientRect();
-    const dist = Math.abs(r.left + r.width / 2 - cx);
+  // Fila visual más cercana en la dirección dy, entre todos los carriles.
+  const cur = document.querySelector<HTMLElement>('#screen .board .it.f');
+  if (!cur) { bump(document.querySelector('#screen .fx.f'), dx, dy); return; }
+  const cr = cur.getBoundingClientRect();
+  const cx = cr.left + cr.width / 2, cy = cr.top + cr.height / 2;
+  let best: number | undefined, bdy = Infinity, bdx = Infinity;
+  for (const el of document.querySelectorAll<HTMLElement>('#screen .board .it')) {
     const k = el.dataset.k?.slice(3);
-    if (dist < bd && k !== undefined) { bd = dist; best = Number(k); }
+    if (k === undefined || el === cur) continue;
+    const r = el.getBoundingClientRect();
+    const ey = r.top + r.height / 2;
+    if (dy > 0 ? ey <= cy + 20 : ey >= cy - 20) continue;
+    const ddy = Math.abs(ey - cy), ddx = Math.abs(r.left + r.width / 2 - cx);
+    if (ddy < bdy - 1 || (Math.abs(ddy - bdy) <= 1 && ddx < bdx)) { bdy = ddy; bdx = ddx; best = Number(k); }
   }
+  if (best === undefined) { bump(document.querySelector('#screen .fx.f'), dx, dy); return; }
   setFocus('tit' + best);
   blip(880);
 }
@@ -378,7 +382,6 @@ export function listCmd(c: string): boolean {
       else bump(document.querySelector('#screen .fx.f'), 0, 0);
       return true;
     case 'x': {
-      if (onBoard()) { if (listHas(app.t)) togglePin(); else bump(document.querySelector('#screen .fx.f'), 0, 0); return true; }
       const t = app.platform?.titles[app.t];
       if (t && listHas(app.t) && t.launchable) void playTitle(t); else bump(document.querySelector('#screen .fx.f'), 0, 0);
       return true;

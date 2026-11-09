@@ -9,7 +9,7 @@ import { RAINBOW, type Accent } from './icons';
 import { hueOf, inkDark } from './oklch';
 import { variablesCSS } from './atmos';
 import { openOsk } from './osk.svelte';
-import { bump, closeOverlay, go, openTitle, popOverlay, pushOverlay, setFocus, toast } from './controller.svelte';
+import { bump, closeOverlay, go, openTitle, openTitlesMenu, playTitle, popOverlay, pushOverlay, setFocus, toast } from './controller.svelte';
 import { closeOrConfirm, inkFor } from './ops.svelte';
 import { LIST_VIS, revealShelfPx, SHELF_CW, SHELF_PITCH } from './milista.svelte';
 import { autoHex, coverColors, gameYear, harmonize, railGradient, suggestGroups, suggestName, titleHex, topHues, yearLayout } from './collections';
@@ -193,8 +193,15 @@ export function collCmd(c: string): boolean {
       else if (!sh.items.length) openCollForm(sh.coll.id);
       else openTitle(sh.items[at.i]);
       return true;
-    case 'x':
-      if (sh) openCollShots(at.c); else bump(flash(), 0, 0);
+    case 'x': {
+      const ti = sh?.items[at.i];
+      const t = ti !== undefined ? app.platform?.titles[ti] : undefined;
+      if (t?.launchable) void playTitle(t); else bump(flash(), 0, 0);
+      return true;
+    }
+    case 'menu':
+      if (sh?.items.length) app.t = sh.items[at.i];
+      openTitlesMenu();
       return true;
     case 'y':
       if (sh) openCollForm(sh.coll.id); else bump(flash(), 0, 0);
