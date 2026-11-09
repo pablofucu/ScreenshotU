@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>D · Panorama</title>
+<style>
+/* Tokens de «Noche ahumada» (src/app.css) y colores de categoría de las otras maquetas. Datos inventados. */
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI','Yu Gothic UI',system-ui,sans-serif;
+  --ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#7f8899;--line:rgba(200,210,235,.16);--line-2:rgba(200,210,235,.24);
+  --face:rgba(30,34,43,.78);--ok:#3BB54A;--bad:#E8384F;--warn:#F2B807;
+  --pc:#1593d6;--sw:#e0384a;--vn:#00A0D8;--jvn:#E5487A;--k:var(--pc)}
+*{box-sizing:border-box}
+body{margin:0;background:#0b0d11;color:var(--ink);font-family:var(--round)}
+.note{padding:12px 18px;font-size:14px;color:var(--ink-2);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.note b{color:var(--ink)}
+.note button{font:inherit;font-weight:700;padding:5px 13px;border-radius:999px;border:1px solid var(--line-2);background:#1e222b;color:var(--ink);cursor:pointer}
+#wrap{position:relative;margin:0 auto 30px;width:1280px;height:720px;transform-origin:0 0}
+#stage{position:absolute;inset:0;overflow:hidden;border-radius:12px;box-shadow:0 0 0 1px var(--line)}
+.bg{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 0%,#232631,#16181e 60%,#0f1115)}
+.blob{position:absolute;border-radius:50%;filter:blur(40px);opacity:.38;transition:background 1s;animation:drift 18s ease-in-out infinite alternate}
+.blob.b1{width:520px;height:520px;left:-120px;top:-160px;background:var(--k)}
+.blob.b2{width:420px;height:420px;right:-100px;top:180px;background:color-mix(in srgb,var(--k) 50%,#E9A100);animation-duration:23s}
+.blob.b3{width:380px;height:380px;left:420px;bottom:-220px;background:color-mix(in srgb,var(--k) 40%,#6E56CF);animation-duration:27s}
+@keyframes drift{to{transform:translate(60px,40px) scale(1.12)}}
+#scroll{position:absolute;inset:58px 0 40px;overflow-y:auto;scroll-behavior:smooth;padding:6px 28px 28px;scrollbar-width:none}
+#scroll::-webkit-scrollbar{display:none}
+
+/* Cabecera */
+.top{position:absolute;left:0;right:0;top:0;height:58px;display:flex;align-items:center;gap:12px;padding:0 24px;z-index:3}
+.top h1{margin:0;font-size:22px;letter-spacing:.2px}
+.tabs{display:flex;gap:6px;margin-left:12px}
+.tab{padding:6px 14px;border-radius:999px;font-weight:800;font-size:14px;color:var(--ink-2);background:rgba(40,44,56,.6);box-shadow:0 0 0 1px var(--line)}
+.tab.on{color:#fff;background:linear-gradient(135deg,#ff6a88,#E9A100 50%,#00A0D8);box-shadow:0 6px 18px -6px rgba(233,161,0,.7)}
+.cats{margin-left:auto;display:flex;gap:6px;align-items:center}
+.cat{padding:6px 13px;border-radius:999px;font-weight:800;font-size:13.5px;cursor:pointer;color:var(--ink-2);background:rgba(40,44,56,.6);box-shadow:0 0 0 1px var(--line);transition:.25s}
+.cat.on{color:#fff;background:var(--c);box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 60%,#fff),0 8px 20px -6px var(--c);transform:translateY(-1px)}
+.btn{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 5px;border-radius:7px;font-size:11px;font-weight:900;background:#2b303b;color:var(--ink);box-shadow:inset 0 -2px 0 rgba(0,0,0,.35)}
+.foot{position:absolute;left:0;right:0;bottom:0;height:40px;display:flex;align-items:center;gap:18px;padding:0 24px;font-size:13px;color:var(--ink-2);z-index:3;background:linear-gradient(0deg,rgba(11,13,17,.9),transparent)}
+.foot span{display:flex;gap:6px;align-items:center}
+
+/* Tarjetas */
+.sec{margin:18px 0 8px;display:flex;align-items:baseline;gap:10px}
+.sec h2{margin:0;font-size:17px}
+.sec small{color:var(--ink-3);font-size:13px}
+.grid{display:grid;gap:14px}
+.card{position:relative;border-radius:22px;padding:16px 18px;background:var(--face);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px var(--line),0 18px 30px -20px rgba(0,0,0,.8);overflow:hidden;
+  opacity:0;transform:translateY(18px) scale(.98);transition:opacity .6s,transform .6s cubic-bezier(.2,.9,.3,1.2)}
+.card.in{opacity:1;transform:none}
+.card h3{margin:0 0 10px;font-size:14px;color:var(--ink-2);font-weight:800;display:flex;gap:8px;align-items:center}
+.card h3 i{font-style:normal;font-size:16px}
+.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:800;color:#fff;background:var(--c)}
+
+/* Contadores */
+.kpis{grid-template-columns:repeat(5,1fr)}
+.kpi{padding:14px 16px 12px;background:linear-gradient(160deg,color-mix(in srgb,var(--g) 38%,rgba(30,34,43,.85)),rgba(30,34,43,.85) 70%)}
+.kpi .v{font-size:34px;font-weight:900;line-height:1.05;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.kpi .v small{font-size:16px;font-weight:800;color:var(--ink-2);margin-left:2px}
+.kpi .l{font-size:13px;color:var(--ink-2);margin-top:2px}
+.kpi .d{font-size:12px;font-weight:800;margin-top:6px}
+.kpi .d.up{color:var(--ok)}.kpi .d.dn{color:var(--bad)}
+.kpi .ico{position:absolute;right:12px;top:10px;font-size:22px;opacity:.9;animation:bob 3s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-4px) rotate(-6deg)}}
+
+/* Fila 2 */
+.r2{grid-template-columns:1.25fr 1fr 1fr}
+#bubbles{position:relative;height:262px}
+.bub{position:absolute;border-radius:50%;display:grid;place-items:center;text-align:center;color:#fff;font-weight:800;padding:8px;line-height:1.1;
+  background:radial-gradient(circle at 32% 28%,color-mix(in srgb,var(--c) 55%,#fff),var(--c) 55%,color-mix(in srgb,var(--c) 60%,#000));
+  box-shadow:0 10px 24px -10px var(--c),inset 0 -6px 14px rgba(0,0,0,.25);transform:scale(0);transition:transform .7s cubic-bezier(.3,1.6,.5,1);animation:float 6s ease-in-out infinite alternate}
+.bub.in{transform:scale(1)}
+.bub b{display:block;font-size:var(--fs);text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.bub span{font-size:11px;opacity:.9}
+@keyframes float{to{translate:0 -7px}}
+#clock{display:block;margin:0 auto}
+.clock-cap{text-align:center;font-size:13px;color:var(--ink-2);margin-top:2px}
+.clock-cap b{color:var(--ink)}
+.donut-wrap{display:flex;gap:14px;align-items:center}
+.legend{display:grid;gap:6px;font-size:13px}
+.legend div{display:flex;gap:7px;align-items:center}
+.legend i{width:11px;height:11px;border-radius:4px;background:var(--c)}
+.legend b{margin-left:auto;padding-left:10px;font-variant-numeric:tabular-nums}
+.stars{margin-top:12px;display:grid;gap:4px}
+.stars div{display:grid;grid-template-columns:62px 1fr 26px;gap:8px;align-items:center;font-size:12.5px;color:var(--ink-2)}
+.stars .t{height:9px;border-radius:9px;background:rgba(255,255,255,.07);overflow:hidden}
+.stars .t i{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,#F2B807,#ff8a3d);transition:width 1s cubic-bezier(.2,.9,.3,1)}
+.stars .s{color:#F2B807;letter-spacing:-1px}
+
+/* Fila 3 */
+.r3{grid-template-columns:1.5fr 1fr}
+#punch{display:grid;grid-template-columns:34px repeat(24,1fr);gap:3px;font-size:10.5px;color:var(--ink-3)}
+#punch .c{aspect-ratio:1;border-radius:5px;background:var(--k);opacity:0;transform:scale(.3);transition:opacity .5s,transform .5s}
+#punch .lab{display:flex;align-items:center}
+#punch .h{text-align:center}
+.river{height:150px}
+.river svg{width:100%;height:100%;overflow:visible}
+
+/* Récords */
+.recs{grid-template-columns:repeat(4,1fr)}
+.rec{padding:14px 16px;min-height:118px}
+.rec .big{font-size:26px;font-weight:900;margin:2px 0}
+.rec .sub{font-size:13px;color:var(--ink-2)}
+.rec .em{position:absolute;right:-6px;bottom:-14px;font-size:64px;opacity:.16;transform:rotate(-12deg)}
+.rec.flash{animation:shine 1.2s}
+@keyframes shine{30%{box-shadow:0 0 0 2px var(--k),0 0 30px -4px var(--k)}}
+
+/* Panel propio de la categoría */
+.own{grid-template-columns:1fr 1fr 1fr}
+.split{height:20px;border-radius:12px;overflow:hidden;display:flex;margin:10px 0 8px;background:rgba(255,255,255,.07)}
+.split i{display:block;height:100%;width:0;transition:width 1.2s cubic-bezier(.2,.9,.3,1)}
+.mini{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-2)}
+.mini b{color:var(--ink)}
+.ach{display:flex;gap:10px;align-items:center;margin-top:8px;font-size:13px}
+.ach .medal{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;background:linear-gradient(135deg,#F2B807,#ff6a3d);box-shadow:0 6px 16px -6px #F2B807;animation:spin 6s linear infinite}
+@keyframes spin{0%,80%{transform:rotate(0)}90%{transform:rotate(-12deg) scale(1.08)}100%{transform:rotate(0)}}
+.spark{width:100%;height:84px}
+
+/* Datos curiosos */
+.fun{display:flex;gap:14px;align-items:center;padding:14px 20px;background:linear-gradient(110deg,color-mix(in srgb,var(--k) 45%,rgba(30,34,43,.9)),rgba(30,34,43,.9) 60%)}
+.fun .q{font-size:30px;animation:bob 2.4s ease-in-out infinite}
+.fun .tx{font-size:17px;font-weight:800;transition:opacity .4s,transform .4s}
+.fun .tx.out{opacity:0;transform:translateY(8px)}
+.fun .dots{margin-left:auto;display:flex;gap:5px}
+.fun .dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25)}
+.fun .dots i.on{background:#fff}
+.focus{outline:3px solid #fff;outline-offset:3px}
+</style>
+</head>
+<body>
+<div class="note"><b>D · Panorama</b> — estadísticas animadas por categoría. LB/RB (o Q/E, o clic en la pastilla) cambia de categoría; ↑/↓ baja por la pantalla.
+ <button id="replay">Repetir animación</button>
+ <button id="all">Ver «Todo»</button></div>
+<div id="wrap"><div id="stage">
+ <div class="bg"></div><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+ <div class="top">
+  <h1>Estadísticas</h1>
+  <div class="tabs"><span class="tab">Semana</span><span class="tab">Calendario</span><span class="tab">Resumen semanal</span><span class="tab on">✨ Panorama</span></div>
+  <div class="cats"><span class="btn">LB</span><span id="cats" style="display:flex;gap:6px"></span><span class="btn">RB</span></div>
+ </div>
+ <div id="scroll"></div>
+ <div class="foot"><span><span class="btn">LB</span><span class="btn">RB</span> Categoría</span><span><span class="btn">↕</span> Recorrer</span><span><span class="btn">A</span> Abrir juego</span><span><span class="btn">X</span> Año / Siempre</span><span><span class="btn">B</span> Volver</span><span style="margin-left:auto" id="per">2026 · hasta el 9 nov</span></div>
+</div></div>
+
+<script>
+// ---------- Datos inventados (en la app: Title.plays, shots, status, rating, console, logros, readstats) ----------
+const CATS=[
+ {id:'all',name:'Todo',c:'linear-gradient(135deg,#ff6a88,#E9A100,#00A0D8)',k:'#E9A100'},
+ {id:'pc',name:'Juegos',c:'var(--pc)',k:'#1593d6',
+  games:[['Elden Ring',118,'#c9a227'],['Baldur\'s Gate 3',96,'#b0432c'],['Hades II',61,'#c2347a'],['Balatro',44,'#2f7de1'],['Sea of Stars',31,'#e68a2e'],['Celeste',18,'#7b5bd6'],['Hollow Knight',14,'#5a7ca8']],
+  kpi:[412,689,6120,212,148],status:[[23,'Terminados','#3BB54A'],[6,'Jugando','#00A0D8'],[31,'Pendientes','#E9A100'],[9,'Abandonados','#7f8899']],
+  stars:[9,7,4,2,1],peak:22,rec:[['5 h 48 min','Partida más larga','Baldur\'s Gate 3 · 14 mar','⏱️'],['19 días','Racha jugando','del 2 al 20 ago','🔥'],['1 284','Más capturas','Elden Ring','📸'],['0,8 %','Logro más raro','«Señor de la llama» · Elden Ring','🏆']]},
+ {id:'switch',name:'Switch',c:'var(--sw)',k:'#e0384a',
+  games:[['Zelda: Tears of the Kingdom',142,'#2f9e6a'],['Mario Kart 8',38,'#e0384a'],['Xenoblade 3',57,'#3a7bd5'],['Pikmin 4',22,'#e8a33d'],['Metroid Dread',12,'#d7542a']],
+  kpi:[271,402,3870,166,0],status:[[11,'Terminados','#3BB54A'],[3,'Jugando','#00A0D8'],[14,'Pendientes','#E9A100'],[2,'Abandonados','#7f8899']],
+  stars:[5,4,2,0,0],peak:20,rec:[['4 h 12 min','Partida más larga','Zelda: TotK · 6 ene','⏱️'],['11 días','Racha jugando','del 23 dic al 2 ene','🔥'],['902','Más capturas','Zelda: TotK','📸'],['78 %','De consola','el resto, emulador','🎮']]},
+ {id:'vn',name:'Novelas visuales',c:'var(--vn)',k:'#00A0D8',
+  games:[['Steins;Gate 0',41,'#3fa8c9'],['Fate/stay night',58,'#c63a3a'],['Clannad',36,'#d78fb8'],['Muv-Luv',27,'#4b6fd1']],
+  kpi:[162,240,2410,131,0],status:[[8,'Terminadas','#3BB54A'],[2,'Leyendo','#00A0D8'],[17,'Pendientes','#E9A100'],[1,'Abandonadas','#7f8899']],
+  stars:[4,3,1,0,0],peak:23,rec:[['3 h 30 min','Sesión más larga','Fate/stay night · 2 feb','⏱️'],['34 días','Racha de meta','récord: 41','🔥'],['612','Más capturas','Fate/stay night','📸'],['6/7','Meta esta semana','30 min al día','🎯']]},
+ {id:'jvn',name:'Novelas japonesas',c:'var(--jvn)',k:'#E5487A',
+  games:[['サマーポケッツ',49,'#f08aa8'],['ATRI',22,'#5bb3e8'],['白昼夢の青写真',31,'#b7a2e8'],['9-nine-',14,'#e86b8a']],
+  kpi:[118,186,1830,109,0],status:[[5,'Terminadas','#3BB54A'],[2,'Leyendo','#00A0D8'],[12,'Pendientes','#E9A100'],[0,'Abandonadas','#7f8899']],
+  stars:[3,2,0,0,0],peak:21,rec:[['2 h 55 min','Sesión más larga','サマーポケッツ · 30 ago','⏱️'],['27 días','Racha de lectura','récord: 27 🎉','🔥'],['3 420','Palabras conocidas','+212 este mes','🧠'],['9 840','Car./hora','+18 % desde enero','🚀']]}
+];
+let rnd=1;const R=()=>(rnd=(rnd*16807)%2147483647)/2147483647;
+const $=s=>document.querySelector(s);
+const fmt=n=>Math.round(n).toLocaleString('es-ES');
+let ci=1,funT=null;
+
+function sumAll(){const s=CATS.slice(1);return{kpi:[0,1,2,3].map(i=>s.reduce((a,c)=>a+c.kpi[i],0)).concat([s[0].kpi[4]])}}
+
+function render(){
+ const C=CATS[ci],all=C.id==='all';rnd=7+ci*13;
+ document.documentElement.style.setProperty('--k',C.k);
+ $('#cats').innerHTML=CATS.map((c,i)=>`<span class="cat${i===ci?' on':''}" style="--c:${c.c}" data-i="${i}">${c.name}</span>`).join('');
+ const k=all?sumAll().kpi:C.kpi,read=C.id==='vn'||C.id==='jvn';
+ const kp=[['Horas',k[0],'h','🕹️','#E5487A','▲ 18 % vs 2025','up'],['Partidas',k[1],'','🎮','#00A0D8','▲ 42','up'],['Capturas',k[2],'','📸','#E9A100','1 cada 4 min jugando',''],['Días activos',k[3],'/313','📅','#3BB54A','68 % del año',''],
+   all?['Categorías',4,'','🗂️','#6E56CF','todas con actividad','']:read?['Caracteres',C.id==='jvn'?1.16:2.4,'M','📖','#6E56CF','▲ 9 % vs 2025','up']:C.id==='switch'?['En consola',211,'h','🔌','#6E56CF','datos de Nintendo','']:['Logros',k[4],'','🏆','#6E56CF','12 juegos al 100 %','']];
+ let h=`<div class="grid kpis">${kp.map(x=>`<div class="card kpi" style="--g:${x[4]}"><span class="ico">${x[3]}</span><div class="v"><span data-n="${x[1]}" data-d="${x[1]%1?2:0}">0</span><small>${x[2]}</small></div><div class="l">${x[0]}</div><div class="d ${x[6]}">${x[5]}</div></div>`).join('')}</div>`;
+
+ if(all){
+  h+=`<div class="sec"><h2>El año en un río</h2><small>horas por mes, una franja por categoría (cada una con su color; ninguna lista mezcla títulos)</small></div>
+  <div class="grid r3"><div class="card river"><svg id="river" viewBox="0 0 700 150" preserveAspectRatio="none"></svg></div>
+  <div class="card"><h3><i>🧭</i>Tu reparto</h3>${CATS.slice(1).map(c=>`<div class="mini" style="margin:7px 0"><span><span class="chip" style="--c:${c.c}">${c.name}</span></span><b>${c.kpi[0]} h</b></div><div class="split" style="height:8px;margin:0 0 4px"><i style="background:${c.c}" data-w="${c.kpi[0]/412*100}"></i></div>`).join('')}</div></div>
+  <div class="sec"><h2>Lo mejor de cada categoría</h2><small>un récord por categoría, cada uno con su etiqueta</small></div>
+  <div class="grid recs">${CATS.slice(1).map(c=>{const r=c.rec[0];return`<div class="card rec"><span class="chip" style="--c:${c.c}">${c.name}</span><div class="big">${r[0]}</div><div class="sub">${r[1]} · ${r[2]}</div><span class="em">${r[3]}</span></div>`}).join('')}</div>`;
+ } else {
+  const tot=C.status.reduce((a,s)=>a+s[0],0);
+  h+=`<div class="sec"><h2>${C.name}: qué, cuándo y cómo</h2><small>solo títulos de esta categoría</small></div>
+  <div class="grid r2">
+   <div class="card"><h3><i>🫧</i>Dónde se fue el tiempo <small style="color:var(--ink-3);font-weight:700">tamaño = horas</small></h3><div id="bubbles"></div></div>
+   <div class="card"><h3><i>🕰️</i>Tu reloj</h3><svg id="clock" width="210" height="210" viewBox="-110 -110 220 220"></svg><div class="clock-cap">Hora punta: <b>${C.peak}:00–${C.peak+1}:00</b> · ${read?'lector':'jugador'} nocturno 🌙</div></div>
+   <div class="card"><h3><i>🍩</i>Estados</h3><div class="donut-wrap"><svg id="donut" width="120" height="120" viewBox="-60 -60 120 120"></svg>
+    <div class="legend">${C.status.map(s=>`<div style="--c:${s[2]}"><i></i>${s[1]}<b>${s[0]}</b></div>`).join('')}</div></div>
+    <div class="stars">${C.stars.map((n,i)=>`<div><span class="s">${'★'.repeat(5-i)}</span><span class="t"><i data-w="${n/Math.max(...C.stars)*100}"></i></span><span>${n}</span></div>`).join('')}</div>
+   </div>
+  </div>
+  <div class="sec"><h2>Semana tipo</h2><small>cuántas veces juegas a cada hora de cada día (desde Title.plays)</small></div>
+  <div class="grid r3"><div class="card"><div id="punch"></div></div>${ownPanel(C)}</div>
+  <div class="sec"><h2>Récords</h2><small>se iluminan por turnos</small></div>
+  <div class="grid recs">${C.rec.map(r=>`<div class="card rec"><div class="sub">${r[1]}</div><div class="big">${r[0]}</div><div class="sub">${r[2]}</div><span class="em">${r[3]}</span></div>`).join('')}</div>`;
+ }
+ h+=`<div class="sec"><h2>¿Sabías que…?</h2></div><div class="card fun"><span class="q">💡</span><span class="tx" id="funtx"></span><span class="dots" id="dots"></span></div>`;
+ $('#scroll').innerHTML=h;$('#scroll').scrollTop=0;
+ $('#cats').querySelectorAll('.cat').forEach(e=>e.onclick=()=>{ci=+e.dataset.i;render()});
+ animate(C,all);
+}
+
+function ownPanel(C){
+ if(C.id==='switch')return`<div class="card"><h3><i>🔌</i>Consola o emulador</h3><div class="split"><i style="background:#e0384a" data-w="78"></i><i style="background:#6E56CF" data-w="22"></i></div><div class="mini"><span>🟥 Consola <b>211 h</b></span><span>🟪 Emulador <b>60 h</b></span></div><div class="mini" style="margin-top:12px"><span>Datos de Nintendo hasta</span><b>8 nov</b></div><div class="mini" style="margin-top:6px"><span>Día con más consola</span><b>4 h 10 · 1 ene</b></div></div>`;
+ if(C.id==='jvn')return`<div class="card"><h3><i>🧠</i>Palabras conocidas</h3><svg class="spark" id="spark" viewBox="0 0 300 84" preserveAspectRatio="none"></svg><div class="mini"><span>Ene <b>1 980</b></span><span>Hoy <b>3 420</b></span><span>Frases al glosario <b>486</b></span></div></div>`;
+ if(C.id==='vn')return`<div class="card"><h3><i>🎯</i>Meta de lectura</h3><svg class="spark" id="spark" viewBox="0 0 300 84" preserveAspectRatio="none"></svg><div class="mini"><span>Días cumplidos <b>214</b></span><span>Rescates <b>6</b></span><span>Media <b>41 min/día</b></span></div></div>`;
+ return`<div class="card"><h3><i>🏆</i>Logros</h3><div class="split"><i style="background:linear-gradient(90deg,#F2B807,#ff6a3d)" data-w="63"></i></div><div class="mini"><span>Desbloqueados <b>148 / 235</b></span><b>63 %</b></div><div class="ach"><span class="medal">👑</span><div><b>Señor de la llama</b><br><span style="color:var(--ink-2)">Elden Ring · solo el 0,8 % lo tiene</span></div></div></div>`;
+}
+
+function animate(C,all){
+ const cards=[...document.querySelectorAll('.card')];
+ cards.forEach((c,i)=>setTimeout(()=>c.classList.add('in'),60+i*70));
+ // Contadores
+ document.querySelectorAll('[data-n]').forEach(e=>{const n=+e.dataset.n,d=+e.dataset.d,t0=performance.now();
+  (function f(t){const p=Math.min(1,(t-t0)/1400),v=n*(1-Math.pow(1-p,3));e.textContent=d?v.toFixed(d).replace('.',','):fmt(v);if(p<1)requestAnimationFrame(f)})(t0)});
+ setTimeout(()=>document.querySelectorAll('[data-w]').forEach(e=>e.style.width=e.dataset.w+'%'),500);
+ if(all)river();else{bubbles(C);clock(C);donut(C);punch(C);spark(C);rotateRecs()}
+ fun(C,all);
+}
+
+function bubbles(C){
+ const box=$('#bubbles'),W=box.clientWidth||440,H=262,max=Math.max(...C.games.map(g=>g[1]));
+ const gs=[...C.games].sort((a,b)=>b[1]-a[1]),sum=gs.reduce((a,g)=>a+g[1],0),sc=Math.sqrt(W*H*.5/(Math.PI*sum));
+ const placed=[];let html='';
+ gs.forEach((g,i)=>{const r=Math.max(24,Math.sqrt(g[1])*sc);let x=W/2,y=H/2,a=R()*6.28,d=0;
+  while(d<600&&(placed.some(p=>Math.hypot(p.x-x,p.y-y)<p.r+r+3)||x<r||x>W-r||y<r||y>H-r)){d+=1.5;a+=.35;x=W/2+Math.cos(a)*d*1.4;y=H/2+Math.sin(a)*d*.8}
+  placed.push({x,y,r});
+  html+=`<div class="bub" style="--c:${g[2]};left:${x-r}px;top:${y-r}px;width:${2*r}px;height:${2*r}px;--fs:${Math.max(11,r/4.2)}px;animation-delay:-${i*1.3}s"><div><b>${r>46?g[0]:g[0].slice(0,9)+(g[0].length>9?'…':'')}</b><span>${g[1]} h</span></div></div>`});
+ box.innerHTML=html;[...box.children].forEach((b,i)=>setTimeout(()=>b.classList.add('in'),400+i*120));
+}
+function clock(C){
+ const s=$('#clock');let h='';const vals=[...Array(24)].map((_,i)=>{const d=Math.min(Math.abs(i-C.peak),24-Math.abs(i-C.peak));return Math.max(.04,Math.exp(-d*d/10)+(i>=10&&i<=14?.25:0)+R()*.12)});
+ const mx=Math.max(...vals);
+ vals.forEach((v,i)=>{const a=(i/24)*Math.PI*2-Math.PI/2,a2=a+Math.PI*2/24-.04,r0=34,r1=r0+(v/mx)*62;
+  const p=(r,an)=>`${(r*Math.cos(an)).toFixed(1)} ${(r*Math.sin(an)).toFixed(1)}`;
+  h+=`<path d="M${p(r0,a)}L${p(r1,a)}A${r1} ${r1} 0 0 1 ${p(r1,a2)}L${p(r0,a2)}A${r0} ${r0} 0 0 0 ${p(r0,a)}Z" fill="var(--k)" opacity="${.35+.65*v/mx}" style="transform:scale(0);transform-origin:0 0;transition:transform .6s cubic-bezier(.3,1.5,.5,1) ${i*30}ms"/>`});
+ [0,6,12,18].forEach(n=>{const a=n/24*Math.PI*2-Math.PI/2;h+=`<text x="${(104*Math.cos(a)).toFixed(0)}" y="${(104*Math.sin(a)+4).toFixed(0)}" fill="#7f8899" font-size="11" text-anchor="middle">${n}h</text>`});
+ h+=`<text y="-2" fill="#e6e9f0" font-size="22" font-weight="900" text-anchor="middle">🌙</text><text y="18" fill="#b4bccb" font-size="10" text-anchor="middle">24 h</text>`;
+ s.innerHTML=h;setTimeout(()=>s.querySelectorAll('path').forEach(p=>p.style.transform='scale(1)'),300);
+}
+function donut(C){
+ const s=$('#donut'),tot=C.status.reduce((a,x)=>a+x[0],0),r=44,L=2*Math.PI*r;let off=0,h=`<circle r="${r}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="16"/>`;
+ C.status.forEach(x=>{const l=x[0]/tot*L;h+=`<circle r="${r}" fill="none" stroke="${x[2]}" stroke-width="16" stroke-dasharray="0 ${L}" data-a="${Math.max(0,l-2)} ${L}" stroke-dashoffset="${-off}" transform="rotate(-90)" style="transition:stroke-dasharray 1s cubic-bezier(.2,.9,.3,1)"/>`;off+=l});
+ h+=`<text y="2" fill="#e6e9f0" font-size="24" font-weight="900" text-anchor="middle">${Math.round(C.status[0][0]/tot*100)}%</text><text y="17" fill="#b4bccb" font-size="9.5" text-anchor="middle">terminado</text>`;
+ s.innerHTML=h;setTimeout(()=>s.querySelectorAll('[data-a]').forEach(c=>c.setAttribute('stroke-dasharray',c.dataset.a)),450);
+}
+function punch(C){
+ const days=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];let h='<span></span>'+[...Array(24)].map((_,i)=>`<span class="h">${i%3?'':i}</span>`).join('');
+ days.forEach((d,di)=>{h+=`<span class="lab">${d}</span>`;for(let i=0;i<24;i++){const dd=Math.min(Math.abs(i-C.peak),24-Math.abs(i-C.peak));let v=Math.exp(-dd*dd/9)*(di>=5?1.1:.75);if(di>=5&&i>=10&&i<=16)v+=.5;v=Math.min(1,v*(.6+R()*.6));h+=`<span class="c" data-v="${v.toFixed(2)}" style="transition-delay:${(di*24+i)*4}ms"></span>`}});
+ $('#punch').innerHTML=h;setTimeout(()=>$('#punch').querySelectorAll('.c').forEach(c=>{const v=+c.dataset.v;c.style.opacity=.08+v*.92;c.style.transform=`scale(${.55+v*.45})`}),500);
+}
+function spark(C){
+ const s=$('#spark');if(!s)return;const n=40,pts=[...Array(n)].map((_,i)=>C.id==='jvn'?20+i*1.4+R()*6+(i>28?(i-28)*1.2:0):30+Math.sin(i/3)*12+R()*14);
+ const mx=Math.max(...pts),mn=Math.min(...pts),xy=pts.map((v,i)=>[i/(n-1)*300,80-(v-mn)/(mx-mn)*72]);
+ const d='M'+xy.map(p=>p.map(q=>q.toFixed(1)).join(' ')).join('L');
+ s.innerHTML=`<defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--k)" stop-opacity=".55"/><stop offset="1" stop-color="var(--k)" stop-opacity="0"/></linearGradient></defs>
+ <path d="${d}L300 84L0 84Z" fill="url(#sg)" opacity="0" style="transition:opacity 1s .9s"/><path d="${d}" fill="none" stroke="var(--k)" stroke-width="3" stroke-linecap="round" stroke-dasharray="900" stroke-dashoffset="900" style="transition:stroke-dashoffset 1.6s ease-out .4s"/>
+ <circle cx="300" cy="${xy[n-1][1].toFixed(1)}" r="5" fill="#fff" opacity="0" style="transition:opacity .3s 2s"><animate attributeName="r" values="4;7;4" dur="1.6s" repeatCount="indefinite"/></circle>`;
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{const p=s.querySelectorAll('path');p[0].style.opacity=1;p[1].style.strokeDashoffset=0;s.querySelector('circle').style.opacity=1}));
+}
+function river(){
+ const s=$('#river'),cats=CATS.slice(1),M=10,months=['E','F','M','A','M','J','J','A','S','O','N'];
+ const data=cats.map(c=>[...Array(M+1)].map((_,m)=>c.kpi[0]/11*(.5+R()*1.0+(c.id==='switch'&&m<2?1.2:0)+(c.id==='pc'&&m>6?.6:0))));
+ const tot=[...Array(M+1)].map((_,m)=>data.reduce((a,d)=>a+d[m],0)),mx=Math.max(...tot);
+ let base=[...Array(M+1)].map((_,m)=>75+(tot[m]/mx)*65),h='';
+ const X=m=>m/M*700;
+ const curve=pts=>pts.map((p,i)=>i?`C${(X(i-1)+X(i))/2} ${pts[i-1]} ${(X(i-1)+X(i))/2} ${p} ${X(i)} ${p}`:`M0 ${p}`).join('');
+ data.forEach((d,ci2)=>{const top=base.map((b,m)=>b-(d[m]/mx)*130);
+  const bk=[...base].reverse(),seg=bk.map((p,i)=>i?`C${700-(X(i-1)+X(i))/2} ${bk[i-1]} ${700-(X(i-1)+X(i))/2} ${p} ${700-X(i)} ${p}`:`L700 ${p}`).join('');
+  h+=`<path d="${curve(top)}${seg}Z" fill="${['#1593d6','#e0384a','#00A0D8','#E5487A'][ci2]}" opacity=".88" style="transform:scaleY(0);transform-origin:0 140px;transition:transform 1s cubic-bezier(.2,.9,.3,1) ${ci2*150}ms"/>`;base=top});
+ months.forEach((m,i)=>h+=`<text x="${X(i)}" y="150" fill="#7f8899" font-size="11" text-anchor="middle">${m}</text>`);
+ s.innerHTML=h;setTimeout(()=>s.querySelectorAll('path').forEach(p=>p.style.transform='scaleY(1)'),350);
+}
+let recT=null;
+function rotateRecs(){clearInterval(recT);let i=0;recT=setInterval(()=>{const r=document.querySelectorAll('.rec');if(!r.length)return;r.forEach(x=>x.classList.remove('flash'));void r[0].offsetWidth;r[i++%r.length].classList.add('flash')},1600)}
+function fun(C,all){
+ const F=all?['Entre todo, 963 h: <b>40 días</b> seguidos sin dormir.','Tus 14 230 capturas, una detrás de otra a 1 por segundo, son <b>4 horas</b> de pase.','El domingo es tu día: <b>31 %</b> del tiempo de todo el año.','Has empezado 47 títulos este año y terminado <b>21</b>.']
+ :C.id==='jvn'?['1,16 millones de caracteres ≈ <b>9 novelas</b> de 400 páginas.','Lees un <b>18 %</b> más rápido que en enero.','Tu palabra conocida número 3 000 fue <b>「面影」</b>, el 2 oct.']
+ :C.id==='vn'?['Has cumplido la meta <b>214 días</b>: casi 7 de cada 10.','Fate/stay night se lleva el <b>36 %</b> de tu lectura.','Tu sesión media dura <b>48 min</b>.']
+ :C.id==='switch'?['Zelda se lleva más de la <b>mitad</b> de tus horas de Switch.','El 1 de enero jugaste <b>4 h 10 min</b> en la consola.','Mario Kart: <b>96 partidas</b>, la media más corta (24 min).']
+ :['Elden Ring: <b>118 h</b>, como ver El Señor de los Anillos 13 veces.','Haces una captura cada <b>4 min</b> de juego.','Tu mes más fuerte fue <b>agosto</b>: 61 h.','Has terminado <b>23 juegos</b>; Hades II con 5 ★.'];
+ clearInterval(funT);let i=0;const tx=$('#funtx'),dots=$('#dots');dots.innerHTML=F.map(()=>'<i></i>').join('');
+ const show=()=>{tx.classList.add('out');setTimeout(()=>{tx.innerHTML=F[i%F.length];[...dots.children].forEach((d,j)=>d.classList.toggle('on',j===i%F.length));tx.classList.remove('out');i++},300)};
+ show();funT=setInterval(show,3600);
+}
+
+// Escalado al ancho de la ventana y controles
+function fit(){const w=Math.min(1,(innerWidth-20)/1280),wr=$('#wrap');wr.style.transform=`scale(${w})`;wr.style.marginBottom=(720*w-720+30)+'px';wr.style.marginLeft=Math.max(10,(innerWidth-1280*w)/2)+'px'}
+addEventListener('resize',fit);fit();
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();
+ if(k==='q'||k==='e'){ci=(ci+(k==='e'?1:CATS.length-1))%CATS.length;render()}
+ if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();$('#scroll').scrollTop+=e.key==='ArrowDown'?260:-260}});
+$('#replay').onclick=render;$('#all').onclick=()=>{ci=0;render()};
+render();
+</script>
+</body>
+</html>
