@@ -152,11 +152,28 @@ body.dk .desc{color:#e6e9f0}
 .v-d .lane.empty .lh{height:30px;font:700 var(--t-s)/1 var(--round);color:var(--ink-3);background:none;box-shadow:none;padding-left:10px}
 .v-d .lane.empty .lh svg{width:20px;height:20px;padding:3px;background:var(--ink-3)}
 #stage[data-theme=dark] .it.f{background:color-mix(in srgb,var(--cf) 28%,#1d212b)}
+
+/* ---------- Portadas más grandes (se combina con cualquier variante) ---------- */
+/* «grandes»: huecos de 8, Terminado en una franja compacta y la portada ocupa todo el alto de la tarjeta. */
+.pg .board,.pm .board{gap:8px}
+.pg .lane,.pm .lane{flex:1 1 0;height:auto}
+.pg .lane.done,.pm .lane.done{flex:none;height:72px}
+.pg .lane.empty,.pm .lane.empty{flex:none;height:30px}
+.pg .its,.pm .its{top:4px;bottom:4px}
+.pg .it,.pm .it{height:100%;padding:4px 12px 4px 4px}
+.pg .cv,.pm .cv{height:100%;width:auto;aspect-ratio:2/3;padding:0}
+.pg .done .tx b,.pm .done .tx b{-webkit-line-clamp:1}
+/* «máximas»: además, las pestañas suben a la barra de arriba y el tablero empieza en y=88. */
+.pm .sx{top:16px;left:auto;right:120px}
+.pm .board{top:88px;height:556px}
+.pm .tx{width:124px}
+.pm .tx b{font-size:var(--t-m)}
 </style>
 </head>
 <body>
 <div class="tool"><b>Mi lista · propuestas</b>
   <span id="vbtns"></span>
+  <button id="port">Portadas: hoy</button>
   <button id="vacia">Franja vacía: no</button>
   <button id="tema">Tema: claro</button>
 </div>
@@ -256,7 +273,7 @@ document.addEventListener('keydown', e => {
 });
 $('#board').addEventListener('click', e => { const it = e.target.closest('.it'); if (it) { focus = { l:+it.dataset.l, i:+it.dataset.i }; render(); } });
 function setV(v) {
-  V = v; stage.className = 'm ' + v;
+  V = v; stage.className = 'm ' + v + (typeof P !== 'undefined' && PORT[P][0] ? ' ' + PORT[P][0] : '');
   const [t, p, li] = VARS[v];
   $('#desc').innerHTML = `<h2>${t}</h2><p>${p}</p><ul>${li.map(x => `<li>${x}</li>`).join('')}</ul>`;
   [...$('#vbtns').children].forEach(b => b.classList.toggle('on', b.dataset.v === v));
@@ -264,6 +281,8 @@ function setV(v) {
 }
 Object.keys(VARS).forEach(v => { const b = document.createElement('button'); b.dataset.v = v; b.textContent = VARS[v][0].split(' · ')[0]; b.onclick = () => setV(v); $('#vbtns').appendChild(b); $('#vbtns').append(' '); });
 $('#tema').onclick = () => { const d = stage.dataset.theme !== 'dark'; stage.dataset.theme = d ? 'dark' : 'light'; document.body.classList.toggle('dk', d); $('#tema').textContent = 'Tema: ' + (d ? 'oscuro' : 'claro'); };
+const PORT=[['','hoy'],['pg','grandes'],['pm','máximas']]; let P=0;
+$('#port').onclick = () => { P=(P+1)%3; setV(V); $('#port').textContent='Portadas: '+PORT[P][1]; };
 $('#vacia').onclick = () => { empty = !empty; if (empty && focus.l === 3) focus = { l:0, i:0 }; $('#vacia').textContent = 'Franja vacía: ' + (empty ? 'sí' : 'no'); render(); };
 const fit = () => document.documentElement.style.setProperty('--k', Math.min(1, (window.innerWidth - 32) / 1280));
 window.addEventListener('resize', fit); fit();
