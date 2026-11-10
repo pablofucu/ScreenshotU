@@ -5,7 +5,7 @@ import { inkDark } from '@shared/oklch';
 import type { Saga } from '@shared/types';
 import type { Library, Shot, Title } from '@shared/types';
 import type { EvoKind, PeriodKind } from '@shared/stats';
-import { AuthError, demoSource, RemoteSource, type Playing, type RemoteConfig, type ServerCfg, type Snapshot, type Source } from './source';
+import { AuthError, demoSource, pairDevice, RemoteSource, unpairDevice, type Playing, type RemoteConfig, type ServerCfg, type Snapshot, type Source } from './source';
 import { pushConnection } from './streaming.svelte';
 import { DEFAULT_PREFS, loadPrefs, loadServer, readSnap, saveServer, savePrefs, serverKey, writeSnap, type Prefs } from './cache';
 
@@ -197,6 +197,7 @@ class Store {
     }
     const src = new RemoteSource(s);
     this.source = src;
+    if (!s.token) void this.pair(src);
     const cached = await readSnap(serverKey(s));
     if (cached) {
       this.apply(cached.snap);
@@ -238,6 +239,20 @@ class Store {
     }
   }
 
+  /**
+   * Pide al PC un token propio para este dispositivo (en segundo plano: sin red o con un visor viejo se sigue con el
+   * código). Con el token, cambiar el código en el PC ya no desconecta esta tablet.
+   */
+  private async pair(src: RemoteSource) {
+    let token = '';
+    try { token = await pairDevice(src.server); } catch { return; /* código mal: ya lo dirá la sincronización */ }
+    if (!token || this.source !== src || !this.server || this.server === 'demo') return;
+    this.server = { ...this.server, token };
+    src.server = this.server;
+    saveServer(this.server);
+    pushConnection(this.server);
+  }
+
   connect(s: ServerCfg | 'demo') {
     this.server = s;
     saveServer(s);
@@ -248,6 +263,8 @@ class Store {
   }
 
   disconnect(msg = '') {
+    // Con un error de autenticación el token ya no vale: no hace falta avisar al PC.
+    if (this.server && this.server !== 'demo' && !msg) void unpairDevice(this.server);
     this.server = null;
     saveServer(null);
     pushConnection(null);

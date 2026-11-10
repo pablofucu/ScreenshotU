@@ -1,7 +1,7 @@
 // Streaming con Moonlight (solo en tablet): estado del plugin nativo `Streaming` y ajustes del usuario.
 // En el móvil (pantalla pequeña) nada de esto se muestra y la app se comporta como antes.
 import { registerPlugin } from '@capacitor/core';
-import { normCode, type ServerCfg } from './source';
+import { authOf, type ServerCfg } from './source';
 
 interface StreamingPlugin {
   isTablet(): Promise<{ tablet: boolean }>;
@@ -54,6 +54,6 @@ void stream.init();
 
 /** Pasa al servicio nativo dónde está el visor y el código, para que pueda pedir la captura con la tecla de volumen. */
 export function pushConnection(s: ServerCfg | 'demo' | null) {
-  const o = s && s !== 'demo' ? { base: `http://${s.host}:${s.port}`, code: normCode(s.code) } : { base: '', code: '' };
+  const o = s && s !== 'demo' ? { base: `http://${s.host}:${s.port}`, code: authOf(s) } : { base: '', code: '' };
   Streaming.setConnection(o).catch(() => { /* fuera de Android */ });
 }

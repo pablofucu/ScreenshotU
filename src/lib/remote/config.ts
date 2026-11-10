@@ -2,7 +2,7 @@
 // La dirección base se pide siempre a `endpoint()`: para un servidor en la nube basta con llamar a `setEndpointProvider`.
 // El servidor guardado es el mismo que usa la pantalla de conexión de la app móvil (clave de localStorage compartida).
 
-export interface ServerCfg { host: string; port: number; code: string; name?: string }
+export interface ServerCfg { host: string; port: number; code: string; name?: string; /** Token del dispositivo (sin normalizar). */ token?: string }
 export interface Endpoint { base: string; code: string; name: string }
 
 const LS_SERVER = 'visor.m.server';
@@ -27,7 +27,7 @@ export function clearServer() {
 
 let provider: () => Endpoint | null = () => {
   const s = loadServer();
-  return s ? { base: `http://${s.host}:${s.port}`, code: normCode(s.code), name: s.name || s.host } : null;
+  return s ? { base: `http://${s.host}:${s.port}`, code: s.token || normCode(s.code), name: s.name || s.host } : null;
 };
 /** Cambia de dónde sale la dirección (p. ej. un servidor en la nube con otro esquema de acceso). */
 export function setEndpointProvider(fn: () => Endpoint | null) { provider = fn; }

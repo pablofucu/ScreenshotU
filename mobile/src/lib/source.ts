@@ -36,7 +36,11 @@ export interface Source {
   file(path: string): Promise<string>;
 }
 
-export interface ServerCfg { host: string; port: number; code: string; name?: string; /** Identificador fijo del PC (para volver a encontrarlo si cambia de IP). */ id?: string }
+export interface ServerCfg {
+  host: string; port: number; code: string; name?: string;
+  /** Identificador fijo del PC (para volver a encontrarlo si cambia de IP). */ id?: string;
+  /** Token propio de este dispositivo (emparejado con `/pair`); sin él se usa el código, como antes. */ token?: string;
+}
 export const DEFAULT_PORT = 47811;
 
 export class AuthError extends Error {}
@@ -56,6 +60,8 @@ export const normCode = (c: string) => c.replace(/[\s-]/g, '').toUpperCase();
 export const fmtCode = (c: string) => { const n = normCode(c); return n.length === 8 ? `${n.slice(0, 4)}-${n.slice(4)}` : n; };
 
 const base = (s: ServerCfg) => `http://${s.host}:${s.port}`;
+/** Lo que va en `Authorization`: el token del dispositivo o, si no hay, el código (el token no se normaliza). */
+export const authOf = (s: ServerCfg) => s.token || normCode(s.code);
 
 async function get(url: string, init: RequestInit, ms: number): Promise<Response> {
   const ctl = new AbortController();
@@ -70,13 +76,43 @@ async function get(url: string, init: RequestInit, ms: number): Promise<Response
 }
 
 /** Comprueba que en esa dirección hay un visor (sin código). */
-export async function hello(host: string, port: number, ms = 5000): Promise<{ name: string; api: number; id: string }> {
+export async function hello(host: string, port: number, ms = 5000): Promise<{ name: string; api: number; id: string; features: string[] }> {
   const r = await get(`http://${host}:${port}/api/v1/hello`, {}, ms);
   if (!r.ok) throw new NetError(`Respuesta inesperada (${r.status})`);
   const j = await r.json().catch(() => null);
   if (!j || j.app !== 'visor-capturas') throw new NetError('En esa dirección no hay un visor de capturas');
   if (j.api !== 1) throw new Error('El servidor usa una versión de API no compatible');
-  return { name: String(j.name ?? 'PC'), api: Number(j.api ?? 1), id: String(j.id ?? '') };
+  return { name: String(j.name ?? 'PC'), api: Number(j.api ?? 1), id: String(j.id ?? ''), features: Array.isArray(j.features) ? (j.features as string[]) : [] };
+}
+
+/** Nombre con el que sale este dispositivo en el PC (se puede cambiar allí, en Ajustes → Equipos). */
+const deviceName = () => (/Mobile/i.test(navigator.userAgent) ? 'Móvil' : 'Tablet');
+
+/**
+ * Empareja este dispositivo con el PC usando el código y devuelve su token propio (así cambiar el código en el PC
+ * ya no lo desconecta). Con un visor viejo sin `/pair`, o sin red, devuelve '' y se sigue con el código.
+ * Lanza AuthError si el código no es correcto.
+ */
+export async function pairDevice(s: ServerCfg): Promise<string> {
+  let h;
+  try { h = await hello(s.host, s.port, 5000); } catch { return ''; }
+  if (!h.features.includes('pair')) return '';
+  const r = await get(`${base(s)}/api/v1/pair`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code: normCode(s.code), name: deviceName(), kind: 'tablet', appVersion: '', api: 2 }),
+  }, 8000);
+  if (r.status === 401) throw new AuthError('El código no es correcto (míralo en Ajustes del visor del PC)');
+  if (r.status === 429) throw new AuthError('Demasiados intentos con un código incorrecto; espera un minuto');
+  if (!r.ok) return '';
+  const j = await r.json().catch(() => null);
+  return typeof j?.token === 'string' ? j.token : '';
+}
+
+/** Avisa al PC de que este dispositivo se desconecta (si no contesta, se puede quitar allí). */
+export async function unpairDevice(s: ServerCfg) {
+  if (!s.token) return;
+  try { await get(`${base(s)}/api/v1/unpair`, { method: 'POST', headers: { Authorization: `Bearer ${s.token}` } }, 4000); } catch { /* apagado */ }
 }
 
 /** Enlace del QR del visor: `visor://pair?h=IP&p=PUERTO&k=CODIGO&i=ID&n=NOMBRE`. */
@@ -92,12 +128,13 @@ export function parsePairLink(text: string): ServerCfg | null {
 export class RemoteSource implements Source {
   readonly kind = 'remote';
   private etag = '';
-  constructor(readonly server: ServerCfg) {}
+  /** `server` cambia al recibir el token del emparejamiento. */
+  constructor(public server: ServerCfg) {}
   get label() { return this.server.name || this.server.host; }
-  private q(path: string) { return `p=${encodeURIComponent(path)}&k=${encodeURIComponent(normCode(this.server.code))}`; }
+  private q(path: string) { return `p=${encodeURIComponent(path)}&k=${encodeURIComponent(authOf(this.server))}`; }
 
   async snapshot(fresh = false): Promise<Snapshot | null> {
-    const headers: Record<string, string> = { Authorization: `Bearer ${normCode(this.server.code)}` };
+    const headers: Record<string, string> = { Authorization: `Bearer ${authOf(this.server)}` };
     if (this.etag && !fresh) headers['If-None-Match'] = this.etag;
     const r = await get(`${base(this.server)}/api/v1/snapshot${fresh ? '?fresh=1' : ''}`, { headers }, 60000);
     if (r.status === 304) return null;
@@ -115,7 +152,7 @@ export class RemoteSource implements Source {
   getEtag() { return this.etag; }
   /** Acción del PC (`launch`, `capture`): POST con el código; lanza el error con el motivo que da el visor. */
   async post(action: 'launch' | 'capture', body: object = {}) {
-    const headers = { Authorization: `Bearer ${normCode(this.server.code)}`, 'Content-Type': 'application/json' };
+    const headers = { Authorization: `Bearer ${authOf(this.server)}`, 'Content-Type': 'application/json' };
     const r = await get(`${base(this.server)}/api/v1/${action}`, { method: 'POST', headers, body: JSON.stringify(body) }, 15000);
     if (r.status === 401) throw new AuthError('El código no es correcto');
     if (!r.ok) {
