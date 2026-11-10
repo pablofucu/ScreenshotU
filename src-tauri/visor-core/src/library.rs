@@ -297,10 +297,71 @@ pub fn copy_into(from: &DataPaths, dest: &Path, db: &Db, cfg: &Config, mut progr
 /// Espacio libre que se pide por encima de lo que se copia (la base crece, el disco no debe quedar lleno).
 pub const FREE_MARGIN: u64 = 200 * 1024 * 1024;
 
+/* --- dueño de la base: dos PCs no pueden abrir el mismo `visor.db` (SQLite por red se corrompe) --- */
+
+const MACHINE_FILE: &str = "machine-id";
+/// Clave de `meta` con el `machine_id` del equipo que usa esta base.
+pub const OWNER_KEY: &str = "owner_machine";
+
+/// Id de este equipo, guardado en su carpeta de configuracion local (no viaja con la biblioteca).
+pub fn machine_id(config_dir: &Path) -> String {
+    let f = config_dir.join(MACHINE_FILE);
+    if let Ok(s) = fs::read_to_string(&f) {
+        let s = s.trim();
+        if !s.is_empty() {
+            return s.to_string();
+        }
+    }
+    let id = crate::remote::new_id();
+    let _ = fs::create_dir_all(config_dir).and_then(|_| fs::write(&f, &id));
+    id
+}
+
+/// Equipo dueño de la base de esa carpeta, si lo tiene (abre `visor.db` solo para leer).
+pub fn db_owner(dir: &Path) -> Option<String> {
+    let c = rusqlite::Connection::open_with_flags(dir.join(DB_FILE), rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY).ok()?;
+    c.query_row("SELECT value FROM meta WHERE key = ?1", [OWNER_KEY], |r| r.get::<_, String>(0)).ok().filter(|s| !s.is_empty())
+}
+
+/// Al arrancar: la base pasa a ser de este equipo si no tenia dueño (o si se adopta). Devuelve el dueño anterior
+/// cuando era otro equipo y no se adopta: entonces no se cambia nada.
+pub fn claim(c: &rusqlite::Connection, me: &str, adopt: bool) -> Result<Option<String>> {
+    let cur: Option<String> = c
+        .query_row("SELECT value FROM meta WHERE key = ?1", [OWNER_KEY], |r| r.get(0))
+        .map(Some)
+        .or_else(|e| if e == rusqlite::Error::QueryReturnedNoRows { Ok(None) } else { Err(e) })?;
+    match cur {
+        Some(o) if !o.is_empty() && o != me && !adopt => Ok(Some(o)),
+        Some(o) if o == me => Ok(None),
+        _ => {
+            c.execute("INSERT OR REPLACE INTO meta (key, value) VALUES (?1, ?2)", [OWNER_KEY, me])?;
+            Ok(None)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::db::data::favorite_set;
+
+    #[test]
+    fn owner_machine() {
+        let d = tempfile::tempdir().unwrap();
+        let me = machine_id(&d.path().join("cfg"));
+        assert_eq!(me, machine_id(&d.path().join("cfg")));
+        let lib = d.path().join("lib");
+        fs::create_dir_all(&lib).unwrap();
+        let db = Db::open(&lib).unwrap();
+        assert_eq!(db_owner(&lib), None);
+        db.with(|c| assert_eq!(claim(c, &me, false).unwrap(), None));
+        assert_eq!(db_owner(&lib).as_deref(), Some(me.as_str()));
+        db.with(|c| {
+            assert_eq!(claim(c, "otro", false).unwrap().as_deref(), Some(me.as_str()));
+            assert_eq!(claim(c, "otro", true).unwrap(), None);
+            assert_eq!(claim(c, "otro", false).unwrap(), None);
+        });
+    }
 
     fn legacy_setup() -> (tempfile::TempDir, DataPaths, Db, Config) {
         let t = tempfile::tempdir().unwrap();

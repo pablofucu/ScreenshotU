@@ -19,6 +19,7 @@ pub mod nintendo;
 pub mod palette;
 pub mod relpath;
 pub mod remote;
+pub mod remote_client;
 pub mod sagas;
 pub mod saves;
 pub mod scan;

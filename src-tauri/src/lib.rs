@@ -6,6 +6,7 @@ mod anki;
 mod audio;
 mod autostart;
 mod backup;
+mod client;
 mod display;
 mod glossary;
 mod input;
@@ -1163,7 +1164,24 @@ pub fn run() {
                 Db::open_memory()?
             } else {
                 match Db::open(&paths.data) {
-                    Ok(d) => d,
+                    Ok(d) => {
+                        // Un visor.db solo lo abre un equipo (dos PCs por red lo corrompen).
+                        let me = visor_core::library::machine_id(&config_dir);
+                        let adopt = library::take_adopt(&config_dir);
+                        match d.with(|c| visor_core::library::claim(c, &me, adopt)) {
+                            Ok(Some(_)) => {
+                                db_in_memory = true;
+                                notices.push(library::other_pc_notice());
+                                drop(d);
+                                Db::open_memory()?
+                            }
+                            Ok(None) => d,
+                            Err(e) => {
+                                eprintln!("dueño de visor.db: {e:#}");
+                                d
+                            }
+                        }
+                    }
                     Err(e) => {
                         eprintln!("No se pudo abrir visor.db: {e:#}. Los datos de esta sesion no se guardaran.");
                         db_in_memory = true;
@@ -1379,6 +1397,14 @@ pub fn run() {
             remote::device_rename,
             remote::device_revoke,
             remote::set_device_name,
+            client::client_info,
+            client::client_endpoint,
+            client::client_discover,
+            client::client_pair,
+            client::client_unpair,
+            client::client_open_stream,
+            client::client_wake,
+            client::client_set_moonlight,
             magpie_status,
             stream_app_status,
             stream_app_install,

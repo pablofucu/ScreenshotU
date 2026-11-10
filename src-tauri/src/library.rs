@@ -78,6 +78,29 @@ pub struct PlanView {
     pub free: Option<u64>,
     /// Hay sitio para copiarlo todo (con margen).
     pub fits: bool,
+    /// La base de esa carpeta es de otro PC (usarla aqui pide confirmarlo: `library_use` con `adopt`).
+    pub other_pc: bool,
+}
+
+/// Marca en la carpeta de configuracion: en el proximo arranque la biblioteca pasa a ser de este equipo.
+const ADOPT_FILE: &str = "adopt-library";
+
+/// Se consume al arrancar (ver `visor_core::library::claim`).
+pub fn take_adopt(config_dir: &Path) -> bool {
+    std::fs::remove_file(config_dir.join(ADOPT_FILE)).is_ok()
+}
+
+/// La base de la biblioteca la esta usando otro PC: esta sesion va en memoria para no estropearla.
+pub fn other_pc_notice() -> Notice {
+    Notice {
+        kind: "error",
+        message: "Esta biblioteca la está usando otro PC. Abrirla desde dos equipos a la vez la estropea, así que esta sesión no guardará nada. En este equipo conéctate a ese PC desde Ajustes → Este equipo.".into(),
+    }
+}
+
+fn other_pc(config_dir: &Path, dir: &Path) -> bool {
+    let me = core::machine_id(config_dir);
+    core::db_owner(dir).is_some_and(|o| o != me)
 }
 
 /// Que se copiaria a `dest` y si cabe. En `Missing` no hay nada que copiar: solo se puede elegir una biblioteca.
@@ -85,6 +108,7 @@ pub struct PlanView {
 pub async fn library_plan(state: State<'_, AppState>, dest: String) -> Result<PlanView, String> {
     let from = state.paths.clone();
     let missing = state.lib_mode == LibMode::Missing;
+    let config_dir = state.config_dir.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let dest = PathBuf::from(dest.trim());
         let plan = core::plan(&dest, &from).map_err(|e| e.to_string())?;
@@ -93,7 +117,8 @@ pub async fn library_plan(state: State<'_, AppState>, dest: String) -> Result<Pl
         }
         let free = free_space(&dest);
         let fits = plan.kind == DestKind::Existing || free.map_or(true, |f| f >= plan.bytes + core::FREE_MARGIN);
-        Ok(PlanView { plan, free, fits })
+        let other_pc = plan.kind == DestKind::Existing && other_pc(&config_dir, &dest);
+        Ok(PlanView { plan, free, fits, other_pc })
     })
     .await
     .map_err(|e| e.to_string())?
@@ -139,10 +164,17 @@ pub async fn library_copy(app: AppHandle, state: State<'_, AppState>, dest: Stri
 
 /// Usa como biblioteca una carpeta que ya lo es (otro equipo, reinstalacion, disco que cambio de letra).
 #[tauri::command]
-pub fn library_use(state: State<'_, AppState>, dest: String) -> Result<(), String> {
+pub fn library_use(state: State<'_, AppState>, dest: String, adopt: Option<bool>) -> Result<(), String> {
     let dest = PathBuf::from(dest.trim());
     if core::check_dest(&dest, &state.paths).map_err(|e| e.to_string())? != DestKind::Existing {
         return Err("Esa carpeta no es una biblioteca del visor".into());
+    }
+    // Dos PCs con el mismo visor.db (p. ej. por red) lo corrompen: solo si el otro ya no la usa.
+    if other_pc(&state.config_dir, &dest) {
+        if !adopt.unwrap_or(false) {
+            return Err("Esta biblioteca es de otro PC. Si ese PC sigue usándola, conéctate a él desde Ajustes → Este equipo".into());
+        }
+        std::fs::write(state.config_dir.join(ADOPT_FILE), "").map_err(|e| e.to_string())?;
     }
     core::write_pointer(&state.config_dir, &Pointer { dir: dest.to_string_lossy().into_owned(), previous: String::new() }).map_err(|e| e.to_string())
 }

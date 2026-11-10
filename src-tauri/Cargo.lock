@@ -5380,6 +5380,7 @@ dependencies = [
  "sha2",
  "tempfile",
  "tiny_http",
+ "ureq 2.12.1",
  "walkdir",
  "zip 2.6.1",
 ]

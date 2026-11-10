@@ -18,6 +18,8 @@ export interface LibraryPlan {
   bytes: number;
   free: number | null;
   fits: boolean;
+  /** La base es de otro PC: usarla aquí pide pulsar dos veces. */
+  otherPc?: boolean;
 }
 export interface CopyProgress { label: string; doneBytes: number; totalBytes: number; doneFiles: number; totalFiles: number }
 
@@ -82,6 +84,7 @@ async function check(dest: string, nest = true) {
   if (!dest) return;
   lb.checking = true;
   try {
+    adoptArmed = false;
     lb.plan = await call<LibraryPlan>('library_plan', { dest });
   } catch (e) {
     const msg = String(e);
@@ -116,11 +119,19 @@ async function pickDest() {
   if (r) { await check(r); lb.row = 1; blip(880); }
 }
 
+/** Segunda pulsación para usar la biblioteca de otro PC (se rearma al elegir otra carpeta). */
+let adoptArmed = false;
+
 async function go() {
   const p = lb.plan;
   if (!p || lb.checking) { void pickDest(); return; }
   if (p.kind === 'existing') {
-    try { await call('library_use', { dest: p.dest }); } catch (e) { toast(String(e), 4200); return; }
+    if (p.otherPc && !adoptArmed) {
+      adoptArmed = true;
+      toast('Esta biblioteca es de otro PC. Si ese PC ya no la usa, pulsa otra vez para usarla aquí; si sigue usándola, conéctate a él desde Ajustes → Este equipo.', 6500);
+      return;
+    }
+    try { await call('library_use', { dest: p.dest, adopt: adoptArmed }); } catch (e) { toast(String(e), 4200); return; }
     lb.step = 'done';
     restartSoon();
     return;
