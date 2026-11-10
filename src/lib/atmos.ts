@@ -52,6 +52,27 @@ export function lerpH(a: number, b: number, p: number): number {
 
 export const bl = (h: number): string => oklch(0.80, 0.12, h);
 
+/** Claridad y croma (OKLCH) de los siete colores del arcoíris, por tono. */
+const VIVO: [number, number, number][] = [
+  [19.3, 0.616, 0.21], [51.6, 0.705, 0.175], [85.4, 0.813, 0.166], [145.2, 0.683, 0.182],
+  [232.4, 0.663, 0.136], [267.4, 0.547, 0.195], [306.7, 0.577, 0.21],
+];
+/** Acento vivo de un tono: el color puro del arcoíris (el amarillo es amarillo), interpolando
+ * claridad y croma entre los vecinos. Solo para gráficos y adornos, nunca bajo texto. */
+export function vivo(h: number): string {
+  const hn = ((h % 360) + 360) % 360;
+  for (let i = 0; i < VIVO.length; i++) {
+    const a = VIVO[i], b = VIVO[(i + 1) % VIVO.length];
+    const hb = b[0] < a[0] ? b[0] + 360 : b[0];
+    const hx = hn < a[0] ? hn + 360 : hn;
+    if (hx >= a[0] && hx <= hb) {
+      const f = (hx - a[0]) / (hb - a[0]);
+      return oklch(a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f, hn);
+    }
+  }
+  return oklch(0.7, 0.18, hn);
+}
+
 export interface AtmosVariables {
   '--g1': string;
   '--g2': string;
@@ -59,6 +80,9 @@ export interface AtmosVariables {
   '--f1': string;
   '--f2': string;
   '--gf': string;
+  '--v1': string;
+  '--v2': string;
+  '--gv': string;
   '--on': string;
   '--b1': string;
   '--b2': string;
@@ -87,6 +111,8 @@ export function variablesCSS(h1: number, h2: number): AtmosVariables {
 
   const f1 = relleno(h1);
   const f2 = relleno(h2);
+  const v1 = vivo(h1);
+  const v2 = vivo(h2);
   const g1 = oklch(0.80, 0.12, h1);
   const g2 = oklch(0.80, 0.12, h2);
   const mid = lerpH(h1, h2, 0.5);
@@ -101,6 +127,9 @@ export function variablesCSS(h1: number, h2: number): AtmosVariables {
     '--f1': f1,
     '--f2': f2,
     '--gf': `linear-gradient(115deg,${f1},${f2})`,
+    '--v1': v1,
+    '--v2': v2,
+    '--gv': `linear-gradient(115deg,${v1},${v2})`,
     '--on': on,
     '--b1': b1,
     '--b2': b2,

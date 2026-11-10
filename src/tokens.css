@@ -3,7 +3,7 @@
    el lector y el hook lo adoptan en sus fases de migración.
    Superficies, texto, radios, tipografía, espaciado, movimiento, alturas y cristal. Las pantallas usan
    estas variables en vez de valores fijos; el color de cada sección / juego llega por --g1 --g2 --grad
-   (suaves) y --f1 --f2 --gf --on (rellenos), que App.svelte calcula desde la atmósfera.
+   (suaves) y --f1 --f2 --gf --on (rellenos) y --v1 --v2 --gv (vivos, solo gráficos), que App.svelte calcula desde la atmósfera.
    --acc = --f1 para todo lo antiguo. */
 #stage,#app{
   /* Tinta: --ink-3 es solo adorno (3,6:1); el texto que se lee usa --ink o --ink-2 */

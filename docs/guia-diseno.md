@@ -54,9 +54,17 @@ El acento no se elige en cada pantalla: lo inyecta `App.svelte` desde la atmósf
 | Variable | Qué es | Para qué |
 |---|---|---|
 | `--g1 --g2 --grad` | Pareja suave | Fondos, halos, tintes |
-| `--f1 --f2 --gf` | Pareja de relleno, con contraste AA frente a `--on` | Botón principal, selector activo, foco, barras |
+| `--f1 --f2 --gf` | Pareja de relleno, oscurecida hasta dar contraste AA frente a `--on` | Todo lo que lleva texto encima o es texto: botón principal, selector activo, pastillas, cifras en color |
+| `--v1 --v2 --gv` | Pareja viva: el color puro del arcoíris para ese tono (`vivo()` en `atmos.ts`) | Gráficos y adornos sin texto encima: anillos, barras, líneas, rachas, mapas de calor, iconos grandes, brillos |
 | `--on` | Texto sobre relleno | Siempre encima de `--gf` |
 | `--acc` | Igual a `--f1` | Código antiguo; en lo nuevo se usa `--f1` |
+
+**Dos acentos.** El relleno `--f1` tiene que oscurecerse para que el blanco se lea encima, y en amarillo, naranja o verde acaba en mostaza o marrón. Por eso hay un segundo acento, `--v1`, que es el color tal cual (el amarillo es amarillo). La regla es sencilla:
+
+- ¿Hay texto encima, o es texto? → `--f1` / `--gf`.
+- ¿Es un trazo, una barra, un relleno de gráfico o un icono grande sin texto? → `--v1` / `--gv`.
+- Nunca texto en `--v1` sobre fondo claro, ni texto blanco sobre `--v1`.
+- Los trazos vivos pueden llevar brillo: `drop-shadow(0 2px 6px color-mix(in srgb,var(--v1) 55%,transparent))`.
 | `--rby`, `--rbsec` | Arcoíris completo y tramo de la sección | Barras y subrayados decorativos |
 
 De dónde sale el acento:
@@ -265,16 +273,31 @@ El color de un gráfico dice **de quién es el dato**, nunca si es bueno o malo.
 
 | Caso | Color |
 |---|---|
-| Una sola serie | Acento de la sección (`--f1`, `--gf`) |
+| Una sola serie | Acento vivo de la sección (`--v1`, `--gv`) |
 | Varios juegos | El color de cada juego |
 | Varias categorías | El tramo fijo de cada categoría |
-| Destacar un dato | Ese dato en acento y el resto en gris (`--line-2`) |
+| Destacar un dato | Ese dato en acento vivo y el resto en gris (`--line-2`) |
 | Series sin dueño, decoración, menús | Arcoíris en su orden |
 
 - Verde, rojo y ámbar no son colores de serie.
 - Ejes y rejilla en `--line`; etiquetas en `--ink-2` a 13 (11 solo en marcas del eje).
 - Barras con las esquinas en `--r-xs`. Las cifras importantes se escriben, no se dejan a la lectura del eje.
 - Un gráfico tiene que ser bonito además de correcto: mismo cristal y mismos huecos que el resto.
+- Cifras y etiquetas en color dentro de un gráfico van en `--f1` (o en `--ink`), nunca en `--v1`.
+
+### 11.1 Chips de estadísticas
+
+Catálogo aprobado, todos animados: `docs/mockups-estadisticas/chips/index.html`. Se usan los 18 en Panorama.
+
+| Grupo | Chips |
+|---|---|
+| Cifras de la categoría | A odómetro, B anillo de meta, C medidor, D chispa con tendencia, L récord, H hito con bandera |
+| Resumen semanal | E barras con día destacado, R siete anillos, G comparación, F racha encadenada, P semana por fuente, Q destacados que rotan, J reloj de 24 h, K abanico de capturas, I mapa de calor en ola |
+| Juegos terminados | M estantería que se llena, N medalla, O bolas por mes (violeta de «Terminado», siempre con su nombre) |
+
+- Cada chip es un `.glass` con cabecera (icono + rótulo en `--ink-2`) y su cifra protagonista.
+- La animación arranca al entrar en pantalla y se repite al enfocarlo.
+- P es el único con varios colores: cada categoría con el suyo.
 
 ## 12. Estados
 

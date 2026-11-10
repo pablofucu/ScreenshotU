@@ -10,7 +10,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 
 /* ---------- Stage (fixed light world) ---------- */
 #stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;outline:none;
-  font-family:var(--round);color:var(--ink);background:#eceef2;--acc:#00A0D8;--acc-ink:#fff;--b1:#00A0D8;--b2:#3F63E0;--b3:#00A0D8;--g1:#00A0D8;--g2:#3F63E0;--grad:linear-gradient(115deg,#00A0D8,#3F63E0);--f1:#0089be;--f2:#3253c5;--gf:linear-gradient(115deg,#0089be,#3253c5);--on:#ffffff;user-select:none;-webkit-user-select:none}
+  font-family:var(--round);color:var(--ink);background:#eceef2;--acc:#00A0D8;--acc-ink:#fff;--b1:#00A0D8;--b2:#3F63E0;--b3:#00A0D8;--g1:#00A0D8;--g2:#3F63E0;--grad:linear-gradient(115deg,#00A0D8,#3F63E0);--f1:#0089be;--f2:#3253c5;--gf:linear-gradient(115deg,#0089be,#3253c5);--v1:#00A0D8;--v2:#3F63E0;--gv:linear-gradient(115deg,#00A0D8,#3F63E0);--on:#ffffff;user-select:none;-webkit-user-select:none}
 #stage:focus-visible{box-shadow:inset 0 0 0 4px var(--acc)}
 /* Los tokens del sistema (claro y «Noche ahumada») y los componentes comunes nuevos viven en tokens.css. */
 #stage[data-theme=dark] .bg{background:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
