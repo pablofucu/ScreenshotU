@@ -324,7 +324,7 @@ button.srow,button.scat{width:100%}
 .odo .u{font-size:var(--t-xl);font-weight:800;color:var(--ink-2);margin:0 8px 0 2px;align-self:flex-end;padding-bottom:6px}
 .chart{display:flex;flex-direction:column;gap:6px;height:100%;justify-content:center}
 .weekbars{display:flex;gap:22px;align-items:flex-end;height:46px}
-.weekbars i{display:block;width:30px;border-radius:5px 5px 3px 3px;background:linear-gradient(180deg,var(--f1),var(--f2));box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
+.weekbars i{display:block;width:30px;border-radius:var(--r-xs) var(--r-xs) 3px 3px;background:linear-gradient(180deg,var(--f1),var(--f2));box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
 .weekbars i.z{background:var(--line-2);box-shadow:none}
 .dsect{position:absolute;left:64px;top:514px;font-size:var(--t-l);font-weight:800;color:var(--ink-2)}
 .dsect span{font-weight:600;color:var(--ink-3);margin-left:8px}
@@ -351,7 +351,7 @@ button.srow,button.scat{width:100%}
 @keyframes todayRise{from{height:var(--h0)}}
 @keyframes todayGlow{40%{filter:brightness(1.25) drop-shadow(0 0 8px var(--acc));transform:scaleX(1.18)}}
 .weekbars i{position:relative;overflow:hidden}
-.weekbars i em{position:absolute;left:0;right:0;top:0;border-radius:5px 5px 0 0;
+.weekbars i em{position:absolute;left:0;right:0;top:0;border-radius:var(--r-xs) var(--r-xs) 0 0;
   background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.9) 50%,transparent 70%) 0 0/250% 100%,color-mix(in srgb,var(--acc) 35%,var(--tint-base));
   box-shadow:0 0 10px color-mix(in srgb,var(--acc) 60%,transparent);animation:segShine 1s ease-in-out 1.9s 3,segFade .8s ease 5s forwards}
 @keyframes segShine{from{background-position:120% 0,0 0}to{background-position:-120% 0,0 0}}
@@ -643,7 +643,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .ml{position:absolute;top:0;font-size:var(--t-s);font-weight:700;color:var(--ink-3)}
 .months{display:flex;gap:10px;align-items:flex-end;height:120px;margin-top:6px;padding-top:6px;border-top:2px solid var(--line)}
 .months div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%;font-size:var(--t-s);font-weight:700;color:var(--ink-2)}
-.months i{display:block;width:100%;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 55%,var(--tint-base)),var(--acc))}
+.months i{display:block;width:100%;border-radius:var(--r-xs) var(--r-xs) 3px 3px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 55%,var(--tint-base)),var(--acc))}
 .months b{font-size:var(--t-s);color:var(--ink);white-space:nowrap}
 .stday{left:772px;top:250px;width:460px;height:398px;padding:16px 20px}
 .ses{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px dashed var(--line)}
@@ -671,7 +671,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .yl{position:absolute;left:0;text-align:right;font-size:var(--t-s);font-weight:700;color:var(--ink-3)}
 .yr{position:absolute;font-size:var(--t-s);font-weight:700;color:var(--ink-3)}
 .ecol{position:absolute;display:flex;align-items:flex-end;justify-content:center;border-radius:var(--r-s);cursor:pointer}
-.ecol i{display:block;width:64%;max-width:72px;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 50%,var(--tint-base)),var(--acc));box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
+.ecol i{display:block;width:64%;max-width:72px;border-radius:var(--r-xs) var(--r-xs) 3px 3px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 50%,var(--tint-base)),var(--acc));box-shadow:inset 0 1px 0 rgba(255,255,255,.6)}
 .ecol.f{background:color-mix(in srgb,var(--acc) 12%,transparent)}
 .ecol.f i{box-shadow:var(--ring)}
 .xl{position:absolute;text-align:center;font-size:var(--t-s);font-weight:700;color:var(--ink-3);white-space:nowrap}
@@ -766,7 +766,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .ymon small{font-size:var(--t-2xl);color:var(--ink-2)}
 .ybars{display:flex;gap:10px;align-items:flex-end;padding-bottom:4px;border-bottom:3px solid var(--line)}
 .ybars>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;height:100%;font-size:var(--t-m);font-weight:700;color:var(--ink-2)}
-.ybars i{display:block;width:100%;border-radius:9px 9px 3px 3px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 40%,var(--tint-base)),color-mix(in srgb,var(--acc) 70%,var(--tint-base)))}
+.ybars i{display:block;width:100%;border-radius:var(--r-xs) var(--r-xs) 3px 3px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 40%,var(--tint-base)),color-mix(in srgb,var(--acc) 70%,var(--tint-base)))}
 .ybars .best i{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 55%,var(--tint-base)),var(--acc));box-shadow:0 0 0 3px var(--face-hi),0 0 0 5px var(--acc)}
 .ybars u{text-decoration:none;font-size:var(--t-s);font-weight:800;color:var(--ink);white-space:nowrap;height:18px}
 .ybars .best span{color:var(--acc);font-weight:800}
@@ -775,7 +775,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .ypan{border-radius:var(--r-m);padding:34px 36px;background:var(--panel);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--acc) 35%,var(--line))}
 .ywd{display:flex;gap:12px;align-items:flex-end;height:140px;margin-top:22px}
 .ywd>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;height:100%;font-size:var(--t-m);font-weight:800;color:var(--ink-2)}
-.ywd i{display:block;width:100%;border-radius:8px 8px 3px 3px;background:color-mix(in srgb,var(--acc) 40%,var(--tint-base))}
+.ywd i{display:block;width:100%;border-radius:var(--r-xs) var(--r-xs) 3px 3px;background:color-mix(in srgb,var(--acc) 40%,var(--tint-base))}
 .ywd .best i{background:var(--gf)}
 .ywd .best{color:var(--acc)}
 /* 7 · capturas */
