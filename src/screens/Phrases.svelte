@@ -85,7 +85,7 @@
 </div>
 
 <style>
-  .phrpanel { left: 90px; top: 50px; width: 1100px; height: 610px; }
+  .phrpanel { left: 90px; top: 40px; width: 1100px; height: 604px; }
   .phread { margin-top: -4px; color: var(--ok); }
   .phbody { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 8px; }
   .phlist { overflow: hidden; position: relative; }

@@ -16,7 +16,7 @@
 
   // Filas por carril: 1 por carril no vacío y el resto al que más lo necesita.
   const rowsOf = $derived.by(() => {
-    const H = 564, EMPTY = 30, GAP = 6, ROW = 108;
+    const H = 532, EMPTY = 30, GAP = 6, ROW = 100; // de y 112 al final del contenido (644)
     const need = lanes.map((l: any) => {
       const per = l.key === 'done' ? 6 : 5;
       const n = l.items.length + (l.key === 'done' ? l.items.filter((i: any) => i.yearStart).length : 0);
@@ -73,7 +73,7 @@
       <span class="et">{band.label} · 0</span>
     </section>
     {:else}
-    <section class="band st-{band.key}" data-band={band.key} style="--c:{band.color}; height:{rows * 108}px">
+    <section class="band st-{band.key}" data-band={band.key} style="--c:{band.color}; height:{rows * 100}px">
       <div class="vt"><span>{band.label}</span></div>
       <div class="its" onwheel={(e) => {
         if (!e.deltaY) return;
@@ -160,7 +160,7 @@
     left: 40px;
     right: 40px;
     top: 112px;
-    bottom: 44px;
+    bottom: calc(720px - var(--content-end));
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -245,7 +245,7 @@
     display: flex;
     flex: none;
     gap: 9px;
-    height: 100px;
+    height: 92px;
     padding: 0 10px 0 0;
     border-radius: 14px;
     align-items: center;
@@ -269,8 +269,8 @@
   .cv {
     position: relative;
     flex: none;
-    width: 68px;
-    height: 100px;
+    width: 62px;
+    height: 92px;
     padding: 4px;
     box-sizing: border-box;
     border-radius: 14px;

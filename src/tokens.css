@@ -27,6 +27,9 @@
   /* Espaciado: escala de 4 */
   --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:24px;--s-6:32px;
 
+  /* Plantilla de pantalla (§10): banda inferior de pistas y margen lateral. El contenido acaba en --content-end (656 - 12) */
+  --band:64px;--gut:24px;--content-end:644px;
+
   /* Movimiento: tres duraciones, dos curvas */
   --d-1:120ms;--d-2:200ms;--d-3:300ms;
   --e-soft:cubic-bezier(.2,.8,.3,1);

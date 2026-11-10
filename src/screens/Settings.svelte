@@ -190,8 +190,8 @@
 <style>
   .st-scrim { background: var(--scrim); }
   .st-wrap { position: absolute; inset: 0; }
-  .st-menu { left: 56px; top: 40px; width: 290px; height: 640px; --r: 36px; cursor: default; }
-  .st-body { left: 366px; top: 40px; width: 858px; height: 640px; --r: 36px; cursor: default; }
+  .st-menu { left: 56px; top: 24px; width: 290px; height: 620px; --r: 36px; cursor: default; }
+  .st-body { left: 366px; top: 24px; width: 858px; height: 620px; --r: 36px; cursor: default; }
   .st-menu .face, .st-body .face { background: var(--face-hi); color: var(--ink); display: flex; flex-direction: column; padding: 24px 22px; position: relative; }
   .st-menu h2 { margin: 0 8px 16px; font-size: var(--t-2xl); font-weight: 800; color: var(--ink); }
   .st-mrow { position: relative; flex: none; display: flex; align-items: center; gap: 14px; height: 56px; margin-bottom: 6px; padding: 0 16px; border: 0; border-radius: var(--r-m); background: transparent; font: inherit; font-size: var(--t-xl); font-weight: 700; color: var(--ink-2); text-align: left; cursor: pointer; transition: background .15s, color .15s; }

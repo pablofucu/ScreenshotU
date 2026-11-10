@@ -242,10 +242,10 @@ export const STATUS_ORDER: GameStatus[] = ['none', 'pending', 'playing', 'finish
 export const STATUS_LABEL: Record<GameStatus, string> = {
   none: 'Sin estado', pending: 'Pendiente', playing: 'Jugando', finished: 'Terminado', dropped: 'Abandonado',
 };
-/** Estantería de «Mi lista»: color fijo de cada estado (los terminados se agrupan por año). */
+/** Color fijo de cada estado: el de su franja en `BAND_DEF` (milista), de más caliente a más frío; «Abandonado» toma el de «Aparcado». */
 export type ListKind = 'playing' | 'pending' | 'finished' | 'dropped' | 'none';
 export const LIST_COLOR: Record<ListKind, Accent> = {
-  playing: RAINBOW[4], pending: RAINBOW[1], finished: RAINBOW[3], dropped: RAINBOW[0],
+  playing: RAINBOW[0], pending: RAINBOW[3], finished: RAINBOW[6], dropped: RAINBOW[4],
   none: { n: 'Gris', c: '#8a93a3', dark: false },
 };
 export interface ListShelf {

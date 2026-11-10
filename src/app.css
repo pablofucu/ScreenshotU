@@ -89,7 +89,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .batt b.off{background:var(--line-2)}
 
 /* hints */
-.hints{position:absolute;right:22px;bottom:16px;display:flex;gap:10px;z-index:5}
+.hints{position:absolute;right:var(--gut);bottom:calc((var(--band) - 38px) / 2);display:flex;gap:10px;z-index:5}
 .hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:999px;font-size:16px;font-weight:700;color:var(--ink-2);cursor:pointer}
 .btn{min-width:28px;height:28px;border-radius:14px;display:grid;place-items:center;font-size:13px;font-weight:800;color:var(--on);--b:var(--ink-2);padding:0 6px;box-sizing:border-box;
   background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,var(--tint-base)) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
@@ -249,7 +249,7 @@ button.srow,button.scat{width:100%}
 .sw i.rb{background:conic-gradient(#E8384F,#F27A1A,#F2B807,#3BB54A,#00A0D8,#3F63E0,#9A4BD8,#E8384F)}
 .sw i.sel{outline:3px solid var(--ink);outline-offset:1px}
 .srow.f .sw i.sel{outline-color:var(--on)}
-.scrim .hints{position:absolute;right:22px;bottom:16px}
+.scrim .hints{position:absolute;right:var(--gut);bottom:calc((var(--band) - 38px) / 2)}
 /* Visor: la barra de datos termina como mucho en x≈744 y las pistas (arriba a la derecha) empiezan hacia x≈830;
    el nombre del juego se acorta con puntos suspensivos antes que invadirlas. */
 .vinfo .vt{overflow:hidden;text-overflow:ellipsis;max-width:260px;min-width:0}
@@ -465,7 +465,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .rmeta{position:absolute;top:574px;width:346px;font-size:15px;font-weight:700;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rmeta span{font-weight:500;color:var(--ink-3)}
 .rnone{position:absolute;left:96px;top:412px;font-size:17px;font-weight:600;color:var(--ink-3)}
-.hdock{position:absolute;left:22px;bottom:16px;display:flex;gap:10px;z-index:5}
+.hdock{position:absolute;left:var(--gut);bottom:calc((var(--band) - 38px) / 2);display:flex;gap:10px;z-index:5}
 .dpill{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 5px;border-radius:999px;font-size:16px;font-weight:700;color:var(--ink-2);cursor:pointer;white-space:nowrap;
   transition:transform .22s cubic-bezier(.34,1.32,.64,1),background .2s,color .2s,box-shadow .2s}
 .dpill i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(180deg,color-mix(in srgb,var(--dc) 25%,var(--tint-base)),var(--dc) 72%);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--dc) 70%,black)}
@@ -714,7 +714,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .sgfoot .tag{font-size:14px;font-weight:700;color:var(--on);background:var(--gf);padding:3px 12px;border-radius:999px}
 
 /* ---------- Resumen anual (tarjetas) ---------- */
-.ycard{left:48px;top:146px;width:1184px;height:486px;padding:30px 40px;overflow:hidden;cursor:pointer;animation:inr .34s cubic-bezier(.3,.8,.3,1) both}
+.ycard{left:48px;top:140px;width:1184px;height:462px;padding:var(--s-5) 40px;overflow:hidden;cursor:pointer;animation:inr .34s cubic-bezier(.3,.8,.3,1) both}
 .ycard[style*="--dir:-1"]{animation-name:inl}
 .yrb{position:absolute;left:0;right:0;top:0;height:7px;opacity:.9}
 .yk{font-size:17px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px;white-space:nowrap}
@@ -804,7 +804,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .ycmp .vals small{font-size:15px;font-weight:700;color:var(--ink-3)}
 .ycmp .dl{font-size:16px;font-weight:800;text-align:right;white-space:nowrap}
 /* indicador de tarjetas */
-.ydots{position:absolute;left:48px;right:360px;top:650px;display:flex;align-items:center;gap:10px}
+.ydots{position:absolute;left:48px;right:360px;top:calc(var(--content-end) - 34px);display:flex;align-items:center;gap:10px}
 .ydots i{width:12px;height:12px;border-radius:50%;background:var(--line-2);transition:all .2s}
 .ydots i.on{width:34px;border-radius:7px;background:var(--gf)}
 .yarr{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;font-size:26px;font-weight:800;color:var(--ink);background:var(--panel);box-shadow:0 0 0 1px var(--line);cursor:pointer}
@@ -819,8 +819,8 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .stpill{background:linear-gradient(180deg,color-mix(in srgb,var(--c) 70%,var(--tint-base)),var(--c))}
 
 /* Zona de las estanterías de «Mi lista» y «Colecciones» (recorta lo que se desplaza fuera, a ancho completo para no cortar las sombras). */
-/* Alto justo para que de la tercera estantería solo asome el borde de su pestaña (sin meterse bajo las pistas). */
-.lclip{position:absolute;left:0;top:166px;width:1280px;height:494px;overflow:hidden}
+/* Acaba donde empieza la banda de pistas: de la tercera estantería solo asoma el borde de su pestaña. */
+.lclip{position:absolute;left:0;top:166px;width:1280px;height:calc(var(--content-end) - 166px);overflow:hidden}
 /* Rescate de racha: color propio por categoría (nunca el de la categoría). */
 .r-vn{--rc:#E9A100;--rsoft:#fcefc7;--rink:#8a5d00;--rmid:#f1dca0}
 .r-jv{--rc:#6E56CF;--rsoft:#e8e3fb;--rink:#4a3aa0;--rmid:#cdc3f2}

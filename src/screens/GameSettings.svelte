@@ -118,8 +118,8 @@
 
 <style>
   .gs-wrap { position: absolute; inset: 0; }
-  .gs-menu { left: 56px; top: 50px; width: 290px; height: 620px; --r: 36px; cursor: default; }
-  .gs-body { left: 366px; top: 50px; width: 858px; height: 620px; --r: 36px; cursor: default; }
+  .gs-menu { left: 56px; top: 24px; width: 290px; height: 620px; --r: 36px; cursor: default; }
+  .gs-body { left: 366px; top: 24px; width: 858px; height: 620px; --r: 36px; cursor: default; }
   .gs-menu .face, .gs-body .face { background: var(--face-hi); color: var(--ink); display: flex; flex-direction: column; padding: 24px 22px; position: relative; }
   .gs-menu h2 { margin: 0 8px 4px; font-size: var(--t-2xl); font-weight: 800; color: var(--ink); }
   .gs-menu .msub { margin: 0 8px 14px; }
