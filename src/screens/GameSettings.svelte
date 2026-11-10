@@ -127,15 +127,15 @@
   .gs-tab i { flex: none; width: 26px; height: 26px; display: grid; place-items: center; }
   .gs-tab i :global(svg) { width: 100%; height: 100%; }
   .gs-tab span { flex: 1; white-space: nowrap; }
-  .gs-tab em { font-style: normal; font-size: 15px; opacity: .7; margin-left: auto; padding-left: 10px; }
+  .gs-tab em { font-style: normal; font-size: var(--t-m); opacity: .7; margin-left: auto; padding-left: 10px; }
   .gs-tab.on { background: var(--gf); color: var(--on); }
   .gs-tab.f { box-shadow: var(--ring); }
   .gs-tab.dis { opacity: .45; cursor: default; }
   .gs-body h3 { margin: 0 0 4px; font-size: var(--t-2xl); font-weight: 800; color: var(--ink); }
-  .gs-help { margin: 0 0 14px; font-size: 15px; font-weight: 600; color: var(--ink-2); }
+  .gs-help { margin: 0 0 14px; font-size: var(--t-m); font-weight: 600; color: var(--ink-2); }
   .gs-row { height: 58px; flex: none; margin-bottom: 4px; }
   .gs-row.gap { margin-top: 14px; }
   .gs-row .sl { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .gs-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 0 2px var(--line); }
-  .gs-back { align-self: flex-start; margin: 0 0 12px; padding: 0; border: 0; background: transparent; font: inherit; font-size: 15px; font-weight: 700; color: var(--ink-2); cursor: pointer; }
+  .gs-back { align-self: flex-start; margin: 0 0 12px; padding: 0; border: 0; background: transparent; font: inherit; font-size: var(--t-m); font-weight: 700; color: var(--ink-2); cursor: pointer; }
 </style>

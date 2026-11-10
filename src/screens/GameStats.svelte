@@ -170,7 +170,7 @@
       <div class="s eq">{#if D && D.peakPpm > 0}Pico: {D.peakPpm} por minuto{/if}</div>
     </div>
   </div>
-  <div class="stnone" style="top:520px;font-size:15px;font-weight:600">Solo se cuentan las pulsaciones, nunca qué tecla es. Se mide desde que se instaló esta versión.</div>
+  <div class="stnone" style="top:520px;font-size:var(--t-m);font-weight:600">Solo se cuentan las pulsaciones, nunca qué tecla es. Se mide desde que se instaló esta versión.</div>
 
   <Hints list={[['Y', 'Resumen', 'y'], ['B', 'Volver', 'b']]} />
   {/if}

@@ -81,27 +81,27 @@
   .pkscrim{background:var(--face-hi)}
   .pkhead{position:absolute;left:69px;top:26px}
   .pkhead h2{margin:0;font-size:30px;font-weight:800;color:var(--ink)}
-  .pkhead p{margin:2px 0 0;font-size:16px;font-weight:600;color:var(--ink-2);max-width:700px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pkhead p{margin:2px 0 0;font-size:var(--t-m);font-weight:600;color:var(--ink-2);max-width:700px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pkbar{position:absolute;left:69px;right:69px;top:92px;display:flex;align-items:center;gap:10px}
-  .pksearch{display:flex;align-items:center;gap:10px;width:380px;height:44px;padding:0 8px 0 14px;border-radius:999px;cursor:pointer;margin-right:10px;
+  .pksearch{display:flex;align-items:center;gap:10px;width:380px;height:44px;padding:0 8px 0 14px;border-radius:var(--r-pill);cursor:pointer;margin-right:10px;
     background:linear-gradient(180deg,var(--glass-chip),var(--face));box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px var(--line),0 8px 16px -10px rgba(40,50,70,.4)}
-  .pksearch b{flex:1;font-size:18px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pksearch b{flex:1;font-size:var(--t-l);font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pksearch b.ph{color:var(--ink-3);font-weight:600}
-  .pkic{width:22px;height:22px;flex:none;border-radius:7px;display:grid;place-items:center;background:var(--acc)}
+  .pkic{width:22px;height:22px;flex:none;border-radius:var(--r-xs);display:grid;place-items:center;background:var(--acc)}
   .pkic :global(svg){width:70%;height:70%}
-  .pkcount{margin-left:auto;font-size:15px;font-weight:700;color:var(--ink-2)}
+  .pkcount{margin-left:auto;font-size:var(--t-m);font-weight:700;color:var(--ink-2)}
   .pkgrid{position:absolute;left:0;right:0;top:150px;overflow:hidden}
   .pktrack{position:absolute;left:69px;top:0;transition:transform .22s cubic-bezier(.25,1,.4,1)}
   .pkcov{--r:16px;--bw:6px}
-  .pkcov .face{border-radius:11px}
+  .pkcov .face{border-radius:var(--r-s)}
   /* El marcado va en la cara (anillo del acento sobre la portada) para no pisar el resplandor del foco, que va en el cristal. */
   .pkcov.on .face::after{box-shadow:inset 0 0 0 4px var(--acc),inset 0 3px 6px -2px rgba(0,0,0,.35)}
   .pkchk{position:absolute;right:6px;top:6px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
     background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 2px var(--on),0 3px 8px -2px rgba(0,0,0,.5);z-index:3}
   .pkchk :global(svg){width:62%;height:62%}
-  .pkempty{position:absolute;left:0;right:0;top:150px;text-align:center;font-size:20px;font-weight:700;color:var(--ink-2);margin:0}
+  .pkempty{position:absolute;left:0;right:0;top:150px;text-align:center;font-size:var(--t-xl);font-weight:700;color:var(--ink-2);margin:0}
   .pkname{position:absolute;right:69px;top:34px;display:flex;flex-direction:column;align-items:flex-end;gap:2px;max-width:420px;white-space:nowrap}
-  .pkname b{font-size:22px;font-weight:800;color:var(--ink);max-width:100%;overflow:hidden;text-overflow:ellipsis}
-  .pkname span{font-size:15px;font-weight:700;color:var(--ink-2)}
+  .pkname b{font-size:var(--t-xl);font-weight:800;color:var(--ink);max-width:100%;overflow:hidden;text-overflow:ellipsis}
+  .pkname span{font-size:var(--t-m);font-weight:700;color:var(--ink-2)}
   @media (prefers-reduced-motion: reduce){.pktrack{transition:none}}
 </style>

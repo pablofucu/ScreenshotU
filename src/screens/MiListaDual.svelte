@@ -218,7 +218,7 @@
   .vt span {
     writing-mode: vertical-rl;
     transform: rotate(180deg);
-    font-size: 12px;
+    font-size: var(--t-s);
     font-weight: 800;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -240,14 +240,14 @@
     overflow: hidden;
   }
   .band.empty { display: flex; align-items: center; padding: 0 14px; }
-  .band.empty .et { font-size: 13px; font-weight: 700; color: var(--ink-3); }
+  .band.empty .et { font-size: var(--t-s); font-weight: 700; color: var(--ink-3); }
   .it {
     display: flex;
     flex: none;
     gap: 9px;
     height: 92px;
     padding: 0 10px 0 0;
-    border-radius: 14px;
+    border-radius: var(--r-s);
     align-items: center;
     cursor: pointer;
     background: linear-gradient(180deg, var(--glass-top) 0%, var(--glass-mid) 46%, var(--glass-bot) 100%);
@@ -273,7 +273,7 @@
     height: 92px;
     padding: 4px;
     box-sizing: border-box;
-    border-radius: 14px;
+    border-radius: var(--r-s);
     transition: transform 0.15s;
   }
   .it.f .cv { transform: scale(1.03); }
@@ -281,7 +281,7 @@
     position: relative;
     width: 100%;
     height: 100%;
-    border-radius: 10px;
+    border-radius: var(--r-s);
     overflow: hidden;
     background: var(--face);
     box-shadow: 0 0 0 1px var(--line);
@@ -296,7 +296,7 @@
     padding: 4px;
     box-sizing: border-box;
     text-align: center;
-    font-size: 10px;
+    font-size: var(--t-xs);
     color: var(--ink-2);
     overflow: hidden;
   }
@@ -326,7 +326,7 @@
   }
   .it.compact .tx { width: 72px; }
   .tx b {
-    font-size: 14px;
+    font-size: var(--t-s);
     font-weight: 800;
     line-height: 1.15;
     color: var(--ink);
@@ -336,13 +336,13 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  .tx small { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+  .tx small { font-size: var(--t-s); font-weight: 700; color: var(--ink-2); }
   .wtxt, .ptxt {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 3px;
-    font-size: 11.5px;
+    font-size: var(--t-xs);
     font-weight: 800;
     line-height: 1.1;
   }
@@ -357,7 +357,7 @@
     padding: 0 6px 0 10px;
     margin-left: 4px;
     border-left: 2px solid color-mix(in srgb, var(--c) 30%, transparent);
-    font-size: 13px;
+    font-size: var(--t-s);
     font-weight: 800;
     color: var(--ink-2);
   }
@@ -391,14 +391,14 @@
   .vacio p {
     margin: 0;
     font-weight: 700;
-    font-size: 16px;
+    font-size: var(--t-m);
     color: var(--ink-2);
   }
   .btn-cat {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    font-size: 15px;
+    font-size: var(--t-m);
     font-weight: 800;
     color: var(--ink);
   }

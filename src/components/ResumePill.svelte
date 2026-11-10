@@ -33,8 +33,8 @@
 {/if}
 
 <style>
-  .rp { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 18px; border-radius: 999px; background: rgba(40,46,58,.78); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 10px 24px -10px rgba(0,0,0,.5); color: var(--on); font-size: 15px; font-weight: 700; z-index: 48; white-space: nowrap; }
+  .rp { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 18px; border-radius: var(--r-pill); background: rgba(40,46,58,.78); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 10px 24px -10px rgba(0,0,0,.5); color: var(--on); font-size: var(--t-m); font-weight: 700; z-index: 48; white-space: nowrap; }
   .t { max-width: 40vw; overflow: hidden; text-overflow: ellipsis; }
-  button { border: 0; border-radius: 999px; padding: 8px 16px; font: inherit; color: inherit; background: rgba(255,255,255,.14); }
+  button { border: 0; border-radius: var(--r-pill); padding: 8px 16px; font: inherit; color: inherit; background: rgba(255,255,255,.14); }
   .go { background: var(--accent, #4da3ff); color: #fff; }
 </style>

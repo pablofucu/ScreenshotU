@@ -41,22 +41,22 @@
   .learnpanel { top: 200px; min-height: 320px; left: 390px; width: 500px; }
   .learnpanel .face { align-items: center; text-align: center; gap: 6px; }
   .lic {
-    width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 4px;
+    width: 52px; height: 52px; border-radius: var(--r-m); display: grid; place-items: center; margin-bottom: 4px;
     background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 30%, white), var(--acc));
     animation: lpulse 1.4s ease-in-out infinite;
   }
   .lic :global(svg) { width: 60%; height: 60%; }
   .learnpanel .msub { height: auto; white-space: normal; }
   .lcombo {
-    margin-top: 6px; min-width: 220px; padding: 12px 24px; border-radius: 18px; font-size: 24px; font-weight: 800;
+    margin-top: 6px; min-width: 220px; padding: 12px 24px; border-radius: var(--r-m); font-size: var(--t-2xl); font-weight: 800;
     color: var(--ink-3); background: var(--glass-in); box-shadow: inset 0 0 0 2px var(--line);
   }
   .lcombo.on { color: var(--acc-ink); background: var(--acc); box-shadow: none; }
-  .lwarn { margin: 4px 0 0; font-size: 13px; font-weight: 600; color: var(--bad); line-height: 1.3; }
+  .lwarn { margin: 4px 0 0; font-size: var(--t-s); font-weight: 600; color: var(--bad); line-height: 1.3; }
   .lfoot { margin-top: auto; width: 100%; display: flex; align-items: center; justify-content: space-between; }
-  .lleft { font-size: 15px; font-weight: 700; color: var(--ink-3); }
+  .lleft { font-size: var(--t-m); font-weight: 700; color: var(--ink-3); }
   .lcancel {
-    font: 700 15px var(--round); color: var(--ink-2); background: var(--glass-in); border: 0; border-radius: 14px;
+    font: 700 15px var(--round); color: var(--ink-2); background: var(--glass-in); border: 0; border-radius: var(--r-s);
     padding: 8px 16px; cursor: pointer;
   }
   .lcancel:hover { background: var(--glass-chip); }

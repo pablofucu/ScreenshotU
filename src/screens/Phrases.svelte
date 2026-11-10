@@ -91,17 +91,17 @@
   .phlist { overflow: hidden; position: relative; }
   .phrow { height: 68px; margin: 3px 0; }
   .phtx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-  .phtx b { font-size: 19px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .phtx small { font-size: 14px; font-weight: 600; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .phbd { font-size: 14px; font-weight: 800; white-space: nowrap; opacity: 0.85; }
+  .phtx b { font-size: var(--t-xl); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .phtx small { font-size: var(--t-s); font-weight: 600; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .phbd { font-size: var(--t-s); font-weight: 800; white-space: nowrap; opacity: 0.85; }
   .phdet { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
   .phdet::-webkit-scrollbar { display: none; }
-  .phshot { width: 100%; max-height: 220px; object-fit: cover; border-radius: 16px; box-shadow: 0 0 0 1px var(--line); }
+  .phshot { width: 100%; max-height: 220px; object-fit: cover; border-radius: var(--r-m); box-shadow: 0 0 0 1px var(--line); }
   .phbig { font-family: var(--jp, 'Yu Gothic UI', sans-serif); font-size: 30px; line-height: 1.7; margin: 0; color: var(--ink); }
   .phbig :global(rt) { font-size: 0.45em; color: var(--ink-3); }
-  .phtr { font-size: 19px; font-weight: 700; margin: 0; color: var(--ink); }
-  .phnote { font-size: 15px; margin: 0; padding: 8px 12px; border-radius: 12px; background: var(--glass-in); }
-  .phmeta { font-size: 14px; font-weight: 600; margin: 0; color: var(--ink-3); }
+  .phtr { font-size: var(--t-xl); font-weight: 700; margin: 0; color: var(--ink); }
+  .phnote { font-size: var(--t-m); margin: 0; padding: 8px 12px; border-radius: var(--r-s); background: var(--glass-in); }
+  .phmeta { font-size: var(--t-s); font-weight: 600; margin: 0; color: var(--ink-3); }
   .rvcard { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; overflow: hidden; }
   .rvcard .phshot { max-width: 420px; }
 </style>

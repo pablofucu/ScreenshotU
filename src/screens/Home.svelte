@@ -122,7 +122,7 @@
 <Hints list={[['A', app.focus === 'read' ? 'Ver racha' : 'Abrir', 'a'], ...(app.focus === 'read' && app.goalKeys.length > 1 ? [['LB/RB', 'Categoría', 'lb'] as [string, string, string]] : []), ...(focusRec?.t.launchable ? [['X', 'Jugar', 'x'] as [string, string, string]] : []), ['Start', 'Menú', 'menu']]} />
 
 <style>
-  .hsect small{font-size:15px;font-weight:600;letter-spacing:0}
+  .hsect small{font-size:var(--t-m);font-weight:600;letter-spacing:0}
   .hsect small :global(b){color:var(--ink);font-weight:800}
   /* Plataformas: el color del foco entra fundido (colores registrados, que sí se interpolan) y la
      escala va sin rebote, para que color y tamaño lleguen a la vez. */

@@ -108,11 +108,11 @@
   .avatar.mini :global(.face) { box-shadow: none; }
   .avatar .streak { flex-direction: column; gap: 0; color: #fff; }
   .avatar .streak svg { width: 22px; height: 22px; }
-  .avatar .streak b { font-size: 16px; font-weight: 800; line-height: 1; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .avatar .streak b { font-size: var(--t-m); font-weight: 800; line-height: 1; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
   .aud { position: relative; display: flex; }
   .audbtn {
     width: 34px; height: 30px; padding: 0; display: grid; place-items: center; cursor: pointer;
-    background: transparent; border: 0; border-radius: 10px; color: var(--ink-3); opacity: 0.75;
+    background: transparent; border: 0; border-radius: var(--r-s); color: var(--ink-3); opacity: 0.75;
     transition: opacity 0.15s, color 0.15s, background 0.15s;
   }
   .audbtn.f { box-shadow: inset 0 0 0 2px var(--acc); }

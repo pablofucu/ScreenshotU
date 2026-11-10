@@ -78,15 +78,15 @@
 
 <style>
   .libpanel .face { gap: 8px; }
-  .lintro { margin: 0 0 6px; font-size: 15px; line-height: 1.4; font-weight: 600; color: var(--ink-2); }
+  .lintro { margin: 0 0 6px; font-size: var(--t-m); line-height: 1.4; font-weight: 600; color: var(--ink-2); }
   .lpath { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: right; }
-  .lerr { margin: 4px 0 0; font-size: 15px; font-weight: 700; color: var(--bad); }
-  .lnote { margin: 4px 0 0; font-size: 14px; line-height: 1.35; color: var(--ink-2); }
+  .lerr { margin: 4px 0 0; font-size: var(--t-m); font-weight: 700; color: var(--bad); }
+  .lnote { margin: 4px 0 0; font-size: var(--t-s); line-height: 1.35; color: var(--ink-2); }
   .litems { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
-  .litem { display: flex; align-items: baseline; gap: 12px; height: 28px; font-size: 15px; font-weight: 700; }
+  .litem { display: flex; align-items: baseline; gap: 12px; height: 28px; font-size: var(--t-m); font-weight: 700; }
   .litem span:first-child { flex: none; width: 300px; }
-  .litem .lfrom { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; font-size: 13px; color: var(--ink-3); }
+  .litem .lfrom { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; font-size: var(--t-s); color: var(--ink-3); }
   .litem b { flex: none; font-variant-numeric: tabular-nums; }
-  .lbar { height: 14px; border-radius: 7px; background: var(--line); overflow: hidden; margin: 18px 0 6px; }
-  .lbar i { display: block; height: 100%; border-radius: 7px; background: var(--gf); transition: width 0.25s; }
+  .lbar { height: 14px; border-radius: var(--r-xs); background: var(--line); overflow: hidden; margin: 18px 0 6px; }
+  .lbar i { display: block; height: 100%; border-radius: var(--r-xs); background: var(--gf); transition: width 0.25s; }
 </style>

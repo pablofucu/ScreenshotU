@@ -190,20 +190,20 @@
   .shelf.dim .scov.hid{opacity:.5}
 
   /* ---- Rótulo: píldora de cristal, teñida en reposo y encendida con el foco ---- */
-  .bsh{position:relative;display:inline-flex;align-items:center;gap:14px;height:40px;max-width:100%;box-sizing:border-box;padding:0 6px 0 8px;margin:0 0 6px 8px;border-radius:999px;white-space:nowrap;z-index:3;isolation:isolate}
+  .bsh{position:relative;display:inline-flex;align-items:center;gap:14px;height:40px;max-width:100%;box-sizing:border-box;padding:0 6px 0 8px;margin:0 0 6px 8px;border-radius:var(--r-pill);white-space:nowrap;z-index:3;isolation:isolate}
   .bsh.hasaur{overflow:hidden}
   .bsh>:global(*:not(.aur)){position:relative}
   .bsh>:global(*:last-child:not(.aur)){margin-right:8px}
-  .bsh h3{margin:0;font-size:22px;font-weight:800;color:var(--ink);line-height:1;max-width:430px;overflow:hidden;text-overflow:ellipsis;min-width:0}
-  .bsh .m{font-size:15px;font-weight:600;color:var(--ink-2)}
-  .bsh :global(.hint){height:32px;font-size:15px;background:var(--glass-chip);box-shadow:none;text-shadow:none;color:color-mix(in srgb,var(--ink),var(--ink-2))}
+  .bsh h3{margin:0;font-size:var(--t-xl);font-weight:800;color:var(--ink);line-height:1;max-width:430px;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .bsh .m{font-size:var(--t-m);font-weight:600;color:var(--ink-2)}
+  .bsh :global(.hint){height:32px;font-size:var(--t-m);background:var(--glass-chip);box-shadow:none;text-shadow:none;color:color-mix(in srgb,var(--ink),var(--ink-2))}
   /* Colecciones: botón de cristal con anillo del par de tonos; al pulsarlo se llena con el degradado (como el rótulo). */
   .tinted .bsh :global(.hint){padding:0 14px 0 4px;color:var(--ink);background:var(--soft-top);
     box-shadow:inset 0 1px 0 var(--hl),0 0 0 1.5px color-mix(in srgb,var(--g1) 55%,transparent);transition:transform .12s,background .12s,color .12s,box-shadow .12s}
   .tinted .bsh :global(.hint .btn){background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;text-shadow:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
   .tinted .bsh :global(.hint:active){transform:scale(.95);color:#fff;background:linear-gradient(115deg,var(--g1),var(--g2));box-shadow:inset 0 2px 6px rgba(0,0,0,.25)}
   .tinted .bsh :global(.hint:active .btn){background:#fff;color:var(--g2)}
-  .tag{font-size:14px;font-weight:800;padding:3px 11px;border-radius:999px;color:var(--ink);background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
+  .tag{font-size:var(--t-s);font-weight:800;padding:3px 11px;border-radius:var(--r-pill);color:var(--ink);background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
   .aur{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:inherit}
   .aur b{position:absolute;top:-30%;width:34%;height:160%;border-radius:50%;filter:blur(16px)}
   .aur.multi{opacity:.5}
@@ -230,14 +230,14 @@
   .rtrack{position:absolute;left:0;top:0;height:100%;transition:transform .3s cubic-bezier(.25,1,.4,1)}
   .rtrack.view{left:9px;top:10px;height:139px}
   .scov{--r:16px;--bw:6px;top:0}
-  .scov .face{border-radius:11px}
+  .scov .face{border-radius:var(--r-s)}
   .scov.hid{opacity:.55}
   /* Baldosas de acción («Nueva colección», «Añadir juegos»): la cara de .addtile de app.css, a la medida de la portada. */
   .scov .addin{gap:8px}
-  .scov .addin span{width:40px;height:40px;border-radius:14px}
-  .scov .addin b{font-size:13px;padding:0 4px;overflow-wrap:anywhere}
+  .scov .addin span{width:40px;height:40px;border-radius:var(--r-s)}
+  .scov .addin b{font-size:var(--t-s);padding:0 4px;overflow-wrap:anywhere}
   .scov :global(.noart){padding:6px}
-  .scov :global(.noart b){font-size:13px;line-height:1.15;overflow-wrap:anywhere}
+  .scov :global(.noart b){font-size:var(--t-s);line-height:1.15;overflow-wrap:anywhere}
 
   /* ---- Borde de etiquetas ---- */
   .slip{position:absolute;left:0;right:0;bottom:0;height:26px;z-index:4;overflow:hidden;
@@ -245,18 +245,18 @@
     box-shadow:inset 0 1px 0 var(--glass-top),0 -6px 12px -10px rgba(40,50,70,.4)}
   .slip .rtrack{left:9px}
   .slab{position:absolute;top:0;height:100%;display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;
-    font-size:13px;font-weight:700;color:var(--ink-2);transition:color .2s}
-  .slab em{font-style:normal;font-size:13px;letter-spacing:-.5px;color:#d9a520}
-  .slab s{text-decoration:none;display:flex;align-items:center;gap:4px;padding:2px 9px;border-radius:999px}
+    font-size:var(--t-s);font-weight:700;color:var(--ink-2);transition:color .2s}
+  .slab em{font-style:normal;font-size:var(--t-s);letter-spacing:-.5px;color:#d9a520}
+  .slab s{text-decoration:none;display:flex;align-items:center;gap:4px;padding:2px 9px;border-radius:var(--r-pill)}
   .slab.on s{background:var(--acc);color:var(--ink);text-shadow:var(--tsh);font-weight:800;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
   .slab.on em{color:#FFE27A}
   .shelf.dk .slab.on em{color:#7a5a00}
-  .sm{position:absolute;top:54px;z-index:6;font-style:normal;font-size:15px;font-weight:800;color:var(--ink-2);pointer-events:none;
-    padding:3px 10px;border-radius:999px;background:var(--glass-chip);box-shadow:0 0 0 1px var(--line)}
+  .sm{position:absolute;top:54px;z-index:6;font-style:normal;font-size:var(--t-m);font-weight:800;color:var(--ink-2);pointer-events:none;
+    padding:3px 10px;border-radius:var(--r-pill);background:var(--glass-chip);box-shadow:0 0 0 1px var(--line)}
   .sm.l{left:8px}
   .sm.r{right:8px}
   /* Nº de orden sobre la portada */
-  .ord{position:absolute;z-index:4;left:-7px;top:-7px;min-width:28px;height:28px;box-sizing:border-box;padding:0 6px;border-radius:999px;display:grid;place-items:center;font-size:14px;font-weight:800;color:color-mix(in srgb,var(--ink),var(--ink-2));
+  .ord{position:absolute;z-index:4;left:-7px;top:-7px;min-width:28px;height:28px;box-sizing:border-box;padding:0 6px;border-radius:var(--r-pill);display:grid;place-items:center;font-size:var(--t-s);font-weight:800;color:color-mix(in srgb,var(--ink),var(--ink-2));
     background:linear-gradient(180deg,var(--face-hi),var(--face));box-shadow:0 0 0 1px var(--line),0 3px 6px -2px rgba(40,50,70,.35)}
   .scov.f .ord{background:var(--acc);color:var(--ink);box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 3px 6px -2px rgba(40,50,70,.35)}
   .shelf.with-ord .rtrack.view{top:11px}
@@ -274,8 +274,8 @@
   .rdot{position:absolute;top:10px;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--tint-base);
     box-shadow:0 0 0 2.5px var(--dc,var(--f1)),0 1px 3px rgba(40,50,70,.3);transition:width .2s,height .2s,margin .2s,box-shadow .2s}
   .rdot.on{width:14px;height:14px;margin:-7px 0 0 -7px;box-shadow:0 0 0 3px var(--dc,var(--f1)),0 0 0 5px rgba(255,255,255,.85),0 0 10px 3px color-mix(in srgb,var(--dc,var(--f1)) 55%,transparent)}
-  .slip.railed .slab{top:17px;height:22px;font-size:15px;font-weight:800;color:var(--ink)}
-  .slab.ylab small{font-size:11px;font-weight:700;color:var(--ink-2)}
+  .slip.railed .slab{top:17px;height:22px;font-size:var(--t-m);font-weight:800;color:var(--ink)}
+  .slab.ylab small{font-size:var(--t-xs);font-weight:700;color:var(--ink-2)}
   .slab.ylab s{padding:1px 10px;transition:transform .2s}
   .slab.ylab.on small{color:inherit;opacity:.85}
 
@@ -286,7 +286,7 @@
     background:linear-gradient(180deg,var(--glass-top),var(--glass-mid) 55%,var(--glass-bot));
     box-shadow:inset 0 1px 0 var(--glass-top),inset 0 -6px 10px -6px var(--hl-bot),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
   .tinted .bsh.hasaur{overflow:visible}
-  .tinted .bsh::before{content:'';position:absolute;inset:-3px;border-radius:999px;padding:2.5px;box-sizing:border-box;pointer-events:none;z-index:2;
+  .tinted .bsh::before{content:'';position:absolute;inset:-3px;border-radius:var(--r-pill);padding:2.5px;box-sizing:border-box;pointer-events:none;z-index:2;
     background:linear-gradient(115deg,var(--g1),var(--g2),var(--g1));background-size:200% 100%;
     -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;
     opacity:.45;transition:opacity .3s}
@@ -313,7 +313,7 @@
     background:linear-gradient(115deg,var(--f1),var(--f2),var(--f1));background-size:200% 100%;-webkit-background-clip:text;background-clip:text;
     filter:drop-shadow(0 1px 0 rgba(255,255,255,.95)) drop-shadow(0 2px 3px color-mix(in srgb,var(--f2) 35%,transparent))}
   .tinted .bsh.lit h3{animation:shelfSheen 6s linear infinite}
-  .tinted .bsh.soft h3{background:none;color:var(--ink-2);filter:none;font-size:22px}
+  .tinted .bsh.soft h3{background:none;color:var(--ink-2);filter:none;font-size:var(--t-xl)}
   .tinted .tag,.tinted .bsh .m{font:800 var(--t-s) var(--round)}
   .tinted .bsh.soft .tag{background:var(--glass-chip);color:var(--ink-2);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--g1) 55%,transparent)}
   :global(#stage[data-theme=dark]) .tinted .bsh h3{background-image:linear-gradient(115deg,var(--g1),var(--g2),var(--g1));filter:drop-shadow(0 0 8px color-mix(in srgb,var(--g2) 45%,transparent))}

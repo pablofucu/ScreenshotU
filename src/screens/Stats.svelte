@@ -222,5 +222,5 @@
 
 <style>
   :global(.sx .vsw) { margin-left: auto; gap: 3px; padding: 4px; cursor: default; }
-  :global(.sx .vsw .o) { display: grid; place-items: center; padding: 0 16px; height: 36px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+  :global(.sx .vsw .o) { display: grid; place-items: center; padding: 0 16px; height: 36px; border-radius: var(--r-pill); cursor: pointer; white-space: nowrap; }
 </style>

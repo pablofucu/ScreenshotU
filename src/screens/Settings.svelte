@@ -205,7 +205,7 @@
   .st-row { display: flex; align-items: center; gap: 12px; width: 100%; height: 52px; margin-bottom: 4px; padding: 0 20px; border: 0; border-radius: var(--r-m); background: var(--glass-in); font: inherit; font-size: var(--t-l); font-weight: 700; color: var(--ink); text-align: left; cursor: pointer; transition: background .15s, color .15s; }
   .st-row .sl { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .st-row .sv { max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--ink-2); }
-  .st-row .sarr { flex: none; font-size: 22px; line-height: 1; padding: 0 4px; opacity: .85; }
+  .st-row .sarr { flex: none; font-size: var(--t-xl); line-height: 1; padding: 0 4px; opacity: .85; }
   .st-row .sarr.hid { visibility: hidden; }
   .st-row.cur { background: var(--glass-chip); }
   .st-row.f { background: var(--gf); color: var(--on); box-shadow: var(--ring); position: relative; z-index: 1; }
@@ -221,7 +221,7 @@
   .st-desc { flex: none; margin: auto 0 0; height: 124px; overflow: hidden; border-radius: var(--r-m); padding: 12px 18px; background: var(--glass-in); font-size: var(--t-s); font-weight: 500; line-height: 1.45; color: var(--ink-2); }
   .st-rows-wrap { position: relative; }
   .st-qr { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; gap: 28px; padding: 0 26px; border-radius: var(--r-m); background: var(--face-hi); }
-  .st-qr-img { flex: none; line-height: 0; border-radius: 12px; overflow: hidden; box-shadow: 0 0 0 1px var(--glass-in); }
+  .st-qr-img { flex: none; line-height: 0; border-radius: var(--r-s); overflow: hidden; box-shadow: 0 0 0 1px var(--glass-in); }
   .st-qr-img :global(svg) { width: 300px; height: 300px; display: block; }
   .st-qr p { margin: 0; font-size: var(--t-s); line-height: 1.5; color: var(--ink-2); }
   .st-qr p b { color: var(--ink); font-size: var(--t-m, 18px); }

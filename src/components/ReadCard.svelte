@@ -61,6 +61,6 @@
   .rface{position:absolute;inset:0}
   .rind{position:absolute;top:378px;height:24px;display:flex;align-items:center;gap:10px}
   .rdots{display:flex;align-items:center;gap:6px}
-  .rdots i{display:block;position:relative;width:7px;height:7px;border-radius:999px;overflow:hidden;cursor:pointer;background:color-mix(in srgb,var(--ink-3) 45%,transparent);transition:width .3s ease}
+  .rdots i{display:block;position:relative;width:7px;height:7px;border-radius:var(--r-pill);overflow:hidden;cursor:pointer;background:color-mix(in srgb,var(--ink-3) 45%,transparent);transition:width .3s ease}
   .rdots i.on{width:20px;background:var(--c)}
 </style>

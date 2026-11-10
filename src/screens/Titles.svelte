@@ -360,9 +360,9 @@
   ]} />
 {/if}
   <style>
-  button.tflt { border: none; font-family: var(--round); font-size: 15px; font-weight: 800; cursor: pointer; }
-  button.tflt.tord { background: transparent; box-shadow: none; font-family: var(--round); font-size: 15px; font-weight: 800; }
-  button.btn.x { border: none; font-family: var(--round); font-size: 13px; font-weight: 800; cursor: pointer; }
+  button.tflt { border: none; font-family: var(--round); font-size: var(--t-m); font-weight: 800; cursor: pointer; }
+  button.tflt.tord { background: transparent; box-shadow: none; font-family: var(--round); font-size: var(--t-m); font-weight: 800; }
+  button.btn.x { border: none; font-family: var(--round); font-size: var(--t-s); font-weight: 800; cursor: pointer; }
   .ttabs.list-tabs { top: 72px; }
   .tsearch {
     height: 32px;
@@ -371,7 +371,7 @@
     gap: 8px;
     padding: 0 12px 0 10px;
     margin-left: 10px;
-    border-radius: 999px;
+    border-radius: var(--r-pill);
     background: var(--glass-chip);
     backdrop-filter: blur(10px);
     box-shadow: inset 0 1px 0 var(--glass-top), 0 0 0 1px var(--line), 0 2px 6px rgba(15, 23, 42, 0.05);
@@ -401,7 +401,7 @@
     border: none;
     background: transparent;
     font-family: inherit;
-    font-size: 13.5px;
+    font-size: var(--t-s);
     font-weight: 700;
     color: var(--ink);
     width: 145px;
@@ -424,7 +424,7 @@
     border-radius: 50%;
     width: 18px;
     height: 18px;
-    font-size: 10px;
+    font-size: var(--t-xs);
     font-weight: 800;
     cursor: pointer;
     display: grid;

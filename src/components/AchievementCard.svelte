@@ -365,7 +365,7 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    font-size: 11.5px;
+    font-size: var(--t-xs);
     font-weight: 800;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -381,7 +381,7 @@
     letter-spacing: 0;
     text-transform: none;
     color: rgba(255, 255, 255, 0.65);
-    font-size: 10.5px;
+    font-size: var(--t-xs);
   }
 
   .rg {
@@ -442,12 +442,12 @@
     font-weight: 800;
   }
   .v1 .rg b small {
-    font-size: 15px;
+    font-size: var(--t-m);
     opacity: 0.7;
   }
   .v1 .rg i {
     font-style: normal;
-    font-size: 12px;
+    font-size: var(--t-s);
     font-weight: 800;
     color: var(--gold-hi);
     margin-top: 3px;
@@ -459,7 +459,7 @@
     align-items: center;
     gap: 8px;
     padding: 7px;
-    border-radius: 13px;
+    border-radius: var(--r-s);
     background: rgba(255, 255, 255, 0.12);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
   }
@@ -468,7 +468,7 @@
   }
   .last-txt b {
     display: block;
-    font-size: 12.5px;
+    font-size: var(--t-s);
     font-weight: 800;
     white-space: nowrap;
     overflow: hidden;
@@ -476,7 +476,7 @@
   }
   .last-txt small {
     display: block;
-    font-size: 10.5px;
+    font-size: var(--t-xs);
     font-weight: 700;
     color: rgba(255, 255, 255, 0.75);
   }
@@ -493,10 +493,10 @@
     z-index: 2;
     height: 22px;
     padding: 0 8px;
-    border-radius: 999px;
+    border-radius: var(--r-pill);
     background: linear-gradient(180deg, var(--gold-hi), var(--gold-lo));
     color: color-mix(in srgb, var(--warn) 25%, black);
-    font-size: 11px;
+    font-size: var(--t-xs);
     font-weight: 800;
     display: flex;
     align-items: center;
@@ -513,7 +513,7 @@
     right: 6px;
     bottom: 6px;
     height: 82px;
-    border-radius: 14px;
+    border-radius: var(--r-s);
     padding: 9px 10px;
     color: white;
     background: rgba(14, 18, 30, 0.65);
@@ -527,11 +527,11 @@
     margin-bottom: 6px;
   }
   .v2 .band b {
-    font-size: 20px;
+    font-size: var(--t-xl);
     font-weight: 800;
   }
   .v2 .band b small {
-    font-size: 12px;
+    font-size: var(--t-s);
     opacity: 0.7;
     font-weight: 700;
   }
@@ -657,12 +657,12 @@
     text-align: center;
   }
   .v4 .t {
-    font-size: 20px;
+    font-size: var(--t-xl);
     font-weight: 800;
     margin-top: -2px;
   }
   .v4 .s {
-    font-size: 12px;
+    font-size: var(--t-s);
     font-weight: 700;
     color: var(--ink-3);
   }
@@ -670,7 +670,7 @@
     align-self: stretch;
     margin-top: auto;
     padding: 7px 9px;
-    border-radius: 12px;
+    border-radius: var(--r-s);
     background: var(--glass-chip);
     box-shadow: inset 0 0 0 1px var(--line);
     text-align: left;
@@ -678,7 +678,7 @@
   .v4 .nx small {
     display: flex;
     justify-content: space-between;
-    font-size: 11px;
+    font-size: var(--t-xs);
     font-weight: 800;
     color: var(--ink-2);
     margin-bottom: 5px;
@@ -695,7 +695,7 @@
     color: var(--ink);
   }
   .v7 .hs {
-    font-size: 12.5px;
+    font-size: var(--t-s);
     font-weight: 700;
     color: var(--ink-2);
     align-self: stretch;
@@ -710,7 +710,7 @@
   .v7 .odo .c {
     width: 44px;
     height: 56px;
-    border-radius: 10px;
+    border-radius: var(--r-s);
     display: grid;
     place-items: center;
     font-size: 40px;
@@ -720,7 +720,7 @@
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(110, 125, 150, 0.25);
   }
   .v7 .odo .u {
-    font-size: 16px;
+    font-size: var(--t-m);
     font-weight: 800;
     color: var(--ink-2);
     margin: 0 0 0 3px;
@@ -728,7 +728,7 @@
     padding-bottom: 8px;
   }
   .v7 .pc {
-    font-size: 11.5px;
+    font-size: var(--t-xs);
     font-weight: 800;
     color: var(--gold-ink);
     margin-top: 6px;
@@ -737,14 +737,14 @@
     align-self: stretch;
     margin-top: auto;
     padding: 8px 8px 6px;
-    border-radius: 12px;
+    border-radius: var(--r-s);
     background: var(--face-hi);
     box-shadow: inset 0 0 0 1px rgba(95, 110, 135, 0.15);
   }
   .v7 .wkb .r {
     display: flex;
     justify-content: space-between;
-    font-size: 11px;
+    font-size: var(--t-xs);
     font-weight: 800;
     color: var(--ink-2);
     margin-bottom: 6px;
@@ -763,7 +763,7 @@
     flex-direction: column;
     align-items: center;
     gap: 2px;
-    font-size: 9px;
+    font-size: var(--t-xs);
     font-weight: 800;
     color: var(--ink-3);
   }
@@ -783,11 +783,11 @@
     align-items: center;
   }
   .v8 .rg b {
-    font-size: 28px;
+    font-size: var(--t-2xl);
     font-weight: 800;
   }
   .v8 .rg b small {
-    font-size: 14px;
+    font-size: var(--t-s);
     opacity: 0.7;
   }
   .v8 .lg {
@@ -803,9 +803,9 @@
     gap: 7px;
     height: 20px;
     padding: 0 8px;
-    border-radius: 8px;
+    border-radius: var(--r-xs);
     background: rgba(255, 255, 255, 0.08);
-    font-size: 11px;
+    font-size: var(--t-xs);
     font-weight: 700;
   }
   .v8 .lg i {

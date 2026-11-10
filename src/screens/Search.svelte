@@ -63,19 +63,19 @@
 
 <style>
   .srch-wrap { position: absolute; inset: 40px 56px 90px; display: flex; flex-direction: column; gap: 18px; min-height: 0; }
-  .gsearch { flex: none; display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 20px; border-radius: 999px; background: var(--glass-chip); box-shadow: inset 0 1px 0 var(--glass-top), 0 0 0 1px var(--line); color: var(--ink-2); }
+  .gsearch { flex: none; display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 20px; border-radius: var(--r-pill); background: var(--glass-chip); box-shadow: inset 0 1px 0 var(--glass-top), 0 0 0 1px var(--line); color: var(--ink-2); }
   .gsearch:focus-within, .gsearch.f { background: var(--face); box-shadow: inset 0 1px 0 var(--glass-top), 0 0 0 2px var(--acc); color: var(--acc); }
   .gsearch .ts-ic { display: grid; place-items: center; flex: none; }
   .gsearch .ts-ic svg { width: 22px; height: 22px; }
-  .gsearch input { flex: 1; min-width: 0; border: none; background: transparent; font: inherit; font-size: 22px; font-weight: 700; color: var(--ink); outline: none; padding: 0; }
+  .gsearch input { flex: 1; min-width: 0; border: none; background: transparent; font: inherit; font-size: var(--t-xl); font-weight: 700; color: var(--ink); outline: none; padding: 0; }
   .gsearch input::placeholder { color: var(--ink-3); font-weight: 600; }
-  .gsearch .ts-x { border: none; background: var(--line); color: var(--ink-2); border-radius: 50%; width: 26px; height: 26px; cursor: pointer; font: inherit; font-size: 12px; }
+  .gsearch .ts-x { border: none; background: var(--line); color: var(--ink-2); border-radius: 50%; width: 26px; height: 26px; cursor: pointer; font: inherit; font-size: var(--t-s); }
   .srch-list { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
   .srow-g { flex: none; padding: 12px 16px 14px; border-radius: var(--r-m); background: var(--panel); box-shadow: 0 0 0 1px var(--line); }
   .srow-g h4 { margin: 0 0 10px; font-size: var(--t-lg, 18px); font-weight: 800; color: var(--ink); }
   .srch-covs { display: flex; gap: 12px; overflow: hidden; }
   .srch-it { flex: none; width: 96px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px; border: 0; border-radius: var(--r-s, 12px); background: transparent; font: inherit; color: var(--ink-2); cursor: pointer; }
-  .srch-it span:last-child { width: 100%; font-size: 12px; font-weight: 700; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .srch-it span:last-child { width: 100%; font-size: var(--t-s); font-weight: 700; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .srch-it.f { background: var(--glass-chip); box-shadow: var(--ring); color: var(--ink); }
-  .srch-none { margin: 24px 8px; font-size: 18px; font-weight: 700; color: var(--ink-2); }
+  .srch-none { margin: 24px 8px; font-size: var(--t-l); font-weight: 700; color: var(--ink-2); }
 </style>
