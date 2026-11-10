@@ -431,6 +431,7 @@ i.big.sel{outline:4px solid var(--ink);outline-offset:2px;transform:scale(1.08)}
 .ghead .sf{flex:none}
 .ghead .sf{font-size:var(--t-m);font-weight:700;color:var(--ink-2);background:var(--face);box-shadow:0 0 0 1px var(--line);padding:4px 12px;border-radius:var(--r-pill);white-space:nowrap}
 .ghead .sf.on{color:var(--on);background:var(--gf);box-shadow:none}
+.ghead .sf{cursor:pointer}.ghead .sf.on{cursor:default}
 .shot .gbadge{position:absolute;left:8px;bottom:8px;max-width:calc(100% - 16px);padding:2px 9px;border-radius:var(--r-pill);font-size:var(--t-s);font-weight:800;color:var(--on);background:rgba(40,46,60,.72);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:2}
 
 /* ---------- animaciones extra ---------- */
@@ -555,6 +556,8 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .ttabs::after{left:4px;right:4px;bottom:-9px}
 .stabs .btn,.stper .btn{cursor:pointer}
 .stabs .t{padding:0 12px}
+.stabs .t,.stview .t{cursor:pointer}.stabs .t.on,.stview .t.on{cursor:default}
+.sx .cat.sel{cursor:pointer;transition:color .15s}.sx .cat.sel:hover{color:var(--acc)}
 .stview .t{padding:0 12px}
 .stper b{min-width:150px;text-align:center;font-size:var(--t-l);font-weight:800;color:var(--ink);padding:0 8px;white-space:nowrap}
 .btn.off{opacity:.35}
@@ -806,7 +809,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .ycmp .dl{font-size:var(--t-m);font-weight:800;text-align:right;white-space:nowrap}
 /* indicador de tarjetas */
 .ydots{position:absolute;left:48px;right:360px;top:calc(var(--content-end) - 34px);display:flex;align-items:center;gap:10px}
-.ydots i{width:12px;height:12px;border-radius:50%;background:var(--line-2);transition:all .2s}
+.ydots i{width:12px;height:12px;border-radius:50%;background:var(--line-2);transition:all .2s;cursor:pointer;box-shadow:0 0 0 6px transparent}
 .ydots i.on{width:34px;border-radius:var(--r-xs);background:var(--gv)}
 .yarr{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;font-size:var(--t-2xl);font-weight:800;color:var(--ink);background:var(--panel);box-shadow:0 0 0 1px var(--line);cursor:pointer}
 .yarr.off{opacity:.35}

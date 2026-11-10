@@ -226,7 +226,7 @@
 
   <div class="ydots">
     <span class="yarr" class:off={card === 0} data-hact="left">‹</span>
-    {#each Array(YEAR_CARDS) as _, i}<i class:on={i === card}></i>{/each}
+    {#each Array(YEAR_CARDS) as _, i}<i class:on={i === card} data-hact="yc:{i}"></i>{/each}
     <span class="yarr" class:off={card === YEAR_CARDS - 1} data-hact="right">›</span>
   </div>
 {/if}

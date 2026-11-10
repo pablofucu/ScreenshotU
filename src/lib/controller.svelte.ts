@@ -810,6 +810,52 @@ function gsMetric(d: number) {
   blip(700);
 }
 
+/** Clic en una métrica de la clasificación de categoría. */
+function setGsMetric(k: string) {
+  if (app.gsScope !== 'cat' || app.gsMetric === k || !GMETRICS.some(([m]) => m === k)) return;
+  app.gsMetric = k as typeof app.gsMetric;
+  setFocus(defaultKey('gstats'));
+  blip(700);
+}
+/** Clic en «Resumen» / «Periféricos» de las estadísticas de un juego. */
+function setGsPage(p: string) {
+  if (app.gsScope !== 'title' || app.gsPage === p || (p !== 'sum' && p !== 'io')) return;
+  app.gsPage = p;
+  blip(700);
+}
+/** Clic en la escala de la evolución (días / semanas / años). */
+function setEvoKind(k: string) {
+  if (app.evoKind === k || !EVO_KINDS.some(([m]) => m === k)) return;
+  app.evoKind = k as typeof app.evoKind;
+  setFocus(defaultKey('evo'));
+  blip(700);
+}
+/** Clic en un juego de la colección (-1 = todos) para filtrar sus capturas. */
+function setSaga(f: number) {
+  const m = app.collTitle?.members?.length ?? 0;
+  if (!app.collTitle || app.favView || app.sagaFilter === f || f < -1 || f >= m) return;
+  app.sagaFilter = f; app.s = 0; app.goff = 0;
+  setFocus(app.cur.shots.length ? 'shot0' : '');
+  blip(700);
+}
+/** Clic en un punto del resumen anual: salta a esa tarjeta. */
+function setYearCard(i: number) {
+  if (!(i >= 0 && i < YEAR_CARDS) || i === app.yearCard) return;
+  app.yearDir = i > app.yearCard ? 1 : -1;
+  app.yearCard = i;
+  blip(880);
+}
+/** Clic en «Inicio» de la cabecera: vuelve al menú principal desde cualquier pantalla. */
+function goHome() {
+  if (app.view === 'home' || app.overlay || app.osk.open || app.audioMenu) return;
+  if (app.view === 'titles') app.fk.home = 'plat' + app.p;
+  if (app.view === 'stats') app.fk.home = 'dock2';
+  if (app.selMode) exitSel();
+  app.favView = false; app.collOpen = null;
+  go('home', 'back');
+  blip(520);
+}
+
 /** LT/RT en la clasificación: categoría anterior/siguiente con partidas (la clasificación nunca mezcla categorías). */
 function cycleStatsPlat(d = 1) {
   const ps = app.statsPlats;
@@ -1842,6 +1888,12 @@ export function cmd(c: string) {
   if (c.startsWith('goal:')) { pickStreak(c.slice(5) as GoalKey); return; }
   if (c.startsWith('hgoal:')) { setHomeGoal(c.slice(6) as GoalKey); return; }
   if (c.startsWith('stab:')) { setStatsTab(c.slice(5) as typeof app.statsTab); return; }
+  // Píldoras de las pantallas (clic): cada una lleva su destino fijo.
+  if (c.startsWith('gm:')) { setGsMetric(c.slice(3)); return; }
+  if (c.startsWith('gp:')) { setGsPage(c.slice(3)); return; }
+  if (c.startsWith('ek:')) { setEvoKind(c.slice(3)); return; }
+  if (c.startsWith('saga:')) { setSaga(+c.slice(5)); return; }
+  if (c.startsWith('yc:')) { setYearCard(+c.slice(3)); return; }
   switch (c) {
     case 'left': move(-1, 0); break;
     case 'right': move(1, 0); break;
@@ -1851,6 +1903,7 @@ export function cmd(c: string) {
       if (app.view === 'stats' && app.statsTab === 'year') yearStep(1);
       else if (app.view !== 'viewer') activate(screenEl()?.querySelector<HTMLElement>('.fx.f')?.dataset.act); break;
     case 'b': back(); break;
+    case 'home': goHome(); break;
     case 'lb': page(-1); break;
     case 'rb': page(1); break;
     case 'x':

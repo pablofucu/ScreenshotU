@@ -35,7 +35,7 @@
   <div class="sttop">
     <div class="stabs pill">
       <span class="btn sh" data-hact="lb">LB</span>
-      {#each GMETRICS as [k, l]}<span class="t" class:on={app.gsMetric === k}>{l}</span>{/each}
+      {#each GMETRICS as [k, l]}<span class="t" class:on={app.gsMetric === k} data-hact="gm:{k}">{l}</span>{/each}
       <span class="btn sh" data-hact="rb">RB</span>
     </div>
   </div>
@@ -82,8 +82,8 @@
   <div class="sttop" style="top:98px;left:auto;right:64px">
     <div class="stview pill" data-hact="y">
       <span class="btn y">Y</span>
-      <span class="t" class:on={app.gsPage === 'sum'}>Resumen</span>
-      <span class="t" class:on={app.gsPage === 'io'}>Periféricos</span>
+      <span class="t" class:on={app.gsPage === 'sum'} data-hact="gp:sum">Resumen</span>
+      <span class="t" class:on={app.gsPage === 'io'} data-hact="gp:io">Periféricos</span>
     </div>
   </div>
 

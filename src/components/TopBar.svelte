@@ -77,8 +77,11 @@
     <div class="avatar mini" aria-hidden="true"><div class="face">{@html ICON.person}</div></div>
   {/if}
   <div class="crumb pill" class:withp={dots > 1}>
+    {#if crumbs.length > 1}
+      <button type="button" class="cback" data-hact="b" title="Volver (B / clic derecho)" aria-label="Volver">‹</button>
+    {/if}
     {#each crumbs as x, i}
-      {#if i === crumbs.length - 1}<span class="cur">{x}</span>{:else}<span>{x}</span><span class="sep">›</span>{/if}
+      {#if i === crumbs.length - 1}<span class="cur">{x}</span>{:else}<span class:go={i === 0 && x === 'Inicio'} data-hact={i === 0 && x === 'Inicio' ? 'home' : undefined} title={i === 0 && x === 'Inicio' ? 'Ir a Inicio' : undefined}>{x}</span><span class="sep">›</span>{/if}
     {/each}
   </div>
   {#if dots > 1}
@@ -111,6 +114,10 @@
 </div>
 
 <style>
+  .cback { flex: none; width: 26px; height: 26px; margin: 0 -2px 0 -8px; padding: 0 0 3px; border: none; border-radius: 50%; display: grid; place-items: center; font: 800 var(--t-xl)/1 var(--round); color: var(--ink-2); background: transparent; cursor: pointer; transition: background .15s, color .15s; }
+  .cback:hover { background: var(--face); color: var(--acc); }
+  .crumb .go { cursor: pointer; transition: color .15s; }
+  .crumb .go:hover { color: var(--acc); text-decoration: underline; text-underline-offset: 4px; }
   .avatar.mini { width: 44px; height: 44px; top: 20px; left: 30px; opacity: 0.6; box-shadow: none; }
   .avatar.mini :global(.face) { box-shadow: none; }
   .avatar .streak { flex-direction: column; gap: 0; color: #fff; }

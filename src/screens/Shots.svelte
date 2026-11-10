@@ -108,8 +108,8 @@
   <span class="tag">{nCapturas(shots.length)}</span>
   {#if members}
     <div class="sfilter" bind:this={sfEl}>
-      <span class="sf" class:on={app.sagaFilter < 0}>Todos</span>
-      {#each members as m, k (m.id)}<span class="sf" class:on={app.sagaFilter === k}>{m.name}</span>{/each}
+      <span class="sf" class:on={app.sagaFilter < 0} data-hact="saga:-1">Todos</span>
+      {#each members as m, k (m.id)}<span class="sf" class:on={app.sagaFilter === k} data-hact="saga:{k}">{m.name}</span>{/each}
     </div>
   {:else}
     <span class="soft">{SORT_LABEL[app.sortMode]}</span>

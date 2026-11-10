@@ -66,7 +66,7 @@
 
 <div class="sx">
   {#if app.statsTab === 'rank'}
-    <span class="cat">{app.statsPlat != null && pname(app.statsPlat) ? `${pname(app.statsPlat)} · ${KIND_LABEL[app.statsKind]}` : 'Sin partidas'}</span>
+    <span class="cat sel" data-hact="rt" title="Cambiar de categoría">{app.statsPlat != null && pname(app.statsPlat) ? `${pname(app.statsPlat)} · ${KIND_LABEL[app.statsKind]}` : 'Sin partidas'}</span>
     <span class="dot"></span>
     <span class="gl" data-hact="view">{#each STATS_KINDS as k}<span class="o" class:gem={app.statsKind === k}>{KIND_LABEL[k]}</span>{/each}</span>
     <span class="gl" class:off={all}>
