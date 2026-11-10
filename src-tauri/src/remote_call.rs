@@ -161,6 +161,11 @@ pub fn dispatch(app: &AppHandle, caller: &visor_core::remote::Caller, cmd: &str,
         "set_achievements_card_variant" => out(achievements::set_achievements_card_variant(app.clone(), arg(a, "gameId")?, arg(a, "variant")?)),
         "get_achievements_card_variant" => out(achievements::get_achievements_card_variant(app.clone(), arg(a, "gameId")?)),
 
+        /* --- multi-PC: juegos instalados en los clientes y sus partidas --- */
+        "match_title" => out(crate::installs::match_title(&st(), &arg::<String>(a, "platform")?, &serde_json::from_value(a.clone()).map_err(|e| format!("{CALL_BAD_ARGS}: {e}"))?)),
+        "register_install" => out(crate::installs::register_install(&st(), caller, serde_json::from_value(a.clone()).map_err(|e| format!("{CALL_BAD_ARGS}: {e}"))?)),
+        "unregister_install" => out(crate::installs::unregister_install(&st(), caller, &arg::<String>(a, "gameId")?)),
+        "sessions_upload" => out(crate::installs::sessions_upload(&st(), caller, arg(a, "sessions")?)),
         _ => Err(CALL_NOT_ALLOWED.into()),
     }
 }

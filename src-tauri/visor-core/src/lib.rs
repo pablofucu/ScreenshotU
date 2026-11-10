@@ -12,6 +12,7 @@ pub mod devices;
 pub mod gamedirs;
 pub mod games;
 pub mod importer;
+pub mod installs;
 pub mod jp;
 pub mod library;
 pub mod magpie;

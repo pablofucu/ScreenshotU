@@ -317,7 +317,11 @@ pub fn stat_add_session_on(
                 if end > e {
                     c.execute("UPDATE sessions SET end_ms = ?1 WHERE id = ?2", params![end, sid])?;
                 }
-                c.execute("UPDATE sessions SET active_ms = COALESCE(active_ms, 0) + ?1 WHERE id = ?2", params![active, sid])?;
+                // `synced_ms = NULL`: la partida ha crecido y hay que volver a enviarla al host (cliente multi-PC).
+                c.execute(
+                    "UPDATE sessions SET active_ms = COALESCE(active_ms, 0) + ?1, synced_ms = NULL WHERE id = ?2",
+                    params![active, sid],
+                )?;
                 input_add(c, sid, input)?;
                 c.execute(
                     "INSERT INTO play_stats(game_id, last_played_ms, seconds) VALUES (?1, 0, ?2)

@@ -10,6 +10,7 @@ mod client;
 mod display;
 mod glossary;
 mod input;
+mod installs;
 mod launcher;
 mod learnkey;
 mod library;
@@ -242,7 +243,8 @@ pub(crate) fn scan_full(state: &AppState) -> (Library, Vec<games::Game>, Config)
         shot_cache: cache.as_ref(),
         console: console.as_ref(),
     };
-    let lib = scan::scan_library_ex(root, &cfg.platforms, &found, &stats, &opts);
+    let mut lib = scan::scan_library_ex(root, &cfg.platforms, &found, &stats, &opts);
+    installs::fill_installed(state, &mut lib);
     let t2 = t0.elapsed();
     state.palettes.save(&state.palettes_file());
     if let Some(r) = root {

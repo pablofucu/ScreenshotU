@@ -119,6 +119,17 @@ pub struct Title {
     /// Fecha de lanzamiento (a mano o de SteamGridDB).
     #[serde(default)]
     pub release: Option<crate::userdata::ReleaseDate>,
+    /// PCs cliente que tienen instalado este juego (multi-PC; lo rellena el host al escanear).
+    #[serde(default)]
+    pub installed_on: Vec<InstalledOn>,
+}
+
+/// Un PC cliente con el juego instalado.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct InstalledOn {
+    pub device_id: String,
+    pub name: String,
 }
 
 impl Title {
@@ -159,6 +170,7 @@ impl Title {
             status_ms: None,
             snooze_ms: None,
             release: None,
+            installed_on: Vec::new(),
         }
     }
 }
