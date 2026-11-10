@@ -22,7 +22,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) cancelAccent(); }}>
-  <div class="glass menupanel accpanel" style="top:{(720 - H) / 2}px;height:{H}px">
+  <div class="glass modal menupanel accpanel" style="top:{(720 - H) / 2}px;height:{H}px">
     <div class="face">
       <h2>Color de acento</h2>
       <p class="msub">{t?.name ?? ''}</p>
@@ -68,7 +68,7 @@
       </div>
 
       <div class="accprev">
-        <span class="chip" style="background:{cur ?? (autoColor || app.chrome.c)};color:var(--on)" data-testid="acc-chip">
+        <span class="tag" style="background:{cur ?? (autoColor || app.chrome.c)};color:var(--on)" data-testid="acc-chip">
           {a.row === 0 ? 'Automático' : (cur ?? '')}
         </span>
         <span class="fhint">Se ve al instante en la ficha. A lo guarda; B cancela.</span>

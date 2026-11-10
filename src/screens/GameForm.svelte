@@ -39,7 +39,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) cmd('b'); }}>
-  <div class="glass formpanel" style="height:{H}px;top:{(720 - H) / 2}px">
+  <div class="glass modal formpanel" style="height:{H}px;top:{(720 - H) / 2}px">
     <div class="face">
       <h2>{TITLE[app.form.kind]}</h2>
       {#each rows as r, i}

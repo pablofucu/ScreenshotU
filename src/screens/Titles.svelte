@@ -222,7 +222,7 @@
 {#snippet fhead(t: NonNullable<typeof cur>, a: { c: string; dark?: boolean }, chip: string)}
   <div class="thead">
     <h3>{t.name}</h3>
-    <span class="chip" style="background:{a.c};color:#fff">{chip}</span>
+    <span class="tag" style="background:{a.c};color:#fff">{chip}</span>
     {#if t.playSeconds >= 60}<span>Jugado <b>{fmtDur(t.playSeconds)}</b></span>{/if}
     {#if t.lastPlayed}<span>Última partida <b>{fmtAgo(t.lastPlayed).toLowerCase()}</b></span>
     {:else if t.shots.length}<span>Última captura <b>{fmtShort(t.shots[0].date)}</b></span>{/if}
@@ -256,7 +256,7 @@
       {@const a = app.titleAcc(app.p, app.t)}
       <div class="thead">
         <h3>{cur.name}</h3>
-        <span class="chip" style="background:{a.c};color:#fff">{cur.shots.length ? nCapturas(cur.shots.length) : 'Sin capturas'}</span>
+        <span class="tag" style="background:{a.c};color:#fff">{cur.shots.length ? nCapturas(cur.shots.length) : 'Sin capturas'}</span>
         {#if cur.playSeconds >= 60}<span>Jugado <b>{fmtDur(cur.playSeconds)}</b></span>{/if}
         {#if cur.lastPlayed}<span>Última partida <b>{fmtAgo(cur.lastPlayed).toLowerCase()}</b></span>
         {:else if cur.shots.length}<span>Última captura <b>{fmtShort(cur.shots[0].date)}</b></span>{/if}

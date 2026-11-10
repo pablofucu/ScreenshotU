@@ -105,7 +105,7 @@
     </div>
   </div>
   <h3>{T.name}</h3>
-  <span class="chip">{nCapturas(shots.length)}</span>
+  <span class="tag">{nCapturas(shots.length)}</span>
   {#if members}
     <div class="sfilter" bind:this={sfEl}>
       <span class="sf" class:on={app.sagaFilter < 0}>Todos</span>
@@ -115,7 +115,7 @@
     <span class="soft">{SORT_LABEL[app.sortMode]}</span>
   {/if}
   {#if wantDays && !days}<span class="soft">Por días: solo con orden por fecha</span>{/if}
-  {#if app.selMode}<span class="chip selchip">Selección · {app.sel.size}</span>{/if}
+  {#if app.selMode}<span class="tag selchip">Selección · {app.sel.size}</span>{/if}
   <span class="date">{cur ? [fmt(cur.date), resText(cur.width, cur.height)].filter(Boolean).join(' · ') : ''}</span>
 </div>
 <div class="gview" class:days>

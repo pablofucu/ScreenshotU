@@ -103,7 +103,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closeOverlay(); }}>
-  <div class="glass menupanel" class:tight={!grouped && per > 9} class:tighter={!grouped && per > 11} class:squeeze={squeeze || grouped} class:two={cols > 1} style="--mrh:{pitch - 4}px;top:{(720 - H) / 2}px;height:{H}px">
+  <div class="glass modal menupanel" class:tight={!grouped && per > 9} class:tighter={!grouped && per > 11} class:squeeze={squeeze || grouped} class:two={cols > 1} style="--mrh:{pitch - 4}px;top:{(720 - H) / 2}px;height:{H}px">
     <div class="face">
       <h2>{list ? (app.menu.items[0]?.startsWith('flt:') ? 'Filtrar' : (t ? t.name : 'Lista de juegos')) : shots ? 'Capturas' : 'Opciones'}</h2>
       <p class="msub">{sub}</p>
@@ -134,14 +134,14 @@
   .menupanel.tighter .mrow{height:40px}
   .menupanel.tighter .mrow.addrow{height:48px}
   .menupanel.squeeze .mrow{height:var(--mrh)}
-  .menupanel.squeeze .mrow.addrow{height:calc(var(--mrh) + 8px)}
-  .mgrid { display: grid; column-gap: 18px; }
-  .mcol { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .menupanel.squeeze .mrow.addrow{height:calc(var(--mrh) + var(--s-2))}
+  .mgrid { display: grid; column-gap: var(--s-4); }
+  .mcol { display: flex; flex-direction: column; gap: var(--s-1); min-width: 0; }
   /* Dos columnas (ficha del juego): primero la izquierda, de arriba abajo. */
   .menupanel.two { left: 210px; width: 860px; }
-  .mhead { margin: 0; height: 26px; line-height: 26px; padding: 0 4px; font-size: 13px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); border-bottom: 2px solid color-mix(in srgb, var(--acc) 35%, transparent); }
-  .mcol > .mhead:not(:first-child) { margin-top: 4px; }
-  .mcount { margin-left: auto; font-size: 15px; font-weight: 700; color: var(--ink-3); }
+  .mhead { margin: 0; height: 26px; line-height: 26px; padding: 0 var(--s-1); font: 800 var(--t-s) / 26px var(--round); letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); border-bottom: 2px solid color-mix(in srgb, var(--acc) 35%, transparent); }
+  .mcol > .mhead:not(:first-child) { margin-top: var(--s-1); }
+  .mcount { margin-left: auto; font: 700 var(--t-m) / 1 var(--round); color: var(--ink-3); }
   .f .mcount { color: inherit; opacity: 0.85; }
   /* Textos largos (p. ej. el nombre de una salida de audio) se cortan con puntos suspensivos. */
   .mrow .sl { min-width: 0; overflow: hidden; text-overflow: ellipsis; }

@@ -440,33 +440,10 @@
     background: var(--glass-chip);
     box-shadow: inset 0 0 0 1px var(--line);
   }
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--s-2);
-    height: 36px;
-    padding: 0 var(--s-4);
-    border: 0;
-    border-radius: var(--r-pill);
-    cursor: pointer;
-    font: 700 var(--t-m) / 1 var(--round);
-    color: var(--ink-2);
+  /* El .chip global (tokens.css), sin fondo propio dentro del grupo */
+  .chips .chip:not(.on) {
     background: transparent;
-    transition: transform var(--d-2) var(--e-bounce), background var(--d-2) var(--e-soft), color var(--d-2) var(--e-soft);
-  }
-  .chip small {
-    font-size: var(--t-s);
-    font-weight: 700;
-    opacity: 0.75;
-  }
-  .chip.on {
-    color: var(--on);
-    background: var(--gf);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 0 0 1px color-mix(in srgb, var(--f2) 75%, black);
-  }
-  .chip:active {
-    transform: scale(0.97);
-    transition-duration: var(--d-1);
+    box-shadow: none;
   }
 
   /* Baldas por rareza */

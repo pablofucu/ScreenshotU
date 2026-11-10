@@ -38,7 +38,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closeSgdbPicker(); }}>
-  <div class="glass setpanel sgpanel">
+  <div class="glass modal setpanel sgpanel">
     <div class="face">
       <div class="sghead">
         <div class="sgtitle">
@@ -53,7 +53,7 @@
           <span class="btn sh">LB</span>
           {#each ART_KINDS as k}
             <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-            <div class="sgtab" class:on={p.kind === k && p.mode === 'images'} onclick={() => setKind(k)}>{KIND_LABEL[k]}</div>
+            <div class="chip" class:on={p.kind === k && p.mode === 'images'} onclick={() => setKind(k)}>{KIND_LABEL[k]}</div>
           {/each}
           <span class="btn sh">RB</span>
         </div>
@@ -95,7 +95,7 @@
         {:else if cur}
           <span>{p.i + 1} de {p.items.length}{p.more ? '+' : ''}</span>
           <span>{cur.width}×{cur.height}{cur.style ? ` · ${cur.style}` : ''}{cur.author ? ` · por ${cur.author}` : ''}</span>
-          {#if p.busy}<span class="chip">Descargando…</span>{/if}
+          {#if p.busy}<span class="tag">Descargando…</span>{/if}
         {/if}
       </div>
     </div>

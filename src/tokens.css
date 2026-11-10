@@ -61,8 +61,18 @@
 }
 
 /* ---------- Componentes comunes nuevos ----------
-   .chip, .empty e .ic de la guía todavía no son globales: chocan con clases locales del mismo nombre
-   (Shelf, Saves, AchievementsModal…) y entran cuando se migre cada una de esas pantallas. */
+   .empty e .ic de la guía todavía no son globales: chocan con clases locales del mismo nombre
+   y entran cuando se migre cada una de esas pantallas (fase 5). Los distintivos que antes se
+   llamaban .chip (contadores en cabeceras) son ahora .tag; .chip es solo el selector. */
+
+/* Selector: pestañas y filtros; el activo lleva el acento */
+.chip{display:inline-flex;align-items:center;gap:var(--s-2);height:36px;padding:0 var(--s-4);border:0;border-radius:var(--r-pill);
+  font:700 var(--t-m)/1 var(--round);color:var(--ink-2);white-space:nowrap;background:var(--glass-chip);box-shadow:inset 0 0 0 1px var(--line);cursor:pointer;
+  transition:transform var(--d-2) var(--e-bounce),background var(--d-2) var(--e-soft),color var(--d-2) var(--e-soft)}
+.chip small{font-size:var(--t-s);font-weight:700;opacity:.75}
+.chip.on{color:var(--on);background:var(--gf);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--f2) 75%,black)}
+.chip.f{transform:scale(1.06);box-shadow:var(--ring)}
+.chip:active{transform:scale(.97);transition-duration:var(--d-1)}
 
 /* Cristal 2: panel interior (sin desenfoque propio) */
 .glass-in{border-radius:var(--r-m);background:var(--glass-in);box-shadow:inset 0 1px 0 var(--hl-ring),inset 0 0 0 1px var(--line)}

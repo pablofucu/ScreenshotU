@@ -55,7 +55,7 @@
   />
 {:else}
   <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) collFormCmd('b'); }}>
-    <div class="glass setpanel cfpanel" style="--acc:{acc.c};--acc-ink:var(--on);height:{H}px;top:{(720 - H) / 2}px">
+    <div class="glass modal setpanel cfpanel" style="--acc:{acc.c};--acc-ink:var(--on);height:{H}px;top:{(720 - H) / 2}px">
       <div class="face">
         <h2>{f.id ? 'Editar colección' : 'Nueva colección'}</h2>
         <p class="msub">{sub}</p>
@@ -94,13 +94,13 @@
 {/if}
 
 <style>
-  .cfpanel .face{gap:4px}
+  .cfpanel .face{gap:var(--s-1)}
   .cfpanel :global(.msub){flex:none}
   .cfpanel .srow{height:54px}
   .cfpanel .srow.accrow{height:60px}
-  .cauto{display:flex;align-items:center;gap:8px;height:34px;padding:0 12px 0 8px;border-radius:11px;font-size:15px;font-weight:800;cursor:pointer;color:var(--ink-2);
+  .cauto{display:flex;align-items:center;gap:var(--s-2);height:34px;padding:0 var(--s-3) 0 var(--s-2);border-radius:var(--r-s);font:800 var(--t-m)/1 var(--round);cursor:pointer;color:var(--ink-2);
     background:linear-gradient(180deg,var(--glass-chip),var(--face));box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px var(--line)}
-  .cauto .dot{width:18px;height:18px;border-radius:6px}
+  .cauto .dot{width:18px;height:18px;border-radius:var(--r-xs)}
   .cfpanel .sv.ph{opacity:.55}
   .cauto.sel{outline:4px solid var(--ink);outline-offset:2px}
   .srow.f .cauto.sel{outline-color:var(--on)}

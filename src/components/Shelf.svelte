@@ -117,7 +117,7 @@
     {/if}
     {#if icon}<span class="mic">{@html icon}</span>{/if}
     <h3>{title}</h3>
-    {#if chip && dim}<span class="chip">{chip}</span>{/if}
+    {#if chip && dim}<span class="tag">{chip}</span>{/if}
     {#if sub}<span class="m">{sub}</span>{/if}
     {#if extra}{@render extra()}{/if}
     {#if end}{@render end()}{/if}
@@ -203,7 +203,7 @@
   .tinted .bsh :global(.hint .btn){background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;text-shadow:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
   .tinted .bsh :global(.hint:active){transform:scale(.95);color:#fff;background:linear-gradient(115deg,var(--g1),var(--g2));box-shadow:inset 0 2px 6px rgba(0,0,0,.25)}
   .tinted .bsh :global(.hint:active .btn){background:#fff;color:var(--g2)}
-  .chip{font-size:14px;font-weight:800;padding:3px 11px;border-radius:999px;color:var(--ink);background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
+  .tag{font-size:14px;font-weight:800;padding:3px 11px;border-radius:999px;color:var(--ink);background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
   .aur{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:inherit}
   .aur b{position:absolute;top:-30%;width:34%;height:160%;border-radius:50%;filter:blur(16px)}
   .aur.multi{opacity:.5}
@@ -296,7 +296,7 @@
   .tinted .lit .aur{opacity:.9}
   .tinted .bsh h3,.tinted .bsh.lit h3{color:var(--ink);text-shadow:none}
   .tinted .bsh .m,.tinted .bsh.lit .m{color:var(--ink-2);text-shadow:none}
-  .tinted .chip{background:var(--gf);color:var(--on);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 0 1px color-mix(in srgb,var(--f2) 70%,black)}
+  .tinted .tag{background:var(--gf);color:var(--on);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 0 1px color-mix(in srgb,var(--f2) 70%,black)}
   .tinted .bsh .mic,.tinted .bsh.lit .mic{background:rgba(255,255,255,.92);box-shadow:inset 0 1px 0 var(--hl),0 0 0 1px color-mix(in srgb,var(--f1) 45%,transparent),0 4px 10px -5px var(--f2)}
   .tinted .bsh .mic :global(svg[fill=none] *),.tinted .bsh.lit .mic :global(svg[fill=none] *){stroke:var(--f2)}
   .tinted .bsh .mic :global(svg:not([fill=none]) *),.tinted .bsh.lit .mic :global(svg:not([fill=none]) *){fill:var(--f2)}
@@ -314,8 +314,8 @@
     filter:drop-shadow(0 1px 0 rgba(255,255,255,.95)) drop-shadow(0 2px 3px color-mix(in srgb,var(--f2) 35%,transparent))}
   .tinted .bsh.lit h3{animation:shelfSheen 6s linear infinite}
   .tinted .bsh.soft h3{background:none;color:var(--ink-2);filter:none;font-size:22px}
-  .tinted .chip,.tinted .bsh .m{font:800 var(--t-s) var(--round)}
-  .tinted .bsh.soft .chip{background:var(--glass-chip);color:var(--ink-2);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--g1) 55%,transparent)}
+  .tinted .tag,.tinted .bsh .m{font:800 var(--t-s) var(--round)}
+  .tinted .bsh.soft .tag{background:var(--glass-chip);color:var(--ink-2);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--g1) 55%,transparent)}
   :global(#stage[data-theme=dark]) .tinted .bsh h3{background-image:linear-gradient(115deg,var(--g1),var(--g2),var(--g1));filter:drop-shadow(0 0 8px color-mix(in srgb,var(--g2) 45%,transparent))}
   :global(#stage[data-theme=dark]) .tinted .bsh.soft h3{background:none;filter:none}
   @keyframes shelfSheen{to{background-position:200% 0}}

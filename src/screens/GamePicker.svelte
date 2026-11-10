@@ -46,9 +46,9 @@
       <span class="btn y">Y</span>
     </div>
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-    <span class="tflt" class:on={p.filter === 'all'} onclick={() => pickerSetFilter('all')}>Todos<small>{total}</small></span>
+    <span class="chip" class:on={p.filter === 'all'} onclick={() => pickerSetFilter('all')}>Todos<small>{total}</small></span>
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
-    <span class="tflt" class:on={p.filter === 'sel'} onclick={() => pickerSetFilter('sel')}>Seleccionados<small>{p.ids.length}</small></span>
+    <span class="chip" class:on={p.filter === 'sel'} onclick={() => pickerSetFilter('sel')}>Seleccionados<small>{p.ids.length}</small></span>
     <span class="pkcount">{p.q ? `${res.length} resultados` : `${res.length} ${res.length === 1 ? 'juego' : 'juegos'}`}</span>
   </div>
   <div class="pkgrid" style="height:{PICK_ROWS * PY}px">
@@ -89,7 +89,6 @@
   .pksearch b.ph{color:var(--ink-3);font-weight:600}
   .pkic{width:22px;height:22px;flex:none;border-radius:7px;display:grid;place-items:center;background:var(--acc)}
   .pkic :global(svg){width:70%;height:70%}
-  .tflt{cursor:pointer}
   .pkcount{margin-left:auto;font-size:15px;font-weight:700;color:var(--ink-2)}
   .pkgrid{position:absolute;left:0;right:0;top:150px;overflow:hidden}
   .pktrack{position:absolute;left:69px;top:0;transition:transform .22s cubic-bezier(.25,1,.4,1)}
