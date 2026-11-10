@@ -2,7 +2,7 @@
   // Baldosa y hoja de tiempo de juego y racha de la meta diaria (novelas, PC o Switch) o récord de sesión.
   import { onDestroy } from 'svelte';
   import type { QuickMenuState } from './data';
-  import { goalTrack, readDetail, GOAL_COL, RESCUE_COL, localDay, rescueCls, type GoalKey } from '../lib/readgoals';
+  import { goalTrack, readDetail, GOAL_COL, localDay, rescueCls, type GoalKey } from '../lib/readgoals';
   import type { Platform, Title } from '../lib/types';
   import { rescueDay, rescueLeft, rescueClose, rescueFailed, fmtMin } from '../lib/readfmt';
   import { titleStats } from '../lib/stats';
@@ -283,14 +283,14 @@
     {#if hasGoal && track}
       {#if track.rescue}
         {@const r = track.rescue}
-        <div class="resc r-vn" style="--c:{GOAL_COL[goalKey].c};--rc:{RESCUE_COL[goalKey].rc};--rmid:{RESCUE_COL[goalKey].rmid}">
+        <div class="resc {rescueCls(goalKey)}" style="--c:{GOAL_COL[goalKey].c}">
           <div class="rtitle">
             <span class="rdot"></span>
             Rescate del {rescueFailed(r)}
             <span style="margin-left:auto;display:flex;gap:10px;align-items:center">
               <div class="rmed" style="height:38px">
                 <svg viewBox="0 0 24 24"><path fill={GOAL_COL[goalKey].c} fill-opacity=".25" stroke={GOAL_COL[goalKey].c} stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"/></svg>
-                <span class="n" style="font-size:22px">{track.streak}</span>
+                <span class="n" style="font-size:var(--t-xl)">{track.streak}</span>
                 <span class="l">{GOAL_COL[goalKey].name}<small class="rp">pendiente</small></span>
               </div>
             </span>
@@ -363,12 +363,12 @@
             <div class="rmed" style="height:60px">
               <svg viewBox="0 0 24 24"><path fill={GOAL_COL[goalKey].c} fill-opacity=".25" stroke={GOAL_COL[goalKey].c} stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"/></svg>
               <span class="n" style="font-size:34px">{track.streak}</span>
-              <span class="l" style="font-size:15px">
+              <span class="l" style="font-size:var(--t-m)">
                 días de racha de {GOAL_COL[goalKey].full.toLowerCase()}
                 <small>{track.streak >= track.best && track.streak > 0 ? 'récord' : `mejor ${track.best}`}</small>
               </span>
             </div>
-            <div class="rnote ok" style="font-size:15px">{timeNote}</div>
+            <div class="rnote ok" style="font-size:var(--t-m)">{timeNote}</div>
           </div>
 
           <div class="rmap" style="transform:scale(1.4);transform-origin:right center;margin-left:30px">

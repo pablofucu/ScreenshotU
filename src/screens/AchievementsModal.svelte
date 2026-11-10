@@ -206,12 +206,16 @@
   <div class="shelves" bind:this={shelvesEl}>
     {#if filtered.length === 0}
       <div class="empty">
+        <svg viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8M10 17h4"/></svg>
         {#if achState.tab === 'unlocked'}
-          Todavía no has conseguido ningún logro en este juego.
+          <h3>Aún sin logros</h3>
+          <p>Todavía no has conseguido ningún logro en este juego.</p>
         {:else if achState.tab === 'locked'}
-          ¡Enhorabuena! Has completado el 100% de los logros.
+          <h3>¡Enhorabuena!</h3>
+          <p>Has completado el 100 % de los logros.</p>
         {:else}
-          No se han encontrado logros registrados para este juego.
+          <h3>Sin logros</h3>
+          <p>No se han encontrado logros registrados para este juego.</p>
         {/if}
       </div>
     {:else}
@@ -691,11 +695,6 @@
 
   .empty {
     margin: auto;
-    padding: var(--s-5);
-    text-align: center;
-    font-size: var(--t-l);
-    font-weight: 700;
-    color: var(--ink-2);
   }
 
   .hintband {

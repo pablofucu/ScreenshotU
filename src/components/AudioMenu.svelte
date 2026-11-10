@@ -27,7 +27,7 @@
   {#each app.audioOutputs as o, i (o.id)}
     <button type="button" role="menuitemradio" aria-checked={o.default} class="audit" class:on={o.default} class:f={app.audioRow === i}
       onmousemove={(e) => hover(e, i)} onclick={() => pick(o.id, o.default)}>
-      <i>{@html audioSvg(audioKind(o.name), 'currentColor', 4)}</i>
+      <i>{@html audioSvg(audioKind(o.name))}</i>
       <span>{o.short}</span>
       {#if o.default}<b>✓</b>{/if}
     </button>

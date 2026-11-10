@@ -92,7 +92,7 @@
         <button type="button" class="audbtn" class:fx={pad} class:f={pad && app.focus === 'audio'} data-k={pad ? 'audio' : undefined} data-act={pad ? 'audio' : undefined}
           class:open={app.audioMenu} title={curOut ? `Salida de audio: ${curOut.short}` : 'Salida de audio'} aria-label="Cambiar la salida de audio" aria-expanded={app.audioMenu}
           onclick={() => { if (!pad || app.audioMenu) toggleMenu(); }}>
-          {@html audioSvg(audioKind(curOut?.name ?? ''), 'currentColor', 4)}
+          {@html audioSvg(audioKind(curOut?.name ?? ''))}
         </button>
       </div>
     {/if}

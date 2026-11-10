@@ -99,7 +99,7 @@
   </div>
 {:else}
   {#if !curShot}
-    <div class="ach-empty" style="font-size:18px;text-align:center;padding:40px">No hay capturas en esta partida</div>
+    <div class="ach-empty" style="font-size:var(--t-l);text-align:center;padding:40px">No hay capturas en esta partida</div>
   {:else}
     {@const curSrc = getImgSrc(curShot)}
     <div class="vshots">

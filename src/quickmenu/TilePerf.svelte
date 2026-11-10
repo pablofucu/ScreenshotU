@@ -71,12 +71,13 @@
             <svg class="ch" viewBox="0 0 240 72" preserveAspectRatio="none" style="height:72px">
               <defs>
                 <linearGradient id="c_t_cpu_g" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stop-color="#ff7a9c"/>
-                  <stop offset="20%" stop-color="#ffb36b"/>
-                  <stop offset="40%" stop-color="#ffe680"/>
-                  <stop offset="60%" stop-color="#7be0a8"/>
-                  <stop offset="80%" stop-color="#6cc6ff"/>
-                  <stop offset="100%" stop-color="#9d8bff"/>
+                  <stop offset="0%" style="stop-color:var(--arc-rojo)"/>
+                  <stop offset="17%" style="stop-color:var(--arc-naranja)"/>
+                  <stop offset="33%" style="stop-color:var(--arc-amarillo)"/>
+                  <stop offset="50%" style="stop-color:var(--arc-verde)"/>
+                  <stop offset="67%" style="stop-color:var(--arc-azul)"/>
+                  <stop offset="83%" style="stop-color:var(--arc-anil)"/>
+                  <stop offset="100%" style="stop-color:var(--arc-violeta)"/>
                 </linearGradient>
               </defs>
               <path class="af" fill="url(#c_t_cpu_g)" fill-opacity="0.18" d={cpuChartTile.area}/>
@@ -94,12 +95,13 @@
             <svg class="ch" viewBox="0 0 240 72" preserveAspectRatio="none" style="height:72px">
               <defs>
                 <linearGradient id="c_t_gpu_g" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stop-color="#ff7a9c"/>
-                  <stop offset="20%" stop-color="#ffb36b"/>
-                  <stop offset="40%" stop-color="#ffe680"/>
-                  <stop offset="60%" stop-color="#7be0a8"/>
-                  <stop offset="80%" stop-color="#6cc6ff"/>
-                  <stop offset="100%" stop-color="#9d8bff"/>
+                  <stop offset="0%" style="stop-color:var(--arc-rojo)"/>
+                  <stop offset="17%" style="stop-color:var(--arc-naranja)"/>
+                  <stop offset="33%" style="stop-color:var(--arc-amarillo)"/>
+                  <stop offset="50%" style="stop-color:var(--arc-verde)"/>
+                  <stop offset="67%" style="stop-color:var(--arc-azul)"/>
+                  <stop offset="83%" style="stop-color:var(--arc-anil)"/>
+                  <stop offset="100%" style="stop-color:var(--arc-violeta)"/>
                 </linearGradient>
               </defs>
               <path class="af" fill="url(#c_t_gpu_g)" fill-opacity="0.18" d={gpuChartTile.area}/>
@@ -112,7 +114,7 @@
   </div>
 {:else}
   {#if !perf}
-    <div class="ach-empty" style="font-size:18px;text-align:center;padding:40px">Midiendo…</div>
+    <div class="ach-empty" style="font-size:var(--t-l);text-align:center;padding:40px">Midiendo…</div>
   {:else}
     <div class="vperf">
       <div class="pblk">
@@ -125,12 +127,13 @@
           <svg class="ch" viewBox="0 0 480 120" preserveAspectRatio="none" style="height:120px">
             <defs>
               <linearGradient id="c_s_cpu_g" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stop-color="#ff7a9c"/>
-                <stop offset="20%" stop-color="#ffb36b"/>
-                <stop offset="40%" stop-color="#ffe680"/>
-                <stop offset="60%" stop-color="#7be0a8"/>
-                <stop offset="80%" stop-color="#6cc6ff"/>
-                <stop offset="100%" stop-color="#9d8bff"/>
+                <stop offset="0%" style="stop-color:var(--arc-rojo)"/>
+                <stop offset="17%" style="stop-color:var(--arc-naranja)"/>
+                <stop offset="33%" style="stop-color:var(--arc-amarillo)"/>
+                <stop offset="50%" style="stop-color:var(--arc-verde)"/>
+                <stop offset="67%" style="stop-color:var(--arc-azul)"/>
+                <stop offset="83%" style="stop-color:var(--arc-anil)"/>
+                <stop offset="100%" style="stop-color:var(--arc-violeta)"/>
               </linearGradient>
             </defs>
             <line class="gl" x1="0" x2="480" y1="30" y2="30"/>
@@ -153,12 +156,13 @@
           <svg class="ch" viewBox="0 0 480 120" preserveAspectRatio="none" style="height:120px">
             <defs>
               <linearGradient id="c_s_gpu_g" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stop-color="#ff7a9c"/>
-                <stop offset="20%" stop-color="#ffb36b"/>
-                <stop offset="40%" stop-color="#ffe680"/>
-                <stop offset="60%" stop-color="#7be0a8"/>
-                <stop offset="80%" stop-color="#6cc6ff"/>
-                <stop offset="100%" stop-color="#9d8bff"/>
+                <stop offset="0%" style="stop-color:var(--arc-rojo)"/>
+                <stop offset="17%" style="stop-color:var(--arc-naranja)"/>
+                <stop offset="33%" style="stop-color:var(--arc-amarillo)"/>
+                <stop offset="50%" style="stop-color:var(--arc-verde)"/>
+                <stop offset="67%" style="stop-color:var(--arc-azul)"/>
+                <stop offset="83%" style="stop-color:var(--arc-anil)"/>
+                <stop offset="100%" style="stop-color:var(--arc-violeta)"/>
               </linearGradient>
             </defs>
             <line class="gl" x1="0" x2="480" y1="30" y2="30"/>

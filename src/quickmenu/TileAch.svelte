@@ -54,7 +54,10 @@
         <svg class="i" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8M10 17h4"/></svg>
         Logros
       </div>
-      <div class="ach-empty">Cargando…</div>
+      <div class="achc" aria-label="Cargando logros">
+        <div class="skel round" style="width:62px;height:62px"></div>
+        <div class="at sk"><div class="skel line" style="width:70%"></div><div class="skel line" style="width:40%"></div></div>
+      </div>
     </div>
   {:else if !achievements || achievements.length === 0}
     <div class="glass tile t-ach dim" style="--i:4">
@@ -82,7 +85,7 @@
       </div>
       <div class="achc">
         <div class="ring" style="--p:{pct};--s:62px;--t:8px">
-          <b style="font-size:17px">{unlocked.length}<small style="display:block;font-size:10px;opacity:.75">de {total}</small></b>
+          <b style="font-size:var(--t-l)">{unlocked.length}<small style="display:block;font-size:var(--t-xs);opacity:.75">de {total}</small></b>
         </div>
         <div class="at">
           {#if lastUnlocked}
@@ -100,11 +103,11 @@
   {/if}
 {:else}
   {#if !achievements || achievements.length === 0}
-    <div class="ach-empty" style="font-size:18px;text-align:center;padding:40px">Este juego no tiene logros</div>
+    <div class="ach-empty" style="font-size:var(--t-l);text-align:center;padding:40px">Este juego no tiene logros</div>
   {:else}
     <div class="vhead">
       <div class="ring" style="--p:{pct};--s:96px;--t:10px">
-        <b style="font-size:30px">{unlocked.length}<small style="display:block;font-size:13px;opacity:.7">de {total}</small></b>
+        <b style="font-size:30px">{unlocked.length}<small style="display:block;font-size:var(--t-s);opacity:.7">de {total}</small></b>
       </div>
       <div>
         <div class="big2">{pct} % completado</div>

@@ -84,7 +84,16 @@
             {/each}
           </div>
         {/if}
-        {#if p.loading && !(p.mode === 'images' && p.items.length)}<p class="sgmsg">Buscando en SteamGridDB…</p>
+        {#if p.loading && !(p.mode === 'images' && p.items.length)}
+          <div class="sgsk" aria-label="Buscando en SteamGridDB">
+            {#if p.mode === 'games'}
+              {#each [0, 1, 2, 3, 4] as k (k)}<div class="skel" style="height:54px;border-radius:var(--r-m)"></div>{/each}
+            {:else}
+              <div style="display:grid;grid-template-columns:repeat({cols},{cellW}px);grid-auto-rows:{cellH}px;gap:{GAP}px">
+                {#each Array(cols * 2) as _, k (k)}<div class="skel"></div>{/each}
+              </div>
+            {/if}
+          </div>
         {:else if p.error}<p class="sgmsg" style="white-space:pre-line">{p.error}</p>
         {:else if p.mode === 'images' && !p.items.length && p.game}<p class="sgmsg">SteamGridDB no tiene ningún {KIND_LABEL[p.kind].toLowerCase()} para «{p.game.name}».<br />Prueba con otro juego (Y) o elige una imagen del PC (View).</p>{/if}
       </div>

@@ -118,7 +118,7 @@
       <div class="chips">
         {#each audio.outputs.slice(0, 3) as o, i}
           <div
-            class="ctl chip"
+            class="ctl qchip"
             class:on={o.default}
             data-f
             data-id="o{i}"
@@ -139,7 +139,7 @@
         {/each}
 
         <div
-          class="ctl chip mic"
+          class="ctl qchip mic"
           class:on={audio.micMute}
           data-f
           data-id="mic"
@@ -153,7 +153,7 @@
         </div>
 
         <div
-          class="ctl chip more"
+          class="ctl qchip more"
           data-f
           data-id="amore"
           onclick={onOpenSheet}
@@ -168,7 +168,7 @@
   </div>
 {:else}
   {#if !audio}
-    <div class="ach-empty" style="font-size:18px;text-align:center;padding:40px">Audio no disponible</div>
+    <div class="ach-empty" style="font-size:var(--t-l);text-align:center;padding:40px">Audio no disponible</div>
   {:else}
     <div class="vaud">
       <div class="vcol">
@@ -275,7 +275,7 @@
               <div
                 class="ctl mute"
                 class:on={app.mute}
-                style="width:36px;height:36px;--r:10px;border-radius:10px"
+                style="width:36px;height:36px;--r:10px;border-radius:var(--r-s)"
                 data-f
                 data-id="app-mute-{app.pid}"
                 onclick={() => onSetAppMute?.(app.pid, !app.mute)}
@@ -306,7 +306,7 @@
                 <div class="vbar" style="--p:{app.mute ? 0 : app.volume}">
                   <i></i>
                 </div>
-                <b style="font-size:16px;min-width:44px">{app.mute ? '—' : app.volume}%</b>
+                <b style="font-size:var(--t-m);min-width:44px">{app.mute ? '—' : app.volume}%</b>
               </div>
             </div>
           {/each}

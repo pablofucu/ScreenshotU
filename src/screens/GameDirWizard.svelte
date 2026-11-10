@@ -37,7 +37,10 @@
     <div class="face">
       {#if g.loading || !it}
         <h2>Carpeta con juegos</h2>
-        <p class="fhint">Buscando ejecutables en las subcarpetas…</p>
+        <div class="fhint" aria-label="Buscando ejecutables en las subcarpetas" style="display:grid;gap:var(--s-2)">
+          <div class="skel line" style="width:80%"></div>
+          <div class="skel line" style="width:55%"></div>
+        </div>
       {:else}
         <h2>Juego {g.i + 1} de {g.items.length}</h2>
         <p class="fhint" style="margin:0 0 4px">

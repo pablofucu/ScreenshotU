@@ -169,7 +169,11 @@
     </div>
     <div class="lwrap">
       {#if !copies.length}
-        <p class="empty">{sv.loading ? 'Buscando las copias…' : 'Aún no hay copias de este juego.'}</p>
+        {#if sv.loading}
+          {#each [0, 1, 2, 3] as k (k)}<div class="skel sk-li"></div>{/each}
+        {:else}
+          <p class="lnote">Aún no hay copias de este juego.</p>
+        {/if}
       {/if}
       {#each groups as g (g.key)}
         <div class="lgh"><span>{g.label}</span><span>{g.played >= 30000 ? fmtHM(g.played) + ' jugado' : ''}</span></div>
@@ -207,7 +211,7 @@
             <button class="bt sm" style="flex:1" onclick={() => togglePin()}>
               <svg viewBox="0 0 24 24" fill={copy.pinned ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="2" stroke-linejoin="round" style={copy.pinned ? 'color:var(--warn)' : ''}><path d="M12 2.5l2.9 6 6.6.8-4.9 4.6 1.3 6.5L12 17.2l-5.9 3.2 1.3-6.5L2.5 9.3l6.6-.8z" /></svg>{copy.pinned ? 'Fijada' : 'Fijar'}
             </button>
-            <button class="bt sm ic" title="Más: nota, exportar, abrir, borrar" aria-label="Más opciones" onclick={() => (sv.focus === 'menu' ? closeMenu() : openMenu())}>
+            <button class="bt sm icb" title="Más: nota, exportar, abrir, borrar" aria-label="Más opciones" onclick={() => (sv.focus === 'menu' ? closeMenu() : openMenu())}>
               <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5" fill="currentColor" /><circle cx="12" cy="12" r="1.5" fill="currentColor" /><circle cx="19" cy="12" r="1.5" fill="currentColor" /></svg>
             </button>
           </div>
@@ -247,16 +251,23 @@
       </div>
       <div class="foot">Lo que hay ahora se guarda antes en una copia «Antes de restaurar».</div>
     {:else}
-      <div class="blank">
-        <h3>{sv.loading ? 'Buscando…' : 'Sin copias todavía'}</h3>
+      {#if sv.loading}
+      <div class="blank" aria-label="Buscando copias">
+        <div class="skel sk-thumb"></div>
+        <div class="skel line" style="width:60%"></div>
+        <div class="skel line" style="width:40%"></div>
+      </div>
+      {:else}
+      <div class="blank empty">
+        <svg viewBox="0 0 24 24"><path d="M5 3.5h11l3 3v14H5z"/><path d="M8 3.5v5h7v-5M8 20.5v-6h8v6"/></svg>
+        <h3>Sin copias todavía</h3>
         <p>{savesSummary()}</p>
-        {#if !sv.loading}
-          <div class="brow3">
+        <div class="brow3">
             <button class="bt pri" disabled={!!sv.busy} onclick={() => backupNow()}>Copiar ahora</button>
             <button class="bt" onclick={() => openLocs()}>Dónde guarda</button>
           </div>
-        {/if}
       </div>
+      {/if}
     {/if}
   </div>
 
@@ -315,7 +326,8 @@
   /* lista por días */
   .lwrap { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; margin: 0 -8px; padding: 0 8px 8px; }
   .lwrap::-webkit-scrollbar { display: none; }
-  .empty { margin: 24px 10px; font-size: var(--t-s); font-weight: 700; color: var(--ink-3); }
+  .lnote { margin: 24px 10px; font-size: var(--t-s); font-weight: 700; color: var(--ink-3); }
+  .sk-li { height: 46px; margin-bottom: 2px; border-radius: var(--r-s); }
   .lgh { height: 28px; padding: 8px 10px 0; font-size: var(--t-s); font-weight: 800; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; display: flex; justify-content: space-between; }
   .lgh span:last-child { text-transform: none; letter-spacing: 0; }
   .li { display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 10px; border-radius: var(--r-s); cursor: pointer; margin-bottom: 2px; }
@@ -342,7 +354,7 @@
   .bt :global(svg) { width: 19px; height: 19px; flex: none; }
   .bt.sm { height: 36px; font-size: var(--t-s); padding: 0 13px; gap: 6px; }
   .bt.sm :global(svg) { width: 16px; height: 16px; }
-  .bt.ic { width: 36px; padding: 0; }
+  .bt.icb { width: 36px; padding: 0; }
   .btn.mini { min-width: 20px; height: 20px; font-size: var(--t-xs); border-radius: var(--r-s); padding: 0 5px; }
   .badge { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: var(--r-pill); font-size: var(--t-s); font-weight: 800; white-space: nowrap; background: color-mix(in srgb, var(--k) 16%, var(--tint-base)); color: color-mix(in srgb, var(--k) 62%, black); }
   .badge::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--k); }
@@ -394,9 +406,9 @@
   .fr:hover .fst, .fr.s .fst, .fr.arm .fst { visibility: hidden; }
   .foot { flex: none; margin-top: 10px; font-size: var(--t-s); font-weight: 700; color: var(--ink-2); }
 
-  .blank { margin: auto; text-align: center; max-width: 440px; }
-  .blank h3 { margin: 0 0 6px; font-size: var(--t-2xl); font-weight: 800; }
-  .blank p { margin: 0 0 18px; font-size: var(--t-m); font-weight: 600; color: var(--ink-2); line-height: 1.4; }
+  .blank { margin: auto; text-align: center; max-width: 440px; width: 100%; display: grid; gap: var(--s-3); justify-items: center; }
+  .sk-thumb { width: 100%; height: 180px; }
+  .blank.empty { padding: 0; }
   .brow3 { display: flex; gap: 10px; justify-content: center; }
 
   /* menú ⋯ */

@@ -646,7 +646,7 @@
           <div class="sp"></div>
           <div
             class="btn sm"
-            style="height:36px;flex:none;font-size:13px;padding:0 14px"
+            style="height:36px;flex:none;font-size:var(--t-s);padding:0 14px"
             data-f
             data-id="sh-close"
             onclick={() => backAction()}
