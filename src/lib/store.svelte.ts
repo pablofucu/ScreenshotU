@@ -3,7 +3,7 @@ import { untrack } from 'svelte';
 import { RAINBOW, type Accent } from './icons';
 import type { AudioOutput, Config, GameStatsDb, GameStatus, Library, MagpieStatus, Collection, Shot, SortMode as SortModeT, Swatch, Title, TitleOrder, TitlesTab } from './types';
 import { hexToLch, hexToRgb, hueOf } from './oklch';
-import { gamePair, INK, pair, variablesCSS } from './atmos';
+import { gamePair, INK, pair, variablesCSS, vivo } from './atmos';
 import { collItems, collectionTitle } from './collections';
 import { GOAL_COL, GOAL_KEYS, goalMin, type GoalKey } from './readgoals';
 import { calendar, categoryStats, evoBuckets, playedPlatforms, playYears, rankPeriod, titleStats, yearReview, type EvoKind, type GMetric, type PeriodKind } from './stats';
@@ -324,6 +324,8 @@ export function sortTitles(titles: Title[], idx: number[], order: TitleOrder, st
 /** Relleno f1 ya calculado por pareja de tonos (variablesCSS busca el contraste en bucle). */
 const PAIR_FILL = new Map<string, { c: string; c2: string; v: string; v2: string; g1: string; g2: string; dark: boolean }>();
 export const accentOf = (c: string, dark: boolean, n = 'Personalizado'): Accent => ({ n, c, dark });
+/** Acento vivo (`--accv`, solo gráficos) de un acento o de un hex: el color puro de su tono. */
+export const accv = (a: Accent | string): string => typeof a === 'string' ? vivo(hueOf(a)) : (a.v ?? vivo(hueOf(a.c)));
 
 class Store {
   config = $state<Config>(structuredClone(DEFAULT_CONFIG));
@@ -598,7 +600,7 @@ class Store {
   /** Acento sólido (relleno f1 de la atmósfera v5) para una pareja de tonos. */
   pairAcc(p: { h1: number; h2: number }, n = 'Atmósfera'): Accent {
     const v = this.pairFill(p);
-    return accentOf(v.c, v.dark, n);
+    return { ...accentOf(v.c, v.dark, n), v: v.v };
   }
   pairFill(p: { h1: number; h2: number }): { c: string; c2: string; v: string; v2: string; g1: string; g2: string; dark: boolean } {
     const key = `${p.h1.toFixed(1)}|${p.h2.toFixed(1)}`;

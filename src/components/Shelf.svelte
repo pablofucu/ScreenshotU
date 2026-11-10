@@ -25,6 +25,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import Thumb from './Thumb.svelte';
+  import { accv } from '../lib/store.svelte';
   import { SHELF_CH, SHELF_CW, SHELF_PITCH, SHELF_VIEW_W } from '../lib/milista.svelte';
 
   // «Balda de cristal» (variante V2 · Rótulo teñido): un rótulo en píldora con el icono de menú, el título, un chip y los
@@ -108,7 +109,7 @@
   const segX = $derived(positions && positions.length ? [positions[0] + SHELF_CW / 2, positions[positions.length - 1] + SHELF_CW / 2] : [0, 0]);
 </script>
 
-<div class="shelf" class:dim class:dk={ink !== '#fff'} class:with-ord={hasOrd} class:tinted={!!vars} style="top:{top}px;--acc:{acc};--on-acc:{ink}{vars ? ';' + vars : ';--ink:' + ink}">
+<div class="shelf" class:dim class:dk={ink !== '#fff'} class:with-ord={hasOrd} class:tinted={!!vars} style="top:{top}px;--acc:{acc};--accv:{accv(acc)};--on-acc:{ink}{vars ? ';' + vars : ';--ink:' + ink}">
   <div class="bsh" class:lit={!dim} class:soft={dim} class:hasaur={aurora.length > 0 || !!tabStyle} class:noic={!icon}>
     {#if aurora.length}
       <div class="aur">{#each aurora as c, k}<b style="left:{4 + k * 20}%;background:{c}"></b>{/each}</div>

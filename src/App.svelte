@@ -163,7 +163,7 @@
 <svelte:window bind:innerWidth={w} bind:innerHeight={h} onkeydown={onKeyDown} onkeyup={learnKeydown} />
 
 <!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
-<div id="stage" onclick={onStageClick} data-theme={app.config.theme === 'dark' ? 'dark' : 'light'} style="transform:translate({ox}px,{oy}px) scale({sc});{atmosCss};--rby:{RBY};--rbsec:{rbsec};--acc:var(--f1);--acc-ink:var(--on)">
+<div id="stage" onclick={onStageClick} data-theme={app.config.theme === 'dark' ? 'dark' : 'light'} style="transform:translate({ox}px,{oy}px) scale({sc});{atmosCss};--rby:{RBY};--rbsec:{rbsec};--acc:var(--f1);--accv:var(--v1);--acc-ink:var(--on)">
   <div class="bg">{@html bg}</div>
   {#if app.ready}
     {#key app.animKey}

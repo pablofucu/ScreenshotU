@@ -1,6 +1,6 @@
 <script lang="ts">
   import { z } from '../lib/format';
-  import { app, LIST_COLOR, STATUS_LABEL, STATUS_ORDER } from '../lib/store.svelte';
+  import { app, accv, LIST_COLOR, STATUS_LABEL, STATUS_ORDER } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { popOverlay } from '../lib/controller.svelte';
   import { statusBarCmd, statusBarPick } from '../lib/milista.svelte';
@@ -19,7 +19,7 @@
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) { if (fin) sb.step = 'pick'; else popOverlay(); } }}>
-  <div class="glass modal menupanel spanel" class:fin style="--acc:{color.c};--acc-ink:white">
+  <div class="glass modal menupanel spanel" class:fin style="--acc:{color.c};--accv:{accv(color)};--acc-ink:white">
     <div class="face">
       {#if !fin}
         <h2>Estado del juego</h2>

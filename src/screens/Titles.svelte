@@ -1,6 +1,6 @@
 <script lang="ts">
   import { IS_TABLET } from '../lib/backend';
-  import { app, coverHue, LIST_COLOR, TITLE_FILTERS, TITLE_ORDER_LABEL, TITLES_TABS, type ListShelf } from '../lib/store.svelte';
+  import { app, accv, coverHue, LIST_COLOR, TITLE_FILTERS, TITLE_ORDER_LABEL, TITLES_TABS, type ListShelf } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { fmtAgo, fmtDur, fmtShort, nCapturas } from '../lib/format';
   import { setFocus, titlesGrid, viewPos, setTitlesTab, cycleTitleOrder } from '../lib/controller.svelte';
@@ -187,7 +187,7 @@
 <div class="ambwash" style={wash}></div>
 <TopBar crumbs={['Inicio', P?.name ?? '']} dots={grid && tab === 'all' ? pages : 0} dot={pg} />
 
-<div class="ttabs" class:car={!grid && tab === 'all'} class:list-tabs={tab === 'list'} style={tabsAcc ? `--acc:${tabsAcc.c};--acc-ink:#fff` : ''}>
+<div class="ttabs" class:car={!grid && tab === 'all'} class:list-tabs={tab === 'list'} style={tabsAcc ? `--acc:${tabsAcc.c};--accv:${accv(tabsAcc)};--acc-ink:#fff` : ''}>
   <span class="btn sh" data-hact="lt">LT</span>
   {#each TITLES_TABS as [f, label]}
     <button type="button" class="tflt" class:on={tab === f} onclick={() => setTitlesTab(f)}>{label}</button>

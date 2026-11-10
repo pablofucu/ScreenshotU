@@ -8,7 +8,7 @@ export const RAINBOW = [
   { n: 'Añil', c: '#3F63E0', dark: false },
   { n: 'Violeta', c: '#9A4BD8', dark: false },
 ] as const;
-export type Accent = { n: string; c: string; dark: boolean };
+export type Accent = { n: string; c: string; dark: boolean; v?: string };
 
 /** Icono de trazo (§9 de la guía): rejilla 24, trazo 2, extremos redondos, color del texto (currentColor). */
 export const ic = (d: string, attrs = '') =>

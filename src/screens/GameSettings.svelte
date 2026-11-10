@@ -136,6 +136,6 @@
   .gs-row { height: 58px; flex: none; margin-bottom: 4px; }
   .gs-row.gap { margin-top: 14px; }
   .gs-row .sl { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .gs-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 0 2px var(--line); }
+  .gs-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--accv); box-shadow: 0 0 0 2px var(--line); }
   .gs-back { align-self: flex-start; margin: 0 0 12px; padding: 0; border: 0; background: transparent; font: inherit; font-size: var(--t-m); font-weight: 700; color: var(--ink-2); cursor: pointer; }
 </style>

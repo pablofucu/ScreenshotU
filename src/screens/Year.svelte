@@ -1,7 +1,7 @@
 <script lang="ts">
   // Resumen anual («Tu año jugando»): tarjetas a pantalla completa que se recorren con izquierda/derecha.
   // Cada tarjeta usa el acento del juego del que habla (o el arcoíris cuando habla de todo el año).
-  import { app } from '../lib/store.svelte';
+  import { app, accv } from '../lib/store.svelte';
   import { YEAR_CARDS } from '../lib/controller.svelte';
   import { RAINBOW } from '../lib/icons';
   import { backend } from '../lib/backend';
@@ -14,6 +14,7 @@
   const card = $derived(app.yearCard);
   const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
   const accOf = (pi: number, ti: number) => app.titleAcc(pi, ti).c;
+  const accvOf = (pi: number, ti: number) => accv(app.titleAcc(pi, ti));
   const pname = (pi: number) => app.lib.platforms[pi]?.name ?? '';
   const plural = (n: number, a: string, b: string) => `${n} ${n === 1 ? a : b}`;
   const rainbow = `linear-gradient(90deg,${RAINBOW.map((r) => r.c).join(',')})`;
@@ -90,7 +91,7 @@
       {:else if card === 1 && top}
         {@const a = accOf(top.pi, top.ti)}
         <div class="yk" style="color:{a}">{Y.year} · Juego del año</div>
-        <div class="y2" style="--acc:{a};--g:{a}">
+        <div class="y2" style="--acc:{a};--accv:{accvOf(top.pi, top.ti)};--g:{a}">
           <div class="yleft">
             <div class="ybanner"><HeroStrip t={top.t} /></div>
             <div class="ystats">
@@ -164,7 +165,7 @@
           {@const L = Y.longest}
           {@const a = accOf(L.pi, L.ti)}
           <div class="yk" style="color:{a}">{Y.year} · Tu maratón</div>
-          <div class="y2" style="--acc:{a};--g:{a}">
+          <div class="y2" style="--acc:{a};--accv:{accvOf(L.pi, L.ti)};--g:{a}">
             <div class="yleft">
               <div class="ybanner"><HeroStrip t={L.t} /></div>
               <div class="ystats two">
@@ -184,7 +185,7 @@
         <div class="yk" style="color:{sh ? accOf(sh.pi, sh.ti) : 'inherit'}">{Y.year} · Tus capturas</div>
         {#if sh}
           {@const a = accOf(sh.pi, sh.ti)}
-          <div class="y7" style="--acc:{a};--g:{a}">
+          <div class="y7" style="--acc:{a};--accv:{accvOf(sh.pi, sh.ti)};--g:{a}">
             <div class="yshots">
               <div class="ybig"><div class="yhrs" style="background-image:{rainbow}"><b>{Y.shots}</b></div><div class="ysub">{Y.shots === 1 ? 'captura hecha' : 'capturas hechas'} en {Y.year}</div></div>
               <div class="ysub b">Más capturas en</div>

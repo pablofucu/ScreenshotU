@@ -36,7 +36,9 @@ En la duda, se queda en `--f1`. El cambio a `--v1` solo se hace cuando no hay te
 ## Hecho (2026-11-10)
 
 - Barras de desplazamiento, puntos de paginación, barras semanales y del año, anillo y halo del catálogo (`--p1/--p2` de `pairStyle` ahora son vivos) y puntos de color de la estantería pasan a `--v1/--v2/--gv`.
-- Sin tocar: todo lo que lleva texto, los anillos de foco y los usos de `--acc` (se sobrescribe por contexto con colores de relleno: mapa de calor, barras de meses, marcos de Year…). Para pasarlos hace falta una variable vivo por contexto; queda pendiente.
+- `--accv`: acento vivo del contexto. Regla: cada sitio que fija `--acc` fija también `--accv` (helper `accv()` en `store.svelte.ts`; `Accent.v` lo rellena `pairAcc`). Global: `app.css` y `App.svelte`.
+- Gráficos de `--acc` pasados a `--accv`: mapa de calor, meses, evolución, barras y marcos de Year, casilla de añadir, botón de la línea de tiempo, punto de ajustes, cabecera de ActionMenu.
+- Se quedan en `--acc`: todo lo que lleva texto o glifo blanco, foco, cursor, `.wicon`, `.mic`, `.addin span`, Shelf, `reader.css` y `hook.css` (su `--acc` fijo ya es vivo), y `Saves` (`KCOL.auto` comparte color con la insignia).
 
 ## Pasos
 

@@ -1,7 +1,7 @@
 <script lang="ts">
   // Selector de juegos de una colección (a pantalla completa): buscador con teclado en pantalla, cuadrícula de portadas
   // de la categoría con check en las elegidas y filtro «Todos / Seleccionados». Ventana virtual por filas.
-  import { app } from '../lib/store.svelte';
+  import { app, accv } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { formAccent, PICK_COLS, PICK_ROWS, pickerAct, pickerResults, pickerSearch, pickerSetFilter, platformGames } from '../lib/coleccion.svelte';
   import { gameYear } from '../lib/collections';
@@ -33,7 +33,7 @@
   }
 </script>
 
-<div class="scrim pkscrim" role="presentation" style="--acc:{acc.c};--acc-ink:var(--on)">
+<div class="scrim pkscrim" role="presentation" style="--acc:{acc.c};--accv:{accv(acc)};--acc-ink:var(--on)">
   <div class="pkhead">
     <h2>Elige los juegos</h2>
     <p>{f.name || 'Nueva colección'} · {plat?.name ?? ''}</p>

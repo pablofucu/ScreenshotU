@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { app } from '../lib/store.svelte';
+  import { app, accv } from '../lib/store.svelte';
   import { IS_TABLET } from '../lib/backend';
   import { ICON, RAINBOW } from '../lib/icons';
   import TopBar from '../components/TopBar.svelte';
@@ -76,7 +76,7 @@
   {#each shown as { p, i }, k (p.id)}
     {@const a = app.platAcc(i)}
     {@const x = x0 + k * step}
-    <div class="glass plat fx" class:f={app.focus === 'plat' + i} data-k="plat{i}" data-act="plat:{i}" style="left:{x}px;top:100px;width:{size}px;height:{size}px;--acc:{a.c};--pc:{a.c}">
+    <div class="glass plat fx" class:f={app.focus === 'plat' + i} data-k="plat{i}" data-act="plat:{i}" style="left:{x}px;top:100px;width:{size}px;height:{size}px;--acc:{a.c};--accv:{accv(a)};--pc:{a.c}">
       <div class="face">{@html ICON[p.icon] ?? ICON.pc}</div>
     </div>
     <div class="plabel hl" class:on={app.focus === 'plat' + i} style="left:{x + (size - lw) / 2}px;top:{112 + size}px;width:{lw}px;--pc:{a.c}">
@@ -92,7 +92,7 @@
     {#each recent as r, i (r.t.id)}
       {@const x = cx0 + i * (CW + CGAP)}
       {@const m = meta(r.t, app.lib.platforms[r.pi].name)}
-      <div class="glass rcard fx" class:f={app.focus === 'rec' + i} data-k="rec{i}" data-act="rec:{i}" style="left:{x}px;--acc:{app.titleAcc(r.pi, r.ti).c};{app.pipStyle(r.pi, r.ti)}">
+      <div class="glass rcard fx" class:f={app.focus === 'rec' + i} data-k="rec{i}" data-act="rec:{i}" style="left:{x}px;--acc:{app.titleAcc(r.pi, r.ti).c};--accv:{accv(app.titleAcc(r.pi, r.ti))};{app.pipStyle(r.pi, r.ti)}">
         <RecentCard t={r.t} playing={!!r.t.gameId && app.playing?.id === r.t.gameId} />
       </div>
       <div class="rmeta" style="left:{x + 4}px">{m.when}{#if m.rest}<span>{m.when ? ' · ' : ''}{m.rest}</span>{/if}</div>

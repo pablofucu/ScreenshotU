@@ -139,7 +139,7 @@
   .mcol { display: flex; flex-direction: column; gap: var(--s-1); min-width: 0; }
   /* Dos columnas (ficha del juego): primero la izquierda, de arriba abajo. */
   .menupanel.two { left: 210px; width: 860px; }
-  .mhead { margin: 0; height: 26px; line-height: 26px; padding: 0 var(--s-1); font: 800 var(--t-s) / 26px var(--round); letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); border-bottom: 2px solid color-mix(in srgb, var(--acc) 35%, transparent); }
+  .mhead { margin: 0; height: 26px; line-height: 26px; padding: 0 var(--s-1); font: 800 var(--t-s) / 26px var(--round); letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); border-bottom: 2px solid color-mix(in srgb, var(--accv) 35%, transparent); }
   .mcol > .mhead:not(:first-child) { margin-top: var(--s-1); }
   .mcount { margin-left: auto; font: 700 var(--t-m) / 1 var(--round); color: var(--ink-3); }
   .f .mcount { color: inherit; opacity: 0.85; }
