@@ -123,12 +123,45 @@
   const showArrows = (id: SettingId) => rowHasArrows(id);
   const vars = (t: number) => { const p = pair(t); return Object.entries(variablesCSS(p.h1, p.h2)).map(([k, v]) => `${k}:${v}`).join(';'); };
   const dark = $derived(app.config.theme === 'dark');
+  const maxOff = () => Math.max(0, rows.length - VIS);
+  const setOff = (o: number) => { off = Math.max(0, Math.min(maxOff(), Math.round(o))); };
+  // Rueda: se acumula el desplazamiento y se avanza una fila cada RH px (si no, las ruedas suaves y los
+  // touchpads disparan un paso por cada evento y la lista salta).
+  let acc = 0;
   function wheel(e: WheelEvent) {
     if (rows.length <= VIS) return;
     e.preventDefault();
-    const d = e.deltaY > 0 ? 1 : -1;
-    off = Math.max(0, Math.min(rows.length - VIS, off + d));
+    const px = e.deltaMode === 1 ? e.deltaY * RH : e.deltaMode === 2 ? e.deltaY * RH * VIS : e.deltaY;
+    acc += px;
+    const steps = Math.trunc(acc / RH);
+    if (steps) { acc -= steps * RH; setOff(off + steps); }
   }
+
+  // Táctil: arrastrar la lista con el dedo (un toque sin mover sigue siendo un clic).
+  let drag: { y: number; off: number; moved: boolean } | null = null;
+  let swallow = false;
+  function rowsDown(e: PointerEvent) {
+    if (e.pointerType === 'mouse' || rows.length <= VIS) return;
+    drag = { y: e.clientY, off, moved: false };
+  }
+  function rowsMove(e: PointerEvent) {
+    if (!drag) return;
+    const dy = drag.y - e.clientY;
+    if (!drag.moved && Math.abs(dy) < 8) return;
+    if (!drag.moved) { drag.moved = true; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); }
+    setOff(drag.off + dy / RH);
+  }
+  function rowsUp() { if (drag?.moved) { swallow = true; setTimeout(() => (swallow = false), 0); } drag = null; }
+  function rowsClick(e: MouseEvent) { if (swallow) { e.stopPropagation(); e.preventDefault(); } }
+
+  // Barra lateral: tocar o arrastrar para moverse por la lista.
+  function barSet(e: PointerEvent) {
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const f = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
+    setOff(f * rows.length - VIS / 2);
+  }
+  function barDown(e: PointerEvent) { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); barSet(e); }
+  function barMove(e: PointerEvent) { if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) barSet(e); }
 
   const moved = makeMoved();
   function hover(e: MouseEvent, i: number) {
@@ -159,7 +192,7 @@
           </div>
         {/if}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div class="st-rows" style="height:{VIS * RH}px" onwheel={wheel}>
+        <div class="st-rows" style="height:{VIS * RH}px" onwheel={wheel} onpointerdown={rowsDown} onpointermove={rowsMove} onpointerup={rowsUp} onpointercancel={rowsUp} onclickcapture={rowsClick}>
         <div class="st-track" style="transform:translateY({-off * RH}px)">
         {#each rows as r, i (r.id)}
           <button type="button" class="st-row" class:f={app.setRow === i && setNav.zone === 'body'} class:cur={app.setRow === i} class:danger={r.id === 'quit' || (r.id === 'restore' && !!app.restoreReady)} data-set={r.id} onmousemove={(e) => hover(e, i)} onclick={() => { app.setRow = i; setNav.zone = 'body'; settingsAct(r.id, 0); }}>
@@ -178,7 +211,8 @@
         </div>
         </div>
         {#if rows.length > VIS}
-          <div class="st-scroll" style="height:{VIS * RH}px"><i style="height:{(VIS / rows.length) * 100}%;top:{(off / rows.length) * 100}%"></i></div>
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div class="st-scroll" style="height:{VIS * RH}px" onpointerdown={barDown} onpointermove={barMove}><i style="height:{(VIS / rows.length) * 100}%;top:{(off / rows.length) * 100}%"></i></div>
         {/if}
         </div>
         {#if focused}<div class="st-desc"><b>{focused.l}.</b> {focused.d}</div>{/if}
@@ -202,7 +236,7 @@
   .st-mrow.on i { background: var(--on); box-shadow: none; }
   .st-mrow.f { box-shadow: var(--ring); }
   .st-body h3 { margin: 0 0 10px; font-size: var(--t-2xl); font-weight: 800; color: var(--ink); }
-  .st-rows { position: relative; overflow: hidden; flex: none; box-sizing: content-box; margin: -4px -8px 0; padding: 4px 8px 0; }
+  .st-rows { position: relative; overflow: hidden; touch-action: none; flex: none; box-sizing: content-box; margin: -4px -8px 0; padding: 4px 8px 0; }
   .st-track { transition: transform .2s cubic-bezier(.25, 1, .4, 1); }
   .st-row { display: flex; align-items: center; gap: 12px; width: 100%; height: 52px; margin-bottom: 4px; padding: 0 20px; border: 0; border-radius: var(--r-m); background: var(--glass-in); font: inherit; font-size: var(--t-l); font-weight: 700; color: var(--ink); text-align: left; cursor: pointer; transition: background .15s, color .15s; }
   .st-row .sl { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -218,8 +252,9 @@
   .seg span.on { background: var(--gf); color: var(--on); }
   .st-row.f .seg { background: var(--glass-in); }
   .st-rows-wrap { position: relative; }
-  .st-scroll { position: absolute; right: 0; top: 4px; width: 5px; border-radius: 3px; background: var(--line); }
-  .st-scroll i { position: absolute; left: 0; right: 0; border-radius: 3px; background: var(--g2); }
+  .st-scroll { position: absolute; right: -10px; top: 4px; width: 28px; touch-action: none; cursor: pointer; z-index: 2; }
+  .st-scroll::before { content: ''; position: absolute; right: 10px; top: 0; bottom: 0; width: 5px; border-radius: 3px; background: var(--line); }
+  .st-scroll i { position: absolute; right: 8px; width: 9px; min-height: 28px; border-radius: 5px; background: var(--g2); pointer-events: none; }
   .st-desc { flex: none; margin: auto 0 0; height: 124px; overflow: hidden; border-radius: var(--r-m); padding: 12px 18px; background: var(--glass-in); font-size: var(--t-s); font-weight: 500; line-height: 1.45; color: var(--ink-2); }
   .st-rows-wrap { position: relative; }
   .st-qr { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; gap: 28px; padding: 0 26px; border-radius: var(--r-m); background: var(--face-hi); }
