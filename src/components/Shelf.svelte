@@ -272,8 +272,8 @@
   .rail{position:absolute;top:8px;height:4px;border-radius:4px}
   .rstem{position:absolute;top:0;width:2px;height:9px;margin-left:-1px;background:rgba(60,70,90,.2)}
   .rdot{position:absolute;top:10px;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--tint-base);
-    box-shadow:0 0 0 2.5px var(--dc,var(--f1)),0 1px 3px rgba(40,50,70,.3);transition:width .2s,height .2s,margin .2s,box-shadow .2s}
-  .rdot.on{width:14px;height:14px;margin:-7px 0 0 -7px;box-shadow:0 0 0 3px var(--dc,var(--f1)),0 0 0 5px rgba(255,255,255,.85),0 0 10px 3px color-mix(in srgb,var(--dc,var(--f1)) 55%,transparent)}
+    box-shadow:0 0 0 2.5px var(--dc,var(--v1)),0 1px 3px rgba(40,50,70,.3);transition:width .2s,height .2s,margin .2s,box-shadow .2s}
+  .rdot.on{width:14px;height:14px;margin:-7px 0 0 -7px;box-shadow:0 0 0 3px var(--dc,var(--v1)),0 0 0 5px rgba(255,255,255,.85),0 0 10px 3px color-mix(in srgb,var(--dc,var(--v1)) 55%,transparent)}
   .slip.railed .slab{top:17px;height:22px;font-size:var(--t-m);font-weight:800;color:var(--ink)}
   .slab.ylab small{font-size:var(--t-xs);font-weight:700;color:var(--ink-2)}
   .slab.ylab s{padding:1px 10px;transition:transform .2s}

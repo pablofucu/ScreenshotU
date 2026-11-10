@@ -322,7 +322,7 @@ export function sortTitles(titles: Title[], idx: number[], order: TitleOrder, st
 
 /** Un color `#rrggbb` como acento de la interfaz. */
 /** Relleno f1 ya calculado por pareja de tonos (variablesCSS busca el contraste en bucle). */
-const PAIR_FILL = new Map<string, { c: string; c2: string; g1: string; g2: string; dark: boolean }>();
+const PAIR_FILL = new Map<string, { c: string; c2: string; v: string; v2: string; g1: string; g2: string; dark: boolean }>();
 export const accentOf = (c: string, dark: boolean, n = 'Personalizado'): Accent => ({ n, c, dark });
 
 class Store {
@@ -600,10 +600,10 @@ class Store {
     const v = this.pairFill(p);
     return accentOf(v.c, v.dark, n);
   }
-  pairFill(p: { h1: number; h2: number }): { c: string; c2: string; g1: string; g2: string; dark: boolean } {
+  pairFill(p: { h1: number; h2: number }): { c: string; c2: string; v: string; v2: string; g1: string; g2: string; dark: boolean } {
     const key = `${p.h1.toFixed(1)}|${p.h2.toFixed(1)}`;
     let v = PAIR_FILL.get(key);
-    if (!v) { const css = variablesCSS(p.h1, p.h2); v = { c: css['--f1'], c2: css['--f2'], g1: css['--g1'], g2: css['--g2'], dark: css['--on'] === INK }; PAIR_FILL.set(key, v); }
+    if (!v) { const css = variablesCSS(p.h1, p.h2); v = { c: css['--f1'], c2: css['--f2'], v: css['--v1'], v2: css['--v2'], g1: css['--g1'], g2: css['--g2'], dark: css['--on'] === INK }; PAIR_FILL.set(key, v); }
     return v;
   }
   /** `--p1/--p2` del punto de color de una portada (los dos tonos del juego). */
@@ -612,7 +612,7 @@ class Store {
   }
   pairStyle(p: { h1: number; h2: number }): string {
     const v = this.pairFill(p);
-    return `--p1:${v.c};--p2:${v.c2};--g1:${v.g1};--g2:${v.g2}`;
+    return `--p1:${v.v};--p2:${v.v2};--g1:${v.g1};--g2:${v.g2}`;
   }
   /** Pareja del tramo de arcoíris de la sección k: las plataformas en su orden y, detrás, Mi lista y Estadísticas. */
   secPair(k: number): { h1: number; h2: number } {

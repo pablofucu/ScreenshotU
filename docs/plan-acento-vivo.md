@@ -33,6 +33,11 @@ En la duda, se queda en `--f1`. El cambio a `--v1` solo se hace cuando no hay te
 
 `store.svelte.ts:606` (PAIR_FILL) usa `variablesCSS` para pintar parejas: decidir si sus gráficos pasan a `--v1`.
 
+## Hecho (2026-11-10)
+
+- Barras de desplazamiento, puntos de paginación, barras semanales y del año, anillo y halo del catálogo (`--p1/--p2` de `pairStyle` ahora son vivos) y puntos de color de la estantería pasan a `--v1/--v2/--gv`.
+- Sin tocar: todo lo que lleva texto, los anillos de foco y los usos de `--acc` (se sobrescribe por contexto con colores de relleno: mapa de calor, barras de meses, marcos de Year…). Para pasarlos hace falta una variable vivo por contexto; queda pendiente.
+
 ## Pasos
 
 1. `app.css` y `Shelf.svelte`: clasificar cada uso con la tabla y cambiar solo los gráficos. Un commit.
