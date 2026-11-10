@@ -2,6 +2,7 @@
 // Todo se agrupa por días locales; una partida que cruza la medianoche reparte su tiempo entre los dos días
 // y cuenta como partida del periodo en el que empezó.
 import type { Library, Title } from './types';
+import { DAY_START_HOUR, goalTrack, localDay, type GoalKey } from './readgoals.ts';
 
 const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const MONTHS_L = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -441,6 +442,157 @@ export function yearReview(lib: Library, year: number, favs: { has(p: string): b
     ...tot, games: rows, months, bestMonth, streak, wdMs, favWd, longest, shotGames, shot, elapsed,
     prev: py === undefined ? null : yearTotals(lib, py),
   };
+}
+
+/* ---------- resumen semanal ---------- */
+/** Horas de juego que se celebran al cruzarlas. */
+export const MILESTONES_H = [10, 25, 50, 100, 200];
+/** Próximo hito de horas de un juego (horas totales actuales) o null si ya pasó el último. */
+export function nextMilestone(t: Title): { h: number; left: number } | null {
+  const h = (t.playSeconds ?? 0) / 3600;
+  const next = MILESTONES_H.find((m) => m > h);
+  return next === undefined ? null : { h: next, left: next - h };
+}
+
+/** ¿La captura cae en [from, to) en hora local? (`date` es la hora local codificada como UTC; como `shotYear`.) */
+export function shotInRange(s: { date: number }, from: number, to: number): boolean {
+  const enc = (ms: number) => (Number.isFinite(ms) ? ms - new Date(ms).getTimezoneOffset() * 60000 : ms);
+  return s.date >= enc(from) && s.date < enc(to);
+}
+
+export type HighlightKind = 'milestone' | 'streak' | 'finished' | 'record';
+export interface Highlight { kind: HighlightKind; pi: number; ti: number | null; /** Horas del hito, días de racha o ms de la partida. */ value: number; text: string }
+
+export interface WeekBlock {
+  pi: number;
+  name: string;
+  kind: 'play' | 'read';
+  ms: number; prevMs: number;
+  /** Partidas empezadas en la semana y juegos distintos con tiempo. */
+  n: number; games: number;
+  /** Ms por día, lunes a domingo. */
+  perDay: number[];
+  top: Array<{ ti: number; ms: number }>;
+  longest: { ti: number; start: number; end: number; ms: number } | null;
+  /** Hitos de horas cruzados en la semana (el más alto por juego). */
+  milestones: Array<{ ti: number; h: number }>;
+  /** Juegos (ti) empezados y terminados en la semana. */
+  started: number[]; finished: number[];
+  shots: number;
+  shotPick: { ti: number; path: string; date: number; fav: boolean } | null;
+  /** Solo Switch con cuenta de Nintendo: ms de la consola incluidos en `ms` y último día con datos (ms). */
+  consoleMs?: number; consoleUntil?: number;
+  goal?: { met: number; of: 7; perDay: number[]; streak: number; rescued: number };
+}
+export interface WeekReview { range: Range; prev: Range; ms: number; prevMs: number; activeDays: number; blocks: WeekBlock[]; highlights: Highlight[] }
+
+const GOAL_EXTRA_WEEKS = 12;
+
+/** Resumen de una semana (off 0 = esta, -1 = pasada) con un bloque por categoría; nunca mezcla `pi`. `goals`: meta diaria en minutos por categoría (sin entrada = sin meta). */
+export function weekReview(
+  lib: Library, off: number, favs: { has(p: string): boolean },
+  live: { id: string; since: number } | null, goals: Partial<Record<GoalKey, number>>, now = Date.now(),
+): WeekReview {
+  const range = periodRange('week', off, now), prev = periodRange('week', off - 1, now);
+  const { from, to } = range;
+  const active = new Set<number>();
+  const blocks: WeekBlock[] = [];
+  const highlights: Highlight[] = [];
+  const consoleAdd = (t: Title, a: number, b: number, f?: (day: number, ms: number) => void) => {
+    let s = 0;
+    for (const [d, min] of t.console?.days ?? []) if (d >= a && d < b) { s += min * 60000; f?.(d, min * 60000); }
+    return s;
+  };
+  lib.platforms.forEach((pl, pi) => {
+    const perDay: number[] = Array(7).fill(0);
+    const rows: Array<{ ti: number; ms: number }> = [];
+    const milestones: WeekBlock['milestones'] = [], started: number[] = [], finished: number[] = [];
+    let ms = 0, prevMs = 0, n = 0, shots = 0, cMs = 0, cUntil = 0, hasConsole = false;
+    let longest: WeekBlock['longest'] = null;
+    let shotPick: WeekBlock['shotPick'] = null, shotFav = false;
+    pl.titles.forEach((t, ti) => {
+      if (t.hidden) return;
+      let tms = 0, since = 0;
+      for (const p of (t.plays ?? []) as Play[]) {
+        tms += overlap(p, from, to);
+        prevMs += overlap(p, prev.from, prev.to);
+        since += overlap(p, from, Infinity);
+        if (p[0] >= from && p[0] < to) {
+          n++;
+          if (!longest || p[1] - p[0] > longest.ms) longest = { ti, start: p[0], end: p[1], ms: p[1] - p[0] };
+        }
+        eachDay(p, from, to, (d, m) => {
+          active.add(d);
+          perDay[Math.min(6, Math.round((d - from) / 864e5))] += m;
+        });
+      }
+      if (t.console) {
+        hasConsole = true;
+        for (const [d] of t.console.days) cUntil = Math.max(cUntil, d);
+        const c = consoleAdd(t, from, to, (d, m) => { active.add(dayStart(d)); perDay[Math.min(6, Math.max(0, Math.round((dayStart(d) - from) / 864e5)))] += m; });
+        tms += c; cMs += c;
+        prevMs += consoleAdd(t, prev.from, prev.to);
+        since += consoleAdd(t, from, Infinity);
+      }
+      ms += tms;
+      if (tms > 0) rows.push({ ti, ms: tms });
+      if (tms > 0) {
+        const before = Math.max(0, (t.playSeconds ?? 0) * 1000 - since);
+        const crossed = MILESTONES_H.filter((h) => before < h * 3600000 && h * 3600000 <= before + tms);
+        if (crossed.length) milestones.push({ ti, h: crossed[crossed.length - 1] });
+      }
+      if (t.firstPlayed != null && t.firstPlayed >= from && t.firstPlayed < to) started.push(ti);
+      if (t.finishedMs != null && t.finishedMs >= from && t.finishedMs < to) finished.push(ti);
+      for (const s of t.shots) {
+        if (!shotInRange(s, from, to)) continue;
+        shots++;
+        const fav = favs.has(s.path);
+        if (!shotPick || (fav && !shotFav) || (fav === shotFav && s.date > shotPick.date)) { shotPick = { ti, path: s.path, date: s.date, fav }; shotFav = fav; }
+      }
+    });
+    if (!(ms > 0 || n > 0 || shots > 0 || started.length || finished.length)) return;
+    rows.sort((a, b) => b.ms - a.ms);
+    const block: WeekBlock = {
+      pi, name: pl.name ?? pl.id, kind: pl.id === 'vn' || pl.id === 'jvn' ? 'read' : 'play',
+      ms, prevMs, n, games: rows.length, perDay, top: rows.slice(0, 3), longest, milestones, started, finished, shots, shotPick,
+    };
+    if (hasConsole) { block.consoleMs = cMs; if (cUntil) block.consoleUntil = cUntil; }
+    // Meta y racha: el día de las metas empieza a las DAY_START_HOUR; la semana es la misma lunes-domingo.
+    const key = pl.id as GoalKey, goalMin = goals[key];
+    if (goalMin && goalMin > 0 && off <= 0) {
+      const today = localDay(now);
+      const mon = localDay(from + DAY_START_HOUR * 3600000);
+      const back = Math.round(((today - ((today + 3) % 7)) - mon) / 7);
+      if (back >= 0) {
+        const tr = goalTrack(key, goalMin, lib.platforms, live, now, back + 1 + GOAL_EXTRA_WEEKS);
+        const col = tr.weeks[GOAL_EXTRA_WEEKS];
+        const cells = tr.weeks.flat();
+        let streak = tr.streak;
+        if (back > 0) {
+          streak = 0;
+          for (let i = GOAL_EXTRA_WEEKS * 7 + 6; i >= 0 && (cells[i].v >= 1 || cells[i].rescued); i--) streak++;
+        }
+        block.goal = {
+          met: col.filter((c) => !c.future && c.v >= 1).length, of: 7, perDay: col.map((c) => c.v),
+          streak, rescued: col.filter((c) => c.rescued).length,
+        };
+      }
+    }
+    blocks.push(block);
+    const name = pl.name ?? pl.id;
+    for (const m of milestones) highlights.push({ kind: 'milestone', pi, ti: m.ti, value: m.h, text: `${pl.titles[m.ti].name} supera las ${m.h} h (${name})` });
+    for (const ti of finished) highlights.push({ kind: 'finished', pi, ti, value: 1, text: `Terminado: ${pl.titles[ti].name} (${name})` });
+    if (block.goal && block.goal.streak >= 7) highlights.push({ kind: 'streak', pi, ti: null, value: block.goal.streak, text: `Racha de ${block.goal.streak} días (${name})` });
+    const lg = longest as WeekBlock['longest'];
+    if (lg) {
+      const earlier = ((pl.titles[lg.ti].plays ?? []) as Play[]).filter((p) => p[0] < from);
+      if (earlier.length && earlier.every((p) => p[1] - p[0] < lg.ms)) {
+        highlights.push({ kind: 'record', pi, ti: lg.ti, value: lg.ms, text: `Récord de partida en ${pl.titles[lg.ti].name} (${name})` });
+      }
+    }
+  });
+  const ms = blocks.reduce((a, b) => a + b.ms, 0);
+  return { range, prev, ms, prevMs: blocks.reduce((a, b) => a + b.prevMs, 0), activeDays: active.size, blocks, highlights };
 }
 
 /** Iniciales para la miniatura de respaldo: «Hollow Knight» → «HK». */
