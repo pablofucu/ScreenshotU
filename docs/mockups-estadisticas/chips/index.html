@@ -30,7 +30,7 @@
   .st>.face{background:var(--panel);padding:var(--s-4) var(--s-4) var(--s-3);display:flex;flex-direction:column;gap:var(--s-2)}
   .st:hover,.st.x-f{transform:scale(1.06);box-shadow:inset 0 1.5px 0 var(--hl),inset 0 0 0 1px var(--hl-ring),var(--sh-2);z-index:2}
   .st .x-k{display:flex;align-items:center;gap:var(--s-2);font:700 var(--t-s)/1.2 var(--round);color:var(--ink-2)}
-  .st .x-k .ic{width:var(--i-s);height:var(--i-s);color:var(--f1)}
+  .st .x-k .ic{width:var(--i-s);height:var(--i-s);color:var(--v1)}
   .st .x-k em{margin-left:auto;font:800 var(--t-xs)/1 var(--round);font-style:normal;color:var(--on);background:var(--gf);border-radius:var(--r-xs);padding:3px 6px}
   .st .x-v{font:800 var(--t-3xl)/1 var(--round);font-variant-numeric:tabular-nums;color:var(--ink);letter-spacing:-.01em}
   .st .x-v small{font:800 var(--t-xl)/1 var(--round);color:var(--ink-2);margin-left:2px}
@@ -39,7 +39,7 @@
   .name{position:absolute;left:var(--s-3);bottom:-26px;font:700 var(--t-s)/1 var(--round);color:var(--ink-2)}
   .name b{color:var(--ink)}
   svg text{font-family:var(--round)}
-  .tint{fill:color-mix(in srgb,var(--f1) 16%,var(--tint-base))}
+  .tint{fill:color-mix(in srgb,var(--v1) 16%,var(--tint-base))}
 
   /* Repetición: cada animación cuelga de .run en el chip */
   .st:not(.run) *{animation:none!important}
@@ -48,7 +48,7 @@
   .odo2{display:flex;align-items:flex-end;gap:3px;margin-top:var(--s-1)}
   .odo2 .x-c{--ch:56px;width:36px;height:var(--ch);border-radius:var(--r-s);overflow:hidden;position:relative;background:var(--tint-base);box-shadow:inset 0 2px 4px rgba(0,0,0,.16),0 0 0 1px var(--line-2)}
   .odo2 .x-c::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.10),transparent 30%,transparent 70%,rgba(0,0,0,.10));pointer-events:none}
-  .odo2 .x-c b{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center;font:800 36px/var(--ch) var(--round);font-variant-numeric:tabular-nums;color:var(--f1);transform:translateY(calc(var(--n) * var(--ch) * -1));animation:roll2 1.6s var(--e-bounce) both;animation-delay:calc(var(--i) * 90ms)}
+  .odo2 .x-c b{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center;font:800 36px/var(--ch) var(--round);font-variant-numeric:tabular-nums;color:var(--ink);transform:translateY(calc(var(--n) * var(--ch) * -1));animation:roll2 1.6s var(--e-bounce) both;animation-delay:calc(var(--i) * 90ms)}
   .odo2 .x-sep{width:6px}
   .odo2 .x-u{font:800 var(--t-xl)/1 var(--round);color:var(--ink-2);margin:0 0 6px 6px}
   @keyframes roll2{from{transform:translateY(calc((var(--n) + 10) * var(--ch) * -1))}}
@@ -85,21 +85,21 @@
   .x-bars{display:flex;align-items:flex-end;gap:var(--s-2);height:96px;margin-top:auto}
   .x-bars div{flex:1;display:flex;flex-direction:column;align-items:center;gap:var(--s-1);height:100%;justify-content:flex-end}
   .x-bars i{display:block;width:100%;height:var(--h);border-radius:var(--r-xs);background:var(--line-2);transform-origin:bottom;animation:grow .7s var(--e-bounce) both;animation-delay:calc(var(--i) * 70ms)}
-  .x-bars .x-top i{background:linear-gradient(180deg,var(--f1),var(--f2));box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 6px 14px -6px var(--f1)}
+  .x-bars .x-top i{background:linear-gradient(180deg,var(--v1),var(--v2));box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 6px 14px -6px var(--v1)}
   .x-bars span{font:800 var(--t-xs)/1 var(--round);color:var(--ink-2)}
   .x-bars .x-top span{color:var(--f1)}
   @keyframes grow{from{transform:scaleY(0)}}
 
   /* F · Racha */
-  .flame{width:52px;height:52px;flex:none;color:var(--f1);animation:flick 1.8s ease-in-out infinite;transform-origin:50% 90%}
+  .flame{width:52px;height:52px;flex:none;color:var(--v1);animation:flick 1.8s ease-in-out infinite;transform-origin:50% 90%}
   @keyframes flick{0%,100%{transform:scale(1) rotate(-2deg)}50%{transform:scale(1.08,1.12) rotate(2deg)}}
   .chain{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;margin-top:auto}
   .chain i{height:22px;border-radius:var(--r-xs);background:var(--glass-in);box-shadow:inset 0 0 0 1px var(--line)}
-  .chain i.on{background:linear-gradient(180deg,var(--f1),var(--f2));box-shadow:inset 0 1px 0 rgba(255,255,255,.45);animation:lit .35s var(--e-bounce) both;animation-delay:calc(var(--i) * 70ms)}
-  .chain i.on.x-save{background:repeating-linear-gradient(135deg,var(--f1) 0 4px,color-mix(in srgb,var(--f1) 45%,var(--tint-base)) 4px 8px)}
+  .chain i.on{background:linear-gradient(180deg,var(--v1),var(--v2));box-shadow:inset 0 1px 0 rgba(255,255,255,.45);animation:lit .35s var(--e-bounce) both;animation-delay:calc(var(--i) * 70ms)}
+  .chain i.on.x-save{background:repeating-linear-gradient(135deg,var(--v1) 0 4px,color-mix(in srgb,var(--v1) 45%,var(--tint-base)) 4px 8px)}
   .chain i.x-today{animation:lit .35s var(--e-bounce) both,glow 1.6s 1.4s ease-in-out infinite;animation-delay:calc(var(--i) * 70ms),1.4s}
   @keyframes lit{from{transform:scale(.3);opacity:0}}
-  @keyframes glow{50%{box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 12px 2px var(--f1)}}
+  @keyframes glow{50%{box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 12px 2px var(--v1)}}
 
   /* G · Comparación */
   .cmp{display:flex;flex-direction:column;gap:var(--s-2);margin-top:auto}
@@ -107,22 +107,22 @@
   .cmp b{color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
   .cmp u{display:block;height:16px;border-radius:var(--r-xs);background:var(--glass-in);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden;text-decoration:none}
   .cmp u i{display:block;height:100%;width:var(--w);border-radius:var(--r-xs);background:var(--line-2);transform-origin:left;animation:growx .9s var(--e-bounce) both}
-  .cmp .now u i{background:linear-gradient(90deg,var(--f1),var(--f2));animation-delay:.2s}
+  .cmp .now u i{background:linear-gradient(90deg,var(--v1),var(--v2));animation-delay:.2s}
   @keyframes growx{from{transform:scaleX(0)}}
 
   /* H · Hito */
   .mile{position:relative;margin-top:auto;height:44px}
   .mile .tr{position:absolute;left:0;right:0;top:18px;height:12px;border-radius:var(--r-pill);background:var(--glass-in);box-shadow:inset 0 1px 2px rgba(0,0,0,.12),inset 0 0 0 1px var(--line)}
-  .mile .x-fl{position:absolute;left:0;top:18px;height:12px;width:var(--w);border-radius:var(--r-pill);background:linear-gradient(90deg,var(--f1),var(--f2));transform-origin:left;animation:growx 1.4s var(--e-soft) both;overflow:hidden}
+  .mile .x-fl{position:absolute;left:0;top:18px;height:12px;width:var(--w);border-radius:var(--r-pill);background:linear-gradient(90deg,var(--v1),var(--v2));transform-origin:left;animation:growx 1.4s var(--e-soft) both;overflow:hidden}
   .mile .x-fl::after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.7) 50%,transparent 70%) 0 0/200% 100%;animation:shine 2.2s 1.4s linear infinite}
   @keyframes shine{from{background-position:150% 0}to{background-position:-50% 0}}
   .mile .x-tk{position:absolute;top:34px;font:800 var(--t-xs)/1 var(--round);color:var(--ink-2);transform:translateX(-50%)}
-  .mile .flag{position:absolute;right:-4px;top:-6px;width:26px;height:26px;color:var(--f1);animation:wave 1.2s ease-in-out infinite;transform-origin:4px 24px}
+  .mile .flag{position:absolute;right:-4px;top:-6px;width:26px;height:26px;color:var(--v1);animation:wave 1.2s ease-in-out infinite;transform-origin:4px 24px}
   @keyframes wave{50%{transform:rotate(-8deg)}}
 
   /* I · Calor */
   .x-heat{display:grid;grid-template-columns:repeat(13,1fr);grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:3px;margin-top:auto;height:104px}
-  .x-heat i{border-radius:3px;background:color-mix(in srgb,var(--f1) calc(var(--l) * 100%),var(--glass-in));box-shadow:inset 0 0 0 1px var(--line);animation:pop .4s var(--e-bounce) both;animation-delay:calc(var(--i) * 9ms)}
+  .x-heat i{border-radius:3px;background:color-mix(in srgb,var(--v1) calc(var(--l) * 100%),var(--glass-in));box-shadow:inset 0 0 0 1px var(--line);animation:pop .4s var(--e-bounce) both;animation-delay:calc(var(--i) * 9ms)}
 
   /* J · Hora favorita */
   .clockw{display:flex;align-items:center;gap:var(--s-4);flex:1}
@@ -139,7 +139,7 @@
   .fan .x-star{position:absolute;left:calc(50% + 34px);top:-4px;width:22px;height:22px;color:var(--warn);animation:pop .5s 1s var(--e-bounce) both}
 
   /* L · Récord */
-  .watch{width:64px;height:64px;flex:none;color:var(--f1)}
+  .watch{width:64px;height:64px;flex:none;color:var(--v1)}
   .watch .x-sw{transform-origin:12px 13px;animation:sweep 1.6s var(--e-soft) both}
   @keyframes sweep{from{transform:rotate(-360deg)}}
   .rec{display:flex;align-items:center;gap:var(--s-3);flex:1}
@@ -189,21 +189,25 @@
   .x-best>div{position:absolute;inset:0;display:flex;align-items:center;gap:var(--s-3);backface-visibility:hidden;opacity:0;transform:rotateX(90deg);transition:transform var(--d-3) var(--e-bounce),opacity var(--d-2) var(--e-soft)}
   .x-best>div.on{opacity:1;transform:none}
   .x-best>div.out{opacity:0;transform:rotateX(-90deg)}
-  .bico{width:56px;height:56px;flex:none;border-radius:var(--r-m);display:grid;place-items:center;color:var(--on);background:linear-gradient(180deg,color-mix(in srgb,var(--f1) 55%,var(--tint-base)),var(--f1));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.6),0 0 0 1px color-mix(in srgb,var(--f2) 70%,black)}
+  .bico{width:56px;height:56px;flex:none;border-radius:var(--r-m);display:grid;place-items:center;color:var(--on);background:linear-gradient(180deg,color-mix(in srgb,var(--v1) 55%,var(--tint-base)),var(--v1));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.6),0 0 0 1px color-mix(in srgb,var(--v2) 70%,black)}
   .bico svg{width:28px;height:28px}
   .x-best h4{margin:0;font:800 var(--t-l)/1.2 var(--round);color:var(--ink)}
   .x-best p{margin:2px 0 0;font:500 var(--t-s)/1.35 var(--round);color:var(--ink-2)}
   .x-dots{display:flex;gap:6px;justify-content:center}
   .x-dots i{width:6px;height:6px;border-radius:50%;background:var(--line-2);transition:all var(--d-2) var(--e-bounce)}
-  .x-dots i.on{width:18px;border-radius:var(--r-pill);background:var(--f1)}
+  .x-dots i.on{width:18px;border-radius:var(--r-pill);background:var(--v1)}
 
   /* R · Semana en tiras (días) */
   .x-wk{display:grid;grid-template-columns:repeat(7,1fr);gap:var(--s-2);margin-top:auto}
   .x-wk div{display:flex;flex-direction:column;align-items:center;gap:var(--s-1)}
-  .x-wk i{position:relative;width:34px;height:34px;border-radius:50%;background:conic-gradient(var(--f1) calc(var(--p) * 360deg),var(--glass-in) 0);box-shadow:inset 0 0 0 1px var(--line);animation:pop .45s var(--e-bounce) both;animation-delay:calc(var(--i) * 80ms)}
+  .x-wk i{position:relative;width:34px;height:34px;border-radius:50%;background:conic-gradient(var(--v1) calc(var(--p) * 360deg),var(--glass-in) 0);box-shadow:inset 0 0 0 1px var(--line);animation:pop .45s var(--e-bounce) both;animation-delay:calc(var(--i) * 80ms)}
   .x-wk i::after{content:'';position:absolute;inset:6px;border-radius:50%;background:var(--panel)}
   .x-wk i.x-ok::after{background:var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2327833a' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center/13px no-repeat}
   .x-wk span{font:800 var(--t-xs)/1 var(--round);color:var(--ink-2)}
+  /* Acento vivo: brillo de color en los trazos */
+  .x-ring .arc,.gauge .arc{filter:drop-shadow(0 2px 6px color-mix(in srgb,var(--v1) 55%,transparent))}
+  .spark .x-ln{filter:drop-shadow(0 3px 5px color-mix(in srgb,var(--v1) 60%,transparent))}
+  .watch,.flame,.mile .flag{filter:drop-shadow(0 3px 8px color-mix(in srgb,var(--v1) 50%,transparent))}
 </style>
 </head>
 <body>
@@ -266,8 +270,8 @@
               <circle cx="60" cy="60" r="48" fill="none" stroke="var(--glass-in)" stroke-width="14"/>
               <circle cx="60" cy="60" r="48" fill="none" stroke="var(--line)" stroke-width="1" />
               <circle class="arc" cx="60" cy="60" r="48" fill="none" stroke="url(#gB)" stroke-width="14" stroke-linecap="round" transform="rotate(-90 60 60)"/>
-              <g class="tip"><circle cx="60" cy="12" r="9" fill="var(--tint-base)" stroke="var(--f1)" stroke-width="3"/></g>
-              <defs><linearGradient id="gB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--f1)"/><stop offset="1" stop-color="var(--f2)"/></linearGradient></defs>
+              <g class="tip"><circle cx="60" cy="12" r="9" fill="var(--tint-base)" stroke="var(--v1)" stroke-width="3"/></g>
+              <defs><linearGradient id="gB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--v1)"/><stop offset="1" stop-color="var(--v2)"/></linearGradient></defs>
               <text x="60" y="64" text-anchor="middle" font-weight="800" font-size="28" fill="var(--ink)" data-count="42">42</text>
               <text x="60" y="82" text-anchor="middle" font-weight="700" font-size="12" fill="var(--ink-2)">de 60 min</text>
             </svg>
@@ -280,7 +284,7 @@
           <svg class="gauge" viewBox="0 0 260 116" style="--len:283;--p:.714">
             <path d="M40 104a90 90 0 0 1 180 0" fill="none" stroke="var(--glass-in)" stroke-width="18" stroke-linecap="round"/>
             <path class="arc" d="M40 104a90 90 0 0 1 180 0" fill="none" stroke="url(#gC)" stroke-width="18" stroke-linecap="round"/>
-            <defs><linearGradient id="gC"><stop offset="0" stop-color="var(--f1)"/><stop offset="1" stop-color="var(--f2)"/></linearGradient></defs>
+            <defs><linearGradient id="gC"><stop offset="0" stop-color="var(--v1)"/><stop offset="1" stop-color="var(--v2)"/></linearGradient></defs>
             <g class="ndl"><path d="M130 104L127 44h6z" fill="var(--ink)"/></g>
             <circle cx="130" cy="104" r="9" fill="var(--ink)"/><circle cx="130" cy="104" r="4" fill="var(--tint-base)"/>
             <text x="12" y="112" font-size="11" font-weight="800" fill="var(--ink-2)">0</text>
@@ -293,10 +297,10 @@
           <div class="x-k"><svg class="ic"><use href="#i-trend"/></svg>Esta semana<em>D</em></div>
           <div class="vrow"><div class="x-v"><span data-count="18">18</span><small>h</small></div><span class="delta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-up"/></svg>23 %</span></div>
           <svg class="spark" viewBox="0 0 260 84" preserveAspectRatio="none">
-            <defs><linearGradient id="gD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--f1)" stop-opacity=".35"/><stop offset="1" stop-color="var(--f1)" stop-opacity="0"/></linearGradient></defs>
+            <defs><linearGradient id="gD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--v1)" stop-opacity=".35"/><stop offset="1" stop-color="var(--v1)" stop-opacity="0"/></linearGradient></defs>
             <path class="ar" d="M4 62 C30 58 40 40 62 46 S100 70 122 50 S160 20 184 34 S226 26 252 12 L252 84 L4 84Z" fill="url(#gD)"/>
-            <path class="x-ln" d="M4 62 C30 58 40 40 62 46 S100 70 122 50 S160 20 184 34 S226 26 252 12" fill="none" stroke="var(--f1)" stroke-width="4" stroke-linecap="round"/>
-            <circle class="pt" cx="252" cy="12" r="6" fill="var(--f1)" stroke="var(--tint-base)" stroke-width="3"/>
+            <path class="x-ln" d="M4 62 C30 58 40 40 62 46 S100 70 122 50 S160 20 184 34 S226 26 252 12" fill="none" stroke="var(--v1)" stroke-width="4" stroke-linecap="round"/>
+            <circle class="pt" cx="252" cy="12" r="6" fill="var(--v1)" stroke="var(--tint-base)" stroke-width="3"/>
           </svg>
         </div><span class="name"><b>D</b> · Chispa con tendencia</span></div>
 
@@ -459,7 +463,7 @@ function acento(i){
   const h1 = RB[i][1], h2 = RB[(i + 1) % RB.length][1], s = stage.style;
   const g = h => `oklch(0.80 0.12 ${h})`, f = h => `oklch(0.52 0.15 ${h})`;
   s.setProperty('--g1', g(h1)); s.setProperty('--g2', g(h2)); s.setProperty('--f1', f(h1)); s.setProperty('--f2', f(h2));
-  s.setProperty('--grad', `linear-gradient(115deg,${g(h1)},${g(h2)})`); s.setProperty('--gf', `linear-gradient(115deg,${f(h1)},${f(h2)})`);
+  s.setProperty('--grad', `linear-gradient(115deg,${g(h1)},${g(h2)})`); s.setProperty('--gf', `linear-gradient(115deg,${f(h1)},${f(h2)})`); const v1 = RB[i][0], v2 = RB[(i + 1) % RB.length][0]; s.setProperty('--v1', v1); s.setProperty('--v2', v2); s.setProperty('--gv', `linear-gradient(115deg,${v1},${v2})`);
   s.setProperty('--b1', g(h1)); s.setProperty('--b2', g(h2)); s.setProperty('--b3', g((h1 + h2) / 2)); s.setProperty('--acc', 'var(--f1)'); s.setProperty('--on', '#fff');
   [...$('#sw7').children].forEach((c, k) => c.classList.toggle('on', k === i));
 }
@@ -486,7 +490,7 @@ $('#src').innerHTML = [['Juegos','#i-pad','#0089be',[.2,.1,.6,0,.5,1,.8],'14 h']
 (() => { const cx = 61, R1 = 34, R2 = 54, w = [0,0,0,0,0,0,0,.05,.1,.1,.1,.15,.2,.2,.1,.15,.25,.3,.35,.45,.6,.9,1,.7]; let h = '';
   w.forEach((v,i)=>{ const a0 = (i/24)*2*Math.PI - Math.PI/2 + .02, a1 = ((i+1)/24)*2*Math.PI - Math.PI/2 - .02, r2 = R1 + (R2-R1)*Math.max(.12,v);
     const p = (r,a)=>`${(cx+r*Math.cos(a)).toFixed(1)} ${(cx+r*Math.sin(a)).toFixed(1)}`;
-    const col = i>=21 ? 'var(--f1)' : 'color-mix(in srgb,var(--ink-3) 40%,transparent)';
+    const col = i>=21 ? 'var(--v1)' : 'color-mix(in srgb,var(--ink-3) 40%,transparent)';
     h += `<path class="seg" style="--i:${i}" d="M${p(R1,a0)} L${p(r2,a0)} A${r2} ${r2} 0 0 1 ${p(r2,a1)} L${p(R1,a1)} A${R1} ${R1} 0 0 0 ${p(R1,a0)}Z" fill="${col}"/>`; });
   h += `<circle cx="61" cy="61" r="28" fill="var(--glass-in)" stroke="var(--line)"/><g class="hand"><path d="M61 61V38" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/></g><circle cx="61" cy="61" r="4" fill="var(--ink)"/>`;
   ['0','6','12','18'].forEach((t,k)=>{ const a = k*Math.PI/2 - Math.PI/2; h += `<text x="${cx+21*Math.cos(a)}" y="${cx+21*Math.sin(a)+4}" text-anchor="middle" font-size="9" font-weight="800" fill="var(--ink-2)">${t}</text>`; });
