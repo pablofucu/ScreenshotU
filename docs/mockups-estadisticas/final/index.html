@@ -271,6 +271,56 @@ html,body{margin:0;height:100%;overflow:hidden;background:#cfd3da}
 .foot{position:absolute;left:48px;right:48px;bottom:16px;height:32px;display:flex;align-items:center;gap:22px;justify-content:flex-end;z-index:4;font:700 var(--t-s)/1 var(--round);color:var(--ink-2)}
 .foot span{display:flex;align-items:center;gap:7px}
 .foot .left{margin-right:auto}
+/* ---------- Arcoíris por chip y categorías ---------- */
+#stage{--done:var(--arc-violeta)}
+.pane[data-p="0"] .x-wk{gap:2px}
+.pane[data-p="0"] .x-wk i{width:28px;height:28px}
+.pane[data-p="0"] .x-wk i::after{inset:5px}
+.cols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s-4)}
+.pane .st.col{height:350px}
+.col>.face{gap:10px}
+.col .ch{display:flex;align-items:center;gap:8px;font:800 var(--t-l)/1.1 var(--round);color:var(--ink)}
+.col .ch svg{width:24px;height:24px;flex:none;color:var(--v1);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.col .tt{display:flex;align-items:center;gap:10px}
+.col .tt b{font:800 var(--t-2xl)/1 var(--round);color:var(--ink);font-variant-numeric:tabular-nums}
+.col .x-bars{height:74px;margin-top:0}
+.col .x-bars i{background:color-mix(in srgb,var(--v1) 30%,var(--glass-in))}
+.col .x-bars .x-top i{background:linear-gradient(180deg,var(--v1),var(--v2))}
+.col .x-wk{margin-top:0;gap:4px}
+.col .x-wk i{width:26px;height:26px}
+.col .x-wk i::after{inset:5px}
+.col .tops{display:flex;flex-direction:column;gap:6px}
+.col .tops div{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:8px;font:700 var(--t-s)/1.1 var(--round);color:var(--ink-2)}
+.col .tops i{height:26px;border-radius:6px;background-size:cover;background-position:center;box-shadow:0 0 0 1px var(--line-2)}
+.col .tops b{color:var(--ink);font-variant-numeric:tabular-nums}
+.col .tops span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.col .tags{margin-top:auto;display:flex;flex-wrap:wrap;gap:6px}
+.col .tags span{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:var(--r-pill);font:700 var(--t-xs)/1 var(--round);color:var(--ink-2);background:var(--glass-in);box-shadow:inset 0 0 0 1px var(--line)}
+.col .tags span i{width:8px;height:8px;border-radius:50%;background:var(--v1)}
+.col .tags span.d i{background:var(--done)}
+.col .sub{font:600 var(--t-xs)/1 var(--round);color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em}
+.delta.dn svg{transform:rotate(180deg)}
+/* Terminados: estantería con desglose */
+.pane[data-p="1"] .shelf .cv{width:36px;height:52px}
+.shelf .por{display:flex;gap:6px;justify-content:flex-end;margin-top:8px}
+.shelf .por span{display:inline-flex;align-items:center;gap:4px;font:800 var(--t-xs)/1 var(--round);color:var(--ink-2)}
+.shelf .por i{width:9px;height:9px;border-radius:3px;background:var(--c)}
+/* Carriles del año */
+.lanes{border-radius:var(--r-l)}
+.lanes>.face{background:var(--panel);padding:14px 16px 12px}
+.yg{display:grid;grid-template-columns:168px repeat(12,minmax(0,1fr));gap:6px}
+.yg .mh{font:800 var(--t-xs)/1 var(--round);color:var(--ink-2);text-align:center;padding-bottom:2px}
+.yg .mh.now{color:var(--ink)}
+.yg .l{display:flex;align-items:center;gap:8px;font:800 var(--t-s)/1.1 var(--round);color:var(--ink)}
+.yg .l svg{width:20px;height:20px;flex:none;color:var(--v1);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.yg .l em{margin-left:auto;font:800 var(--t-s)/1 var(--round);font-style:normal;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.yg .cell{height:56px;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:4px;background:color-mix(in srgb,var(--v1) 9%,var(--glass-in));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--v1) 18%,transparent)}
+.yg .cell.fut{background:transparent;box-shadow:inset 0 0 0 1px var(--line);opacity:.6}
+.cvf{width:32px;height:46px;border-radius:6px;background-size:cover;background-position:center;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(255,255,255,.35),0 5px 9px -5px rgba(30,40,60,.6);transition:transform .25s var(--e-bounce),box-shadow .2s;animation:drop .6s var(--e-bounce) both;animation-delay:calc(var(--i) * 60ms)}
+.cvf:hover,.cvf.x-f{transform:scale(1.25);box-shadow:0 0 0 3px var(--v1),0 8px 18px -6px var(--v1);position:relative;z-index:2}
+.det{display:flex;align-items:center;gap:12px;margin-top:12px;padding-top:10px;box-shadow:0 -1px 0 var(--line);font:600 var(--t-m)/1 var(--round);color:var(--ink-2);min-height:28px}
+.det b{color:var(--ink);font-weight:800}
+.det .cdot{width:10px;height:10px;border-radius:50%;background:var(--v1)}
 </style>
 </head>
 <body>
@@ -324,33 +374,20 @@ html,body{margin:0;height:100%;overflow:hidden;background:#cfd3da}
   </div>
 
   <div class="vp" id="vp">
-    <div class="pane" data-p="0"><h3 class="sh"><svg class="ic"><use href="#i-cal"/></svg>La semana<span>lunes a domingo · todas las fuentes</span></h3>
-<div class="grid"><div class="glass st" data-k="E"><div class="face">
-          <div class="x-k"><svg class="ic"><use href="#i-bars"/></svg>Día favorito<em>E</em></div>
-          <div class="x-s"><b style="font-size:var(--t-xl)">Sábado</b> · 4 h 10 min</div>
-          <div class="x-bars">
-            <div style="--i:0"><i style="--h:30%"></i><span>L</span></div>
-            <div style="--i:1"><i style="--h:18%"></i><span>M</span></div>
-            <div style="--i:2"><i style="--h:44%"></i><span>X</span></div>
-            <div style="--i:3"><i style="--h:8%"></i><span>J</span></div>
-            <div style="--i:4"><i style="--h:56%"></i><span>V</span></div>
-            <div class="x-top" style="--i:5"><i style="--h:100%"></i><span>S</span></div>
-            <div style="--i:6"><i style="--h:62%"></i><span>D</span></div>
+    <div class="pane" data-p="0"><h3 class="sh"><svg class="ic"><use href="#i-cal"/></svg>La semana<span>lunes a domingo · toda la biblioteca</span></h3>
+<div class="grid"><div class="glass st" data-k="G"><div class="face">
+          <div class="x-k"><svg class="ic"><use href="#i-swap"/></svg>Tiempo total<em>G</em></div>
+          <div class="vrow"><div class="x-v"><span data-count="24">24</span><small>h 15</small></div><span class="delta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-up"/></svg>2 h 10</span></div>
+          <div class="cmp">
+            <div class="now"><span>Esta</span><u><i style="--w:100%"></i></u><b>24 h 15</b></div>
+            <div><span>Anterior</span><u><i style="--w:91%"></i></u><b>22 h 05</b></div>
           </div>
-        </div><span class="name"><b>E</b> · Barras con el día destacado</span></div>
+        </div><span class="name"><b>G</b> · Comparación</span></div>
 <div class="glass st" data-k="R"><div class="face">
-          <div class="x-k"><svg class="ic"><use href="#i-check"/></svg>Meta de lectura<em>R</em></div>
+          <div class="x-k"><svg class="ic"><use href="#i-check"/></svg>Meta diaria<em>R</em></div>
           <div class="x-s"><b style="font-size:var(--t-xl)">5 de 7</b> días cumplidos</div>
           <div class="x-wk" id="wk"></div>
         </div><span class="name"><b>R</b> · Siete anillos</span></div>
-<div class="glass st" data-k="G"><div class="face">
-          <div class="x-k"><svg class="ic"><use href="#i-swap"/></svg>Frente a la semana pasada<em>G</em></div>
-          <div class="vrow"><div class="x-v"><span data-count="18">18</span><small>h</small></div><span class="delta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-up"/></svg>3 h 20 min</span></div>
-          <div class="cmp">
-            <div class="now"><span>Esta</span><u><i style="--w:100%"></i></u><b>18 h</b></div>
-            <div><span>Anterior</span><u><i style="--w:81%"></i></u><b>14 h 40</b></div>
-          </div>
-        </div><span class="name"><b>G</b> · Comparación</span></div>
 <div class="glass st" data-k="F"><div class="face">
           <div class="x-k"><svg class="ic"><use href="#i-flame"/></svg>Racha<em>F</em></div>
           <div style="display:flex;align-items:center;gap:var(--s-3)">
@@ -359,28 +396,26 @@ html,body{margin:0;height:100%;overflow:hidden;background:#cfd3da}
           </div>
           <div class="chain" id="chain"></div>
         </div><span class="name"><b>F</b> · Racha encadenada</span></div>
-<div class="glass st wide" data-k="P"><div class="face">
-          <div class="x-k"><svg class="ic"><use href="#i-grid"/></svg>Tu semana · 2 al 8 nov<em>P</em></div>
-          <div class="vrow"><div class="x-v"><span data-count="26">26</span><small>h</small></div><div class="x-s">en total · <b>6 de 7</b> días</div></div>
-          <div class="src" id="src"></div>
-        </div><span class="name"><b>P</b> · Semana por fuente (cada categoría con su color)</span></div>
-<div class="glass st wide" data-k="Q"><div class="face">
-          <div class="x-k"><svg class="ic"><use href="#i-star"/></svg>Lo mejor de la semana<em>Q</em></div>
-          <div class="x-best" id="best">
-            <div class="on"><span class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-flag"/></svg></span><div><h4>Persona 5 pasa de 50 h</h4><p>Juegos · el jueves</p></div></div>
-            <div><span class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-check"/></svg></span><div><h4>Terminaste Hades</h4><p>Juegos · 42 h en total</p></div></div>
-            <div><span class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#i-flame"/></svg></span><div><h4>12 días leyendo seguidos</h4><p>Novelas japonesas · tu mejor racha</p></div></div>
+<div class="glass st" data-k="K"><div class="face">
+          <div class="x-k"><svg class="ic"><use href="#i-cam"/></svg>Capturas<em>K</em></div>
+          <div class="x-v"><span data-count="84">84</span><small>capturas</small></div>
+          <div class="fan">
+            <img src="../capturas/a1.png" alt="" style="--a:-14deg;--y:4px;--i:0">
+            <img src="../capturas/c1.png" alt="" style="--a:14deg;--y:4px;--i:1">
+            <img src="../capturas/b1.png" alt="" style="--a:0deg;--y:-6px;--i:2">
+            <svg class="x-star" viewBox="0 0 24 24" fill="currentColor" stroke="var(--tint-base)" stroke-width="1.5" stroke-linejoin="round"><use href="#i-star"/></svg>
           </div>
-          <div class="x-dots" id="bdots"><i class="on"></i><i></i><i></i></div>
-        </div><span class="name"><b>Q</b> · Destacados que rotan</span></div></div></div>
-    <div class="pane" data-p="1"><h3 class="sh"><svg class="ic"><use href="#i-check"/></svg>Terminados<span>solo esta categoría · violeta de «Terminado»</span></h3>
-<div class="grid"><div class="glass st wide" data-k="M" style="--done:#9A4BD8"><div class="face">
+        </div><span class="name"><b>K</b> · Abanico de capturas</span></div></div>
+<h3 class="sh"><svg class="ic"><use href="#i-grid"/></svg>Por categoría<span>cada una en su bloque, con su color; nunca se mezclan</span></h3>
+<div class="cols" id="cols"></div></div>
+    <div class="pane" data-p="1"><h3 class="sh"><svg class="ic"><use href="#i-check"/></svg>El año<span>todas las categorías, cada una en su carril</span></h3>
+<div class="grid"><div class="glass st wide" data-k="M" data-fijo><div class="face">
           <div class="x-k"><svg class="ic" style="color:var(--done)"><use href="#i-check"/></svg>Terminados en 2026<em>M</em></div>
           <div class="shelf" id="shelf">
-            <div class="cnt"><div class="x-v"><span data-count="9">9</span></div><span class="tag2"><i></i>Terminado</span></div>
+            <div class="cnt"><div class="x-v"><span data-count="11">11</span></div><span class="tag2"><i></i>Terminado</span><div class="por" id="por"></div></div>
           </div>
         </div><span class="name"><b>M</b> · Estantería que se llena</span></div>
-<div class="glass st" data-k="N" style="--done:#9A4BD8"><div class="face">
+<div class="glass st" data-k="N" data-fijo><div class="face">
           <div class="x-k"><svg class="ic" style="color:var(--done)"><use href="#i-medal"/></svg>Último terminado<em>N</em></div>
           <div class="medw">
             <svg class="x-medal" viewBox="0 0 96 96">
@@ -392,19 +427,25 @@ html,body{margin:0;height:100%;overflow:hidden;background:#cfd3da}
                 <path class="glint" d="M30 46a22 22 0 0 1 12-10" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
               </g>
             </svg>
-            <div><div class="x-s"><b style="font-size:var(--t-l)">Hades</b></div><div class="x-s">hace 3 días · 42 h</div><span class="tag2" style="margin-top:var(--s-2)"><i></i>Terminado</span></div>
+            <div><div class="x-s"><b style="font-size:var(--t-l)">Hades</b></div><div class="x-s">Juegos PC · hace 3 días</div><span class="tag2" style="margin-top:var(--s-2)"><i></i>Terminado</span></div>
           </div>
         </div><span class="name"><b>N</b> · Medalla</span></div>
-<div class="glass st" data-k="O" style="--done:#9A4BD8"><div class="face">
-          <div class="x-k"><svg class="ic" style="color:var(--done)"><use href="#i-cal"/></svg>Terminados por mes<em>O</em></div>
-          <div class="x-s"><b style="font-size:var(--t-xl)">9</b> este año · <b>2</b> en noviembre</div>
-          <div class="x-months" id="months"></div>
-        </div><span class="name"><b>O</b> · Bolas que caen por mes</span></div></div><h3 class="sh"><svg class="ic"><use href="#i-flag"/></svg>Los últimos<span>del más reciente al más antiguo</span></h3><div class="lst glass"><div class="face"><div class="row"><i style="background-image:url(../capturas/a1.png)"></i><b>Hades</b><span>hace 3 días</span><span>42 h</span><span class="tag2"><i></i>Terminado</span></div><div class="row"><i style="background-image:url(../capturas/b1.png)"></i><b>Celeste</b><span>12 oct</span><span>18 h</span><span class="tag2"><i></i>Terminado</span></div><div class="row"><i style="background-image:url(../capturas/c1.png)"></i><b>Outer Wilds</b><span>28 sep</span><span>24 h</span><span class="tag2"><i></i>Terminado</span></div><div class="row"><i style="background-image:url(../capturas/a2.png)"></i><b>Hollow Knight</b><span>2 ago</span><span>61 h</span><span class="tag2"><i></i>Terminado</span></div><div class="row"><i style="background-image:url(../capturas/b2.png)"></i><b>Inside</b><span>14 jul</span><span>4 h</span><span class="tag2"><i></i>Terminado</span></div></div></div></div>
+<div class="glass st" data-k="G"><div class="face">
+          <div class="x-k"><svg class="ic"><use href="#i-swap"/></svg>Frente a 2025<em>G</em></div>
+          <div class="vrow"><div class="x-v"><span data-count="11">11</span><small>títulos</small></div><span class="delta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-up"/></svg>6 más</span></div>
+          <div class="cmp">
+            <div class="now"><span>2026</span><u><i style="--w:100%"></i></u><b>11</b></div>
+            <div><span>2025</span><u><i style="--w:45%"></i></u><b>5</b></div>
+          </div>
+        </div><span class="name"><b>G</b> · Comparación</span></div></div>
+<h3 class="sh"><svg class="ic"><use href="#i-cal"/></svg>Mes a mes<span>cada portada, en el mes en que la terminaste</span></h3>
+<div class="lanes glass"><div class="face"><div class="yg" id="yg"></div>
+  <div class="det" id="det"></div></div></div></div>
     <div class="pane" data-p="2"><h3 class="sh"><svg class="ic"><use href="#i-clock"/></svg>Lo esencial<span>la cifra protagonista de la categoría</span></h3>
 <div class="grid"><div class="glass st" data-k="A"><div class="face">
           <div class="x-k"><svg class="ic"><use href="#i-clock"/></svg>Tiempo jugado<em>A</em></div>
           <div class="odo2" data-odo="1284"></div>
-          <div class="x-s" style="margin-top:auto"><b>+14 h</b> esta semana · 63 juegos</div>
+          <div class="x-s" style="margin-top:auto"><b>+12 h</b> esta semana · 63 juegos</div>
         </div><span class="name"><b>A</b> · Odómetro</span></div>
 <div class="glass st" data-k="B"><div class="face">
           <div class="x-k"><svg class="ic"><use href="#i-target"/></svg>Meta de hoy<em>B</em></div>
@@ -436,7 +477,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#cfd3da}
         </div><span class="name"><b>C</b> · Medidor</span></div>
 <div class="glass st" data-k="D"><div class="face">
           <div class="x-k"><svg class="ic"><use href="#i-trend"/></svg>Esta semana<em>D</em></div>
-          <div class="vrow"><div class="x-v"><span data-count="18">18</span><small>h</small></div><span class="delta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-up"/></svg>23 %</span></div>
+          <div class="vrow"><div class="x-v"><span data-count="12">12</span><small>h</small></div><span class="delta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-up"/></svg>23 %</span></div>
           <svg class="spark" viewBox="0 0 260 84" preserveAspectRatio="none">
             <defs><linearGradient id="gD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--v1)" stop-opacity=".35"/><stop offset="1" stop-color="var(--v1)" stop-opacity="0"/></linearGradient></defs>
             <path class="ar" d="M4 62 C30 58 40 40 62 46 S100 70 122 50 S160 20 184 34 S226 26 252 12 L252 84 L4 84Z" fill="url(#gD)"/>
@@ -490,8 +531,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#cfd3da}
   <div class="foot">
     <span class="left" id="where"></span>
     <span><i class="btn k">LB</i><i class="btn k">RB</i>Pestaña</span>
-    <span><i class="btn k">X</i>Categoría</span>
-    <span><i class="btn k">A</i>Ver detalle</span>
+    <span id="hx"><i class="btn k">X</i>Categoría</span>
+    <span><i class="btn k">A</i><b id="ha" style="font-weight:inherit">Ver detalle</b></span>
     <span><i class="btn k" style="background:var(--bad,#d44)">B</i>Volver</span>
   </div>
 </div>
@@ -526,9 +567,29 @@ $('#chain').innerHTML = Array.from({length:14},(_,i)=>{ const on = i >= 2; retur
 $('#wk').innerHTML = [[1,'L'],[1,'M'],[.55,'X'],[1,'J'],[1,'V'],[.2,'S'],[1,'D']].map(([p,d],i)=>`<div><i class="${p>=1?'x-ok':''}" style="--p:${p};--i:${i}"></i><span>${d}</span></div>`).join('');
 // I · mapa de calor
 $('#heat').innerHTML = Array.from({length:91},(_,i)=>{ const v = Math.max(0, Math.sin(i*.37)*.5 + Math.sin(i*1.7)*.35 + (i/91)*.4); return `<i style="--l:${Math.min(1,v).toFixed(2)};--i:${i}"></i>`; }).join('');
-// P · por fuente (colores de categoría: posición fija de cada una)
-$('#src').innerHTML = [['Juegos','#i-pad','#0089be',[.2,.1,.6,0,.5,1,.8],'14 h'],['Switch','#i-switch','#c3283f',[0,.3,0,.4,.2,.9,.6],'6 h 30'],['Novelas','#i-book','#7b38b8',[.5,.6,.4,.7,.5,.3,.8],'5 h 30']]
-  .map(([n,ic,c,ds,t],r)=>`<div style="--c:${c}"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="${ic}"/></svg><span>${n}</span><u>${ds.map((l,i)=>`<i style="--l:${l};--i:${r*7+i}"></i>`).join('')}</u><b>${t}</b></div>`).join('');
+// Por categoría: un bloque por categoría, con su color fijo; nunca se mezclan
+const CATS0 = [['Juegos PC','#i-pad',4],['Switch','#i-switch',0],['Novelas visuales','#i-book',6],['Novelas japonesas','#i-book',5]];
+const ARC = ['rojo','naranja','amarillo','verde','azul','anil','violeta'], HUE = [20,52,88,146,232,268,308];
+function tono(el, k){ const a = k % 7, b = (k + 1) % 7, s = el.style, f = h => `oklch(0.52 0.15 ${h})`;
+  s.setProperty('--v1', `var(--arc-${ARC[a]})`); s.setProperty('--v2', `var(--arc-${ARC[b]})`); s.setProperty('--gv', `linear-gradient(115deg,var(--arc-${ARC[a]}),var(--arc-${ARC[b]}))`);
+  s.setProperty('--f1', f(HUE[a])); s.setProperty('--f2', f(HUE[b])); s.setProperty('--gf', `linear-gradient(115deg,${f(HUE[a])},${f(HUE[b])})`); }
+const DIAS = 'LMXJVSD';
+const bars = v => `<div class="x-bars">${v.map((h,i)=>`<div class="${h===100?'x-top':''}"><i style="--h:${Math.max(4,h)}%;--i:${i}"></i><span>${DIAS[i]}</span></div>`).join('')}</div>`;
+const rings = v => `<div class="x-wk">${v.map((p,i)=>`<div><i class="${p>=1?'x-ok':''}" style="--p:${p};--i:${i}"></i><span>${DIAS[i]}</span></div>`).join('')}</div>`;
+const COLS = [
+  {n:'Juegos PC', ic:'#i-pad', k:4, t:'12 h 10', d:['up','1 h 30'], g:bars([30,18,44,8,56,100,62]), sub:'Más jugados', tops:[['a1','Hades','5 h 20'],['b2','Persona 5','4 h 10'],['c1','Outer Wilds','2 h 40']], tags:[['d','Hades terminado'],['','38 capturas']]},
+  {n:'Switch', ic:'#i-switch', k:0, t:'6 h 30', d:['dn','40 min'], g:bars([0,30,0,40,20,100,60]), sub:'Más jugados', tops:[['b1','Zelda: TotK','4 h'],['a2','Mario Wonder','2 h 30']], tags:[['','Zelda pasa de 100 h'],['','26 capturas']]},
+  {n:'Novelas visuales', ic:'#i-book', k:6, t:'1 h 50', d:['up','20 min'], g:rings([1,1,.5,1,1,.2,1]), sub:'Lo más leído', tops:[['c2','Steins;Gate','1 h 10']], tags:[['','Meta 5 de 7'],['','8 capturas']]},
+  {n:'Novelas japonesas', ic:'#i-book', k:5, t:'3 h 45', d:['up','35 min'], g:rings([1,1,1,1,.6,1,1]), sub:'Lo más leído', tops:[['b3','Kino no Tabi','2 h 10']], tags:[['','12 días seguidos'],['','Meta 6 de 7']]},
+];
+if ($('#cols')) { $('#cols').innerHTML = COLS.map(c=>`<div class="glass st col" data-k="${c.n}" data-cat="${c.k}"><div class="face">
+  <div class="ch"><svg><use href="${c.ic}"/></svg>${c.n}</div>
+  <div class="tt"><b>${c.t}</b><span class="delta${c.d[0]==='dn'?' dn':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><use href="#i-up"/></svg>${c.d[1]}</span></div>
+  ${c.g}<div class="sub">${c.sub}</div>
+  <div class="tops">${c.tops.map(([im,n,h])=>`<div><i style="background-image:url(../capturas/${im}.png)"></i><span>${n}</span><b>${h}</b></div>`).join('')}</div>
+  <div class="tags">${c.tags.map(([cl,x])=>`<span class="${cl}"><i></i>${x}</span>`).join('')}</div>
+  </div></div>`).join('');
+  [...$('#cols').children].forEach(c => tono(c, +c.dataset.cat)); }
 // J · reloj
 (() => { const cx = 61, R1 = 34, R2 = 54, w = [0,0,0,0,0,0,0,.05,.1,.1,.1,.15,.2,.2,.1,.15,.25,.3,.35,.45,.6,.9,1,.7]; let h = '';
   w.forEach((v,i)=>{ const a0 = (i/24)*2*Math.PI - Math.PI/2 + .02, a1 = ((i+1)/24)*2*Math.PI - Math.PI/2 - .02, r2 = R1 + (R2-R1)*Math.max(.12,v);
@@ -538,10 +599,24 @@ $('#src').innerHTML = [['Juegos','#i-pad','#0089be',[.2,.1,.6,0,.5,1,.8],'14 h']
   h += `<circle cx="61" cy="61" r="28" fill="var(--glass-in)" stroke="var(--line)"/><g class="hand"><path d="M61 61V38" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/></g><circle cx="61" cy="61" r="4" fill="var(--ink)"/>`;
   ['0','6','12','18'].forEach((t,k)=>{ const a = k*Math.PI/2 - Math.PI/2; h += `<text x="${cx+21*Math.cos(a)}" y="${cx+21*Math.sin(a)+4}" text-anchor="middle" font-size="9" font-weight="800" fill="var(--ink-2)">${t}</text>`; });
   $('#clock').innerHTML = h; })();
-// M · estantería
-$('#shelf').insertAdjacentHTML('afterbegin', ['a1','b1','c1','a2','b2','b3','c2','a1','b2'].map((c,i,a)=>`<div class="cv${i===a.length-1?' new':''}" style="--i:${i};background-image:url(../capturas/${c}.png)"></div>`).join(''));
-// O · meses
-$('#months').innerHTML = [1,0,2,1,0,0,1,0,1,1,2,0].map((n,m)=>`<div class="${m===10?'now':''}">${Array.from({length:n},(_,k)=>`<i style="--i:${m+k}"></i>`).join('')}<span>${'EFMAMJJASOND'[m]}</span></div>`).join('');
+// Terminados de 2026, cada uno en su categoría y su mes
+const FIN = [
+  [0,'Inside',7,'14 jul','4 h','b2'],[0,'Hollow Knight',8,'2 ago','61 h','a2'],[0,'Outer Wilds',9,'28 sep','24 h','c1'],[0,'Celeste',10,'12 oct','18 h','b1'],[0,'Hades',11,'7 nov','42 h','a1'],
+  [1,'Zelda: Tears of the Kingdom',3,'18 mar','112 h','b1'],[1,'Super Mario Wonder',8,'21 ago','16 h','c2'],
+  [2,'Steins;Gate',4,'9 abr','38 h','c2'],[2,'Clannad',10,'30 oct','54 h','b3'],
+  [3,'Kino no Tabi',1,'25 ene','9 h','b3'],[3,'Konosuba',9,'3 sep','7 h','a2']];
+// M · estantería (por fecha) y desglose por categoría
+if ($('#shelf')) { const ord = [...FIN].sort((a,b)=>a[2]-b[2]);
+  $('#shelf').insertAdjacentHTML('afterbegin', ord.map((f,i)=>`<div class="cv${f[1]==='Hades'?' new':''}" style="--i:${i};background-image:url(../capturas/${f[5]}.png)"></div>`).join(''));
+  $('#por').innerHTML = [0,1,2,3].map(c=>`<span style="--c:var(--arc-${ARC[CATS0[c][2]]})"><i></i>${FIN.filter(f=>f[0]===c).length}</span>`).join(''); }
+// Carriles: 12 meses, un carril por categoría
+if ($('#yg')) { const MES = 'Ene Feb Mar Abr May Jun Jul Ago Sep Oct Nov Dic'.split(' '); let h = '<div></div>' + MES.map((m,i)=>`<div class="mh${i===10?' now':''}">${m}</div>`).join(''), n = 0;
+  CATS0.forEach((c,ci) => { const fs = FIN.filter(f=>f[0]===ci);
+    h += `<div class="l" data-cat="${c[2]}"><svg><use href="${c[1]}"/></svg>${c[0]}<em>${fs.length}</em></div>`;
+    for (let m = 1; m <= 12; m++) h += `<div class="cell${m>11?' fut':''}" data-cat="${c[2]}">${fs.filter(f=>f[2]===m).map(f=>`<div class="cvf" style="--i:${n++};background-image:url(../capturas/${f[5]}.png)" data-t="${f[1]}" data-c="${ci}" data-d="${f[3]}" data-h="${f[4]}"></div>`).join('')}</div>`; });
+  $('#yg').innerHTML = h; $('#yg').querySelectorAll('[data-cat]').forEach(e => tono(e, +e.dataset.cat)); }
+function detalle(el){ const d = $('#det'); if (!d || !el.classList.contains('cvf')) return; const c = CATS0[+el.dataset.c]; tono(d, c[2]);
+  d.innerHTML = `<i class="cdot"></i><b>${el.dataset.t}</b>· ${c[0]} · ${el.dataset.d} · ${el.dataset.h} jugadas<span class="tag2" style="margin-left:auto"><i></i>Terminado</span>`; }
 
 // Contadores que suben
 function cuenta(root){ root.querySelectorAll('[data-count]').forEach(el => { const to = +el.dataset.count, t0 = performance.now(), D = 1100;
@@ -554,46 +629,48 @@ chips.forEach(c => { io.observe(c); c.addEventListener('mouseenter', () => lanza
 $('#rep').onclick = () => chips.forEach(lanza);
 
 // Q · rota cada 3 s
-(() => { const it = [...$('#best').children], d = [...$('#bdots').children]; let i = 0;
+$('#best') && (() => { const it = [...$('#best').children], d = [...$('#bdots').children]; let i = 0;
   setInterval(() => { const o = it[i]; o.classList.remove('on'); o.classList.add('out'); setTimeout(() => o.classList.remove('out'), 320);
     i = (i+1) % it.length; it[i].classList.add('on'); d.forEach((x,k)=>x.classList.toggle('on',k===i)); }, 3000); })();
 
 
 // ================= Maqueta final: pestañas, ámbito y desplazamiento con mando =================
-const CATS = [['Juegos PC','#i-pad',4],['Switch','#i-switch',0],['Novelas visuales','#i-book',6],['Novelas japonesas','#i-book',5]];
-const PER = [['3–9 nov 2026','27 oct–2 nov','20–26 oct'],['2026','2025','Siempre'],['Siempre','2026','2025','Últimos 30 días']];
+const CATS = CATS0;
+const PER = [['3–9 nov 2026','27 oct–2 nov','20–26 oct'],['2026','2025','2024','Todo'],['Siempre','2026','2025','Últimos 30 días']];
 let tab = 2, cat = 0, per = [0,0,0], cur = null;
 const panes = [...document.querySelectorAll('.pane')], vp = $('#vp');
 const fit = () => { const k = Math.min((innerWidth - 24) / 1280, (innerHeight - 64) / 720); stage.style.setProperty('--k', Math.min(1.5, k)); };
 addEventListener('resize', fit); fit();
 
-const items = () => [...panes[tab].querySelectorAll('.st, .lst .row')];
+const items = () => [...panes[tab].querySelectorAll('.st, .lst .row, .cvf')];
 const topIn = (el, pane) => { let t = 0; for (let p = el; p && p !== pane; p = p.offsetParent) t += p.offsetTop; return t; };
 function pinta(){
   document.querySelectorAll('#tabs .o').forEach((o,i) => o.className = 'o' + (i === tab ? ' gem' : ''));
   panes.forEach((p,i) => p.classList.toggle('on', i === tab));
-  const semana = tab === 0;
-  $('#scope').style.display = semana ? 'none' : '';
-  acento(semana ? 4 : CATS[cat][2]);
+  const general = tab !== 2;
+  $('#scope').style.display = general ? 'none' : '';
+  acento(general ? 4 : CATS[cat][2]);
+  $('#bar').firstElementChild.style.background = general ? 'linear-gradient(180deg,var(--arc))' : '';
+  $('#hx').style.display = general ? 'none' : ''; $('#ha').textContent = tab === 1 ? 'Abrir juego' : 'Ver detalle';
   $('#sclbl').textContent = CATS[cat][0]; $('#scic').setAttribute('href', CATS[cat][1]);
   $('#perlbl').textContent = PER[tab][per[tab]];
-  $('#where').textContent = semana ? 'Toda la biblioteca, cada fuente en su bloque' : 'Solo títulos de ' + CATS[cat][0];
+  $('#where').textContent = tab === 0 ? 'Toda la biblioteca, cada categoría en su bloque' : tab === 1 ? 'Todas las categorías, cada una en su carril' : 'Solo títulos de ' + CATS[cat][0];
   const it = items(); foco(it[0], true);
   it.filter(c => c.classList.contains('st')).forEach(c => setTimeout(() => lanza(c), 60));
 }
 function foco(el, reset){
-  if (!el) return; if (cur) cur.classList.remove('x-f'); cur = el; el.classList.add('x-f');
+  if (!el) return; if (cur) cur.classList.remove('x-f'); cur = el; el.classList.add('x-f'); detalle(el);
   const pane = panes[tab], H = vp.clientHeight, max = Math.max(0, pane.scrollHeight - H);
   let y = reset ? 0 : (+pane.dataset.y || 0);
-  const top = topIn(el, pane), h = el.offsetHeight;
+  const box = el.classList.contains('cvf') ? el.closest('.lanes') : el, top = topIn(box, pane), h = box.offsetHeight;
   // Si el foco entra en una sección, se ve también su título.
-  const prev = el.closest('.grid, .lst')?.previousElementSibling;
+  const prev = el.closest('.grid, .lst, .cols, .lanes')?.previousElementSibling;
   const head = prev && prev.classList.contains('sh') && top - topIn(prev, pane) < 260 ? topIn(prev, pane) - 10 : top - 16;
   if (head < y) y = head; if (top + h + 60 > y + H) y = top + h + 60 - H;
   y = Math.max(0, Math.min(max, y)); pane.dataset.y = y; pane.style.transform = `translateY(${-y}px)`;
   const bar = $('#bar'), th = bar.clientHeight; bar.classList.toggle('off', max === 0);
   const hh = Math.max(40, th * H / pane.scrollHeight); bar.firstElementChild.style.height = hh + 'px'; bar.firstElementChild.style.top = (max ? (th - hh) * y / max : 0) + 'px';
-  const left = items().filter(c => topIn(c, pane) > y + H - 40).length;
+  const left = items().filter(c => c.classList.contains('st') && topIn(c, pane) > y + H - 40).length;
   $('#more').classList.toggle('off', max === 0 || y >= max - 4);
   $('#morel').textContent = left ? `${left} ${left === 1 ? 'chip' : 'chips'} más abajo` : 'Más abajo';
 }
@@ -611,15 +688,19 @@ addEventListener('keydown', e => {
   const k = e.key.toLowerCase(); if (k.startsWith('arrow')) e.preventDefault();
   if (k === 'arrowright') mueve(1,0); if (k === 'arrowleft') mueve(-1,0); if (k === 'arrowdown') mueve(0,1); if (k === 'arrowup') mueve(0,-1);
   if (k === 'q' || k === 'e') { tab = (tab + (k === 'e' ? 1 : 2)) % 3; pinta(); }
-  if ((k === 'a' || k === 'd') && tab) { cat = (cat + (k === 'd' ? 1 : CATS.length - 1)) % CATS.length; pinta(); }
+  if ((k === 'a' || k === 'd') && tab === 2) { cat = (cat + (k === 'd' ? 1 : CATS.length - 1)) % CATS.length; pinta(); }
 });
 document.querySelectorAll('#tabs .o').forEach(o => o.onclick = () => { tab = +o.dataset.t; pinta(); });
 document.querySelectorAll('#scope .chev').forEach(o => o.onclick = () => { cat = (cat + +o.dataset.d + CATS.length) % CATS.length; pinta(); });
 document.querySelectorAll('#per .chev').forEach(o => o.onclick = () => { const n = PER[tab].length; per[tab] = (per[tab] + +o.dataset.p + n) % n; $('#perlbl').textContent = PER[tab][per[tab]]; });
-vp.addEventListener('click', e => { const c = e.target.closest('.st, .lst .row'); if (c) { foco(c); if (c.classList.contains('st')) lanza(c); } });
+vp.addEventListener('click', e => { const c = e.target.closest('.cvf, .st, .lst .row'); if (c) { foco(c); if (c.classList.contains('st')) lanza(c); } });
 let rueda = 0; vp.addEventListener('wheel', e => { e.preventDefault(); const t = performance.now(); if (t - rueda < 220) return; rueda = t; mueve(0, Math.sign(e.deltaY)); }, {passive:false});
 $('#letras').onclick = () => $('#letras').classList.toggle('on', stage.classList.toggle('letras'));
 $('#heat').innerHTML = Array.from({length:364},(_,i)=>{ const v = Math.max(0, Math.sin(i*.21)*.45 + Math.sin(i*1.3)*.3 + Math.sin(i*.05)*.25); return `<i style="--l:${Math.min(1,v).toFixed(2)};--i:${i>>1}"></i>`; }).join('');
+// Arcoíris por chip, en orden de lectura dentro de cada pestaña
+panes.forEach(p => { let n = 0; p.querySelectorAll('.st:not(.col)').forEach(c => { if (!c.hasAttribute('data-fijo')) tono(c, n); n++; });
+  p.querySelectorAll('.sh').forEach(h => { const e = h.nextElementSibling, c = e && e.querySelector('.st:not([data-fijo]):not(.col)');
+    if (c) h.style.setProperty('--v1', c.style.getPropertyValue('--v1')); else if (e && e.classList.contains('lanes')) h.style.setProperty('--v1', 'var(--done)'); }); });
 const qs = new URLSearchParams(location.search), q0 = qs.get('tab'); if (q0) tab = +q0;
 pinta();
 if (qs.get('foco')) setTimeout(() => foco(items()[+qs.get('foco')]), 50);
