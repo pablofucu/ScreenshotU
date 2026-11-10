@@ -184,6 +184,10 @@ pub trait Provider: Send + Sync + 'static {
     fn session_start(&self, _w: u32, _h: u32, _fps: u32) -> Result<serde_json::Value> {
         anyhow::bail!("Este equipo no admite sesiones de streaming")
     }
+    /// Juego del host que el PC cliente `caller` quiere copiar entero (`GET /install/*`).
+    fn install_source(&self, _caller: &Caller, _id: &str) -> Result<crate::gamecopy::InstallSource> {
+        anyhow::bail!("Este equipo no permite copiar juegos")
+    }
     /// Carpetas de las que sirve `GET /asset` (cualquier archivo dentro de ellas).
     fn asset_roots(&self) -> Vec<PathBuf> {
         vec![self.thumbs_dir(), self.previews_dir()]
@@ -568,6 +572,8 @@ pub enum Body {
     Empty,
     Bytes(Vec<u8>),
     File(PathBuf),
+    /// Trozo de un archivo: `(ruta, inicio, longitud)` (respuestas 206 a `Range`).
+    FileRange(PathBuf, u64, u64),
 }
 
 pub struct Reply {
@@ -705,7 +711,7 @@ fn route(inner: &Inner, req: &Req) -> Reply {
         "/api/v1/hello" => {
             return Reply::json(
                 200,
-                &serde_json::json!({ "app": "visor-capturas", "api": API_VERSION, "name": inner.provider.name(), "version": env!("CARGO_PKG_VERSION"), "id": inner.provider.id(), "apiRev": API_REV, "apiMin": API_MIN, "features": ["launch", "capture", "call", "events", "asset", "discover", "close", "session", "pair", "devices"] }),
+                &serde_json::json!({ "app": "visor-capturas", "api": API_VERSION, "name": inner.provider.name(), "version": env!("CARGO_PKG_VERSION"), "id": inner.provider.id(), "apiRev": API_REV, "apiMin": API_MIN, "features": ["launch", "capture", "call", "events", "asset", "discover", "close", "session", "pair", "devices", "install"] }),
             )
         }
         "/api/v1/launch" | "/api/v1/capture" | "/api/v1/call" | "/api/v1/close" | "/api/v1/session/start" | "/api/v1/pair" | "/api/v1/unpair" if !post => {
@@ -726,6 +732,8 @@ fn route(inner: &Inner, req: &Req) -> Reply {
         "/api/v1/file" => "file",
         "/api/v1/events" => "events",
         "/api/v1/asset" => "asset",
+        "/api/v1/install/list" => "install_list",
+        "/api/v1/install/file" => "install_file",
         _ => return Reply::error(404, "No existe"),
     };
     if client_api(req).is_some_and(|a| a < API_MIN) {
@@ -795,6 +803,9 @@ fn route(inner: &Inner, req: &Req) -> Reply {
     }
     if ep == "asset" {
         return asset_reply(inner, req);
+    }
+    if ep == "install_list" || ep == "install_file" {
+        return install_reply(inner, &caller, req, ep == "install_list");
     }
     if ep == "capture" {
         return match inner.provider.capture() {
@@ -936,6 +947,38 @@ fn asset_reply(inner: &Inner, req: &Req) -> Reply {
         .with("ETag", etag)
 }
 
+/// `GET /install/list?id=` (archivos de la carpeta del juego) y `GET /install/file?id=&f=` (uno, con `Range`).
+fn install_reply(inner: &Inner, caller: &Caller, req: &Req, list: bool) -> Reply {
+    let Some(id) = req.query.get("id").filter(|i| !i.is_empty()) else {
+        return Reply::error(400, "Falta el id del juego");
+    };
+    let src = match inner.provider.install_source(caller, id) {
+        Ok(s) => s,
+        Err(e) => return Reply::error(409, &format!("{e:#}")),
+    };
+    if list {
+        return match crate::gamecopy::copy_list(id, &src) {
+            Ok(l) => Reply::json(200, &l).with("Cache-Control", "no-store"),
+            Err(e) => Reply::error(500, &format!("{e:#}")),
+        };
+    }
+    let Some(f) = req.query.get("f").and_then(|f| crate::gamecopy::resolve(&src.dir, f)) else {
+        return Reply::error(404, "Ese archivo no es del juego");
+    };
+    let Ok(len) = fs::metadata(&f).map(|m| m.len()) else {
+        return Reply::error(404, "El archivo ya no existe");
+    };
+    let base = Reply { status: 200, headers: vec![("Content-Type", "application/octet-stream".into()), ("Accept-Ranges", "bytes".into()), ("Cache-Control", "no-store".into())], body: Body::Empty };
+    match req.header("range") {
+        None => Reply { body: Body::File(f), ..base },
+        Some(h) => match crate::gamecopy::parse_range(h, len) {
+            Some((start, n)) => Reply { status: 206, body: Body::FileRange(f, start, n), ..base }
+                .with("Content-Range", format!("bytes {start}-{}/{len}", start + n - 1)),
+            None => Reply { status: 416, ..base }.with("Content-Range", format!("bytes */{len}")),
+        },
+    }
+}
+
 fn snapshot_reply(c: &Cached, req: &Req) -> Reply {
     if etag_matches(req.header("if-none-match"), &c.etag) {
         return Reply::empty(304).with("ETag", c.etag.clone()).with("Cache-Control", "no-cache").with("Vary", "Accept-Encoding");
@@ -991,6 +1034,13 @@ fn handle(inner: &Inner, mut rq: tiny_http::Request) {
                 return;
             }
         },
+        Body::FileRange(p, start, n) if !head_only => {
+            use std::io::Seek;
+            match fs::File::open(&p).and_then(|mut f| f.seek(std::io::SeekFrom::Start(start)).map(|_| f)) {
+                Ok(f) => tiny_http::Response::new(reply.status.into(), vec![], std::io::Read::take(f, n), Some(n as usize), None).boxed(),
+                Err(_) => tiny_http::Response::empty(404).boxed(),
+            }
+        }
         Body::Bytes(b) if !head_only => tiny_http::Response::from_data(b).with_status_code(reply.status).boxed(),
         _ => tiny_http::Response::empty(reply.status).boxed(),
     };
@@ -1499,6 +1549,55 @@ mod tests {
                 _ => Err(CALL_NOT_ALLOWED.into()),
             }
         }
+        fn install_source(&self, caller: &Caller, id: &str) -> Result<crate::gamecopy::InstallSource> {
+            anyhow::ensure!(caller.kind == "pc" && id == "g1", "no");
+            Ok(crate::gamecopy::InstallSource { dir: self.dir.join("Juego"), exe: "game.exe".into(), args: String::new(), name: "Juego".into(), platform: "pc".into() })
+        }
+    }
+
+    #[test]
+    fn copy_game_with_resume() {
+        use std::sync::atomic::AtomicBool;
+        let d = tempfile::tempdir().unwrap();
+        let g = d.path().join("Juego");
+        fs::create_dir_all(g.join("data")).unwrap();
+        let big: Vec<u8> = (0..300_000u32).map(|i| (i % 251) as u8).collect();
+        fs::write(g.join("game.exe"), b"MZ-exe").unwrap();
+        fs::write(g.join("data/big.pak"), &big).unwrap();
+        fs::write(g.join("data/empty.txt"), b"").unwrap();
+        fs::write(d.path().join("secreto.txt"), b"no").unwrap();
+        let devs = vec![
+            ("tokpc".to_string(), Caller { device_id: "pc1".into(), name: "Portátil".into(), kind: "pc".into() }, false),
+            ("toktab".to_string(), Caller { device_id: "tab1".into(), name: "Tablet".into(), kind: "tablet".into() }, false),
+        ];
+        let p = Paired { dir: d.path().to_path_buf(), devs: Arc::new(Mutex::new(devs)), seen: Arc::new(Mutex::new(vec![])) };
+        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), "ABCD-EFGH".into(), p).unwrap();
+        let a = srv.local_addr();
+        let addr = a.to_string();
+        // sin token, otro tipo de dispositivo o fuera de la carpeta: no
+        assert_eq!(get(a, "GET", "/api/v1/install/list?id=g1", &[]).status, 401);
+        assert_eq!(get(a, "GET", "/api/v1/install/list?id=g1", &[("Authorization", "Bearer toktab")]).status, 409);
+        assert_eq!(get(a, "GET", "/api/v1/install/file?id=g1&f=..%2Fsecreto.txt", &[("Authorization", "Bearer tokpc")]).status, 404);
+        // Range: 206 con el trozo pedido; fuera del archivo, 416
+        let r = get(a, "GET", "/api/v1/install/file?id=g1&f=data%2Fbig.pak", &[("Authorization", "Bearer tokpc"), ("Range", "bytes=10-19")]);
+        assert_eq!(r.status, 206);
+        assert_eq!(r.body, big[10..20]);
+        assert_eq!(get(a, "GET", "/api/v1/install/file?id=g1&f=game.exe", &[("Authorization", "Bearer tokpc"), ("Range", "bytes=99-")]).status, 416);
+        // copia entera, reanudando un archivo a medias
+        let list = crate::gamecopy::fetch_list(&addr, "tokpc", "1.0", "g1").unwrap();
+        assert_eq!((list.folder.as_str(), list.exe.as_str(), list.files.len(), list.total), ("Juego", "game.exe", 3, big.len() as u64 + 6));
+        let dest = d.path().join("copia");
+        fs::create_dir_all(dest.join("data")).unwrap();
+        fs::write(dest.join("data/big.pak.visor-part"), &big[..123_456]).unwrap();
+        let mut last = crate::gamecopy::Progress::default();
+        crate::gamecopy::download(&addr, "tokpc", "1.0", &list, &dest, &AtomicBool::new(false), |p| last = p).unwrap();
+        assert_eq!(fs::read(dest.join("data/big.pak")).unwrap(), big);
+        assert_eq!(fs::read(dest.join("game.exe")).unwrap(), b"MZ-exe");
+        assert!(dest.join("data/empty.txt").is_file());
+        assert!(!dest.join("data/big.pak.visor-part").exists());
+        assert_eq!((last.done, last.files_done), (list.total, 3));
+        // otra vez: no descarga nada (ya esta todo)
+        crate::gamecopy::download(&addr, "tokpc", "1.0", &list, &dest, &AtomicBool::new(false), |_| ()).unwrap();
     }
 
     #[test]

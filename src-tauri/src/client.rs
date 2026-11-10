@@ -261,6 +261,8 @@ pub struct LocalAdd {
     pub args: String,
     pub rom: String,
     pub workdir: String,
+    /// Tamaño de la instalacion (0 = no se sabe).
+    pub size_bytes: i64,
 }
 
 /// Un juego instalado en este equipo (para casarlo con la biblioteca del host).
@@ -300,7 +302,7 @@ pub async fn client_add_game(app: AppHandle, state: State<'_, AppState>, game: L
         "name": name,
         "exeName": file_name(&main),
         "folderName": parent_name(&main),
-        "sizeBytes": 0,
+        "sizeBytes": game.size_bytes.max(0),
     });
     let id = blocking(move || host_call(&cfg, &ver, "register_install", args)).await?;
     let id = id.as_str().filter(|s| !s.is_empty()).ok_or("El PC principal no devolvió el juego")?.to_string();
@@ -394,4 +396,83 @@ pub fn spawn_sync(app: AppHandle) {
             std::thread::sleep(Duration::from_secs(60));
         }
     });
+}
+
+/* ------------------------------------------------------------------ */
+/* Copiar un juego entero del PC principal (fase 3b)                    */
+/* ------------------------------------------------------------------ */
+
+static COPY_CANCEL: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static COPYING: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
+
+/// Que copiaria `client_copy_game` (carpeta, ejecutable, tamaño y archivos).
+#[tauri::command]
+pub async fn client_copy_info(app: AppHandle, state: State<'_, AppState>, id: String) -> Result<visor_core::gamecopy::CopyList, String> {
+    let cfg = current(&state)?;
+    let ver = version(&app);
+    let mut l = blocking(move || visor_core::gamecopy::fetch_list(cfg.addr(), &cfg.token, &ver, &id).map_err(|e| format!("{e:#}"))).await?;
+    l.files.clear();
+    Ok(l)
+}
+
+/// Nombre de carpeta valido en Windows.
+fn folder_name(s: &str) -> String {
+    let n: String = s.chars().map(|c| if r#"<>:"/\|?*"#.contains(c) || c.is_control() { '_' } else { c }).collect();
+    let n = n.trim().trim_end_matches('.').to_string();
+    if n.is_empty() { "Juego".into() } else { n }
+}
+
+/// Copia el juego del host a `dest\<carpeta del juego>` (reanuda si se corto) y lo apunta como instalado aqui.
+/// Avisa del progreso con `client-copy-progress`. Devuelve el id del juego.
+#[tauri::command]
+pub async fn client_copy_game(app: AppHandle, state: State<'_, AppState>, id: String, dest: String) -> Result<String, String> {
+    use tauri::Emitter;
+    let cfg = current(&state)?;
+    if !Path::new(&dest).is_dir() {
+        return Err("La carpeta de destino no existe".into());
+    }
+    {
+        let mut c = COPYING.lock().unwrap();
+        if c.is_some() {
+            return Err("Ya se está copiando un juego".into());
+        }
+        *c = Some(id.clone());
+    }
+    COPY_CANCEL.store(false, std::sync::atomic::Ordering::Relaxed);
+    let ver = version(&app);
+    let (app2, id2) = (app.clone(), id.clone());
+    let res = blocking(move || {
+        let list = visor_core::gamecopy::fetch_list(cfg.addr(), &cfg.token, &ver, &id2).map_err(|e| format!("{e:#}"))?;
+        let dir = Path::new(&dest).join(folder_name(&list.folder));
+        let mut last = std::time::Instant::now() - Duration::from_secs(1);
+        let r = visor_core::gamecopy::download(cfg.addr(), &cfg.token, &ver, &list, &dir, &COPY_CANCEL, |p| {
+            if last.elapsed() >= Duration::from_millis(250) || p.files_done == p.files {
+                last = std::time::Instant::now();
+                let _ = app2.emit("client-copy-progress", serde_json::json!({ "id": id2, "progress": p }));
+            }
+        });
+        r.map_err(|e| format!("{e:#}"))?;
+        Ok((list, dir))
+    })
+    .await;
+    *COPYING.lock().unwrap() = None;
+    let (list, dir) = res?;
+    let exe = dir.join(visor_core::gamecopy::safe_rel(&list.exe).ok_or("El ejecutable del juego no es válido")?);
+    let game = LocalAdd {
+        game_id: Some(id),
+        platform: list.platform,
+        name: list.name,
+        kind: "exe".into(),
+        exe: exe.to_string_lossy().into_owned(),
+        args: list.args,
+        size_bytes: list.total as i64,
+        ..Default::default()
+    };
+    client_add_game(app, state, game).await
+}
+
+/// Para la copia en curso (lo ya bajado se aprovecha al volver a copiar).
+#[tauri::command]
+pub fn client_copy_cancel() {
+    COPY_CANCEL.store(true, std::sync::atomic::Ordering::Relaxed);
 }

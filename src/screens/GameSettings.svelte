@@ -2,7 +2,7 @@
   import { app, STATUS_LABEL, type MenuItem } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { closeOverlay, MAGPIE_LABEL, MAGPIE_ORDER } from '../lib/controller.svelte';
-  import { GAME_TABS, TAB_HELP, gameSetAct, gameSetListAct, gameTabItems, otherPlatforms, selectTab } from '../lib/gameset.svelte';
+  import { GAME_TABS, TAB_HELP, gameSetAct, gameSetListAct, gameTabItems, otherPlatforms, selectTab, copying } from '../lib/gameset.svelte';
   import { platformCollections } from '../lib/coleccion.svelte';
   import { fmtRelease } from '../lib/release.svelte';
   import Hints from '../components/Hints.svelte';
@@ -29,6 +29,9 @@
       case 'magpie': return { l: 'Escalado con Magpie…', s: magpie.detail, v: magpie.label };
       case 'setexe': return { l: 'Ejecutable…' };
       case 'setdir': return { l: 'Carpeta de trabajo…' };
+      case 'copyhere': return copying.id
+        ? { l: 'Cancelar la copia', s: `${copying.name} · ${copying.total ? Math.floor((copying.done / copying.total) * 100) : 0} %` }
+        : { l: 'Copiar a este equipo…', s: 'Descarga el juego del PC principal para jugarlo aquí' };
       case 'folder': return { l: 'Abrir carpeta de capturas' };
       case 'addshots': return { l: 'Añadir capturas…' };
       case 'saves': return { l: 'Partidas guardadas…' };
@@ -46,7 +49,7 @@
     }
   }
   const icon = (it: MenuItem) => ({
-    sgdb: ICON.search, accent: ICON.palette, reload: ICON.reload, magpie: ICON.image, setexe: ICON.folder, setdir: ICON.folder,
+    sgdb: ICON.search, accent: ICON.palette, reload: ICON.reload, magpie: ICON.image, setexe: ICON.folder, setdir: ICON.folder, copyhere: ICON.import,
     folder: ICON.folder, addshots: ICON.image, saves: ICON.import, phrases: ICON.jvn, addcoll: ICON.saga, status: ICON.checks,
     release: ICON.calendar, category: ICON.move, hide: ICON.eyeOff, unhide: ICON.eye, remove: ICON.trash,
   } as Record<string, string>)[it] ?? '';

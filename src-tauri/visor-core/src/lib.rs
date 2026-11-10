@@ -9,6 +9,7 @@ pub mod config;
 pub mod db;
 pub mod dates;
 pub mod devices;
+pub mod gamecopy;
 pub mod gamedirs;
 pub mod games;
 pub mod importer;

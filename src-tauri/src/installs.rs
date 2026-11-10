@@ -174,3 +174,39 @@ pub fn fill_installed(state: &AppState, lib: &mut Library) {
         }
     }
 }
+
+/// Juego del host que un PC cliente quiere copiar entero (fase 3b): su carpeta y su ejecutable relativo.
+/// `id` es el del titulo (el que ve el cliente) o el del juego. Solo juegos con ejecutable propio.
+pub fn install_source(state: &AppState, caller: &Caller, id: &str) -> Result<visor_core::gamecopy::InstallSource, String> {
+    pc_caller(caller)?;
+    let (lib, found) = library(state);
+    let title = lib.platforms.iter().flat_map(|p| p.titles.iter()).find(|t| t.id == id);
+    let gid = title.and_then(|t| t.game_id.clone()).unwrap_or_else(|| id.to_string());
+    let g = found.iter().find(|g| g.id == gid).ok_or("Ese juego no está en el PC principal")?;
+    let (exe, args, workdir) = match &g.launch {
+        Launch::Exe { exe, args, workdir } => (exe.clone(), args.clone(), workdir.clone()),
+        Launch::Emulator { .. } => return Err("Los juegos de emulador no se copian: copia la ROM y añádela a mano".into()),
+        _ => return Err("Este juego no tiene un ejecutable que copiar (p. ej. es de Steam)".into()),
+    };
+    let exe_p = Path::new(&exe);
+    // La carpeta del juego: la de instalacion o la de trabajo si contienen el ejecutable; si no, la del ejecutable.
+    let dir = [g.install_dir.clone().unwrap_or_default(), workdir]
+        .into_iter()
+        .filter(|d| !d.is_empty())
+        .map(std::path::PathBuf::from)
+        .find(|d| exe_p.starts_with(d))
+        .or_else(|| exe_p.parent().map(Path::to_path_buf))
+        .ok_or("No se sabe en qué carpeta está el juego")?;
+    // Nunca una unidad entera (`D:\`) ni una carpeta de primer nivel compartida por muchos juegos.
+    if dir.components().count() < 3 {
+        return Err(format!("La carpeta del juego es demasiado general para copiarla: {}", dir.display()));
+    }
+    let rel = exe_p.strip_prefix(&dir).map_err(|_| "El ejecutable no está dentro de la carpeta del juego")?;
+    Ok(visor_core::gamecopy::InstallSource {
+        dir,
+        exe: rel.to_string_lossy().replace('\\', "/"),
+        args,
+        name: title.map(|t| t.name.clone()).unwrap_or_else(|| g.name.clone()),
+        platform: g.platform.clone(),
+    })
+}

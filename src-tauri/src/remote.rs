@@ -145,6 +145,10 @@ impl Provider for AppProvider {
         crate::remote_call::dispatch(&self.app, caller, cmd, args)
     }
 
+    fn install_source(&self, caller: &Caller, id: &str) -> anyhow::Result<visor_core::gamecopy::InstallSource> {
+        crate::installs::install_source(&self.app.state::<AppState>(), caller, id).map_err(|e| anyhow::anyhow!(e))
+    }
+
     fn asset_roots(&self) -> Vec<PathBuf> {
         let st = self.app.state::<AppState>();
         let mut v = vec![st.thumbs_dir(), st.previews_dir(), st.paths.art.clone(), st.paths.saves.clone(), st.paths.glossary.clone()];

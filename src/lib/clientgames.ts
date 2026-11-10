@@ -68,3 +68,15 @@ export async function removeLocal(id: string): Promise<void> {
 
 export const launchLocal = (id: string) => invoke('client_launch', { id });
 export const syncNow = () => invoke<number>('client_sync').catch(() => 0);
+
+/* Fase 3b: copiar un juego entero del PC principal a este equipo. */
+export interface CopyInfo { id: string; name: string; platform: string; folder: string; exe: string; total: number }
+export interface CopyProgress { done: number; total: number; filesDone: number; files: number }
+export const copyInfo = (id: string) => invoke<CopyInfo>('client_copy_info', { id });
+/** Descarga el juego en `dest\<carpeta>` (reanuda lo que hubiera a medias) y lo apunta como instalado aquí. */
+export async function copyGame(id: string, dest: string): Promise<string> {
+  const r = await invoke<string>('client_copy_game', { id, dest });
+  await refreshLocal();
+  return r;
+}
+export const copyCancel = () => invoke('client_copy_cancel');
