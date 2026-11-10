@@ -47,7 +47,7 @@ fn on_main<T: Send + 'static>(app: &AppHandle, f: impl FnOnce(AppHandle) -> T + 
     rx.recv_timeout(std::time::Duration::from_secs(30)).map_err(|_| "El visor no respondió a tiempo".to_string())
 }
 
-pub fn dispatch(app: &AppHandle, cmd: &str, args: Value) -> Res {
+pub fn dispatch(app: &AppHandle, caller: &visor_core::remote::Caller, cmd: &str, args: Value) -> Res {
     let st = || app.state::<AppState>();
     let a = &args;
     match cmd {
@@ -83,7 +83,8 @@ pub fn dispatch(app: &AppHandle, cmd: &str, args: Value) -> Res {
                 game = found.iter().find(|g| g.id == id).cloned();
                 *state.games.lock().unwrap() = found;
             }
-            out(crate::stream::launch(app, game.ok_or("Juego no encontrado")?, String::new()))
+            // La partida queda a nombre de quien la pide (streaming desde la tablet o desde otro PC).
+            out(crate::stream::launch(app, game.ok_or("Juego no encontrado")?, caller.device_id.clone()))
         }
         "stream_cancel" => val(crate::stream::cancel()),
         "close_game" => out(crate::stream::close(app, arg(a, "force").unwrap_or(false))),

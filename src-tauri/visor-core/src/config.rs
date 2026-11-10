@@ -147,6 +147,8 @@ pub struct Config {
     /// Identificador fijo de este PC (se genera la primera vez): la tablet lo guarda en lugar de la IP para volver
     /// a encontrarlo si cambia.
     pub remote_id: String,
+    /// Nombre de este equipo para los demas dispositivos (vacio = el nombre de Windows).
+    pub device_name: String,
     /// Arrancar con Windows en segundo plano (icono en la bandeja, sin ventana) para que la tablet conecte siempre.
     pub start_with_windows: bool,
     /// Ocultar el cursor del PC mientras dura un juego lanzado por streaming (en modo trackpad de Artemis hay que verlo).
@@ -259,6 +261,7 @@ impl Default for Config {
             remote_port: crate::remote::DEFAULT_PORT,
             remote_token: String::new(),
             remote_id: String::new(),
+            device_name: String::new(),
             start_with_windows: false,
             stream_hide_cursor: true,
             titles_order: Default::default(),

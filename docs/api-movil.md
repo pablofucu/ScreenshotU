@@ -21,13 +21,31 @@ ambiguos: `ABCDEFGHJKMNPQRSTUVWXYZ23456789`). Se compara sin guiones ni espacios
 Sin código o con uno incorrecto: `401` con `{"error":"..."}`. Tras 10 intentos fallidos en un minuto desde la
 misma IP se responde `429` durante ese minuto.
 
+**Token de dispositivo (apiRev 2).** Cada dispositivo (otro PC o la tablet) se empareja una vez con
+`POST /api/v1/pair` y recibe un token propio (64 caracteres hex), que manda igual que el código
+(`Authorization: Bearer <token>` o `?k=<token>`). Así el host sabe quién llama y guarda sus partidas a su nombre.
+El código de siempre sigue entrando, como «Tablet» (`legacy-tablet`). Opcionales en cada petición:
+`X-Visor-Version` (versión de la app) y `X-Visor-Api` (revisión que usa el cliente); si `X-Visor-Api` es menor que
+`apiMin`, `426` «Actualiza el visor de este equipo».
+
 ## Endpoints
 
 ### `GET /api/v1/hello` (sin código)
 
 ```json
-{ "app": "visor-capturas", "api": 1, "name": "PC-SALON", "version": "0.1.0", "features": ["launch", "capture", "call", "events", "asset"] }
+{ "app": "visor-capturas", "api": 1, "apiRev": 2, "apiMin": 1, "name": "PC-SALON", "version": "0.1.0", "features": ["launch", "capture", "call", "events", "asset", "pair", "devices"] }
 ```
+
+`api` se queda en 1 (las rutas `/api/v1` no cambian y la APK antigua solo acepta 1); lo nuevo se mira en `apiRev`.
+
+### `POST /api/v1/pair` (sin cabecera)
+
+Cuerpo `{ "code": "ABCD-EFGH", "name": "Portátil", "kind": "pc"|"tablet", "appVersion": "0.9.0", "api": 2 }` →
+`{ "deviceId", "token", "hostId", "hostName", "api" }`. Código malo: `401` (cuenta para el `429`); sin nombre: `400`.
+
+### `POST /api/v1/unpair` (con token)
+
+El dispositivo se quita a sí mismo: su token deja de valer. Con el código antiguo: `400`.
 
 Sirve para comprobar que en esa dirección hay un visor antes de pedir el código. `features` lista las acciones
 (`POST`) que ofrece este PC.
@@ -122,4 +140,4 @@ ruta se canoniza y debe quedar dentro de una de esas carpetas (`..` o enlaces qu
 ## Errores
 
 `{"error": "mensaje en español"}` con `400` (parámetros), `401` (código), `403` (comando no disponible), `404` (ruta desconocida o
-desaparecida), `405` (método), `409` (acción rechazada), `429` (demasiados intentos) o `500`.
+desaparecida), `405` (método), `409` (acción rechazada), `426` (cliente demasiado antiguo), `429` (demasiados intentos) o `500`.

@@ -105,7 +105,9 @@ ALTER TABLE read_sessions ADD COLUMN uid TEXT;
   2. si no, `provider.device_by_token(token)` (SHA-256 del token, `revoked = 0`).
   Guardar `X-Visor-Version`/`X-Visor-Api` en `touch`.
 - `route` (`:627`):
-  - `hello` (`:639`): `api: 2`, `apiMin: 1`, features `+ "pair", "devices"`.
+  - `hello` (`:639`): `apiRev: 2`, `apiMin: 1`, features `+ "pair", "devices"`. **Hecho así:** `api` se queda en 1
+    porque la APK actual rechaza cualquier otro valor (`mobile/src/lib/source.ts:78`); los clientes nuevos miran
+    `apiRev`.
   - Nuevo `POST /api/v1/pair` (sin cabecera; el código va en el cuerpo, mismo `throttle`): cuerpo
     `{ code, name, kind, appVersion, api }` → `{ deviceId, token, hostId, hostName, api }`. Token: 32 bytes de
     `getrandom` en hex.

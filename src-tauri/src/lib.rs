@@ -183,6 +183,8 @@ fn save_config(app: AppHandle, state: State<'_, AppState>, config: Config) -> Re
     // El codigo del movil lo gestiona el nucleo (`remote_new_code`): se ignora el que mande la interfaz.
     config.remote_token = state.config.lock().unwrap().remote_token.clone();
     config.remote_id = state.config.lock().unwrap().remote_id.clone();
+    // El nombre del equipo se cambia con `set_device_name` (reinicia el descubrimiento).
+    config.device_name = state.config.lock().unwrap().device_name.clone();
     if config.remote_enabled && config.remote_token.is_empty() {
         config.remote_token = visor_core::remote::new_code();
     }
@@ -1373,6 +1375,10 @@ pub fn run() {
             saves::saves_update_manifest,
             remote::remote_info,
             remote::remote_new_code,
+            remote::devices_list,
+            remote::device_rename,
+            remote::device_revoke,
+            remote::set_device_name,
             magpie_status,
             stream_app_status,
             stream_app_install,

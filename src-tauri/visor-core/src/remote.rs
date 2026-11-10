@@ -22,8 +22,15 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, RwLock};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-/// Version del contrato (`api` en `hello` y `snapshot`).
+/// Version del contrato (`api` en `hello` y `snapshot`). Se queda en 1: la APK de la tablet rechaza cualquier otro
+/// valor y las rutas `/api/v1` siguen siendo compatibles. Lo nuevo se anuncia con `API_REV`.
 pub const API_VERSION: u32 = 1;
+/// Revision de la API (`apiRev` en `hello`): sube cuando se anaden rutas o campos. 2 = dispositivos con token.
+pub const API_REV: u32 = 2;
+/// Revision mas antigua que se acepta: un cliente que mande `X-Visor-Api` menor recibe 426.
+pub const API_MIN: u32 = 1;
+/// Dispositivo de las tablets que entran con el codigo de emparejamiento (la APK de antes de los tokens).
+pub const LEGACY_TABLET: &str = "legacy-tablet";
 pub const DEFAULT_PORT: u16 = 47811;
 /// Ancho maximo de la vista previa para el visor del movil.
 pub const PREVIEW_WIDTH: u32 = 1920;
@@ -76,6 +83,30 @@ pub struct Playing {
     pub name: String,
     /// Inicio (ms desde epoch).
     pub since: i64,
+    /// Nombre del dispositivo que juega (vacio = en el propio host).
+    pub device: String,
+}
+
+/// Quien hace la peticion: un dispositivo emparejado, la tablet antigua (con el codigo) o el propio host.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct Caller {
+    /// Id del dispositivo (`''` = el propio host, `LEGACY_TABLET` = tablet con el codigo).
+    pub device_id: String,
+    pub name: String,
+    /// `tablet` o `pc`.
+    pub kind: String,
+}
+
+impl Caller {
+    /// El propio equipo (el ayudante de streaming desde loopback).
+    pub fn host() -> Caller {
+        Caller { device_id: String::new(), name: String::new(), kind: "pc".into() }
+    }
+    /// Tablet que entra con el codigo de emparejamiento, sin token propio.
+    pub fn legacy_tablet() -> Caller {
+        Caller { device_id: LEGACY_TABLET.into(), name: "Tablet".into(), kind: "tablet".into() }
+    }
 }
 
 /// Todo lo que la app movil necesita de una vez (sin `api`, `generatedAt` ni `name`, que anade el servidor).
@@ -115,8 +146,22 @@ pub trait Provider: Send + Sync + 'static {
     fn thumbs_dir(&self) -> PathBuf;
     /// Cache de vistas previas de 1920 px.
     fn previews_dir(&self) -> PathBuf;
+    /// Dispositivo emparejado con ese token (no revocado).
+    fn device_by_token(&self, _token: &str) -> Option<Caller> {
+        None
+    }
+    /// Da de alta un dispositivo y devuelve `(id, token)`.
+    fn pair(&self, _name: &str, _kind: &str, _version: &str, _api: u32) -> Result<(String, String)> {
+        anyhow::bail!("Este equipo no admite emparejar dispositivos")
+    }
+    /// El dispositivo deja de estar emparejado (su token ya no vale).
+    fn unpair(&self, _caller: &Caller) -> Result<()> {
+        anyhow::bail!("Este equipo no admite emparejar dispositivos")
+    }
+    /// Un dispositivo con token se ha conectado (version de su app y revision de la API, si las manda).
+    fn device_seen(&self, _caller: &Caller, _version: &str, _api: u32) {}
     /// Lanza un juego por su id con el lanzador del escritorio (cuenta el tiempo de juego).
-    fn launch(&self, _id: &str) -> Result<()> {
+    fn launch(&self, _caller: &Caller, _id: &str) -> Result<()> {
         anyhow::bail!("Este equipo no puede lanzar juegos")
     }
     /// Hace una captura ahora, como el atajo del escritorio.
@@ -124,7 +169,7 @@ pub trait Provider: Send + Sync + 'static {
         anyhow::bail!("Este equipo no puede hacer capturas")
     }
     /// Ejecuta un comando del visor por su nombre (`POST /call`). `Err(CALL_NOT_ALLOWED)` = no permitido.
-    fn call(&self, _cmd: &str, _args: serde_json::Value) -> std::result::Result<serde_json::Value, String> {
+    fn call(&self, _caller: &Caller, _cmd: &str, _args: serde_json::Value) -> std::result::Result<serde_json::Value, String> {
         Err(CALL_NOT_ALLOWED.into())
     }
     /// Cierra el juego en marcha (`POST /close`). Devuelve `{ "closed": "none"|"asked"|"forced" }`.
@@ -619,7 +664,8 @@ impl Inner {
         self.snapshot(false)
     }
 
-    fn authorized(&self, req: &Req) -> bool {
+    /// Quien llama segun su cabecera `Authorization` (o `k`): el codigo de emparejamiento o el token de un dispositivo.
+    fn caller(&self, req: &Req) -> Option<Caller> {
         let given = req
             .header("authorization")
             .and_then(|h| {
@@ -628,8 +674,17 @@ impl Inner {
             })
             .or_else(|| req.query.get("k").cloned())
             .unwrap_or_default();
-        let token = self.token.read().unwrap_or_else(|e| e.into_inner());
-        code_matches(&token, &given)
+        let code = self.token.read().unwrap_or_else(|e| e.into_inner()).clone();
+        if code_matches(&code, &given) {
+            return Some(Caller::legacy_tablet());
+        }
+        let given = given.trim();
+        if given.is_empty() {
+            return None;
+        }
+        let c = self.provider.device_by_token(given)?;
+        self.provider.device_seen(&c, req.header("x-visor-version").unwrap_or("").trim(), client_api(req).unwrap_or(0));
+        Some(c)
     }
 
     fn gen_lock(&self, key: &str) -> MutexGuard<'_, ()> {
@@ -650,10 +705,14 @@ fn route(inner: &Inner, req: &Req) -> Reply {
         "/api/v1/hello" => {
             return Reply::json(
                 200,
-                &serde_json::json!({ "app": "visor-capturas", "api": API_VERSION, "name": inner.provider.name(), "version": env!("CARGO_PKG_VERSION"), "id": inner.provider.id(), "features": ["launch", "capture", "call", "events", "asset", "discover", "close", "session"] }),
+                &serde_json::json!({ "app": "visor-capturas", "api": API_VERSION, "name": inner.provider.name(), "version": env!("CARGO_PKG_VERSION"), "id": inner.provider.id(), "apiRev": API_REV, "apiMin": API_MIN, "features": ["launch", "capture", "call", "events", "asset", "discover", "close", "session", "pair", "devices"] }),
             )
         }
-        "/api/v1/launch" | "/api/v1/capture" | "/api/v1/call" | "/api/v1/close" | "/api/v1/session/start" if !post => return Reply::error(405, "Método no permitido"),
+        "/api/v1/launch" | "/api/v1/capture" | "/api/v1/call" | "/api/v1/close" | "/api/v1/session/start" | "/api/v1/pair" | "/api/v1/unpair" if !post => {
+            return Reply::error(405, "Método no permitido")
+        }
+        "/api/v1/pair" => "pair",
+        "/api/v1/unpair" => "unpair",
         "/api/v1/launch" => "launch",
         "/api/v1/close" => "close",
         "/api/v1/session/start" => "session_start",
@@ -669,18 +728,34 @@ fn route(inner: &Inner, req: &Req) -> Reply {
         "/api/v1/asset" => "asset",
         _ => return Reply::error(404, "No existe"),
     };
+    if client_api(req).is_some_and(|a| a < API_MIN) {
+        return Reply::error(426, "Actualiza el visor de este equipo");
+    }
     let now = Instant::now();
     if inner.throttle.blocked(req.ip, now) {
         return Reply::error(429, "Demasiados intentos con un código incorrecto. Espera un minuto.");
+    }
+    if ep == "pair" {
+        return pair_reply(inner, req, now);
     }
     // El ayudante de streaming habla desde el propio PC: sin codigo desde loopback.
     let local_ok = (ep == "session" || ep == "session_start") && req.ip.is_loopback();
     if ep == "session_start" && !local_ok {
         return Reply::error(403, "Solo desde el propio equipo");
     }
-    if !local_ok && !inner.authorized(req) {
+    let caller = if local_ok { Some(Caller::host()) } else { inner.caller(req) };
+    let Some(caller) = caller else {
         inner.throttle.fail(req.ip, now);
         return Reply::error(401, "Falta el código de emparejamiento o no es correcto.");
+    };
+    if ep == "unpair" {
+        if caller.device_id == LEGACY_TABLET {
+            return Reply::error(400, "Este dispositivo entra con el código, no tiene emparejamiento propio");
+        }
+        return match inner.provider.unpair(&caller) {
+            Ok(()) => Reply::json(200, &serde_json::json!({ "ok": true })),
+            Err(e) => Reply::error(409, &format!("{e:#}")),
+        };
     }
     if ep == "session" {
         return Reply::json(200, &inner.provider.session()).with("Cache-Control", "no-store");
@@ -705,13 +780,13 @@ fn route(inner: &Inner, req: &Req) -> Reply {
         let Some(id) = id else {
             return Reply::error(400, "Falta el id del juego");
         };
-        return match inner.provider.launch(&id) {
+        return match inner.provider.launch(&caller, &id) {
             Ok(()) => Reply::json(200, &serde_json::json!({ "ok": true })),
             Err(e) => Reply::error(409, &format!("{e:#}")),
         };
     }
     if ep == "call" {
-        return call_reply(inner, &req.body);
+        return call_reply(inner, &caller, &req.body);
     }
     if ep == "events" {
         let num = |k: &str| req.query.get(k).and_then(|v| v.parse::<u64>().ok()).unwrap_or(0);
@@ -779,8 +854,38 @@ fn route(inner: &Inner, req: &Req) -> Reply {
     r
 }
 
+/// Revision de la API que dice usar el cliente (`X-Visor-Api`), si la manda.
+fn client_api(req: &Req) -> Option<u32> {
+    req.header("x-visor-api").and_then(|v| v.trim().parse().ok())
+}
+
+/// `POST /pair` (sin cabecera): `{code, name, kind, appVersion, api}` -> `{deviceId, token, hostId, hostName, api}`.
+/// El codigo va en el cuerpo y cuenta para el limite de intentos fallidos igual que la cabecera.
+fn pair_reply(inner: &Inner, req: &Req, now: Instant) -> Reply {
+    let v = serde_json::from_slice::<serde_json::Value>(&req.body).unwrap_or(serde_json::Value::Null);
+    let s = |k: &str| v.get(k).and_then(|x| x.as_str()).unwrap_or("").to_string();
+    let code = inner.token.read().unwrap_or_else(|e| e.into_inner()).clone();
+    if !code_matches(&code, &s("code")) {
+        inner.throttle.fail(req.ip, now);
+        return Reply::error(401, "El código de emparejamiento no es correcto.");
+    }
+    let name = s("name");
+    if name.trim().is_empty() {
+        return Reply::error(400, "Falta el nombre del dispositivo");
+    }
+    let api = v.get("api").and_then(|x| x.as_u64()).unwrap_or(0) as u32;
+    match inner.provider.pair(&name, &s("kind"), &s("appVersion"), api) {
+        Ok((id, token)) => Reply::json(
+            200,
+            &serde_json::json!({ "deviceId": id, "token": token, "hostId": inner.provider.id(), "hostName": inner.provider.name(), "api": API_REV }),
+        )
+        .with("Cache-Control", "no-store"),
+        Err(e) => Reply::error(400, &format!("{e:#}")),
+    }
+}
+
 /// `POST /call`: `{"cmd": "...", "args": {...}}` -> resultado JSON del comando.
-fn call_reply(inner: &Inner, body: &[u8]) -> Reply {
+fn call_reply(inner: &Inner, caller: &Caller, body: &[u8]) -> Reply {
     let Ok(v) = serde_json::from_slice::<serde_json::Value>(body) else {
         return Reply::error(400, "El cuerpo no es JSON");
     };
@@ -792,7 +897,7 @@ fn call_reply(inner: &Inner, body: &[u8]) -> Reply {
         Some(a) if a.is_object() => a.clone(),
         Some(_) => return Reply::error(400, "args debe ser un objeto"),
     };
-    match inner.provider.call(cmd, args) {
+    match inner.provider.call(caller, cmd, args) {
         Ok(r) => Reply::json(200, &r),
         Err(e) if e == CALL_NOT_ALLOWED => Reply::error(403, CALL_NOT_ALLOWED),
         Err(e) if e.starts_with(CALL_BAD_ARGS) => Reply::error(400, &e),
@@ -854,7 +959,7 @@ fn snapshot_reply(c: &Cached, req: &Req) -> Reply {
 
 const CORS: [(&str, &str); 4] = [
     ("Access-Control-Allow-Origin", "*"),
-    ("Access-Control-Allow-Headers", "Authorization, If-None-Match, Content-Type"),
+    ("Access-Control-Allow-Headers", "Authorization, If-None-Match, Content-Type, X-Visor-Api, X-Visor-Version"),
     ("Access-Control-Allow-Methods", "GET, POST, OPTIONS"),
     ("Access-Control-Expose-Headers", "ETag"),
 ];
@@ -1160,7 +1265,7 @@ mod tests {
         fn previews_dir(&self) -> PathBuf {
             self.dir.join("previews")
         }
-        fn launch(&self, id: &str) -> Result<()> {
+        fn launch(&self, _caller: &Caller, id: &str) -> Result<()> {
             anyhow::ensure!(id == "pc/A", "Juego no encontrado");
             Ok(())
         }
@@ -1176,9 +1281,10 @@ mod tests {
         fn session_start(&self, _w: u32, _h: u32, _fps: u32) -> Result<serde_json::Value> {
             anyhow::bail!("No hay juego pendiente")
         }
-        fn call(&self, cmd: &str, args: serde_json::Value) -> std::result::Result<serde_json::Value, String> {
+        fn call(&self, caller: &Caller, cmd: &str, args: serde_json::Value) -> std::result::Result<serde_json::Value, String> {
             match cmd {
                 "ping" => Ok(serde_json::json!({ "pong": args["n"] })),
+                "whoami" => Ok(serde_json::json!({ "device": caller.device_id })),
                 "boom" => Err("fallo".into()),
                 _ => Err(CALL_NOT_ALLOWED.into()),
             }
@@ -1343,6 +1449,93 @@ mod tests {
         let out = format!("/api/v1/asset?p={}&k=ABCD-EFGH", d.path().join("thumbs").join("..").join("x.png").to_string_lossy().replace('\\', "/"));
         assert_eq!(get(a, "GET", &out, &[]).status, 404);
         assert_eq!(get(a, "GET", "/api/v1/asset?p=x", &[]).status, 401);
+    }
+
+    /// Proveedor con dispositivos en memoria: `(token, dispositivo, quitado)`.
+    struct Paired {
+        dir: PathBuf,
+        devs: Arc<Mutex<Vec<(String, Caller, bool)>>>,
+        seen: Arc<Mutex<Vec<(String, String, u32)>>>,
+    }
+    impl Provider for Paired {
+        fn name(&self) -> String {
+            "HOST".into()
+        }
+        fn id(&self) -> String {
+            "host-1".into()
+        }
+        fn snapshot(&self) -> Result<Snapshot> {
+            let config = RemoteConfig { goal_vn: 1, goal_jvn: 1, goal_pc: 1, goal_switch: 1, accent_mode: "art".into(), accent_fixed: 0 };
+            Ok(Snapshot { config, library: lib_with(vec![]), favorites: vec![], sagas: vec![], playing: None })
+        }
+        fn thumbs_dir(&self) -> PathBuf {
+            self.dir.join("thumbs")
+        }
+        fn previews_dir(&self) -> PathBuf {
+            self.dir.join("previews")
+        }
+        fn device_by_token(&self, token: &str) -> Option<Caller> {
+            self.devs.lock().unwrap().iter().find(|(t, _, rev)| t == token && !rev).map(|(_, c, _)| c.clone())
+        }
+        fn pair(&self, name: &str, kind: &str, _version: &str, _api: u32) -> Result<(String, String)> {
+            let mut d = self.devs.lock().unwrap();
+            let id = format!("dev{}", d.len() + 1);
+            let token = format!("tok{}", d.len() + 1);
+            d.push((token.clone(), Caller { device_id: id.clone(), name: name.into(), kind: kind.into() }, false));
+            Ok((id, token))
+        }
+        fn unpair(&self, caller: &Caller) -> Result<()> {
+            for d in self.devs.lock().unwrap().iter_mut().filter(|d| d.1.device_id == caller.device_id) {
+                d.2 = true;
+            }
+            Ok(())
+        }
+        fn device_seen(&self, caller: &Caller, version: &str, api: u32) {
+            self.seen.lock().unwrap().push((caller.device_id.clone(), version.into(), api));
+        }
+        fn call(&self, caller: &Caller, cmd: &str, _args: serde_json::Value) -> std::result::Result<serde_json::Value, String> {
+            match cmd {
+                "whoami" => Ok(serde_json::json!({ "device": caller.device_id, "name": caller.name })),
+                _ => Err(CALL_NOT_ALLOWED.into()),
+            }
+        }
+    }
+
+    #[test]
+    fn pair_token_revoke_and_legacy_code() {
+        let d = tempfile::tempdir().unwrap();
+        let seen = Arc::new(Mutex::new(vec![]));
+        let p = Paired { dir: d.path().to_path_buf(), devs: Arc::new(Mutex::new(vec![])), seen: seen.clone() };
+        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), "ABCD-EFGH".into(), p).unwrap();
+        let a = srv.local_addr();
+        let hello: serde_json::Value = serde_json::from_slice(&get(a, "GET", "/api/v1/hello", &[]).body).unwrap();
+        assert_eq!((hello["api"].as_u64(), hello["apiRev"].as_u64(), hello["apiMin"].as_u64()), (Some(1), Some(API_REV as u64), Some(1)));
+        assert!(hello["features"].as_array().unwrap().iter().any(|f| f == "pair"));
+        // codigo malo: 401; sin nombre: 400; bueno: id y token
+        assert_eq!(post(a, "/api/v1/pair", None, "{\"code\":\"ZZZZ-ZZZZ\",\"name\":\"Portátil\"}").0, 401);
+        assert_eq!(post(a, "/api/v1/pair", None, "{\"code\":\"ABCD-EFGH\",\"name\":\" \"}").0, 400);
+        assert_eq!(get(a, "GET", "/api/v1/pair", &[]).status, 405);
+        let (st, text) = post(a, "/api/v1/pair", None, "{\"code\":\"abcd efgh\",\"name\":\"Portátil\",\"kind\":\"pc\",\"appVersion\":\"1.0\",\"api\":2}");
+        assert_eq!(st, 200, "{text}");
+        let body: serde_json::Value = serde_json::from_str(&text[text.find("\r\n\r\n").unwrap() + 4..]).unwrap();
+        assert_eq!((body["deviceId"].as_str(), body["token"].as_str(), body["hostId"].as_str()), (Some("dev1"), Some("tok1"), Some("host-1")));
+        // el token entra y el proveedor sabe quien llama; tambien apunta la version
+        let (st, text) = post(a, "/api/v1/call", Some("tok1"), "{\"cmd\":\"whoami\"}");
+        assert_eq!(st, 200);
+        assert!(text.contains("\"device\":\"dev1\""), "{text}");
+        let r = get(a, "GET", "/api/v1/snapshot", &[("Authorization", "Bearer tok1"), ("X-Visor-Version", "1.1"), ("X-Visor-Api", "2")]);
+        assert_eq!(r.status, 200);
+        assert!(seen.lock().unwrap().contains(&("dev1".into(), "1.1".into(), 2)));
+        // el codigo antiguo sigue entrando como la tablet de siempre
+        let (_, text) = post(a, "/api/v1/call", Some("ABCD-EFGH"), "{\"cmd\":\"whoami\"}");
+        assert!(text.contains(LEGACY_TABLET), "{text}");
+        assert_eq!(post(a, "/api/v1/unpair", Some("ABCD-EFGH"), "").0, 400);
+        // api demasiado vieja: 426
+        assert_eq!(get(a, "GET", "/api/v1/snapshot", &[("Authorization", "Bearer tok1"), ("X-Visor-Api", "0")]).status, 426);
+        // quitarse: el token deja de valer
+        assert_eq!(post(a, "/api/v1/unpair", Some("tok1"), "").0, 200);
+        assert_eq!(post(a, "/api/v1/call", Some("tok1"), "{\"cmd\":\"whoami\"}").0, 401);
+        assert_eq!(get(a, "GET", "/api/v1/snapshot", &[("Authorization", "Bearer tok1")]).status, 401);
     }
 
     #[test]

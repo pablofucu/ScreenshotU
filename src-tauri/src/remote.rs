@@ -5,9 +5,10 @@ use serde::Serialize;
 use std::net::{Ipv4Addr, SocketAddr};
 use std::path::PathBuf;
 use std::sync::Mutex;
-use tauri::{AppHandle, Listener, Manager, State};
+use tauri::{AppHandle, Emitter, Listener, Manager, State};
 use visor_core::db::data as dbd;
-use visor_core::remote::{self, Discovery, Playing, Provider, RemoteConfig, RemoteServer, Snapshot};
+use visor_core::devices;
+use visor_core::remote::{self, Caller, Discovery, Playing, Provider, RemoteConfig, RemoteServer, Snapshot};
 
 /// Respondedor UDP de "hay un visor por aqui?" (vive mientras el servidor esta activado).
 static DISCOVERY: Mutex<Option<Discovery>> = Mutex::new(None);
@@ -16,9 +17,32 @@ struct AppProvider {
     app: AppHandle,
 }
 
+/// Nombre de este equipo para los demas dispositivos: el que le puso el usuario o, si no, el de Windows.
+pub fn display_name(st: &AppState) -> String {
+    let n = st.config.lock().unwrap().device_name.trim().to_string();
+    if n.is_empty() {
+        remote::host_name()
+    } else {
+        n
+    }
+}
+
+/// Nombre de un dispositivo para mostrarlo (`''` = este equipo).
+pub fn device_label(st: &AppState, id: &str) -> String {
+    match id {
+        "" => String::new(),
+        remote::LEGACY_TABLET => "Tablet".into(),
+        _ => st.db.with(|c| devices::get(c, id)).ok().flatten().map(|d| d.name).unwrap_or_else(|| "Otro dispositivo".into()),
+    }
+}
+
+fn caller_of(d: devices::Device) -> Caller {
+    Caller { device_id: d.id, name: d.name, kind: d.kind }
+}
+
 impl Provider for AppProvider {
     fn name(&self) -> String {
-        remote::host_name()
+        display_name(&self.app.state::<AppState>())
     }
 
     fn id(&self) -> String {
@@ -36,7 +60,8 @@ impl Provider for AppProvider {
         lib.hidden.clear();
         let favorites = st.favorites.lock().unwrap().clone();
         let sagas = state::log_db("sagas", st.db.with(dbd::sagas_load));
-        let playing = st.active.lock().unwrap().as_ref().map(|a| Playing { id: a.id.clone(), name: a.name.clone(), since: a.since });
+        let active = st.active.lock().unwrap().clone();
+        let playing = active.map(|a| Playing { device: device_label(&st, &a.device), id: a.id, name: a.name, since: a.since });
         Ok(Snapshot { config: RemoteConfig::from_config(&cfg), library: lib, favorites, sagas, playing })
     }
 
@@ -48,7 +73,32 @@ impl Provider for AppProvider {
         self.app.state::<AppState>().previews_dir()
     }
 
-    fn launch(&self, id: &str) -> anyhow::Result<()> {
+    fn device_by_token(&self, token: &str) -> Option<Caller> {
+        let st = self.app.state::<AppState>();
+        st.db.with(|c| devices::by_token(c, token)).ok().flatten().map(caller_of)
+    }
+
+    fn pair(&self, name: &str, kind: &str, version: &str, api: u32) -> anyhow::Result<(String, String)> {
+        let st = self.app.state::<AppState>();
+        let r = st.db.with(|c| devices::create(c, name, kind, version, api))?;
+        let _ = self.app.emit("devices-changed", ());
+        Ok(r)
+    }
+
+    fn unpair(&self, caller: &Caller) -> anyhow::Result<()> {
+        let st = self.app.state::<AppState>();
+        st.db.with(|c| devices::revoke(c, &caller.device_id))?;
+        let _ = self.app.emit("devices-changed", ());
+        Ok(())
+    }
+
+    fn device_seen(&self, caller: &Caller, version: &str, api: u32) {
+        let st = self.app.state::<AppState>();
+        state::log_db_err("dispositivos", st.db.with(|c| devices::touch(c, &caller.device_id, version, api)));
+    }
+
+    /// Lanzar sin streaming es jugar en el host: la partida es del host aunque la pida otro dispositivo.
+    fn launch(&self, _caller: &Caller, id: &str) -> anyhow::Result<()> {
         let id = id.to_string();
         let app = self.app.clone();
         // El lanzador toca la ventana y la pantalla principal: va en el hilo principal, como el comando del visor.
@@ -91,8 +141,8 @@ impl Provider for AppProvider {
         crate::stream::session_start(&self.app, w, h, fps).map_err(|e| anyhow::anyhow!(e))
     }
 
-    fn call(&self, cmd: &str, args: serde_json::Value) -> Result<serde_json::Value, String> {
-        crate::remote_call::dispatch(&self.app, cmd, args)
+    fn call(&self, caller: &Caller, cmd: &str, args: serde_json::Value) -> Result<serde_json::Value, String> {
+        crate::remote_call::dispatch(&self.app, caller, cmd, args)
     }
 
     fn asset_roots(&self) -> Vec<PathBuf> {
@@ -191,15 +241,21 @@ pub fn apply(app: &AppHandle) {
             *cur = Some(s);
             *st.remote_error.lock().unwrap() = None;
             // Que la tablet pueda encontrar el PC por su identificador aunque cambie de IP.
-            match Discovery::start(SocketAddr::from((Ipv4Addr::UNSPECIFIED, remote::DISCOVERY_PORT)), id, remote::host_name(), port) {
-                Ok(d) => *DISCOVERY.lock().unwrap() = Some(d),
-                Err(e) => eprintln!("descubrimiento de la tablet: {e:#}"),
-            }
+            start_discovery(&st, id, port);
         }
         Err(e) => {
             eprintln!("servidor del movil: {e:#}");
             *st.remote_error.lock().unwrap() = Some(format!("{e:#}"));
         }
+    }
+}
+
+/// Respondedor UDP con el nombre de ahora (se reinicia si cambia el nombre del equipo).
+fn start_discovery(st: &AppState, id: String, port: u16) {
+    *DISCOVERY.lock().unwrap() = None;
+    match Discovery::start(SocketAddr::from((Ipv4Addr::UNSPECIFIED, remote::DISCOVERY_PORT)), id, display_name(st), port) {
+        Ok(d) => *DISCOVERY.lock().unwrap() = Some(d),
+        Err(e) => eprintln!("descubrimiento de la tablet: {e:#}"),
     }
 }
 
@@ -214,6 +270,8 @@ pub struct RemoteInfo {
     code: String,
     /// Identificador fijo del PC.
     id: String,
+    /// Nombre de este equipo para los demas dispositivos.
+    name: String,
     /// Enlace `visor://pair?...` que lleva el QR (vacio si no hay IP o no esta activado).
     link: String,
     /// El QR de `link` como imagen SVG.
@@ -227,8 +285,8 @@ fn encode(s: &str) -> String {
 }
 
 /// Enlace de emparejamiento que lee la tablet: direccion, codigo e identificador del PC.
-fn pair_link(ip: &str, port: u16, code: &str, id: &str) -> String {
-    format!("visor://pair?h={}&p={port}&k={}&i={}&n={}", encode(ip), encode(code), encode(id), encode(&remote::host_name()))
+fn pair_link(ip: &str, port: u16, code: &str, id: &str, name: &str) -> String {
+    format!("visor://pair?h={}&p={port}&k={}&i={}&n={}", encode(ip), encode(code), encode(id), encode(name))
 }
 
 fn qr_svg(text: &str) -> String {
@@ -247,7 +305,8 @@ fn info(st: &AppState) -> RemoteInfo {
     };
     let running = st.remote.lock().unwrap().is_some();
     let addresses = if running { remote::local_ipv4s() } else { Vec::new() };
-    let link = addresses.first().map(|ip| pair_link(ip, port, &code, &id)).unwrap_or_default();
+    let name = display_name(st);
+    let link = addresses.first().map(|ip| pair_link(ip, port, &code, &id, &name)).unwrap_or_default();
     let qr = qr_svg(&link);
     RemoteInfo {
         enabled,
@@ -256,6 +315,7 @@ fn info(st: &AppState) -> RemoteInfo {
         addresses,
         code,
         id,
+        name,
         link,
         qr,
         error: st.remote_error.lock().unwrap().clone(),
@@ -278,5 +338,45 @@ pub fn remote_new_code(app: AppHandle, state: State<'_, AppState>) -> Result<Rem
         *c = next;
     }
     apply(&app);
+    Ok(info(&state))
+}
+
+/* --- dispositivos emparejados (solo desde el escritorio del host; no estan en `remote_call::dispatch`) --- */
+
+#[tauri::command]
+pub fn devices_list(state: State<'_, AppState>) -> Result<Vec<devices::Device>, String> {
+    state.db.with(devices::list).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn device_rename(app: AppHandle, state: State<'_, AppState>, id: String, name: String) -> Result<(), String> {
+    state.db.with(|c| devices::rename(c, &id, &name)).map_err(|e| e.to_string())?;
+    let _ = app.emit("devices-changed", ());
+    Ok(())
+}
+
+/// Quita un dispositivo: su token deja de valer y tendra que emparejarse otra vez.
+#[tauri::command]
+pub fn device_revoke(app: AppHandle, state: State<'_, AppState>, id: String) -> Result<(), String> {
+    state.db.with(|c| devices::revoke(c, &id)).map_err(|e| e.to_string())?;
+    let _ = app.emit("devices-changed", ());
+    Ok(())
+}
+
+/// Nombre de este equipo para los demas dispositivos (vacio = el de Windows).
+#[tauri::command]
+pub fn set_device_name(state: State<'_, AppState>, name: String) -> Result<RemoteInfo, String> {
+    let name: String = name.trim().chars().take(60).collect();
+    let (id, port) = {
+        let mut c = state.config.lock().unwrap();
+        let mut next = c.clone();
+        next.device_name = name;
+        next.save(&state.config_file()).map_err(|e| e.to_string())?;
+        *c = next;
+        (c.remote_id.clone(), c.remote_port)
+    };
+    if state.remote.lock().unwrap().is_some() {
+        start_discovery(&state, id, port);
+    }
     Ok(info(&state))
 }
