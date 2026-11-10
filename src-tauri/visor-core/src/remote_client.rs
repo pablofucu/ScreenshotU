@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::net::{Ipv4Addr, SocketAddr, UdpSocket};
 use std::time::{Duration, Instant};
 
-use crate::remote::{API_REV, DEFAULT_PORT, DISCOVERY_PORT, DISCOVERY_QUERY};
+use crate::remote::{local_ipv4s, API_REV, DEFAULT_PORT, DISCOVERY_PORT, DISCOVERY_QUERY};
 
 const TIMEOUT: Duration = Duration::from_secs(4);
 
@@ -81,7 +81,27 @@ pub fn addr_host(addr: &str) -> String {
 
 /// Busca visores en la red local (difusion UDP) durante `wait`.
 pub fn discover(wait: Duration) -> Result<Vec<Found>> {
-    discover_to(&[SocketAddr::from((Ipv4Addr::BROADCAST, DISCOVERY_PORT))], wait)
+    discover_to(&broadcast_targets(&local_ipv4s()), wait)
+}
+
+/// Destinos de la difusion: la general (`255.255.255.255`) y la de cada red privada de este PC (`a.b.c.255`).
+/// Windows manda la general por una sola interfaz (la de la ruta por defecto), asi que con Tailscale o adaptadores
+/// virtuales puede no llegar a la red de casa; la de cada subred sale por su propio adaptador. Se asume /24, que es
+/// lo habitual en redes domesticas; una mascara distinta solo hace que esa difusion no llegue, sin dar error.
+pub fn broadcast_targets(ips: &[String]) -> Vec<SocketAddr> {
+    let mut out = vec![SocketAddr::from((Ipv4Addr::BROADCAST, DISCOVERY_PORT))];
+    for ip in ips {
+        let Ok(v4) = ip.parse::<Ipv4Addr>() else { continue };
+        if !v4.is_private() {
+            continue;
+        }
+        let [a, b, c, _] = v4.octets();
+        let bc = SocketAddr::from((Ipv4Addr::new(a, b, c, 255), DISCOVERY_PORT));
+        if !out.contains(&bc) {
+            out.push(bc);
+        }
+    }
+    out
 }
 
 /// Como `discover`, preguntando a esas direcciones (en las pruebas, al respondedor en loopback).
@@ -244,6 +264,29 @@ mod tests {
     use crate::remote::{Caller, Discovery, Provider, RemoteServer, Snapshot};
     use std::path::PathBuf;
     use std::sync::{Arc, Mutex};
+
+    #[test]
+    fn broadcast_targets_incluye_cada_subred_privada() {
+        let ips = vec!["192.168.0.80".to_string(), "100.124.5.117".to_string(), "192.168.0.80".to_string(), "10.1.2.3".to_string()];
+        let t = broadcast_targets(&ips);
+        let want: Vec<SocketAddr> = vec![
+            SocketAddr::from((Ipv4Addr::BROADCAST, DISCOVERY_PORT)),
+            SocketAddr::from((Ipv4Addr::new(192, 168, 0, 255), DISCOVERY_PORT)),
+            SocketAddr::from((Ipv4Addr::new(10, 1, 2, 255), DISCOVERY_PORT)),
+        ];
+        assert_eq!(t, want);
+    }
+
+    #[test]
+    fn broadcast_targets_sin_ips_solo_la_general() {
+        assert_eq!(broadcast_targets(&[]), vec![SocketAddr::from((Ipv4Addr::BROADCAST, DISCOVERY_PORT))]);
+    }
+
+    #[test]
+    fn broadcast_targets_seguro() {
+        // Cadenas que no son IPv4 se ignoran sin fallar.
+        assert_eq!(broadcast_targets(&["no-es-ip".to_string()]).len(), 1);
+    }
 
     #[test]
     fn addresses() {
