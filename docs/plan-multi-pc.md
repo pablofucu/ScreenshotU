@@ -277,6 +277,21 @@ Comandos (registrar en `lib.rs:1312`, nunca en `remote_call.rs`):
 
 ---
 
+## Decisiones del usuario (10-nov-2026)
+
+- **Imágenes originales:** configuración lo más fácil posible y que funcione también desde otra red. No se comparte P:
+  por SMB (pide permisos de administrador y cortafuegos, y no sirve fuera de casa). El host sirve los originales por
+  su API HTTP bajo demanda, con caché en el cliente. Esto sirve igual en la red local y por Tailscale.
+- **Wake-on-LAN:** un botón «Encender host», como en la tablet. No se despierta solo al pulsar «Jugar».
+- **Host ocupado:** solo por error. Dos personas pueden usar dos clientes a la vez (editar y ver la biblioteca sin
+  problema), pero Apollo solo admite un streaming a la vez: el segundo ve «El host está en uso: <dispositivo> juega a
+  <juego>». Ningún cliente cierra el juego de otro. El segundo puede jugar en local lo que tenga instalado (fase 2).
+- **Versiones:** una sola versión de escritorio para todos los PCs; el modo (host o cliente) se elige al instalar
+  o en Ajustes. La tablet sigue siendo su APK. Mismo número de versión; si no coincide, el cliente avisa, se queda en
+  solo lectura y ofrece actualizar (el actualizador ya existe).
+- **Estadísticas por dispositivo:** algo simple, del tipo «5 partidas en Tablet, 5 en Portátil»: partidas y horas por
+  dispositivo en la ficha del juego y en Estadísticas. Sin vistas nuevas complejas.
+
 ## Riesgos y decisiones abiertas
 
 1. **SQLite por red.** Si alguien apunta el cliente a `P:` compartido, dos procesos escriben el mismo `visor.db` y se
