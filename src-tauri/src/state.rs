@@ -21,6 +21,8 @@ pub struct Active {
     pub since: i64,
     /// PIDs de los procesos del juego (se actualizan mientras se vigila).
     pub pids: Arc<Mutex<Vec<u32>>>,
+    /// Dispositivo que juega (`''` = este equipo; si no, el id del cliente que juega en streaming).
+    pub device: String,
 }
 
 /// Registra un error de la base y devuelve el valor por defecto (para lecturas al arrancar o en hilos sin donde informar).

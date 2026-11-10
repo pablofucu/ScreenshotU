@@ -255,6 +255,20 @@ pub fn new_id() -> String {
     hex(&buf[..16])
 }
 
+/// Token secreto de un dispositivo: 32 bytes aleatorios en hexadecimal (64 caracteres).
+pub fn new_token() -> String {
+    let mut buf = [0u8; 32];
+    if getrandom::getrandom(&mut buf).is_err() {
+        fallback_random(&mut buf);
+    }
+    hex(&buf)
+}
+
+/// SHA-256 de un texto, en hexadecimal (para guardar tokens sin dejarlos en claro).
+pub fn sha256_hex(s: &str) -> String {
+    hex(&Sha256::digest(s.as_bytes()))
+}
+
 /// Por si el generador del sistema fallara: hora, proceso y contador pasados por SHA-256.
 fn fallback_random(buf: &mut [u8; 32]) {
     static COUNTER: AtomicU64 = AtomicU64::new(0);

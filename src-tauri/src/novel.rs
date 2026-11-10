@@ -187,7 +187,8 @@ pub fn on_launch(app: AppHandle, game: Game, pids: Arc<Mutex<Vec<u32>>>) {
     // Sin hilo guardado (primera vez con este juego) la pagina de lectura abre sola la configuracion del texthook.
     crate::reader::server::set_extra("needHook", serde_json::json!(prefs.thread_key.is_none()));
     crate::reader::server::set_session(Some(game.name.clone()), Some(prefs.clone()));
-    readstats::start(&app, &game.id, &game.name);
+    let device = app.state::<crate::state::AppState>().active.lock().unwrap().as_ref().map(|a| a.device.clone()).unwrap_or_default();
+    readstats::start(&app, &game.id, &game.name, &device);
 
     // Esperar al proceso del juego (el vigilante de `launcher` va rellenando los PIDs).
     let started = Instant::now();

@@ -51,9 +51,11 @@ struct Session {
     epoch: u64,
     /// App de Apollo con la que se lanzó el stream (la tablet la necesita para volver a la partida).
     stream_app: Option<String>,
+    /// Dispositivo que pidió el juego (id del cliente; `''` = la tablet antigua o el propio equipo).
+    device: String,
 }
 
-static SESSION: Mutex<Session> = Mutex::new(Session { phase: Phase::Idle, streamed: false, game: None, started_ms: 0, shots: 0, last: None, close_asked: None, pending: None, epoch: 0, stream_app: None });
+static SESSION: Mutex<Session> = Mutex::new(Session { phase: Phase::Idle, streamed: false, game: None, started_ms: 0, shots: 0, last: None, close_asked: None, pending: None, epoch: 0, stream_app: None, device: String::new() });
 
 fn session() -> std::sync::MutexGuard<'static, Session> {
     SESSION.lock().unwrap_or_else(|e| e.into_inner())
@@ -222,7 +224,8 @@ fn app_installed(app: &AppHandle) -> bool {
 /// «Jugar» desde la tablet. Con el ayudante el juego queda pendiente hasta que la tablet conecte; sin el
 /// (app «Desktop» o Sunshine) se sondea la pantalla virtual y, si no aparece, se abre en el monitor del PC.
 /// Devuelve `{app}`: el nombre de la app de Apollo que debe abrir la tablet, o `null` para usar su ajuste.
-pub fn launch(app: &AppHandle, game: Game) -> Result<Value, String> {
+/// `device`: id del dispositivo que juega (se guarda en la partida).
+pub fn launch(app: &AppHandle, game: Game, device: String) -> Result<Value, String> {
     if let Some(a) = app.state::<AppState>().active.lock().unwrap().as_ref() {
         return Err(format!("Ya hay un juego en marcha: {}", a.name));
     }
@@ -236,6 +239,7 @@ pub fn launch(app: &AppHandle, game: Game) -> Result<Value, String> {
         s.streamed = true;
         s.game = Some((game.id.clone(), game.name.clone()));
         s.pending = Some(game.clone());
+        s.device = device;
         s.epoch
     };
     let app = app.clone();
@@ -288,6 +292,7 @@ fn reset_idle() {
     s.game = None;
     s.stream_app = None;
     s.pending = None;
+    s.device.clear();
     s.epoch += 1;
     drop(s);
     crate::stream_touch::stop();
@@ -309,10 +314,11 @@ fn launch_now(app: &AppHandle, game: Game, wait: Duration) {
         notice(app, &game.id, "No apareció la pantalla virtual: el juego se abre en el monitor del PC", false);
     }
     let (app2, id) = (app.clone(), game.id.clone());
+    let device = session().device.clone();
     // El lanzador toca la ventana y la pantalla principal: va en el hilo principal.
     let (tx, rx) = std::sync::mpsc::channel();
     let sent = app.run_on_main_thread(move || {
-        let _ = tx.send(crate::launcher::start_at(&app2, game, screen));
+        let _ = tx.send(crate::launcher::start_at(&app2, game, screen, device));
     });
     let r = sent.map_err(|e| e.to_string()).and_then(|_| rx.recv_timeout(Duration::from_secs(30)).map_err(|_| "El visor no respondió a tiempo".to_string()));
     if let Err(e) = r.and_then(|r| r) {

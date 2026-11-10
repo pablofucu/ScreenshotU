@@ -31,10 +31,10 @@ fn publish(live: Option<rs::Live>) {
 }
 
 /// Empieza a registrar la sesion de un juego de novela (se llama al lanzarlo).
-pub fn start(app: &AppHandle, game_id: &str, game_name: &str) {
+pub fn start(app: &AppHandle, game_id: &str, game_name: &str, device: &str) {
     finish(app);
     let t0 = now_ms();
-    let session_id = log_db("estadisticas de lectura", db(app).with(|c| rs::session_start(c, game_id, game_name, t0)).map(Some));
+    let session_id = log_db("estadisticas de lectura", db(app).with(|c| rs::session_start(c, game_id, game_name, t0, device)).map(Some));
     let tracker = Tracker::new(t0);
     let live = tracker.live(t0);
     *RUN.lock().unwrap() = Some(Run { game_id: game_id.to_string(), session_id, tracker });

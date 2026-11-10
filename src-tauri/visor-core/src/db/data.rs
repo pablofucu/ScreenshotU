@@ -277,13 +277,38 @@ pub fn game_stats(c: &Connection, id: &str) -> Result<GameStatsDb> {
 /// `active_ms` = tiempo interactivo medido; en una fusion se suma al de la partida ampliada (igual que `input`,
 /// cuyos picos por minuto se quedan con el maximo).
 pub fn stat_add_session(c: &Connection, id: &str, start_ms: i64, end_ms: i64, active_ms: i64, input: &InputCounts) -> Result<()> {
+    stat_add_session_on(c, id, start_ms, end_ms, active_ms, input, "", None).map(|_| ())
+}
+
+/// Como [`stat_add_session`], para la partida de un dispositivo (`''` = el dueño de la base). Solo se funde con
+/// la ultima partida **del mismo dispositivo**. `uid` = id global de la partida (si es `None` se genera); si ya
+/// existe una partida con ese `uid` no hace nada y devuelve `false` (subidas repetidas).
+#[allow(clippy::too_many_arguments)]
+pub fn stat_add_session_on(
+    c: &Connection,
+    id: &str,
+    start_ms: i64,
+    end_ms: i64,
+    active_ms: i64,
+    input: &InputCounts,
+    device_id: &str,
+    uid: Option<&str>,
+) -> Result<bool> {
+    if let Some(u) = uid {
+        if c.query_row("SELECT 1 FROM sessions WHERE uid = ?1", [u], |_| Ok(())).optional()?.is_some() {
+            return Ok(false);
+        }
+    }
+    let uid = uid.map(str::to_string).unwrap_or_else(crate::remote::new_id);
     let end = end_ms.max(start_ms);
     let secs = (end - start_ms) / 1000;
     let active = active_ms.clamp(0, end - start_ms);
     let last: Option<(i64, i64, i64)> = c
-        .query_row("SELECT id, start_ms, end_ms FROM sessions WHERE game_id = ?1 ORDER BY id DESC LIMIT 1", [id], |r| {
-            Ok((r.get(0)?, r.get(1)?, r.get(2)?))
-        })
+        .query_row(
+            "SELECT id, start_ms, end_ms FROM sessions WHERE game_id = ?1 AND device_id = ?2 ORDER BY id DESC LIMIT 1",
+            params![id, device_id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
         .optional()?;
     if let Some((sid, s, e)) = last {
         if start_ms >= s && start_ms - e < crate::games::MERGE_GAP_MS {
@@ -299,7 +324,7 @@ pub fn stat_add_session(c: &Connection, id: &str, start_ms: i64, end_ms: i64, ac
                      ON CONFLICT(game_id) DO UPDATE SET seconds = seconds + excluded.seconds",
                     params![id, extra],
                 )?;
-                Ok(())
+                Ok(true)
             });
         }
     }
@@ -309,9 +334,12 @@ pub fn stat_add_session(c: &Connection, id: &str, start_ms: i64, end_ms: i64, ac
              ON CONFLICT(game_id) DO UPDATE SET seconds = seconds + excluded.seconds",
             params![id, secs],
         )?;
-        c.execute("INSERT INTO sessions(game_id, start_ms, end_ms, active_ms) VALUES (?1, ?2, ?3, ?4)", params![id, start_ms, end, active])?;
+        c.execute(
+            "INSERT INTO sessions(game_id, start_ms, end_ms, active_ms, device_id, uid) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![id, start_ms, end, active, device_id, uid],
+        )?;
         input_add(c, c.last_insert_rowid(), input)?;
-        Ok(())
+        Ok(true)
     })
 }
 

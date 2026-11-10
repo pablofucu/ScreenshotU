@@ -278,6 +278,8 @@ pub const MIGRATIONS: &[&str] = &[
         PRIMARY KEY (device_id, player_id)
     );
     "#,
+    // 16: dispositivos emparejados (solo se usa en el host) y dispositivo/uid de cada partida y sesion de lectura.
+    crate::devices::SCHEMA,
 ];
 
 /// Version del esquema que entiende esta compilacion.
@@ -458,7 +460,7 @@ mod tests {
         let d = tempfile::tempdir().unwrap();
         let c = open_connection(&d.path().join("sub/visor.db")).unwrap();
         let t = tables(&c);
-        for want in ["favorites", "games", "play_stats", "sessions", "hidden", "title_prefs", "title_magpie", "sagas", "saga_members", "sgdb", "novel_prefs", "known_words", "phrases", "phrase_tags", "title_status", "save_paths", "meta", "achievements", "achievement_unlocks", "title_achievements_pref", "switch_titles", "switch_daily", "switch_players"] {
+        for want in ["favorites", "games", "play_stats", "sessions", "hidden", "title_prefs", "title_magpie", "sagas", "saga_members", "sgdb", "novel_prefs", "known_words", "phrases", "phrase_tags", "title_status", "save_paths", "meta", "achievements", "achievement_unlocks", "title_achievements_pref", "switch_titles", "switch_daily", "switch_players", "devices"] {
             assert!(t.iter().any(|x| x == want), "falta la tabla {want}: {t:?}");
         }
         let v: i64 = c.query_row("PRAGMA user_version", [], |r| r.get(0)).unwrap();
@@ -537,13 +539,38 @@ mod tests {
         }
         let db = Db::open_path(&p).unwrap();
         db.with(|c| {
-            assert_eq!(c.query_row::<i64, _, _>("PRAGMA user_version", [], |r| r.get(0)).unwrap(), 15);
+            assert_eq!(c.query_row::<i64, _, _>("PRAGMA user_version", [], |r| r.get(0)).unwrap(), latest_version());
             assert_eq!(c.query_row::<i64, _, _>("SELECT count(*) FROM favorites", [], |r| r.get(0)).unwrap(), 1);
             c.execute("INSERT INTO switch_titles (nx_id, name) VALUES ('0100000000010000', 'Juego')", []).unwrap();
             let ins = "INSERT INTO switch_daily (day, nx_id, source, minutes, updated_ms) VALUES ('2026-01-01', '0100000000010000', 'history', 30, 1)";
             c.execute(ins, []).unwrap();
             assert!(c.execute(ins, []).is_err(), "la clave completa es unica");
             c.execute("INSERT INTO switch_players (device_id, player_id) VALUES ('d', 'p')", []).unwrap();
+        });
+    }
+
+    #[test]
+    fn migration_16_adds_devices_keeping_sessions() {
+        let d = tempfile::tempdir().unwrap();
+        let p = d.path().join("visor.db");
+        {
+            let mut c = Connection::open(&p).unwrap();
+            migrate(&mut c, &MIGRATIONS[..15]).unwrap();
+            c.execute_batch(
+                "INSERT INTO play_stats(game_id, last_played_ms, seconds) VALUES ('g', 6000, 1);
+                 INSERT INTO sessions(game_id, start_ms, end_ms) VALUES ('g', 5000, 6000);",
+            )
+            .unwrap();
+        }
+        let db = Db::open_path(&p).unwrap();
+        db.with(|c| {
+            assert_eq!(c.query_row::<i64, _, _>("PRAGMA user_version", [], |r| r.get(0)).unwrap(), 16);
+            let (dev, uid): (String, Option<String>) =
+                c.query_row("SELECT device_id, uid FROM sessions", [], |r| Ok((r.get(0)?, r.get(1)?))).unwrap();
+            assert_eq!((dev.as_str(), uid), ("", None), "las partidas antiguas son del dueño de la base");
+            c.execute("UPDATE sessions SET uid = 'u1'", []).unwrap();
+            let dup = c.execute("INSERT INTO sessions(game_id, start_ms, end_ms, uid) VALUES ('g', 7000, 8000, 'u1')", []);
+            assert!(dup.is_err(), "uid es unico");
         });
     }
 
@@ -565,6 +592,28 @@ mod tests {
         assert_eq!((g.run_count, g.first_played_ms), (2, Some(5000)));
         // Las partidas anteriores no tienen tiempo interactivo medido.
         assert_eq!((g.active_ms, g.measured_ms, g.longest_active_at), (0, 0, None));
+    }
+
+    #[test]
+    fn sessions_merge_per_device_and_uid_is_idempotent() {
+        let d = tempfile::tempdir().unwrap();
+        let db = Db::open_path(&d.path().join("visor.db")).unwrap();
+        db.with(|c| {
+            let none = InputCounts::default();
+            assert!(stat_add_session_on(c, "g", 1_000, 61_000, 0, &none, "portatil", Some("u1")).unwrap());
+            // Una partida en el host justo despues no se funde con la del portatil.
+            stat_add_session(c, "g", 62_000, 122_000, 0, &none).unwrap();
+            // La misma subida repetida no se cuenta dos veces.
+            assert!(!stat_add_session_on(c, "g", 1_000, 61_000, 0, &none, "portatil", Some("u1")).unwrap());
+            let rows: Vec<(String, String)> = c
+                .prepare("SELECT device_id, uid FROM sessions ORDER BY id").unwrap()
+                .query_map([], |r| Ok((r.get(0)?, r.get(1)?))).unwrap().map(|r| r.unwrap()).collect();
+            assert_eq!(rows.len(), 2);
+            assert_eq!((rows[0].0.as_str(), rows[0].1.as_str()), ("portatil", "u1"));
+            assert_eq!(rows[1].0, "");
+            assert_eq!(rows[1].1.len(), 32, "las partidas del host tambien llevan uid");
+        });
+        assert_eq!(db.with(stats_load).unwrap()["g"].seconds, 120);
     }
 
     #[test]

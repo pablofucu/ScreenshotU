@@ -338,11 +338,11 @@ pub fn compute(rows: &[DayRow], names: &BTreeMap<String, String>, known_ms: &[i6
 /* SQLite                                                               */
 /* ------------------------------------------------------------------ */
 
-/// Crea la fila de la sesion y devuelve su id.
-pub fn session_start(c: &Connection, game_id: &str, game_name: &str, start_ms: i64) -> rusqlite::Result<i64> {
+/// Crea la fila de la sesion y devuelve su id. `device_id` = dispositivo que lee (`''` = el dueño de la base).
+pub fn session_start(c: &Connection, game_id: &str, game_name: &str, start_ms: i64, device_id: &str) -> rusqlite::Result<i64> {
     c.execute(
-        "INSERT INTO read_sessions(game_id, game_name, start_ms, end_ms) VALUES (?1, ?2, ?3, ?3)",
-        params![game_id, game_name, start_ms],
+        "INSERT INTO read_sessions(game_id, game_name, start_ms, end_ms, device_id, uid) VALUES (?1, ?2, ?3, ?3, ?4, ?5)",
+        params![game_id, game_name, start_ms, device_id, crate::remote::new_id()],
     )?;
     Ok(c.last_insert_rowid())
 }
@@ -552,7 +552,7 @@ mod tests {
         let today = day_of(now, off);
         db.with(|c| -> rusqlite::Result<()> {
             let mut t = Tracker::new(now);
-            let id = session_start(c, "g1", "Mi novela", now)?;
+            let id = session_start(c, "g1", "Mi novela", now, "")?;
             let d = t.push("雪が降っている。", now + 1000);
             day_add(c, "g1", today, 1, d.chars, d.active_ms, 0)?;
             let d = t.push("明日も降るだろう。", now + 11_000);
@@ -562,7 +562,7 @@ mod tests {
             known_dated(c, "雪", true, now)?;
             known_dated(c, "降る", true, now)?;
             known_dated(c, "降る", false, now)?;
-            let empty = session_start(c, "g1", "Mi novela", now + 50_000)?;
+            let empty = session_start(c, "g1", "Mi novela", now + 50_000, "")?;
             session_finish(c, empty, now + 60_000, &Tracker::new(0))?;
             Ok(())
         })

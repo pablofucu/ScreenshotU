@@ -84,11 +84,11 @@ fn now_ms() -> i64 {
 
 /// Lanza el juego en el monitor del visor, deja el visor detras y empieza a vigilar el proceso.
 pub fn start(app: &AppHandle, game: Game) -> Result<(), String> {
-    start_at(app, game, None)
+    start_at(app, game, None, String::new())
 }
 
-/// `screen`: monitor donde abrirlo; sin el, el del visor.
-pub(crate) fn start_at(app: &AppHandle, game: Game, screen: Option<crate::display::Monitor>) -> Result<(), String> {
+/// `screen`: monitor donde abrirlo; sin el, el del visor. `device`: quien juega (`''` = este equipo).
+pub(crate) fn start_at(app: &AppHandle, game: Game, screen: Option<crate::display::Monitor>, device: String) -> Result<(), String> {
     let st = app.state::<AppState>();
     if let Some(a) = st.active.lock().unwrap().as_ref() {
         return Err(format!("Ya hay un juego en marcha: {}", a.name));
@@ -135,6 +135,7 @@ pub(crate) fn start_at(app: &AppHandle, game: Game, screen: Option<crate::displa
         folder: game.folder.clone(),
         since: now_ms(),
         pids: pids.clone(),
+        device,
     });
     let _ = app.emit("game-started", GameEvent { id: game.id.clone(), name: game.name.clone(), seconds: 0 });
     crate::quickmenu::prewarm(app);
@@ -393,7 +394,11 @@ fn watch(app: AppHandle, game: Game, mut child: Option<Child>, pids: Arc<Mutex<V
             peak_ppm: tele.peak_ppm.load(Ordering::Relaxed) as i64,
             ..captured
         };
-        crate::state::log_db_err("partida", st.db.with(|c| visor_core::db::data::stat_add_session(c, &game.id, first_seen_ms, end, active, &input)));
+        let device = st.active.lock().unwrap_or_else(|e| e.into_inner()).as_ref().filter(|a| a.id == game.id).map(|a| a.device.clone()).unwrap_or_default();
+        crate::state::log_db_err(
+            "partida",
+            st.db.with(|c| visor_core::db::data::stat_add_session_on(c, &game.id, first_seen_ms, end, active, &input, &device, None).map(|_| ())),
+        );
     }
     {
         let mut a = st.active.lock().unwrap_or_else(|e| e.into_inner());
