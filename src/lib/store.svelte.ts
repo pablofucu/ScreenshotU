@@ -424,7 +424,29 @@ class Store {
   platform = $derived(this.lib.platforms[this.p]);
 
   /* Estadísticas: clasificación por periodo o calendario; evolución de un juego. */
-  statsTab = $state<'rank' | 'cal' | 'year'>('rank');
+  statsTab = $state<'week' | 'fin' | 'pano' | 'rank' | 'cal' | 'year'>('week');
+  /** Semana: 0 = la actual, -1 = la anterior… */
+  weekOff = $state(0);
+  /** Terminados: año elegido. */
+  finYear = $state(new Date().getFullYear());
+  /** Panorama: categoría (-1 = la primera con datos) y periodo. */
+  panoPi = $state(-1);
+  panoPer = $state<'all' | number | 'd30'>('all');
+  /** Primera actividad registrada (partida o captura), en ms; 0 si no hay. */
+  firstActivity = $derived.by(() => {
+    let m = Infinity;
+    for (const p of this.lib.platforms) for (const t of p.titles) {
+      for (const pl of (t.plays ?? []) as Array<[number, number]>) if (pl[0] < m) m = pl[0];
+      for (const s of t.shots) if (s.date && s.date < m) m = s.date;
+    }
+    return Number.isFinite(m) ? m : 0;
+  });
+  /** Años con juegos terminados, ascendentes. */
+  finYears = $derived.by(() => {
+    const ys = new Set<number>();
+    for (const p of this.lib.platforms) for (const t of p.titles) if (t.status === 'finished' && t.finishedMs) ys.add(new Date(t.finishedMs).getFullYear());
+    return [...ys].sort((a, b) => a - b);
+  });
   /** Resumen anual: año elegido (null = el último con partidas), tarjeta actual y sentido de la última animación. */
   yearSel = $state<number | null>(null);
   yearCard = $state(0);

@@ -128,6 +128,7 @@ function validKey(view: View, key: string | undefined): string | undefined {
   } else if (view === 'shots') {
     if (/^shot\d+$/.test(key)) return n < app.cur.shots.length ? key : undefined;
   } else if (view === 'stats') {
+    if (/^(wk|fn|pn)\d+$/.test(key)) return screenEl()?.querySelector(`[data-k="${key}"]`) ? key : undefined;
     if (app.statsTab === 'rank' && /^sr\d+$/.test(key)) return n < app.rank.rows.length ? key : undefined;
     if (app.statsTab === 'cal' && /^cd\d+$/.test(key)) return app.cal.days[n] && !app.cal.days[n].future ? key : undefined;
   } else if (view === 'evo') {
@@ -150,6 +151,9 @@ function defaultKey(view: View): string {
   if (view === 'shots') return app.cur.shots.length ? 'shot0' : '';
   if (view === 'stats') {
     if (app.statsTab === 'year') return '';
+    if (app.statsTab === 'week') return 'wk0';
+    if (app.statsTab === 'fin') return 'fn0';
+    if (app.statsTab === 'pano') return 'pn0';
     if (app.statsTab === 'rank') return app.rank.rows.length ? 'sr0' : '';
     const c = app.cal;
     return 'cd' + (c.today >= 0 ? c.today : c.days.length - 1);
@@ -779,14 +783,11 @@ function yearShift(d: number) {
   blip(700);
 }
 
-/** Y recorre Clasificación > Calendario > Resumen anual (Terminados vive en «Mi lista»). */
+const STATS_TABS: Array<typeof app.statsTab> = ['week', 'fin', 'pano', 'rank', 'cal', 'year'];
+
+/** Y recorre Semana > Terminados > Panorama > Clasificación > Calendario > Resumen anual. */
 function toggleStatsTab() {
-  app.statsTab = app.statsTab === 'rank' ? 'cal' : app.statsTab === 'cal' ? 'year' : 'rank';
-  if (app.statsTab === 'year') { app.yearCard = 0; app.yearSel = null; }
-  app.goff = 0;
-  delete app.fk.stats;
-  setFocus(defaultKey('stats'));
-  blip(700);
+  setStatsTab(STATS_TABS[(STATS_TABS.indexOf(app.statsTab) + 1) % STATS_TABS.length]);
 }
 
 /** Pestaña de estadísticas con destino fijo (órdenes «stab:…»). */
@@ -866,6 +867,17 @@ function cycleStatsPlat(d = 1) {
   blip(700);
 }
 
+/** LT/RT en Panorama: categoría anterior/siguiente con datos. */
+function cyclePanoPlat(d = 1) {
+  const ps = app.statsPlats;
+  if (ps.length < 2) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+  const cur = ps.includes(app.panoPi) ? app.panoPi : ps[0];
+  app.panoPi = ps[(ps.indexOf(cur) + d + ps.length) % ps.length];
+  app.goff = 0;
+  setFocus(defaultKey('stats'));
+  blip(700);
+}
+
 /** X en la clasificación: Mes > Año > Siempre. */
 function cycleStatsKind() {
   const ks = STATS_KINDS;
@@ -890,6 +902,24 @@ function statsKind(d: number) {
 function statsShift(d: number) {
   if (app.view === 'stats' && app.statsTab === 'year') { yearShift(d); return; }
   if (app.view === 'evo') { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+  if (app.statsTab === 'week') {
+    const cur = new Date(app.now); cur.setHours(0, 0, 0, 0);
+    cur.setDate(cur.getDate() - ((cur.getDay() + 6) % 7) + 7 * app.weekOff);
+    const ok = d < 0 ? app.firstActivity > 0 && cur.getTime() > app.firstActivity : app.weekOff < 0;
+    if (!ok) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+    app.weekOff += d; setFocus(defaultKey('stats')); blip(700); return;
+  }
+  if (app.statsTab === 'fin') {
+    const ys = app.finYears, i = ys.indexOf(app.finYear) + d;
+    if (i < 0 || i >= ys.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+    app.finYear = ys[i]; setFocus(defaultKey('stats')); blip(700); return;
+  }
+  if (app.statsTab === 'pano') {
+    const pers: Array<'all' | number | 'd30'> = ['all', 'd30', ...[...app.years].reverse()];
+    const i = pers.indexOf(app.panoPer) + d;
+    if (i < 0 || i >= pers.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+    app.panoPer = pers[i]; setFocus(defaultKey('stats')); blip(700); return;
+  }
   if (app.statsTab === 'rank') {
     const ok = d < 0 ? app.rank.older : app.statsOff < 0;
     if (!ok || app.statsKind === 'all') { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
@@ -1033,6 +1063,7 @@ export function page(d: number) {
 /** LT/RT: en la lista de juegos, pestaña anterior/siguiente; en la vista de capturas por días, día anterior/siguiente. */
 export function trigger(d: number) {
   if (app.view === 'stats' && app.statsTab === 'rank') { cycleStatsPlat(d); return; }
+  if (app.view === 'stats' && app.statsTab === 'pano') { cyclePanoPlat(d); return; }
   if (app.view === 'stats' || app.view === 'evo') { statsShift(d); return; }
   if (app.view === 'titles') { cycleTitlesTab(d); return; }
   if (app.view === 'shots' && daysOn()) {
@@ -2101,7 +2132,7 @@ function onWheel(e: WheelEvent) {
   switch (app.view) {
     case 'home': case 'detail': case 'evo': move(d, 0); break;
     case 'gstats': move(0, d); break;
-    case 'stats': if (app.statsTab === 'rank') move(0, d); else move(d, 0); break;
+    case 'stats': if (app.statsTab === 'rank' || app.statsTab === 'week' || app.statsTab === 'fin' || app.statsTab === 'pano') move(0, d); else move(d, 0); break;
     case 'titles': {
       // Mi lista y Colecciones son carriles: el gesto horizontal recorre el carril y el vertical cambia de fila.
       const lc = wheelH ? (d > 0 ? 'right' : 'left') : (d > 0 ? 'down' : 'up');

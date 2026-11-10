@@ -11,7 +11,25 @@
   import Year from './Year.svelte';
 
   const KIND_LABEL: Record<string, string> = { month: 'Mes', year: 'Año', all: 'Siempre' };
-  const VIEW_LABEL = { rank: 'Clasificación', cal: 'Calendario', year: 'Resumen anual' };
+  const VIEW_LABEL = { week: 'Semana', fin: 'Terminados', pano: 'Panorama', rank: 'Clasificación', cal: 'Calendario', year: 'Resumen anual' };
+  const TABS = ['week', 'fin', 'pano', 'rank', 'cal', 'year'] as const;
+  const PER_LABEL = (p: 'all' | number | 'd30') => (p === 'all' ? 'Siempre' : p === 'd30' ? 'Últimos 30 días' : String(p));
+  const PANO_PERS = $derived(['all', 'd30', ...[...app.years].reverse()] as Array<'all' | number | 'd30'>);
+  const panoPlat = $derived(app.statsPlats.includes(app.panoPi) ? app.panoPi : (app.statsPlats[0] ?? -1));
+  const weekLabel = $derived.by(() => {
+    const a = new Date(app.now); a.setHours(0, 0, 0, 0);
+    a.setDate(a.getDate() - ((a.getDay() + 6) % 7) + 7 * app.weekOff);
+    const b = new Date(a); b.setDate(b.getDate() + 6);
+    if (app.weekOff === 0) return 'Esta semana';
+    if (app.weekOff === -1) return 'Semana pasada';
+    const f = (d: Date) => d.toLocaleDateString('es', { day: 'numeric', month: 'short' }).replace('.', '');
+    return `${f(a)} – ${f(b)}`;
+  });
+  const weekCanOlder = $derived.by(() => {
+    const a = new Date(app.now); a.setHours(0, 0, 0, 0);
+    a.setDate(a.getDate() - ((a.getDay() + 6) % 7) + 7 * app.weekOff);
+    return app.firstActivity > 0 && a.getTime() > app.firstActivity;
+  });
   const R = $derived(app.rank);
   const rows = $derived(R.rows);
   const maxMs = $derived(Math.max(1, ...rows.map((r) => r.ms)));
@@ -82,6 +100,29 @@
       <span class="lbl">{app.yearNow}</span>
       <span class="chev" class:dis={yi < 0 || yi >= app.years.length - 1} data-hact="rb">{@render chev(false)}</span>
     </span>
+  {:else if app.statsTab === 'week'}
+    <span class="cat">Todas las categorías</span>
+    <span class="gl">
+      <span class="chev" class:dis={!weekCanOlder} data-hact="lb">{@render chev(true)}</span>
+      <span class="lbl">{weekLabel}</span>
+      <span class="chev" class:dis={app.weekOff >= 0} data-hact="rb">{@render chev(false)}</span>
+    </span>
+  {:else if app.statsTab === 'fin'}
+    {@const fi = app.finYears.indexOf(app.finYear)}
+    <span class="cat">Todas las categorías</span>
+    <span class="gl">
+      <span class="chev" class:dis={fi <= 0} data-hact="lb">{@render chev(true)}</span>
+      <span class="lbl">{app.finYear}</span>
+      <span class="chev" class:dis={fi < 0 || fi >= app.finYears.length - 1} data-hact="rb">{@render chev(false)}</span>
+    </span>
+  {:else if app.statsTab === 'pano'}
+    {@const pi = PANO_PERS.indexOf(app.panoPer)}
+    <span class="cat sel" data-hact="rt" title="Cambiar de categoría">{panoPlat >= 0 && pname(panoPlat) ? pname(panoPlat) : 'Sin partidas'}</span>
+    <span class="gl">
+      <span class="chev" class:dis={pi <= 0} data-hact="lb">{@render chev(true)}</span>
+      <span class="lbl">{PER_LABEL(app.panoPer)}</span>
+      <span class="chev" class:dis={pi < 0 || pi >= PANO_PERS.length - 1} data-hact="rb">{@render chev(false)}</span>
+    </span>
   {:else}
     <span class="cat">Todas las categorías</span>
     <span class="gl">
@@ -91,8 +132,8 @@
     </span>
   {/if}
   <span class="gl vsw">
-    {#each ['rank', 'cal', 'year'] as v}
-      <span class="o" class:gem={app.statsTab === v} data-hact="stab:{v}">{VIEW_LABEL[v as 'rank' | 'cal' | 'year']}</span>
+    {#each TABS as v}
+      <span class="o" class:gem={app.statsTab === v} data-hact="stab:{v}">{VIEW_LABEL[v]}</span>
     {/each}
   </span>
 </div>
@@ -101,9 +142,13 @@
   <svg viewBox="0 0 12 12"><path d={left ? 'M7.5 2 3.5 6l4 4' : 'M4.5 2l4 4-4 4'} /></svg>
 {/snippet}
 
-{#if app.statsTab === 'year'}
+{#if app.statsTab === 'week' || app.statsTab === 'fin' || app.statsTab === 'pano'}
+  {@const pre = app.statsTab === 'week' ? 'wk' : app.statsTab === 'fin' ? 'fn' : 'pn'}
+  <div class="stnone fx" class:f={app.focus === pre + '0'} data-k="{pre}0">En preparación: {VIEW_LABEL[app.statsTab]} llegará en la próxima actualización.</div>
+  <Hints list={[['LB/RB', app.statsTab === 'pano' ? 'Periodo' : app.statsTab === 'fin' ? 'Año' : 'Semana', 'rb'], ...(app.statsTab === 'pano' ? [['LT/RT', 'Categoría', 'rt'] as [string, string, string]] : []), ['Y', VIEW_LABEL[TABS[(TABS.indexOf(app.statsTab) + 1) % TABS.length]], 'y'], ['B', 'Volver', 'b']]} />
+{:else if app.statsTab === 'year'}
   <Year />
-  <Hints list={[['A', 'Siguiente', 'a'], ['LB/RB', 'Año', 'rb'], ['Y', 'Clasificación', 'y'], ['B', 'Volver', 'b']]} />
+  <Hints list={[['A', 'Siguiente', 'a'], ['LB/RB', 'Año', 'rb'], ['Y', 'Semana', 'y'], ['B', 'Volver', 'b']]} />
 {:else if app.statsTab === 'rank'}
   <div class="stsum">
     <div class="rbox">
@@ -162,7 +207,7 @@
   {/if}
 
   <Hints list={[...(rows.length ? [['A', 'Ver juego', 'a'] as [string, string, string]] : []),['LB/RB', 'Fecha', 'rb'], ['View', 'Periodo', 'view'], ['LT/RT', 'Categoría', 'rt'], ['Y', 'Calendario', 'y'], ['B', 'Volver', 'b']]} />
-{:else}
+{:else if app.statsTab === 'cal'}
   <div class="stsum">
     <div class="rbox"><div class="k">Días con partida</div><div class="v acc">{C.played} <small>de {C.elapsed}</small></div></div>
     <div class="rbox"><div class="k">Racha actual</div><div class="v">{C.curStreak} <small>{C.curStreak === 1 ? 'día' : 'días'}</small></div></div>
