@@ -20,6 +20,8 @@ import { AUDIO_COMBO_PRESETS, AUDIO_HOTKEY_PRESETS, COMBO_PRESETS, HOTKEY_PRESET
 import { READING_CYCLE, READING_ROWS, isReadingId, readingAct, type ReadingId } from './reading.svelte';
 import { checkUpdate, updateAct } from './updater.svelte';
 import { REMOTE_CYCLE, isRemoteId, remoteAct, type RemoteId } from './remote.svelte';
+import { DEVICES_CYCLE, devicesAct, devicesRows, isDevicesId, refreshDevices, type DevicesId } from './devices.svelte';
+import { clientMode } from './ipc';
 import { openPhrases, phrasesCmd } from './phrases.svelte';
 import { gameSetCmd, openGameSettings } from './gameset.svelte';
 import { GOAL_TXT, goalMin, goalMinLeft, goalTrack, groupOf, localDay, RESCUE_MIN_PLAY, type GoalKey } from './readgoals';
@@ -1255,7 +1257,7 @@ export type SettingId =
   | 'savesauto' | 'ludusavi' | 'inputmouse' | 'inputkeys' | 'update'
   | 'liststalled' | 'liststalleddays' | 'liststalledact' | 'listautoplay' | 'theme'
   | 'tabpc' | 'tabstate' | 'tabdisc'
-  | ReadingId | RemoteId;
+  | ReadingId | RemoteId | DevicesId;
 /** Filas de lectura que en la tablet no existen (Anki y atajo de grabación son del PC). */
 const TABLET_HIDDEN_READING = new Set<string>(['ankiurl', 'ankitest', 'ankiauto', 'ankiexe', 'ankideck', 'ankicreate', 'ankimodel', 'ankistyle', 'map_word', 'map_reading', 'map_meaning', 'map_sentence', 'map_translation', 'map_shot', 'map_audio', 'rechotkey']);
 /** Secciones de Ajustes (LB/RB las recorren). `t` es la posición en el arcoíris (0..1) que da su color. */
@@ -1278,21 +1280,27 @@ export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[
     name: 'Mando',
     t: 0.4,
     // En la tablet: sin aprender botones/atajos, sin elegir Magpie.exe y sin el servidor «Acceso desde el móvil».
-    rows: IS_TABLET
-      ? ['capsound', 'cappeek', 'caprumble', 'caponly', 'magpie']
-      : [
-        'combo', 'mouse', 'hotkey',
-        'qmkey', 'qmpad', 'qmmouse', 'qmhold', 'qmpause',
-        'capsound', 'cappeek', 'caprumble', 'caponly',
-        'magpieexe', 'magpie',
-        'remoteon', 'remoteqr', 'remoteaddr', 'remotecode', 'remotecursor', 'remotestream', 'remotehelp',
-      ],
+    // En un PC cliente tampoco hay servidor: el que vale es el del PC principal.
+    get rows(): SettingId[] {
+      return IS_TABLET
+        ? ['capsound', 'cappeek', 'caprumble', 'caponly', 'magpie']
+        : [
+          'combo', 'mouse', 'hotkey',
+          'qmkey', 'qmpad', 'qmmouse', 'qmhold', 'qmpause',
+          'capsound', 'cappeek', 'caprumble', 'caponly',
+          'magpieexe', 'magpie',
+          ...(clientMode ? [] : ['remoteon', 'remoteqr', 'remoteaddr', 'remotecode', 'remotecursor', 'remotestream', 'remotehelp'] as SettingId[]),
+        ];
+    },
   },
+  // Solo en el PC: dispositivos emparejados, o conectarse a otro PC (modo cliente).
+  ...(IS_TABLET ? [] : [{ name: 'Equipos', t: 0.5, get rows(): SettingId[] { return devicesRows(); } }]),
   {
     name: 'Biblioteca',
     t: 0.6,
-    // En la tablet: sin carpeta de la biblioteca, añadir juegos, copias de seguridad ni Anki/atajos de lectura.
-    rows: IS_TABLET
+    // En la tablet (y en un PC cliente, cuya biblioteca está en el PC principal): sin carpeta de la biblioteca,
+    // añadir juegos, copias de seguridad ni Anki/atajos de lectura.
+    get rows(): SettingId[] { return IS_TABLET || clientMode
       ? [
         'rescan', 'hidden', 'showhidden',
         'savesauto', 'ludusavi', 'inputmouse', 'inputkeys',
@@ -1303,7 +1311,7 @@ export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[
         'savesauto', 'ludusavi', 'inputmouse', 'inputkeys',
         'backup', 'backupmedia', 'restore', 'autobackup',
         ...READING_ROWS,
-      ],
+      ]; },
   },
   {
     name: 'Mi lista',
@@ -1321,7 +1329,7 @@ export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[
 ];
 /** Filas que cambian de valor con izquierda/derecha (se marcan con ‹ ›). Las demás son acciones: izquierda vuelve al menú. */
 export const CYCLE = new Set<SettingId>(['theme', 'showhidden', 'view', 'shotsview', 'shotsorder', 'collstyle', 'achcardvariant', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'qmkey', 'qmpad', 'qmmouse', 'qmhold', 'qmpause', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'inputmouse', 'inputkeys', 'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay', 'bgtray', 'bgstart', 'ntmin']);
-export const rowHasArrows = (id: SettingId | undefined) => !!id && (CYCLE.has(id) || READING_CYCLE.has(id as never) || REMOTE_CYCLE.has(id as never));
+export const rowHasArrows = (id: SettingId | undefined) => !!id && (CYCLE.has(id) || READING_CYCLE.has(id as never) || REMOTE_CYCLE.has(id as never) || DEVICES_CYCLE.has(id as never));
 /** Zona de foco en Ajustes: el menú de secciones o la lista de opciones. */
 export const setNav = $state({ zone: 'menu' as 'menu' | 'body' });
 const secRows = () => SETTING_SECTIONS[app.setSec]?.rows ?? [];
@@ -1461,6 +1469,7 @@ export function openSettings() {
   void refreshSavesStatus();
   void refreshMonitor();
   void refreshAudio();
+  if (!IS_TABLET) void refreshDevices();
   app.overlayStack = [];
   app.overlay = 'settings';
   app.setRow = 0;
@@ -1580,6 +1589,7 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'ntimport' && dir === 0) void openNintendoImport();
   else if (id && isReadingId(id)) readingAct(id, dir);
   else if (id && isRemoteId(id)) remoteAct(id, dir);
+  else if (id && isDevicesId(id)) devicesAct(id, dir);
 }
 
 function overlayCmd(c: string) {
@@ -2266,7 +2276,7 @@ async function announceStartup(): Promise<boolean> {
 async function announceDue() {
   if (!backend.isTauri) return;
   try {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const { invoke } = await import('./ipc');
     const n = await invoke<number>('phrases_due_count', { gameId: null });
     if (n > 0) toast(`Tienes ${n} ${n === 1 ? 'frase' : 'frases'} para repasar (Ajustes › Lectura)`, 4200);
   } catch { /* sin glosario todavia */ }

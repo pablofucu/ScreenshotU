@@ -7,6 +7,14 @@ import { onServerUp, startEventLoop } from './event';
 
 export const OFFLINE_MSG = 'Sin conexión con el PC';
 
+/** Revisión del API que habla esta interfaz (el servidor responde 426 si es demasiado vieja). */
+const API_REV = '2';
+
+/** Nombre del PC principal cuando esta interfaz es un PC cliente (null = tablet). */
+let clientPc: string | null = null;
+/** PC cliente: sin conexión no se guarda nada en el buzón (solo lectura) y «Jugar» espera a que abra Moonlight. */
+export function setClientPc(name: string | null) { clientPc = name; }
+
 /** Comandos de solo lectura: su último resultado se guarda y se sirve sin conexión. */
 const READS = new Set([
   'get_config', 'cached_library', 'scan_library', 'get_favorites', 'get_collections', 'game_stats', 'get_thumb',
@@ -91,12 +99,17 @@ function probe(ep: Endpoint): Promise<boolean> {
 async function callServer(ep: Endpoint, cmd: string, args: unknown, ms: number): Promise<unknown> {
   const r = await http(ep, '/api/v1/call', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${ep.code}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${ep.code}`, 'Content-Type': 'application/json', 'X-Visor-Api': API_REV },
     body: JSON.stringify({ cmd, args: args ?? {} }),
   }, ms);
   markOnline();
-  if (r.status === 401 || r.status === 429) throw 'El código no es correcto (míralo en Ajustes del visor del PC)';
-  if (r.status === 403) throw 'No disponible desde la tablet';
+  if (r.status === 401 || r.status === 429) {
+    throw clientPc
+      ? `Este equipo ya no está emparejado con ${clientPc}: vuelve a conectarlo en Ajustes → Este equipo`
+      : 'El código no es correcto (míralo en Ajustes del visor del PC)';
+  }
+  if (r.status === 403) throw clientPc ? 'No disponible desde otro PC' : 'No disponible desde la tablet';
+  if (r.status === 426) throw 'Actualiza el visor del PC principal';
   const j = await r.json().catch(() => null);
   if (!r.ok || (j && typeof j === 'object' && 'error' in j && (j as { error: unknown }).error)) {
     throw String((j as { error?: unknown } | null)?.error ?? `Error del PC (${r.status})`);
@@ -119,7 +132,10 @@ export async function invoke<T = unknown>(cmd: string, args?: Record<string, unk
       // «Jugar» en la tablet: el PC espera a la pantalla virtual, que no existe hasta que Artemis conecta.
       const res = await callServer(ep, cmd === 'launch_game' ? 'launch_stream' : cmd, args, read ? 60000 : 180000);
       if (read) void cachePut(readKey(ep, cmd, args), res);
-      if (cmd === 'launch_game' && afterLaunch) void Promise.resolve(afterLaunch(args, res)).catch((e) => console.warn(e));
+      if (cmd === 'launch_game' && afterLaunch) {
+        if (clientPc) await afterLaunch(args, res); // el error (p. ej. sin Moonlight) llega a quien pulsó «Jugar»
+        else void Promise.resolve(afterLaunch(args, res)).catch((e) => console.warn(e));
+      }
       return res as T;
     } catch (e) {
       if (!(e instanceof NetFail)) throw e;
@@ -133,8 +149,9 @@ async function offline<T>(ep: Endpoint, cmd: string, args: unknown): Promise<T> 
   if (READS.has(cmd)) {
     const hit = (await cacheGet<T>(readKey(ep, cmd, args))) ?? (FALLBACK[cmd] ? await cacheGet<T>(readKey(ep, FALLBACK[cmd], args)) : null);
     if (hit) return hit.v;
-    throw OFFLINE_MSG;
+    throw clientPc ? `Sin conexión con ${clientPc}` : OFFLINE_MSG;
   }
+  if (clientPc) throw `Sin conexión con ${clientPc}: solo lectura`;
   if (!OUTBOX.has(cmd)) throw OFFLINE_MSG;
   await tx('outbox', 'readwrite', (s) => s.add({ base: ep.base, cmd, args } satisfies OutItem));
   void refreshPending();

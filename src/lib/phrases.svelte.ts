@@ -61,7 +61,7 @@ async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> 
     }
     return null as T;
   }
-  const { invoke } = await import('@tauri-apps/api/core');
+  const { invoke } = await import('./ipc');
   return invoke<T>(cmd, args);
 }
 

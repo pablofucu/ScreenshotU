@@ -12,6 +12,7 @@
   import { isReadingId, readingRow } from '../lib/reading.svelte';
   import { updateRow } from '../lib/updater.svelte';
   import { isRemoteId, remoteRow, remoteView } from '../lib/remote.svelte';
+  import { devicesRow, isDevicesId } from '../lib/devices.svelte';
   import Learn from '../components/Learn.svelte';
   import Hints from '../components/Hints.svelte';
   import { makeMoved } from '../lib/pointer';
@@ -98,6 +99,7 @@
   function row(id: SettingId): Row {
     if (isReadingId(id)) return readingRow(id);
     if (isRemoteId(id)) return remoteRow(id);
+    if (isDevicesId(id)) return devicesRow(id);
     return ROWS[id]?.() ?? { l: '', v: '', d: '' };
   }
 

@@ -126,7 +126,7 @@ async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> 
     if (cmd === 'saves_delete_copy') m.copies = m.copies.filter((x) => x.file !== args?.file);
     return null as T;
   }
-  const { invoke } = await import('@tauri-apps/api/core');
+  const { invoke } = await import('./ipc');
   return invoke<T>(cmd, args);
 }
 
@@ -483,7 +483,7 @@ async function reveal(r: SaveRow | undefined) {
       const fixed = l.path.split(/[\\/]/).filter((c, n, a) => !a.slice(0, n + 1).some((x) => /[*?]/.test(x))).join('\\');
       await backend.reveal(fixed);
     } else if (IS_TAURI) {
-      const { invoke } = await import('@tauri-apps/api/core');
+      const { invoke } = await import('./ipc');
       await invoke('saves_open_dir', { id: i.gameId });
     } else toast('Abrir carpeta (simulado en el navegador)');
   } catch (e) { toast(String(e), 3200); }
@@ -593,7 +593,7 @@ export async function updateManifestFromSettings() {
 /** Avisos de la copia automática al cerrar un juego. */
 export async function listenSaves() {
   if (!IS_TAURI) return;
-  const { listen } = await import('@tauri-apps/api/event');
+  const { listen } = await import('./ipc');
   // Llega justo después del aviso de «Has jugado…»: se deja leer ese primero.
   void listen<{ message: string; error: boolean }>('saves-copied', (e) =>
     setTimeout(() => toast(e.payload.message, e.payload.error ? 5200 : 2600), 3400));

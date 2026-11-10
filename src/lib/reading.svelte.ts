@@ -124,7 +124,7 @@ async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> 
     if (cmd === 'anki_fields') return ['Expression', 'ExpressionReading', 'MainDefinition', 'Sentence', 'SentenceAudio', 'Picture'] as T;
     return { word: 'Expression', reading: 'ExpressionReading', meaning: 'MainDefinition', sentence: 'Sentence', translation: '', shot: 'Picture', audio: 'SentenceAudio' } as T;
   }
-  const { invoke } = await import('@tauri-apps/api/core');
+  const { invoke } = await import('./ipc');
   return invoke<T>(cmd, args);
 }
 

@@ -203,7 +203,8 @@ pub fn client_open_stream(state: State<'_, AppState>, app: String) -> Result<(),
     let cfg = current(&state)?;
     let exe = moonlight(&cfg).ok_or("No se encuentra Moonlight: instálalo o elige dónde está en Ajustes → Este equipo")?;
     let host = rc::addr_host(cfg.addr());
-    let app = if app.trim().is_empty() { "Juego actual".to_string() } else { app };
+    // Sin app «Juego actual» en Apollo, el escritorio (como la tablet).
+    let app = if app.trim().is_empty() { "Desktop".to_string() } else { app };
     std::process::Command::new(exe).args(["stream", &host, &app]).spawn().map_err(|e| format!("No se pudo abrir Moonlight: {e}"))?;
     Ok(())
 }

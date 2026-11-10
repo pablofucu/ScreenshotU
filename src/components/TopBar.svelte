@@ -4,6 +4,8 @@
   import { ICON, audioKind, audioSvg } from '../lib/icons';
   import { closeAudioMenu, openAudioMenu, toast } from '../lib/controller.svelte';
   import { backend, IS_TABLET } from '../lib/backend';
+  import { pcView } from '../lib/devices.svelte';
+  import { invoke } from '../lib/ipc';
   import { createReadRings } from '../lib/readrings.svelte';
 
   // `pad`: el botón de audio entra en la navegación del mando (arriba desde el contenido de la pantalla).
@@ -39,6 +41,11 @@
     try { await backend.suspendPc(); toast('Suspendiendo el PC…', 3000); } catch (e) { toast(String(e), 3000); }
   }
   async function wakePc() {
+    // En un PC cliente la MAC del PC principal la guarda el núcleo al emparejar.
+    if (pcView.client) {
+      try { await invoke('client_wake'); toast('Despertando el PC principal…', 3000); } catch (e) { toast(String(e), 3500); }
+      return;
+    }
     const mac = readMac();
     const w = (window as unknown as { __VISOR_WAKE__?: (m: string) => Promise<void> }).__VISOR_WAKE__;
     if (!mac) { toast('Aún no se conoce la MAC del PC: conéctate una vez con el PC encendido', 3500); return; }
@@ -78,7 +85,7 @@
     <div class="pagep pill">Página {dot + 1} de {dots}<i><b style="left:{(dot / dots) * 100}%;width:{100 / dots}%"></b></i></div>
   {/if}
   <div class="clock">
-    {#if IS_TABLET}
+    {#if IS_TABLET || pcView.client}
       <button type="button" class="audbtn" title="Despertar el PC (Wake-on-LAN)" aria-label="Despertar el PC" onclick={wakePc}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 3v7"/><path d="M5.6 7.2a8 8 0 0 0 0 11.3 8 8 0 0 0 12.8 0"/><path d="M18.4 18.5a8 8 0 0 0-3-13.3" stroke-dasharray="1 3.2"/></svg>
       </button>

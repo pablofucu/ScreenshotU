@@ -10,7 +10,7 @@ type Invoke = <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
 let inv: Invoke | null = null;
 async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   if (!IS_TAURI) return mock(cmd) as T;
-  inv ??= (await import('@tauri-apps/api/core')).invoke as Invoke;
+  inv ??= (await import('./ipc')).invoke as Invoke;
   return inv<T>(cmd, args);
 }
 
@@ -56,7 +56,7 @@ let listening = false;
 async function listen() {
   if (listening || !IS_TAURI) return;
   listening = true;
-  const { listen } = await import('@tauri-apps/api/event');
+  const { listen } = await import('./ipc');
   void listen<{ ok: boolean; message: string }>('nintendo-login-result', (e) => {
     nt.busy = '';
     nt.connected = e.payload.ok;

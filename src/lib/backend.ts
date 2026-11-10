@@ -95,8 +95,8 @@ export function decodeImg(url: string): Promise<void> {
 }
 
 async function tauriBackend(): Promise<Backend> {
-  const { invoke, convertFileSrc } = await import('@tauri-apps/api/core');
-  const { listen } = await import('@tauri-apps/api/event');
+  const { invoke, convertFileSrc, listen, ready } = await import('./ipc');
+  await ready; // `convertFileSrc` cambia si este equipo es cliente de otro PC
   const { getCurrentWindow } = await import('@tauri-apps/api/window');
   const { getCurrentWebview } = await import('@tauri-apps/api/webview');
   const q = new Queue(6);

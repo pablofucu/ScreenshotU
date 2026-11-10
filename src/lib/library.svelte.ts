@@ -56,7 +56,7 @@ async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> 
     if (cmd === 'library_copy' || cmd === 'library_use') return null as T;
     throw 'Solo funciona en la aplicación de escritorio (simulado)';
   }
-  const { invoke } = await import('@tauri-apps/api/core');
+  const { invoke } = await import('./ipc');
   return invoke<T>(cmd, args);
 }
 
@@ -141,7 +141,7 @@ async function go() {
   lb.progress = { label: 'Preparando…', doneBytes: 0, totalBytes: p.bytes, doneFiles: 0, totalFiles: p.files };
   let un: (() => void) | null = null;
   if (IS_TAURI) {
-    const { listen } = await import('@tauri-apps/api/event');
+    const { listen } = await import('./ipc');
     un = await listen<CopyProgress>('library-progress', (e) => { lb.progress = e.payload; });
   }
   try {

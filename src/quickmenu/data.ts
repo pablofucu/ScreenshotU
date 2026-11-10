@@ -1,5 +1,5 @@
 // Puente de datos y comandos del menú sobre el juego (Tauri y modo navegador).
-import { listen } from '@tauri-apps/api/event';
+import { listen } from '../lib/ipc';
 import type { Achievement } from '../lib/types';
 import { localDay, dayStart, type GoalKey } from '../lib/readgoals';
 
@@ -58,7 +58,7 @@ export const isTauri = (): boolean =>
 // (ver quickmenu.rs::confirm, que espera este aviso antes de suspender el proceso).
 export async function markPainted(gen: number | undefined): Promise<void> {
   if (!isTauri() || gen === undefined) return;
-  const { invoke } = await import('@tauri-apps/api/core');
+  const { invoke } = await import('../lib/ipc');
   await invoke('quickmenu_painted', { gen });
 }
 
@@ -336,7 +336,7 @@ export function buildMockState(): QuickMenuState {
 
 export async function fetchQuickmenuState(): Promise<QuickMenuState> {
   if (isTauri()) {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const { invoke } = await import('../lib/ipc');
     return invoke<QuickMenuState>('quickmenu_state');
   }
   return buildMockState();
@@ -344,21 +344,21 @@ export async function fetchQuickmenuState(): Promise<QuickMenuState> {
 
 export async function quickmenuClose(): Promise<void> {
   if (isTauri()) {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const { invoke } = await import('../lib/ipc');
     await invoke('quickmenu_close');
   }
 }
 
 export async function quickmenuCloseGame(): Promise<void> {
   if (isTauri()) {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const { invoke } = await import('../lib/ipc');
     await invoke('quickmenu_close_game');
   }
 }
 
 export async function quickmenuCapture(): Promise<void> {
   if (isTauri()) {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const { invoke } = await import('../lib/ipc');
     await invoke('quickmenu_capture');
   } else {
     mockShots.unshift({
@@ -371,7 +371,7 @@ export async function quickmenuCapture(): Promise<void> {
 
 export async function quickmenuTrash(paths: string[]): Promise<void> {
   if (isTauri()) {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const { invoke } = await import('../lib/ipc');
     await invoke('quickmenu_trash', { paths });
   } else {
     const set = new Set(paths);
@@ -381,14 +381,14 @@ export async function quickmenuTrash(paths: string[]): Promise<void> {
 
 export async function quickmenuRumble(port: number): Promise<void> {
   if (isTauri()) {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const { invoke } = await import('../lib/ipc');
     await invoke('quickmenu_rumble', { port });
   }
 }
 
 export async function getGameAchievements(gameId: string): Promise<Achievement[]> {
   if (isTauri()) {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const { invoke } = await import('../lib/ipc');
     return invoke<Achievement[]>('get_game_achievements', { gameId, appId: null });
   }
   const now = Date.now();
@@ -404,7 +404,7 @@ export async function getGameAchievements(gameId: string): Promise<Achievement[]
 
 export async function quickmenuAudio(): Promise<AudioState | null> {
   if (isTauri()) {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const { invoke } = await import('../lib/ipc');
     return invoke<AudioState>('quickmenu_audio');
   }
   return { ...mockAudio };
@@ -412,7 +412,7 @@ export async function quickmenuAudio(): Promise<AudioState | null> {
 
 export async function quickmenuSetVolume(volume: number): Promise<AudioState | null> {
   if (isTauri()) {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const { invoke } = await import('../lib/ipc');
     return invoke<AudioState>('quickmenu_set_volume', { volume });
   }
   mockAudio.volume = Math.max(0, Math.min(100, Math.round(volume)));
@@ -443,7 +443,7 @@ export function setVolumeThrottled(volume: number, onResult?: (st: AudioState | 
 
 export async function quickmenuSetMute(mute: boolean): Promise<AudioState | null> {
   if (isTauri()) {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const { invoke } = await import('../lib/ipc');
     return invoke<AudioState>('quickmenu_set_mute', { mute });
   }
   mockAudio.mute = mute;
@@ -452,7 +452,7 @@ export async function quickmenuSetMute(mute: boolean): Promise<AudioState | null
 
 export async function quickmenuSetMicMute(mute: boolean): Promise<AudioState | null> {
   if (isTauri()) {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const { invoke } = await import('../lib/ipc');
     return invoke<AudioState>('quickmenu_set_mic_mute', { mute });
   }
   mockAudio.micMute = mute;
@@ -461,7 +461,7 @@ export async function quickmenuSetMicMute(mute: boolean): Promise<AudioState | n
 
 export async function quickmenuSelectOutput(id: string): Promise<AudioState | null> {
   if (isTauri()) {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const { invoke } = await import('../lib/ipc');
     return invoke<AudioState>('quickmenu_select_output', { id });
   }
   mockAudio.outputs = mockAudio.outputs.map((o) => ({ ...o, default: o.id === id }));
@@ -470,7 +470,7 @@ export async function quickmenuSelectOutput(id: string): Promise<AudioState | nu
 
 export async function quickmenuSelectInput(id: string): Promise<AudioState | null> {
   if (isTauri()) {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const { invoke } = await import('../lib/ipc');
     return invoke<AudioState>('quickmenu_select_input', { id });
   }
   mockAudio.inputs = mockAudio.inputs.map((i) => ({ ...i, default: i.id === id }));
@@ -479,7 +479,7 @@ export async function quickmenuSelectInput(id: string): Promise<AudioState | nul
 
 export async function quickmenuSetAppVolume(pid: number, volume: number): Promise<AudioState | null> {
   if (isTauri()) {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const { invoke } = await import('../lib/ipc');
     return invoke<AudioState>('quickmenu_set_app_volume', { pid, volume });
   }
   const app = mockAudio.apps.find((a) => a.pid === pid);
@@ -492,7 +492,7 @@ export async function quickmenuSetAppVolume(pid: number, volume: number): Promis
 
 export async function quickmenuSetAppMute(pid: number, mute: boolean): Promise<AudioState | null> {
   if (isTauri()) {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const { invoke } = await import('../lib/ipc');
     return invoke<AudioState>('quickmenu_set_app_mute', { pid, mute });
   }
   const app = mockAudio.apps.find((a) => a.pid === pid);
@@ -502,7 +502,7 @@ export async function quickmenuSetAppMute(pid: number, mute: boolean): Promise<A
 
 export async function getThumbUrl(path: string): Promise<string> {
   if (isTauri()) {
-    const { invoke, convertFileSrc } = await import('@tauri-apps/api/core');
+    const { invoke, convertFileSrc } = await import('../lib/ipc');
     const thumbPath = await invoke<string>('get_thumb', { path });
     return convertFileSrc(thumbPath);
   }

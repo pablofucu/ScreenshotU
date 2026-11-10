@@ -7,8 +7,8 @@ export interface HookApi {
 }
 
 async function tauriApi(): Promise<HookApi> {
-  const { invoke } = await import('@tauri-apps/api/core');
-  const { listen } = await import('@tauri-apps/api/event');
+  const { invoke } = await import('../lib/ipc');
+  const { listen } = await import('../lib/ipc');
   return {
     call: <T>(cmd: string, args?: Record<string, unknown>) => invoke<T>(cmd, args),
     on: async <T>(event: string, cb: (p: T) => void) => listen<T>(event, e => cb(e.payload)),

@@ -123,7 +123,7 @@ let rarityListening = false;
 async function listenRarity() {
   if (rarityListening || !IS_TAURI) return;
   rarityListening = true;
-  const { listen } = await import('@tauri-apps/api/event');
+  const { listen } = await import('./ipc');
   void listen('achievements-rarity-updated', async () => {
     const gameId = achState.gameId;
     if (!gameId || !achState.list.length) return;
