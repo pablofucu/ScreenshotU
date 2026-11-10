@@ -1,6 +1,7 @@
 import { tick } from 'svelte';
 import { app, SORT_LABEL, SORT_ORDER, TITLE_FILTERS, TITLE_ORDERS, TITLE_ORDER_LABEL, TITLES_TABS, validFilter, type MenuItem, type SortMode, type TitleFilter, type View } from './store.svelte';
 import { backend, initBackend, IS_TABLET } from './backend';
+import { installedHere, launchLocal, removeLocal } from './clientgames';
 import { clearServer } from './remote/config';
 import { blip } from './sound';
 import { confirmTwice } from './confirm';
@@ -407,7 +408,8 @@ export async function playTitle(t: Title) {
     return;
   }
   try {
-    await backend.launch(t.gameId);
+    const here = installedHere(t);
+    if (here) await launchLocal(t.id); else await backend.launch(t.gameId);
     if (!app.playing) app.playing = { id: t.gameId, since: Date.now() };
     onLaunched(t);
     toast(backend.isTauri ? `Iniciando ${t.name}…` : `Jugar: ${t.name} (simulado en el navegador)`, 2400);
@@ -468,8 +470,13 @@ export async function menuAct(item: MenuItem) {
     if (!confirmTwice(app.menu)) return;
     app.overlay = ''; app.overlayStack = [];
     try {
-      await backend.removeGame(t.gameId!);
-      toast(`«${t.name}» quitado de la lista`);
+      if (installedHere(t)) {
+        await removeLocal(t.id);
+        toast(`«${t.name}» quitado de este equipo`);
+      } else {
+        await backend.removeGame(t.gameId!);
+        toast(`«${t.name}» quitado de la lista`);
+      }
       app.fk.titles = 'tit' + Math.max(0, app.t - 1);
       app.t = Math.max(0, app.t - 1);
       go('titles', 'back');

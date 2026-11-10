@@ -2,6 +2,7 @@
 // capturas, selección múltiple y selector de color de acento. Usa las funciones del controlador (toast, refrescos...).
 import { app, type FormKind, type MenuItem, type MoveTarget } from './store.svelte';
 import { backend, IS_TABLET } from './backend';
+import { addLocal, isClient, matchTitle } from './clientgames';
 import { blip } from './sound';
 import { confirmTwice } from './confirm';
 import { openOsk } from './osk.svelte';
@@ -126,6 +127,7 @@ async function saveForm() {
   if (!f.name.trim()) { toast('Escribe un nombre'); return; }
   if ((f.hero || f.logo || f.cover || f.kind === 'captures') && !app.config.root) { toast('Elige primero la carpeta de la biblioteca', 3200); return; }
   const kind: NewGame['kind'] = f.kind === 'emu' ? 'emulator' : f.kind;
+  if (isClient() && kind !== 'captures') { await saveLocal(kind, f.name.trim()); return; }
   try {
     const rep = await backend.addGame({
       kind, name: f.name.trim(), exe: f.exe, args: f.args, rom: f.rom, platform: f.platform,
@@ -134,6 +136,22 @@ async function saveForm() {
     app.overlay = ''; app.overlayStack = [];
     toast(`«${f.name.trim()}» añadido${rep.notes.length ? ' · ' + rep.notes[0] : ''}`, rep.notes.length ? 4200 : 1800);
     await refreshAfterAdd(f.platform, f.name.trim());
+  } catch (e) {
+    toast(String(e), 3600);
+  }
+}
+
+/** PC cliente: el juego se instala aquí y se casa con un título del host de esa misma categoría (o el host lo crea). */
+async function saveLocal(kind: 'exe' | 'emulator', name: string) {
+  const f = app.form;
+  try {
+    const cands = await matchTitle(f.platform, name, kind === 'emulator' ? f.rom : f.exe);
+    // Steam, exe o carpeta coinciden (≥ 92) o el nombre es igual (90): es ese título; si no, uno nuevo.
+    const hit = cands.find((c) => c.score >= 85) ?? null;
+    await addLocal({ gameId: hit?.id ?? null, platform: f.platform, name: hit?.name ?? name, kind, exe: f.exe, args: f.args, rom: f.rom });
+    app.overlay = ''; app.overlayStack = [];
+    toast(hit ? `«${hit.name}» instalado en este equipo` : `«${name}» añadido al PC principal e instalado aquí`, 2600);
+    await refreshAfterAdd(f.platform, hit?.name ?? name);
   } catch (e) {
     toast(String(e), 3600);
   }

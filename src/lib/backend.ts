@@ -96,6 +96,7 @@ export function decodeImg(url: string): Promise<void> {
 
 async function tauriBackend(): Promise<Backend> {
   const { invoke, convertFileSrc, listen, ready } = await import('./ipc');
+  const { markLocal } = await import('./clientgames');
   await ready; // `convertFileSrc` cambia si este equipo es cliente de otro PC
   const { getCurrentWindow } = await import('@tauri-apps/api/window');
   const { getCurrentWebview } = await import('@tauri-apps/api/webview');
@@ -114,8 +115,8 @@ async function tauriBackend(): Promise<Backend> {
       const r = await open({ directory: true, multiple: false, title });
       return typeof r === 'string' ? r : null;
     },
-    scan: () => invoke<Library>('scan_library'),
-    cachedScan: () => invoke<Library | null>('cached_library'),
+    scan: async () => (await markLocal(await invoke<Library>('scan_library')))!,
+    cachedScan: async () => markLocal(await invoke<Library | null>('cached_library')),
     async thumb(path, signal) {
       const hit = cache.get(path);
       if (hit) return hit;

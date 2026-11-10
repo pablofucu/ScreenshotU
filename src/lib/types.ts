@@ -236,6 +236,8 @@ export interface Title {
   plays: Array<[number, number]>;
   /** Id estable (id del lanzador o plataforma/carpeta). */
   id: string;
+  /** PCs cliente que lo tienen instalado (multi-PC). */
+  installedOn?: Array<{ deviceId: string; name: string }>;
   hidden: boolean;
   /** Acento extraído del hero y la portada (null si no hay arte con color). */
   accent: AccentInfo | null;
