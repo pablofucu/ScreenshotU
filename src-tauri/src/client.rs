@@ -369,14 +369,67 @@ fn sync_once(app: &AppHandle) -> Result<usize, String> {
     let pend = st.db.with(|c| visor_core::installs::unsynced(c, 2000)).map_err(|e| e.to_string())?;
     // Solo los juegos apuntados en el host (los demas no los aceptaria y se reenviarian siempre).
     let pend: Vec<_> = pend.into_iter().filter(|s| mine.contains(&s.game_id)).take(200).collect();
-    if pend.is_empty() {
-        return Ok(0);
-    }
-    let res = host_call(&cfg, &version(app), "sessions_upload", serde_json::json!({ "sessions": pend }))?;
-    let uids: Vec<String> = serde_json::from_value(res).map_err(|e| e.to_string())?;
+    let ver = version(app);
     let now = chrono::Utc::now().timestamp_millis();
-    st.db.with(|c| visor_core::installs::mark_synced(c, &uids, now)).map_err(|e| e.to_string())?;
-    Ok(uids.len())
+    let mut n = 0;
+    if !pend.is_empty() {
+        let res = host_call(&cfg, &ver, "sessions_upload", serde_json::json!({ "sessions": pend }))?;
+        let uids: Vec<String> = serde_json::from_value(res).map_err(|e| e.to_string())?;
+        st.db.with(|c| visor_core::installs::mark_synced(c, &uids, now)).map_err(|e| e.to_string())?;
+        n += uids.len();
+    }
+    n += sync_reading(&st, &cfg, &ver, &mine, now)?;
+    Ok(n)
+}
+
+/// Sube las sesiones de lectura y las frases del glosario de los juegos de este equipo (fase 4), con su media.
+fn sync_reading(st: &AppState, cfg: &ClientCfg, ver: &str, mine: &std::collections::HashSet<String>, now: i64) -> Result<usize, String> {
+    use visor_core::readsync;
+    let mut n = 0;
+    let reads = st.db.with(|c| readsync::unsynced_reads(c, 2000)).map_err(|e| e.to_string())?;
+    let reads: Vec<_> = reads.into_iter().filter(|r| mine.contains(&r.game_id)).take(300).collect();
+    if !reads.is_empty() {
+        let res = host_call(cfg, ver, "reads_upload", serde_json::json!({ "reads": reads }))?;
+        let uids: Vec<String> = serde_json::from_value(res).map_err(|e| e.to_string())?;
+        st.db.with(|c| readsync::mark_reads_synced(c, &uids, now)).map_err(|e| e.to_string())?;
+        n += uids.len();
+    }
+    let phrases = st.db.with(|c| readsync::unsynced_phrases(c, 2000)).map_err(|e| e.to_string())?;
+    let phrases: Vec<_> = phrases.into_iter().filter(|p| mine.contains(&p.game_id)).take(100).collect();
+    if phrases.is_empty() {
+        return Ok(n);
+    }
+    #[derive(Deserialize)]
+    struct Up {
+        saved: Vec<(String, String)>,
+        missing: Vec<String>,
+    }
+    let res = host_call(cfg, ver, "phrases_upload", serde_json::json!({ "phrases": phrases }))?;
+    let up: Up = serde_json::from_value(res).map_err(|e| e.to_string())?;
+    // Primero la media que le falta al host; si una no sube, sus frases quedan pendientes para la proxima vez.
+    let dir = st.paths.glossary.join("media");
+    let mut failed: Vec<String> = Vec::new();
+    for m in &up.missing {
+        let Some(f) = readsync::media_path(&dir, m) else { continue };
+        let Ok(bytes) = std::fs::read(&f) else { continue }; // aqui tampoco esta: no hay nada que subir
+        let args = serde_json::json!({ "name": m, "data": readsync::encode_media(&bytes) });
+        if let Err(e) = rc::call_long(cfg.addr(), &cfg.token, ver, "phrase_media_upload", args) {
+            eprintln!("cliente: no se pudo subir {m}: {e:#}");
+            failed.push(m.clone());
+        }
+    }
+    let ok: Vec<(String, String)> = up
+        .saved
+        .into_iter()
+        .filter(|k| {
+            phrases
+                .iter()
+                .find(|p| p.game_id == k.0 && p.id == k.1)
+                .is_none_or(|p| readsync::media_of(p).iter().all(|m| !failed.contains(m)))
+        })
+        .collect();
+    st.db.with(|c| readsync::mark_phrases_synced(c, &ok, now)).map_err(|e| e.to_string())?;
+    Ok(n + ok.len())
 }
 
 /// Sube ya las partidas pendientes (p. ej. al acabar una).

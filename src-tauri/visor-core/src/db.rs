@@ -281,6 +281,8 @@ pub const MIGRATIONS: &[&str] = &[
     // 16: dispositivos emparejados (solo se usa en el host) y dispositivo/uid de cada partida y sesion de lectura.
     crate::devices::SCHEMA,
     crate::installs::SCHEMA,
+    // 18: marca de subida de las sesiones de lectura y las frases de un PC cliente (multi-PC, fase 4).
+    crate::readsync::SCHEMA,
 ];
 
 /// Version del esquema que entiende esta compilacion.
@@ -565,7 +567,7 @@ mod tests {
         }
         let db = Db::open_path(&p).unwrap();
         db.with(|c| {
-            assert_eq!(c.query_row::<i64, _, _>("PRAGMA user_version", [], |r| r.get(0)).unwrap(), 17);
+            assert_eq!(c.query_row::<i64, _, _>("PRAGMA user_version", [], |r| r.get(0)).unwrap(), latest_version());
             let (dev, uid): (String, Option<String>) =
                 c.query_row("SELECT device_id, uid FROM sessions", [], |r| Ok((r.get(0)?, r.get(1)?))).unwrap();
             assert_eq!((dev.as_str(), uid), ("", None), "las partidas antiguas son del dueño de la base");

@@ -19,6 +19,7 @@ pub mod library;
 pub mod magpie;
 pub mod nintendo;
 pub mod palette;
+pub mod readsync;
 pub mod relpath;
 pub mod remote;
 pub mod remote_client;

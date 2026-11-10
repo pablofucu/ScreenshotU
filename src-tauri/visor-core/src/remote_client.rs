@@ -181,6 +181,16 @@ pub fn call(addr: &str, token: &str, version: &str, cmd: &str, args: serde_json:
     Ok(r.into_json().context("respuesta del PC principal")?)
 }
 
+/// Como `call`, con mas tiempo (subidas grandes, p. ej. el audio de una frase).
+pub fn call_long(addr: &str, token: &str, version: &str, cmd: &str, args: serde_json::Value) -> Result<serde_json::Value> {
+    let a = ureq::AgentBuilder::new().timeout_connect(TIMEOUT).timeout(Duration::from_secs(120)).build();
+    let r = with_headers(a.post(&url(addr, "/api/v1/call")), version)
+        .set("Authorization", &format!("Bearer {token}"))
+        .send_json(serde_json::json!({ "cmd": cmd, "args": args }))
+        .map_err(|e| http_err(addr, e))?;
+    Ok(r.into_json().context("respuesta del PC principal")?)
+}
+
 /// Deja de estar emparejado (el token deja de valer en el host).
 pub fn unpair(addr: &str, token: &str, version: &str) -> Result<()> {
     with_headers(agent().post(&url(addr, "/api/v1/unpair")), version)

@@ -48,6 +48,8 @@ const EVENT_BUFFER: usize = 200;
 const EVENTS_MAX_WAIT: u64 = 25;
 /// Cuerpo maximo de las peticiones POST.
 const MAX_BODY: u64 = 1024 * 1024;
+/// Cuerpo maximo de `POST /call` de un PC emparejado (sube la media de las frases: capturas y audio).
+const MAX_UPLOAD: u64 = 48 * 1024 * 1024;
 /// Error de `Provider::call` para un comando que no se puede usar desde fuera del escritorio (da 403).
 pub const CALL_NOT_ALLOWED: &str = "No disponible desde la tablet";
 /// Prefijo del error de `Provider::call` cuando los argumentos no encajan con el comando (da 400).
@@ -1013,7 +1015,8 @@ fn handle(inner: &Inner, mut rq: tiny_http::Request) {
     let mut req = Req::parse(rq.method().as_str(), rq.url(), headers, ip);
     if req.method == "POST" {
         // Cuerpo JSON (un id o los argumentos de un comando): se limita para que nadie llene la memoria.
-        let _ = std::io::Read::take(rq.as_reader(), MAX_BODY).read_to_end(&mut req.body);
+        let max = if req.path == "/api/v1/call" && inner.caller(&req).is_some_and(|c| c.kind == "pc") { MAX_UPLOAD } else { MAX_BODY };
+        let _ = std::io::Read::take(rq.as_reader(), max).read_to_end(&mut req.body);
     }
     let reply = route(inner, &req);
     let head_only = req.method == "HEAD";

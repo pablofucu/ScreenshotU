@@ -166,6 +166,9 @@ pub fn dispatch(app: &AppHandle, caller: &visor_core::remote::Caller, cmd: &str,
         "register_install" => out(crate::installs::register_install(&st(), caller, serde_json::from_value(a.clone()).map_err(|e| format!("{CALL_BAD_ARGS}: {e}"))?)),
         "unregister_install" => out(crate::installs::unregister_install(&st(), caller, &arg::<String>(a, "gameId")?)),
         "sessions_upload" => out(crate::installs::sessions_upload(&st(), caller, arg(a, "sessions")?)),
+        "reads_upload" => out(crate::installs::reads_upload(&st(), caller, arg(a, "reads")?)),
+        "phrases_upload" => out(crate::installs::phrases_upload(&st(), caller, arg(a, "phrases")?)),
+        "phrase_media_upload" => out(crate::installs::phrase_media_upload(&st(), caller, &arg::<String>(a, "name")?, &arg::<String>(a, "data")?)),
         _ => Err(CALL_NOT_ALLOWED.into()),
     }
 }

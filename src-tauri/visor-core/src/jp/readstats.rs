@@ -350,7 +350,7 @@ pub fn session_start(c: &Connection, game_id: &str, game_name: &str, start_ms: i
 /// Actualiza los totales de la sesion (`end_ms` = instante de la ultima actividad).
 pub fn session_update(c: &Connection, id: i64, end_ms: i64, t: &Tracker) -> rusqlite::Result<()> {
     c.execute(
-        "UPDATE read_sessions SET end_ms = ?2, lines = ?3, chars = ?4, active_ms = ?5 WHERE id = ?1",
+        "UPDATE read_sessions SET end_ms = ?2, lines = ?3, chars = ?4, active_ms = ?5, synced_ms = NULL WHERE id = ?1",
         params![id, end_ms, t.lines, t.chars, t.active_ms],
     )?;
     Ok(())

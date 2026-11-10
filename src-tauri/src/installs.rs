@@ -8,6 +8,8 @@ use std::path::Path;
 use visor_core::db::data as dbd;
 use visor_core::games::{self, Launch, ManualGame};
 use visor_core::installs::{self, Candidate, Install, MatchItem, MatchQuery, RemoteSession};
+use visor_core::jp::phrases::Phrase;
+use visor_core::readsync::{self, RemoteRead};
 use visor_core::remote::Caller;
 use visor_core::scan::{InstalledOn, Library};
 
@@ -157,6 +159,78 @@ pub fn sessions_upload(state: &AppState, caller: &Caller, sessions: Vec<RemoteSe
         }
     }
     Ok(ok)
+}
+
+/// Guarda las sesiones de lectura que sube un cliente (texthook de un juego instalado alli). Devuelve los `uid` guardados.
+pub fn reads_upload(state: &AppState, caller: &Caller, reads: Vec<RemoteRead>) -> Result<Vec<String>, String> {
+    let device = pc_caller(caller)?;
+    let now = now_ms();
+    let offset = visor_core::jp::readstats::local_offset_min(now);
+    let mut ok = Vec::new();
+    for r in reads.iter().take(500) {
+        let saved = state
+            .db
+            .with(|c| anyhow::Ok(installs::has(c, &r.game_id, device)? && readsync::put_remote_read(c, device, r, offset)?))
+            .map_err(|e| e.to_string())?;
+        if saved {
+            ok.push(r.uid.clone());
+        }
+    }
+    Ok(ok)
+}
+
+#[derive(Debug, Default, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PhrasesUploaded {
+    /// `[gameId, id]` de las frases guardadas.
+    pub saved: Vec<(String, String)>,
+    /// Archivos de media de esas frases que el host aun no tiene (el cliente los sube con `phrase_media_upload`).
+    pub missing: Vec<String>,
+}
+
+fn phrase_media_dir(state: &AppState) -> std::path::PathBuf {
+    state.paths.glossary.join("media")
+}
+
+/// Guarda las frases del glosario que sube un cliente (se juntan con las que ya tenga el host).
+pub fn phrases_upload(state: &AppState, caller: &Caller, phrases: Vec<Phrase>) -> Result<PhrasesUploaded, String> {
+    let device = pc_caller(caller)?;
+    let now = now_ms();
+    let offset = visor_core::jp::readstats::local_offset_min(now);
+    let dir = phrase_media_dir(state);
+    let mut out = PhrasesUploaded::default();
+    for p in phrases.into_iter().take(200) {
+        let key = (p.game_id.clone(), p.id.clone());
+        let media = readsync::media_of(&p);
+        let saved = state
+            .db
+            .with(|c| anyhow::Ok(installs::has(c, &p.game_id, device)? && { readsync::put_remote_phrase(c, p, offset)?; true }))
+            .map_err(|e| e.to_string())?;
+        if saved {
+            out.saved.push(key);
+            for m in media {
+                if readsync::media_path(&dir, &m).is_some_and(|f| !f.exists()) && !out.missing.contains(&m) {
+                    out.missing.push(m);
+                }
+            }
+        }
+    }
+    Ok(out)
+}
+
+/// Guarda un archivo de media de una frase (`name` = nombre de archivo, `data` en base64). No pisa uno que ya exista.
+pub fn phrase_media_upload(state: &AppState, caller: &Caller, name: &str, data: &str) -> Result<bool, String> {
+    pc_caller(caller)?;
+    let dir = phrase_media_dir(state);
+    let f = readsync::media_path(&dir, name).ok_or("Nombre de archivo no válido")?;
+    if f.exists() {
+        return Ok(false);
+    }
+    let bytes = readsync::decode_media(data).map_err(|e| format!("media no válida: {e}"))?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let tmp = f.with_extension("visor-part");
+    std::fs::write(&tmp, &bytes).and_then(|_| std::fs::rename(&tmp, &f)).map_err(|e| e.to_string())?;
+    Ok(true)
 }
 
 /// Rellena `installed_on` de los titulos con los PCs cliente que los tienen instalados.

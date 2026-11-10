@@ -833,7 +833,8 @@ pub fn phrase_save(c: &Connection, p: &Phrase) -> Result<()> {
                     seen = excluded.seen, translation = excluded.translation, explanation_json = excluded.explanation_json,
                     starred = excluded.starred, note = excluded.note, shot = excluded.shot, audio = excluded.audio,
                     synth = excluded.synth, anki_note_id = excluded.anki_note_id, due_ms = excluded.due_ms,
-                    interval_days = excluded.interval_days, ease = excluded.ease, reps = excluded.reps, lapses = excluded.lapses"
+                    interval_days = excluded.interval_days, ease = excluded.ease, reps = excluded.reps, lapses = excluded.lapses,
+                    synced_ms = NULL"
             ),
             params![
                 p.game_id,
