@@ -346,12 +346,12 @@ La subida de versión se hace como en `0a50e7e` («chore: subir version a 2.0.0�
 1. Botones de Estadísticas: se mantiene el contrato actual (Y pestaña, LB/RB periodo, LT/RT categoría).
 2. Pestañas: siguen Clasificación y Resumen anual. Orden recomendado: Semana · Terminados · Panorama · Clasificación · Calendario · Resumen anual.
 3. Chips R y F de Semana: salen de las metas de lectura de **Novelas visuales** (`vn`), no de toda la biblioteca.
-4. Mi lista: el estilo es el que ya hay en `MiListaDual.svelte` en GitHub (maqueta C ajustada, 5 carriles adaptativos). **L3 no se hace**; L2 (portadas grandes y máximas) sigue.
+4. Mi lista (corregido el 2026-11-11): estilo **C · Lomo fino** de la maqueta, con portadas **«grandes» fijas** y **sin Terminado: cuatro franjas**. L3 se hace con ese estilo; L2 se reduce a aplicar «grandes» siempre: **sin ajuste nuevo, sin `config.rs`, sin «máximas»** (lo que tengan de selector se descarta).
 5. Chip K (abanico de capturas): sí, una destacada por categoría (máx. 3).
 6. Chip M (estantería de terminados): agrupada por categoría, cada grupo con su color.
 7. Terminados → «Todo»: **no se hace**, solo años. Apuntado como idea futura.
 8. Extras de `d-panorama` (vista «Todo», río del año, «¿Sabías que…?»): sí, E7 pasa a la 2.2.0.
-9. Menú principal: pendiente de elegir entre A (Pulido), B (Barra inferior), C (Estante) y D (Foco claro).
+9. Menú principal: **A · Pulido, sin «fondo más tranquilo»** (se mantienen cabeceras con barrita de color, «Últimos 7 días» pegada a su cabecera y quitar «Ajustes» repetido; el fondo no se toca).
 10. Colecciones: aparcado (C1 fuera de plan por ahora).
 
 ## 7. Decisiones abiertas para el usuario
