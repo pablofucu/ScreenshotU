@@ -18,6 +18,9 @@
   /* Significados reservados; --ok-f y --bad-f son los rellenos con texto blanco encima (AA) */
   --ok:#3BB54A;--bad:#E8384F;--warn:#F2B807;--ok-f:#27833a;--bad-f:#d92c44;
 
+  /* Rareza de logros (§3.4), de más rara a más común: posiciones fijas del arcoíris (RAINBOW en icons.ts) */
+  --rar-0:#9A4BD8;--rar-1:#E8384F;--rar-2:#F27A1A;--rar-3:#3BB54A;--rar-4:#00A0D8;--rar-5:var(--ink-3);
+
   --r-xs:6px;--r-s:12px;--r-m:18px;--r-l:28px;--r-pill:999px;
   --t-xs:11px;--t-s:13px;--t-m:15px;--t-l:17px;--t-xl:20px;--t-2xl:28px;--t-3xl:44px;
 

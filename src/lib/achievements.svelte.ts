@@ -183,7 +183,7 @@ export function formatUnlockDate(epoch?: number | null): string {
 export function getRankTier(percentage: number): { name: string; color: string; next: string; nextTarget: number } {
   if (percentage >= 100) return { name: 'Platino', color: '#00A0D8', next: 'Máximo', nextTarget: 100 };
   if (percentage >= 75) return { name: 'Oro', color: '#F2B807', next: 'Platino', nextTarget: 100 };
-  if (percentage >= 25) return { name: 'Plata', color: '#d5dbe4', next: 'Oro', nextTarget: 75 };
+  if (percentage >= 25) return { name: 'Plata', color: '#8e9aac', next: 'Oro', nextTarget: 75 };
   return { name: 'Bronce', color: '#cd7f32', next: 'Plata', nextTarget: 25 };
 }
 

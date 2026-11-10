@@ -9,7 +9,7 @@
     VARIANT_SHORT_NAMES,
     getRankTier,
   } from '../lib/achievements.svelte';
-  import type { AchievementSummary } from '../lib/types';
+  import type { Achievement, AchievementSummary } from '../lib/types';
   import Thumb from './Thumb.svelte';
 
   interface Props {
@@ -47,6 +47,29 @@
   // SVG Icons
   const trophySvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8M9 17h6"/></svg>`;
   const lockSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`;
+
+  // Mosaico (variante 3): conseguidos primero, de más raro a más común; luego los pendientes.
+  // Tramos de rareza como en AchievementsModal (0 legendario … 4 común, 5 sin datos).
+  type Ach = Achievement & { rarityPct?: number | null; rarityTier?: number };
+  const MOS_MAX = 25;
+  function tierOf(a: Ach): number {
+    const p = a.rarityPct;
+    if (typeof p === 'number') return p < 5 ? 0 : p < 12 ? 1 : p < 25 ? 2 : p < 50 ? 3 : 4;
+    const t = a.rarityTier ?? 0;
+    if (t >= 1) return t >= 2 ? 1 : 2;
+    return 5;
+  }
+  const mosaic = $derived.by(() => {
+    const list = (achState.list ?? []) as Ach[];
+    const cells: { a: Ach | null; earned: boolean; secret: boolean; ti: number; more?: number }[] = list.length
+      ? [...list]
+          .map((a) => ({ a, earned: a.earned, secret: a.hidden && !a.earned, ti: tierOf(a) }))
+          .sort((x, y) => Number(y.earned) - Number(x.earned) || x.ti - y.ti)
+      : Array.from({ length: total }, (_, i) => ({ a: null, earned: i < unlocked, secret: false, ti: 5 }));
+    if (cells.length <= MOS_MAX) return cells;
+    const shown = cells.slice(0, MOS_MAX - 1);
+    return [...shown, { a: null, earned: false, secret: false, ti: 5, more: cells.length - shown.length }];
+  });
 
   function onCardClick() {
     openAchievementsModal(gameId, title, coverPath);
@@ -167,38 +190,37 @@
       <!-- VARIANTE 3: Mosaico de la colección con todos los iconos -->
       <div class="fc v3">
         <div class="blurc" style={blur ? `background-image:url(${blur})` : ''}></div>
-        <div class="lab">
-          {@html trophySvg}
-          <span>Colección</span>
-          <em>{unlocked}/{total}</em>
+        <div class="hd">
+          <span class="lab">{@html trophySvg}Colección</span>
+          <span class="cnt"><b>{unlocked}</b>/{total}</span>
         </div>
         <div class="mos">
-          {#each (achState.list && achState.list.length > 0 ? achState.list : Array(Math.min(25, total)).fill(null)).slice(0, 25) as ach, i}
-            {@const isEarned = ach ? ach.earned : i < unlocked}
-            {@const isSecret = ach ? (ach.hidden && !ach.earned) : false}
-            <div
-              class="mos-ico"
-              class:locked={!isEarned}
-              class:secret={isSecret}
-              title={ach?.displayName ?? ''}
-            >
-              {#if ach?.icon}
-                <img src={ach.icon} alt={ach?.displayName ?? ''} />
-              {:else if isSecret}
-                <span>?</span>
-              {:else if isEarned}
-                {@html trophySvg}
-              {:else}
-                {@html lockSvg}
-              {/if}
-            </div>
+          {#each mosaic as m}
+            {#if m.more}
+              <div class="mos-ico more">+{m.more}</div>
+            {:else}
+              <div
+                class="mos-ico"
+                class:locked={!m.earned}
+                class:secret={m.secret}
+                style={m.earned && m.ti < 5 ? `--c:var(--rar-${m.ti})` : ''}
+                title={m.a?.displayName ?? ''}
+              >
+                {#if m.secret}
+                  <span>?</span>
+                {:else if m.a?.icon}
+                  <img src={m.a.icon} alt="" />
+                {:else if m.earned}
+                  {@html trophySvg}
+                {:else}
+                  {@html lockSvg}
+                {/if}
+              </div>
+            {/if}
           {/each}
         </div>
         <div class="ft">
-          <small>
-            <span>{pct} % completado</span>
-            <span>{total - unlocked} restantes</span>
-          </small>
+          <div class="ftl"><b>{pct} %</b><span>{total - unlocked} por conseguir</span></div>
           <div class="gb"><i style="width:{pct}%"></i></div>
         </div>
       </div>
@@ -263,18 +285,18 @@
             <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="10" />
             <!-- Segmentos aproximados según distribución -->
             <circle
-              cx="50" cy="50" r="44" fill="none" style="stroke:var(--rar-common)" stroke-width="10"
+              cx="50" cy="50" r="44" fill="none" style="stroke:var(--rar-4)" stroke-width="10"
               pathLength="24" stroke-dasharray="{Math.max(1, summary.rarityCommon * (total ? 24 / total : 1))} 24"
               transform="rotate(-90 50 50)"
             />
             <circle
-              cx="50" cy="50" r="44" fill="none" style="stroke:var(--rar-rare)" stroke-width="10"
+              cx="50" cy="50" r="44" fill="none" style="stroke:var(--rar-2)" stroke-width="10"
               pathLength="24" stroke-dasharray="{Math.max(1, summary.rarityRare * (total ? 24 / total : 1))} 24"
               stroke-dashoffset="-{summary.rarityCommon * (total ? 24 / total : 1)}"
               transform="rotate(-90 50 50)"
             />
             <circle
-              cx="50" cy="50" r="44" fill="none" style="stroke:var(--rar-ultra)" stroke-width="10"
+              cx="50" cy="50" r="44" fill="none" style="stroke:var(--rar-1)" stroke-width="10"
               pathLength="24" stroke-dasharray="{Math.max(1, summary.rarityUltra * (total ? 24 / total : 1))} 24"
               stroke-dashoffset="-{(summary.rarityCommon + summary.rarityRare) * (total ? 24 / total : 1)}"
               transform="rotate(-90 50 50)"
@@ -285,9 +307,9 @@
           </div>
         </div>
         <div class="lg">
-          <div><i style="background:var(--rar-common)"></i>Comunes<b>{summary.rarityCommon}</b></div>
-          <div><i style="background:var(--rar-rare)"></i>Raros<b>{summary.rarityRare}</b></div>
-          <div><i style="background:var(--rar-ultra)"></i>Ultra raros<b>{summary.rarityUltra}</b></div>
+          <div><i style="background:var(--rar-4)"></i>Comunes<b>{summary.rarityCommon}</b></div>
+          <div><i style="background:var(--rar-2)"></i>Raros<b>{summary.rarityRare}</b></div>
+          <div><i style="background:var(--rar-1)"></i>Ultra raros<b>{summary.rarityUltra}</b></div>
         </div>
       </div>
     {/if}
@@ -296,12 +318,6 @@
 
 <style>
   .ach-card {
-    /* Colores semánticos de rareza arcoíris sincronizados con AchievementsModal */
-    --rar-common: #00a0d8;
-    --rar-uncommon: #3bb54a;
-    --rar-rare: #f27a1a;
-    --rar-ultra: #e8384f;
-    --rar-legendary: #9a4bd8;
     --gold: var(--warn);
     --gold-hi: color-mix(in srgb, var(--warn) 55%, var(--tint-base));
     --gold-lo: var(--warn);
@@ -527,78 +543,109 @@
 
   /* 3 · Mosaico de la colección */
   .v3 {
-    background: linear-gradient(180deg, color-mix(in srgb, var(--night) 70%, black), color-mix(in srgb, var(--night) 35%, black));
-    color: white;
-    padding: 10px 8px 9px;
-    align-items: center;
+    /* Fondo noche: la portada desenfocada (.blurc) sobre negro tintado del color del juego */
+    background: color-mix(in srgb, var(--night) 30%, #0b0d12);
+    color: #fff;
+    padding: var(--s-3);
+    gap: var(--s-2);
+  }
+  .v3 .blurc {
+    filter: blur(18px) brightness(0.45) saturate(1.4);
+  }
+  .v3 .blurc::after {
+    background: linear-gradient(180deg, rgba(11, 13, 18, 0.35), rgba(11, 13, 18, 0.8) 80%);
+  }
+  .v3 .hd {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-2);
   }
   .v3 .lab {
-    align-self: stretch;
-    padding: 0 4px;
-    color: var(--gold-hi);
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    font-size: var(--t-xs);
+    gap: var(--s-1);
   }
-  .v3 .lab em {
-    margin-left: auto;
-    font-style: normal;
-    color: white;
-    font-size: 13px;
+  .v3 .cnt {
+    font-size: var(--t-s);
     font-weight: 700;
+    color: rgba(255, 255, 255, 0.6);
+    white-space: nowrap;
+  }
+  .v3 .cnt b {
+    font-size: var(--t-xl);
+    font-weight: 800;
+    color: #fff;
   }
   .v3 .mos {
     display: grid;
-    grid-template-columns: repeat(5, 30px);
-    gap: 5px;
-    margin-top: 8px;
-    justify-content: center;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--s-1);
+    align-content: start;
   }
   .mos-ico {
-    width: 30px;
-    height: 30px;
-    border-radius: 6px;
+    aspect-ratio: 1;
+    border-radius: var(--r-xs);
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.08);
     display: grid;
     place-items: center;
-    font-size: 11px;
+    font-size: var(--t-s);
     font-weight: 800;
     color: var(--gold-hi);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+  /* Conseguido: aro del color de su rareza (§3.4) */
+  .mos-ico:not(.locked) {
+    box-shadow: 0 0 0 2px var(--c, rgba(255, 255, 255, 0.35)), 0 2px 6px rgba(0, 0, 0, 0.4);
   }
   .mos-ico img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 6px;
+    display: block;
   }
   .mos-ico :global(svg) {
-    width: 16px;
-    height: 16px;
+    width: 55%;
+    height: 55%;
+  }
+  .mos-ico.locked img,
+  .mos-ico.locked :global(svg) {
+    opacity: 0.3;
+    filter: grayscale(1);
   }
   .mos-ico.locked {
-    opacity: 0.35;
-    filter: grayscale(1);
-    color: var(--ink-3);
+    color: rgba(255, 255, 255, 0.45);
   }
-  .mos-ico.secret {
-    opacity: 0.25;
-    color: var(--ink-3);
-    background: rgba(0, 0, 0, 0.25);
+  .mos-ico.more {
+    font-size: var(--t-xs);
+    color: rgba(255, 255, 255, 0.75);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
   }
   .v3 .ft {
-    align-self: stretch;
     margin-top: auto;
-    padding: 0 4px;
   }
-  .v3 .ft small {
+  .v3 .ftl {
     display: flex;
+    align-items: baseline;
     justify-content: space-between;
-    font-size: 11px;
+    gap: var(--s-2);
+    margin-bottom: var(--s-1);
+    white-space: nowrap;
+  }
+  .v3 .ftl b {
+    font-size: var(--t-m);
     font-weight: 800;
-    color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 5px;
+    color: var(--gold-hi);
+  }
+  .v3 .ftl span {
+    font-size: var(--t-xs);
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.65);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .v3 .gb {
+    background: rgba(255, 255, 255, 0.12);
   }
 
   /* 4 · Medalla */

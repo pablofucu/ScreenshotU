@@ -3,15 +3,14 @@
   import {
     achState,
     getFilteredAchievements,
-    closeAchievementsModal,
     toggleRevealSecret,
     formatUnlockDate,
     getRankTier,
-    cycleCardVariant,
     VARIANT_NAMES,
   } from '../lib/achievements.svelte';
   import type { Achievement } from '../lib/types';
   import Hints from '../components/Hints.svelte';
+  import TopBar from '../components/TopBar.svelte';
 
   // El backend (visor-core) ya envía estos campos; el tipo del frontend aún no los declara.
   type Ach = Achievement & {
@@ -133,12 +132,6 @@
     }
   }
 
-  function onCycleVariant() {
-    if (achState.gameId) {
-      void cycleCardVariant(achState.gameId);
-    }
-  }
-
   let rootEl = $state<HTMLElement | null>(null);
   let shelvesEl = $state<HTMLElement | null>(null);
   let popEl = $state<HTMLElement | null>(null);
@@ -178,24 +171,9 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 <div class="root" bind:this={rootEl} onclick={onRootClick}>
-  <header class="top">
-    <button class="pillbtn" type="button" onclick={closeAchievementsModal} title="Cerrar (B)">
-      <span class="chev">‹</span>
-      <b>Volver</b>
-    </button>
-    <div class="crumb">
-      <span>{achState.gameTitle || 'Detalles'}</span>
-      <span class="sep">›</span>
-      <span class="cur">Logros</span>
-    </div>
-    <button class="pillbtn" type="button" onclick={onCycleVariant} title="Cambiar diseño global de tarjeta (Y)">
-      <small>Diseño:</small>
-      <b>{VARIANT_NAMES[app.config.achievementsCardVariant ?? summary?.variant ?? 1] ?? 'Variante'}</b>
-      <span class="key">Y</span>
-    </button>
-  </header>
+  <TopBar crumbs={['Inicio', app.platform?.name ?? '', achState.gameTitle || 'Detalles', 'Logros']} />
 
-  <section class="head">
+  <section class="head glass-in">
     <div class="ring" style="--p:{pct}">
       <u></u><i></i>
       <span><b>{pct} %</b></span>
@@ -213,7 +191,6 @@
     </span>
 
     <nav class="chips">
-      <span class="btn sh">LB</span>
       <button class="chip" class:on={achState.tab === 'all'} type="button" onclick={() => setTab('all')}>
         Todos <small>{total}</small>
       </button>
@@ -223,7 +200,6 @@
       <button class="chip" class:on={achState.tab === 'locked'} type="button" onclick={() => setTab('locked')}>
         Pendientes <small>{total - unlocked}</small>
       </button>
-      <span class="btn sh">RB</span>
     </nav>
   </section>
 
@@ -240,7 +216,7 @@
       </div>
     {:else}
       {#each groups as g (g.ti)}
-        <div class="shelf" style="--c:var(--rar-{g.ti})">
+        <div class="shelf glass-in" style="--c:var(--rar-{g.ti})">
           <div class="lab">
             <b>{g.k}</b>
             <small><em>{g.ok}/{g.count}</em> · {g.range}</small>
@@ -322,8 +298,8 @@
         {#if selected.source}<span>{selected.source.toUpperCase()}</span>{/if}
       </div>
       {#if selected.hidden && !selected.earned}
-        <button class="reveal" type="button" onclick={onToggleSecret}>
-          {isSecret ? 'Revelar logro secreto (X)' : 'Ocultar spoiler (X)'}
+        <button class="b-main reveal" type="button" onclick={onToggleSecret}>
+          {isSecret ? 'Revelar logro secreto' : 'Ocultar spoiler'}
         </button>
       {/if}
     {/if}
@@ -343,14 +319,8 @@
 
 <style>
   .root {
-    /* Colores semánticos de rareza (de más raro a más común); lo demás sale de los tokens. */
-    --rar-0: #9a4bd8;
-    --rar-1: #e8384f;
-    --rar-2: #f27a1a;
-    --rar-3: #3bb54a;
-    --rar-4: #00a0d8;
-    --rar-5: var(--ink-3);
     --hint: 64px;
+    --mx: var(--s-5);
 
     position: absolute;
     inset: 0;
@@ -364,90 +334,17 @@
       var(--face);
   }
 
-  /* Barra superior */
-  .top {
-    position: absolute;
-    left: 22px;
-    right: 22px;
-    top: 14px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-  .pillbtn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    height: 40px;
-    padding: 0 var(--t-m, 15px);
-    border: 0;
-    border-radius: var(--r-pill);
-    cursor: pointer;
-    font: 700 var(--t-m) inherit;
-    font-family: inherit;
-    color: var(--ink);
-    background: var(--glass-chip);
-    box-shadow: 0 0 0 1px var(--line), inset 0 1px 0 var(--glass-top);
-  }
-  .pillbtn small {
-    font-size: var(--t-s);
-    font-weight: 700;
-    color: var(--ink-3);
-  }
-  .chev {
-    font-size: 22px;
-    line-height: 1;
-    margin-top: -2px;
-  }
-  .key {
-    min-width: 24px;
-    height: 24px;
-    display: inline-grid;
-    place-items: center;
-    border-radius: 12px;
-    font-size: var(--t-s);
-    font-weight: 800;
-    color: var(--on, var(--ink));
-    background: var(--f1, var(--ink-3));
-  }
-  .crumb {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: var(--t-xl);
-    font-weight: 700;
-    color: var(--ink-2);
-    min-width: 0;
-  }
-  .crumb span:first-child {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .crumb .sep {
-    color: var(--ink-3);
-    font-weight: 500;
-  }
-  .crumb .cur {
-    color: var(--f1, var(--ink));
-  }
-
   /* Cabecera: anillo + resumen + filtros */
   .head {
     position: absolute;
-    left: 22px;
-    right: 22px;
-    top: 66px;
+    left: var(--mx);
+    right: var(--mx);
+    top: 84px;
     height: 100px;
     display: flex;
     align-items: center;
-    gap: var(--t-xs, 11px);
-    padding: 0 20px 0 14px;
-    border-radius: var(--r-m);
-    background: var(--glass-in);
-    box-shadow: 0 0 0 1px var(--line), inset 0 1px 0 var(--glass-top);
+    gap: var(--s-3);
+    padding: 0 var(--s-4) 0 var(--s-3);
   }
   .head > * {
     flex: none;
@@ -460,7 +357,7 @@
     height: var(--sz);
     position: relative;
     border-radius: 50%;
-    margin-right: 6px;
+    margin-right: var(--s-1);
   }
   .ring u,
   .ring i {
@@ -507,7 +404,7 @@
     text-overflow: ellipsis;
   }
   .sum .s {
-    margin-top: 2px;
+    margin-top: var(--s-1);
     font-size: var(--t-m);
     color: var(--ink-2);
   }
@@ -518,70 +415,72 @@
   .rank {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    height: 30px;
-    padding: 0 12px;
+    gap: var(--s-2);
+    height: 32px;
+    padding: 0 var(--s-3);
     border-radius: var(--r-pill);
     font-size: var(--t-m);
-    color: color-mix(in srgb, var(--c) 70%, var(--ink));
+    color: color-mix(in srgb, var(--c) 55%, var(--ink));
     background: color-mix(in srgb, var(--c) 18%, transparent);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 55%, var(--line));
   }
   .rank :global(svg) {
-    width: 16px;
-    height: 16px;
+    width: var(--i-s);
+    height: var(--i-s);
   }
+
+  /* Selector de pestañas (familia .chip de la guía) */
   .chips {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 4px;
+    gap: var(--s-1);
+    padding: var(--s-1);
     margin-left: auto;
     border-radius: var(--r-pill);
     background: var(--glass-chip);
-    box-shadow: 0 0 0 1px var(--line);
-  }
-  .chips .btn {
-    margin: 0 2px;
+    box-shadow: inset 0 0 0 1px var(--line);
   }
   .chip {
-    height: 32px;
-    padding: 0 16px;
-    border: 0;
-    border-radius: var(--r-pill);
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--s-2);
+    height: 36px;
+    padding: 0 var(--s-4);
+    border: 0;
+    border-radius: var(--r-pill);
     cursor: pointer;
-    font: 700 var(--t-m) inherit;
-    font-family: inherit;
+    font: 700 var(--t-m) / 1 var(--round);
     color: var(--ink-2);
     background: transparent;
-    transition: background 0.2s, color 0.2s;
+    transition: transform var(--d-2) var(--e-bounce), background var(--d-2) var(--e-soft), color var(--d-2) var(--e-soft);
   }
   .chip small {
     font-size: var(--t-s);
     font-weight: 700;
-    opacity: 0.7;
+    opacity: 0.75;
   }
   .chip.on {
-    color: var(--on, var(--ink));
-    background: linear-gradient(180deg, var(--f1, var(--ink-3)), var(--f2, var(--f1, var(--ink-3))));
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--f1, var(--ink-3)) 75%, black);
+    color: var(--on);
+    background: var(--gf);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 0 0 1px color-mix(in srgb, var(--f2) 75%, black);
+  }
+  .chip:active {
+    transform: scale(0.97);
+    transition-duration: var(--d-1);
   }
 
   /* Baldas por rareza */
   .shelves {
     position: absolute;
-    left: 22px;
-    right: 22px;
-    top: 176px;
-    bottom: calc(var(--hint) + 6px);
+    left: var(--mx);
+    right: var(--mx);
+    top: 192px;
+    bottom: calc(var(--hint) + var(--s-2));
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--s-2);
     overflow-y: auto;
-    padding: 6px 0;
+    padding: var(--s-2) 0;
     scrollbar-width: none;
   }
   .shelves::-webkit-scrollbar {
@@ -592,11 +491,8 @@
     min-height: 72px;
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 6px 16px 6px 0;
-    border-radius: var(--r-m);
-    background: var(--glass-in);
-    box-shadow: 0 0 0 1px var(--line), inset 0 1px 0 var(--glass-top);
+    gap: var(--s-4);
+    padding: var(--s-2) var(--s-4) var(--s-2) 0;
   }
   .lab {
     width: 176px;
@@ -605,7 +501,8 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 0 16px;
+    margin: calc(-1 * var(--s-2)) 0;
+    padding: 0 var(--s-4);
     border-radius: var(--r-m) 0 0 var(--r-m);
     border-left: 6px solid var(--c);
     background: linear-gradient(90deg, color-mix(in srgb, var(--c) 22%, transparent), transparent);
@@ -618,26 +515,26 @@
   .lab small {
     font-size: var(--t-s);
     font-weight: 700;
-    color: var(--ink-3);
+    color: var(--ink-2);
   }
   .lab em {
     font-style: normal;
-    color: var(--ink-2);
+    color: var(--ink);
   }
   .meds {
     flex: 1;
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    gap: var(--s-3);
     align-items: center;
-    padding: 6px 0;
+    padding: var(--s-1) 0;
   }
   .rest {
     margin-left: auto;
     align-self: center;
     font-size: var(--t-s);
     font-weight: 700;
-    color: var(--ink-3);
+    color: var(--ink-2);
     white-space: nowrap;
   }
 
@@ -645,25 +542,25 @@
     position: relative;
     width: 56px;
     height: 56px;
-    border-radius: 12px;
+    border-radius: var(--r-s);
     cursor: pointer;
-    transition: transform 0.18s;
+    transition: transform var(--d-2) var(--e-bounce);
   }
   .med .ico {
     width: 100%;
     height: 100%;
-    border-radius: 12px;
+    border-radius: var(--r-s);
     overflow: hidden;
     display: grid;
     place-items: center;
-    color: white;
+    color: var(--on);
     background: radial-gradient(
       120% 100% at 30% 15%,
       color-mix(in srgb, var(--c) 30%, var(--tint-base)),
       var(--c) 65%,
       color-mix(in srgb, var(--c) 75%, black)
     );
-    box-shadow: 0 0 0 3px var(--glass-chip), 0 2px 6px var(--line);
+    box-shadow: 0 0 0 3px var(--glass-chip), var(--sh-1);
   }
   .med .ico img {
     width: 100%;
@@ -672,8 +569,8 @@
     display: block;
   }
   .med .ico :global(svg) {
-    width: 56%;
-    height: 56%;
+    width: var(--i-l);
+    height: var(--i-l);
     filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
   }
   .med:not(.earned) .ico {
@@ -685,7 +582,7 @@
     opacity: 0.55;
   }
   .qmark {
-    font-size: 24px;
+    font-size: var(--t-xl);
     font-weight: 800;
   }
   .med.f {
@@ -715,19 +612,20 @@
     stroke: var(--c);
   }
 
-  /* Popover flotante */
+  /* Ficha flotante del logro (altura flotante) */
   .pop {
     position: absolute;
     z-index: 20;
     width: 320px;
-    padding: 12px 16px;
+    padding: var(--s-3) var(--s-4);
     border-radius: var(--r-m);
     background: var(--face-hi);
-    box-shadow: 0 10px 30px var(--scrim), 0 0 0 1px var(--line);
-    backdrop-filter: blur(8px);
+    box-shadow: var(--sh-3);
+    -webkit-backdrop-filter: var(--blur-panel);
+    backdrop-filter: var(--blur-panel);
   }
   .pop.mv {
-    transition: left 0.15s, top 0.15s;
+    transition: left var(--d-1) var(--e-soft), top var(--d-1) var(--e-soft);
   }
   .pop.off {
     display: none;
@@ -757,13 +655,13 @@
   .pop .d {
     font-size: var(--t-s);
     color: var(--ink-2);
-    margin: 2px 0 8px;
+    margin: var(--s-1) 0 var(--s-2);
   }
   .pop .m {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: var(--s-2);
     font-size: var(--t-s);
     font-weight: 700;
     color: var(--ink-2);
@@ -772,34 +670,34 @@
     margin-left: auto;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--s-1);
   }
   .ok {
     display: inline-flex;
     color: var(--ok);
   }
   .ok :global(svg) {
-    width: 15px;
-    height: 15px;
+    width: var(--i-s);
+    height: var(--i-s);
   }
   .tag {
     display: inline-flex;
     align-items: center;
     height: 22px;
-    padding: 0 8px;
+    padding: 0 var(--s-2);
     border-radius: var(--r-xs);
     font-size: var(--t-xs);
     font-weight: 800;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: color-mix(in srgb, var(--c, var(--ink-3)) 80%, var(--ink));
+    color: color-mix(in srgb, var(--c, var(--ink-3)) 70%, var(--ink));
     background: color-mix(in srgb, var(--c, var(--ink-3)) 16%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c, var(--ink-3)) 35%, transparent);
   }
   .pop .meta {
     display: flex;
-    gap: 8px;
-    margin-top: 8px;
+    gap: var(--s-2);
+    margin-top: var(--s-2);
     font-size: var(--t-xs);
     font-weight: 700;
     color: var(--ink-3);
@@ -811,25 +709,16 @@
     white-space: nowrap;
   }
   .reveal {
-    margin-top: 10px;
-    height: 32px;
-    padding: 0 14px;
-    border: 0;
-    border-radius: var(--r-pill);
-    cursor: pointer;
-    font: 800 var(--t-s) inherit;
-    font-family: inherit;
-    color: var(--on, var(--ink));
-    background: linear-gradient(180deg, var(--f1, var(--ink-3)), var(--f2, var(--f1, var(--ink-3))));
+    margin-top: var(--s-3);
   }
 
   .empty {
     margin: auto;
-    padding: 24px;
+    padding: var(--s-5);
     text-align: center;
     font-size: var(--t-l);
     font-weight: 700;
-    color: var(--ink-3);
+    color: var(--ink-2);
   }
 
   .hintband {
