@@ -172,13 +172,7 @@ fn collect(locs: &[(String, LocKind)], tmp: &Path) -> Result<(Vec<CopyEntry>, Ve
                 if matches.is_empty() {
                     continue;
                 }
-                let anchor = if glob::has_magic(path) {
-                    literal_prefix(path)
-                } else if Path::new(path).is_dir() {
-                    PathBuf::from(path)
-                } else {
-                    Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default()
-                };
+                let anchor = anchor_of(path, Path::new(path).is_dir());
                 let before = items.len();
                 for m in matches {
                     for e in WalkDir::new(&m).into_iter().flatten().filter(|e| e.file_type().is_file()) {
@@ -197,6 +191,17 @@ fn collect(locs: &[(String, LocKind)], tmp: &Path) -> Result<(Vec<CopyEntry>, Ve
     items.sort_by(|a, b| a.zip_name.cmp(&b.zip_name));
     items.dedup_by(|a, b| a.zip_name == b.zip_name);
     Ok((entries, items))
+}
+
+/// Carpeta fija de una ubicacion: hasta el primer comodin, la propia carpeta o la carpeta del archivo.
+fn anchor_of(path: &str, is_dir: bool) -> PathBuf {
+    if glob::has_magic(path) {
+        literal_prefix(path)
+    } else if is_dir {
+        PathBuf::from(path)
+    } else {
+        Path::new(path).parent().map(Path::to_path_buf).unwrap_or_default()
+    }
 }
 
 /// Fecha local de un archivo como fecha de entrada del .zip (None si no cabe en el formato).
@@ -355,23 +360,31 @@ pub struct RestoreReport {
 /// Restaura `zip` en sus ubicaciones originales: primero guarda en `dir` una copia de lo que hay ahora y despues
 /// sobrescribe (los archivos que no estan en la copia no se borran).
 pub fn restore(zip: &Path, dir: &Path, now_ms: i64, stamp: &str) -> Result<RestoreReport> {
-    restore_some(zip, dir, now_ms, stamp, None)
+    restore_some(zip, dir, now_ms, stamp, None, None)
 }
 
 /// Como `restore`, pero solo un archivo de la copia (`only` = su nombre en el .zip, como `e0/slot1.sav`). Tambien
 /// se guarda antes lo que hay.
 pub fn restore_one(zip: &Path, dir: &Path, now_ms: i64, stamp: &str, only: &str) -> Result<RestoreReport> {
-    restore_some(zip, dir, now_ms, stamp, Some(only))
+    restore_some(zip, dir, now_ms, stamp, Some(only), None)
 }
 
-fn restore_some(zip: &Path, dir: &Path, now_ms: i64, stamp: &str, only: Option<&str>) -> Result<RestoreReport> {
+/// Ubicaciones de aqui y, para cada ubicacion de la copia, la carpeta de aqui donde va (None = no se restaura).
+type Remap<'a> = (&'a [(String, LocKind)], &'a [Option<String>]);
+
+fn restore_some(zip: &Path, dir: &Path, now_ms: i64, stamp: &str, only: Option<&str>, remap: Option<Remap>) -> Result<RestoreReport> {
     let man = read_manifest(zip)?;
-    for e in &man.entries {
-        if e.kind == LocKind::Path && !Path::new(&e.anchor).is_absolute() {
-            bail!("la copia tiene una ruta no valida: {}", e.anchor);
+    let (locs, anchors): (Vec<(String, LocKind)>, Vec<Option<String>>) = match remap {
+        Some((l, a)) => (l.to_vec(), a.to_vec()),
+        None => (man.entries.iter().map(|e| (e.path.clone(), e.kind)).collect(), man.entries.iter().map(|e| Some(e.anchor.clone())).collect()),
+    };
+    for (e, a) in man.entries.iter().zip(&anchors) {
+        if let (LocKind::Path, Some(a)) = (e.kind, a) {
+            if !Path::new(a).is_absolute() {
+                bail!("la copia tiene una ruta no valida: {a}");
+            }
         }
     }
-    let locs: Vec<(String, LocKind)> = man.entries.iter().map(|e| (e.path.clone(), e.kind)).collect();
     let before = create(&CopyReq { dir, game_id: &man.game_id, game_name: &man.game_name, locs: &locs, kind: CopyKind::Antes, now_ms, stamp, skip_if_same: false })?;
     let mut z = zip::ZipArchive::new(File::open(zip)?)?;
     let tmp = dir.join(format!(".tmp-restaurar-{}-{now_ms}", std::process::id()));
@@ -406,9 +419,12 @@ fn restore_some(zip: &Path, dir: &Path, now_ms: i64, stamp: &str, only: Option<&
                 continue;
             }
             let Some(i) = head.strip_prefix('e').and_then(|s| s.parse::<usize>().ok()) else { continue };
-            let Some(e) = man.entries.get(i).filter(|e| e.kind == LocKind::Path) else { continue };
+            if man.entries.get(i).map(|e| e.kind) != Some(LocKind::Path) {
+                continue;
+            }
+            let Some(anchor) = anchors.get(i).cloned().flatten() else { continue };
             let Some(rel) = safe_rel(rest) else { bail!("la copia tiene una ruta no valida: {name}") };
-            let dest = Path::new(&e.anchor).join(rel);
+            let dest = Path::new(&anchor).join(rel);
             if let Some(p) = dest.parent() {
                 fs::create_dir_all(p).with_context(|| format!("creando {}", p.display()))?;
             }
@@ -420,6 +436,153 @@ fn restore_some(zip: &Path, dir: &Path, now_ms: i64, stamp: &str, only: Option<&
     })();
     let _ = fs::remove_dir_all(&tmp);
     r.map(|_| rep)
+}
+
+/* ---------------------------- Copias de otro equipo ---------------------------- */
+//
+// Una copia hecha en otro PC guarda las carpetas de ese PC (otro usuario, otra unidad, otra carpeta del juego). Al
+// importarla, cada ubicacion de la copia se lleva a la ubicacion de aqui del mismo juego cuya carpeta acaba igual
+// (`…\AppData\Roaming\RenPy\Juego-123`, `…\Juego\game\saves`).
+
+/// A donde va una ubicacion de la copia.
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportLoc {
+    /// Carpeta en el equipo donde se hizo la copia.
+    pub from: String,
+    /// Carpeta de aqui (None = no hay una ubicacion de aqui que case: no se restaura; en el registro, siempre None).
+    pub to: Option<String>,
+    pub kind: LocKind,
+    pub files: usize,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportPlan {
+    pub game_id: String,
+    pub game_name: String,
+    pub created_ms: i64,
+    pub locs: Vec<ImportLoc>,
+    /// Archivo mas reciente de la copia y de lo que hay aqui y se sobrescribiria (0 = ninguno).
+    pub newest_copy_ms: i64,
+    pub newest_local_ms: i64,
+    /// Lo de aqui es mas reciente que la copia.
+    pub local_newer: bool,
+    /// Archivos que se restaurarian.
+    pub files: usize,
+}
+
+/// Componentes de una ruta para compararlas sin importar mayusculas ni barras.
+fn parts(p: &str) -> Vec<String> {
+    p.replace('\\', "/").split('/').filter(|c| !c.is_empty()).map(|c| c.to_lowercase()).collect()
+}
+
+/// Cuantos componentes finales tienen en comun.
+fn common_tail(a: &[String], b: &[String]) -> usize {
+    a.iter().rev().zip(b.iter().rev()).take_while(|(x, y)| x == y).count()
+}
+
+/// Carpeta de aqui para cada ubicacion de la copia (`Some("")` en las del registro: las claves valen tal cual).
+fn remap(man: &CopyManifest, here: &[(String, LocKind)]) -> Vec<Option<String>> {
+    let cands: Vec<(usize, Vec<String>, String)> = here
+        .iter()
+        .enumerate()
+        .filter(|(_, (_, k))| *k == LocKind::Path)
+        .map(|(i, (p, _))| {
+            // Si aun no existe (el juego no se ha abierto aqui), se supone carpeta salvo que parezca un archivo.
+            let pp = Path::new(p);
+            let is_dir = pp.is_dir() || (!pp.exists() && pp.extension().is_none());
+            let a = anchor_of(p, is_dir).to_string_lossy().into_owned();
+            (i, parts(&a), a)
+        })
+        .collect();
+    let mut used = HashSet::new();
+    man.entries
+        .iter()
+        .map(|e| match e.kind {
+            LocKind::Registry => Some(String::new()),
+            LocKind::Path => {
+                let src = parts(&e.anchor);
+                let best = cands
+                    .iter()
+                    .filter(|(i, _, _)| !used.contains(i))
+                    .map(|(i, p, a)| (common_tail(&src, p), *i, a))
+                    .filter(|(n, _, _)| *n > 0)
+                    .max_by_key(|(n, _, _)| *n);
+                match best {
+                    Some((_, i, a)) => {
+                        used.insert(i);
+                        Some(a.clone())
+                    }
+                    // Misma ruta en los dos equipos: vale la de la copia si su carpeta existe aqui.
+                    None if Path::new(&e.anchor).is_dir() => Some(e.anchor.clone()),
+                    None => None,
+                }
+            }
+        })
+        .collect()
+}
+
+/// Indice de ubicacion de una entrada del .zip (`e3/slot.sav`, `e1.reg`) y su ruta relativa ("" en el registro).
+fn entry_loc(name: &str) -> Option<(usize, &str)> {
+    let (head, rest) = name.split_once('/').unwrap_or((name, ""));
+    let n = if rest.is_empty() { head.strip_prefix('e')?.strip_suffix(".reg")? } else { head.strip_prefix('e')? };
+    Some((n.parse().ok()?, rest))
+}
+
+/// Lo que haria importar `zip` aqui, con las ubicaciones de este juego en este equipo (`here`).
+pub fn plan_import(zip: &Path, here: &[(String, LocKind)]) -> Result<ImportPlan> {
+    let man = read_manifest(zip)?;
+    let anchors = remap(&man, here);
+    let mut z = zip::ZipArchive::new(File::open(zip)?)?;
+    let mut counts = vec![0usize; man.entries.len()];
+    let (mut newest_copy, mut newest_local) = (0i64, 0i64);
+    for k in 0..z.len() {
+        let f = z.by_index(k)?;
+        if f.is_dir() || f.name() == COPY_JSON {
+            continue;
+        }
+        let Some((i, rest)) = entry_loc(f.name()).filter(|(i, _)| *i < counts.len()) else { continue };
+        counts[i] += 1;
+        newest_copy = newest_copy.max(entry_ms(f.last_modified()));
+        // Lo mas reciente de aqui: solo los archivos que la copia sobrescribiria.
+        if let (Some(Some(a)), Some(rel)) = (anchors.get(i), safe_rel(rest)) {
+            if !a.is_empty() {
+                if let Ok(md) = fs::metadata(Path::new(a).join(rel)) {
+                    newest_local = newest_local.max(crate::scan::mtime_ms(&md));
+                }
+            }
+        }
+    }
+    let locs: Vec<ImportLoc> = man
+        .entries
+        .iter()
+        .zip(&anchors)
+        .zip(&counts)
+        .map(|((e, a), n)| ImportLoc { from: e.anchor.clone(), to: a.clone().filter(|a| !a.is_empty()), kind: e.kind, files: *n })
+        .collect();
+    let files = locs.iter().filter(|l| l.kind == LocKind::Registry || l.to.is_some()).map(|l| l.files).sum();
+    Ok(ImportPlan {
+        game_id: man.game_id,
+        game_name: man.game_name,
+        created_ms: man.created_ms,
+        locs,
+        newest_copy_ms: newest_copy,
+        newest_local_ms: newest_local,
+        // Dos segundos de margen: el .zip guarda las fechas con esa precision.
+        local_newer: newest_copy > 0 && newest_local > newest_copy + 2000,
+        files,
+    })
+}
+
+/// Restaura aqui una copia de otro equipo: antes guarda en `dir` lo que hay en las ubicaciones de aqui.
+pub fn restore_import(zip: &Path, dir: &Path, here: &[(String, LocKind)], now_ms: i64, stamp: &str) -> Result<RestoreReport> {
+    let man = read_manifest(zip)?;
+    let anchors = remap(&man, here);
+    if !anchors.iter().any(Option::is_some) {
+        bail!("ninguna ubicacion de la copia casa con las de este juego en este equipo");
+    }
+    restore_some(zip, dir, now_ms, stamp, None, Some((here, &anchors)))
 }
 
 /// Estado de un archivo de la copia frente a lo que hay ahora.
@@ -650,6 +813,45 @@ mod tests {
         assert!(!Path::new(&c2.file).exists());
         delete_copy(&out, Path::new(&c1.file)).unwrap();
         assert!(!Path::new(&c1.file).exists());
+    }
+
+    #[test]
+    fn import_from_other_pc_remaps_folders() {
+        let d = tempfile::tempdir().unwrap();
+        let s = |p: &Path| p.to_string_lossy().into_owned();
+        // PC de origen: otro usuario y otra carpeta del juego.
+        let a_rp = d.path().join("pcA/Users/ana/AppData/Roaming/RenPy/Juego-1");
+        let a_game = d.path().join("pcA/Games/Juego/game/saves");
+        put(&a_rp.join("persistent"), "p");
+        put(&a_game.join("1-1.save"), "uno");
+        let a_locs = vec![(s(&a_rp), LocKind::Path), (format!("{}/*.save", s(&a_game)), LocKind::Path)];
+        let out_a = d.path().join("copiasA");
+        let c = create(&req(&out_a, &a_locs, CopyKind::Manual, 1000, "a", false)).unwrap().unwrap();
+        // Este PC: el juego aun no se ha abierto (RenPy no existe) y esta en otra unidad.
+        let b_rp = d.path().join("pcB/Users/luis/AppData/Roaming/RenPy/Juego-1");
+        let b_game = d.path().join("pcB/G/Juego/game/saves");
+        put(&b_game.join("1-1.save"), "viejo");
+        let here = vec![(format!("{}/*.save", s(&b_game)), LocKind::Path), (s(&b_rp), LocKind::Path)];
+        let plan = plan_import(Path::new(&c.file), &here).unwrap();
+        assert_eq!(plan.files, 2);
+        assert_eq!(plan.locs[0].to.as_deref(), Some(s(&b_rp).as_str()));
+        assert_eq!(parts(plan.locs[1].to.as_deref().unwrap()), parts(&s(&b_game)));
+        // Lo de aqui es mas reciente: se avisa.
+        let f = File::options().write(true).open(b_game.join("1-1.save")).unwrap();
+        f.set_modified(std::time::SystemTime::now() + std::time::Duration::from_secs(3600)).unwrap();
+        drop(f);
+        assert!(plan_import(Path::new(&c.file), &here).unwrap().local_newer);
+        let out_b = d.path().join("copiasB");
+        let rep = restore_import(Path::new(&c.file), &out_b, &here, 2000, "b").unwrap();
+        assert_eq!(rep.files, 2);
+        assert_eq!(fs::read_to_string(b_rp.join("persistent")).unwrap(), "p");
+        assert_eq!(fs::read_to_string(b_game.join("1-1.save")).unwrap(), "uno");
+        // Antes de restaurar se guardo lo de aqui.
+        assert_eq!(rep.before.unwrap().kind, CopyKind::Antes);
+        // Nada casa: no se restaura.
+        fs::remove_dir_all(d.path().join("pcA")).unwrap();
+        let none = vec![(s(&d.path().join("pcB/otra")), LocKind::Path)];
+        assert!(restore_import(Path::new(&c.file), &out_b, &none, 3000, "c").is_err());
     }
 
     #[test]

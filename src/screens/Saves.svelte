@@ -91,6 +91,7 @@
       }
       case 'adddir': return { l: '＋  Añadir carpeta…', v: '' };
       case 'addfile': return { l: '＋  Añadir archivo…', v: '' };
+      case 'import': return sv.confirm === 'import' ? { l: '↓  ¿Importar? Pulsa otra vez', v: `${sv.pendingImport?.plan.files ?? 0} archivos` } : { l: '↓  Importar copia de otro equipo…', v: '' };
     }
   }
 

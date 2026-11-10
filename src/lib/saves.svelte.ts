@@ -42,13 +42,20 @@ export type FileState = 'same' | 'changed' | 'onlyCopy' | 'newNow';
 export interface CopyFile { entry: string; loc: number; name: string; size: number; copyMs: number; nowSize: number; nowMs: number; state: FileState; registry: boolean }
 export interface CopyFilesInfo { locs: Array<{ path: string; kind: 'path' | 'registry'; place: string }>; files: CopyFile[] }
 export type FileFilter = 'all' | FileState;
+/** Importar una copia hecha en otro equipo: a qué carpeta de aquí va cada ubicación. */
+export interface ImportPlan {
+  gameId: string; gameName: string; createdMs: number;
+  locs: Array<{ from: string; to: string | null; kind: 'path' | 'registry'; files: number }>;
+  newestCopyMs: number; newestLocalMs: number; localNewer: boolean; files: number;
+}
 
 /** Filas del cajón «Dónde guarda». */
 export type SaveRow =
   | { k: 'download' }
   | { k: 'loc'; i: number }
   | { k: 'adddir' }
-  | { k: 'addfile' };
+  | { k: 'addfile' }
+  | { k: 'import' };
 
 /** Dónde está el foco: lista de copias, tabla de archivos, menú ⋯ o cajón de ubicaciones. */
 export type SavesFocus = 'list' | 'table' | 'menu' | 'locs';
@@ -73,6 +80,8 @@ export const sv = $state({
   row: 0,
   /** Acción esperando la segunda pulsación: 'all' (restaurar la copia), 'del' o el nombre de un archivo. */
   confirm: '',
+  /** Copia de otro equipo elegida, esperando la segunda pulsación para importarla. */
+  pendingImport: null as { file: string; plan: ImportPlan } | null,
 });
 
 /* ---------- acceso al núcleo (o simulado en el navegador) ---------- */
@@ -138,7 +147,7 @@ export function savesRows(): SaveRow[] {
   if (!i.manifestGames && i.hasExe) out.push({ k: 'download' });
   i.locs.forEach((_, n) => out.push({ k: 'loc', i: n }));
   // En la tablet no se pueden añadir carpetas ni archivos del PC.
-  if (!IS_TABLET) out.push({ k: 'adddir' }, { k: 'addfile' });
+  if (!IS_TABLET) out.push({ k: 'adddir' }, { k: 'addfile' }, { k: 'import' });
   return out;
 }
 
@@ -198,6 +207,12 @@ export function rowHelp(r: SaveRow | undefined): string {
       return `${l.path}${extra} · ${l.label}`;
     }
     case 'adddir': return 'Si sus partidas están en otro sitio, elige la carpeta.';
+    case 'import': {
+      const p = sv.confirm === 'import' ? sv.pendingImport?.plan : null;
+      if (!p) return 'Un .zip exportado en otro PC: cada carpeta suya va a la de este equipo. Antes se guarda lo que hay aquí.';
+      const to = p.locs.filter((l) => l.to).map((l) => l.to).join(' · ');
+      return `${p.files} archivos de ${fmtAgo(p.createdMs).toLowerCase()} → ${to || 'el registro'}${p.localNewer ? ' · OJO: lo de aquí es más reciente' : ''}`;
+    }
     case 'addfile': return 'Para juegos que guardan en un único archivo.';
   }
 }
@@ -323,6 +338,8 @@ async function act(r: SaveRow) {
       l.enabled = !l.enabled; // al momento; la recarga lo confirma
       blip(1320);
       await reloadSaves();
+    } else if (r.k === 'import') {
+      await importCopy();
     } else {
       const p = r.k === 'adddir' ? await backend.pickFolder('Carpeta de partidas') : await pickFile();
       if (!p) return;
@@ -331,6 +348,42 @@ async function act(r: SaveRow) {
       toast('Ubicación añadida');
     }
   } catch (e) { toast(String(e), 4200); }
+}
+
+async function pickZip(): Promise<string | null> {
+  if (!IS_TAURI) return null;
+  const { open } = await import('@tauri-apps/plugin-dialog');
+  const r = await open({ multiple: false, directory: false, title: 'Copia de partidas de otro equipo', filters: [{ name: 'Copia de partidas (.zip)', extensions: ['zip'] }] });
+  return typeof r === 'string' ? r : null;
+}
+
+/** Importar una copia de otro PC: la primera pulsación elige el .zip y enseña a dónde va; la segunda la restaura. */
+async function importCopy() {
+  const i = sv.info;
+  if (!i || sv.busy) return;
+  const pend = sv.confirm === 'import' ? sv.pendingImport : null;
+  if (!pend) {
+    if (!IS_TAURI) { toast('Importar copia (simulado en el navegador)'); return; }
+    const file = await pickZip();
+    if (!file) return;
+    const plan = await call<ImportPlan>('saves_import_preview', { id: i.gameId, file });
+    if (!plan.files) { toast('Ninguna carpeta de esa copia casa con las de este juego aquí. Añade la carpeta y vuelve a probar', 4800); return; }
+    sv.pendingImport = { file, plan };
+    arm('import');
+    const other = plan.gameId !== i.gameId ? ` Es de «${plan.gameName}».` : '';
+    toast(`${plan.localNewer ? 'Lo de aquí es más reciente que la copia. ' : ''}${other}Pulsa otra vez para importar`, 4200);
+    return;
+  }
+  disarm();
+  sv.pendingImport = null;
+  sv.busy = 'restore';
+  toast('Importando…', 0);
+  try {
+    const rep = await call<{ files: number; registry: number }>('saves_import', { id: i.gameId, file: pend.file });
+    toast(`Importados ${rep.files} archivos${rep.registry ? ` y ${rep.registry} claves del registro` : ''}. Lo que había quedó en otra copia`, 4200);
+  } catch (e) { toast(String(e), 4200); }
+  sv.busy = '';
+  await refreshAll();
 }
 
 /** Copia manual ahora. */

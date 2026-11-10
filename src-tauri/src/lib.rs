@@ -1393,6 +1393,8 @@ pub fn run() {
             saves::saves_set_pinned,
             saves::saves_delete_copy,
             saves::saves_export_copy,
+            saves::saves_import_preview,
+            saves::saves_import,
             saves::saves_open_dir,
             saves::saves_status,
             saves::saves_update_manifest,

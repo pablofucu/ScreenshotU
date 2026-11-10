@@ -191,6 +191,40 @@ pub async fn saves_restore(state: State<'_, AppState>, id: String, file: String)
         .map_err(|e| e.to_string())?
 }
 
+/// Ubicaciones activas de este juego en este equipo, aunque aun no existan (para importar una copia de otro PC).
+fn here_locs(db: &visor_core::db::Db, m: Option<&Manifest>, g: &Game) -> Vec<(String, LocKind)> {
+    detect(db, m, g).locs.iter().filter(|l| l.enabled).map(|l| (l.path.clone(), l.kind)).collect()
+}
+
+/// Lo que haria importar aqui una copia hecha en otro equipo (a que carpetas de aqui va cada ubicacion).
+#[tauri::command]
+pub async fn saves_import_preview(state: State<'_, AppState>, id: String, file: String) -> Result<archive::ImportPlan, String> {
+    let g = game_of(&state, &id)?;
+    let (db, m) = (state.db.clone(), manifest(&state));
+    tauri::async_runtime::spawn_blocking(move || {
+        archive::plan_import(Path::new(&file), &here_locs(&db, m.as_deref(), &g)).map_err(|e| format!("{e:#}"))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Restaura aqui una copia de otro equipo (antes guarda lo que hay aqui, como la restauracion normal).
+#[tauri::command]
+pub async fn saves_import(state: State<'_, AppState>, id: String, file: String) -> Result<RestoreReport, String> {
+    if state.active.lock().unwrap().as_ref().map(|a| a.id == id).unwrap_or(false) {
+        return Err("Cierra el juego antes de restaurar sus partidas".into());
+    }
+    let g = game_of(&state, &id)?;
+    let (db, m) = (state.db.clone(), manifest(&state));
+    let dir = archive::game_dir(&saves_root(&state), &g.id, &g.name);
+    tauri::async_runtime::spawn_blocking(move || {
+        let here = here_locs(&db, m.as_deref(), &g);
+        archive::restore_import(Path::new(&file), &dir, &here, now_ms(), &stamp()).map_err(|e| format!("{e:#}"))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 /// Carpeta de copias del juego y ruta de una de ellas (que debe estar dentro).
 fn copy_of(state: &AppState, id: &str, file: &str) -> Result<(PathBuf, PathBuf), String> {
     let g = game_of(state, id)?;
