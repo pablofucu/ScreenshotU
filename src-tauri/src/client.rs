@@ -5,7 +5,7 @@ use crate::state::AppState;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 use visor_core::config::write_atomic;
 use visor_core::remote_client as rc;
 
@@ -226,4 +226,172 @@ pub fn client_set_moonlight(state: State<'_, AppState>, path: String) -> Result<
     cfg.moonlight_path = path.trim().to_string();
     cfg.save(&state.config_dir)?;
     Ok(info_of(Some(&cfg), &state))
+}
+
+/* ------------------------------------------------------------------ */
+/* Juegos instalados en este equipo (fase 2)                            */
+/* ------------------------------------------------------------------ */
+//
+// El juego se guarda en la base local con el id del titulo del host, asi que la biblioteca (que viene del host)
+// y lo instalado aqui casan por `Title.id`. Las partidas que se juegan aqui se suben solas al host.
+
+fn host_call(cfg: &ClientCfg, ver: &str, cmd: &str, args: serde_json::Value) -> Result<serde_json::Value, String> {
+    rc::call(cfg.addr(), &cfg.token, ver, cmd, args).map_err(|e| format!("{e:#}"))
+}
+
+fn file_name(p: &str) -> String {
+    Path::new(p).file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default()
+}
+
+fn parent_name(p: &str) -> String {
+    Path::new(p).parent().and_then(|d| d.file_name()).map(|f| f.to_string_lossy().into_owned()).unwrap_or_default()
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct LocalAdd {
+    /// Titulo del host elegido tras `match_title`; `None` = que el host lo cree en `platform`.
+    pub game_id: Option<String>,
+    /// Categoria del host (nunca se crean categorias).
+    pub platform: String,
+    pub name: String,
+    /// "exe" | "emulator".
+    pub kind: String,
+    pub exe: String,
+    pub args: String,
+    pub rom: String,
+    pub workdir: String,
+}
+
+/// Un juego instalado en este equipo (para casarlo con la biblioteca del host).
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LocalGame {
+    pub id: String,
+    pub name: String,
+    pub platform: String,
+    pub kind: String,
+    pub exe: String,
+    pub rom: String,
+}
+
+/// Añade un juego instalado aqui: el host lo apunta (o crea el titulo en esa categoria) y aqui se guarda con su id.
+#[tauri::command]
+pub async fn client_add_game(app: AppHandle, state: State<'_, AppState>, game: LocalAdd) -> Result<String, String> {
+    let cfg = current(&state)?;
+    if game.kind != "exe" && game.kind != "emulator" {
+        return Err("Tipo de juego desconocido".into());
+    }
+    if !Path::new(&game.exe).is_file() {
+        return Err("El ejecutable no existe".into());
+    }
+    if game.kind == "emulator" && !Path::new(&game.rom).is_file() {
+        return Err("La ROM no existe".into());
+    }
+    let name = game.name.trim().to_string();
+    if name.is_empty() {
+        return Err("Falta el nombre".into());
+    }
+    let ver = version(&app);
+    let main = if game.kind == "emulator" { game.rom.clone() } else { game.exe.clone() };
+    let args = serde_json::json!({
+        "gameId": game.game_id,
+        "platform": game.platform,
+        "name": name,
+        "exeName": file_name(&main),
+        "folderName": parent_name(&main),
+        "sizeBytes": 0,
+    });
+    let id = blocking(move || host_call(&cfg, &ver, "register_install", args)).await?;
+    let id = id.as_str().filter(|s| !s.is_empty()).ok_or("El PC principal no devolvió el juego")?.to_string();
+    let entry = visor_core::games::ManualGame {
+        id: id.clone(),
+        name,
+        kind: game.kind,
+        exe: game.exe,
+        args: game.args,
+        rom: game.rom,
+        platform: game.platform,
+        workdir: game.workdir.trim().to_string(),
+        ..Default::default()
+    };
+    state
+        .db
+        .with(|c| {
+            visor_core::db::data::manual_remove(c, &id)?;
+            visor_core::db::data::manual_add(c, &entry)
+        })
+        .map_err(|e| e.to_string())?;
+    Ok(id)
+}
+
+/// Juegos instalados en este equipo.
+#[tauri::command]
+pub fn client_local_games(state: State<'_, AppState>) -> Result<Vec<LocalGame>, String> {
+    let list = state.db.with(visor_core::db::data::manual_load).map_err(|e| e.to_string())?;
+    Ok(list
+        .into_iter()
+        .filter(|g| g.kind == "exe" || g.kind == "emulator")
+        .map(|g| LocalGame { id: g.id, name: g.name, platform: g.platform, kind: g.kind, exe: g.exe, rom: g.rom })
+        .collect())
+}
+
+/// Lanza aqui un juego instalado en este equipo.
+#[tauri::command]
+pub fn client_launch(app: AppHandle, state: State<'_, AppState>, id: String) -> Result<(), String> {
+    let manual = state.db.with(visor_core::db::data::manual_load).map_err(|e| e.to_string())?;
+    let found = visor_core::games::all_games(&manual);
+    let game = found.iter().find(|g| g.id == id).cloned().ok_or("Ese juego no está instalado en este equipo")?;
+    *state.games.lock().unwrap() = found;
+    crate::launcher::start(&app, game)
+}
+
+/// Quita un juego de este equipo (no toca sus archivos) y se lo dice al host si responde.
+#[tauri::command]
+pub async fn client_remove_game(app: AppHandle, state: State<'_, AppState>, id: String) -> Result<(), String> {
+    state.db.with(|c| visor_core::db::data::manual_remove(c, &id)).map_err(|e| e.to_string())?;
+    if let Ok(cfg) = current(&state) {
+        let ver = version(&app);
+        let args = serde_json::json!({ "gameId": id });
+        let _ = blocking(move || host_call(&cfg, &ver, "unregister_install", args)).await;
+    }
+    Ok(())
+}
+
+/// Sube al host las partidas jugadas aqui que falten. Devuelve cuantas se subieron.
+fn sync_once(app: &AppHandle) -> Result<usize, String> {
+    let st = app.state::<AppState>();
+    let Some(cfg) = ClientCfg::load(&st.config_dir) else { return Ok(0) };
+    let mine: std::collections::HashSet<String> =
+        st.db.with(visor_core::db::data::manual_load).map_err(|e| e.to_string())?.into_iter().map(|g| g.id).collect();
+    let pend = st.db.with(|c| visor_core::installs::unsynced(c, 2000)).map_err(|e| e.to_string())?;
+    // Solo los juegos apuntados en el host (los demas no los aceptaria y se reenviarian siempre).
+    let pend: Vec<_> = pend.into_iter().filter(|s| mine.contains(&s.game_id)).take(200).collect();
+    if pend.is_empty() {
+        return Ok(0);
+    }
+    let res = host_call(&cfg, &version(app), "sessions_upload", serde_json::json!({ "sessions": pend }))?;
+    let uids: Vec<String> = serde_json::from_value(res).map_err(|e| e.to_string())?;
+    let now = chrono::Utc::now().timestamp_millis();
+    st.db.with(|c| visor_core::installs::mark_synced(c, &uids, now)).map_err(|e| e.to_string())?;
+    Ok(uids.len())
+}
+
+/// Sube ya las partidas pendientes (p. ej. al acabar una).
+#[tauri::command]
+pub async fn client_sync(app: AppHandle) -> Result<usize, String> {
+    blocking(move || sync_once(&app)).await
+}
+
+/// Hilo que sube las partidas locales al host cada minuto (si este equipo es cliente).
+pub fn spawn_sync(app: AppHandle) {
+    let _ = std::thread::Builder::new().name("client-sync".into()).spawn(move || {
+        std::thread::sleep(Duration::from_secs(15));
+        loop {
+            if let Err(e) = sync_once(&app) {
+                eprintln!("cliente: no se pudieron subir las partidas: {e}");
+            }
+            std::thread::sleep(Duration::from_secs(60));
+        }
+    });
 }

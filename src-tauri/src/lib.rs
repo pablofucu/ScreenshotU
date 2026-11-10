@@ -1267,6 +1267,9 @@ pub fn run() {
             }
             overlay::init(app.handle());
             if !is_test_env {
+                client::spawn_sync(app.handle().clone());
+            }
+            if !is_test_env {
                 nintendo::sync::spawn(app.handle().clone());
             }
             // Si el visor se cerro a mitad de partida, el monitor principal sigue cambiado: se restaura.
@@ -1407,6 +1410,11 @@ pub fn run() {
             client::client_open_stream,
             client::client_wake,
             client::client_set_moonlight,
+            client::client_add_game,
+            client::client_local_games,
+            client::client_launch,
+            client::client_remove_game,
+            client::client_sync,
             magpie_status,
             stream_app_status,
             stream_app_install,
