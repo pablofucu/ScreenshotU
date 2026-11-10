@@ -16,7 +16,8 @@ const FILE: &str = "client.json";
 pub struct ClientCfg {
     pub host_id: String,
     pub host_name: String,
-    /// `ip:puerto` del host (la primera es la que se usa).
+    /// `ip:puerto` del host en orden de preferencia (la de casa primero; despues la de Tailscale u otra red).
+    /// Se usa la primera que conteste (ver `probe`).
     pub host_addrs: Vec<String>,
     /// MAC del host para encenderlo (Wake-on-LAN).
     pub host_mac: String,
@@ -40,9 +41,48 @@ impl ClientCfg {
         write_atomic(&config_dir.join(FILE), &json).map_err(|e| format!("{e:#}"))
     }
 
+    /// La direccion que contesto la ultima vez (sin red: lo que diga la cache), o la primera.
     fn addr(&self) -> &str {
-        self.host_addrs.first().map(String::as_str).unwrap_or("")
+        let active = ACTIVE.lock().unwrap().as_ref().filter(|a| a.host_id == self.host_id).map(|a| a.addr.clone());
+        active
+            .and_then(|a| self.host_addrs.iter().find(|x| **x == a))
+            .or(self.host_addrs.first())
+            .map(String::as_str)
+            .unwrap_or("")
     }
+}
+
+/// Direccion del host que contesto (fase 5: varias direcciones, casa y Tailscale).
+struct Active {
+    host_id: String,
+    addr: String,
+    at: std::time::Instant,
+}
+static ACTIVE: std::sync::Mutex<Option<Active>> = std::sync::Mutex::new(None);
+/// Cuanto vale la direccion elegida antes de volver a probarlas.
+const ACTIVE_TTL: Duration = Duration::from_secs(90);
+
+/// Prueba las direcciones del host en orden con `hello` y se queda con la primera que sea ese host.
+/// Con una sola direccion no hace nada. `force` = probar aunque la elegida sea reciente.
+fn probe(cfg: &ClientCfg, force: bool) -> Option<String> {
+    if cfg.host_addrs.len() < 2 {
+        return None;
+    }
+    if !force {
+        let g = ACTIVE.lock().unwrap();
+        if let Some(a) = g.as_ref().filter(|a| a.host_id == cfg.host_id && a.at.elapsed() < ACTIVE_TTL) {
+            if cfg.host_addrs.contains(&a.addr) {
+                return Some(a.addr.clone());
+            }
+        }
+    }
+    for a in &cfg.host_addrs {
+        if rc::hello(a).is_ok_and(|h| cfg.host_id.is_empty() || h.id == cfg.host_id) {
+            *ACTIVE.lock().unwrap() = Some(Active { host_id: cfg.host_id.clone(), addr: a.clone(), at: std::time::Instant::now() });
+            return Some(a.clone());
+        }
+    }
+    None
 }
 
 /// Moonlight elegido a mano o, si no, donde lo deja su instalador.
@@ -69,6 +109,8 @@ pub struct ClientInfo {
     host_id: String,
     host_name: String,
     host_addr: String,
+    /// Todas las direcciones guardadas (la de casa y las de fuera).
+    host_addrs: Vec<String>,
     host_mac: String,
     device_id: String,
     device_name: String,
@@ -87,6 +129,7 @@ fn info_of(cfg: Option<&ClientCfg>, st: &AppState) -> ClientInfo {
         host_id: c.host_id.clone(),
         host_name: c.host_name.clone(),
         host_addr: c.addr().to_string(),
+        host_addrs: c.host_addrs.clone(),
         host_mac: c.host_mac.clone(),
         device_id: c.device_id.clone(),
         device_name: c.device_name.clone(),
@@ -123,11 +166,37 @@ pub struct ClientEndpoint {
     host_id: String,
 }
 
-/// Dirección y token para que la interfaz hable con el host (`None` en modo host).
+/// Dirección y token para que la interfaz hable con el host (`None` en modo host). Con varias direcciones, la que conteste.
 #[tauri::command]
-pub fn client_endpoint(state: State<'_, AppState>) -> Option<ClientEndpoint> {
-    let c = ClientCfg::load(&state.config_dir)?;
-    Some(ClientEndpoint { base: format!("http://{}", rc::normalize_addr(c.addr())), token: c.token.clone(), host_id: c.host_id.clone() })
+pub async fn client_endpoint(state: State<'_, AppState>) -> Result<Option<ClientEndpoint>, String> {
+    let Some(c) = ClientCfg::load(&state.config_dir) else { return Ok(None) };
+    let c = blocking(move || {
+        probe(&c, false);
+        Ok(c)
+    })
+    .await?;
+    Ok(Some(ClientEndpoint { base: format!("http://{}", rc::normalize_addr(c.addr())), token: c.token.clone(), host_id: c.host_id.clone() }))
+}
+
+/// Cambia las direcciones del PC principal (la primera se prueba antes; p. ej. la de casa y luego la de Tailscale).
+#[tauri::command]
+pub fn client_set_addrs(state: State<'_, AppState>, addrs: Vec<String>) -> Result<ClientInfo, String> {
+    let mut cfg = current(&state)?;
+    let mut out: Vec<String> = Vec::new();
+    for a in addrs.iter().flat_map(|a| a.split([',', ';', ' '])) {
+        let a = rc::normalize_addr(a);
+        if !a.is_empty() && !out.contains(&a) {
+            out.push(a);
+        }
+    }
+    if out.is_empty() {
+        return Err("Hace falta al menos una dirección".into());
+    }
+    out.truncate(6);
+    cfg.host_addrs = out;
+    cfg.save(&state.config_dir)?;
+    *ACTIVE.lock().unwrap() = None;
+    Ok(info_of(Some(&cfg), &state))
 }
 
 /// Visores en la red local (1,5 s esperando respuestas), sin este mismo equipo.
@@ -236,7 +305,18 @@ pub fn client_set_moonlight(state: State<'_, AppState>, path: String) -> Result<
 // y lo instalado aqui casan por `Title.id`. Las partidas que se juegan aqui se suben solas al host.
 
 fn host_call(cfg: &ClientCfg, ver: &str, cmd: &str, args: serde_json::Value) -> Result<serde_json::Value, String> {
-    rc::call(cfg.addr(), &cfg.token, ver, cmd, args).map_err(|e| format!("{e:#}"))
+    probe(cfg, false);
+    match rc::call(cfg.addr(), &cfg.token, ver, cmd, args.clone()) {
+        // Sin respuesta: quiza ha cambiado de red (casa <-> Tailscale); se prueba otra direccion una vez.
+        Err(e) if cfg.host_addrs.len() > 1 && e.chain().any(|c| c.downcast_ref::<rc::Unreachable>().is_some()) => {
+            let before = cfg.addr().to_string();
+            match probe(cfg, true) {
+                Some(a) if a != before => rc::call(&a, &cfg.token, ver, cmd, args).map_err(|e| format!("{e:#}")),
+                _ => Err(format!("{e:#}")),
+            }
+        }
+        r => r.map_err(|e| format!("{e:#}")),
+    }
 }
 
 fn file_name(p: &str) -> String {
@@ -463,7 +543,11 @@ static COPYING: std::sync::Mutex<Option<String>> = std::sync::Mutex::new(None);
 pub async fn client_copy_info(app: AppHandle, state: State<'_, AppState>, id: String) -> Result<visor_core::gamecopy::CopyList, String> {
     let cfg = current(&state)?;
     let ver = version(&app);
-    let mut l = blocking(move || visor_core::gamecopy::fetch_list(cfg.addr(), &cfg.token, &ver, &id).map_err(|e| format!("{e:#}"))).await?;
+    let mut l = blocking(move || {
+        probe(&cfg, false);
+        visor_core::gamecopy::fetch_list(cfg.addr(), &cfg.token, &ver, &id).map_err(|e| format!("{e:#}"))
+    })
+    .await?;
     l.files.clear();
     Ok(l)
 }
@@ -495,6 +579,7 @@ pub async fn client_copy_game(app: AppHandle, state: State<'_, AppState>, id: St
     let ver = version(&app);
     let (app2, id2) = (app.clone(), id.clone());
     let res = blocking(move || {
+        probe(&cfg, false);
         let list = visor_core::gamecopy::fetch_list(cfg.addr(), &cfg.token, &ver, &id2).map_err(|e| format!("{e:#}"))?;
         let dir = Path::new(&dest).join(folder_name(&list.folder));
         let mut last = std::time::Instant::now() - Duration::from_secs(1);

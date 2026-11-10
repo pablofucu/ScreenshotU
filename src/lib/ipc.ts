@@ -38,6 +38,10 @@ async function detect() {
     if (ep) info = await core.invoke<{ hostName: string }>('client_info');
   } catch (e) { console.warn('client_endpoint', e); }
   if (!ep) return;
+  // Con varias direcciones del PC principal (casa y Tailscale) puede cambiar la que contesta.
+  setInterval(() => {
+    core.invoke<Endpoint | null>('client_endpoint').then((e) => { if (e) ep = e; }).catch(() => {});
+  }, 60_000);
   const [{ setEndpointProvider }, rc, rev] = await Promise.all([
     import('./remote/config'), import('./remote/core'), import('./remote/event'),
   ]);

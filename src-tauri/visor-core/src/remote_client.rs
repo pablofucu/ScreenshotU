@@ -140,9 +140,21 @@ fn http_err(addr: &str, e: ureq::Error) -> anyhow::Error {
                 _ => anyhow!("El PC principal respondió {code}"),
             }
         }
-        ureq::Error::Transport(_) => anyhow!("No se pudo conectar con {addr}. ¿Está encendido y con el visor abierto?"),
+        ureq::Error::Transport(_) => anyhow::Error::new(Unreachable(addr.to_string())),
     }
 }
+
+/// No se pudo hablar con el host en esa direccion (apagado, otra red...), no un error que haya devuelto el host.
+#[derive(Debug)]
+pub struct Unreachable(pub String);
+
+impl std::fmt::Display for Unreachable {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "No se pudo conectar con {}. ¿Está encendido y con el visor abierto?", self.0)
+    }
+}
+
+impl std::error::Error for Unreachable {}
 
 /// Cabeceras que identifican a este cliente.
 fn with_headers(r: ureq::Request, version: &str) -> ureq::Request {

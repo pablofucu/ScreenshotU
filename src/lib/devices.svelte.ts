@@ -9,22 +9,22 @@ import type { RemoteInfo } from './types';
 export type DevicesId =
   | 'devname' | 'devlist' | 'devrename' | 'devrevoke'
   | 'pcfind' | 'pcaddr' | 'pcname' | 'pcpair'
-  | 'pcmode' | 'pcmoon' | 'pcwake' | 'pcunpair';
-const ALL: DevicesId[] = ['devname', 'devlist', 'devrename', 'devrevoke', 'pcfind', 'pcaddr', 'pcname', 'pcpair', 'pcmode', 'pcmoon', 'pcwake', 'pcunpair'];
+  | 'pcmode' | 'pcaddrs' | 'pcmoon' | 'pcwake' | 'pcunpair';
+const ALL: DevicesId[] = ['devname', 'devlist', 'devrename', 'devrevoke', 'pcfind', 'pcaddr', 'pcname', 'pcpair', 'pcmode', 'pcaddrs', 'pcmoon', 'pcwake', 'pcunpair'];
 export const isDevicesId = (id: string): id is DevicesId => (ALL as string[]).includes(id);
 export const DEVICES_CYCLE = new Set<DevicesId>(['devlist', 'pcfind']);
 
 /** Filas según el modo de este equipo (en modo cliente los dispositivos se gestionan en el PC principal). */
 export function devicesRows(): DevicesId[] {
   return clientMode
-    ? ['pcmode', 'pcmoon', 'pcwake', 'pcunpair']
+    ? ['pcmode', 'pcaddrs', 'pcmoon', 'pcwake', 'pcunpair']
     : ['devname', 'devlist', 'devrename', 'devrevoke', 'pcfind', 'pcaddr', 'pcname', 'pcpair'];
 }
 
 interface Device { id: string; name: string; kind: string; createdMs: number; lastSeenMs: number; appVersion: string; api: number; revoked: boolean }
 interface Found { id: string; name: string; addr: string }
 interface ClientInfo {
-  mode: 'host' | 'client'; hostId: string; hostName: string; hostAddr: string; hostMac: string;
+  mode: 'host' | 'client'; hostId: string; hostName: string; hostAddr: string; hostAddrs: string[]; hostMac: string;
   deviceId: string; deviceName: string; moonlightPath: string; moonlightFound: string; suggestedName: string;
 }
 
@@ -119,6 +119,10 @@ export function devicesRow(id: DevicesId): { l: string; v: string; d: string } {
       return { l: 'Conectar', v: dv.busy ? 'Conectando…' : '', d: 'Pulsa A y escribe el código de «Dirección y código» del PC principal. La biblioteca de este equipo no se toca: al desconectarte vuelve tal cual.' };
     case 'pcmode':
       return { l: 'Conectado a', v: i?.hostName || clientMode?.hostName || '…', d: `Este equipo usa la biblioteca de ese PC${i?.hostAddr ? ` (${i.hostAddr})` : ''}. Los ajustes de la biblioteca se cambian allí.` };
+    case 'pcaddrs': {
+      const n = i?.hostAddrs?.length ?? 0;
+      return { l: 'Direcciones del PC principal', v: n > 1 ? `${n} direcciones` : n ? '1 dirección' : '…', d: `Se prueban en orden y se usa la primera que conteste: la de casa primero y después, para jugar fuera, la de Tailscale (p. ej. 100.64.1.2:8787). Pulsa A para cambiarlas, separadas por comas.${i?.hostAddrs?.length ? ` Ahora: ${i.hostAddrs.join(', ')}.` : ''}` };
+    }
     case 'pcmoon':
       return { l: 'Moonlight', v: i?.moonlightFound ? (i.moonlightPath ? 'Elegido' : 'Encontrado') : 'No encontrado', d: `Con él se juega aquí lo que se abre en el PC principal${i?.moonlightFound ? ` (${i.moonlightFound})` : ''}. Pulsa A para elegir Moonlight.exe; ‹ vuelve a buscarlo solo.` };
     case 'pcwake':
@@ -220,6 +224,20 @@ export function devicesAct(id: DevicesId, dir: number) {
       if (dir === 0) void pair();
       return;
     case 'pcmode':
+      return;
+    case 'pcaddrs':
+      if (dir !== 0) return;
+      openOsk({
+        label: 'Direcciones del PC principal',
+        hint: 'IP:puerto separadas por comas; la de casa primero',
+        value: (dv.info?.hostAddrs ?? []).join(', '),
+        maxLen: 200,
+        onDone: (v) => {
+          invoke<ClientInfo>('client_set_addrs', { addrs: [v] })
+            .then((r) => { dv.info = r; blip(1320); })
+            .catch((e) => toast(errText(e), 4200));
+        },
+      });
       return;
     case 'pcmoon':
       void pickMoonlight(dir);

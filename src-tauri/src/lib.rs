@@ -1412,6 +1412,7 @@ pub fn run() {
             client::client_open_stream,
             client::client_wake,
             client::client_set_moonlight,
+            client::client_set_addrs,
             client::client_add_game,
             client::client_local_games,
             client::client_launch,
