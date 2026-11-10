@@ -8,6 +8,8 @@
   </head>
   <body>
     <div id="app"></div>
+    <!-- Desarrollo: `?mock&tablet` enseña la interfaz como en la tablet (IS_TABLET) con datos de prueba. -->
+    <script>if (/[?&]tablet\b/.test(location.search)) window.__VISOR_TABLET__ = true;</script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

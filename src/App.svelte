@@ -87,7 +87,8 @@
     const key = untrack(() => app.animKey);
     const jump = key !== atmosKey;
     atmosKey = key;
-    if (reduced || jump) {
+    // En la tablet el fundido de 700 ms repinta todo el cristal en cada fotograma: se salta.
+    if (reduced || jump || IS_TABLET) {
       curAtmos = { ...target };
       applyAtmos(variablesCSS(curAtmos.h1, curAtmos.h2));
       return;
@@ -122,6 +123,7 @@
   }
 
   onMount(() => {
+    if (IS_TABLET) document.documentElement.classList.add('tablet');
     boot().catch((e) => { console.error(e); error = String(e); });
     startGamepad();
     startMouse();

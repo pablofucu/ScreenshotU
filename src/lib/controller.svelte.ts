@@ -2051,7 +2051,7 @@ function onMouseButton(e: MouseEvent) {
 }
 
 /** Rueda: recorre carruseles, páginas, capturas y listas sin llevar el ratón a los bordes. */
-let wheelAcc = 0, wheelT = 0;
+let wheelAcc = 0, wheelT = 0, wheelH = false;
 let zoomAcc = 0, zoomT = 0;
 function onWheel(e: WheelEvent) {
   if (e.defaultPrevented) return;
@@ -2091,7 +2091,8 @@ function onWheel(e: WheelEvent) {
   wheelT = now;
   const dy = e.deltaMode === 1 ? e.deltaY * 40 : e.deltaY;
   const dx = e.deltaMode === 1 ? e.deltaX * 40 : e.deltaX;
-  wheelAcc += Math.abs(dx) > Math.abs(dy) ? dx : dy;
+  wheelH = Math.abs(dx) > Math.abs(dy);
+  wheelAcc += wheelH ? dx : dy;
   if (Math.abs(wheelAcc) < 40) return;
   const d = Math.sign(wheelAcc);
   wheelAcc = 0;
@@ -2102,8 +2103,10 @@ function onWheel(e: WheelEvent) {
     case 'gstats': move(0, d); break;
     case 'stats': if (app.statsTab === 'rank') move(0, d); else move(d, 0); break;
     case 'titles': {
-      if (listTab()) { listCmd(d > 0 ? 'down' : 'up'); break; }
-      if (collTab()) { collCmd(d > 0 ? 'down' : 'up'); break; }
+      // Mi lista y Colecciones son carriles: el gesto horizontal recorre el carril y el vertical cambia de fila.
+      const lc = wheelH ? (d > 0 ? 'right' : 'left') : (d > 0 ? 'down' : 'up');
+      if (listTab()) { listCmd(lc); break; }
+      if (collTab()) { collCmd(lc); break; }
       if (app.config.titlesView === 'grid') { page(d); break; }
       const np = viewPos(app.t) + d;
       if (np >= 0 && np <= app.tview.length - (IS_TABLET ? 1 : 0)) { setFocus('tit' + atPos(np)); blip(880); }
