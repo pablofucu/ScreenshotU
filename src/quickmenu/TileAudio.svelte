@@ -30,15 +30,44 @@
     audio?.apps ? [...audio.apps].sort((a, b) => (b.isGame ? 1 : 0) - (a.isGame ? 1 : 0)) : []
   );
 
-  function handleSliderClick(e: MouseEvent) {
-    if (!audio) return;
-    const target = e.currentTarget as HTMLElement;
-    const vbar = target.querySelector('.vbar') as HTMLElement | null;
-    if (!vbar) return;
-    const rect = vbar.getBoundingClientRect();
-    const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
-    const pct = Math.round((x / rect.width) * 100);
-    onSetVolume?.(pct);
+  /** Arrastre con puntero (ratón, toque, lápiz): pulsar y mover la barra con el dedo. */
+  function dragSlider(node: HTMLElement, set: (pct: number) => void) {
+    let cb = set;
+    let active: number | null = null;
+    const apply = (e: PointerEvent) => {
+      const vbar = node.querySelector('.vbar') as HTMLElement | null;
+      if (!vbar) return;
+      const rect = vbar.getBoundingClientRect();
+      if (rect.width <= 0) return;
+      const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+      cb(Math.round((x / rect.width) * 100));
+    };
+    const down = (e: PointerEvent) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      active = e.pointerId;
+      try { node.setPointerCapture(e.pointerId); } catch { /* sin captura el arrastre sigue dentro de la barra */ }
+      e.preventDefault();
+      apply(e);
+    };
+    const move = (e: PointerEvent) => { if (e.pointerId === active) { e.preventDefault(); apply(e); } };
+    const end = (e: PointerEvent) => {
+      if (e.pointerId !== active) return;
+      active = null;
+      try { node.releasePointerCapture(e.pointerId); } catch { /* ya liberado */ }
+    };
+    node.addEventListener('pointerdown', down);
+    node.addEventListener('pointermove', move);
+    node.addEventListener('pointerup', end);
+    node.addEventListener('pointercancel', end);
+    return {
+      update(next: (pct: number) => void) { cb = next; },
+      destroy() {
+        node.removeEventListener('pointerdown', down);
+        node.removeEventListener('pointermove', move);
+        node.removeEventListener('pointerup', end);
+        node.removeEventListener('pointercancel', end);
+      },
+    };
   }
 
   function handleSliderKey(e: KeyboardEvent) {
@@ -98,7 +127,7 @@
           data-f
           data-id="vol"
           data-slider
-          onclick={handleSliderClick}
+          use:dragSlider={(pct) => onSetVolume?.(pct)}
           onkeydown={handleSliderKey}
           role="slider"
           aria-valuenow={audio.mute ? 0 : audio.volume}
@@ -296,6 +325,7 @@
                 data-f
                 data-id="app-vol-{app.pid}"
                 data-slider
+                use:dragSlider={(pct) => onSetAppVolume?.(app.pid, pct)}
                 onkeydown={(e) => handleAppSliderKey(e, app.pid, app.volume)}
                 role="slider"
                 aria-valuenow={app.mute ? 0 : app.volume}
