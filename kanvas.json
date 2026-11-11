@@ -17,6 +17,22 @@
     {
       "id": "SW",
       "name": "Switch: tiempo de juego"
+    },
+    {
+      "id": "RN9",
+      "name": "Revisión 9 nov: rápidos"
+    },
+    {
+      "id": "RV",
+      "name": "Revisión 9 nov: coherencia"
+    },
+    {
+      "id": "RS",
+      "name": "Revisión 9 nov: diseño"
+    },
+    {
+      "id": "MPF",
+      "name": "Multi-PC fase 1"
     }
   ],
   "tasks": [
@@ -278,11 +294,18 @@
     {
       "id": "SW-04",
       "title": "Probar la ventana de login (WebView2)",
-      "state": "doing",
+      "state": "done",
       "group": "SW",
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "Rama aparte, no se fusiona: comprobar que on_navigation ve npf…://auth y que el login de Nintendo carga."
+      "desc": "Rama aparte, no se fusiona: comprobar que on_navigation ve npf…://auth y que el login de Nintendo carga.",
+      "notes": [
+        {
+          "at": "2026-11-07T18:09:50Z",
+          "by": "agent",
+          "text": "Probado en WebView2: login (incluido Google) carga, on_navigation captura npf…://auth, canje OK y play_histories real devuelve 87 titulos/11 dias"
+        }
+      ]
     },
     {
       "id": "SW-05",
@@ -359,42 +382,90 @@
     {
       "id": "SW-09",
       "title": "Mezcla de tiempos consola/PC",
-      "state": "todo",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-08"],
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "merge.rs con tests: emulador + consola se suman, entre APIs de Nintendo cuenta el máximo por día, DST."
+      "desc": "merge.rs con tests: emulador + consola se suman, entre APIs de Nintendo cuenta el máximo por día, DST.",
+      "notes": [
+        {
+          "at": "2026-11-07T18:12:54Z",
+          "by": "claude-code",
+          "text": "Código ya commiteado (ver git log); cierro en el tablero."
+        },
+        {
+          "at": "2026-11-07T18:12:54Z",
+          "by": "claude-code",
+          "text": "Hecho en los commits 2347a9b / 89e8117, con tests de visor-core."
+        }
+      ]
     },
     {
       "id": "SW-10",
       "title": "Emparejamiento automático con fichas",
-      "state": "todo",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-08"],
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "link.rs con tests: enlaza título de Nintendo con juego o carpeta de la categoría Switch sin cambiar ids."
+      "desc": "link.rs con tests: enlaza título de Nintendo con juego o carpeta de la categoría Switch sin cambiar ids.",
+      "notes": [
+        {
+          "at": "2026-11-07T18:12:55Z",
+          "by": "claude-code",
+          "text": "Código ya commiteado (ver git log); cierro en el tablero."
+        },
+        {
+          "at": "2026-11-07T18:12:55Z",
+          "by": "claude-code",
+          "text": "Hecho en los commits 2347a9b / 89e8117, con tests de visor-core."
+        }
+      ]
     },
     {
       "id": "SW-11",
       "title": "Aplicar el tiempo de consola en el escaneo",
-      "state": "todo",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-09"],
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "Title.console antes de ordenar; scan.rs, src-tauri/src/lib.rs, examples/serve.rs."
+      "desc": "Title.console antes de ordenar; scan.rs, src-tauri/src/lib.rs, examples/serve.rs.",
+      "notes": [
+        {
+          "at": "2026-11-07T18:12:56Z",
+          "by": "claude-code",
+          "text": "Código ya commiteado (23cc5b3)."
+        },
+        {
+          "at": "2026-11-07T18:12:57Z",
+          "by": "claude-code",
+          "text": "Hecho en 23cc5b3: tiempo de consola en el escaneo de Switch."
+        }
+      ]
     },
     {
       "id": "SW-12",
       "title": "Tipos y mock del frontend",
-      "state": "proposed",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-11"],
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "src/lib/types.ts y mock.ts."
+      "desc": "src/lib/types.ts y mock.ts.",
+      "notes": [
+        {
+          "at": "2026-11-07T18:33:45Z",
+          "by": "agent",
+          "text": "Plan: tipos y mock del tiempo de juego de consola"
+        },
+        {
+          "at": "2026-11-07T18:36:14Z",
+          "by": "claude-code",
+          "text": "Los tipos del frontend ya conocen el tiempo de consola (Title.console) y la vista previa/importación de Nintendo (NxPreview, NxChoice…). El mock del navegador simula una vista previa con nuevos, enlazados, dudosos y excluidos. Comprobado con svelte-check (0 errores)."
+        }
+      ]
     },
     {
       "id": "SW-13",
@@ -433,12 +504,19 @@
     {
       "id": "SW-15",
       "title": "Ventana de login y comandos de estado",
-      "state": "todo",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-04", "SW-14"],
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "login.rs: captura de la redirección, pegar enlace como respaldo, estado conectado/caducado."
+      "desc": "login.rs: captura de la redirección, pegar enlace como respaldo, estado conectado/caducado.",
+      "notes": [
+        {
+          "at": "2026-11-07T18:09:56Z",
+          "by": "agent",
+          "text": "login.rs: nintendo_login_start/paste/status/logout, evento nintendo-login-result"
+        }
+      ]
     },
     {
       "id": "SW-16",
@@ -460,68 +538,91 @@
     {
       "id": "SW-17",
       "title": "Vista previa e importación de la lista de juegos",
-      "state": "todo",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-10", "SW-16"],
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "Comandos de vista previa, importar y enlace manual. Filtra: nunca demos; solo juegos con tiempo mínimo (por defecto 60 min). La importación es explícita, con vista previa de lo excluido."
+      "desc": "Comandos de vista previa, importar y enlace manual. Filtra: nunca demos; solo juegos con tiempo mínimo (por defecto 60 min). La importación es explícita, con vista previa de lo excluido.",
+      "notes": [
+        {
+          "at": "2026-11-07T18:13:09Z",
+          "by": "claude-code",
+          "text": "Plan: docs/plan-switch-fase4.md (core/nintendo/import.rs + comandos en app/nintendo/import.rs)"
+        },
+        {
+          "at": "2026-11-07T18:16:11Z",
+          "by": "claude-code",
+          "text": "Ya hay comandos para ver y aplicar la importación de juegos de Nintendo, solo sobre la categoría Switch (sin pantalla aún: llega con SW-21).\n- nintendo_import_preview reparte los juegos en nuevos, enlazados, dudosos, excluidos (por debajo del mínimo, 60 min por defecto) e ignorados; las demos nunca salen.\n- nintendo_import_apply crea fichas sin carpeta en disco, enlaza o ignora; salta con motivo lo no válido. También nintendo_link y nintendo_set_ignored.\n- Verificado con tests de visor-core (36 ok) con la fixture: 5 nuevos, 3 excluidos y 2 demos."
+        }
+      ]
     },
     {
       "id": "SW-18",
       "title": "Hilo de sincronización periódica",
-      "state": "todo",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-11", "SW-16"],
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "sync.rs: cada 30 min, errores, evento nintendo-synced; solo actualiza tiempos, nunca crea fichas."
-    },
-    {
-      "id": "SW-19",
-      "title": "Control Parental opcional (Moon)",
-      "state": "proposed",
-      "group": "SW",
-      "deps": ["SW-02", "SW-18"],
-      "at": "2026-11-07T01:09:13Z",
-      "by": "claude-code",
-      "desc": "parental.rs: consolas y resúmenes diarios; cuenta solo el primer usuario. Se activa aparte; sin él todo funciona con el historial."
+      "desc": "sync.rs: cada 30 min, errores, evento nintendo-synced; solo actualiza tiempos, nunca crea fichas.",
+      "notes": [
+        {
+          "at": "2026-11-07T18:16:19Z",
+          "by": "claude-code",
+          "text": "Plan: docs/plan-switch-fase4.md (sync.rs, next_delay, title_times)"
+        },
+        {
+          "at": "2026-11-07T18:18:35Z",
+          "by": "claude-code",
+          "text": "La app sincroniza sola el tiempo de Nintendo mientras haya cuenta conectada: primera vez al minuto de arrancar, luego cada 30 min (con errores reintenta a 1, 2, 4... hasta 30 min). Solo actualiza tiempos, nunca crea fichas.\n- Emite el evento nintendo-synced (cambios, juegos nuevos sin importar, error) y los comandos nintendo_sync_now y nintendo_title_times.\n- Comprobado: tests de visor-core (reintentos, tiempos iguales a los del escaneo, solo Switch) y cargo check sin avisos.\n- Sin probar con cuenta real: puedes llamar a nintendo_sync_now y mirar el evento en la consola del webview."
+        }
+      ]
     },
     {
       "id": "SW-20",
       "title": "Sección «Nintendo» de Ajustes",
-      "state": "todo",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-15", "SW-18"],
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "Conectar cuenta, estado, vincular Control Parental (opcional), ajuste del mínimo de tiempo, importar ahora."
+      "desc": "Conectar cuenta, estado, vincular Control Parental (opcional), ajuste del mínimo de tiempo, importar ahora.",
+      "notes": [
+        {
+          "at": "2026-11-07T18:29:33Z",
+          "by": "claude-code",
+          "text": "Ajustes tiene una sección nueva «Nintendo» (solo en el PC) con tres filas: Cuenta de Nintendo (A conecta con la ventana de login o desconecta; muestra el estado y los juegos pendientes), Mínimo para importar un juego (‹ › entre Todos, 15/30 min, 1/2/3/5 h; por defecto 1 h) e Importar juegos ahora (baja el historial y avisa de cuántos hay por importar). Falta la fila de Control Parental: SW-19 no existe en el tablero. La pantalla de importación completa es SW-21. Comprobado con svelte-check (0 errores); no probado con la cuenta real."
+        }
+      ]
     },
     {
       "id": "SW-21",
       "title": "Pantalla de importación",
-      "state": "todo",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-17", "SW-20"],
       "yolo": true,
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
-      "desc": "Vista previa de títulos a importar y de los excluidos por el mínimo; añadir a mano."
-    },
-    {
-      "id": "SW-22",
-      "title": "Ficha del juego: consola / PC",
-      "state": "proposed",
-      "group": "SW",
-      "deps": ["SW-12", "SW-18"],
-      "at": "2026-11-07T01:09:13Z",
-      "by": "claude-code",
-      "desc": "Desglose de tiempo, panel de semana; se actualiza tras nintendo-synced. Switch 1 y 2 juntos."
+      "desc": "Vista previa de títulos a importar y de los excluidos por el mínimo; añadir a mano.",
+      "notes": [
+        {
+          "at": "2026-11-07T18:33:45Z",
+          "by": "agent",
+          "text": "Plan: pantalla de importación en Ajustes > Nintendo"
+        },
+        {
+          "at": "2026-11-07T18:36:14Z",
+          "by": "claude-code",
+          "text": "Ajustes > Nintendo > «Importar juegos ahora» baja el historial y abre una pantalla con la vista previa: juegos nuevos (se crean por defecto), enlaces automáticos, dudosos (‹ › elige ficha, crear o ignorar) y los bajo el mínimo (se añaden a mano con A). La primera fila «Importar N cambios» aplica y reescanea. Las demos no salen. Comprobado con svelte-check (0 errores) y el mock del navegador; no probado con la cuenta real. A revisar: el aspecto de la lista (usa el selector genérico) y si quieres ver también los ignorados para poder des-ignorarlos."
+        }
+      ]
     },
     {
       "id": "SW-23",
       "title": "Estudiar importar capturas al conectar la Switch",
-      "state": "proposed",
+      "state": "todo",
       "group": "SW",
       "at": "2026-11-07T01:09:13Z",
       "by": "claude-code",
@@ -530,22 +631,209 @@
     {
       "id": "SW-24",
       "title": "Fusionar juegos importados con fichas repetidas",
-      "state": "proposed",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-10"],
       "at": "2026-11-07T16:43:28Z",
       "by": "agent",
-      "desc": "Al importar de Nintendo, detectar fichas ya existentes (incluidas duplicadas en la categoria Switch) y ofrecer fusionarlas en vez de crear otra. Sin tocar categorias."
+      "desc": "Al importar de Nintendo, detectar fichas ya existentes (incluidas duplicadas en la categoria Switch) y ofrecer fusionarlas en vez de crear otra. Sin tocar categorias.",
+      "notes": [
+        {
+          "at": "2026-11-07T18:19:58Z",
+          "by": "claude-code",
+          "text": "Plan: docs/plan-switch-fase4.md (base_name, dudosos por nombre base, agrupar nuevos)"
+        },
+        {
+          "at": "2026-11-07T18:21:00Z",
+          "by": "claude-code",
+          "text": "Al importar, las versiones de un mismo juego (p. ej. Mina the Hollower y su «Nintendo Switch 2 Edition») salen como una sola ficha nueva. Si ya existe una ficha con ese nombre base, se propone como «dudoso» (la ficha con juego primero) y, al crear, se enlaza en vez de duplicar.\n- Comprobado con tests de visor-core (40 ok). No se fusionan dos fichas ya existentes entre sí."
+        }
+      ]
     },
     {
       "id": "SW-25",
       "title": "Grafismos para los juegos importados",
-      "state": "proposed",
+      "state": "done",
       "group": "SW",
       "deps": ["SW-17"],
       "at": "2026-11-07T16:43:28Z",
       "by": "agent",
-      "desc": "Portada/logo/hero compatibles con la biblioteca, reutilizando SteamGridDB (sgdb.rs) y la cache de arte; busqueda por nombre y titleId."
+      "desc": "Portada/logo/hero compatibles con la biblioteca, reutilizando SteamGridDB (sgdb.rs) y la cache de arte; busqueda por nombre y titleId.",
+      "notes": [
+        {
+          "at": "2026-11-07T18:21:00Z",
+          "by": "claude-code",
+          "text": "Plan: docs/plan-switch-fase4.md (run_batch en sgdb.rs, art.rs)"
+        },
+        {
+          "at": "2026-11-07T18:23:28Z",
+          "by": "claude-code",
+          "text": "Al importar juegos de Nintendo, se buscan solos portada, fondo y logo en SteamGridDB (si hay clave y la descarga automatica esta activa), buscando por el nombre sin «Switch 2 Edition». Si no queda portada, se usa la del CDN de Nintendo (solo https y *.cdn.nintendo.net). Verificado con cargo check y tests; no probado con la API real."
+        }
+      ]
+    },
+    {
+      "id": "RN9-01",
+      "title": "R1. Pastillas legibles en «Noche ahumada»",
+      "state": "proposed",
+      "group": "RN9",
+      "at": "2026-11-09T22:07:34Z",
+      "by": "claude-code",
+      "desc": "Fallo 1 del informe-revision-2026-11-09: .pill y chips usan tokens en vez de blanco fijo; dock, pistas, migas y racha se leen en oscuro."
+    },
+    {
+      "id": "RN9-02",
+      "title": "R2. Catálogo: X Jugar, Y Buscar, View Vista; ocultar Buscar del dock",
+      "state": "proposed",
+      "group": "RN9",
+      "at": "2026-11-09T22:07:34Z",
+      "by": "claude-code",
+      "desc": "Fallos 2, 3 y 4: las pistas del Catálogo dicen la verdad, el campo de búsqueda se alcanza con mando y el botón Buscar de Inicio se oculta hasta que exista el buscador global."
+    },
+    {
+      "id": "RN9-03",
+      "title": "R3. Mi lista «1 mes», pista de Racha y Guardar desactivado",
+      "state": "proposed",
+      "group": "RN9",
+      "at": "2026-11-09T22:07:34Z",
+      "by": "claude-code",
+      "desc": "Fallos 7, 9 y 13: plural correcto de meses, pista «Categoría» en Racha, y Guardar desactivado en Añadir juego hasta elegir el ejecutable."
+    },
+    {
+      "id": "RV-01",
+      "title": "C1. Contrato de botones y Start = «Menú»",
+      "state": "proposed",
+      "group": "RV",
+      "deps": ["RN9-02"],
+      "at": "2026-11-09T22:07:34Z",
+      "by": "claude-code",
+      "desc": "Diseño C y §2.1-3: misma gramática A/B/X/Y/View/Start en todas las pantallas; Start se llama «Menú» siempre."
+    },
+    {
+      "id": "RV-02",
+      "title": "C2. Visor a pantalla completa con pistas abajo",
+      "state": "proposed",
+      "group": "RV",
+      "at": "2026-11-09T22:07:34Z",
+      "by": "claude-code",
+      "desc": "Diseño D y fallo 5: modo desnudo por defecto, información abajo 2 s al pulsar A, resolución en la hoja Y."
+    },
+    {
+      "id": "RV-03",
+      "title": "C3. Estadísticas con pestañas y ámbito visible",
+      "state": "proposed",
+      "group": "RV",
+      "at": "2026-11-09T22:07:34Z",
+      "by": "claude-code",
+      "desc": "Fallo 6 y diseño F: segmentado visible, ámbito «Juegos PC · Siempre», abre en el último periodo con datos."
+    },
+    {
+      "id": "RV-04",
+      "title": "C4. Mi lista con carriles adaptativos",
+      "state": "proposed",
+      "group": "RV",
+      "at": "2026-11-09T22:07:34Z",
+      "by": "claude-code",
+      "desc": "Fallo 8 y diseño E: carriles que no se desbordan y vacíos plegados."
+    },
+    {
+      "id": "RS-01",
+      "title": "D1. Inicio de 4 elementos y tarjeta fija",
+      "state": "proposed",
+      "group": "RS",
+      "deps": ["RV-01"],
+      "at": "2026-11-09T22:07:34Z",
+      "by": "claude-code",
+      "desc": "Diseño A: dock reducido, «Juego de hoy» sin rotación, avatar con racha."
+    },
+    {
+      "id": "RS-02",
+      "title": "D2. Buscador global",
+      "state": "proposed",
+      "group": "RS",
+      "deps": ["RS-01"],
+      "at": "2026-11-09T22:07:34Z",
+      "by": "claude-code",
+      "desc": "Diseño B: capa de búsqueda con resultados agrupados por categoría, sin mezclar títulos."
+    },
+    {
+      "id": "RS-03",
+      "title": "D3. Repaso completo del tema oscuro",
+      "state": "proposed",
+      "group": "RS",
+      "deps": ["RN9-01"],
+      "at": "2026-11-09T22:07:34Z",
+      "by": "claude-code",
+      "desc": "Diseño G: el resto de blancos fijos a tokens y repaso pantalla a pantalla."
+    },
+    {
+      "id": "MPF-01",
+      "title": "1A. Tabla de dispositivos (migración 16)",
+      "state": "proposed",
+      "group": "MPF",
+      "at": "2026-11-10T15:33:12Z",
+      "by": "claude-code",
+      "desc": "La base del host guarda los dispositivos emparejados (nombre, tipo, token cifrado, última conexión) y cada partida/lectura lleva su dispositivo. Las partidas antiguas quedan como «jugadas en el host». Hecho: migración 16 + módulo devices + tests en verde."
+    },
+    {
+      "id": "MPF-02",
+      "title": "1B. Partidas con dispositivo",
+      "state": "proposed",
+      "group": "MPF",
+      "deps": ["MPF-01"],
+      "at": "2026-11-10T15:33:12Z",
+      "by": "claude-code",
+      "desc": "Cada partida y sesión de lectura se guarda con el dispositivo que jugó; una partida en streaming no se funde con otra del host. Hecho: lanzador, lectura y stream pasan el dispositivo; tests en verde."
+    },
+    {
+      "id": "MPF-03",
+      "title": "1C. Servidor: emparejar y saber quién llama",
+      "state": "proposed",
+      "group": "MPF",
+      "deps": ["MPF-01", "MPF-02"],
+      "at": "2026-11-10T15:33:12Z",
+      "by": "claude-code",
+      "desc": "El host empareja equipos con el código y les da un token propio; sabe qué dispositivo llama, puede revocarlo y la APK antigua sigue entrando con el código. Ajustes del host: nombre del equipo y lista de dispositivos (comandos). Hecho: /pair, /unpair, 426 por versión vieja, tests."
+    },
+    {
+      "id": "MPF-04",
+      "title": "1D. Cliente PC: conectar al host (Rust)",
+      "state": "proposed",
+      "group": "MPF",
+      "deps": ["MPF-03"],
+      "at": "2026-11-10T15:33:12Z",
+      "by": "claude-code",
+      "desc": "Un PC puede buscar el host en la red, emparejarse con el código, encenderlo (Wake-on-LAN), abrir Moonlight y desemparejarse. Impide usar como biblioteca el visor.db de otro host."
+    },
+    {
+      "id": "MPF-05",
+      "title": "1E. Cliente PC: interfaz",
+      "state": "proposed",
+      "group": "MPF",
+      "deps": ["MPF-04"],
+      "at": "2026-11-10T15:33:12Z",
+      "by": "claude-code",
+      "desc": "En modo cliente la app muestra la biblioteca del host, edita en él, juega en streaming y sin conexión queda en solo lectura. Ajustes: «Dispositivos» en el host y «Este equipo» en el cliente."
+    },
+    {
+      "id": "MPF-06",
+      "title": "1F. Tablet: emparejar con token",
+      "state": "proposed",
+      "group": "MPF",
+      "deps": ["MPF-03"],
+      "at": "2026-11-10T15:33:12Z",
+      "by": "claude-code",
+      "desc": "La tablet se empareja con nombre y token propio, y sus partidas salen con su dispositivo. Con un host viejo sigue usando el código."
+    },
+    {
+      "id": "MPF-07",
+      "title": "1G. Comprobación con dos PCs",
+      "state": "proposed",
+      "group": "MPF",
+      "deps": ["MPF-05", "MPF-06"],
+      "at": "2026-11-10T15:33:12Z",
+      "by": "claude-code",
+      "desc": "Prueba manual en la LAN: emparejar el portátil, ver/editar la biblioteca, apagar el host (solo lectura), jugar en streaming y ver el dispositivo en sessions."
     }
   ]
 }
