@@ -1,7 +1,7 @@
 //! Tiempo de juego de Nintendo Switch: logica pura (sin red ni Tauri).
 //!
 //! Aqui viven las constantes de las APIs de Nintendo (un solo sitio), la normalizacion de ids y
-//! nombres de titulo, y el login PKCE ([`pkce`]). Ver `docs/plan-switch*.md` y `docs/nintendo-api.md`.
+//! nombres de titulo, y el login PKCE ([`pkce`]). Ver `docs/archivo/plan-switch*.md` y `docs/referencia/nintendo-api.md`.
 
 pub mod import;
 pub mod link;

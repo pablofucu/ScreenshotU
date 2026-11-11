@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>A · «Actividad»: un solo sitio para todo</title>
+<link rel="stylesheet" href="m.css">
+<style>
+.cols{display:grid;grid-template-columns:1fr 1fr 1.1fr;gap:12px}
+.nv{border-radius:14px;padding:9px 11px;background:rgba(255,255,255,.05);box-shadow:0 0 0 1px var(--line);display:flex;flex-direction:column;gap:7px}
+.yr{display:grid;grid-template-columns:330px 1fr;gap:12px}
+.big{font-size:74px;font-weight:800;line-height:1;background:linear-gradient(90deg,var(--pc),var(--vn),var(--warn),var(--jvn));-webkit-background-clip:text;color:transparent}
+.big small{font-size:28px}
+.lane{display:grid;grid-template-columns:170px 1fr;gap:10px;align-items:center;padding:5px 10px;border-radius:14px;flex:1;background:rgba(255,255,255,.04);box-shadow:inset 4px 0 0 var(--c)}
+.lane .l b{display:block;font-size:15px}.lane .l span{font-size:12px;color:var(--ink-3);font-weight:700}
+.lane .cs{display:flex;gap:14px}
+</style>
+</head>
+<body>
+<a href="index.html">← Todas las propuestas</a>
+<h1>A · «Actividad»: un solo sitio para todo</h1>
+<p class="s">Estadísticas pasa a llamarse <b>Actividad</b> y gana dos cosas: la pestaña <b>Semana</b> (el resumen semanal, que es lo primero que se ve al entrar) y los <b>terminados del año</b> dentro de la pestaña <b>Año</b>. Los terminados dejan de ser una pestaña de cada categoría y se ven todos juntos, pero <b>cada categoría en su propia fila</b>: nunca se mezclan en una misma lista.</p>
+
+<h2>1 · Actividad › Semana (resumen semanal)</h2>
+<p class="s">Un bloque por categoría. Novelas visuales y japonesas comparten columna pero cada una lleva su fila, su meta y su más leída.</p>
+<div class="frame" id="a1"></div>
+
+<h2>2 · Actividad › Año (resumen anual + terminados del año)</h2>
+<p class="s">A la izquierda, las cifras del año. A la derecha, los títulos terminados ese año, una fila por categoría. LB/RB cambia de año y A sobre una portada abre el juego.</p>
+<div class="frame" id="a2"></div>
+
+<h2>Qué cambia</h2>
+<ul class="chg">
+<li><b>Ubicación:</b> Inicio › Actividad, con cuatro pestañas (Y las recorre): Semana · Clasificación · Calendario · Año.</li>
+<li><b>Terminados:</b> salen de las pestañas de cada categoría (queda Todos · Mi lista · Colecciones). En «Mi lista» sigue la franja «Terminado» con lo último; el histórico por años vive en Actividad › Año.</li>
+<li><b>Categorías:</b> juntas en la misma pantalla, separadas por filas. Ninguna lista mezcla títulos.</li>
+<li><b>A favor:</b> todo lo «de mirar atrás» está en un sitio y el año se cuenta entero. <b>En contra:</b> para ver los terminados de Switch hay que salir de Switch.</li>
+</ul>
+
+<script src="m.js"></script>
+<script>
+const col = (id, w) => { const c = CATS.find((x) => x.id === id); return `<div class="card c ${id === 'pc' ? 'f' : ''}" style="--c:${c.c}">
+  <div class="ch"><span class="dot"></span>${c.name}<span class="tot">${w.t}</span></div>
+  <div class="sub">${delta(w)} frente a la semana anterior</div>
+  ${bars(w.days)}
+  ${w.top.map((t) => trow(t[0], t[1], t[2])).join('')}
+  <div style="margin-top:auto;display:flex;gap:6px;flex-wrap:wrap">${id === 'pc' ? '<span class="chip">🏁 Hades II terminado</span><span class="chip">📷 52 capturas</span>' : '<span class="chip">⏱ Zelda pasa de 100 h</span><span class="chip">📷 32 capturas</span>'}</div></div>`; };
+const nv = (id, w) => { const c = CATS.find((x) => x.id === id); return `<div class="nv" style="--c:${c.c}">
+  <div class="ch" style="font-size:14.5px"><span class="dot"></span>${c.name}<span class="tot" style="font-size:17px">${w.t}</span></div>
+  ${goal7(w.goal)}
+  <div class="sub">Meta ${w.goal.filter(Boolean).length}/7 días · ${delta(w)}</div>
+  ${trow(w.top, 'la más leída', '')}</div>`; };
+mount('a1', tb(['Inicio', 'Actividad', 'Semana']) + `<div class="body">
+  <div class="rowx">${tabs(['Semana', 'Clasificación', 'Calendario', 'Año'], 'Semana', ['Semana'])}<span class="grow"></span><div class="nav pill"><i>‹</i>2 – 8 nov<small>semana 45</small><i>›</i></div></div>
+  <div class="rowx">${rbox('Tiempo total', '21 h 40', '<span class="up">▲ 1 h 30 (+7 %)</span>')}${rbox('Días con actividad', '6 <small>de 7</small>')}${rbox('Terminados', '1', '<span class="mut">Hades II</span>')}${rbox('Capturas', '84', '<span class="mut">3 favoritas</span>')}</div>
+  <div class="cols grow">${col('pc', WEEK.pc)}${col('sw', WEEK.sw)}
+    <div class="card"><div class="ch">Novelas<span class="tot">5 h 35</span></div>${nv('vn', WEEK.vn)}${nv('jvn', WEEK.jvn)}</div></div>
+</div>` + hints([['LB/RB', 'Semana', 'sh'], ['Y', 'Clasificación', 'y'], ['A', 'Abrir', 'a'], ['B', 'Volver', 'b']]));
+
+const Y = 2026;
+const lane = (c) => { const l = FIN.filter((f) => f[1] === c.id && f[2] === Y).sort((a, b) => a[3] - b[3]); return `<div class="lane" style="--c:${c.c}">
+  <div class="l"><b>${c.name}</b><span>${l.length} ${l.length === 1 ? 'terminado' : 'terminados'}</span></div>
+  <div class="cs">${l.map((f, i) => fin(f, 40, c.id === 'pc' && i === 3 ? 'f' : '')).join('')}</div></div>`; };
+mount('a2', tb(['Inicio', 'Actividad', 'Año']) + `<div class="body">
+  <div class="rowx">${tabs(['Semana', 'Clasificación', 'Calendario', 'Año'], 'Año')}<span class="grow"></span><div class="nav pill"><i>‹</i>2026<i>›</i></div></div>
+  <div class="yr grow">
+    <div class="card" style="--c:var(--acc)"><div class="sub">Tu año jugando y leyendo</div><div class="big">412<small> h</small></div>
+      ${bars([22, 31, 40, 28, 35, 44, 52, 38, 30, 47, 45, 0], MES.map((m) => m[0].toUpperCase()), 90)}
+      <div class="rowx">${rbox('Partidas', '318')}${rbox('Días', '201 <small>de 313</small>')}</div>
+      <div class="sub" style="margin-top:auto"><span class="up">▲ 36 h</span> más que en 2025 · A: ver el resumen en tarjetas</div></div>
+    <div class="card"><div class="ch">Terminados en 2026<small>10 títulos</small><span class="tot" style="font-size:14px;color:var(--ink-3)">2025: 5 · 2024: 3</span></div>
+      ${CATS.map(lane).join('')}</div>
+  </div>
+</div>` + hints([['LB/RB', 'Año', 'sh'], ['Y', 'Semana', 'y'], ['A', 'Abrir juego', 'a'], ['B', 'Volver', 'b']]));
+</script>
+</body>
+</html>

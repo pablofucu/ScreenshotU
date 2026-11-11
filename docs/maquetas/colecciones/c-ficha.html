@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>C · «Ficha»: lista a la izquierda, colección a la derecha</title>
+<link rel="stylesheet" href="m.css"><link rel="stylesheet" href="c.css">
+<style>
+.md{display:grid;grid-template-columns:310px 1fr;gap:12px}
+.lst{display:flex;flex-direction:column;gap:8px;min-height:0}
+.li{border-radius:16px;padding:9px 12px;display:grid;grid-template-columns:64px 1fr;gap:10px;align-items:center;background:var(--face);box-shadow:0 0 0 1px var(--line)}
+.li.f{box-shadow:0 0 0 3px var(--c),0 0 22px 1px color-mix(in srgb,var(--c) 50%,transparent)}
+.li .stk{display:flex}.li .stk .cov+.cov{margin-left:-14px}
+.li b{font-size:16px;display:block}.li span{font-size:12px;color:var(--ink-3);font-weight:700;display:block;margin-bottom:5px}
+.li.new{grid-template-columns:1fr;border:2px dashed var(--line-2);background:none;box-shadow:none;color:var(--ink-2);font-weight:800;text-align:center;padding:12px}
+.det{border-radius:22px;padding:16px 22px;display:flex;flex-direction:column;gap:11px;box-shadow:0 0 0 1px var(--line);min-width:0}
+.det h3{margin:0;font-size:32px;line-height:1.1}
+.tl{display:flex;justify-content:space-between;position:relative;padding-bottom:6px}
+.tl::after{content:'';position:absolute;left:0;right:0;bottom:26px;height:6px;border-radius:3px;background:var(--rail)}
+.tl .t{display:flex;flex-direction:column;align-items:center;gap:13px;font-size:13px;font-weight:800;position:relative;z-index:1}
+.tl .t i{position:absolute;bottom:22px;width:14px;height:14px;border-radius:50%;background:var(--s);box-shadow:0 0 0 3px #1c1f27}
+.lab{font-size:12.5px;font-weight:800;color:var(--ink-2);text-transform:uppercase;letter-spacing:.06em}
+.shots{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;height:92px}
+.next{margin-top:auto;border-radius:16px;padding:9px 14px;display:flex;align-items:center;gap:12px;background:rgba(0,0,0,.28);box-shadow:0 0 0 1px var(--line);font-weight:800}
+.next small{display:block;font-size:12px;color:var(--ink-3)}
+</style>
+</head>
+<body>
+<a href="index.html">← Todas las propuestas</a>
+<h1>C · «Ficha»: lista a la izquierda, colección a la derecha</h1>
+<p class="s">La pestaña se parte en dos: a la izquierda la <b>lista de colecciones</b> (compacta, con progreso) y a la derecha la <b>ficha</b> de la enfocada, con todo lo que hoy está repartido: la línea de tiempo, las cifras, las últimas capturas de toda la saga y por dónde vas.</p>
+<div class="frame" id="c1"></div>
+
+<h2>Qué cambia</h2>
+<ul class="chg">
+<li><b>Vista:</b> maestro-detalle. Arriba/abajo cambia de colección y la ficha se actualiza al momento; derecha entra en la ficha (portadas, capturas, «Seguir»).</li>
+<li><b>Línea de tiempo:</b> se conserva la idea actual (cada portada sobre su año, raíl con los colores de las portadas) y se añade el estado de cada juego como punto de color.</li>
+<li><b>Nuevo:</b> «Capturas recientes» de toda la colección y «Seguir con…», que apunta al juego que tienes a medias.</li>
+<li><b>A favor:</b> es la que más información da sin entrar en ningún sitio. <b>En contra:</b> la más densa y la menos «de sofá»; las portadas quedan más pequeñas que hoy.</li>
+</ul>
+
+<script src="c.js"></script>
+<script>
+const li = (c, i) => `<div class="li ${i === 0 ? 'f' : ''}" style="${cv(c)}"><div class="stk">${c.games.slice(0, 3).map((g) => cov(g, 30)).join('')}</div>
+  <div><b>${c.name}</b><span>${c.games.length} juegos · ${hrs(c)} h</span>${seg(c)}</div></div>`;
+const C = COLS[0], cur = C.games.find((g) => g[5] === 'j');
+const rail = `linear-gradient(90deg,${C.games.map((g) => g[3]).join(',')})`;
+mount('c1', tb(['Juegos', 'Colecciones']) + `<div class="body">
+  <div class="rowx">${tabs()}</div>
+  <div class="md grow">
+    <div class="lst">${COLS.map(li).join('')}<div class="li new">+ Nueva colección</div></div>
+    <div class="det aur" style="${cv(C)}">
+      <div class="rowx"><div class="grow"><h3>${C.name}</h3><div class="sub">2004 – 2020 · ordenada por año de lanzamiento</div></div>
+        <span class="chip">${done(C)} de ${C.games.length} terminados</span><span class="chip">⏱ ${hrs(C)} h</span><span class="chip">📷 ${caps(C)}</span></div>
+      <div class="tl" style="--rail:${rail}">${C.games.map((g, i) => `<div class="t" style="--s:${ST[g[5]][1]}">${cov(g, 84, i === 4 ? 'f' : '')}<i></i><span>${g[2]}</span></div>`).join('')}</div>
+      <div class="rowx"><span class="lab grow">Capturas recientes de la colección</span><span class="st" style="--s:${ST.t[1]}">Terminado</span><span class="st" style="--s:${ST.j[1]}">Jugando</span><span class="st" style="--s:${ST.p[1]}">Pendiente</span></div>
+      <div class="shots">${[4, 4, 3, 4, 1].map((k, i) => shot(C.games[k], i, '', '', C.games[k][1])).join('')}</div>
+      <div class="next">${cov(cur, 34)}<div class="grow">Seguir con ${cur[0]}<small>${cur[6]} h jugadas · última partida ayer · ${cur[7]} capturas</small></div><span class="hint pill"><span class="btn y">Y</span>Jugar</span></div>
+    </div>
+  </div>
+</div>` + hints([['▲ ▼', 'Colección', 'sh'], ['A', 'Abrir juego', 'a'], ['X', 'Capturas', 'x'], ['☰', 'Editar', 'sh'], ['B', 'Volver', 'b']]));
+</script>
+</body>
+</html>

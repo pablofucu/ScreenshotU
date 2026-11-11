@@ -1,0 +1,13 @@
+/* Piezas compartidas por las propuestas de «Colecciones» (se suma a m.css). */
+.shot{border-radius:10px;position:relative;overflow:hidden;min-width:0;min-height:0;box-shadow:0 0 0 1px rgba(0,0,0,.4);
+  background:radial-gradient(70% 90% at 75% 15%,rgba(255,255,255,.28),transparent 60%),radial-gradient(60% 70% at 15% 95%,rgba(0,0,0,.45),transparent 65%),linear-gradient(var(--a,135deg),var(--g1),var(--g2))}
+.shot.f{box-shadow:0 0 0 3px #fff,0 0 22px 2px var(--g1)}
+.shot .chip{position:absolute;left:8px;bottom:8px;font-size:11px;padding:3px 8px}
+.seg{display:flex;gap:3px;height:8px;flex:none}
+.seg i{flex:1;border-radius:4px;background:var(--line-2)}
+.seg i.t{background:var(--c)}
+.seg i.j{background:repeating-linear-gradient(135deg,var(--c) 0 4px,color-mix(in srgb,var(--c) 30%,transparent) 4px 8px)}
+.st{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;color:var(--ink-2);white-space:nowrap}
+.st::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--s)}
+.gt{background:linear-gradient(90deg,var(--c),var(--c2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.aur{background:radial-gradient(90% 120% at 0% 0%,color-mix(in srgb,var(--c) 42%,transparent),transparent 62%),radial-gradient(80% 120% at 100% 0%,color-mix(in srgb,var(--c2) 36%,transparent),transparent 60%),var(--face)}

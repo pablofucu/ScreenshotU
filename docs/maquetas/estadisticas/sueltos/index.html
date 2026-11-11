@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Estadísticas, terminados y resumen semanal · propuestas</title>
+<style>/* Tokens copiados de src/app.css (tema oscuro «Noche ahumada»). Compartido por las tres propuestas. */
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;--ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#7f8899;
+  --line:rgba(200,210,235,.16);--line-2:rgba(200,210,235,.24);--face:#262a33;--face-hi:rgba(30,33,41,.94);--chip:rgba(40,44,56,.82);
+  --ok:#3BB54A;--bad:#E8384F;--warn:#F2B807;--acc:#00A0D8;--pc:#1593d6;--sw:#e0384a;--vn:#19b8a6;--jvn:#E5487A}
+*{box-sizing:border-box}
+body{margin:0;padding:28px 32px 60px;background:#0b0d11;font-family:var(--round);color:var(--ink)}
+a{color:#6cc8f0}
+h1{margin:0 0 6px;font-size:28px}
+h2{margin:34px 0 4px;font-size:19px}
+p.s{margin:0 0 12px;color:var(--ink-2);max-width:1280px;font-size:15px;line-height:1.5}
+ul.chg{max-width:1280px;color:var(--ink-2);font-size:15px;line-height:1.6;padding-left:20px}
+ul.chg b{color:var(--ink)}
+
+.frame{width:1280px;height:720px;position:relative;overflow:hidden;border-radius:10px;box-shadow:0 0 0 1px var(--line);
+  background:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
+.pill{background:linear-gradient(180deg,rgba(60,66,80,.80),rgba(36,40,50,.62));box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 0 0 1px var(--line)}
+.crumb{position:absolute;left:28px;top:20px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:18px;font-weight:700;color:var(--ink-2)}
+.crumb i{color:var(--ink-3);font-style:normal;font-weight:500}.crumb b{color:var(--acc)}
+.clock{position:absolute;right:28px;top:28px;font-size:18px;font-weight:700;color:var(--ink-2)}
+.hints{position:absolute;right:22px;bottom:14px;display:flex;gap:8px}
+.hint{display:flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 6px;border-radius:999px;font-size:14.5px;font-weight:700;color:var(--ink-2)}
+.btn{min-width:26px;height:26px;border-radius:13px;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;--b:var(--ink-3);padding:0 6px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white),var(--b) 55%,color-mix(in srgb,var(--b) 85%,black))}
+.btn.a{--b:var(--ok)}.btn.b{--b:var(--bad)}.btn.y{--b:var(--warn);color:#3a414e}.btn.x{--b:#1593d6}.btn.sh{border-radius:7px}
+.body{position:absolute;left:56px;right:56px;top:78px;bottom:62px;display:flex;flex-direction:column;gap:12px}
+.rowx{display:flex;gap:12px;align-items:center}
+.grow{flex:1;min-width:0;min-height:0}
+
+.tabs{display:flex;gap:4px;padding:4px;border-radius:999px;height:44px}
+.tabs span{padding:0 18px;border-radius:999px;display:flex;align-items:center;font-size:15.5px;font-weight:800;color:var(--ink-2)}
+.tabs span.on{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 70%,white),var(--acc));color:#fff}
+.tabs span.new::after{content:'nuevo';margin-left:7px;font-size:10px;padding:2px 6px;border-radius:999px;background:var(--warn);color:#3a414e}
+.nav{display:flex;align-items:center;gap:12px;height:44px;padding:0 14px;border-radius:999px;font-weight:800;font-size:16px}
+.nav i{font-style:normal;color:var(--ink-3)}
+.nav small{color:var(--ink-3);font-weight:700}
+
+.rbox{border-radius:18px;padding:9px 16px;background:var(--face-hi);box-shadow:0 0 0 1px var(--line);min-width:0}
+.rbox .k{font-size:12.5px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.rbox .v{font-size:25px;font-weight:800;line-height:1.15;white-space:nowrap}
+.rbox .v small{font-size:14px;color:var(--ink-3)}
+.rbox .d{font-size:12px;font-weight:700}
+.up{color:#5fd36c}.dn{color:#ff6b7d}.mut{color:var(--ink-3)}
+
+.card{border-radius:22px;background:var(--face);box-shadow:0 0 0 1px var(--line),0 14px 26px -16px rgba(0,0,0,.7);padding:14px 16px;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:9px;min-width:0}
+.card.c::before{content:'';position:absolute;left:0;right:0;top:0;height:4px;background:var(--c)}
+.card.f{box-shadow:0 0 0 3px var(--c),0 0 24px 2px color-mix(in srgb,var(--c) 55%,transparent)}
+.ch{display:flex;align-items:center;gap:9px;font-weight:800;font-size:17px}
+.ch .dot,.dot{width:12px;height:12px;border-radius:50%;background:var(--c);flex:none}
+.ch .tot{margin-left:auto;font-size:20px}
+.ch small{font-size:12.5px;color:var(--ink-3);font-weight:700}
+.sub{font-size:12.5px;font-weight:700;color:var(--ink-2)}
+
+.bars{display:flex;gap:5px;align-items:flex-end;height:var(--h,52px)}
+.bars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%}
+.bars i{width:100%;border-radius:4px 4px 2px 2px;background:var(--c);min-height:2px}
+.bars i.z{background:var(--line)}
+.bars span{font-size:10px;color:var(--ink-3);font-weight:700}
+
+.cov{width:var(--w,54px);aspect-ratio:2/3;border-radius:7px;flex:none;display:grid;place-items:center;font-size:calc(var(--w,54px)*.26);font-weight:800;color:#fff;
+  background:linear-gradient(160deg,var(--g1),var(--g2));box-shadow:0 0 0 1px rgba(0,0,0,.35),0 6px 10px -6px #000;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.cov.f{box-shadow:0 0 0 3px #fff,0 0 20px 2px var(--g1)}
+.trow{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:700}
+.trow .n{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trow .n small{display:block;font-size:11px;color:var(--ink-3)}
+.trow .bar{width:90px;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.trow .bar i{display:block;height:100%;background:var(--c,var(--acc));border-radius:4px}
+.chip{font-size:12px;font-weight:800;padding:5px 10px;border-radius:999px;background:var(--chip);box-shadow:0 0 0 1px var(--line);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.chip .dot{width:8px;height:8px}
+.fin{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:var(--ink-3);white-space:nowrap}
+.fin u{text-decoration:none;color:var(--warn);letter-spacing:-1px}
+.goal7{display:flex;gap:4px}
+.goal7 i{flex:1;height:16px;border-radius:5px;background:color-mix(in srgb,var(--c) 18%,#262a33)}
+.goal7 i.ok{background:var(--c)}
+.ch small.up{color:#5fd36c}.ch small.dn{color:#ff6b7d}
+</style>
+<style>
+a.c{display:block;max-width:980px;margin-bottom:14px;padding:18px 22px;border-radius:22px;background:var(--face-hi);box-shadow:0 0 0 1px var(--line),inset 0 4px 0 var(--k);color:inherit;text-decoration:none}
+a.c:hover{box-shadow:0 0 0 2px var(--k)}
+a.c b{font-size:20px}a.c span{display:block;color:var(--ink-2);margin-top:4px;font-size:15px;line-height:1.45}
+table{border-collapse:collapse;max-width:980px;font-size:14.5px;margin-top:8px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink-2)}
+th{color:var(--ink);font-size:13px}td:first-child{color:var(--ink);font-weight:800;white-space:nowrap}
+</style>
+</head>
+<body>
+<h1>Estadísticas, terminados por año y resumen semanal</h1>
+<p class="s">Tres formas de repartirlo. En las tres las categorías se quedan como están y ninguna lista mezcla títulos de categorías distintas; lo que cambia es dónde vive cada cosa y si las categorías se ven juntas o por separado.</p>
+
+<a class="c" style="--k:#00A0D8" href="a-actividad.html"><b>A · «Actividad»: un solo sitio</b><span>Estadísticas gana la pestaña Semana (resumen semanal) y los terminados del año pasan a la pestaña Año, una fila por categoría.</span></a>
+<a class="c" style="--k:#1593d6" href="b-por-categoria.html"><b>B · Todo dentro de cada categoría</b><span>Cada categoría tiene su pestaña Estadísticas y su Terminados (anuario). El resumen semanal es una tarjeta en Inicio.</span></a>
+<a class="c" style="--k:#E5487A" href="c-diario.html"><b>C · «Diario»: el año en carriles</b><span>Una pantalla nueva con los 12 meses y un carril por categoría; elegir una semana abre su resumen al lado.</span></a>
+
+<h2>Comparación</h2>
+<table>
+<tr><th></th><th>A · Actividad</th><th>B · Por categoría</th><th>C · Diario</th></tr>
+<tr><td>Estadísticas</td><td>Inicio › Actividad (global, como hoy)</td><td>Pestaña de cada categoría</td><td>Inicio › Diario</td></tr>
+<tr><td>Terminados por año</td><td>Actividad › Año, una fila por categoría</td><td>Pestaña de cada categoría (como hoy, con cifras)</td><td>Rejilla de meses, un carril por categoría</td></tr>
+<tr><td>Resumen semanal</td><td>Pestaña «Semana», la primera</td><td>Tarjeta «Tu semana» en Inicio</td><td>Panel al elegir una semana</td></tr>
+<tr><td>Categorías</td><td>Juntas en pantalla, en filas separadas</td><td>Separadas del todo</td><td>Juntas en pantalla, en carriles separados</td></tr>
+<tr><td>Trabajo</td><td>Medio</td><td>Medio (se reparte por pestañas)</td><td>Grande</td></tr>
+</table>
+
+<h2>Diseños ya hechos del resumen semanal</h2>
+<p class="s">El interior del resumen semanal ya tenía tres maquetas (tablero, historia de tarjetas y diario para la tablet): <a href="../resumen-semanal/index.html">resumen-semanal</a>. Sirven para cualquiera de las tres propuestas; aquí se decide dónde se coloca.</p>
+</body>
+</html>

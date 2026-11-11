@@ -1,4 +1,4 @@
-//! Servidor HTTP para la app movil (contrato en `docs/api-movil.md`).
+//! Servidor HTTP para la app movil (contrato en `docs/referencia/api-movil.md`).
 //!
 //! Solo lee: sirve una instantanea de la biblioteca (JSON) y las imagenes que aparecen en ella
 //! (miniatura, vista previa reducida u original). No depende de Tauri: los datos los da un [`Provider`].

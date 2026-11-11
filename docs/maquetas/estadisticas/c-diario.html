@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>C · «Diario»: el año en carriles</title>
+<link rel="stylesheet" href="m.css">
+<style>
+.lay{display:grid;grid-template-columns:96px 1fr;gap:12px}
+.lay.d{grid-template-columns:96px 1fr 330px}
+.rail{display:flex;flex-direction:column;gap:8px}
+.rail span{height:46px;border-radius:14px;display:grid;place-items:center;font-weight:800;font-size:17px;color:var(--ink-2);background:var(--chip)}
+.rail span.on{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 70%,white),var(--acc));color:#fff}
+.grid{display:grid;grid-template-columns:118px repeat(12,1fr);gap:0 2px;align-items:center}
+.grid .m{font-size:11px;font-weight:800;color:var(--ink-3);text-align:center;text-transform:uppercase;padding-bottom:4px}
+.grid .l{font-size:13px;font-weight:800;line-height:1.15;display:flex;gap:7px;align-items:center}
+.grid .l small{display:block;color:var(--ink-3);font-size:11px}
+.grid .cell{height:74px;display:flex;justify-content:center;align-items:center;gap:2px;background:color-mix(in srgb,var(--c) 7%,transparent);border-top:1px solid var(--line)}
+.wks{display:grid;grid-template-columns:118px 1fr;align-items:center}
+.wk{display:flex;gap:3px}
+.wk i{flex:1;height:26px;border-radius:4px;background:color-mix(in srgb,var(--acc) calc(var(--v)*1%),#30343f)}
+.wk i.sel{outline:3px solid #fff;outline-offset:1px}
+.wk i.fut{background:transparent;box-shadow:inset 0 0 0 1px var(--line)}
+.card.f>.ch{white-space:nowrap}
+.wr{display:flex;flex-direction:column;gap:5px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.05);box-shadow:inset 4px 0 0 var(--c)}
+</style>
+</head>
+<body>
+<a href="index.html">← Todas las propuestas</a>
+<h1>C · «Diario»: el año en carriles</h1>
+<p class="s">Una sola pantalla sustituye a Estadísticas y a las pestañas de Terminados: el <b>Diario</b>. Cada año es una rejilla de 12 meses con un <b>carril por categoría</b>; los títulos terminados se colocan en el mes en que se acabaron. Debajo, una tira con las semanas del año: elegir una abre su <b>resumen semanal</b> al lado, con los mismos carriles.</p>
+
+<h2>1 · Diario › 2026 (terminados por mes, un carril por categoría)</h2>
+<p class="s">Arriba las cifras del año; en la rejilla, lo terminado; abajo, la intensidad de cada semana. ↑↓ cambia de año y ←→ recorre portadas o semanas.</p>
+<div class="frame" id="c1"></div>
+
+<h2>2 · Diario › semana 45 (resumen semanal)</h2>
+<p class="s">Con una semana elegida, el panel de la derecha enseña lo jugado y leído en cada categoría. La clasificación y el calendario actuales pasan a ser el detalle de este panel (Y los alterna).</p>
+<div class="frame" id="c2"></div>
+
+<h2>Qué cambia</h2>
+<ul class="chg">
+<li><b>Ubicación:</b> Inicio › Diario. Desaparecen la pantalla Estadísticas y la pestaña «Terminados» de cada categoría; el resumen anual en tarjetas se abre desde el año (A sobre la cifra).</li>
+<li><b>Terminados:</b> todos en la misma rejilla, pero cada categoría en su carril. No hay listas mezcladas.</li>
+<li><b>Resumen semanal:</b> no es una pantalla aparte, es lo que se ve al elegir una semana.</li>
+<li><b>A favor:</b> se ve de un vistazo cuándo terminaste cada cosa y cómo fue cada semana, y solo hay un sitio que aprender. <b>En contra:</b> es el cambio más grande y el que más cuesta programar; un mes con muchos terminados necesita apilar portadas («+2»).</li>
+</ul>
+
+<script src="m.js"></script>
+<script>
+let s = 11; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+const WN = 52, SEL = 44;
+const weeks = Array.from({ length: WN }, (_, i) => (i > SEL ? '<i class="fut"></i>' : `<i class="${i === SEL ? 'sel' : ''}" style="--v:${Math.round(15 + rnd() * 85)}"></i>`)).join('');
+const Y = 2026;
+const lanes = (cw) => CATS.map((c) => { const l = FIN.filter((f) => f[1] === c.id && f[2] === Y);
+  return `<div class="l" style="--c:${c.c}"><span class="dot"></span><span>${c.name}<small>${l.length} terminados</small></span></div>` +
+    MES.map((_, m) => `<div class="cell" style="--c:${c.c}">${l.filter((f) => f[3] === m + 1).map((f) => cov(f[0], cw, f[0] === 'Hades II' ? 'f' : '')).join('')}</div>`).join(''); }).join('');
+const wr = (c) => { const w = WEEK[c.id]; return `<div class="wr" style="--c:${c.c}"><div class="ch" style="font-size:14px">${c.name}<span class="tot" style="font-size:16px">${w.t}</span></div>
+  ${w.days ? bars(w.days, null, 26) : goal7(w.goal)}
+  <div class="sub">${w.days ? w.top[0][0] + ' · ' + w.top[0][2] : 'Meta ' + w.goal.filter(Boolean).length + '/7 · ' + w.top} · ${delta(w)}</div></div>`; };
+const diario = (drawer) => tb(['Inicio', 'Diario', drawer ? 'Semana 45' : '2026']) + `<div class="body">
+  <div class="rowx">${rbox('Tiempo en 2026', '412 h', '<span class="up">▲ 36 h frente a 2025</span>')}${rbox('Terminados', '10', '<span class="mut">4 · 2 · 2 · 2 por categoría</span>')}${rbox('Días con actividad', '201 <small>de 313</small>')}${drawer ? '' : rbox('Esta semana', '21 h 40', '<span class="up">▲ 7 %</span>')}</div>
+  <div class="lay grow ${drawer ? 'd' : ''}">
+    <div class="rail"><span class="on">2026</span><span>2025</span><span>2024</span><span style="font-size:14px">Todo</span></div>
+    <div class="card"><div class="ch" style="font-size:15px">Terminados en 2026<small>cada portada, en el mes en que se terminó</small></div>
+      <div class="grid"><span></span>${MES.map((m) => `<span class="m">${m}</span>`).join('')}${lanes(drawer ? 34 : 44)}</div>
+      <div class="wks" style="margin-top:auto"><div class="sub">Semanas<br><span class="mut">más color = más horas</span></div><div class="wk">${weeks}</div></div></div>
+    ${drawer ? `<div class="card f" style="--c:var(--acc)"><div class="ch">Semana 45<small>2 – 8 nov</small><span class="tot">21 h 40 <small class="up">▲ 7 %</small></span></div>
+      ${CATS.map(wr).join('')}
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip">🏁 Hades II terminado</span><span class="chip">📷 84 capturas</span></div></div>` : ''}
+  </div>
+</div>` + hints(drawer ? [['←→', 'Semana', 'sh'], ['Y', 'Clasificación', 'y'], ['A', 'Abrir', 'a'], ['B', 'Cerrar', 'b']] : [['↑↓', 'Año', 'sh'], ['←→', 'Mover', 'sh'], ['A', 'Abrir', 'a'], ['B', 'Volver', 'b']]);
+mount('c1', diario(false));
+mount('c2', diario(true));
+</script>
+</body>
+</html>

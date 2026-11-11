@@ -1,4 +1,4 @@
-// Lineas de ejemplo (de la maqueta design/lectura-propuestas.html) para `reader.html?demo`, sin WebSocket.
+// Lineas de ejemplo (de la maqueta docs/archivo/maquetas/design/lectura-propuestas.html) para `reader.html?demo`, sin WebSocket.
 import type { ReadLive, ReadStats, AnkiState, DictState, Explanation, GrammarHit, KanjiInfo, NovelPrefs, Phrase, PhraseFilter, Pos, ReaderLine, ReaderMsg, Tok, WordDef, WordInfo } from '../lib/novel-types';
 import type { Link } from './ws';
 

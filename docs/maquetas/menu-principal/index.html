@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Menú principal: retoques</title>
+<!-- Abrir con el servidor de Vite en marcha: http://localhost:5175/docs/maquetas/menu-principal/index.html
+     Cada marco carga la app real en modo mock (/?mock) y le inyecta solo el CSS de la variante. -->
+<style>
+  :root{--bg:#eceef2;--ink:#3a414e;--ink2:#6a7282;--card:#fff;--line:rgba(95,110,135,.2);--acc:#0089be}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;padding:28px 16px 60px}
+  h1{margin:0 auto 4px;max-width:1340px;font-size:26px}
+  .lead{margin:0 auto 22px;max-width:1340px;color:var(--ink2);font-size:15px}
+  .grid{max-width:1340px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(640px,1fr));gap:22px}
+  .card{background:var(--card);border-radius:18px;box-shadow:0 0 0 1px var(--line),0 10px 24px -14px rgba(40,50,70,.35);overflow:hidden}
+  .head{display:flex;align-items:baseline;gap:10px;padding:14px 18px 10px}
+  .head b{font-size:18px}
+  .head span{color:var(--ink2);font-size:14px}
+  .tag{margin-left:auto;font-size:12px;font-weight:700;color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,white);padding:3px 10px;border-radius:999px}
+  .frame{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#dfe3e9;cursor:zoom-in}
+  .frame iframe{position:absolute;left:0;top:0;width:1280px;height:720px;border:0;transform-origin:0 0;pointer-events:none}
+  ul{margin:0;padding:12px 18px 16px 36px;font-size:14px;line-height:1.55;color:var(--ink2)}
+  ul b{color:var(--ink)}
+  .big{position:fixed;inset:0;background:rgba(20,26,36,.7);display:none;place-items:center;z-index:9;padding:24px}
+  .big.on{display:grid}
+  .big .frame{width:min(96vw,170vh);border-radius:14px;cursor:default}
+  .big .frame iframe{pointer-events:auto}
+  .big .x{position:fixed;top:14px;right:18px;color:#fff;font-size:15px;cursor:pointer}
+</style>
+</head>
+<body>
+<h1>Menú principal: cuatro retoques</h1>
+<p class="lead">Misma estructura, mismas posiciones y mismas categorías; solo cambia el acabado. Cada marco es la app de verdad (datos de prueba) con un bloque de CSS encima. Pulsa un marco para verlo grande y moverte con el ratón.</p>
+<div class="grid" id="grid"></div>
+<div class="big" id="big"><span class="x">Cerrar ✕</span><div class="frame" id="bigf"></div></div>
+
+<script>
+const V = [
+  { id:'actual', name:'Actual', sub:'referencia', css:'', notes:[] },
+
+  { id:'a', name:'A · Pulido', sub:'detalles de orden y aire', tag:'el más conservador',
+    notes:[
+      '<b>Fondo más tranquilo:</b> las fichas borrosas y los destellos bajan de intensidad; se queda el color de las manchas.',
+      '<b>Cabeceras de sección</b> con una barrita del color activo, iguales en «Seguir jugando» y «Juego de hoy».',
+      '<b>«Últimos 7 días»</b> pasa a ser una etiqueta pegada a su cabecera en lugar de flotar a media fila.',
+      '<b>Sin «Ajustes» repetido:</b> se quita la ayuda «Start Ajustes», que ya está en el dock.'],
+    css:`
+#stage .ghost{opacity:.28}
+#stage .bokeh{opacity:.35}
+#stage .hsect{display:flex;align-items:center;gap:9px;font-size:17px;letter-spacing:.01em;color:var(--ink)}
+#stage .hsect::before{content:'';width:5px;height:18px;border-radius:3px;background:var(--gf)}
+#stage .hweek{left:262px!important;right:auto!important;top:376px;padding:3px 12px;border-radius:999px;font-size:13px;
+  background:var(--glass-chip);box-shadow:0 0 0 1px var(--line),0 4px 10px -6px rgba(40,50,70,.35)}
+#stage .rmeta{font-size:14px}
+#stage .hints .hint:last-child{display:none}` },
+
+  { id:'b', name:'B · Barra inferior', sub:'dock y ayudas en una sola franja', tag:'más ordenado',
+    notes:[
+      '<b>Una franja de cristal</b> a todo el ancho reúne el dock y las ayudas de botones; deja de haber dos filas de píldoras sueltas.',
+      'Los accesos del dock pierden su píldora individual; <b>solo el enfocado</b> se rellena de color, como ahora.',
+      'Las ayudas (A Abrir…) quedan a la derecha separadas por una línea fina.',
+      'Incluye los retoques de fondo y cabeceras de A.'],
+    css:`
+#stage .ghost{opacity:.28}
+#stage .bokeh{opacity:.35}
+#stage .hsect{display:flex;align-items:center;gap:9px;font-size:17px;color:var(--ink)}
+#stage .hsect::before{content:'';width:5px;height:18px;border-radius:3px;background:var(--gf)}
+#stage .hweek{left:262px!important;right:auto!important;top:376px;padding:3px 12px;border-radius:999px;font-size:13px;background:var(--glass-chip);box-shadow:0 0 0 1px var(--line)}
+#stage #screen::after{content:'';position:absolute;left:0;right:0;bottom:0;height:66px;z-index:4;
+  background:linear-gradient(180deg,rgba(255,255,255,.50),rgba(255,255,255,.78));
+  -webkit-backdrop-filter:blur(18px) saturate(1.6);backdrop-filter:blur(18px) saturate(1.6);
+  box-shadow:inset 0 1px 0 #fff,0 -1px 0 var(--line)}
+#stage .hdock{bottom:14px;gap:4px}
+#stage .hdock .dpill:not(.f),#stage .hints .hint{background:none!important;box-shadow:none!important;-webkit-backdrop-filter:none;backdrop-filter:none}
+#stage .hints{bottom:14px;gap:2px;padding-left:14px;border-left:1px solid var(--line-2)}
+#stage .hints .hint:last-child{display:none}` },
+
+  { id:'c', name:'C · Estante', sub:'la fila de abajo dentro de un panel', tag:'agrupa',
+    notes:[
+      '<b>Un panel de cristal muy suave</b> agrupa «Seguir jugando» y «Juego de hoy», separándolos visualmente de las plataformas.',
+      'Las <b>plataformas se apoyan en un suelo</b>: una sombra elíptica bajo cada icono que les da peso.',
+      'Etiquetas de plataforma algo más compactas para que respiren encima del panel.',
+      'Fondo calmado como en A.'],
+    css:`
+#stage .ghost{opacity:.28}
+#stage .bokeh{opacity:.35}
+#stage #screen::before{content:'';position:absolute;left:44px;right:44px;top:360px;height:252px;border-radius:30px;
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,.28));
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:inset 0 1.5px 0 #fff,0 0 0 1px var(--line),0 18px 34px -24px rgba(40,50,70,.45)}
+#stage .hsect{color:var(--ink);font-size:17px}
+#stage .hweek{font-size:13px}
+#stage .plat{filter:drop-shadow(0 26px 16px rgba(40,50,70,.30))}
+#stage .plabel.hl{font-size:21px}
+#stage .plabel.hl small{font-size:13px;color:var(--ink-3)}` },
+
+  { id:'d', name:'D · Foco claro', sub:'lo elegido destaca, el resto se apaga', tag:'más jerarquía',
+    notes:[
+      '<b>Plataformas no enfocadas</b> algo desaturadas y con el nombre en gris claro; la enfocada conserva todo el color.',
+      'El <b>contador</b> (títulos · capturas) solo se lee fuerte en la plataforma enfocada.',
+      'El <b>fondo toma más color</b> de la plataforma activa (manchas más presentes, fichas borrosas casi fuera).',
+      'Las líneas de debajo de las tarjetas se aclaran para que manden las portadas.'],
+    css:`
+#stage .ghost{opacity:.15}
+#stage .bokeh{opacity:.25}
+#stage .blob{opacity:.72}
+#stage .plat:not(.f) .face{filter:saturate(.45) brightness(1.08)}
+#stage .plat:not(.f){opacity:.88}
+#stage .plabel:not(.on){color:var(--ink-3)}
+#stage .plabel:not(.on) small{opacity:.55}
+#stage .plabel.on small{color:var(--ink)}
+#stage .rmeta{color:var(--ink-3)}
+#stage .hsect{color:var(--ink)}` },
+];
+
+const grid = document.getElementById('grid');
+function mount(frame, v){
+  const f = document.createElement('iframe');
+  f.src = '/?mock';
+  f.onload = () => {
+    const st = f.contentDocument.createElement('style');
+    st.textContent = v.css;
+    f.contentDocument.head.appendChild(st);
+  };
+  frame.appendChild(f);
+  const fit = () => { f.style.transform = `scale(${frame.clientWidth / 1280})`; };
+  new ResizeObserver(fit).observe(frame); fit();
+}
+for (const v of V) {
+  const c = document.createElement('div'); c.className = 'card';
+  c.innerHTML = `<div class="head"><b>${v.name}</b><span>${v.sub}</span>${v.tag ? `<em class="tag">${v.tag}</em>` : ''}</div><div class="frame"></div>` +
+    (v.notes.length ? `<ul>${v.notes.map(n => `<li>${n}</li>`).join('')}</ul>` : '<ul><li>Cómo está hoy.</li></ul>');
+  const fr = c.querySelector('.frame');
+  mount(fr, v);
+  fr.onclick = () => { const b = document.getElementById('bigf'); b.innerHTML = ''; mount(b, v); document.getElementById('big').classList.add('on'); };
+  grid.appendChild(c);
+}
+document.querySelector('#big .x').onclick = () => { document.getElementById('big').classList.remove('on'); document.getElementById('bigf').innerHTML = ''; };
+</script>
+</body>
+</html>

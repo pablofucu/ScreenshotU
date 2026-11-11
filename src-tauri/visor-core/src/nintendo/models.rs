@@ -1,4 +1,4 @@
-//! Modelos de la respuesta de `play_histories` (ver `docs/nintendo-api.md`) y su paso a las filas
+//! Modelos de la respuesta de `play_histories` (ver `docs/referencia/nintendo-api.md`) y su paso a las filas
 //! de [`super::store`]. Logica pura: sin red.
 
 use serde::Deserialize;

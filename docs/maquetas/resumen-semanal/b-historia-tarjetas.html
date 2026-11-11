@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>B · Resumen semanal en «historia» de tarjetas + tarjeta PNG compartible</title>
+<style>
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI','Yu Gothic UI',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:#0b0d11;font-family:var(--round);color:#e6e9f0}
+.bar{display:flex;gap:10px;align-items:center;padding:12px 18px;font-size:14px;color:#b4bccb;flex-wrap:wrap}
+.bar b{color:#e6e9f0}
+.bar button{font:inherit;font-weight:700;padding:6px 14px;border-radius:999px;border:1px solid rgba(200,210,235,.24);background:#1e222b;color:#e6e9f0;cursor:pointer}
+.bar button.on{background:#00A0D8;border-color:#00A0D8;color:#fff}
+.frame{width:1920px;height:1080px;margin:30px 18px 28px;position:relative;overflow:hidden;border-radius:10px;box-shadow:0 0 0 1px rgba(200,210,235,.16)}
+.frame.png{width:1200px;height:675px}
+.lbl{display:block;margin:30px 18px -22px;font-size:13px;color:#7f8899}
+.stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform:scale(1.5);transform-origin:0 0;overflow:hidden;
+  --ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#7f8899;--line:rgba(200,210,235,.16);--line-2:rgba(200,210,235,.24);
+  --face:#262a33;--face-hi:rgba(30,33,41,.94);--glass-top:rgba(60,66,80,.62);--glass-mid:rgba(36,40,50,.42);--glass-bot:rgba(20,22,28,.38);--glass-in:rgba(255,255,255,.08);--glass-chip:rgba(40,44,56,.82);
+  --ok:#3BB54A;--bad:#E8384F;--warn:#F2B807;--acc:#00A0D8;--pc:#1593d6;--sw:#e0384a;--vn:#00A0D8;--jvn:#E5487A;--rvn:#E9A100;--rjv:#6E56CF}
+.bg{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
+.blob{position:absolute;border-radius:50%;opacity:.38;background:radial-gradient(circle,var(--b),color-mix(in srgb,var(--b) 45%,transparent) 35%,transparent 70%)}
+.pill{background:linear-gradient(180deg,rgba(60,66,80,.80),rgba(36,40,50,.62));box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 0 0 1px var(--line),0 10px 20px -12px rgba(0,0,0,.6)}
+.avatar{position:absolute;left:22px;top:12px;width:60px;height:60px;border-radius:16px;padding:5px;background:linear-gradient(180deg,var(--glass-top),var(--glass-bot));box-shadow:0 0 0 1px var(--line)}
+.avatar i{display:block;width:100%;height:100%;border-radius:12px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 40%,white),var(--acc))}
+.crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:20px;font-weight:700;color:var(--ink-2)}
+.crumb .sep{color:var(--ink-3);font-weight:500}.crumb .cur{color:var(--acc)}
+.clock{position:absolute;right:24px;top:24px;font-size:20px;font-weight:700;color:var(--ink-2)}
+.clock small{font-size:15px;font-weight:500;color:var(--ink-3)}
+.hints{position:absolute;right:22px;bottom:16px;display:flex;gap:10px;z-index:5}
+.hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:999px;font-size:16px;font-weight:700;color:var(--ink-2)}
+.btn{min-width:28px;height:28px;border-radius:14px;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;--b:var(--ink-3);padding:0 6px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 1px color-mix(in srgb,var(--b) 70%,black)}
+.btn.a{--b:var(--ok)}.btn.b{--b:var(--bad)}.btn.x{--b:var(--acc)}.btn.y{--b:var(--warn);color:#3a414e}.btn.sh{border-radius:8px}
+.up{color:#5fd36c}.dn{color:#ff6b7d}.eq{color:var(--ink-3)}
+
+/* fila de progreso de la historia */
+.story{position:absolute;left:96px;right:96px;top:84px;display:flex;gap:8px;align-items:center}
+.story .wkn{font-size:15px;font-weight:800;color:var(--ink-2);margin-right:10px;white-space:nowrap;display:flex;gap:8px;align-items:center}
+.story i{flex:1;height:6px;border-radius:3px;background:var(--line-2)}
+.story i.done{background:var(--ink-2)}.story i.cur{background:linear-gradient(90deg,var(--c) 60%,var(--line-2) 60%)}
+.story i.skip{background:repeating-linear-gradient(90deg,var(--line-2) 0 4px,transparent 4px 8px)}
+/* tarjeta grande */
+.card{position:absolute;left:96px;right:96px;top:108px;bottom:66px;border-radius:34px;padding:10px;
+  background:linear-gradient(150deg,color-mix(in srgb,var(--c) 55%,white) 0%,var(--c) 50%,color-mix(in srgb,var(--c) 60%,black) 100%);
+  box-shadow:0 0 34px 4px color-mix(in srgb,var(--c) 40%,transparent)}
+.card .in{height:100%;border-radius:26px;background:var(--face);display:grid;grid-template-columns:430px 1fr;overflow:hidden;position:relative}
+.hero{position:relative;padding:26px 28px;display:flex;flex-direction:column;gap:8px;background:linear-gradient(170deg,color-mix(in srgb,var(--c) 42%,#262a33),#1b1e25 80%);overflow:hidden}
+.hero .art{position:absolute;inset:0;background:linear-gradient(200deg,var(--g1),var(--g2));opacity:.55;-webkit-mask-image:linear-gradient(180deg,#000 10%,transparent 85%);mask-image:linear-gradient(180deg,#000 10%,transparent 85%)}
+.hero>*{position:relative}
+.hero .tag{font-size:14px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:color-mix(in srgb,var(--c) 40%,white)}
+.hero .big{font-size:76px;font-weight:800;line-height:1}
+.hero .big small{font-size:30px;color:var(--ink-2)}
+.hero .cmp{font-size:17px;font-weight:800}
+.hero .line{font-size:15px;color:var(--ink-2);font-weight:700}
+.hero .spark{margin-top:auto;display:flex;gap:8px;align-items:flex-end;height:110px}
+.hero .spark div{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.hero .spark i{width:100%;border-radius:6px 6px 3px 3px;background:color-mix(in srgb,var(--c) 70%,white)}
+.hero .spark i.cons{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--c) 75%,white) 0 5px,var(--c) 5px 10px)}
+.hero .spark i.z{background:rgba(255,255,255,.12);height:3px!important}
+.hero .spark span{font-size:12px;font-weight:800;color:var(--ink-3)}
+.det{padding:22px 26px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.det h4{margin:0;font-size:14px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em}
+.podium{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.pg{border-radius:18px;background:var(--face-hi);box-shadow:0 0 0 1px var(--line);overflow:hidden}
+.pg .cv{height:112px;background:linear-gradient(160deg,var(--g1),var(--g2));position:relative;display:grid;place-items:center;font-size:32px;font-weight:800;color:rgba(255,255,255,.9)}
+.pg .cv b{position:absolute;left:10px;top:8px;width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.55);font-size:14px;display:grid;place-items:center}
+.pg .t{padding:8px 12px 10px}
+.pg .t div{font-size:14.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pg .t span{font-size:12.5px;color:var(--ink-2);font-weight:700}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.fact{border-radius:16px;padding:10px 14px;background:var(--glass-in);box-shadow:0 0 0 1px var(--line)}
+.fact .k{font-size:12px;font-weight:800;color:var(--ink-3)}
+.fact .v{font-size:19px;font-weight:800;margin-top:2px}
+.fact .v small{font-size:12.5px;color:var(--ink-2)}
+.strip{display:flex;gap:10px;margin-top:auto}
+.strip .sh{flex:1;height:96px;border-radius:14px;background:linear-gradient(140deg,var(--g1),var(--g2));position:relative;box-shadow:0 0 0 1px rgba(0,0,0,.3)}
+.strip .sh.fav::after{content:'★ favorita';position:absolute;left:8px;bottom:6px;font-size:11px;font-weight:800;color:#ffe08a;text-shadow:0 1px 2px #000}
+.warn{font-size:13px;font-weight:700;color:#ffd666;background:rgba(242,184,7,.12);box-shadow:0 0 0 1px rgba(242,184,7,.35);border-radius:12px;padding:8px 12px}
+.gold{background:linear-gradient(180deg,#5b4a12,#3e3209);box-shadow:0 0 0 1px #c9a227;color:#ffe08a}
+.arrow{position:absolute;top:50%;width:44px;height:44px;margin-top:-22px;border-radius:50%;display:grid;place-items:center;font-size:22px;font-weight:800;color:var(--ink-2);z-index:4}
+/* portada: tres anillos, uno por fuente */
+.cover .in{grid-template-columns:1fr}
+.cov3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;padding:30px 40px 0}
+.src{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.donut{width:190px;height:190px;border-radius:50%;background:conic-gradient(var(--c) calc(var(--p)*1%),rgba(255,255,255,.08) 0);display:grid;place-items:center;position:relative}
+.donut::before{content:'';position:absolute;inset:18px;border-radius:50%;background:var(--face)}
+.donut b{position:relative;font-size:34px;font-weight:800;line-height:1}
+.donut b small{display:block;font-size:13px;color:var(--ink-3);font-weight:700;margin-top:4px}
+.donut.two{background:conic-gradient(var(--vn) 0 calc(var(--p1)*1%),rgba(255,255,255,.08) 0 50%,var(--jvn) 50% calc(50% + var(--p2)*1%),rgba(255,255,255,.08) 0)}
+.src h3{margin:0;font-size:22px}
+.src .s{font-size:14px;font-weight:800}
+.cvhead{padding:26px 40px 0;display:flex;align-items:baseline;gap:16px}
+.cvhead h2{margin:0;font-size:38px}
+.cvhead span{font-size:17px;color:var(--ink-2);font-weight:700}
+.cvfoot{position:absolute;left:40px;right:40px;bottom:24px;display:flex;gap:10px;flex-wrap:wrap}
+.chip{font-size:13px;font-weight:800;padding:6px 12px;border-radius:999px;background:var(--glass-chip);box-shadow:0 0 0 1px var(--line);display:flex;gap:6px;align-items:center}
+.chip i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+/* novelas: dos mitades */
+.halves{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.half{border-radius:18px;padding:12px 14px;background:var(--glass-in);box-shadow:0 0 0 1px var(--line),inset 0 3px 0 var(--k);display:flex;flex-direction:column;gap:8px}
+.half .h{display:flex;justify-content:space-between;font-weight:800}
+.half .h b{font-size:22px}
+.g7{display:flex;gap:5px}
+.g7 i{flex:1;height:30px;border-radius:8px;background:color-mix(in srgb,var(--k) 18%,#262a33);font-style:normal;font-size:10px;font-weight:800;display:grid;place-items:end center;padding-bottom:2px;color:rgba(255,255,255,.75)}
+.g7 i.ok{background:var(--k)}.g7 i.res{background:var(--r)}
+.half .ln{font-size:13px;font-weight:700;color:var(--ink-2)}
+.half .ln b{color:var(--ink)}
+.empty{display:grid;place-items:center;text-align:center;height:100%;color:var(--ink-3);font-weight:700}
+.empty b{display:block;font-size:22px;color:var(--ink-2);margin-bottom:6px}
+.hide{display:none!important}
+
+/* ---------- tarjeta PNG 1200×675 ---------- */
+.share{position:absolute;inset:0;background:radial-gradient(120% 120% at 0% 0%,#2a2f3c 0%,#15171d 55%,#0d0f13 100%);color:#e6e9f0;padding:44px 52px;display:flex;flex-direction:column;
+  --pc:#1593d6;--sw:#e0384a;--vn:#00A0D8;--jvn:#E5487A}
+.share .blob{opacity:.35}
+.share>*{position:relative}
+.share .h{display:flex;align-items:baseline;gap:18px}
+.share .h h1{margin:0;font-size:46px}
+.share .h span{font-size:20px;color:#b4bccb;font-weight:700}
+.share .tot{font-size:22px;font-weight:800;color:#b4bccb;margin-top:6px}
+.share .tot b{color:#fff;font-size:30px}
+.share .three{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px}
+.share .s3{border-radius:24px;padding:18px 20px;background:rgba(255,255,255,.06);box-shadow:inset 0 4px 0 var(--c),0 0 0 1px rgba(200,210,235,.16);display:flex;flex-direction:column;gap:10px}
+.share .s3 .k{font-size:15px;font-weight:800;color:#b4bccb;text-transform:uppercase;letter-spacing:.06em}
+.share .s3 .v{font-size:44px;font-weight:800;line-height:1}
+.share .s3 .g{display:flex;gap:10px;align-items:center;font-size:16px;font-weight:800}
+.share .s3 .g i{width:40px;height:58px;border-radius:8px;background:linear-gradient(160deg,var(--g1),var(--g2));flex:none}
+.share .s3 .g small{display:block;font-size:13px;color:#7f8899}
+.share .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end}
+.share .shot{width:300px;height:169px;border-radius:16px;background:linear-gradient(140deg,#a87a1a,#2a1c06);box-shadow:0 0 0 1px rgba(255,255,255,.2)}
+.share .brand{font-size:15px;color:#7f8899;font-weight:700;text-align:right}
+</style>
+</head>
+<body>
+<div class="bar"><b>B · Historia de tarjetas</b> Una tarjeta a pantalla casi completa por fuente: Portada › Juegos › Switch › Novelas › Tarjeta para compartir. Estado:
+  <button class="on" data-st="full">Semana normal</button><button data-st="part">Semana parcial (sin Switch)</button>
+  · ←/→ cambia de tarjeta, LB/RB de semana, X guarda la imagen.</div>
+
+<!-- 1. Portada -->
+<span class="lbl">1 · Portada (Estadísticas › Resumen semanal, la tarjeta con la que se abre)</span>
+<div class="frame"><div class="stage">
+  <div class="bg"><div class="blob" style="--b:#1593d6;left:-100px;top:-60px;width:600px;height:460px"></div><div class="blob" style="--b:#E5487A;left:820px;top:400px;width:560px;height:420px"></div></div>
+  <div class="avatar"><i></i></div><div class="crumb pill"><span>Estadísticas</span><span class="sep">›</span><span class="cur">Resumen semanal</span></div><div class="clock">09/11 <small>(lun)</small> 18:20</div>
+  <div class="story" style="--c:#8a6fe0"><span class="wkn"><span class="btn sh">LB</span>lun 2 – dom 8 nov<span class="btn sh">RB</span></span><i class="cur"></i><i></i><i class="sw"></i><i></i><i></i></div>
+  <div class="card cover" style="--c:#5a6fe0"><div class="in">
+    <div class="cvhead"><h2>Tu semana</h2><span data-full="21 h 40 entre todo · 6 de 7 días · ▲ 3 h 10 frente a la anterior" data-part="9 h 05 entre todo · 4 de 7 días · ▼ 9 h 25 frente a la anterior"></span></div>
+    <div class="cov3">
+      <div class="src" style="--c:var(--pc)"><div class="donut" style="--p:53"><b>11 h 25<small>Juegos</small></b></div><h3>Juegos</h3><span class="s up" data-full="▲ 2 h 05 · 3 juegos" data-part="▼ 4 h 30 · 2 juegos"></span></div>
+      <div class="src" style="--c:var(--sw)"><div class="donut" data-full-p="24" data-part-p="0" style="--p:24"><b data-full="5 h 10<small>Switch</small>" data-part="—<small>sin datos</small>"></b></div><h3>Switch</h3><span class="s eq" data-full="datos hasta el sáb 7" data-part="¿falta sincronizar?"></span></div>
+      <div class="src"><div class="donut two" style="--p1:43;--p2:50"><b>13<small>de 14 metas</small></b></div><h3>Novelas</h3><span class="s"><span style="color:var(--vn)">● 6/7 visuales</span> &nbsp;<span style="color:var(--jvn)">● 7/7 japonés</span></span></div>
+    </div>
+    <div class="cvfoot"><span class="chip gold">🏆 50 h en Elden Ring</span><span class="chip" style="--c:var(--ok)"><i></i>Hades II terminado</span><span class="chip" style="--c:var(--jvn)"><i></i>Racha de 12 días en japonés</span><span class="chip gold">🏅 7 logros · 1 ultra raro</span></div>
+  </div></div>
+  <div class="arrow pill" style="right:70px">›</div>
+  <div class="hints"><div class="hint pill"><span class="btn sh">←→</span>Tarjeta</div><div class="hint pill"><span class="btn sh">LB</span><span class="btn sh">RB</span>Semana</div><div class="hint pill"><span class="btn x">X</span>Guardar imagen</div><div class="hint pill"><span class="btn y">Y</span>Pestaña</div></div>
+</div></div>
+
+<!-- 2. Switch -->
+<span class="lbl">2 · Tarjeta de Switch (Juegos de PC tiene la misma estructura con su azul). En la semana parcial la tarjeta se salta y la barra lo marca con trazos.</span>
+<div class="frame"><div class="stage">
+  <div class="bg"><div class="blob" style="--b:#e0384a;left:-100px;top:-60px;width:620px;height:460px"></div></div>
+  <div class="avatar"><i></i></div><div class="crumb pill"><span>Estadísticas</span><span class="sep">›</span><span class="cur">Resumen semanal</span></div><div class="clock">09/11 <small>(lun)</small> 18:21</div>
+  <div class="story" style="--c:var(--sw)"><span class="wkn"><span class="btn sh">LB</span>lun 2 – dom 8 nov<span class="btn sh">RB</span></span><i class="done"></i><i class="done"></i><i class="cur swbar"></i><i></i><i></i></div>
+  <div class="card" style="--c:var(--sw)"><div class="in">
+    <div data-only="full" style="display:contents">
+      <div class="hero" style="--g1:#46a35a;--g2:#0c2412"><div class="art"></div>
+        <span class="tag">Switch</span><div class="big">5 h <small>10 min</small></div>
+        <div class="cmp up">▲ 50 min más que la semana anterior</div>
+        <div class="line">3 h 40 en la consola · 1 h 30 en Ryujinx · 4 días</div>
+        <div class="spark"><div><i class="cons" style="height:34px"></i><span>L</span></div><div><i class="z"></i><span>M</span></div><div><i style="height:26px"></i><span>X</span></div><div><i class="cons" style="height:60px"></i><span>J</span></div><div><i class="z"></i><span>V</span></div><div><i class="cons" style="height:52px"></i><span>S</span></div><div><i class="z" style="opacity:.4"></i><span>D?</span></div></div>
+      </div>
+      <div class="det">
+        <h4>Lo más jugado en Switch</h4>
+        <div class="podium">
+          <div class="pg"><div class="cv" style="--g1:#46a35a;--g2:#163a1e"><b>1</b>Z</div><div class="t"><div>Zelda: Echoes of Wisdom</div><span>2 h 30 · consola</span></div></div>
+          <div class="pg"><div class="cv" style="--g1:#3f63e0;--g2:#101c4a"><b>2</b>P</div><div class="t"><div>Pokémon Leyendas Z-A</div><span>1 h 30 · 2 partidas</span></div></div>
+          <div class="pg"><div class="cv" style="--g1:#e0384a;--g2:#4a0e16"><b>3</b>MK</div><div class="t"><div>Mario Kart World</div><span>1 h 10 · consola</span></div></div>
+        </div>
+        <div class="facts">
+          <div class="fact"><div class="k">Día fuerte</div><div class="v">Jueves <small>1 h 15</small></div></div>
+          <div class="fact"><div class="k">Hito</div><div class="v">20 h <small>en Zelda</small></div></div>
+          <div class="fact"><div class="k">Capturas</div><div class="v">5 <small>esta semana</small></div></div>
+        </div>
+        <div class="warn">⚠ Datos de Nintendo hasta el sábado 7. Lo del domingo aparecerá al sincronizar (Ajustes › Nintendo).</div>
+        <div class="strip"><div class="sh fav" style="--g1:#2f7a3e;--g2:#0c2412"></div><div class="sh" style="--g1:#3f63e0;--g2:#101c4a"></div><div class="sh" style="--g1:#b0303f;--g2:#2a080c"></div></div>
+      </div>
+    </div>
+    <div data-only="part" style="grid-column:1/-1"><div class="empty"><div><b>Esta semana no hay nada de Switch</b>Ni partidas en el emulador ni tiempo de consola.<br>Si jugaste en la consola, sincroniza en Ajustes › Nintendo.<br><br><span class="hint pill" style="display:inline-flex"><span class="btn a">A</span>Ir a Ajustes › Nintendo</span></div></div></div>
+  </div></div>
+  <div class="arrow pill" style="left:70px">‹</div><div class="arrow pill" style="right:70px">›</div>
+  <div class="hints"><div class="hint pill"><span class="btn sh">←→</span>Tarjeta</div><div class="hint pill"><span class="btn a">A</span>Ver en Clasificación</div><div class="hint pill"><span class="btn x">X</span>Guardar imagen</div></div>
+</div></div>
+
+<!-- 3. Novelas -->
+<span class="lbl">3 · Tarjeta de Novelas: dos mitades, una por categoría (cada una con su meta, racha y top)</span>
+<div class="frame"><div class="stage">
+  <div class="bg"><div class="blob" style="--b:#00A0D8;left:-100px;top:-60px;width:560px;height:420px"></div><div class="blob" style="--b:#E5487A;left:820px;top:400px;width:560px;height:420px"></div></div>
+  <div class="avatar"><i></i></div><div class="crumb pill"><span>Estadísticas</span><span class="sep">›</span><span class="cur">Resumen semanal</span></div><div class="clock">09/11 <small>(lun)</small> 18:22</div>
+  <div class="story" style="--c:#8a6fe0"><span class="wkn"><span class="btn sh">LB</span>lun 2 – dom 8 nov<span class="btn sh">RB</span></span><i class="done"></i><i class="done"></i><i class="done swbar"></i><i class="cur"></i><i></i></div>
+  <div class="card" style="--c:#8a6fe0"><div class="in">
+    <div class="hero" style="--g1:#E5487A;--g2:#0b2a3a"><div class="art"></div>
+      <span class="tag">Novelas</span><div class="big" data-full="5 h <small>05 min</small>" data-part="4 h <small>15 min</small>"></div>
+      <div class="cmp up">13 de 14 metas cumplidas</div>
+      <div class="line">38.420 caracteres en japonés · 14.000 car./h <span class="up">▲ 6 %</span></div>
+      <div class="line">+57 palabras conocidas · 23 frases al glosario</div>
+      <div class="spark"><div><i style="height:50px"></i><span>L</span></div><div><i style="height:44px"></i><span>M</span></div><div><i style="height:20px"></i><span>X</span></div><div><i style="height:62px"></i><span>J</span></div><div><i style="height:48px"></i><span>V</span></div><div><i style="height:70px"></i><span>S</span></div><div><i style="height:36px"></i><span>D</span></div></div>
+    </div>
+    <div class="det">
+      <div class="halves">
+        <div class="half" style="--k:var(--vn);--r:var(--rvn)">
+          <div class="h"><span style="color:var(--vn)">Novelas visuales</span><b>2 h 20</b></div>
+          <div class="g7"><i class="ok">L</i><i class="ok">M</i><i class="res">X</i><i class="ok">J</i><i class="ok">V</i><i class="ok">S</i><i>D</i></div>
+          <div class="ln">Meta <b>6/7</b> · racha <b>9 días</b> · <b>1 rescate</b> (miércoles)</div>
+          <div class="ln">Más leída: <b>Steins;Gate 0</b> · 1 h 35</div>
+        </div>
+        <div class="half" style="--k:var(--jvn);--r:var(--rjv)">
+          <div class="h"><span style="color:var(--jvn)">Novelas japonesas</span><b>2 h 45</b></div>
+          <div class="g7"><i class="ok">L</i><i class="ok">M</i><i class="ok">X</i><i class="ok">J</i><i class="ok">V</i><i class="ok">S</i><i class="ok">D</i></div>
+          <div class="ln">Meta <b>7/7</b> · racha <b>12 días</b> 🔥 (récord: 15)</div>
+          <div class="ln">Más leída: <b>サマーポケッツ</b> · 2 h 10</div>
+        </div>
+      </div>
+      <div class="facts">
+        <div class="fact" style="box-shadow:0 0 0 1px var(--line),inset 0 3px 0 var(--jvn)"><div class="k">Caracteres (japonés)</div><div class="v">38.420 <small>▲ 4.100</small></div></div>
+        <div class="fact" style="box-shadow:0 0 0 1px var(--line),inset 0 3px 0 var(--jvn)"><div class="k">Palabras nuevas</div><div class="v">+57 <small>2.311 en total</small></div></div>
+        <div class="fact" style="box-shadow:0 0 0 1px var(--line),inset 0 3px 0 var(--vn)"><div class="k">Terminada</div><div class="v" style="font-size:16px">Steins;Gate 0 <small>★ 5</small></div></div>
+      </div>
+      <h4>Capturas destacadas</h4>
+      <div class="strip"><div class="sh fav" style="--g1:#e5487a;--g2:#3a0f22"></div><div class="sh" style="--g1:#00a0d8;--g2:#072a3a"></div><div class="sh" style="--g1:#6E56CF;--g2:#1c1440"></div></div>
+    </div>
+  </div></div>
+  <div class="arrow pill" style="left:70px">‹</div><div class="arrow pill" style="right:70px">›</div>
+  <div class="hints"><div class="hint pill"><span class="btn sh">←→</span>Tarjeta</div><div class="hint pill"><span class="btn a">A</span>Ver racha</div><div class="hint pill"><span class="btn x">X</span>Guardar imagen</div></div>
+</div></div>
+
+<!-- 4. PNG -->
+<span class="lbl">4 · Última tarjeta = la imagen que se guarda (PNG 1200×675, a tamaño real). Usa miniaturas ya cacheadas, nunca los originales de P:</span>
+<div class="frame png"><div class="share">
+  <div class="blob" style="--b:#1593d6;left:-120px;top:-120px;width:520px;height:420px"></div><div class="blob" style="--b:#E5487A;left:760px;top:360px;width:520px;height:420px"></div>
+  <div class="h"><h1>Mi semana</h1><span>2 – 8 de noviembre de 2026</span></div>
+  <div class="tot" data-full="<b>21 h 40</b> · 6 de 7 días · 🏆 50 h en Elden Ring" data-part="<b>9 h 05</b> · 4 de 7 días · 🔥 12 días seguidos leyendo japonés"></div>
+  <div class="three">
+    <div class="s3" style="--c:var(--pc)"><span class="k">Juegos</span><span class="v" data-full="11 h 25" data-part="4 h 50"></span><div class="g"><i style="--g1:#c9a227;--g2:#5b3d0a"></i><div>Elden Ring Nightreign<small>6 h 50 · 5 partidas</small></div></div></div>
+    <div class="s3" style="--c:var(--sw)" data-only="full"><span class="k">Switch</span><span class="v">5 h 10</span><div class="g"><i style="--g1:#46a35a;--g2:#163a1e"></i><div>Zelda: Echoes of Wisdom<small>2 h 30 · consola</small></div></div></div>
+    <div class="s3" style="--c:var(--sw);opacity:.45" data-only="part"><span class="k">Switch</span><span class="v">—</span><div class="g" style="color:#7f8899">Sin datos esta semana</div></div>
+    <div class="s3" style="--c:var(--jvn)"><span class="k">Novelas</span><span class="v">13<span style="font-size:22px;color:#b4bccb">/14 metas</span></span><div class="g"><i style="--g1:#E5487A;--g2:#3a0f22"></i><div>サマーポケッツ<small>38.420 caracteres</small></div></div></div>
+  </div>
+  <div class="foot"><div class="shot"></div><div class="brand">Visor de capturas<br>Semana 45 · 2026</div></div>
+</div></div>
+
+<script>
+function render(st){
+  document.querySelectorAll('[data-full]').forEach(e=>e.innerHTML=e.dataset[st]);
+  document.querySelectorAll('[data-full-p]').forEach(e=>e.style.setProperty('--p',e.getAttribute('data-'+st+'-p')));
+  document.querySelectorAll('[data-only]').forEach(e=>e.classList.toggle('hide',e.dataset.only!==st));
+  document.querySelectorAll('.story i.sw,.story i.swbar').forEach(e=>e.classList.toggle('skip',st==='part'));
+  document.querySelectorAll('.bar button').forEach(b=>b.classList.toggle('on',b.dataset.st===st));
+}
+document.querySelectorAll('.bar button').forEach(b=>b.onclick=()=>render(b.dataset.st));
+render('full');
+</script>
+</body>
+</html>

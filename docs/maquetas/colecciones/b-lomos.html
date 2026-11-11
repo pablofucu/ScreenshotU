@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>B · «Lomos»: las colecciones como cajas en una balda</title>
+<link rel="stylesheet" href="m.css"><link rel="stylesheet" href="c.css">
+<style>
+.acc{display:flex;gap:10px}
+.sp{width:88px;flex:none;border-radius:18px;padding:12px 0;display:flex;flex-direction:column;align-items:center;gap:10px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--c) 62%,#262a33),color-mix(in srgb,var(--c2) 38%,#16181e));box-shadow:0 0 0 1px var(--line),inset 0 1px 0 rgba(255,255,255,.18)}
+.sp .n{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.35);font-weight:800;font-size:14px}
+.sp b{flex:1;writing-mode:vertical-rl;transform:rotate(180deg);font-size:22px;white-space:nowrap;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.sp .mini{display:flex;flex-direction:column;gap:5px}
+.sp.new{background:none;border:2px dashed var(--line-2);box-shadow:none;color:var(--ink-3)}
+.sp.new b{font-size:17px;text-shadow:none}
+.open{flex:1;border-radius:22px;padding:14px 20px 16px;display:flex;flex-direction:column;gap:12px;min-width:0;box-shadow:0 0 0 3px var(--c),0 0 28px 2px color-mix(in srgb,var(--c) 50%,transparent)}
+.open h3{margin:0;font-size:30px;line-height:1.1}
+.gg{flex:1;display:grid;grid-template-columns:repeat(4,1fr);align-content:space-evenly;justify-items:center;gap:6px}
+.g{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;font-weight:800;color:var(--ink-2);text-align:center;width:140px}
+.g small{font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+</style>
+</head>
+<body>
+<a href="index.html">← Todas las propuestas</a>
+<h1>B · «Lomos»: las colecciones como cajas en una balda</h1>
+<p class="s">Todas las colecciones de la categoría están en <b>una sola balda</b>, de canto, como cajas recopilatorias. Izquierda/derecha pasa de una a otra y la enfocada <b>se abre</b> y enseña sus juegos; arriba/abajo entra en ellos. No hay desplazamiento vertical ni segunda pantalla.</p>
+<div class="frame" id="b1"></div>
+
+<h2>Qué cambia</h2>
+<ul class="chg">
+<li><b>Vista:</b> acordeón horizontal. Cada lomo lleva el color de la colección, el número de juegos y tres portadas pequeñas.</li>
+<li><b>Colección abierta:</b> portadas grandes en rejilla (orden por año), con año y estado bajo cada una, y la barra de progreso arriba.</li>
+<li><b>A favor:</b> muy físico y rápido de recorrer con la cruceta; todo ocurre en una pantalla. <b>En contra:</b> con más de 8–9 colecciones los lomos tienen que desplazarse, y los nombres en vertical se leen peor.</li>
+</ul>
+
+<script src="c.js"></script>
+<script>
+const F = 1;
+const spine = (c) => `<div class="sp" style="${cv(c)}"><span class="n">${c.games.length}</span><b>${c.name}</b><div class="mini">${c.games.slice(0, 3).map((g) => cov(g, 46)).join('')}</div></div>`;
+const open = (c) => `<div class="open aur" style="${cv(c)}">
+  <div class="rowx"><div class="grow"><h3>${c.name}</h3><div class="sub">${sub(c)} · ${done(c)} de ${c.games.length} terminados</div></div><span class="hint pill"><span class="btn x">X</span>Capturas</span></div>
+  ${seg(c)}
+  <div class="gg">${c.games.map((g, i) => `<div class="g">${cov(g, 100, i === 3 ? 'f' : '')}<span>${g[2]} · ${st(g)}</span><small>${g[0]}</small></div>`).join('')}</div></div>`;
+mount('b1', tb(['Juegos', 'Colecciones']) + `<div class="body">
+  <div class="rowx">${tabs()}<span class="grow"></span><span class="chip">2 de 5 · Kingdom Hearts</span></div>
+  <div class="acc grow">${COLS.map((c, i) => (i === F ? open(c) : spine(c))).join('')}<div class="sp new"><span class="n">+</span><b>Nueva colección</b></div></div>
+</div>` + hints([['◄ ►', 'Colección', 'sh'], ['A', 'Abrir juego', 'a'], ['X', 'Capturas', 'x'], ['☰', 'Editar', 'sh'], ['B', 'Volver', 'b']]));
+</script>
+</body>
+</html>

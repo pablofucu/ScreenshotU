@@ -139,7 +139,7 @@ pub struct Config {
     pub open_on_cursor: bool,
     /// Al cerrar el visor, seguir en segundo plano con icono en la bandeja (si no, se sale del todo).
     pub keep_in_tray: bool,
-    /// Servidor para la app movil (ver `remote` y `docs/api-movil.md`): activado, puerto y codigo de emparejamiento
+    /// Servidor para la app movil (ver `remote` y `docs/referencia/api-movil.md`): activado, puerto y codigo de emparejamiento
     /// (se genera la primera vez que se activa).
     pub remote_enabled: bool,
     pub remote_port: u16,

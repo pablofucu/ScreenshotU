@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>B · Todo dentro de cada categoría</title>
+<link rel="stylesheet" href="m.css">
+<style>
+.two{display:grid;grid-template-columns:1.25fr 1fr;gap:12px}
+.seg{display:flex;gap:4px;font-size:13px !important;font-weight:800;color:var(--ink-2)}
+.seg span{padding:5px 12px;border-radius:999px;background:var(--chip)}.seg span.on{background:var(--c);color:#fff}
+.heat{display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;gap:3px;height:92px}
+.heat i{border-radius:3px;background:color-mix(in srgb,var(--c) calc(var(--v)*1%),#30343f)}
+.yb{display:grid;grid-template-columns:190px 1fr;gap:16px;align-items:center;flex:1}
+.yb .y{font-size:54px;font-weight:800;line-height:1;color:var(--c)}
+.yb .cs{display:flex;gap:18px;align-items:flex-start}
+.md{display:flex;gap:3px;margin-top:6px}.md i{width:10px;height:10px;border-radius:3px;background:var(--line)}.md i.on{background:var(--c)}
+.tiles{display:flex;gap:16px;justify-content:center}
+.tile{width:170px;height:150px;border-radius:26px;display:grid;place-items:center;font-weight:800;font-size:17px;text-align:center;
+  background:linear-gradient(160deg,color-mix(in srgb,var(--c) 45%,#262a33),color-mix(in srgb,var(--c) 70%,black));box-shadow:0 0 0 1px var(--line)}
+.wk4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.mini{border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.05);box-shadow:inset 0 3px 0 var(--c),0 0 0 1px var(--line);display:flex;flex-direction:column;gap:6px}
+</style>
+</head>
+<body>
+<a href="index.html">← Todas las propuestas</a>
+<h1>B · Todo dentro de cada categoría</h1>
+<p class="s">Cada categoría es dueña de lo suyo: gana una pestaña <b>Estadísticas</b> con solo sus títulos y <b>Terminados</b> se queda donde está, rediseñado como un anuario. Lo único común a todas es el <b>resumen semanal</b>, que vive en Inicio como una tarjeta («Tu semana»).</p>
+
+<h2>1 · Juegos › Estadísticas (pestaña nueva en cada categoría)</h2>
+<p class="s">La clasificación ya no mezcla categorías: aquí solo hay juegos de PC. Lo mismo en Switch y en cada tipo de novela (allí con minutos leídos y metas).</p>
+<div class="frame" id="b1"></div>
+
+<h2>2 · Juegos › Terminados (anuario)</h2>
+<p class="s">Una franja por año con sus cifras (cuántos, horas, nota media, en qué meses) y las portadas con fecha y nota.</p>
+<div class="frame" id="b2"></div>
+
+<h2>3 · Inicio con la tarjeta «Tu semana»</h2>
+<p class="s">La tarjeta aparece bajo las categorías con una casilla por categoría. A la abre a pantalla completa (cualquiera de los tres diseños de <a href="../resumen-semanal/index.html">resumen-semanal</a>).</p>
+<div class="frame" id="b3"></div>
+
+<h2>Qué cambia</h2>
+<ul class="chg">
+<li><b>Ubicación:</b> pestañas de cada categoría: Todos · Mi lista · Terminados · Colecciones · Estadísticas. La pantalla global de Estadísticas se reduce a «Resumen semanal» y «Resumen anual».</li>
+<li><b>Terminados:</b> separados por categoría, como ahora, con cabecera de cifras por año.</li>
+<li><b>Categorías:</b> totalmente separadas. Solo los dos resúmenes las enseñan juntas, cada una en su bloque.</li>
+<li><b>A favor:</b> es lo más fiel a «todo vive dentro de su categoría» y cada una enseña lo que le importa (horas en juegos, metas en novelas). <b>En contra:</b> no hay una clasificación global ni un sitio donde ver «todo lo terminado en 2026».</li>
+</ul>
+
+<script src="m.js"></script>
+<script>
+const CT = ['Todos', 'Mi lista', 'Terminados', 'Colecciones', 'Estadísticas'];
+let s = 7; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+const heat = Array.from({ length: 7 * 26 }, () => { const r = rnd(); return `<i style="--v:${r < .35 ? 0 : Math.round(r * 100)}"></i>`; }).join('');
+const rank = [['Hades II', 62], ['Stardew Valley', 48], ['Balatro', 41], ['Celeste', 22], ['The Witcher 3', 14], ['Hi-Fi Rush', 6]];
+const byYear = [2024, 2025, 2026].map((y) => FIN.filter((f) => f[1] === 'pc' && f[2] === y).length);
+mount('b1', tb(['Inicio', 'Juegos']) + `<div class="body" style="--c:var(--pc);--acc:var(--pc)">
+  <div class="rowx">${tabs(CT, 'Estadísticas', ['Estadísticas'])}<span class="grow"></span><div class="nav pill"><i>‹</i>2026<i>›</i></div></div>
+  <div class="two grow">
+    <div class="card"><div class="ch">Más jugados<span class="tot seg"><span>Semana</span><span>Mes</span><span class="on">Año</span><span>Todo</span></span></div>
+      ${rank.map((r, i) => trow(r[0], `${i + 1}º · ${Math.round(r[1] / 2.2)} partidas`, r[1] + ' h', (r[1] / 62) * 100, 34)).join('')}</div>
+    <div style="display:flex;flex-direction:column;gap:12px;min-height:0">
+      <div class="rowx">${rbox('Tiempo jugado', '193 h', '<span class="up">▲ 21 h</span>')}${rbox('Partidas', '148')}${rbox('Días', '112')}</div>
+      <div class="card"><div class="ch" style="font-size:15px">Calendario<small>últimos 6 meses</small></div><div class="heat">${heat}</div></div>
+      <div class="card grow"><div class="ch" style="font-size:15px">Terminados por año<small>X: abrir Terminados</small></div>
+        ${bars(byYear, ['2024', '2025', '2026'], 86)}
+        <div class="sub">${byYear[2]} en 2026 · nota media 4,3 ★</div></div>
+    </div>
+  </div>
+</div>` + hints([['LB/RB', 'Año', 'sh'], ['X', 'Periodo', 'x'], ['A', 'Abrir', 'a'], ['B', 'Volver', 'b']]));
+
+const yb = (y, hrs, avg) => { const l = FIN.filter((f) => f[1] === 'pc' && f[2] === y).sort((a, b) => b[3] - a[3]); const ms = new Set(l.map((f) => f[3]));
+  return `<div class="card yb"><div><div class="y">${y}</div><div class="sub">${l.length} ${l.length === 1 ? 'juego' : 'juegos'} · ${hrs} h${avg ? ` · ${avg} ★` : ''}</div>
+    <div class="md">${MES.map((_, i) => `<i class="${ms.has(i + 1) ? 'on' : ''}"></i>`).join('')}</div></div>
+    <div class="cs">${l.map((f, i) => fin(f, 62, y === 2026 && i === 0 ? 'f' : '')).join('')}</div></div>`; };
+mount('b2', tb(['Inicio', 'Juegos']) + `<div class="body" style="--c:var(--pc);--acc:var(--pc)">
+  <div class="rowx">${tabs(CT, 'Terminados')}<span class="grow"></span><span class="chip">7 terminados en total</span></div>
+  ${yb(2026, 142, '4,3')}${yb(2025, 171, '5,0')}${yb(2024, 12, '4,0')}
+</div>` + hints([['↑↓', 'Año', 'sh'], ['A', 'Abrir', 'a'], ['X', 'Fecha y nota', 'x'], ['B', 'Volver', 'b']]));
+
+const mini = (c) => { const w = WEEK[c.id]; return `<div class="mini" style="--c:${c.c}"><div class="sub">${c.name}</div><div style="font-size:22px;font-weight:800">${w.t}</div>
+  <div class="d" style="font-size:12px;font-weight:700">${delta(w)}</div>${w.days ? bars(w.days, null, 30) : goal7(w.goal)}</div>`; };
+mount('b3', tb(['Inicio']) + `<div class="body" style="top:96px;gap:22px">
+  <div class="tiles">${CATS.map((c) => `<div class="tile" style="--c:${c.c}">${c.name}</div>`).join('')}</div>
+  <div class="card f" style="--c:var(--acc);margin:0 110px"><div class="ch">Tu semana<small>2 – 8 nov</small><span class="tot">21 h 40 <small class="up">▲ 7 %</small></span></div>
+    <div class="wk4">${CATS.map(mini).join('')}</div>
+    <div style="display:flex;gap:6px"><span class="chip">🏁 Hades II terminado</span><span class="chip">⏱ Zelda pasa de 100 h</span><span class="chip">🔥 12 días de racha leyendo</span></div></div>
+</div>` + hints([['A', 'Ver el resumen', 'a'], ['X', 'Ocultar', 'x'], ['Y', 'Resumen anual', 'y']]));
+</script>
+</body>
+</html>

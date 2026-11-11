@@ -1,4 +1,4 @@
-// Ajustes de la sección «Móvil»: servidor en la red local para la app Visor de Android (docs/api-movil.md).
+// Ajustes de la sección «Móvil»: servidor en la red local para la app Visor de Android (docs/referencia/api-movil.md).
 import { app } from './store.svelte';
 import { backend } from './backend';
 import { blip } from './sound';

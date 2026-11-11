@@ -1,4 +1,4 @@
-// De dónde saca la app los datos: el visor del PC (API HTTP de `docs/api-movil.md`) o una biblioteca de
+// De dónde saca la app los datos: el visor del PC (API HTTP de `docs/referencia/api-movil.md`) o una biblioteca de
 // demostración. Mañana un servidor en la nube hablará la misma API: solo cambia la dirección.
 import type { Library, Saga } from '@shared/types';
 

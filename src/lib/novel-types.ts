@@ -1,4 +1,4 @@
-// Tipos compartidos de «Novelas japonesas» (ver docs/novelas-japonesas.md). Espejo de src-tauri/src/novel.rs y visor_core::jp.
+// Tipos compartidos de «Novelas japonesas» (ver docs/referencia/novelas-japonesas.md). Espejo de src-tauri/src/novel.rs y visor_core::jp.
 export interface ProcInfo { pid: number; exe: string; arch: 32 | 64; connected: boolean }
 export interface ThreadInfo { key: string; name: string; code: string; lines: number; last: string; live: boolean }
 export interface ThStatus { proc: ProcInfo | null; threads: ThreadInfo[]; selected: string | null; nameThread: string | null; gameId: string | null; gameName: string | null }

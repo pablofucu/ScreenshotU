@@ -4,7 +4,7 @@ Fecha: 2026-11-10. Acordada con Pablo en seis rondas de preguntas.
 
 - **Muestra viva:** [guia-diseno/index.html](guia-diseno/index.html). Carga el `src/app.css` real y se ve en claro y oscuro. Se abre con el servidor de desarrollo en `/docs/guia-diseno/index.html`.
 - **Tokens y componentes propuestos:** [guia-diseno/propuesta.css](guia-diseno/propuesta.css). Aún no están en `src/`; entran en la fase 0 de la migración (§15).
-- **Antecedentes:** `docs/informe-interfaz.md` (diagnóstico) y `docs/informe-revision-2026-11-09.md` (contrato de botones).
+- **Antecedentes:** `docs/archivo/informe-interfaz.md` (diagnóstico) y `docs/archivo/informe-revision-2026-11-09.md` (contrato de botones).
 
 Cómo leerla: cada apartado da la regla y, si hace falta, la razón. Lo que la guía no menciona se resuelve copiando cómo lo hace **Inicio**, que es la pantalla de referencia.
 
@@ -287,7 +287,7 @@ El color de un gráfico dice **de quién es el dato**, nunca si es bueno o malo.
 
 ### 11.1 Chips de estadísticas
 
-Catálogo aprobado, todos animados: `docs/mockups-estadisticas/chips/index.html`. Se usan los 18 en Panorama.
+Catálogo aprobado, todos animados: `docs/maquetas/estadisticas/chips/index.html`. Se usan los 18 en Panorama.
 
 | Grupo | Chips |
 |---|---|
@@ -375,7 +375,7 @@ Casi todo el estilo de las pantallas vive en `app.css`, así que la migración e
 | 5. Estados e iconos (**hecha el 2026-11-10**) | `.empty` y `.skel` en todas las pantallas; iconos al trazo de 24. Hecho: `.empty` global en `tokens.css` (icono de 56, `h3` y `p`) en Logros y Copias; `.skel` aparece a los 200 ms y tiene variantes `.line` y `.round`; los textos de carga de Copias, SteamGridDB, Carpeta con juegos y la ficha de logros del menú del juego pasan a esqueletos (no había ruedas de carga: los aros que giran son decorativos); los iconos pequeños de `icons.ts` se dibujan con `ic()` en `currentColor` (`audioSvg` ya no recibe color). Exentos: los glifos de plataforma (§9). | No quedan ruedas de carga ni iconos con `#fff` fijo. |
 | 6. Menú del juego (**hecha el 2026-11-10**) | `quickmenu.css` a tokens comunes. Hecho: letra y radios a la escala; el arcoíris pasa a tokens `--arc-*`, `--arc` y `--arco` en `tokens.css` (lo usan también los degradados de `TilePerf`); botones A/B/X/Y con `--ok-f`, `--bad-f`, `--arc-azul` y `--warn`; los chips propios se llaman `.qchip` para no chocar con el `.chip` común. | Sin `--r1`…`--r6` ni rarezas propias. |
 | 7. Lector y hook | Marco a tokens comunes; paleta `--rd-`. | `reader.css` y `hook.css` no redefinen tokens de la app. |
-| 8. Tablet | Maquetación táctil sobre los mismos tokens. | Ver `docs/plan-tablet.md`. |
+| 8. Tablet | Maquetación táctil sobre los mismos tokens. | Ver `docs/archivo/plan-tablet.md`. |
 
 Cada pantalla migrada se revisa en claro y en oscuro, comparándola con Inicio.
 

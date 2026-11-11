@@ -1,6 +1,6 @@
 //! Tiempo de consola por juego, listo para sumarlo al del PC al escanear (SW-09).
 //!
-//! Reglas (ver `docs/plan-switch-playtime.md`, decisiones 6-8):
+//! Reglas (ver `docs/archivo/plan-switch-playtime.md`, decisiones 6-8):
 //! - Total de un titulo = total del historial + minutos de los dias **posteriores** al dia en que
 //!   se leyo ese total (el dia de la lectura ya va dentro del total).
 //! - Por dia y titulo cuenta el **maximo** entre el historial y la suma de los usuarios marcados del

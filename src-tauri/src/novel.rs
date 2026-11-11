@@ -1,5 +1,5 @@
 //! Novelas japonesas: une LunaHook (`texthook`), el procesado de texto (`visor_core::jp`) y la
-//! pagina de lectura (`reader`). Ver `docs/novelas-japonesas.md`.
+//! pagina de lectura (`reader`). Ver `docs/referencia/novelas-japonesas.md`.
 pub mod readstats;
 
 use crate::state::AppState;

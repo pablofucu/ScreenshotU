@@ -1,4 +1,4 @@
-/* Ventana Texthook: estilo cristal Wii U, responsive (ver design/texthook-propuestas.html, propuesta 1). */
+/* Ventana Texthook: estilo cristal Wii U, responsive (ver docs/archivo/maquetas/design/texthook-propuestas.html, propuesta 1). */
 :root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;color-scheme:light}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:#eceef2;overflow:hidden;font-family:var(--round)}

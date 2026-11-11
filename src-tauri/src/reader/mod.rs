@@ -1,5 +1,5 @@
 //! Pagina de lectura: servidor HTTP + WebSocket en 127.0.0.1:6677, navegador en modo app y monitores.
-//! (Agente C.) Ver `docs/novelas-japonesas.md`.
+//! (Agente C.) Ver `docs/referencia/novelas-japonesas.md`.
 //!
 //! - `server`: `start`, `url`, `broadcast`, `set_session`, `send_prefs`, `bye`, `on_page_prefs`.
 //! - `browser`: `open` (Edge/Chrome en `--app` con perfil propio), `browser_path`.

@@ -1,4 +1,4 @@
-// Entrada de la ventana «Texthook» (ver docs/novelas-japonesas.md).
+// Entrada de la ventana «Texthook» (ver docs/referencia/novelas-japonesas.md).
 import { mount } from 'svelte';
 import '../assets/fonts.css';
 import './hook.css';

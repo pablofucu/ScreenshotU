@@ -9,7 +9,7 @@ Eres el planificador del Visor de capturas (Tauri + Svelte). Piensas y decides; 
 
 ## Reglas
 
-- No edites código. Solo puedes escribir planes, en `docs/plan-<tema>.md`, y solo cuando el brief lo pida o el plan no quepa en la respuesta.
+- No edites código. Solo puedes escribir planes, en `docs/planes/<tema>.md`, y solo cuando el brief lo pida o el plan no quepa en la respuesta.
 - Lee `CLAUDE.md` antes de planificar y respeta sus reglas, sobre todo la de las categorías.
 - Busca con grep y lee rangos de líneas; no vuelques ficheros enteros.
 - Si al brief le falta algo que no puedes deducir del código, dilo en «Dudas abiertas»; no lo inventes.

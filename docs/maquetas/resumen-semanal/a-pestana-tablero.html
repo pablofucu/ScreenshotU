@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>A · Pestaña «Resumen semanal» en tres columnas + aviso en Inicio</title>
+<style>
+/* Tokens copiados de src/app.css (#stage[data-theme=dark], «Noche ahumada») y de readgoals.ts (GOAL_COL / RESCUE_COL). */
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI','Yu Gothic UI',system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:#0b0d11;font-family:var(--round);color:#e6e9f0}
+.bar{display:flex;gap:10px;align-items:center;padding:12px 18px;font-size:14px;color:#b4bccb;flex-wrap:wrap}
+.bar b{color:#e6e9f0}
+.bar button{font:inherit;font-weight:700;padding:6px 14px;border-radius:999px;border:1px solid rgba(200,210,235,.24);background:#1e222b;color:#e6e9f0;cursor:pointer}
+.bar button.on{background:#00A0D8;border-color:#00A0D8;color:#fff}
+.frame{width:1920px;height:1080px;margin:0 18px 28px;position:relative;overflow:hidden;border-radius:10px;box-shadow:0 0 0 1px rgba(200,210,235,.16)}
+.frame>.lbl{position:absolute;left:0;top:-26px;font-size:13px;color:#7f8899}
+#stage,.stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform:scale(1.5);transform-origin:0 0;overflow:hidden;
+  color:#e6e9f0;--ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#7f8899;--line:rgba(200,210,235,.16);--line-2:rgba(200,210,235,.24);
+  --face:#262a33;--face-hi:rgba(30,33,41,.94);--panel:rgba(30,34,43,.78);
+  --glass-top:rgba(60,66,80,.62);--glass-mid:rgba(36,40,50,.42);--glass-bot:rgba(20,22,28,.38);--glass-in:rgba(255,255,255,.08);--glass-chip:rgba(40,44,56,.82);
+  --ok:#3BB54A;--bad:#E8384F;--warn:#F2B807;--acc:#00A0D8;--on:#fff;
+  --pc:#1593d6;--sw:#e0384a;--vn:#00A0D8;--jvn:#E5487A;--rvn:#E9A100;--rjv:#6E56CF}
+.bg{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
+.blob{position:absolute;border-radius:50%;opacity:.30;background:radial-gradient(circle,var(--b),color-mix(in srgb,var(--b) 45%,transparent) 35%,transparent 70%)}
+.pill{background:linear-gradient(180deg,rgba(60,66,80,.80),rgba(36,40,50,.62));box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 0 0 1px var(--line),0 10px 20px -12px rgba(0,0,0,.6)}
+.avatar{position:absolute;left:22px;top:12px;width:60px;height:60px;border-radius:16px;padding:5px;background:linear-gradient(180deg,var(--glass-top),var(--glass-bot));box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 0 1px var(--line)}
+.avatar i{display:block;width:100%;height:100%;border-radius:12px;background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 40%,white),var(--acc))}
+.crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:20px;font-weight:700;color:var(--ink-2)}
+.crumb .sep{color:var(--ink-3);font-weight:500}.crumb .cur{color:var(--acc)}
+.clock{position:absolute;right:24px;top:24px;font-size:20px;font-weight:700;color:var(--ink-2)}
+.clock small{font-size:15px;font-weight:500;color:var(--ink-3)}
+.hints{position:absolute;right:22px;bottom:16px;display:flex;gap:10px;z-index:5}
+.hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:999px;font-size:16px;font-weight:700;color:var(--ink-2)}
+.btn{min-width:28px;height:28px;border-radius:14px;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;--b:var(--ink-3);padding:0 6px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 0 0 1px color-mix(in srgb,var(--b) 70%,black)}
+.btn.a{--b:var(--ok)}.btn.b{--b:var(--bad)}.btn.y{--b:var(--warn);color:#3a414e}.btn.sh{border-radius:8px}
+.rbox{border-radius:20px;padding:10px 16px;background:var(--face-hi);box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px var(--line),0 10px 20px -14px rgba(0,0,0,.6);min-width:0}
+.rbox .k{font-size:13px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.rbox .v{font-size:28px;font-weight:800;line-height:1.15;white-space:nowrap}
+.rbox .v small{font-size:15px;color:var(--ink-3);margin-left:2px}
+.up{color:#5fd36c}.dn{color:#ff6b7d}.eq{color:var(--ink-3)}
+.s{font-size:12.5px;font-weight:700}
+
+/* --- cabecera de semana --- */
+.wk{position:absolute;left:96px;right:96px;top:84px;height:92px;display:flex;gap:12px;align-items:stretch}
+.wk .nav{width:250px;border-radius:22px;display:flex;align-items:center;gap:10px;padding:0 14px}
+.wk .nav .t{flex:1;text-align:center}
+.wk .nav .t b{display:block;font-size:22px}
+.wk .nav .t span{font-size:13px;color:var(--ink-3);font-weight:700}
+.wk .rbox{flex:1}
+.days7{display:flex;gap:4px;margin-top:6px}
+.days7 i{flex:1;height:10px;border-radius:3px;background:var(--line)}
+.days7 i.on{background:linear-gradient(90deg,var(--pc),var(--sw),var(--vn),var(--jvn))}
+
+/* --- tres columnas --- */
+.cols{position:absolute;left:96px;right:96px;top:188px;bottom:66px;display:grid;grid-template-columns:1fr 1fr 1.15fr;gap:14px}
+.col{border-radius:26px;padding:8px;background:linear-gradient(180deg,var(--glass-top),var(--glass-mid) 46%,var(--glass-bot));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.18),0 0 0 1px var(--line),0 18px 30px -16px rgba(0,0,0,.7);position:relative}
+.col.f{box-shadow:0 0 0 3px var(--c),0 0 26px 4px color-mix(in srgb,var(--c) 55%,transparent);transform:scale(1.015)}
+.col .in{height:100%;border-radius:20px;background:var(--face);padding:14px 16px;display:flex;flex-direction:column;gap:10px;overflow:hidden;position:relative}
+.col .in::before{content:'';position:absolute;left:0;right:0;top:0;height:4px;background:var(--c)}
+.ch{display:flex;align-items:center;gap:10px}
+.ch .ico{width:34px;height:34px;border-radius:10px;background:linear-gradient(160deg,color-mix(in srgb,var(--c) 45%,white),var(--c));display:grid;place-items:center;font-size:15px;font-weight:800;color:#fff}
+.ch h3{margin:0;font-size:19px;flex:1}
+.ch .tot{font-size:22px;font-weight:800}
+.ch .tot small{font-size:13px;color:var(--ink-3)}
+.sub{display:flex;gap:12px;font-size:12.5px;font-weight:700;color:var(--ink-2)}
+.bars{display:flex;gap:6px;align-items:flex-end;height:54px;padding-top:4px}
+.bars div{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bars i{width:100%;border-radius:4px 4px 2px 2px;background:var(--c);min-height:2px}
+.bars i.cons{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--c) 70%,black) 0 4px,var(--c) 4px 8px)}
+.bars i.zero{background:var(--line)}
+.bars span{font-size:10px;color:var(--ink-3);font-weight:700}
+.top3{display:flex;flex-direction:column;gap:6px}
+.row{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700}
+.cov{width:30px;height:44px;border-radius:6px;flex:none;display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff;background:linear-gradient(160deg,var(--g1),var(--g2));box-shadow:0 0 0 1px rgba(0,0,0,.3)}
+.row .n{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .n small{display:block;font-size:11px;color:var(--ink-3)}
+.row .m{font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:999px;background:var(--glass-chip);box-shadow:0 0 0 1px var(--line);display:flex;align-items:center;gap:5px}
+.chip i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.chip.gold{background:linear-gradient(180deg,#5b4a12,#3e3209);box-shadow:0 0 0 1px #c9a227;color:#ffe08a}
+.shots{display:flex;gap:6px;margin-top:auto}
+.shot{flex:1;height:62px;border-radius:10px;background:linear-gradient(140deg,var(--g1),var(--g2));position:relative;box-shadow:0 0 0 1px rgba(0,0,0,.3)}
+.shot.fav::after{content:'★';position:absolute;right:6px;top:3px;color:#F2B807;font-size:13px;text-shadow:0 1px 2px #000}
+.shot.more{display:grid;place-items:center;font-weight:800;font-size:13px;background:var(--glass-chip);color:var(--ink-2)}
+.warn{font-size:12px;font-weight:700;color:#ffd666;background:rgba(242,184,7,.12);box-shadow:0 0 0 1px rgba(242,184,7,.35);border-radius:10px;padding:6px 10px}
+.empty{flex:1;display:grid;place-items:center;text-align:center;color:var(--ink-3);font-size:14px;font-weight:700;border:2px dashed var(--line-2);border-radius:16px}
+.empty b{display:block;font-size:17px;color:var(--ink-2);margin-bottom:4px}
+/* novelas: dos filas, una por categoría */
+.nv{border-radius:16px;padding:10px 12px;background:var(--glass-in);box-shadow:0 0 0 1px var(--line);display:flex;flex-direction:column;gap:7px}
+.nv .h{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14.5px}
+.nv .h .dot{width:10px;height:10px;border-radius:50%;background:var(--k)}
+.nv .h .mins{margin-left:auto;font-size:17px}
+.goal7{display:flex;gap:4px}
+.goal7 i{flex:1;height:22px;border-radius:6px;background:color-mix(in srgb,var(--k) 18%,#262a33);position:relative}
+.goal7 i.ok{background:var(--k)}
+.goal7 i.half{background:linear-gradient(0deg,var(--k) 45%,color-mix(in srgb,var(--k) 18%,#262a33) 45%)}
+.goal7 i.res{background:var(--r)}
+.goal7 i.res::after{content:'⛑';position:absolute;inset:0;display:grid;place-items:center;font-size:11px}
+.nv .meta{display:flex;gap:10px;font-size:12px;font-weight:700;color:var(--ink-2);flex-wrap:wrap}
+.nv .meta b{color:var(--ink)}
+
+/* --- Inicio con aviso de semana nueva --- */
+.plat{position:absolute;top:110px;width:190px;height:190px;border-radius:30px;padding:10px;background:linear-gradient(180deg,var(--glass-top),var(--glass-bot));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.18),0 0 0 1px var(--line)}
+.plat i{display:grid;place-items:center;width:100%;height:100%;border-radius:22px;background:linear-gradient(160deg,color-mix(in srgb,var(--c) 40%,#262a33),color-mix(in srgb,var(--c) 70%,black));font-weight:800;font-size:18px}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+.toast{position:absolute;left:50%;top:50%;width:760px;transform:translate(-50%,-50%);border-radius:32px;padding:10px;background:linear-gradient(150deg,color-mix(in srgb,#00A0D8 55%,white),#0089be 50%,#3253c5);box-shadow:0 0 40px 6px rgba(0,160,216,.35)}
+.toast .in{border-radius:24px;background:var(--face);padding:22px 26px 18px}
+.toast h2{margin:0;font-size:28px}
+.toast .d{color:var(--ink-3);font-weight:700;font-size:14px;margin:2px 0 16px}
+.toast .tri{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.toast .tri .rbox{border-top:4px solid var(--c)}
+.toast .best{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
+.toast .acts{margin-top:16px;display:flex;justify-content:flex-end;gap:10px}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div class="bar"><b>A · Tablero en tres columnas</b> La pestaña «Resumen semanal» de Estadísticas: PC | Switch | Novelas. Estado:
+  <button class="on" data-st="full">Semana normal</button><button data-st="part">Semana parcial (sin Switch)</button>
+  · Navegación: LB/RB cambia de semana, ←/→ enfoca columna, A abre el top de la columna en Clasificación.</div>
+
+<!-- ============ PANTALLA 1: pestaña en Estadísticas ============ -->
+<div class="frame" style="margin-top:30px"><span class="lbl">Escritorio 1920×1080 (escenario 1280×720 ×1.5) · Estadísticas › Resumen semanal</span>
+<div class="stage">
+  <div class="bg"><div class="blob" style="--b:#1593d6;left:-120px;top:-80px;width:620px;height:460px"></div><div class="blob" style="--b:#E5487A;left:820px;top:420px;width:560px;height:420px"></div></div>
+  <div class="avatar"><i></i></div>
+  <div class="crumb pill"><span>Inicio</span><span class="sep">›</span><span>Estadísticas</span><span class="sep">›</span><span class="cur">Resumen semanal</span></div>
+  <div class="clock">09/11 <small>(lun)</small> 18:20</div>
+
+  <div class="wk">
+    <div class="nav pill"><span class="btn sh">LB</span><div class="t"><b>Semana pasada</b><span>lun 2 – dom 8 nov</span></div><span class="btn sh">RB</span></div>
+    <div class="rbox"><div class="k">Tiempo total</div><div class="v" data-full="21 h <small>40 min</small>" data-part="9 h <small>05 min</small>">21 h <small>40 min</small></div><div class="s up" data-full="▲ 3 h 10 más que la semana anterior" data-part="▼ 9 h 25 menos que la semana anterior">▲ 3 h 10 más que la semana anterior</div></div>
+    <div class="rbox"><div class="k">Días con actividad</div><div class="v" data-full="6<small>/7</small>" data-part="4<small>/7</small>">6<small>/7</small></div><div class="days7" data-full="1111101" data-part="1010110"></div></div>
+    <div class="rbox"><div class="k">Lo mejor de la semana</div><div class="v" style="font-size:19px;padding-top:4px" data-full="🏆 50 h en Elden Ring" data-part="🔥 Racha de 12 días leyendo">🏆 50 h en Elden Ring</div><div class="s eq" data-full="Juegos · cruzado el jueves 5" data-part="Novelas japonesas · sigue viva">Juegos · cruzado el jueves 5</div></div>
+  </div>
+
+  <div class="cols">
+    <!-- PC -->
+    <div class="col f" style="--c:var(--pc)"><div class="in">
+      <div class="ch"><span class="ico">PC</span><h3>Juegos</h3><span class="tot" data-full="11 h 25" data-part="4 h 50">11 h 25</span></div>
+      <div class="sub"><span data-full="9 partidas · 3 juegos" data-part="4 partidas · 2 juegos">9 partidas · 3 juegos</span><span class="up" data-full="▲ 2 h 05" data-part="▼ 4 h 30">▲ 2 h 05</span></div>
+      <div class="bars" data-c="pc" data-full="40,90,0,120,75,160,200" data-part="0,60,0,110,0,120,0"></div>
+      <div class="top3">
+        <div class="row"><span class="cov" style="--g1:#c9a227;--g2:#5b3d0a">ER</span><span class="n">Elden Ring Nightreign<small>5 partidas · récord 2 h 40 (sáb)</small></span><span class="m">6 h 50</span></div>
+        <div class="row"><span class="cov" style="--g1:#d14fb2;--g2:#4a1240">H</span><span class="n">Hades II<small>3 partidas</small></span><span class="m">3 h 15</span></div>
+        <div class="row" data-only="full"><span class="cov" style="--g1:#3aa6a0;--g2:#14403e">B</span><span class="n">Balatro<small>1 partida · nuevo</small></span><span class="m">1 h 20</span></div>
+      </div>
+      <div class="chips"><span class="chip gold">🏅 7 logros · 1 ultra raro (2,1 %)</span><span class="chip" data-only="full" style="--c:var(--ok)"><i></i>Hades II terminado</span></div>
+      <div class="shots"><div class="shot fav" style="--g1:#a87a1a;--g2:#2a1c06"></div><div class="shot" style="--g1:#8a2a6e;--g2:#220a1c"></div><div class="shot more">+21</div></div>
+    </div></div>
+
+    <!-- Switch -->
+    <div class="col" style="--c:var(--sw)"><div class="in">
+      <div class="ch"><span class="ico">SW</span><h3>Switch</h3><span class="tot" data-full="5 h 10" data-part="—">5 h 10</span></div>
+      <div data-only="full" style="display:contents">
+        <div class="sub"><span>3 h 40 en la consola · 1 h 30 emulador</span><span class="up">▲ 50 min</span></div>
+        <div class="bars"><div><i class="cons" style="height:30px"></i><span>L</span></div><div><i class="zero"></i><span>M</span></div><div><i style="height:22px"></i><span>X</span></div><div><i class="cons" style="height:44px"></i><span>J</span></div><div><i class="zero"></i><span>V</span></div><div><i class="cons" style="height:40px"></i><span>S</span></div><div><i class="zero" style="opacity:.4"></i><span>D?</span></div></div>
+        <div class="top3">
+          <div class="row"><span class="cov" style="--g1:#46a35a;--g2:#163a1e">Z</span><span class="n">Zelda: Echoes of Wisdom<small>consola · 3 días</small></span><span class="m">2 h 30</span></div>
+          <div class="row"><span class="cov" style="--g1:#e0384a;--g2:#4a0e16">MK</span><span class="n">Mario Kart World<small>consola · 2 días</small></span><span class="m">1 h 10</span></div>
+          <div class="row"><span class="cov" style="--g1:#3f63e0;--g2:#101c4a">P</span><span class="n">Pokémon Leyendas Z-A<small>Ryujinx · 2 partidas</small></span><span class="m">1 h 30</span></div>
+        </div>
+        <div class="warn">⚠ Datos de Nintendo hasta el sábado 7. El domingo puede faltar: sincroniza en Ajustes › Nintendo.</div>
+        <div class="shots"><div class="shot" style="--g1:#2f7a3e;--g2:#0c2412"></div><div class="shot more">+4</div></div>
+      </div>
+      <div class="empty" data-only="part"><div><b>Sin datos de Switch</b>Ni partidas en el emulador ni tiempo de consola<br>esta semana. ¿Falta sincronizar con Nintendo?</div></div>
+    </div></div>
+
+    <!-- Novelas -->
+    <div class="col" style="--c:#8a6fe0"><div class="in">
+      <div class="ch"><span class="ico" style="background:linear-gradient(135deg,var(--vn),var(--jvn))">NV</span><h3>Novelas</h3><span class="tot" data-full="5 h 05" data-part="4 h 15">5 h 05</span></div>
+      <div class="nv" style="--k:var(--vn);--r:var(--rvn)">
+        <div class="h"><span class="dot"></span>Novelas visuales<span class="mins" data-full="2 h 20" data-part="1 h 05">2 h 20</span></div>
+        <div class="goal7" data-full="ok,ok,res,ok,ok,ok,half" data-part="ok,half,0,0,ok,0,0"></div>
+        <div class="meta"><span>Meta <b data-full="6/7" data-part="2/7">6/7</b> días</span><span>Racha <b data-full="9 días" data-part="—">9 días</b></span><span data-only="full">1 rescate</span><span>Top: <b>Steins;Gate 0</b></span></div>
+      </div>
+      <div class="nv" style="--k:var(--jvn);--r:var(--rjv)">
+        <div class="h"><span class="dot"></span>Novelas japonesas<span class="mins" data-full="2 h 45" data-part="3 h 10">2 h 45</span></div>
+        <div class="goal7" data-full="ok,ok,ok,ok,ok,ok,ok" data-part="ok,ok,ok,ok,ok,ok,ok"></div>
+        <div class="meta"><span>Meta <b>7/7</b> días</span><span>Racha <b>12 días</b> 🔥</span><span>Top: <b>サマーポケッツ</b></span></div>
+        <div class="chips">
+          <span class="chip" style="--c:var(--jvn)"><i></i><b data-full="38.420" data-part="44.100">38.420</b>&nbsp;caracteres</span>
+          <span class="chip" style="--c:var(--jvn)"><i></i><b data-full="14.000" data-part="13.900">14.000</b>&nbsp;car./h <span class="up">▲6 %</span></span>
+          <span class="chip" style="--c:var(--rjv)"><i></i><b>+57</b>&nbsp;palabras conocidas</span>
+          <span class="chip" style="--c:var(--rjv)"><i></i><b>23</b>&nbsp;frases al glosario</span>
+        </div>
+      </div>
+      <div class="shots"><div class="shot fav" style="--g1:#e5487a;--g2:#3a0f22"></div><div class="shot" style="--g1:#00a0d8;--g2:#072a3a"></div><div class="shot more">+9</div></div>
+    </div></div>
+  </div>
+
+  <div class="hints"><div class="hint pill"><span class="btn sh">LB</span><span class="btn sh">RB</span>Semana</div><div class="hint pill"><span class="btn a">A</span>Ver en Clasificación</div><div class="hint pill"><span class="btn y">Y</span>Pestaña</div><div class="hint pill"><span class="btn b">B</span>Atrás</div></div>
+</div></div>
+
+<!-- ============ PANTALLA 2: aviso de semana nueva en Inicio ============ -->
+<div class="frame" style="margin-top:46px"><span class="lbl">Inicio, primera vez que se abre la app desde el lunes · aviso superpuesto (no cambia el layout)</span>
+<div class="stage">
+  <div class="bg"><div class="blob" style="--b:#00A0D8;left:-80px;top:-60px;width:520px;height:420px"></div></div>
+  <div class="avatar"><i></i></div>
+  <div class="crumb pill"><span class="cur">Inicio</span></div>
+  <div class="clock">09/11 <small>(lun)</small> 18:20</div>
+  <div class="plat" style="left:120px;--c:#1593d6"><i>Juegos</i></div>
+  <div class="plat" style="left:330px;--c:#e0384a"><i>Switch</i></div>
+  <div class="plat" style="left:540px;--c:#00A0D8"><i>Novelas</i></div>
+  <div class="plat" style="left:750px;--c:#E5487A"><i>Japonés</i></div>
+  <div class="plat" style="left:960px;--c:#3aa64a"><i>…</i></div>
+  <div class="scrim"></div>
+  <div class="toast"><div class="in">
+    <h2>Tu semana está lista</h2>
+    <div class="d">lun 2 – dom 8 nov · 21 h 40 en total · 6 de 7 días</div>
+    <div class="tri">
+      <div class="rbox" style="--c:var(--pc)"><div class="k">Juegos (PC)</div><div class="v">11 h 25</div><div class="s up">▲ 2 h 05 · Elden Ring</div></div>
+      <div class="rbox" style="--c:var(--sw)"><div class="k">Switch</div><div class="v" data-full="5 h 10" data-part="—">5 h 10</div><div class="s eq" data-full="hasta el sáb 7 · Zelda" data-part="sin datos esta semana">hasta el sáb 7 · Zelda</div></div>
+      <div class="rbox" style="--c:var(--jvn)"><div class="k">Novelas</div><div class="v">13<small>/14 metas</small></div><div class="s up">Racha japonés: 12 días</div></div>
+    </div>
+    <div class="best"><span class="chip gold">🏆 50 h en Elden Ring</span><span class="chip" style="--c:var(--ok)"><i></i>Hades II terminado</span><span class="chip" style="--c:var(--rjv)"><i></i>+57 palabras</span></div>
+    <div class="acts"><div class="hint pill"><span class="btn a">A</span>Ver resumen</div><div class="hint pill"><span class="btn b">B</span>Más tarde</div></div>
+  </div></div>
+</div></div>
+
+<script>
+const D='LMXJVSD';
+function render(st){
+  document.querySelectorAll('[data-full]').forEach(e=>{
+    if(e.classList.contains('bars')){const v=e.dataset[st].split(',').map(Number),mx=200;
+      e.innerHTML=v.map((m,i)=>`<div><i class="${m?'':'zero'}" style="height:${m?Math.max(4,m/mx*44):2}px"></i><span>${D[i]}</span></div>`).join('');return;}
+    if(e.classList.contains('goal7')){e.innerHTML=e.dataset[st].split(',').map(c=>`<i class="${c==='0'?'':c}"></i>`).join('');return;}
+    if(e.classList.contains('days7')){e.innerHTML=[...e.dataset[st]].map(c=>`<i class="${c==='1'?'on':''}"></i>`).join('');return;}
+    e.innerHTML=e.dataset[st];
+  });
+  document.querySelectorAll('[data-only]').forEach(e=>e.classList.toggle('hide',e.dataset.only!==st));
+  document.querySelectorAll('.bar button').forEach(b=>b.classList.toggle('on',b.dataset.st===st));
+}
+document.querySelectorAll('.bar button').forEach(b=>b.onclick=()=>render(b.dataset.st));
+render('full');
+</script>
+</body>
+</html>

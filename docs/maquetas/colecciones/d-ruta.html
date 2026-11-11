@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>D · «Ruta»: la saga como un camino</title>
+<link rel="stylesheet" href="m.css"><link rel="stylesheet" href="c.css">
+<style>
+.map{position:absolute;left:0;right:0;top:56px;height:430px}
+.map svg{position:absolute;inset:0}
+.nd{position:absolute;display:flex;flex-direction:column;align-items:center;gap:5px;transform:translate(-50%,-50%);font-size:13px;font-weight:800;color:var(--ink-2)}
+.nd.p .cov{filter:saturate(.35) brightness(.7)}
+.nd .ck{position:absolute;right:-8px;top:-8px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;color:#fff;background:var(--ok);box-shadow:0 0 0 3px #16181e}
+.nd .here{position:absolute;top:-30px;white-space:nowrap;font-size:12px;padding:3px 10px;border-radius:999px;background:var(--acc);color:#fff}
+.info{position:absolute;left:0;right:0;bottom:0;height:86px;border-radius:22px;padding:0 20px;display:flex;align-items:center;gap:16px;box-shadow:0 0 0 1px var(--line)}
+.info b{font-size:21px;display:block}.info small{font-size:13px;color:var(--ink-2);font-weight:700}
+.dots{display:flex;gap:6px}.dots i{width:9px;height:9px;border-radius:50%;background:var(--line-2)}.dots i.on{background:var(--c);width:24px;border-radius:5px}
+.ttl{font-size:30px;font-weight:800;line-height:1}
+</style>
+</head>
+<body>
+<a href="index.html">← Todas las propuestas</a>
+<h1>D · «Ruta»: la saga como un camino</h1>
+<p class="s">Cada colección ocupa <b>toda la pantalla</b> y se dibuja como el mapa de un viaje: una parada por juego, en orden, con el tramo ya recorrido encendido y el que falta en gris. La pregunta que responde no es «qué tengo» sino <b>«por dónde voy»</b>. LB/RB cambia de colección.</p>
+<div class="frame" id="d1"></div>
+
+<h2>Qué cambia</h2>
+<ul class="chg">
+<li><b>Vista:</b> una colección por pantalla; izquierda/derecha recorre las paradas y la barra de abajo cuenta el juego enfocado.</li>
+<li><b>Camino:</b> el tramo terminado toma los colores de las portadas; al entrar, el foco cae en el juego que estás jugando («Vas por aquí»).</li>
+<li><b>Orden:</b> por año, como hoy; el camino admitiría también un orden manual (orden recomendado de juego) sin cambiar el dibujo.</li>
+<li><b>A favor:</b> la más vistosa y la que mejor cuenta una saga larga. <b>En contra:</b> no se ven varias colecciones a la vez y con colecciones que no son sagas (p. ej. «FromSoftware») el camino significa menos; sagas de más de 9–10 juegos necesitan desplazarse.</li>
+</ul>
+
+<script src="c.js"></script>
+<script>
+const C = COLS[0], N = C.games.length, CUR = C.games.findIndex((g) => g[5] === 'j');
+const P = C.games.map((_, i) => [80 + i * 144, i % 2 ? 300 : 150]);
+const path = (a, b) => P.slice(a, b + 1).map((p, i) => (i ? `C ${P[a + i - 1][0] + 72} ${P[a + i - 1][1]} ${p[0] - 72} ${p[1]} ${p[0]} ${p[1]}` : `M ${p[0]} ${p[1]}`)).join(' ');
+const node = (g, i) => { const f = i === CUR, w = f ? 106 : 82;
+  return `<div class="nd ${g[5]}" style="left:${P[i][0]}px;top:${P[i][1]}px"><div style="position:relative">${f ? '<span class="here" style="left:50%;transform:translateX(-50%)">Vas por aquí</span>' : ''}${cov(g, w, f ? 'f' : '')}${g[5] === 't' ? '<span class="ck">✓</span>' : ''}</div><span>${g[2]}</span></div>`; };
+const g = C.games[CUR];
+mount('d1', tb(['Juegos', 'Colecciones', C.name]) + `<div class="body" style="display:block">
+  <div class="rowx" style="${cv(C)}"><span class="btn sh">LB</span><span class="ttl gt">${C.name}</span><span class="btn sh">RB</span>
+    <span class="dots">${COLS.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</span><span class="grow"></span>
+    <span class="chip">${done(C)} de ${N} terminados</span><span class="chip">⏱ ${hrs(C)} h</span><span class="chip">📷 ${caps(C)} capturas</span></div>
+  <div class="map"><svg viewBox="0 0 1168 430">
+    <defs><linearGradient id="gd" x1="0" x2="1" y1="0" y2="0">${C.games.slice(0, CUR + 1).map((x, i) => `<stop offset="${i / CUR}" stop-color="${x[3]}"/>`).join('')}</linearGradient></defs>
+    <path d="${path(CUR, N - 1)}" fill="none" stroke="rgba(200,210,235,.28)" stroke-width="6" stroke-dasharray="2 14" stroke-linecap="round"/>
+    <path d="${path(0, CUR)}" fill="none" stroke="rgba(0,0,0,.45)" stroke-width="18" stroke-linecap="round"/>
+    <path d="${path(0, CUR)}" fill="none" stroke="url(#gd)" stroke-width="10" stroke-linecap="round"/></svg>
+    ${C.games.map(node).join('')}</div>
+  <div class="info aur" style="--c:${g[3]};--c2:${g[4]}">${cov(g, 44)}<div class="grow"><b>${g[0]}</b><small>${g[2]} · parada ${CUR + 1} de ${N} · ${g[6]} h jugadas · ${g[7]} capturas · última partida ayer</small></div>
+    ${st(g)}<span class="hint pill"><span class="btn y">Y</span>Jugar</span><span class="hint pill"><span class="btn x">X</span>Capturas de la saga</span></div>
+</div>` + hints([['LB/RB', 'Colección', 'sh'], ['A', 'Abrir juego', 'a'], ['☰', 'Editar', 'sh'], ['B', 'Volver', 'b']]));
+</script>
+</body>
+</html>

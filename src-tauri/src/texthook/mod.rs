@@ -1,5 +1,5 @@
 //! LunaHook: carga de LunaHost, inyeccion en el juego, hilos de texto, codigos H y busqueda de hooks.
-//! (Agente A.) Ver `docs/novelas-japonesas.md`.
+//! (Agente A.) Ver `docs/referencia/novelas-japonesas.md`.
 //!
 //! Estructura: `luna.rs` es la capa FFI (callbacks `extern "C"` que solo encolan `luna::Event`); aqui un unico hilo de
 //! trabajo consume la cola, mantiene el registro de hilos y emite los eventos Tauri del contrato (`th-proc`, `th-thread`,

@@ -1,5 +1,5 @@
 //! Texto japones de las novelas: filtros, nombres, tokenizador con furigana y preferencias por juego.
-//! (Agente B.) Los tipos de este archivo forman parte del contrato de `docs/novelas-japonesas.md`.
+//! (Agente B.) Los tipos de este archivo forman parte del contrato de `docs/referencia/novelas-japonesas.md`.
 use serde::{Deserialize, Serialize};
 
 pub mod anki;

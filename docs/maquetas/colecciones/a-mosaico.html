@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>A · «Mosaico»: todas las colecciones de un vistazo</title>
+<link rel="stylesheet" href="m.css"><link rel="stylesheet" href="c.css">
+<style>
+.grid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:12px}
+.cc{border-radius:22px;padding:12px 18px 14px;display:flex;flex-direction:column;gap:7px;box-shadow:0 0 0 1px var(--line),0 14px 26px -16px rgba(0,0,0,.7);min-width:0;min-height:0}
+.cc.f{box-shadow:0 0 0 3px var(--c),0 0 28px 2px color-mix(in srgb,var(--c) 55%,transparent)}
+.fan{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+.fan .more{margin-left:10px;font-weight:800;font-size:14px;color:var(--ink-2)}
+.nm{font-size:22px;font-weight:800;display:flex;align-items:baseline;gap:8px}
+.nm small{margin-left:auto;font-size:13px;color:var(--ink-2)}
+.new{border-radius:22px;border:2px dashed var(--line-2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--ink-2);font-weight:800;font-size:17px;text-align:center}
+.new u{text-decoration:none;font-size:44px;line-height:1;color:var(--ink-3);font-weight:500}
+.new small{font-size:12.5px;color:var(--ink-3);font-weight:700}
+</style>
+</head>
+<body>
+<a href="index.html">← Todas las propuestas</a>
+<h1>A · «Mosaico»: todas las colecciones de un vistazo</h1>
+<p class="s">En vez de una estantería por colección (hoy caben tres en pantalla), cada colección es una <b>tarjeta</b> con sus portadas en abanico, su color y su progreso. Caben seis sin desplazarse y se ve de un golpe cuánto llevas de cada saga. A sobre una tarjeta abre la colección (su estantería actual, o la ficha de la propuesta C, o la ruta de la D).</p>
+<div class="frame" id="a1"></div>
+
+<h2>Qué cambia</h2>
+<ul class="chg">
+<li><b>Vista:</b> rejilla 3×2 con desplazamiento vertical; la cruceta se mueve en dos direcciones.</li>
+<li><b>Tarjeta:</b> hasta seis portadas en abanico, nombre, juegos · horas · capturas, y una barra con un tramo por juego (lleno = terminado, rayado = jugando).</li>
+<li><b>Nueva colección:</b> es la última casilla y enseña la sugerencia automática (los grupos por nombre que ya calcula la app).</li>
+<li><b>A favor:</b> el doble de colecciones a la vista y progreso inmediato. <b>En contra:</b> un paso más para llegar a un juego concreto y se pierde la línea de tiempo en la vista general.</li>
+</ul>
+
+<script src="c.js"></script>
+<script>
+const card = (c, i) => { const g = c.games.slice(0, 6), n = g.length;
+  return `<div class="cc aur ${i === 0 ? 'f' : ''}" style="${cv(c)}">
+  <div class="fan">${g.map((x, k) => cov(x, 64, '', `transform:rotate(${(k - (n - 1) / 2) * 5}deg) translateY(${Math.abs(k - (n - 1) / 2) * 5}px);margin-left:${k ? -16 : 0}px`)).join('')}${c.games.length > 6 ? `<span class="more">+${c.games.length - 6}</span>` : ''}</div>
+  <div class="nm">${c.name}<small>${done(c)} de ${c.games.length} terminados</small></div>
+  <div class="sub">${sub(c)}</div>${seg(c)}</div>`; };
+mount('a1', tb(['Juegos', 'Colecciones']) + `<div class="body">
+  <div class="rowx">${tabs()}<span class="grow"></span><span class="chip">5 colecciones · 25 juegos</span></div>
+  <div class="grid grow">${COLS.map(card).join('')}
+    <div class="new"><u>+</u>Nueva colección<small>Sugerencia: Final Fantasy (4 juegos)</small></div></div>
+</div>` + hints([['A', 'Abrir', 'a'], ['X', 'Capturas', 'x'], ['☰', 'Editar', 'sh'], ['B', 'Volver', 'b']]));
+</script>
+</body>
+</html>

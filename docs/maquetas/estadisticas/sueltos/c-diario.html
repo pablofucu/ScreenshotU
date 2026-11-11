@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>C · «Diario»: el año en carriles</title>
+<style>/* Tokens copiados de src/app.css (tema oscuro «Noche ahumada»). Compartido por las tres propuestas. */
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;--ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#7f8899;
+  --line:rgba(200,210,235,.16);--line-2:rgba(200,210,235,.24);--face:#262a33;--face-hi:rgba(30,33,41,.94);--chip:rgba(40,44,56,.82);
+  --ok:#3BB54A;--bad:#E8384F;--warn:#F2B807;--acc:#00A0D8;--pc:#1593d6;--sw:#e0384a;--vn:#19b8a6;--jvn:#E5487A}
+*{box-sizing:border-box}
+body{margin:0;padding:28px 32px 60px;background:#0b0d11;font-family:var(--round);color:var(--ink)}
+a{color:#6cc8f0}
+h1{margin:0 0 6px;font-size:28px}
+h2{margin:34px 0 4px;font-size:19px}
+p.s{margin:0 0 12px;color:var(--ink-2);max-width:1280px;font-size:15px;line-height:1.5}
+ul.chg{max-width:1280px;color:var(--ink-2);font-size:15px;line-height:1.6;padding-left:20px}
+ul.chg b{color:var(--ink)}
+
+.frame{width:1280px;height:720px;position:relative;overflow:hidden;border-radius:10px;box-shadow:0 0 0 1px var(--line);
+  background:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
+.pill{background:linear-gradient(180deg,rgba(60,66,80,.80),rgba(36,40,50,.62));box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 0 0 1px var(--line)}
+.crumb{position:absolute;left:28px;top:20px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:18px;font-weight:700;color:var(--ink-2)}
+.crumb i{color:var(--ink-3);font-style:normal;font-weight:500}.crumb b{color:var(--acc)}
+.clock{position:absolute;right:28px;top:28px;font-size:18px;font-weight:700;color:var(--ink-2)}
+.hints{position:absolute;right:22px;bottom:14px;display:flex;gap:8px}
+.hint{display:flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 6px;border-radius:999px;font-size:14.5px;font-weight:700;color:var(--ink-2)}
+.btn{min-width:26px;height:26px;border-radius:13px;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;--b:var(--ink-3);padding:0 6px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white),var(--b) 55%,color-mix(in srgb,var(--b) 85%,black))}
+.btn.a{--b:var(--ok)}.btn.b{--b:var(--bad)}.btn.y{--b:var(--warn);color:#3a414e}.btn.x{--b:#1593d6}.btn.sh{border-radius:7px}
+.body{position:absolute;left:56px;right:56px;top:78px;bottom:62px;display:flex;flex-direction:column;gap:12px}
+.rowx{display:flex;gap:12px;align-items:center}
+.grow{flex:1;min-width:0;min-height:0}
+
+.tabs{display:flex;gap:4px;padding:4px;border-radius:999px;height:44px}
+.tabs span{padding:0 18px;border-radius:999px;display:flex;align-items:center;font-size:15.5px;font-weight:800;color:var(--ink-2)}
+.tabs span.on{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 70%,white),var(--acc));color:#fff}
+.tabs span.new::after{content:'nuevo';margin-left:7px;font-size:10px;padding:2px 6px;border-radius:999px;background:var(--warn);color:#3a414e}
+.nav{display:flex;align-items:center;gap:12px;height:44px;padding:0 14px;border-radius:999px;font-weight:800;font-size:16px}
+.nav i{font-style:normal;color:var(--ink-3)}
+.nav small{color:var(--ink-3);font-weight:700}
+
+.rbox{border-radius:18px;padding:9px 16px;background:var(--face-hi);box-shadow:0 0 0 1px var(--line);min-width:0}
+.rbox .k{font-size:12.5px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.rbox .v{font-size:25px;font-weight:800;line-height:1.15;white-space:nowrap}
+.rbox .v small{font-size:14px;color:var(--ink-3)}
+.rbox .d{font-size:12px;font-weight:700}
+.up{color:#5fd36c}.dn{color:#ff6b7d}.mut{color:var(--ink-3)}
+
+.card{border-radius:22px;background:var(--face);box-shadow:0 0 0 1px var(--line),0 14px 26px -16px rgba(0,0,0,.7);padding:14px 16px;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:9px;min-width:0}
+.card.c::before{content:'';position:absolute;left:0;right:0;top:0;height:4px;background:var(--c)}
+.card.f{box-shadow:0 0 0 3px var(--c),0 0 24px 2px color-mix(in srgb,var(--c) 55%,transparent)}
+.ch{display:flex;align-items:center;gap:9px;font-weight:800;font-size:17px}
+.ch .dot,.dot{width:12px;height:12px;border-radius:50%;background:var(--c);flex:none}
+.ch .tot{margin-left:auto;font-size:20px}
+.ch small{font-size:12.5px;color:var(--ink-3);font-weight:700}
+.sub{font-size:12.5px;font-weight:700;color:var(--ink-2)}
+
+.bars{display:flex;gap:5px;align-items:flex-end;height:var(--h,52px)}
+.bars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%}
+.bars i{width:100%;border-radius:4px 4px 2px 2px;background:var(--c);min-height:2px}
+.bars i.z{background:var(--line)}
+.bars span{font-size:10px;color:var(--ink-3);font-weight:700}
+
+.cov{width:var(--w,54px);aspect-ratio:2/3;border-radius:7px;flex:none;display:grid;place-items:center;font-size:calc(var(--w,54px)*.26);font-weight:800;color:#fff;
+  background:linear-gradient(160deg,var(--g1),var(--g2));box-shadow:0 0 0 1px rgba(0,0,0,.35),0 6px 10px -6px #000;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.cov.f{box-shadow:0 0 0 3px #fff,0 0 20px 2px var(--g1)}
+.trow{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:700}
+.trow .n{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trow .n small{display:block;font-size:11px;color:var(--ink-3)}
+.trow .bar{width:90px;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.trow .bar i{display:block;height:100%;background:var(--c,var(--acc));border-radius:4px}
+.chip{font-size:12px;font-weight:800;padding:5px 10px;border-radius:999px;background:var(--chip);box-shadow:0 0 0 1px var(--line);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.chip .dot{width:8px;height:8px}
+.fin{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:var(--ink-3);white-space:nowrap}
+.fin u{text-decoration:none;color:var(--warn);letter-spacing:-1px}
+.goal7{display:flex;gap:4px}
+.goal7 i{flex:1;height:16px;border-radius:5px;background:color-mix(in srgb,var(--c) 18%,#262a33)}
+.goal7 i.ok{background:var(--c)}
+.ch small.up{color:#5fd36c}.ch small.dn{color:#ff6b7d}
+</style>
+<style>
+.lay{display:grid;grid-template-columns:96px 1fr;gap:12px}
+.lay.d{grid-template-columns:96px 1fr 330px}
+.rail{display:flex;flex-direction:column;gap:8px}
+.rail span{height:46px;border-radius:14px;display:grid;place-items:center;font-weight:800;font-size:17px;color:var(--ink-2);background:var(--chip)}
+.rail span.on{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 70%,white),var(--acc));color:#fff}
+.grid{display:grid;grid-template-columns:118px repeat(12,1fr);gap:0 2px;align-items:center}
+.grid .m{font-size:11px;font-weight:800;color:var(--ink-3);text-align:center;text-transform:uppercase;padding-bottom:4px}
+.grid .l{font-size:13px;font-weight:800;line-height:1.15;display:flex;gap:7px;align-items:center}
+.grid .l small{display:block;color:var(--ink-3);font-size:11px}
+.grid .cell{height:74px;display:flex;justify-content:center;align-items:center;gap:2px;background:color-mix(in srgb,var(--c) 7%,transparent);border-top:1px solid var(--line)}
+.wks{display:grid;grid-template-columns:118px 1fr;align-items:center}
+.wk{display:flex;gap:3px}
+.wk i{flex:1;height:26px;border-radius:4px;background:color-mix(in srgb,var(--acc) calc(var(--v)*1%),#30343f)}
+.wk i.sel{outline:3px solid #fff;outline-offset:1px}
+.wk i.fut{background:transparent;box-shadow:inset 0 0 0 1px var(--line)}
+.card.f>.ch{white-space:nowrap}
+.wr{display:flex;flex-direction:column;gap:5px;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.05);box-shadow:inset 4px 0 0 var(--c)}
+</style>
+</head>
+<body>
+<a href="index.html">← Todas las propuestas</a>
+<h1>C · «Diario»: el año en carriles</h1>
+<p class="s">Una sola pantalla sustituye a Estadísticas y a las pestañas de Terminados: el <b>Diario</b>. Cada año es una rejilla de 12 meses con un <b>carril por categoría</b>; los títulos terminados se colocan en el mes en que se acabaron. Debajo, una tira con las semanas del año: elegir una abre su <b>resumen semanal</b> al lado, con los mismos carriles.</p>
+
+<h2>1 · Diario › 2026 (terminados por mes, un carril por categoría)</h2>
+<p class="s">Arriba las cifras del año; en la rejilla, lo terminado; abajo, la intensidad de cada semana. ↑↓ cambia de año y ←→ recorre portadas o semanas.</p>
+<div class="frame" id="c1"></div>
+
+<h2>2 · Diario › semana 45 (resumen semanal)</h2>
+<p class="s">Con una semana elegida, el panel de la derecha enseña lo jugado y leído en cada categoría. La clasificación y el calendario actuales pasan a ser el detalle de este panel (Y los alterna).</p>
+<div class="frame" id="c2"></div>
+
+<h2>Qué cambia</h2>
+<ul class="chg">
+<li><b>Ubicación:</b> Inicio › Diario. Desaparecen la pantalla Estadísticas y la pestaña «Terminados» de cada categoría; el resumen anual en tarjetas se abre desde el año (A sobre la cifra).</li>
+<li><b>Terminados:</b> todos en la misma rejilla, pero cada categoría en su carril. No hay listas mezcladas.</li>
+<li><b>Resumen semanal:</b> no es una pantalla aparte, es lo que se ve al elegir una semana.</li>
+<li><b>A favor:</b> se ve de un vistazo cuándo terminaste cada cosa y cómo fue cada semana, y solo hay un sitio que aprender. <b>En contra:</b> es el cambio más grande y el que más cuesta programar; un mes con muchos terminados necesita apilar portadas («+2»).</li>
+</ul>
+
+<script>// Datos de ejemplo y piezas compartidas por las tres propuestas (solo maqueta, nada de esto es código de la app).
+const G = {
+  'Celeste': ['#e85a9b', '#5b3fb0'], 'Stardew Valley': ['#6fbf4a', '#2a7a5a'], 'Balatro': ['#e0483a', '#2d4fb0'],
+  'The Witcher 3': ['#b03a2e', '#3a2a2a'], 'Red Dead Redemption 2': ['#c92a2a', '#3b1d14'], 'Hi-Fi Rush': ['#f2b807', '#e0384a'],
+  'Hades II': ['#7a3fd0', '#e0483a'], 'Metroid Dread': ['#e0384a', '#1b3a6b'], 'Animal Crossing': ['#5cc9a7', '#3b8fd0'],
+  'Kirby y la tierra olvidada': ['#ff8fb8', '#5aa9e6'], 'Super Mario Odyssey': ['#e0384a', '#f2b807'], 'Zelda: Tears of the Kingdom': ['#5fbf8f', '#c9a227'],
+  'Steins;Gate': ['#c9b27a', '#4a5a3a'], 'Fata Morgana': ['#8a2a3a', '#2a1a2a'], 'Summer Pockets': ['#5ab0e6', '#f2d06b'],
+  'Kino no Tabi': ['#6E56CF', '#2a3a6b'], 'Kimi no Na wa': ['#3b6fd0', '#e58a48'], 'Kokoro': ['#E5487A', '#6E56CF'],
+};
+const CATS = [
+  { id: 'pc', name: 'Juegos', c: 'var(--pc)' }, { id: 'sw', name: 'Switch', c: 'var(--sw)' },
+  { id: 'vn', name: 'Novelas visuales', c: 'var(--vn)' }, { id: 'jvn', name: 'Novelas japonesas', c: 'var(--jvn)' },
+];
+// Terminados: [título, categoría, año, mes (1-12), día, nota]
+const FIN = [
+  ['Celeste', 'pc', 2026, 8, 14, 5], ['Stardew Valley', 'pc', 2026, 3, 2, 4], ['Balatro', 'pc', 2026, 9, 30, 3], ['Hades II', 'pc', 2026, 11, 6, 5],
+  ['The Witcher 3', 'pc', 2025, 11, 20, 5], ['Red Dead Redemption 2', 'pc', 2025, 6, 1, 0], ['Hi-Fi Rush', 'pc', 2024, 6, 21, 4],
+  ['Super Mario Odyssey', 'sw', 2026, 5, 9, 4], ['Zelda: Tears of the Kingdom', 'sw', 2026, 10, 18, 5], ['Kirby y la tierra olvidada', 'sw', 2025, 4, 12, 4],
+  ['Metroid Dread', 'sw', 2024, 10, 15, 5], ['Animal Crossing', 'sw', 2024, 3, 20, 3],
+  ['Steins;Gate', 'vn', 2026, 2, 11, 5], ['Summer Pockets', 'vn', 2026, 7, 27, 4], ['Fata Morgana', 'vn', 2025, 9, 3, 5],
+  ['Kino no Tabi', 'jvn', 2026, 4, 22, 4], ['Kokoro', 'jvn', 2026, 10, 2, 3], ['Kimi no Na wa', 'jvn', 2025, 12, 28, 4],
+];
+const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const DIAS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+const ini = (n) => n.split(/[\s:;]+/).filter((w) => /^[A-ZÁÉÍÓÚ0-9]/.test(w)).slice(0, 2).map((w) => w[0]).join('');
+const cov = (n, w = 54, cls = '') => `<div class="cov ${cls}" title="${n}" style="--w:${w}px;--g1:${G[n][0]};--g2:${G[n][1]}">${ini(n)}</div>`;
+const stars = (r) => (r ? `<u>${'★'.repeat(r)}</u>` : '');
+const fin = (f, w = 54, cls = '') => `<div class="fin">${cov(f[0], w, cls)}<span>${f[4]} ${MES[f[3] - 1]}</span>${stars(f[5])}</div>`;
+const bars = (a, lab = DIAS, h = 52) => { const m = Math.max(1, ...a); return `<div class="bars" style="--h:${h}px">${a.map((v, i) => `<div><i class="${v ? '' : 'z'}" style="height:${v ? Math.max(6, (v / m) * 100) : 0}%"></i>${lab ? `<span>${lab[i]}</span>` : ''}</div>`).join('')}</div>`; };
+const trow = (n, sub, t, pct, w = 30) => `<div class="trow">${cov(n, w)}<span class="n">${n}${sub ? `<small>${sub}</small>` : ''}</span>${pct != null ? `<span class="bar"><i style="width:${pct}%"></i></span>` : ''}<span>${t}</span></div>`;
+const hints = (l) => `<div class="hints">${l.map(([b, t, c = '']) => `<span class="hint pill"><span class="btn ${c}">${b}</span>${t}</span>`).join('')}</div>`;
+const tb = (crumbs) => `<div class="crumb pill">${crumbs.map((c, i) => (i === crumbs.length - 1 ? `<b>${c}</b>` : `${c}<i>›</i>`)).join('')}</div><div class="clock">lun 9 nov · 21:14</div>`;
+const tabs = (l, on, nw = []) => `<div class="tabs pill">${l.map((t) => `<span class="${t === on ? 'on' : ''} ${nw.includes(t) ? 'new' : ''}">${t}</span>`).join('')}</div>`;
+const rbox = (k, v, d = '', st = '') => `<div class="rbox grow" style="${st}"><div class="k">${k}</div><div class="v">${v}</div>${d ? `<div class="d">${d}</div>` : ''}</div>`;
+const goal7 = (a) => `<div class="goal7">${a.map((x) => `<i class="${x ? 'ok' : ''}"></i>`).join('')}</div>`;
+// Semana de ejemplo (2–8 nov), usada en las tres propuestas.
+const WEEK = {
+  pc: { t: '9 h 20', d: '▲ 1 h 40', up: 1, days: [0, 90, 45, 0, 120, 185, 120], top: [['Hades II', '12 partidas', '6 h 05'], ['Balatro', '5 partidas', '2 h 10'], ['Celeste', '2 partidas', '1 h 05']] },
+  sw: { t: '6 h 45', d: '▼ 50 min', up: 0, days: [60, 0, 0, 75, 0, 150, 120], top: [['Zelda: Tears of the Kingdom', 'en la consola', '5 h 30'], ['Animal Crossing', 'en la consola', '1 h 15']] },
+  vn: { t: '3 h 10', d: '▲ 40 min', up: 1, goal: [1, 1, 0, 1, 1, 0, 1], top: 'Summer Pockets' },
+  jvn: { t: '2 h 25', d: '= igual', up: 1, goal: [1, 1, 1, 1, 0, 1, 1], top: 'Kokoro' },
+};
+const delta = (w) => `<span class="${w.d[0] === '=' ? 'mut' : w.up ? 'up' : 'dn'}">${w.d}</span>`;
+function mount(id, html) { document.getElementById(id).innerHTML = html; }
+// Para las capturas: «fichero.html?solo=a1» deja solo ese marco en la página.
+addEventListener('load', () => { const id = new URLSearchParams(location.search).get('solo'); if (!id) return;
+  document.body.style.padding = '0'; for (const el of [...document.body.children]) if (el.id !== id) el.style.display = 'none'; });
+</script>
+<script>
+let s = 11; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+const WN = 52, SEL = 44;
+const weeks = Array.from({ length: WN }, (_, i) => (i > SEL ? '<i class="fut"></i>' : `<i class="${i === SEL ? 'sel' : ''}" style="--v:${Math.round(15 + rnd() * 85)}"></i>`)).join('');
+const Y = 2026;
+const lanes = (cw) => CATS.map((c) => { const l = FIN.filter((f) => f[1] === c.id && f[2] === Y);
+  return `<div class="l" style="--c:${c.c}"><span class="dot"></span><span>${c.name}<small>${l.length} terminados</small></span></div>` +
+    MES.map((_, m) => `<div class="cell" style="--c:${c.c}">${l.filter((f) => f[3] === m + 1).map((f) => cov(f[0], cw, f[0] === 'Hades II' ? 'f' : '')).join('')}</div>`).join(''); }).join('');
+const wr = (c) => { const w = WEEK[c.id]; return `<div class="wr" style="--c:${c.c}"><div class="ch" style="font-size:14px">${c.name}<span class="tot" style="font-size:16px">${w.t}</span></div>
+  ${w.days ? bars(w.days, null, 26) : goal7(w.goal)}
+  <div class="sub">${w.days ? w.top[0][0] + ' · ' + w.top[0][2] : 'Meta ' + w.goal.filter(Boolean).length + '/7 · ' + w.top} · ${delta(w)}</div></div>`; };
+const diario = (drawer) => tb(['Inicio', 'Diario', drawer ? 'Semana 45' : '2026']) + `<div class="body">
+  <div class="rowx">${rbox('Tiempo en 2026', '412 h', '<span class="up">▲ 36 h frente a 2025</span>')}${rbox('Terminados', '10', '<span class="mut">4 · 2 · 2 · 2 por categoría</span>')}${rbox('Días con actividad', '201 <small>de 313</small>')}${drawer ? '' : rbox('Esta semana', '21 h 40', '<span class="up">▲ 7 %</span>')}</div>
+  <div class="lay grow ${drawer ? 'd' : ''}">
+    <div class="rail"><span class="on">2026</span><span>2025</span><span>2024</span><span style="font-size:14px">Todo</span></div>
+    <div class="card"><div class="ch" style="font-size:15px">Terminados en 2026<small>cada portada, en el mes en que se terminó</small></div>
+      <div class="grid"><span></span>${MES.map((m) => `<span class="m">${m}</span>`).join('')}${lanes(drawer ? 34 : 44)}</div>
+      <div class="wks" style="margin-top:auto"><div class="sub">Semanas<br><span class="mut">más color = más horas</span></div><div class="wk">${weeks}</div></div></div>
+    ${drawer ? `<div class="card f" style="--c:var(--acc)"><div class="ch">Semana 45<small>2 – 8 nov</small><span class="tot">21 h 40 <small class="up">▲ 7 %</small></span></div>
+      ${CATS.map(wr).join('')}
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip">🏁 Hades II terminado</span><span class="chip">📷 84 capturas</span></div></div>` : ''}
+  </div>
+</div>` + hints(drawer ? [['←→', 'Semana', 'sh'], ['Y', 'Clasificación', 'y'], ['A', 'Abrir', 'a'], ['B', 'Cerrar', 'b']] : [['↑↓', 'Año', 'sh'], ['←→', 'Mover', 'sh'], ['A', 'Abrir', 'a'], ['B', 'Volver', 'b']]);
+mount('c1', diario(false));
+mount('c2', diario(true));
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-//! Tactil en streaming con Magpie (fases B1 y B2 de docs/plan-magpie-tablet.md).
+//! Tactil en streaming con Magpie (fases B1 y B2 de docs/planes/magpie-tablet.md).
 //! Un gancho de raton de bajo nivel, activo solo durante la partida. Se enciende con archivos en
 //! `%APPDATA%\app.visorcapturas.desktop`:
 //! - `stream_touch_diag`: copia cada evento a `stream_touch.log`, sin bloquear nada.
@@ -409,7 +409,7 @@ mod imp {
     #[cfg(test)]
     mod tests {
         use super::dest_to_src;
-        // Tsukihime en la pantalla virtual de 2560x1600 (datos reales de docs/plan-magpie-tablet.md).
+        // Tsukihime en la pantalla virtual de 2560x1600 (datos reales de docs/planes/magpie-tablet.md).
         const R: [isize; 8] = [142, 171, 2417, 1451, 0, 80, 2560, 1520];
 
         #[test]

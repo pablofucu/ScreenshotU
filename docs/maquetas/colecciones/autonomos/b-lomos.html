@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>B · «Lomos»: las colecciones como cajas en una balda</title>
+<style>
+/* Tokens copiados de src/app.css (tema oscuro «Noche ahumada»). Compartido por las tres propuestas. */
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;--ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#7f8899;
+  --line:rgba(200,210,235,.16);--line-2:rgba(200,210,235,.24);--face:#262a33;--face-hi:rgba(30,33,41,.94);--chip:rgba(40,44,56,.82);
+  --ok:#3BB54A;--bad:#E8384F;--warn:#F2B807;--acc:#00A0D8;--pc:#1593d6;--sw:#e0384a;--vn:#19b8a6;--jvn:#E5487A}
+*{box-sizing:border-box}
+body{margin:0;padding:28px 32px 60px;background:#0b0d11;font-family:var(--round);color:var(--ink)}
+a{color:#6cc8f0}
+h1{margin:0 0 6px;font-size:28px}
+h2{margin:34px 0 4px;font-size:19px}
+p.s{margin:0 0 12px;color:var(--ink-2);max-width:1280px;font-size:15px;line-height:1.5}
+ul.chg{max-width:1280px;color:var(--ink-2);font-size:15px;line-height:1.6;padding-left:20px}
+ul.chg b{color:var(--ink)}
+
+.frame{width:1280px;height:720px;position:relative;overflow:hidden;border-radius:10px;box-shadow:0 0 0 1px var(--line);
+  background:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
+.pill{background:linear-gradient(180deg,rgba(60,66,80,.80),rgba(36,40,50,.62));box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 0 0 1px var(--line)}
+.crumb{position:absolute;left:28px;top:20px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:999px;font-size:18px;font-weight:700;color:var(--ink-2)}
+.crumb i{color:var(--ink-3);font-style:normal;font-weight:500}.crumb b{color:var(--acc)}
+.clock{position:absolute;right:28px;top:28px;font-size:18px;font-weight:700;color:var(--ink-2)}
+.hints{position:absolute;right:22px;bottom:14px;display:flex;gap:8px}
+.hint{display:flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 6px;border-radius:999px;font-size:14.5px;font-weight:700;color:var(--ink-2)}
+.btn{min-width:26px;height:26px;border-radius:13px;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;--b:var(--ink-3);padding:0 6px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white),var(--b) 55%,color-mix(in srgb,var(--b) 85%,black))}
+.btn.a{--b:var(--ok)}.btn.b{--b:var(--bad)}.btn.y{--b:var(--warn);color:#3a414e}.btn.x{--b:#1593d6}.btn.sh{border-radius:7px}
+.body{position:absolute;left:56px;right:56px;top:78px;bottom:62px;display:flex;flex-direction:column;gap:12px}
+.rowx{display:flex;gap:12px;align-items:center}
+.grow{flex:1;min-width:0;min-height:0}
+
+.tabs{display:flex;gap:4px;padding:4px;border-radius:999px;height:44px}
+.tabs span{padding:0 18px;border-radius:999px;display:flex;align-items:center;font-size:15.5px;font-weight:800;color:var(--ink-2)}
+.tabs span.on{background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 70%,white),var(--acc));color:#fff}
+.tabs span.new::after{content:'nuevo';margin-left:7px;font-size:10px;padding:2px 6px;border-radius:999px;background:var(--warn);color:#3a414e}
+.nav{display:flex;align-items:center;gap:12px;height:44px;padding:0 14px;border-radius:999px;font-weight:800;font-size:16px}
+.nav i{font-style:normal;color:var(--ink-3)}
+.nav small{color:var(--ink-3);font-weight:700}
+
+.rbox{border-radius:18px;padding:9px 16px;background:var(--face-hi);box-shadow:0 0 0 1px var(--line);min-width:0}
+.rbox .k{font-size:12.5px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.rbox .v{font-size:25px;font-weight:800;line-height:1.15;white-space:nowrap}
+.rbox .v small{font-size:14px;color:var(--ink-3)}
+.rbox .d{font-size:12px;font-weight:700}
+.up{color:#5fd36c}.dn{color:#ff6b7d}.mut{color:var(--ink-3)}
+
+.card{border-radius:22px;background:var(--face);box-shadow:0 0 0 1px var(--line),0 14px 26px -16px rgba(0,0,0,.7);padding:14px 16px;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:9px;min-width:0}
+.card.c::before{content:'';position:absolute;left:0;right:0;top:0;height:4px;background:var(--c)}
+.card.f{box-shadow:0 0 0 3px var(--c),0 0 24px 2px color-mix(in srgb,var(--c) 55%,transparent)}
+.ch{display:flex;align-items:center;gap:9px;font-weight:800;font-size:17px}
+.ch .dot,.dot{width:12px;height:12px;border-radius:50%;background:var(--c);flex:none}
+.ch .tot{margin-left:auto;font-size:20px}
+.ch small{font-size:12.5px;color:var(--ink-3);font-weight:700}
+.sub{font-size:12.5px;font-weight:700;color:var(--ink-2)}
+
+.bars{display:flex;gap:5px;align-items:flex-end;height:var(--h,52px)}
+.bars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%}
+.bars i{width:100%;border-radius:4px 4px 2px 2px;background:var(--c);min-height:2px}
+.bars i.z{background:var(--line)}
+.bars span{font-size:10px;color:var(--ink-3);font-weight:700}
+
+.cov{width:var(--w,54px);aspect-ratio:2/3;border-radius:7px;flex:none;display:grid;place-items:center;font-size:calc(var(--w,54px)*.26);font-weight:800;color:#fff;
+  background:linear-gradient(160deg,var(--g1),var(--g2));box-shadow:0 0 0 1px rgba(0,0,0,.35),0 6px 10px -6px #000;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.cov.f{box-shadow:0 0 0 3px #fff,0 0 20px 2px var(--g1)}
+.trow{display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:700}
+.trow .n{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trow .n small{display:block;font-size:11px;color:var(--ink-3)}
+.trow .bar{width:90px;height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.trow .bar i{display:block;height:100%;background:var(--c,var(--acc));border-radius:4px}
+.chip{font-size:12px;font-weight:800;padding:5px 10px;border-radius:999px;background:var(--chip);box-shadow:0 0 0 1px var(--line);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.chip .dot{width:8px;height:8px}
+.fin{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:var(--ink-3);white-space:nowrap}
+.fin u{text-decoration:none;color:var(--warn);letter-spacing:-1px}
+.goal7{display:flex;gap:4px}
+.goal7 i{flex:1;height:16px;border-radius:5px;background:color-mix(in srgb,var(--c) 18%,#262a33)}
+.goal7 i.ok{background:var(--c)}
+.ch small.up{color:#5fd36c}.ch small.dn{color:#ff6b7d}
+
+</style><style>
+/* Piezas compartidas por las propuestas de «Colecciones» (se suma a m.css). */
+.shot{border-radius:10px;position:relative;overflow:hidden;min-width:0;min-height:0;box-shadow:0 0 0 1px rgba(0,0,0,.4);
+  background:radial-gradient(70% 90% at 75% 15%,rgba(255,255,255,.28),transparent 60%),radial-gradient(60% 70% at 15% 95%,rgba(0,0,0,.45),transparent 65%),linear-gradient(var(--a,135deg),var(--g1),var(--g2))}
+.shot.f{box-shadow:0 0 0 3px #fff,0 0 22px 2px var(--g1)}
+.shot .chip{position:absolute;left:8px;bottom:8px;font-size:11px;padding:3px 8px}
+.seg{display:flex;gap:3px;height:8px;flex:none}
+.seg i{flex:1;border-radius:4px;background:var(--line-2)}
+.seg i.t{background:var(--c)}
+.seg i.j{background:repeating-linear-gradient(135deg,var(--c) 0 4px,color-mix(in srgb,var(--c) 30%,transparent) 4px 8px)}
+.st{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;color:var(--ink-2);white-space:nowrap}
+.st::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--s)}
+.gt{background:linear-gradient(90deg,var(--c),var(--c2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.aur{background:radial-gradient(90% 120% at 0% 0%,color-mix(in srgb,var(--c) 42%,transparent),transparent 62%),radial-gradient(80% 120% at 100% 0%,color-mix(in srgb,var(--c2) 36%,transparent),transparent 60%),var(--face)}
+
+</style>
+<style>
+.acc{display:flex;gap:10px}
+.sp{width:88px;flex:none;border-radius:18px;padding:12px 0;display:flex;flex-direction:column;align-items:center;gap:10px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--c) 62%,#262a33),color-mix(in srgb,var(--c2) 38%,#16181e));box-shadow:0 0 0 1px var(--line),inset 0 1px 0 rgba(255,255,255,.18)}
+.sp .n{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.35);font-weight:800;font-size:14px}
+.sp b{flex:1;writing-mode:vertical-rl;transform:rotate(180deg);font-size:22px;white-space:nowrap;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.sp .mini{display:flex;flex-direction:column;gap:5px}
+.sp.new{background:none;border:2px dashed var(--line-2);box-shadow:none;color:var(--ink-3)}
+.sp.new b{font-size:17px;text-shadow:none}
+.open{flex:1;border-radius:22px;padding:14px 20px 16px;display:flex;flex-direction:column;gap:12px;min-width:0;box-shadow:0 0 0 3px var(--c),0 0 28px 2px color-mix(in srgb,var(--c) 50%,transparent)}
+.open h3{margin:0;font-size:30px;line-height:1.1}
+.gg{flex:1;display:grid;grid-template-columns:repeat(4,1fr);align-content:space-evenly;justify-items:center;gap:6px}
+.g{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;font-weight:800;color:var(--ink-2);text-align:center;width:140px}
+.g small{font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+</style>
+</head>
+<body>
+<a href="index.html">← Todas las propuestas</a>
+<h1>B · «Lomos»: las colecciones como cajas en una balda</h1>
+<p class="s">Todas las colecciones de la categoría están en <b>una sola balda</b>, de canto, como cajas recopilatorias. Izquierda/derecha pasa de una a otra y la enfocada <b>se abre</b> y enseña sus juegos; arriba/abajo entra en ellos. No hay desplazamiento vertical ni segunda pantalla.</p>
+<div class="frame" id="b1"></div>
+
+<h2>Qué cambia</h2>
+<ul class="chg">
+<li><b>Vista:</b> acordeón horizontal. Cada lomo lleva el color de la colección, el número de juegos y tres portadas pequeñas.</li>
+<li><b>Colección abierta:</b> portadas grandes en rejilla (orden por año), con año y estado bajo cada una, y la barra de progreso arriba.</li>
+<li><b>A favor:</b> muy físico y rápido de recorrer con la cruceta; todo ocurre en una pantalla. <b>En contra:</b> con más de 8–9 colecciones los lomos tienen que desplazarse, y los nombres en vertical se leen peor.</li>
+</ul>
+
+<script>
+// Datos de ejemplo y piezas compartidas por las propuestas de «Colecciones» (solo maqueta, nada de esto es código de la app).
+// Juego: [nombre, sigla, año, color 1, color 2, estado (t terminado · j jugando · p pendiente), horas, capturas]
+const COLS = [
+  { name: 'Trails', c: '#3b8fd0', c2: '#19b8a6', games: [
+    ['Trails in the Sky', 'Sky', 2004, '#4aa3e0', '#f2d06b', 't', 48, 212], ['Trails in the Sky SC', 'SC', 2006, '#3b6fd0', '#e58a48', 't', 61, 305],
+    ['Trails in the Sky the 3rd', '3rd', 2007, '#6E56CF', '#2a3a6b', 't', 39, 140], ['Trails from Zero', 'Zero', 2010, '#19b8a6', '#2a4a7a', 't', 52, 261],
+    ['Trails to Azure', 'Azure', 2011, '#2d6fe0', '#7ad0f0', 'j', 23, 118], ['Trails of Cold Steel', 'CS I', 2013, '#b03a2e', '#3a2a2a', 'p', 0, 0],
+    ['Trails of Cold Steel II', 'CS II', 2014, '#c94a6a', '#2a2a4a', 'p', 0, 0], ['Trails into Reverie', 'Rev', 2020, '#7a3fd0', '#e0483a', 'p', 0, 0]] },
+  { name: 'Kingdom Hearts', c: '#6E56CF', c2: '#e58a48', games: [
+    ['Kingdom Hearts', 'KH', 2002, '#3b6fd0', '#f2d06b', 't', 31, 96], ['Chain of Memories', 'CoM', 2004, '#8a2a3a', '#2a1a2a', 't', 18, 41],
+    ['Kingdom Hearts II', 'KH II', 2005, '#6E56CF', '#e58a48', 't', 42, 180], ['Birth by Sleep', 'BbS', 2010, '#5ab0e6', '#2a3a6b', 'j', 9, 37],
+    ['Dream Drop Distance', 'DDD', 2012, '#e85a9b', '#5b3fb0', 'p', 0, 0], ['Kingdom Hearts III', 'KH III', 2019, '#2d4fb0', '#c9a227', 'p', 0, 0]] },
+  { name: 'Yakuza', c: '#e0384a', c2: '#f2b807', games: [
+    ['Yakuza 0', 'Y0', 2015, '#e0384a', '#f2b807', 't', 74, 420], ['Yakuza Kiwami', 'K1', 2016, '#b03a2e', '#3a2a2a', 't', 28, 133],
+    ['Yakuza Kiwami 2', 'K2', 2017, '#c92a2a', '#2a3a6b', 'j', 12, 58], ['Like a Dragon', 'LaD', 2020, '#e58a48', '#3b6fd0', 'p', 0, 0]] },
+  { name: 'Persona', c: '#f2b807', c2: '#e0384a', games: [
+    ['Persona 4 Golden', 'P4G', 2012, '#f2b807', '#e58a48', 't', 82, 351], ['Persona 5 Royal', 'P5R', 2019, '#e0384a', '#1a1a1a', 't', 121, 640],
+    ['Persona 3 Reload', 'P3R', 2024, '#2d6fe0', '#5cc9f0', 'p', 0, 0]] },
+  { name: 'FromSoftware', c: '#c9a227', c2: '#5fbf8f', games: [
+    ['Dark Souls', 'DS', 2011, '#8a6a2a', '#2a2a2a', 't', 55, 147], ['Dark Souls III', 'DS III', 2016, '#b0562e', '#2a1a1a', 't', 47, 122],
+    ['Sekiro', 'Sek', 2019, '#c94a2a', '#e5b848', 'p', 3, 9], ['Elden Ring', 'ER', 2022, '#c9a227', '#3a4a2a', 'j', 96, 512]] },
+];
+const ST = { t: ['Terminado', '#3BB54A'], j: ['Jugando', '#00A0D8'], p: ['Pendiente', '#7f8899'] };
+const sum = (c, k) => c.games.reduce((n, g) => n + g[k], 0);
+const hrs = (c) => sum(c, 6), caps = (c) => sum(c, 7), done = (c) => c.games.filter((g) => g[5] === 't').length;
+const sub = (c) => `${c.games.length} juegos · ${hrs(c)} h · ${caps(c)} capturas`;
+const cv = (c) => `--c:${c.c};--c2:${c.c2}`;
+const cov = (g, w = 54, cls = '', st = '') => `<div class="cov ${cls}" title="${g[0]}" style="--w:${w}px;--g1:${g[3]};--g2:${g[4]};${st}">${g[1]}</div>`;
+const shot = (g, k = 0, cls = '', st = '', lab = '') => `<div class="shot ${cls}" style="--g1:${g[3]};--g2:${g[4]};--a:${(k * 67 + 100) % 360}deg;${st}">${lab ? `<span class="chip">${lab}</span>` : ''}</div>`;
+const seg = (c) => `<div class="seg" style="--c:${c.c}">${c.games.map((g) => `<i class="${g[5]}"></i>`).join('')}</div>`;
+const st = (g) => `<span class="st" style="--s:${ST[g[5]][1]}">${ST[g[5]][0]}</span>`;
+const hints = (l) => `<div class="hints">${l.map(([b, t, c = '']) => `<span class="hint pill"><span class="btn ${c}">${b}</span>${t}</span>`).join('')}</div>`;
+const tb = (crumbs) => `<div class="crumb pill">${crumbs.map((c, i) => (i === crumbs.length - 1 ? `<b>${c}</b>` : `${c}<i>›</i>`)).join('')}</div><div class="clock">lun 9 nov · 21:14</div>`;
+const tabs = (on = 'Colecciones') => `<div class="tabs pill">${['Todos', 'Mi lista', 'Colecciones'].map((t) => `<span class="${t === on ? 'on' : ''}">${t}</span>`).join('')}</div>`;
+function mount(id, html) { document.getElementById(id).innerHTML = html; }
+// Para las capturas: «fichero.html?solo=a1» deja solo ese marco en la página.
+addEventListener('load', () => { const id = new URLSearchParams(location.search).get('solo'); if (!id) return;
+  document.body.style.padding = '0'; for (const el of [...document.body.children]) if (el.id !== id) el.style.display = 'none'; });
+
+</script>
+<script>
+const F = 1;
+const spine = (c) => `<div class="sp" style="${cv(c)}"><span class="n">${c.games.length}</span><b>${c.name}</b><div class="mini">${c.games.slice(0, 3).map((g) => cov(g, 46)).join('')}</div></div>`;
+const open = (c) => `<div class="open aur" style="${cv(c)}">
+  <div class="rowx"><div class="grow"><h3>${c.name}</h3><div class="sub">${sub(c)} · ${done(c)} de ${c.games.length} terminados</div></div><span class="hint pill"><span class="btn x">X</span>Capturas</span></div>
+  ${seg(c)}
+  <div class="gg">${c.games.map((g, i) => `<div class="g">${cov(g, 100, i === 3 ? 'f' : '')}<span>${g[2]} · ${st(g)}</span><small>${g[0]}</small></div>`).join('')}</div></div>`;
+mount('b1', tb(['Juegos', 'Colecciones']) + `<div class="body">
+  <div class="rowx">${tabs()}<span class="grow"></span><span class="chip">2 de 5 · Kingdom Hearts</span></div>
+  <div class="acc grow">${COLS.map((c, i) => (i === F ? open(c) : spine(c))).join('')}<div class="sp new"><span class="n">+</span><b>Nueva colección</b></div></div>
+</div>` + hints([['◄ ►', 'Colección', 'sh'], ['A', 'Abrir juego', 'a'], ['X', 'Capturas', 'x'], ['☰', 'Editar', 'sh'], ['B', 'Volver', 'b']]));
+</script>
+</body>
+</html>
