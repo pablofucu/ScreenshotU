@@ -137,31 +137,50 @@
     if (steps) { acc -= steps * RH; setOff(off + steps); }
   }
 
-  // Táctil: arrastrar la lista con el dedo (un toque sin mover sigue siendo un clic).
-  let drag: { y: number; off: number; moved: boolean } | null = null;
+  // Arrastre con cualquier puntero (dedo, lápiz o ratón: Artemis entrega los toques de varias maneras). Se sigue con
+  // escuchas en window, sin depender de la captura de puntero, que falla con toques inyectados.
+  function track(id: number, onMove: (e: PointerEvent) => void, onEnd?: () => void) {
+    const mv = (e: PointerEvent) => { if (e.pointerId === id) onMove(e); };
+    const up = (e: PointerEvent) => {
+      if (e.pointerId !== id) return;
+      window.removeEventListener('pointermove', mv);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+      onEnd?.();
+    };
+    window.addEventListener('pointermove', mv);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  }
+
+  // Arrastrar la lista (un toque sin mover sigue siendo un clic).
   let swallow = false;
   function rowsDown(e: PointerEvent) {
-    if (e.pointerType === 'mouse' || rows.length <= VIS) return;
-    drag = { y: e.clientY, off, moved: false };
+    if (rows.length <= VIS || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    const y0 = e.clientY, off0 = off;
+    let moved = false;
+    track(e.pointerId, (ev) => {
+      const dy = y0 - ev.clientY;
+      if (!moved && Math.abs(dy) < 8) return;
+      moved = true;
+      setOff(off0 + dy / RH);
+    }, () => { if (moved) { swallow = true; setTimeout(() => (swallow = false), 0); } });
   }
-  function rowsMove(e: PointerEvent) {
-    if (!drag) return;
-    const dy = drag.y - e.clientY;
-    if (!drag.moved && Math.abs(dy) < 8) return;
-    if (!drag.moved) { drag.moved = true; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); }
-    setOff(drag.off + dy / RH);
-  }
-  function rowsUp() { if (drag?.moved) { swallow = true; setTimeout(() => (swallow = false), 0); } drag = null; }
   function rowsClick(e: MouseEvent) { if (swallow) { e.stopPropagation(); e.preventDefault(); } }
 
   // Barra lateral: tocar o arrastrar para moverse por la lista.
-  function barSet(e: PointerEvent) {
-    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const f = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
+  function barSet(el: HTMLElement, y: number) {
+    const r = el.getBoundingClientRect();
+    const f = Math.max(0, Math.min(1, (y - r.top) / r.height));
     setOff(f * rows.length - VIS / 2);
   }
-  function barDown(e: PointerEvent) { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); barSet(e); }
-  function barMove(e: PointerEvent) { if ((e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) barSet(e); }
+  function barDown(e: PointerEvent) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    const el = e.currentTarget as HTMLElement;
+    barSet(el, e.clientY);
+    track(e.pointerId, (ev) => barSet(el, ev.clientY));
+  }
 
   const moved = makeMoved();
   function hover(e: MouseEvent, i: number) {
@@ -192,7 +211,7 @@
           </div>
         {/if}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div class="st-rows" style="height:{VIS * RH}px" onwheel={wheel} onpointerdown={rowsDown} onpointermove={rowsMove} onpointerup={rowsUp} onpointercancel={rowsUp} onclickcapture={rowsClick}>
+        <div class="st-rows" style="height:{VIS * RH}px" onwheel={wheel} onpointerdown={rowsDown} onclickcapture={rowsClick}>
         <div class="st-track" style="transform:translateY({-off * RH}px)">
         {#each rows as r, i (r.id)}
           <button type="button" class="st-row" class:f={app.setRow === i && setNav.zone === 'body'} class:cur={app.setRow === i} class:danger={r.id === 'quit' || (r.id === 'restore' && !!app.restoreReady)} data-set={r.id} onmousemove={(e) => hover(e, i)} onclick={() => { app.setRow = i; setNav.zone = 'body'; settingsAct(r.id, 0); }}>
@@ -212,7 +231,7 @@
         </div>
         {#if rows.length > VIS}
           <!-- svelte-ignore a11y_no_static_element_interactions -->
-          <div class="st-scroll" style="height:{VIS * RH}px" onpointerdown={barDown} onpointermove={barMove}><i style="height:{(VIS / rows.length) * 100}%;top:{(off / rows.length) * 100}%"></i></div>
+          <div class="st-scroll" style="height:{VIS * RH}px" onpointerdown={barDown}><i style="height:{(VIS / rows.length) * 100}%;top:{(off / rows.length) * 100}%"></i></div>
         {/if}
         </div>
         {#if focused}<div class="st-desc"><b>{focused.l}.</b> {focused.d}</div>{/if}
@@ -252,9 +271,9 @@
   .seg span.on { background: var(--gf); color: var(--on); }
   .st-row.f .seg { background: var(--glass-in); }
   .st-rows-wrap { position: relative; }
-  .st-scroll { position: absolute; right: -10px; top: 4px; width: 28px; touch-action: none; cursor: pointer; z-index: 2; }
-  .st-scroll::before { content: ''; position: absolute; right: 10px; top: 0; bottom: 0; width: 5px; border-radius: 3px; background: var(--line); }
-  .st-scroll i { position: absolute; right: 8px; width: 9px; min-height: 28px; border-radius: 5px; background: var(--g2); pointer-events: none; }
+  .st-scroll { position: absolute; right: -18px; top: 4px; width: 44px; touch-action: none; cursor: pointer; z-index: 2; }
+  .st-scroll::before { content: ''; position: absolute; right: 18px; top: 0; bottom: 0; width: 5px; border-radius: 3px; background: var(--line); }
+  .st-scroll i { position: absolute; right: 16px; width: 9px; min-height: 28px; border-radius: 5px; background: var(--g2); pointer-events: none; }
   .st-desc { flex: none; margin: auto 0 0; height: 124px; overflow: hidden; border-radius: var(--r-m); padding: 12px 18px; background: var(--glass-in); font-size: var(--t-s); font-weight: 500; line-height: 1.45; color: var(--ink-2); }
   .st-rows-wrap { position: relative; }
   .st-qr { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; gap: 28px; padding: 0 26px; border-radius: var(--r-m); background: var(--face-hi); }
