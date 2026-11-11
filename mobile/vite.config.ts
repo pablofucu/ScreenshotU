@@ -31,5 +31,10 @@ export default defineConfig({
   },
   clearScreen: false,
   server: { port: 1430, strictPort: true, host: '0.0.0.0', fs: { allow: ['..'] } },
-  build: { target: 'es2022', chunkSizeWarningLimit: 1000 },
+  build: {
+    target: 'es2022',
+    chunkSizeWarningLimit: 1000,
+    // Dos páginas: la app y el menú que el servicio de accesibilidad enseña sobre Artemis.
+    rollupOptions: { input: { main: fileURLToPath(new URL('./index.html', import.meta.url)), quickmenu: fileURLToPath(new URL('./quickmenu.html', import.meta.url)) } },
+  },
 });

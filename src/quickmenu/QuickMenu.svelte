@@ -31,6 +31,13 @@
   import TileAch from './TileAch.svelte';
   import TilePad from './TilePad.svelte';
   import TileExit from './TileExit.svelte';
+  import TileBack from './TileBack.svelte';
+
+  // Versión reducida para la tablet: la página va dentro de un WebView del servicio de accesibilidad (ver
+  // CaptureKeyService.java) y habla con el PC por HTTP. Solo tiempo, capturas, salir y volver a la app.
+  type Native = { close(): void; back(): void };
+  const nat = (): Native | null => (typeof window === 'undefined' ? null : ((window as unknown as { VisorQm?: Native }).VisorQm ?? null));
+  const TABLET = typeof window !== 'undefined' && (window as unknown as { __QM_TABLET__?: boolean }).__QM_TABLET__ === true;
 
   let qmState = $state<QuickMenuState | null>(null);
   let sheet = $state<null | 'rendimiento' | 'tiempo' | 'capturas' | 'audio' | 'logros' | 'mando'>(null);
@@ -153,6 +160,7 @@
 
   async function triggerClose() {
     if (closing) return;
+    if (TABLET) { flushPendingTrash(); nat()?.close(); return; }
     await quickmenuClose();
     if (!isTauri()) onCloseEvent();
   }
@@ -165,6 +173,25 @@
   async function handleCapture() {
     triggerShutterFlash();
     await quickmenuCapture();
+    // En la tablet no llega el aviso de captura nueva: se vuelve a pedir la lista cuando el PC ya la ha guardado.
+    if (TABLET) setTimeout(() => { void refreshShots(); }, 1400);
+  }
+
+  async function refreshShots() {
+    try {
+      const st = withContextShots(await fetchQuickmenuState());
+      if (qmState) qmState.shots = st.shots;
+    } catch { /* sin conexión: se queda como está */ }
+  }
+
+  function goBack() {
+    flushPendingTrash();
+    nat()?.back();
+  }
+
+  async function exitGame() {
+    await quickmenuCloseGame();
+    nat()?.close();
   }
 
   function deleteShotDeferred(index: number) {
@@ -195,6 +222,7 @@
   }
 
   function loadAchievementsOnce() {
+    if (TABLET) return;
     if (achievements !== null || !qmState?.game?.id) return;
     achievementsLoading = true;
     getGameAchievements(qmState.game.id).then((res) => {
@@ -221,7 +249,7 @@
     });
     // Dos frames: el primero deja que el DOM pinte la nueva hoja, el segundo confirma que ya salio en pantalla.
     // Sin este aviso el backend nunca sabe que puede pausar el juego (ver quickmenu.rs::confirm).
-    requestAnimationFrame(() => requestAnimationFrame(() => markPainted(newState.gen)));
+    if (!TABLET) requestAnimationFrame(() => requestAnimationFrame(() => markPainted(newState.gen)));
   }
 
   function onPausedEvent(paused: boolean) {
@@ -394,6 +422,17 @@
     updateClock();
     clockTimer = setInterval(updateClock, 1000);
     window.addEventListener('resize', fitStage);
+    if (TABLET) {
+      // El servicio llama a esto cada vez que enseña el menú (el WebView se queda cargado entre aperturas).
+      const w = window as unknown as { __qmOpen?: () => void };
+      w.__qmOpen = () => {
+        fitStage();
+        updateClock();
+        fetchQuickmenuState().then(onOpenState).catch(() => { qmState = null; });
+      };
+      w.__qmOpen();
+      return;
+    }
     window.addEventListener('keydown', handleKeydown);
     window.addEventListener('focus', syncIfOpen);
 
@@ -473,7 +512,7 @@
   });
 </script>
 
-<div class="qm-wrap">
+<div class="qm-wrap" class:tablet={TABLET}>
   <div
     class="stage"
     bind:this={stageEl}
@@ -522,12 +561,14 @@
       </header>
 
       <main class="gridA">
+        {#if !TABLET}
         <TilePerf
           perf={qmState?.perf ?? null}
           paused={qmState?.paused ?? false}
           view="tile"
           onOpenSheet={() => openSheet('rendimiento')}
         />
+        {/if}
 
         <TileTime
           context={qmState?.context ?? null}
@@ -548,6 +589,7 @@
           onDeleteShot={deleteShotDeferred}
         />
 
+        {#if !TABLET}
         <TileAudio
           audio={qmState?.audio ?? null}
           view="tile"
@@ -586,9 +628,12 @@
           view="tile"
           onOpenSheet={() => openSheet('mando')}
         />
+        {:else}
+        <TileBack onBack={goBack} />
+        {/if}
 
         <TileExit
-          onClose={() => quickmenuCloseGame()}
+          onClose={() => { void exitGame(); }}
         />
       </main>
 
@@ -609,7 +654,7 @@
         </div>
       {/if}
 
-      <div class="hints">
+      <div class="hints" class:gone={TABLET}>
         {#each hintsHtml as h}
           <span>
             <i class="k {h.c || ''}">{h.k}</i>

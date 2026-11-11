@@ -1866,3 +1866,10 @@ svg.ch {
 .A.out .tile {
   animation: popout .22s ease-in forwards;
 }
+
+/* Versión reducida de la tablet: cuatro baldosas grandes. */
+.tablet .t-time { grid-area: 1 / 1 / 3 / 3; }
+.tablet .t-shots { grid-area: 1 / 3 / 3 / 5; }
+.tablet .t-back { grid-area: 3 / 1 / 4 / 3; }
+.tablet .t-pow { grid-area: 3 / 3 / 4 / 5; }
+.tablet .hints.gone { display: none; }

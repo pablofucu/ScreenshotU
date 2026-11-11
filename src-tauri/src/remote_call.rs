@@ -117,6 +117,13 @@ pub fn dispatch(app: &AppHandle, caller: &visor_core::remote::Caller, cmd: &str,
         "capture_now" => val(crate::capture_now(app.clone())),
         "suspend_pc" => out(crate::suspend_pc()),
         "pc_mac" => val(crate::pc_mac()),
+        /* --- menu sobre el juego (version reducida de la tablet) --- */
+        "quickmenu_state" => out(block(crate::quickmenu::quickmenu_state(app.clone()))),
+        "quickmenu_set_context" => { crate::quickmenu::quickmenu_set_context(arg(a, "ctx")?); val(()) }
+        "quickmenu_capture" => { crate::quickmenu::quickmenu_capture(app.clone()); val(()) }
+        "quickmenu_close_game" => { crate::quickmenu::quickmenu_close_game(app.clone()); val(()) }
+        "quickmenu_trash" => out(block(crate::quickmenu::quickmenu_trash(app.clone(), st(), arg(a, "paths")?))),
+
         "audio_outputs" => out(block(crate::audio_outputs())),
         "set_audio_output" => out(block(crate::set_audio_output(app.clone(), arg(a, "id")?))),
 

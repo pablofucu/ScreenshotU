@@ -1,6 +1,14 @@
 package app.visorcapturas.movil;
 
 import android.accessibilityservice.AccessibilityService;
+import android.annotation.SuppressLint;
+import android.net.Uri;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -10,7 +18,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -21,12 +28,12 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -34,7 +41,7 @@ import java.net.URL;
 
 /**
  * Mientras Moonlight/Artemis esta en primer plano: volumen abajo hace una captura en el PC
- * (POST /api/v1/capture) y volumen arriba abre un menu pequeno arriba (capturar, cerrar el juego, volver a la app).
+ * (POST /api/v1/capture) y volumen arriba abre el menu del juego (la pagina del overlay del PC en un WebView).
  * Fuera de Moonlight no toca ninguna tecla.
  */
 public class CaptureKeyService extends AccessibilityService {
@@ -45,8 +52,7 @@ public class CaptureKeyService extends AccessibilityService {
 
     private final Handler ui = new Handler(Looper.getMainLooper());
     private View menu;
-    private TextView closeBtn;
-    private final Runnable hideMenu = this::removeMenu;
+    private WebView web;
 
     /** Se acaba de ver la pantalla del stream de Artemis: si ahora sale su lista, el usuario ha salido con atras. */
     private boolean leftStream;
@@ -113,80 +119,107 @@ public class CaptureKeyService extends AccessibilityService {
     }
 
     private void removeMenu() {
-        ui.removeCallbacks(hideMenu);
         if (menu == null) return;
         try {
             ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).removeView(menu);
         } catch (Exception ignored) {
         }
         menu = null;
-        closeBtn = null;
     }
 
-    private TextView button(String text, View.OnClickListener l) {
-        TextView t = new TextView(this);
-        t.setText(text);
-        t.setTextColor(Color.WHITE);
-        t.setTextSize(15);
-        t.setGravity(Gravity.CENTER);
-        int pad = (int) (12 * getResources().getDisplayMetrics().density);
-        t.setPadding(pad * 2, pad, pad * 2, pad);
-        t.setOnClickListener(l);
-        return t;
+    /** Puente JS del menu: la pagina pide la configuracion del servidor y avisa de cerrar o volver. */
+    private final class QmBridge {
+        @JavascriptInterface
+        public String config() {
+            SharedPreferences sp = getSharedPreferences(StreamingPlugin.PREFS, Context.MODE_PRIVATE);
+            try {
+                URL u = new URL(sp.getString("base", ""));
+                String code = sp.getString("code", "");
+                JSONObject o = new JSONObject();
+                o.put("host", u.getHost());
+                o.put("port", u.getPort() > 0 ? u.getPort() : 80);
+                o.put("code", code);
+                o.put("token", code);
+                return o.toString();
+            } catch (Exception e) {
+                return "{}";
+            }
+        }
+
+        @JavascriptInterface
+        public void close() {
+            ui.post(CaptureKeyService.this::removeMenu);
+        }
+
+        @JavascriptInterface
+        public void back() {
+            ui.post(() -> {
+                removeMenu();
+                returnToApp();
+            });
+        }
+    }
+
+    private static String mime(String path) {
+        String p = path.toLowerCase();
+        if (p.endsWith(".html")) return "text/html";
+        if (p.endsWith(".js") || p.endsWith(".mjs")) return "text/javascript";
+        if (p.endsWith(".css")) return "text/css";
+        if (p.endsWith(".json")) return "application/json";
+        if (p.endsWith(".svg")) return "image/svg+xml";
+        if (p.endsWith(".png")) return "image/png";
+        if (p.endsWith(".jpg") || p.endsWith(".jpeg")) return "image/jpeg";
+        if (p.endsWith(".webp")) return "image/webp";
+        if (p.endsWith(".woff2")) return "font/woff2";
+        if (p.endsWith(".woff")) return "font/woff";
+        if (p.endsWith(".ttf")) return "font/ttf";
+        return "application/octet-stream";
+    }
+
+    @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
+    private WebView createWeb() {
+        WebView w = new WebView(this);
+        w.setBackgroundColor(Color.TRANSPARENT);
+        WebSettings st = w.getSettings();
+        st.setJavaScriptEnabled(true);
+        st.setDomStorageEnabled(true);
+        st.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        w.addJavascriptInterface(new QmBridge(), "VisorQm");
+        w.setWebViewClient(new WebViewClient() {
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest r) {
+                Uri u = r.getUrl();
+                if (!"visor-qm.invalid".equals(u.getHost())) return null;
+                String path = u.getPath();
+                if (path == null || path.equals("/")) path = "/quickmenu.html";
+                try {
+                    InputStream in = getAssets().open("public" + path);
+                    return new WebResourceResponse(mime(path), "utf-8", in);
+                } catch (Exception e) {
+                    return new WebResourceResponse("text/plain", "utf-8", 404, "Not Found", null, new ByteArrayInputStream(new byte[0]));
+                }
+            }
+        });
+        w.loadUrl("https://visor-qm.invalid/quickmenu.html");
+        return w;
     }
 
     private void showMenu() {
         removeMenu();
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        GradientDrawable bg = new GradientDrawable();
-        bg.setColor(Color.argb(235, 24, 24, 32));
-        bg.setCornerRadius(24 * getResources().getDisplayMetrics().density);
-        row.setBackground(bg);
-        row.addView(button("Capturar", v -> {
-            capture();
-            ui.removeCallbacks(hideMenu);
-            ui.postDelayed(hideMenu, 1500);
-        }));
-        closeBtn = button("Cerrar juego", v -> closeGame());
-        row.addView(closeBtn);
-        row.addView(button("Volver a la app", v -> {
-            removeMenu();
-            returnToApp();
-        }));
+        boolean fresh = web == null;
+        if (fresh) web = createWeb();
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
                 PixelFormat.TRANSLUCENT);
-        lp.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        lp.y = (int) (16 * getResources().getDisplayMetrics().density);
         try {
-            ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).addView(row, lp);
-            menu = row;
-            ui.postDelayed(hideMenu, 4000);
+            ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).addView(web, lp);
+            menu = web;
+            // La primera vez la propia pagina se abre al cargar; las siguientes hay que avisarla.
+            if (!fresh) web.evaluateJavascript("window.__qmOpen&&window.__qmOpen()", null);
         } catch (Exception ignored) {
         }
-    }
-
-    private void closeGame() {
-        ui.removeCallbacks(hideMenu);
-        final boolean force = closeBtn != null && "Forzar cierre".contentEquals(closeBtn.getText());
-        new Thread(() -> {
-            String r = post("/api/v1/close", force ? "{\"force\":true}" : "{}");
-            boolean ok = r != null;
-            vibrate(ok);
-            ui.post(() -> {
-                if (menu == null) return;
-                if (ok && r.contains("\"asked\"")) {
-                    // El juego mostro un dialogo o tarda: la siguiente pulsacion fuerza el cierre.
-                    if (closeBtn != null) closeBtn.setText("Forzar cierre");
-                    ui.postDelayed(hideMenu, 5000);
-                } else {
-                    removeMenu();
-                }
-            });
-        }, "visor-close").start();
     }
 
     private void returnToApp() {
