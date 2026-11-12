@@ -9,6 +9,7 @@ import type { BackendEvent, Config, Library, MagpieMode, Shot, Title, TitlesTab 
 import { fmtDur } from './format';
 import { oskCmd, oskKeydown } from './osk.svelte';
 import { pairCmd } from './pair.svelte';
+import { useCmd } from './usepc.svelte';
 import {
   accentCmd, addCmd, addShotsTo, curTitle, exitSel, formCmd, gdirCmd, hiddenCmd, moveCmd, onFilesDropped,
   openAccentPicker, openAdd, openHidden, openShotMenu, patchTitle, shotMenuAct, toggleHideTitle, toggleSel,
@@ -1916,6 +1917,7 @@ export function cmd(c: string) {
   if (pairCmd(c)) return;
   if (app.audioMenu) { audioCmd(c); return; }
   if (app.osk.open) { oskCmd(c); return; }
+  if (useCmd(c)) return;
   if (app.overlay) { overlayCmd(c); return; }
   if (listTab() && listCmd(c)) return;
   if (collTab() && collCmd(c)) return;
