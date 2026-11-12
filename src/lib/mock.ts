@@ -580,16 +580,17 @@ export async function mockBackend(): Promise<Backend> {
     },
     async remoteInfo() {
       const on = cfg.remoteEnabled;
-      if (on && !cfg.remoteToken) cfg = { ...cfg, remoteToken: 'K7QM-4XTR' };
-      return { enabled: on, running: on, port: cfg.remotePort, addresses: on ? ['192.168.1.20'] : [], code: cfg.remoteToken, id: 'mock', link: '', qr: '', error: null };
+      return { enabled: on, running: on, port: cfg.remotePort, addresses: on ? ['192.168.1.20'] : [], id: 'mock', link: '', qr: '', error: null };
     },
-    async remoteNewCode() {
-      const abc = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-      const code = Array.from({ length: 8 }, (_, i) => (i === 4 ? '-' : '') + abc[Math.floor(Math.random() * abc.length)]).join('');
-      cfg = { ...cfg, remoteToken: code };
-      try { store()?.setItem(LS, JSON.stringify(cfg)); } catch {}
-      return { enabled: cfg.remoteEnabled, running: cfg.remoteEnabled, port: cfg.remotePort, addresses: cfg.remoteEnabled ? ['192.168.1.20'] : [], code, id: 'mock', link: '', qr: '', error: null };
-    },
+    async pairPending() { return []; },
+    async pairApprove() {},
+    async pairReject() {},
+    async pairTicketNew() { return { ticket: 'K7QM-4XTR', expiresMs: Date.now() + 300000, qr: '' }; },
+    async pairTicketCancel() {},
+    async hostAddrs() { return cfg.remoteEnabled ? ['192.168.1.20:' + cfg.remotePort] : []; },
+    async apolloCredsSet() { return { state: 'ok' as const, hasCredentials: true }; },
+    async apolloCredsClear() { return { state: 'noCredentials' as const, hasCredentials: false }; },
+    async apolloWebState() { return { state: 'noCredentials' as const, hasCredentials: false }; },
     async streamAppStatus() { return { found: true, path: 'C:\Program Files\Apollo\config\apps.json', installed: false, outdated: false }; },
     async streamAppInstall() { return { found: true, path: 'C:\Program Files\Apollo\config\apps.json', installed: true, outdated: false }; },
     async magpieStatus() { return { exe: 'C:\\Magpie\\Magpie.exe (simulado)', running: true, cunny: true }; },

@@ -31,15 +31,17 @@ pub struct Hello {
     pub name: String,
     pub version: String,
     pub features: Vec<String>,
+    /// Direcciones con las que llegar al PC (`ip:puerto`).
+    pub addrs: Vec<String>,
 }
 
 impl Default for Hello {
     fn default() -> Self {
-        Hello { app: String::new(), api: 0, api_rev: 1, api_min: 1, id: String::new(), name: String::new(), version: String::new(), features: vec![] }
+        Hello { app: String::new(), api: 0, api_rev: 1, api_min: 1, id: String::new(), name: String::new(), version: String::new(), features: vec![], addrs: vec![] }
     }
 }
 
-/// Lo que devuelve `POST /api/v1/pair`.
+/// Credenciales que da el PC principal al aprobar (`pair/wait`) o con un billete (`pair/ticket`).
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct Paired {
@@ -47,6 +49,31 @@ pub struct Paired {
     pub token: String,
     pub host_id: String,
     pub host_name: String,
+    /// Direcciones del PC principal (`ip:puerto`), de casa primero y Tailscale despues.
+    #[serde(default)]
+    pub addrs: Vec<String>,
+}
+
+/// Lo que devuelve `POST /pair/request`.
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct PairRequested {
+    /// Secreto de la solicitud, para esperar o cancelar.
+    pub request_id: String,
+    /// Numero de 4 cifras que el PC muestra igual.
+    pub digits: String,
+    /// Milisegundos que le quedan a la solicitud.
+    #[serde(default)]
+    pub expires_ms: u64,
+}
+
+/// Estado de una solicitud segun `pair/wait`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PairStatus {
+    Pending,
+    Approved(Paired),
+    Rejected,
+    Expired,
 }
 
 /// `192.168.1.10`, `http://pc:47811/` ... -> `192.168.1.10:47811`.
@@ -153,9 +180,9 @@ fn http_err(addr: &str, e: ureq::Error) -> anyhow::Error {
         ureq::Error::Status(code, r) => {
             let msg = r.into_json::<serde_json::Value>().ok().and_then(|v| v["error"].as_str().map(String::from)).unwrap_or_default();
             match code {
-                401 => anyhow!("{}", if msg.is_empty() { "El código no es correcto".into() } else { msg }),
+                401 => anyhow!("{}", if msg.is_empty() { "Este dispositivo no está emparejado con el PC principal".into() } else { msg }),
                 426 => anyhow!("El PC principal tiene una versión más nueva: actualiza el visor de este equipo"),
-                429 => anyhow!("Demasiados intentos con un código incorrecto. Espera un minuto."),
+                429 => anyhow!("{}", if msg.is_empty() { "Demasiados intentos. Espera un minuto.".into() } else { msg }),
                 _ if !msg.is_empty() => anyhow!("{msg}"),
                 _ => anyhow!("El PC principal respondió {code}"),
             }
@@ -190,18 +217,73 @@ pub fn hello(addr: &str) -> Result<Hello> {
     Ok(h)
 }
 
-/// Comprueba que es un visor que admite dispositivos y se empareja con el codigo.
-pub fn pair(addr: &str, code: &str, name: &str, version: &str) -> Result<(Hello, Paired)> {
+/// `hello` y comprueba que el visor admite el emparejamiento nuevo y que este cliente no es demasiado viejo.
+fn hello_pair2(addr: &str) -> Result<Hello> {
     let h = hello(addr)?;
-    if !h.features.iter().any(|f| f == "pair") {
-        bail!("El visor de {} es antiguo y no admite otros PCs: actualízalo", if h.name.is_empty() { addr } else { &h.name });
+    if !h.features.iter().any(|f| f == "pair2") {
+        bail!("El visor de {} es antiguo y no admite este emparejamiento: actualízalo", if h.name.is_empty() { addr } else { &h.name });
     }
     if h.api_min > API_REV {
         bail!("El PC principal tiene una versión más nueva: actualiza el visor de este equipo");
     }
-    let body = serde_json::json!({ "code": code, "name": name, "kind": "pc", "appVersion": version, "api": API_REV });
-    let r = with_headers(agent().post(&url(addr, "/api/v1/pair")), version).send_json(body).map_err(|e| http_err(addr, e))?;
+    Ok(h)
+}
+
+/// Pide entrar en el PC principal (`POST /pair/request`). El usuario lo aprueba en el PC.
+pub fn pair_request(addr: &str, name: &str, kind: &str, version: &str) -> Result<(Hello, PairRequested)> {
+    let h = hello_pair2(addr)?;
+    let body = serde_json::json!({ "name": name, "kind": kind, "appVersion": version, "api": API_REV });
+    let r = with_headers(agent().post(&url(addr, "/api/v1/pair/request")), version).send_json(body).map_err(|e| http_err(addr, e))?;
+    Ok((h, r.into_json().context("respuesta de la solicitud")?))
+}
+
+/// Espera (long-poll de hasta ~25 s) a que el PC resuelva la solicitud. Llamar de nuevo mientras sea `Pending`.
+pub fn pair_wait(addr: &str, request_id: &str, version: &str) -> Result<PairStatus> {
+    let a = ureq::AgentBuilder::new().timeout_connect(TIMEOUT).timeout(Duration::from_secs(40)).build();
+    let path = format!("/api/v1/pair/wait?id={}", urlenc(request_id));
+    let r = with_headers(a.get(&url(addr, &path)), version).call().map_err(|e| http_err(addr, e))?;
+    let v: serde_json::Value = r.into_json().context("respuesta de la espera")?;
+    Ok(match v["status"].as_str().unwrap_or("") {
+        "approved" => PairStatus::Approved(serde_json::from_value(v).context("respuesta de la aprobación")?),
+        "rejected" => PairStatus::Rejected,
+        "pending" => PairStatus::Pending,
+        _ => PairStatus::Expired,
+    })
+}
+
+/// Retira la solicitud pendiente (`POST /pair/cancel`).
+pub fn pair_cancel(addr: &str, request_id: &str, version: &str) -> Result<()> {
+    let path = format!("/api/v1/pair/cancel?id={}", urlenc(request_id));
+    with_headers(agent().post(&url(addr, &path)), version).send_string("").map_err(|e| http_err(addr, e))?;
+    Ok(())
+}
+
+/// Se empareja con un billete de un solo uso (`POST /pair/ticket`): da el token directamente.
+pub fn pair_with_ticket(addr: &str, ticket: &str, name: &str, kind: &str, version: &str) -> Result<(Hello, Paired)> {
+    let h = hello_pair2(addr)?;
+    let body = serde_json::json!({ "ticket": ticket, "name": name, "kind": kind, "appVersion": version, "api": API_REV });
+    let r = with_headers(agent().post(&url(addr, "/api/v1/pair/ticket")), version).send_json(body).map_err(|e| http_err(addr, e))?;
     Ok((h, r.into_json().context("respuesta del emparejamiento")?))
+}
+
+/// Empareja el streaming (`POST /stream/pair`). Con `pin` el PC lo mete en Apollo (`{"ok":true}`); sin `pin` pide un
+/// OTP a Apollo y devuelve `{"pin","passphrase","port"}`.
+pub fn stream_pair(addr: &str, token: &str, version: &str, pin: Option<&str>) -> Result<serde_json::Value> {
+    let a = ureq::AgentBuilder::new().timeout_connect(TIMEOUT).timeout(Duration::from_secs(30)).build();
+    let body = match pin {
+        Some(p) => serde_json::json!({ "pin": p }),
+        None => serde_json::json!({}),
+    };
+    let r = with_headers(a.post(&url(addr, "/api/v1/stream/pair")), version)
+        .set("Authorization", &format!("Bearer {token}"))
+        .send_json(body)
+        .map_err(|e| http_err(addr, e))?;
+    Ok(r.into_json().context("respuesta del emparejamiento del streaming")?)
+}
+
+/// Codifica un valor para la query (los `requestId` son hexadecimales, pero no se da nada por supuesto).
+fn urlenc(s: &str) -> String {
+    s.bytes().map(|b| if b.is_ascii_alphanumeric() || b"-_.~".contains(&b) { (b as char).to_string() } else { format!("%{b:02X}") }).collect()
 }
 
 /// `POST /call` con el token del dispositivo.
@@ -339,8 +421,16 @@ mod tests {
             self.devs.lock().unwrap().iter().find(|(t, _)| t == token).map(|(_, c)| c.clone())
         }
         fn pair(&self, name: &str, kind: &str, _v: &str, _api: u32) -> Result<(String, String)> {
-            self.devs.lock().unwrap().push(("tok".into(), Caller { device_id: "dev1".into(), name: name.into(), kind: kind.into() }));
-            Ok(("dev1".into(), "tok".into()))
+            let mut d = self.devs.lock().unwrap();
+            let n = d.len() + 1;
+            d.push((format!("tok{n}"), Caller { device_id: format!("dev{n}"), name: name.into(), kind: kind.into() }));
+            Ok((format!("dev{n}"), format!("tok{n}")))
+        }
+        fn stream_pair(&self, _c: &Caller, pin: Option<&str>) -> Result<serde_json::Value> {
+            Ok(match pin {
+                Some(p) => serde_json::json!({ "ok": true, "pin": p }),
+                None => serde_json::json!({ "pin": "4321", "passphrase": "abc", "port": 47989 }),
+            })
         }
         fn unpair(&self, _c: &Caller) -> Result<()> {
             self.devs.lock().unwrap().clear();
@@ -355,21 +445,80 @@ mod tests {
         }
     }
 
-    #[test]
-    fn pair_call_unpair_against_the_server() {
+    fn host() -> (tempfile::TempDir, RemoteServer, String) {
         let d = tempfile::tempdir().unwrap();
-        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), "ABCD-EFGH".into(), Host { dir: d.path().into(), devs: Default::default() }).unwrap();
+        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), Host { dir: d.path().into(), devs: Default::default() }).unwrap();
         let a = srv.local_addr().to_string();
-        let e = pair(&a, "ZZZZ-ZZZZ", "Portátil", "1.0").unwrap_err();
-        assert!(format!("{e}").contains("código"), "{e}");
-        let (h, p) = pair(&a, "abcd-efgh", "Portátil", "1.0").unwrap();
+        (d, srv, a)
+    }
+
+    /// Espera (poco) a que haya una solicitud pendiente en el servidor.
+    fn first_pending(srv: &RemoteServer) -> crate::remote::PairRequest {
+        for _ in 0..100 {
+            if let Some(r) = srv.pending_requests().into_iter().next() {
+                return r;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        panic!("no llego la solicitud");
+    }
+
+    #[test]
+    fn request_approve_call_unpair_against_the_server() {
+        let (_d, srv, a) = host();
+        let (h, rq) = pair_request(&a, "Portátil", "pc", "1.0").unwrap();
         assert_eq!((h.name.as_str(), h.id.as_str()), ("SALON", "host-1"));
-        assert_eq!(p, Paired { device_id: "dev1".into(), token: "tok".into(), host_id: "host-1".into(), host_name: "SALON".into() });
+        assert!(!h.addrs.is_empty(), "hello debe llevar addrs");
+        assert_eq!(rq.digits.len(), 4);
+        let waiter = {
+            let (a, id) = (a.clone(), rq.request_id.clone());
+            std::thread::spawn(move || pair_wait(&a, &id, "1.0").unwrap())
+        };
+        let pend = first_pending(&srv);
+        assert_eq!((pend.name.as_str(), pend.kind.as_str(), pend.digits.as_str()), ("Portátil", "pc", rq.digits.as_str()));
+        srv.approve(&pend.id_public).unwrap();
+        let PairStatus::Approved(p) = waiter.join().unwrap() else { panic!("debia estar aprobada") };
+        assert_eq!((p.device_id.as_str(), p.token.as_str(), p.host_id.as_str(), p.host_name.as_str()), ("dev1", "tok1", "host-1", "SALON"));
+        assert!(!p.addrs.is_empty());
+        // se recoge una sola vez
+        assert_eq!(pair_wait(&a, &rq.request_id, "1.0").unwrap(), PairStatus::Expired);
         assert_eq!(call(&a, &p.token, "1.0", "whoami", serde_json::json!({})).unwrap(), "Portátil");
         assert_eq!(call(&a, &p.token, "1.0", "pc_mac", serde_json::Value::Null).unwrap(), "aa:bb:cc:dd:ee:ff");
+        // streaming: con PIN y sin PIN
+        assert_eq!(stream_pair(&a, &p.token, "1.0", Some("1234")).unwrap()["ok"], true);
+        let otp = stream_pair(&a, &p.token, "1.0", None).unwrap();
+        assert_eq!((otp["pin"].as_str(), otp["passphrase"].as_str(), otp["port"].as_u64()), (Some("4321"), Some("abc"), Some(47989)));
         unpair(&a, &p.token, "1.0").unwrap();
         assert!(call(&a, &p.token, "1.0", "whoami", serde_json::json!({})).is_err());
         let e = hello("127.0.0.1:1").unwrap_err();
         assert!(format!("{e}").contains("No se pudo conectar"), "{e}");
+    }
+
+    #[test]
+    fn request_rejected_and_cancelled() {
+        let (_d, srv, a) = host();
+        let (_, rq) = pair_request(&a, "Tablet", "tablet", "1.0").unwrap();
+        let pend = first_pending(&srv);
+        assert_eq!(pend.kind, "tablet");
+        srv.reject(&pend.id_public).unwrap();
+        assert_eq!(pair_wait(&a, &rq.request_id, "1.0").unwrap(), PairStatus::Rejected);
+        // pendiente: con la espera corta del servidor no se queda colgado y cancelar la borra
+        let (_, rq2) = pair_request(&a, "Tablet 2", "tablet", "1.0").unwrap();
+        pair_cancel(&a, &rq2.request_id, "1.0").unwrap();
+        assert!(srv.pending_requests().is_empty());
+        assert_eq!(pair_wait(&a, &rq2.request_id, "1.0").unwrap(), PairStatus::Expired);
+    }
+
+    #[test]
+    fn ticket_pairs_once_and_wrong_ticket_fails() {
+        let (_d, srv, a) = host();
+        let t = srv.new_ticket();
+        let e = pair_with_ticket(&a, "ZZZZ-ZZZZ", "Portátil", "pc", "1.0").unwrap_err();
+        assert!(format!("{e}").contains("billete"), "{e}");
+        let (h, p) = pair_with_ticket(&a, &t.code.to_lowercase(), "Portátil", "pc", "1.0").unwrap();
+        assert_eq!((h.id.as_str(), p.token.as_str(), p.host_name.as_str()), ("host-1", "tok1", "SALON"));
+        assert!(!p.addrs.is_empty());
+        assert_eq!(call(&a, &p.token, "1.0", "whoami", serde_json::json!({})).unwrap(), "Portátil");
+        assert!(pair_with_ticket(&a, &t.code, "Otro", "pc", "1.0").is_err(), "el billete vale una vez");
     }
 }

@@ -67,8 +67,23 @@
               "title": "E6: Navegación y pulido con mando en Estadísticas",
               "desc": "",
               "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "notes": [
+                {
+                  "at": "2026-11-12T17:15:42+01:00",
+                  "by": "persona",
+                  "kind": "done",
+                  "text": "Hecho."
+                },
+                {
+                  "at": "2026-11-12T17:15:43+01:00",
+                  "by": "persona",
+                  "kind": "reopen",
+                  "text": "Vuelve a pendiente."
+                }
+              ],
+              "cat": "interfaz",
+              "result": "",
+              "updated": "2026-11-12T17:15:43+01:00"
             }
           ]
         },
@@ -264,7 +279,7 @@
               "id": "EN-6",
               "title": "Aviso modal en visor y notificación en Windows",
               "desc": "",
-              "state": "pending",
+              "state": "doing",
               "notes": [
                 {
                   "at": "2026-11-12T02:37:05+01:00",
@@ -283,10 +298,16 @@
                   "by": "claude",
                   "kind": "note",
                   "text": "La notificacion y el aviso deben ser arcoiris (pedido por la persona); se aplicara al hacer este paso."
+                },
+                {
+                  "at": "2026-11-12T22:11:26+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
                 }
               ],
               "change": "Ten en ceunta qye quiero la notificacion arcoiris",
-              "updated": "2026-11-12T12:03:25+01:00",
+              "updated": "2026-11-12T22:11:26+01:00",
               "cat": "interfaz"
             }
           ]
@@ -534,7 +555,13 @@
           "file": ".unificador/propuestas/P-2/5.html"
         }
       ],
-      "answer": null,
+      "answer": {
+        "option": 1,
+        "text": "",
+        "by": "persona",
+        "at": "2026-11-12T17:09:05+01:00",
+        "seen": true
+      },
       "by": "ia",
       "created": "2026-11-12T02:19:27+01:00"
     }

@@ -2,9 +2,10 @@
 //! Android). Solo lee la biblioteca; la base se abre como en la app (la primera vez importaria los JSON antiguos).
 //!
 //! ```text
-//! cargo run -p visor-core --example serve --release -- [carpeta_config] [puerto] [codigo]
+//! cargo run -p visor-core --example serve --release -- [carpeta_config] [puerto]
 //! ```
-//! Por defecto: `%APPDATA%\app.visorcapturas.desktop`, 47811 y `TEST-CODE`. Las miniaturas salen de la cache
+//! Por defecto: `%APPDATA%\app.visorcapturas.desktop` y 47811. Imprime un billete de un solo uso y aprueba solo
+//! las solicitudes de emparejamiento que lleguen (los dispositivos se guardan en la base). Las miniaturas salen de la cache
 //! del escritorio (`%LOCALAPPDATA%\app.visorcapturas.desktop\thumbs`) y las vistas previas van a `previews`.
 use anyhow::Result;
 use std::net::{Ipv4Addr, SocketAddr};
@@ -15,7 +16,8 @@ use visor_core::games;
 use visor_core::library::{self, DataPaths};
 use visor_core::palette::PaletteCache;
 use visor_core::relpath;
-use visor_core::remote::{self, Provider, RemoteConfig, RemoteServer, Snapshot};
+use visor_core::devices;
+use visor_core::remote::{self, Caller, Provider, RemoteConfig, RemoteServer, Snapshot};
 use visor_core::scan::{self, ScanOpts};
 
 const APP_ID: &str = "app.visorcapturas.desktop";
@@ -64,6 +66,19 @@ impl Provider for Real {
         Ok(Snapshot { config: RemoteConfig::from_config(&cfg), library, favorites, sagas, playing: None })
     }
 
+    fn device_by_token(&self, token: &str) -> Option<Caller> {
+        let d = self.db.with(|c| devices::by_token(c, token)).ok().flatten()?;
+        Some(Caller { device_id: d.id, name: d.name, kind: d.kind })
+    }
+
+    fn pair(&self, name: &str, kind: &str, version: &str, api: u32) -> Result<(String, String)> {
+        self.db.with(|c| devices::create(c, name, kind, version, api))
+    }
+
+    fn unpair(&self, caller: &Caller) -> Result<()> {
+        self.db.with(|c| devices::revoke(c, &caller.device_id))
+    }
+
     fn thumbs_dir(&self) -> PathBuf {
         self.cache_dir.join("thumbs")
     }
@@ -78,7 +93,6 @@ fn main() -> Result<()> {
     let env_dir = |var: &str| std::env::var_os(var).map(PathBuf::from).unwrap_or_default().join(APP_ID);
     let config_dir = args.first().filter(|a| !a.is_empty()).map(PathBuf::from).unwrap_or_else(|| env_dir("APPDATA"));
     let port: u16 = args.get(1).and_then(|p| p.parse().ok()).unwrap_or(remote::DEFAULT_PORT);
-    let code = args.get(2).cloned().unwrap_or_else(|| "TEST-CODE".into());
     let cache_dir = env_dir("LOCALAPPDATA");
     // La biblioteca, si la hay; si no, los datos de antes.
     let paths = match library::read_pointer(&config_dir) {
@@ -87,13 +101,24 @@ fn main() -> Result<()> {
     };
     let db = Db::open(&paths.data)?;
     println!("Datos: {}", paths.data.display());
-    let srv = RemoteServer::start(SocketAddr::from((Ipv4Addr::UNSPECIFIED, port)), code.clone(), Real { paths, cache_dir, db })?;
-    println!("Codigo: {code}");
+    let srv = RemoteServer::start(SocketAddr::from((Ipv4Addr::UNSPECIFIED, port)), Real { paths, cache_dir, db })?;
     for ip in remote::local_ipv4s() {
         println!("http://{ip}:{port}/api/v1/hello");
     }
     println!("http://127.0.0.1:{}/api/v1/hello  (Ctrl+C para salir)", srv.local_addr().port());
+    println!("Las solicitudes de emparejamiento se aprueban solas (solo para probar). El billete se renueva cada 4 minutos.");
+    let mut ticket_at: Option<std::time::Instant> = None;
     loop {
-        std::thread::park();
+        if ticket_at.map_or(true, |t| t.elapsed() >= std::time::Duration::from_secs(240)) {
+            println!("Billete: {}", srv.new_ticket().code);
+            ticket_at = Some(std::time::Instant::now());
+        }
+        for r in srv.pending_requests() {
+            match srv.approve(&r.id_public) {
+                Ok(()) => println!("Aprobada: {} ({}, {}) {}", r.name, r.kind, r.ip, r.digits),
+                Err(e) => eprintln!("No se pudo aprobar a {}: {e:#}", r.name),
+            }
+        }
+        std::thread::sleep(std::time::Duration::from_millis(500));
     }
 }

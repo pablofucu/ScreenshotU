@@ -144,7 +144,7 @@ async function pair() {
     onDone: (code) => {
       if (!code.trim()) return;
       dv.busy = true;
-      invoke('client_pair', { addr: dv.addr, code, deviceName: dv.pcName })
+      invoke('client_pair_ticket', { addr: dv.addr, ticket: code })
         .then(() => { toast('Conectado: recargando…', 2000); setTimeout(() => location.reload(), 600); })
         .catch((e) => { toast(errText(e), 5000); dv.busy = false; });
     },

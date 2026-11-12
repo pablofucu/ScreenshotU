@@ -19,18 +19,29 @@ use std::io::{Read, Write};
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, UdpSocket};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, MutexGuard, RwLock};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 /// Version del contrato (`api` en `hello` y `snapshot`). Se queda en 1: la APK de la tablet rechaza cualquier otro
 /// valor y las rutas `/api/v1` siguen siendo compatibles. Lo nuevo se anuncia con `API_REV`.
 pub const API_VERSION: u32 = 1;
-/// Revision de la API (`apiRev` en `hello`): sube cuando se anaden rutas o campos. 2 = dispositivos con token.
-pub const API_REV: u32 = 2;
+/// Revision de la API (`apiRev` en `hello`): sube cuando se anaden rutas o campos. 2 = dispositivos con token,
+/// 3 = emparejamiento por solicitud y billete (sin codigo fijo).
+pub const API_REV: u32 = 3;
 /// Revision mas antigua que se acepta: un cliente que mande `X-Visor-Api` menor recibe 426.
-pub const API_MIN: u32 = 1;
-/// Dispositivo de las tablets que entran con el codigo de emparejamiento (la APK de antes de los tokens).
-pub const LEGACY_TABLET: &str = "legacy-tablet";
+pub const API_MIN: u32 = 3;
+/// Mensaje del 426 (cliente con una version anterior al emparejamiento nuevo).
+pub const UPDATE_MSG: &str = "Actualiza la app: este PC usa el emparejamiento nuevo";
+/// Una solicitud de emparejamiento sin respuesta caduca a los 2 minutos.
+const PAIR_TTL: Duration = Duration::from_secs(120);
+/// Solicitudes pendientes a la vez; la siguiente recibe 429.
+const PAIR_MAX_PENDING: usize = 3;
+/// Espera maxima de `GET /pair/wait` (segundos).
+const PAIR_WAIT_MAX: u64 = 25;
+/// Una solicitud ya resuelta (aprobada o rechazada) espera este tiempo a que el dispositivo la recoja.
+const PAIR_RESOLVED_KEEP: Duration = Duration::from_secs(60);
+/// Un billete de un solo uso vale 5 minutos.
+const TICKET_TTL: Duration = Duration::from_secs(300);
 pub const DEFAULT_PORT: u16 = 47811;
 /// Ancho maximo de la vista previa para el visor del movil.
 pub const PREVIEW_WIDTH: u32 = 1920;
@@ -89,11 +100,11 @@ pub struct Playing {
     pub device: String,
 }
 
-/// Quien hace la peticion: un dispositivo emparejado, la tablet antigua (con el codigo) o el propio host.
+/// Quien hace la peticion: un dispositivo emparejado (con su token) o el propio host.
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct Caller {
-    /// Id del dispositivo (`''` = el propio host, `LEGACY_TABLET` = tablet con el codigo).
+    /// Id del dispositivo (`''` = el propio host).
     pub device_id: String,
     pub name: String,
     /// `tablet` o `pc`.
@@ -104,10 +115,6 @@ impl Caller {
     /// El propio equipo (el ayudante de streaming desde loopback).
     pub fn host() -> Caller {
         Caller { device_id: String::new(), name: String::new(), kind: "pc".into() }
-    }
-    /// Tablet que entra con el codigo de emparejamiento, sin token propio.
-    pub fn legacy_tablet() -> Caller {
-        Caller { device_id: LEGACY_TABLET.into(), name: "Tablet".into(), kind: "tablet".into() }
     }
 }
 
@@ -132,6 +139,33 @@ struct SnapshotDoc<'a> {
     name: &'a str,
     #[serde(flatten)]
     snap: &'a Snapshot,
+}
+
+/// Solicitud de emparejamiento pendiente, tal como la ve la app del PC principal.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct PairRequest {
+    /// Identificador corto para aprobar o rechazar desde el PC (distinto del `requestId` secreto del dispositivo).
+    pub id_public: String,
+    pub name: String,
+    /// `tablet` o `pc`.
+    pub kind: String,
+    /// Numero de 4 cifras que el dispositivo muestra igual, para reconocer la solicitud.
+    pub digits: String,
+    /// IP desde la que se pidio.
+    pub ip: String,
+    /// Caducidad (ms desde epoch).
+    pub expires_ms: i64,
+}
+
+/// Billete de un solo uso para emparejar sin verse en la red (QR o escrito a mano).
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct Ticket {
+    /// `ABCD-EFGH`.
+    pub code: String,
+    /// Caducidad (ms desde epoch).
+    pub expires_ms: i64,
 }
 
 /// Fuente de los datos (la app de escritorio, o el ejemplo `serve` sin interfaz).
@@ -159,6 +193,15 @@ pub trait Provider: Send + Sync + 'static {
     /// El dispositivo deja de estar emparejado (su token ya no vale).
     fn unpair(&self, _caller: &Caller) -> Result<()> {
         anyhow::bail!("Este equipo no admite emparejar dispositivos")
+    }
+    /// Ha llegado una solicitud de emparejamiento (para avisar al usuario: modal, notificacion).
+    fn pair_requested(&self, _req: &PairRequest) {}
+    /// Ha cambiado la lista de solicitudes pendientes (llega, caduca, se aprueba, se rechaza o se cancela).
+    fn pair_requests_changed(&self) {}
+    /// Empareja el streaming (Moonlight/Artemis). Con `pin` (lo genero el dispositivo) se mete en Apollo y se
+    /// devuelve `{"ok":true}`; sin `pin` se pide un OTP a Apollo y se devuelve `{"pin","passphrase","port"}`.
+    fn stream_pair(&self, _caller: &Caller, _pin: Option<&str>) -> Result<serde_json::Value> {
+        anyhow::bail!("Este equipo no puede emparejar el streaming")
     }
     /// Un dispositivo con token se ha conectado (version de su app y revision de la API, si las manda).
     fn device_seen(&self, _caller: &Caller, _version: &str, _api: u32) {}
@@ -387,6 +430,43 @@ pub fn local_ipv4s() -> Vec<String> {
         }
     }
     out.into_iter().map(|ip| ip.to_string()).collect()
+}
+
+/// IP de Tailscale (CGNAT, 100.64.0.0/10).
+fn is_tailscale(ip: &Ipv4Addr) -> bool {
+    let o = ip.octets();
+    o[0] == 100 && (o[1] & 0xC0) == 64
+}
+
+/// Direcciones `ip:puerto` con las que se puede llegar a este equipo: primero las IPv4 de casa y despues las de
+/// Tailscale (100.64.0.0/10).
+pub fn host_addrs(port: u16) -> Vec<String> {
+    let mut home: Vec<Ipv4Addr> = Vec::new();
+    let mut tail: Vec<Ipv4Addr> = Vec::new();
+    for ip in local_ipv4s().iter().filter_map(|s| s.parse::<Ipv4Addr>().ok()) {
+        if is_tailscale(&ip) {
+            tail.push(ip);
+        } else if !home.contains(&ip) {
+            home.push(ip);
+        }
+    }
+    // `local_ipv4s` solo da redes privadas: la de Tailscale sale del nombre del equipo (todos sus adaptadores).
+    use std::net::ToSocketAddrs;
+    if let Ok(addrs) = (host_name().as_str(), 0u16).to_socket_addrs() {
+        for a in addrs {
+            if let IpAddr::V4(v4) = a.ip() {
+                if is_tailscale(&v4) && !tail.contains(&v4) {
+                    tail.push(v4);
+                }
+            }
+        }
+    }
+    home.into_iter().chain(tail).map(|ip| format!("{ip}:{port}")).collect()
+}
+
+/// Contenido del QR de emparejamiento (v2): direcciones del PC y billete de un solo uso.
+pub fn qr_payload(id: &str, name: &str, addrs: &[String], port: u16, ticket: &str) -> String {
+    serde_json::json!({ "v": 2, "app": "visor-capturas", "id": id, "name": name, "addrs": addrs, "port": port, "ticket": ticket }).to_string()
 }
 
 /// Rutas que se pueden servir: capturas, portadas, hero y logos de la instantanea.
@@ -625,20 +705,111 @@ fn content_type(p: &Path) -> &'static str {
 /// Estado compartido por los hilos del servidor.
 struct Inner {
     provider: Arc<dyn Provider>,
-    token: Arc<RwLock<String>>,
+    /// Puerto en el que escucha (para las direcciones que se anuncian).
+    port: u16,
     cache: Mutex<Option<Arc<Cached>>>,
     /// Un solo escaneo a la vez.
     building: Mutex<()>,
     throttle: Throttle,
     /// Cerrojos por ruta (repartidos) para no generar dos veces la misma miniatura a la vez.
     gen_locks: Vec<Mutex<()>>,
+    /// Solicitudes de emparejamiento y billete activo (solo en memoria).
+    pairing: Mutex<Pairing>,
+    pairing_cv: Condvar,
+}
+
+enum ReqState {
+    Pending,
+    Approved { device_id: String, token: String },
+    Rejected,
+}
+
+struct PendingReq {
+    /// Secreto del dispositivo (`requestId`).
+    secret: String,
+    public: String,
+    name: String,
+    kind: String,
+    version: String,
+    api: u32,
+    digits: String,
+    ip: IpAddr,
+    created: Instant,
+    created_ms: i64,
+    resolved: Option<Instant>,
+    state: ReqState,
+}
+
+impl PendingReq {
+    fn is_pending(&self) -> bool {
+        matches!(self.state, ReqState::Pending)
+    }
+    fn expired(&self, now: Instant) -> bool {
+        now.saturating_duration_since(self.created) >= PAIR_TTL
+    }
+    fn view(&self) -> PairRequest {
+        PairRequest {
+            id_public: self.public.clone(),
+            name: self.name.clone(),
+            kind: self.kind.clone(),
+            digits: self.digits.clone(),
+            ip: self.ip.to_string(),
+            expires_ms: self.created_ms + PAIR_TTL.as_millis() as i64,
+        }
+    }
+}
+
+struct TicketState {
+    code: String,
+    expires: Instant,
+}
+
+#[derive(Default)]
+struct Pairing {
+    reqs: Vec<PendingReq>,
+    ticket: Option<TicketState>,
+}
+
+impl Pairing {
+    /// Quita lo caducado (solicitudes sin responder, resueltas sin recoger y billete). `true` si cambio la lista
+    /// de pendientes.
+    fn purge(&mut self, now: Instant) -> bool {
+        let before = self.reqs.iter().filter(|r| r.is_pending()).count();
+        self.reqs.retain(|r| match r.resolved {
+            None => !r.expired(now),
+            Some(t) => now.saturating_duration_since(t) < PAIR_RESOLVED_KEEP,
+        });
+        if self.ticket.as_ref().is_some_and(|t| now >= t.expires) {
+            self.ticket = None;
+        }
+        before != self.reqs.iter().filter(|r| r.is_pending()).count()
+    }
+}
+
+/// `n` cifras decimales aleatorias, sin sesgo.
+fn random_digits(n: usize) -> String {
+    let mut out = String::new();
+    while out.len() < n {
+        let mut buf = [0u8; 32];
+        if getrandom::getrandom(&mut buf).is_err() {
+            fallback_random(&mut buf);
+        }
+        for b in buf {
+            if b < 250 && out.len() < n {
+                out.push((b'0' + b % 10) as char);
+            }
+        }
+    }
+    out
 }
 
 impl Inner {
-    fn new(provider: Arc<dyn Provider>, token: Arc<RwLock<String>>) -> Inner {
+    fn new(provider: Arc<dyn Provider>, port: u16) -> Inner {
         Inner {
             provider,
-            token,
+            port,
+            pairing: Mutex::new(Pairing::default()),
+            pairing_cv: Condvar::new(),
             cache: Mutex::new(None),
             building: Mutex::new(()),
             throttle: Throttle::default(),
@@ -672,7 +843,83 @@ impl Inner {
         self.snapshot(false)
     }
 
-    /// Quien llama segun su cabecera `Authorization` (o `k`): el codigo de emparejamiento o el token de un dispositivo.
+    /// Direcciones con las que llegar a este equipo (de casa primero, Tailscale despues).
+    fn addrs(&self) -> Vec<String> {
+        host_addrs(self.port)
+    }
+
+    /// Avisa a la app de que cambio la lista de solicitudes (nunca con el cerrojo de `pairing` cogido).
+    fn pairs_changed(&self) {
+        self.provider.pair_requests_changed();
+    }
+
+    /// Solicitudes pendientes (sin las caducadas).
+    fn pending_requests_at(&self, now: Instant) -> Vec<PairRequest> {
+        let mut g = lock(&self.pairing);
+        let changed = g.purge(now);
+        let v = g.reqs.iter().filter(|r| r.is_pending()).map(PendingReq::view).collect();
+        drop(g);
+        if changed {
+            self.pairs_changed();
+        }
+        v
+    }
+
+    /// Aprueba una solicitud: da de alta el dispositivo y deja el token listo para `GET /pair/wait`.
+    fn approve_at(&self, id_public: &str, now: Instant) -> Result<()> {
+        let (found, changed) = {
+            let mut g = lock(&self.pairing);
+            let changed = g.purge(now);
+            let found = g.reqs.iter().find(|r| r.is_pending() && r.public == id_public).map(|r| (r.name.clone(), r.kind.clone(), r.version.clone(), r.api));
+            (found, changed)
+        };
+        let Some((name, kind, version, api)) = found else {
+            if changed {
+                self.pairs_changed();
+            }
+            anyhow::bail!("La solicitud ya no existe (puede haber caducado)")
+        };
+        let (device_id, token) = self.provider.pair(&name, &kind, &version, api)?;
+        let mut g = lock(&self.pairing);
+        let Some(r) = g.reqs.iter_mut().find(|r| r.is_pending() && r.public == id_public) else {
+            // Se cancelo mientras se daba de alta: no se deja un dispositivo huerfano.
+            drop(g);
+            let _ = self.provider.unpair(&Caller { device_id, name, kind });
+            self.pairs_changed();
+            anyhow::bail!("La solicitud ya no existe (puede haber caducado)");
+        };
+        r.state = ReqState::Approved { device_id, token };
+        r.resolved = Some(now);
+        drop(g);
+        self.pairing_cv.notify_all();
+        self.pairs_changed();
+        Ok(())
+    }
+
+    fn reject_at(&self, id_public: &str, now: Instant) -> Result<()> {
+        let mut g = lock(&self.pairing);
+        g.purge(now);
+        let Some(r) = g.reqs.iter_mut().find(|r| r.is_pending() && r.public == id_public) else {
+            drop(g);
+            self.pairs_changed();
+            anyhow::bail!("La solicitud ya no existe (puede haber caducado)");
+        };
+        r.state = ReqState::Rejected;
+        r.resolved = Some(now);
+        drop(g);
+        self.pairing_cv.notify_all();
+        self.pairs_changed();
+        Ok(())
+    }
+
+    fn new_ticket_at(&self, now: Instant) -> Ticket {
+        let code = new_code();
+        let expires_ms = now_ms() + TICKET_TTL.as_millis() as i64;
+        lock(&self.pairing).ticket = Some(TicketState { code: code.clone(), expires: now + TICKET_TTL });
+        Ticket { code, expires_ms }
+    }
+
+    /// Quien llama segun su cabecera `Authorization` (o `k`): el token de un dispositivo emparejado.
     fn caller(&self, req: &Req) -> Option<Caller> {
         let given = req
             .header("authorization")
@@ -682,10 +929,6 @@ impl Inner {
             })
             .or_else(|| req.query.get("k").cloned())
             .unwrap_or_default();
-        let code = self.token.read().unwrap_or_else(|e| e.into_inner()).clone();
-        if code_matches(&code, &given) {
-            return Some(Caller::legacy_tablet());
-        }
         let given = given.trim();
         if given.is_empty() {
             return None;
@@ -702,6 +945,11 @@ impl Inner {
 }
 
 fn route(inner: &Inner, req: &Req) -> Reply {
+    route_at(inner, req, Instant::now())
+}
+
+/// Como `route`, con la hora que se le da (las pruebas adelantan el reloj para caducar solicitudes y billetes).
+fn route_at(inner: &Inner, req: &Req, now: Instant) -> Reply {
     if req.method == "OPTIONS" {
         return Reply::empty(204);
     }
@@ -713,13 +961,29 @@ fn route(inner: &Inner, req: &Req) -> Reply {
         "/api/v1/hello" => {
             return Reply::json(
                 200,
-                &serde_json::json!({ "app": "visor-capturas", "api": API_VERSION, "name": inner.provider.name(), "version": env!("CARGO_PKG_VERSION"), "id": inner.provider.id(), "apiRev": API_REV, "apiMin": API_MIN, "features": ["launch", "capture", "call", "events", "asset", "discover", "close", "session", "pair", "devices", "install"] }),
+                &serde_json::json!({ "app": "visor-capturas", "api": API_VERSION, "name": inner.provider.name(), "version": env!("CARGO_PKG_VERSION"), "id": inner.provider.id(), "apiRev": API_REV, "apiMin": API_MIN, "features": ["launch", "capture", "call", "events", "asset", "discover", "close", "session", "pair2", "devices", "install"], "addrs": inner.addrs() }),
             )
         }
-        "/api/v1/launch" | "/api/v1/capture" | "/api/v1/call" | "/api/v1/close" | "/api/v1/session/start" | "/api/v1/pair" | "/api/v1/unpair" if !post => {
+        // El emparejamiento por codigo ya no existe: cualquier metodo recibe 426.
+        "/api/v1/pair" => return Reply::error(426, UPDATE_MSG),
+        "/api/v1/launch"
+        | "/api/v1/capture"
+        | "/api/v1/call"
+        | "/api/v1/close"
+        | "/api/v1/session/start"
+        | "/api/v1/unpair"
+        | "/api/v1/pair/request"
+        | "/api/v1/pair/ticket"
+        | "/api/v1/pair/cancel"
+        | "/api/v1/stream/pair"
+            if !post =>
+        {
             return Reply::error(405, "Método no permitido")
         }
-        "/api/v1/pair" => "pair",
+        "/api/v1/pair/request" => "pair_request",
+        "/api/v1/pair/ticket" => "pair_ticket",
+        "/api/v1/pair/cancel" => "pair_cancel",
+        "/api/v1/stream/pair" => "stream_pair",
         "/api/v1/unpair" => "unpair",
         "/api/v1/launch" => "launch",
         "/api/v1/close" => "close",
@@ -727,6 +991,7 @@ fn route(inner: &Inner, req: &Req) -> Reply {
         "/api/v1/call" => "call",
         "/api/v1/capture" => "capture",
         _ if post => return Reply::error(405, "Método no permitido"),
+        "/api/v1/pair/wait" => "pair_wait",
         "/api/v1/session" => "session",
         "/api/v1/snapshot" => "snapshot",
         "/api/v1/thumb" => "thumb",
@@ -739,14 +1004,17 @@ fn route(inner: &Inner, req: &Req) -> Reply {
         _ => return Reply::error(404, "No existe"),
     };
     if client_api(req).is_some_and(|a| a < API_MIN) {
-        return Reply::error(426, "Actualiza el visor de este equipo");
+        return Reply::error(426, UPDATE_MSG);
     }
-    let now = Instant::now();
     if inner.throttle.blocked(req.ip, now) {
-        return Reply::error(429, "Demasiados intentos con un código incorrecto. Espera un minuto.");
+        return Reply::error(429, "Demasiados intentos fallidos. Espera un minuto.");
     }
-    if ep == "pair" {
-        return pair_reply(inner, req, now);
+    match ep {
+        "pair_request" => return pair_request_reply(inner, req, now),
+        "pair_ticket" => return pair_ticket_reply(inner, req, now),
+        "pair_cancel" => return pair_cancel_reply(inner, req),
+        "pair_wait" => return pair_wait_reply(inner, req, now),
+        _ => {}
     }
     // El ayudante de streaming habla desde el propio PC: sin codigo desde loopback.
     let local_ok = (ep == "session" || ep == "session_start") && req.ip.is_loopback();
@@ -756,12 +1024,20 @@ fn route(inner: &Inner, req: &Req) -> Reply {
     let caller = if local_ok { Some(Caller::host()) } else { inner.caller(req) };
     let Some(caller) = caller else {
         inner.throttle.fail(req.ip, now);
-        return Reply::error(401, "Falta el código de emparejamiento o no es correcto.");
+        return Reply::error(401, "Este dispositivo no está emparejado con este PC.");
     };
+    if ep == "stream_pair" {
+        // Con `pin` el dispositivo lo genero y el PC lo mete en Apollo; sin cuerpo el PC pide un OTP a Apollo.
+        let pin = serde_json::from_slice::<serde_json::Value>(&req.body)
+            .ok()
+            .and_then(|v| v.get("pin").and_then(|p| p.as_str().map(|p| p.trim().to_string())))
+            .filter(|p| !p.is_empty());
+        return match inner.provider.stream_pair(&caller, pin.as_deref()) {
+            Ok(v) => Reply::json(200, &v),
+            Err(e) => Reply::error(409, &format!("{e:#}")),
+        };
+    }
     if ep == "unpair" {
-        if caller.device_id == LEGACY_TABLET {
-            return Reply::error(400, "Este dispositivo entra con el código, no tiene emparejamiento propio");
-        }
         return match inner.provider.unpair(&caller) {
             Ok(()) => Reply::json(200, &serde_json::json!({ "ok": true })),
             Err(e) => Reply::error(409, &format!("{e:#}")),
@@ -872,25 +1148,156 @@ fn client_api(req: &Req) -> Option<u32> {
     req.header("x-visor-api").and_then(|v| v.trim().parse().ok())
 }
 
-/// `POST /pair` (sin cabecera): `{code, name, kind, appVersion, api}` -> `{deviceId, token, hostId, hostName, api}`.
-/// El codigo va en el cuerpo y cuenta para el limite de intentos fallidos igual que la cabecera.
-fn pair_reply(inner: &Inner, req: &Req, now: Instant) -> Reply {
-    let v = serde_json::from_slice::<serde_json::Value>(&req.body).unwrap_or(serde_json::Value::Null);
-    let s = |k: &str| v.get(k).and_then(|x| x.as_str()).unwrap_or("").to_string();
-    let code = inner.token.read().unwrap_or_else(|e| e.into_inner()).clone();
-    if !code_matches(&code, &s("code")) {
-        inner.throttle.fail(req.ip, now);
-        return Reply::error(401, "El código de emparejamiento no es correcto.");
+/// Cuerpo JSON de una peticion de emparejamiento (`Null` si no lo es) y su campo `api`.
+fn pair_body(req: &Req) -> serde_json::Value {
+    serde_json::from_slice::<serde_json::Value>(&req.body).unwrap_or(serde_json::Value::Null)
+}
+
+/// Un cliente que no dice `api` en el cuerpo, o dice una menor que `API_MIN`, es de antes del emparejamiento nuevo.
+fn body_too_old(v: &serde_json::Value) -> bool {
+    v.get("api").and_then(|x| x.as_u64()).unwrap_or(0) < API_MIN as u64
+}
+
+/// `POST /pair/request` `{name, kind, appVersion, api}` -> `{requestId, digits, expiresMs}` (milisegundos que le
+/// quedan a la solicitud). Queda pendiente hasta que el usuario la apruebe o rechace en el PC.
+fn pair_request_reply(inner: &Inner, req: &Req, now: Instant) -> Reply {
+    let v = pair_body(req);
+    if body_too_old(&v) {
+        return Reply::error(426, UPDATE_MSG);
     }
-    let name = s("name");
-    if name.trim().is_empty() {
+    let s = |k: &str| v.get(k).and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
+    let name: String = s("name").chars().take(60).collect();
+    if name.is_empty() {
         return Reply::error(400, "Falta el nombre del dispositivo");
+    }
+    let kind = if s("kind") == "tablet" { "tablet" } else { "pc" };
+    let api = v.get("api").and_then(|x| x.as_u64()).unwrap_or(0) as u32;
+    let mut g = lock(&inner.pairing);
+    let mut changed = g.purge(now);
+    // Quien repite la solicitud (misma IP y nombre) sustituye a la anterior en vez de llenar los huecos.
+    let before = g.reqs.len();
+    g.reqs.retain(|r| !(r.is_pending() && r.ip == req.ip && r.name == name));
+    changed |= g.reqs.len() != before;
+    if g.reqs.iter().filter(|r| r.is_pending()).count() >= PAIR_MAX_PENDING {
+        drop(g);
+        inner.throttle.fail(req.ip, now);
+        if changed {
+            inner.pairs_changed();
+        }
+        return Reply::error(429, "Hay demasiadas solicitudes pendientes en este PC. Espera un momento.");
+    }
+    let p = PendingReq {
+        secret: new_id(),
+        public: new_id()[..8].to_string(),
+        name,
+        kind: kind.into(),
+        version: s("appVersion"),
+        api,
+        digits: random_digits(4),
+        ip: req.ip,
+        created: now,
+        created_ms: now_ms(),
+        resolved: None,
+        state: ReqState::Pending,
+    };
+    let view = p.view();
+    let out = serde_json::json!({ "requestId": p.secret, "digits": p.digits, "expiresMs": PAIR_TTL.as_millis() as u64 });
+    g.reqs.push(p);
+    drop(g);
+    inner.provider.pair_requested(&view);
+    inner.pairs_changed();
+    Reply::json(200, &out).with("Cache-Control", "no-store")
+}
+
+/// `GET /pair/wait?id=<requestId>[&wait=s]`: espera (hasta 25 s) a que el PC resuelva la solicitud.
+/// `{status: pending|approved|rejected|expired}`; si `approved`, ademas `{deviceId, token, hostId, hostName, addrs}`
+/// (una sola vez: la solicitud se borra). Una solicitud desconocida cuenta como `expired`.
+fn pair_wait_reply(inner: &Inner, req: &Req, now: Instant) -> Reply {
+    let Some(id) = req.query.get("id").filter(|i| !i.is_empty()) else {
+        return Reply::error(400, "Falta el parámetro id");
+    };
+    let wait = req.query.get("wait").and_then(|v| v.parse::<u64>().ok()).unwrap_or(PAIR_WAIT_MAX).min(PAIR_WAIT_MAX);
+    let started = Instant::now();
+    let deadline = started + Duration::from_secs(wait);
+    let status = |s: &str| Reply::json(200, &serde_json::json!({ "status": s })).with("Cache-Control", "no-store");
+    let mut g = lock(&inner.pairing);
+    loop {
+        let at = now + started.elapsed();
+        let Some(i) = g.reqs.iter().position(|r| &r.secret == id) else {
+            return status("expired");
+        };
+        if g.reqs[i].is_pending() {
+            if g.reqs[i].expired(at) {
+                g.reqs.remove(i);
+                drop(g);
+                inner.pairs_changed();
+                return status("expired");
+            }
+            let left = deadline.saturating_duration_since(Instant::now());
+            if left.is_zero() {
+                return status("pending");
+            }
+            g = inner.pairing_cv.wait_timeout(g, left.min(Duration::from_secs(1))).unwrap_or_else(|e| e.into_inner()).0;
+            continue;
+        }
+        let r = g.reqs.remove(i);
+        drop(g);
+        return match r.state {
+            ReqState::Approved { device_id, token } => Reply::json(
+                200,
+                &serde_json::json!({
+                    "status": "approved", "deviceId": device_id, "token": token,
+                    "hostId": inner.provider.id(), "hostName": inner.provider.name(), "addrs": inner.addrs(),
+                }),
+            )
+            .with("Cache-Control", "no-store"),
+            _ => status("rejected"),
+        };
+    }
+}
+
+/// `POST /pair/cancel?id=<requestId>`: el dispositivo retira su solicitud.
+fn pair_cancel_reply(inner: &Inner, req: &Req) -> Reply {
+    let id = req.query.get("id").cloned().unwrap_or_default();
+    let mut g = lock(&inner.pairing);
+    let before = g.reqs.len();
+    g.reqs.retain(|r| r.secret != id);
+    let removed = g.reqs.len() != before;
+    drop(g);
+    if removed {
+        inner.pairing_cv.notify_all();
+        inner.pairs_changed();
+    }
+    Reply::json(200, &serde_json::json!({ "ok": true }))
+}
+
+/// `POST /pair/ticket` `{ticket, name, kind, appVersion, api}`: con un billete valido da el token directamente
+/// (`{deviceId, token, hostId, hostName, addrs}`) y el billete queda gastado. Si no vale, 401 y cuenta como fallo.
+fn pair_ticket_reply(inner: &Inner, req: &Req, now: Instant) -> Reply {
+    let v = pair_body(req);
+    if body_too_old(&v) {
+        return Reply::error(426, UPDATE_MSG);
+    }
+    let s = |k: &str| v.get(k).and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
+    let name = s("name");
+    if name.is_empty() {
+        return Reply::error(400, "Falta el nombre del dispositivo");
+    }
+    let mut g = lock(&inner.pairing);
+    let good = g.ticket.as_ref().is_some_and(|t| now < t.expires && code_matches(&t.code, &s("ticket")));
+    if good {
+        g.ticket = None;
+    }
+    drop(g);
+    if !good {
+        inner.throttle.fail(req.ip, now);
+        return Reply::error(401, "El billete no es válido o ha caducado.");
     }
     let api = v.get("api").and_then(|x| x.as_u64()).unwrap_or(0) as u32;
     match inner.provider.pair(&name, &s("kind"), &s("appVersion"), api) {
         Ok((id, token)) => Reply::json(
             200,
-            &serde_json::json!({ "deviceId": id, "token": token, "hostId": inner.provider.id(), "hostName": inner.provider.name(), "api": API_REV }),
+            &serde_json::json!({ "deviceId": id, "token": token, "hostId": inner.provider.id(), "hostName": inner.provider.name(), "addrs": inner.addrs() }),
         )
         .with("Cache-Control", "no-store"),
         Err(e) => Reply::error(400, &format!("{e:#}")),
@@ -1061,22 +1468,38 @@ fn handle(inner: &Inner, mut rq: tiny_http::Request) {
 pub struct RemoteServer {
     server: Arc<tiny_http::Server>,
     stop: Arc<AtomicBool>,
-    token: Arc<RwLock<String>>,
+    inner: Arc<Inner>,
     addr: SocketAddr,
 }
 
 impl RemoteServer {
-    pub fn start<P: Provider>(bind: SocketAddr, token: String, provider: P) -> Result<RemoteServer> {
-        Self::start_arc(bind, token, Arc::new(provider))
+    pub fn start<P: Provider>(bind: SocketAddr, provider: P) -> Result<RemoteServer> {
+        Self::start_arc(bind, Arc::new(provider))
     }
 
-    pub fn start_arc(bind: SocketAddr, token: String, provider: Arc<dyn Provider>) -> Result<RemoteServer> {
+    pub fn start_arc(bind: SocketAddr, provider: Arc<dyn Provider>) -> Result<RemoteServer> {
         let server = tiny_http::Server::http(bind).map_err(|e| anyhow!("No se pudo abrir el puerto {}: {e}", bind.port()))?;
         let addr = server.server_addr().to_ip().unwrap_or(bind);
         let server = Arc::new(server);
         let stop = Arc::new(AtomicBool::new(false));
-        let token = Arc::new(RwLock::new(token));
-        let inner = Arc::new(Inner::new(provider, token.clone()));
+        let inner = Arc::new(Inner::new(provider, addr.port()));
+        // Vigila las solicitudes: las que caducan sin que nadie las toque avisan a la app.
+        {
+            let (inner, stop) = (inner.clone(), stop.clone());
+            std::thread::Builder::new()
+                .name("remote-pairing".into())
+                .spawn(move || {
+                    while !stop.load(Ordering::SeqCst) {
+                        std::thread::sleep(Duration::from_millis(500));
+                        let changed = lock(&inner.pairing).purge(Instant::now());
+                        if changed {
+                            inner.pairing_cv.notify_all();
+                            inner.pairs_changed();
+                        }
+                    }
+                })
+                .context("creando el vigilante de solicitudes")?;
+        }
         for i in 0..WORKERS {
             let (srv, stop, inner) = (server.clone(), stop.clone(), inner.clone());
             std::thread::Builder::new()
@@ -1093,12 +1516,38 @@ impl RemoteServer {
                 })
                 .context("creando los hilos del servidor")?;
         }
-        Ok(RemoteServer { server, stop, token, addr })
+        Ok(RemoteServer { server, stop, inner, addr })
     }
 
-    /// Cambia el codigo de emparejamiento sin reiniciar.
-    pub fn set_token(&self, token: &str) {
-        *self.token.write().unwrap_or_else(|e| e.into_inner()) = token.to_string();
+    /// Solicitudes de emparejamiento pendientes (las que no han caducado).
+    pub fn pending_requests(&self) -> Vec<PairRequest> {
+        self.inner.pending_requests_at(Instant::now())
+    }
+
+    /// Aprueba una solicitud (por su `id_public`): crea el dispositivo con `Provider::pair` y deja el token para
+    /// que el dispositivo lo recoja con `GET /pair/wait`.
+    pub fn approve(&self, id_public: &str) -> Result<()> {
+        self.inner.approve_at(id_public, Instant::now())
+    }
+
+    /// Rechaza una solicitud (por su `id_public`).
+    pub fn reject(&self, id_public: &str) -> Result<()> {
+        self.inner.reject_at(id_public, Instant::now())
+    }
+
+    /// Billete de un solo uso nuevo (5 minutos); sustituye al anterior si lo habia.
+    pub fn new_ticket(&self) -> Ticket {
+        self.inner.new_ticket_at(Instant::now())
+    }
+
+    /// Anula el billete activo.
+    pub fn cancel_ticket(&self) {
+        lock(&self.inner.pairing).ticket = None;
+    }
+
+    /// Direcciones `ip:puerto` de este equipo (casa primero, Tailscale despues).
+    pub fn addrs(&self) -> Vec<String> {
+        self.inner.addrs()
     }
 
     pub fn local_addr(&self) -> SocketAddr {
@@ -1113,6 +1562,7 @@ impl RemoteServer {
         for _ in 0..WORKERS {
             self.server.unblock();
         }
+        self.inner.pairing_cv.notify_all();
     }
 }
 
@@ -1318,6 +1768,9 @@ mod tests {
         fn previews_dir(&self) -> PathBuf {
             self.dir.join("previews")
         }
+        fn device_by_token(&self, token: &str) -> Option<Caller> {
+            (token == "ABCD-EFGH").then(|| Caller { device_id: "fake".into(), name: "Fake".into(), kind: "tablet".into() })
+        }
         fn launch(&self, _caller: &Caller, id: &str) -> Result<()> {
             anyhow::ensure!(id == "pc/A", "Juego no encontrado");
             Ok(())
@@ -1468,7 +1921,7 @@ mod tests {
         fs::create_dir_all(d.path().join("thumbs")).unwrap();
         fs::write(d.path().join("thumbs").join("t.png"), b"png!").unwrap();
         let fake = Fake { lib: lib_with(vec![]), dir: d.path().to_path_buf(), scans: Arc::new(AtomicU64::new(0)) };
-        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), "ABCD-EFGH".into(), fake).unwrap();
+        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), fake).unwrap();
         let a = srv.local_addr();
         let auth = [("Authorization", "Bearer ABCD-EFGH")];
         // call: sin codigo 401; cuerpo roto 400; comando del proveedor de prueba 200; el resto 403 / 500
@@ -1509,6 +1962,8 @@ mod tests {
         dir: PathBuf,
         devs: Arc<Mutex<Vec<(String, Caller, bool)>>>,
         seen: Arc<Mutex<Vec<(String, String, u32)>>>,
+        /// Avisos recibidos (`requested:<nombre>`, `changed`, `stream:<id>:<pin>`).
+        notes: Arc<Mutex<Vec<String>>>,
     }
     impl Provider for Paired {
         fn name(&self) -> String {
@@ -1546,6 +2001,19 @@ mod tests {
         fn device_seen(&self, caller: &Caller, version: &str, api: u32) {
             self.seen.lock().unwrap().push((caller.device_id.clone(), version.into(), api));
         }
+        fn pair_requested(&self, req: &PairRequest) {
+            self.notes.lock().unwrap().push(format!("requested:{}", req.name));
+        }
+        fn pair_requests_changed(&self) {
+            self.notes.lock().unwrap().push("changed".into());
+        }
+        fn stream_pair(&self, caller: &Caller, pin: Option<&str>) -> Result<serde_json::Value> {
+            self.notes.lock().unwrap().push(format!("stream:{}:{}", caller.device_id, pin.unwrap_or("-")));
+            Ok(match pin {
+                Some(_) => serde_json::json!({ "ok": true }),
+                None => serde_json::json!({ "pin": "4321", "passphrase": "abc", "port": 47989 }),
+            })
+        }
         fn call(&self, caller: &Caller, cmd: &str, _args: serde_json::Value) -> std::result::Result<serde_json::Value, String> {
             match cmd {
                 "whoami" => Ok(serde_json::json!({ "device": caller.device_id, "name": caller.name })),
@@ -1573,8 +2041,8 @@ mod tests {
             ("tokpc".to_string(), Caller { device_id: "pc1".into(), name: "Portátil".into(), kind: "pc".into() }, false),
             ("toktab".to_string(), Caller { device_id: "tab1".into(), name: "Tablet".into(), kind: "tablet".into() }, false),
         ];
-        let p = Paired { dir: d.path().to_path_buf(), devs: Arc::new(Mutex::new(devs)), seen: Arc::new(Mutex::new(vec![])) };
-        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), "ABCD-EFGH".into(), p).unwrap();
+        let p = Paired { dir: d.path().to_path_buf(), devs: Arc::new(Mutex::new(devs)), seen: Arc::new(Mutex::new(vec![])), notes: Default::default() };
+        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), p).unwrap();
         let a = srv.local_addr();
         let addr = a.to_string();
         // sin token, otro tipo de dispositivo o fuera de la carpeta: no
@@ -1603,37 +2071,250 @@ mod tests {
         crate::gamecopy::download(&addr, "tokpc", "1.0", &list, &dest, &AtomicBool::new(false), |_| ()).unwrap();
     }
 
+    fn paired_in(d: &Path) -> Paired {
+        Paired { dir: d.to_path_buf(), devs: Default::default(), seen: Default::default(), notes: Default::default() }
+    }
+
+    /// Cuerpo JSON de la respuesta de `post` (texto HTTP entero).
+    fn body_of(text: &str) -> serde_json::Value {
+        serde_json::from_str(&text[text.find("\r\n\r\n").unwrap() + 4..]).unwrap()
+    }
+
+    fn json_of(r: &Resp) -> serde_json::Value {
+        serde_json::from_slice(&r.body).unwrap()
+    }
+
+    /// Peticion armada a mano para `route_at` (sin red) con el reloj que se quiera.
+    fn rq(method: &str, url: &str, ip: &str, body: &str) -> Req {
+        let mut r = Req::parse(method, url, vec![], ip.parse().unwrap());
+        r.body = body.as_bytes().to_vec();
+        r
+    }
+
+    fn rj(r: &Reply) -> serde_json::Value {
+        match &r.body {
+            Body::Bytes(b) => serde_json::from_slice(b).unwrap_or(serde_json::Value::Null),
+            _ => serde_json::Value::Null,
+        }
+    }
+
+    const PAIR_BODY: &str = r#"{"name":"Tablet","kind":"tablet","appVersion":"2.0.3","api":3}"#;
+
+    fn named(n: &str) -> String {
+        format!(r#"{{"name":"{n}","kind":"tablet","appVersion":"2.0.3","api":3}}"#)
+    }
+
+    fn ticket_body(code: &str, api: u32) -> String {
+        format!(r#"{{"ticket":"{code}","name":"Portátil","kind":"pc","appVersion":"2.0.3","api":{api}}}"#)
+    }
+
     #[test]
-    fn pair_token_revoke_and_legacy_code() {
+    fn pair2_request_approve_and_wait_once() {
         let d = tempfile::tempdir().unwrap();
-        let seen = Arc::new(Mutex::new(vec![]));
-        let p = Paired { dir: d.path().to_path_buf(), devs: Arc::new(Mutex::new(vec![])), seen: seen.clone() };
-        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), "ABCD-EFGH".into(), p).unwrap();
+        let p = paired_in(d.path());
+        let notes = p.notes.clone();
+        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), p).unwrap();
         let a = srv.local_addr();
-        let hello: serde_json::Value = serde_json::from_slice(&get(a, "GET", "/api/v1/hello", &[]).body).unwrap();
-        assert_eq!((hello["api"].as_u64(), hello["apiRev"].as_u64(), hello["apiMin"].as_u64()), (Some(1), Some(API_REV as u64), Some(1)));
-        assert!(hello["features"].as_array().unwrap().iter().any(|f| f == "pair"));
-        // codigo malo: 401; sin nombre: 400; bueno: id y token
-        assert_eq!(post(a, "/api/v1/pair", None, "{\"code\":\"ZZZZ-ZZZZ\",\"name\":\"Portátil\"}").0, 401);
-        assert_eq!(post(a, "/api/v1/pair", None, "{\"code\":\"ABCD-EFGH\",\"name\":\" \"}").0, 400);
-        assert_eq!(get(a, "GET", "/api/v1/pair", &[]).status, 405);
-        let (st, text) = post(a, "/api/v1/pair", None, "{\"code\":\"abcd efgh\",\"name\":\"Portátil\",\"kind\":\"pc\",\"appVersion\":\"1.0\",\"api\":2}");
+        let hello = json_of(&get(a, "GET", "/api/v1/hello", &[]));
+        assert_eq!((hello["apiRev"].as_u64(), hello["apiMin"].as_u64()), (Some(3), Some(3)));
+        let feats: Vec<&str> = hello["features"].as_array().unwrap().iter().filter_map(|f| f.as_str()).collect();
+        assert!(feats.contains(&"pair2") && !feats.contains(&"pair"), "{feats:?}");
+        let addrs = hello["addrs"].as_array().expect("hello lleva addrs");
+        assert!(addrs.iter().all(|x| x.as_str().unwrap().ends_with(&format!(":{}", a.port()))));
+
+        let (st, text) = post(a, "/api/v1/pair/request", None, PAIR_BODY);
         assert_eq!(st, 200, "{text}");
-        let body: serde_json::Value = serde_json::from_str(&text[text.find("\r\n\r\n").unwrap() + 4..]).unwrap();
+        let b = body_of(&text);
+        let rid = b["requestId"].as_str().unwrap().to_string();
+        let digits = b["digits"].as_str().unwrap().to_string();
+        assert_eq!(rid.len(), 32);
+        assert!(digits.len() == 4 && digits.bytes().all(|c| c.is_ascii_digit()), "{digits}");
+        assert_eq!(b["expiresMs"], 120_000);
+
+        // sin resolver: pending
+        let w = json_of(&get(a, "GET", &format!("/api/v1/pair/wait?id={rid}&wait=0"), &[]));
+        assert_eq!(w["status"], "pending");
+        let pend = srv.pending_requests();
+        assert_eq!(pend.len(), 1);
+        assert_eq!((pend[0].name.as_str(), pend[0].kind.as_str(), pend[0].ip.as_str()), ("Tablet", "tablet", "127.0.0.1"));
+        assert_eq!(pend[0].digits, digits);
+        assert_ne!(pend[0].id_public, rid, "el id publico no es el secreto");
+        assert!(pend[0].expires_ms > now_ms());
+        assert!(notes.lock().unwrap().contains(&"requested:Tablet".to_string()));
+        assert!(notes.lock().unwrap().contains(&"changed".to_string()));
+
+        // un wait largo se despierta con la aprobacion
+        let rid2 = rid.clone();
+        let h = std::thread::spawn(move || get(a, "GET", &format!("/api/v1/pair/wait?id={rid2}&wait=10"), &[]));
+        std::thread::sleep(Duration::from_millis(150));
+        srv.approve(&pend[0].id_public).unwrap();
+        let w = json_of(&h.join().unwrap());
+        assert_eq!(w["status"], "approved");
+        assert_eq!((w["deviceId"].as_str(), w["token"].as_str(), w["hostId"].as_str(), w["hostName"].as_str()), (Some("dev1"), Some("tok1"), Some("host-1"), Some("HOST")));
+        assert!(w["addrs"].is_array());
+        // el token se entrega una sola vez
+        assert_eq!(json_of(&get(a, "GET", &format!("/api/v1/pair/wait?id={rid}&wait=0"), &[]))["status"], "expired");
+        assert!(srv.pending_requests().is_empty());
+        let (st, text) = post(a, "/api/v1/call", Some("tok1"), "{\"cmd\":\"whoami\"}");
+        assert_eq!(st, 200);
+        assert!(text.contains("\"device\":\"dev1\""), "{text}");
+        assert!(srv.approve("nada").is_err());
+        assert_eq!(get(a, "GET", "/api/v1/pair/wait?wait=0", &[]).status, 400);
+        assert_eq!(get(a, "GET", "/api/v1/pair/request", &[]).status, 405);
+    }
+
+    #[test]
+    fn pair2_reject_and_cancel() {
+        let d = tempfile::tempdir().unwrap();
+        let p = paired_in(d.path());
+        let devs = p.devs.clone();
+        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), p).unwrap();
+        let a = srv.local_addr();
+        let rid = body_of(&post(a, "/api/v1/pair/request", None, PAIR_BODY).1)["requestId"].as_str().unwrap().to_string();
+        let id_public = srv.pending_requests()[0].id_public.clone();
+        srv.reject(&id_public).unwrap();
+        assert!(srv.reject(&id_public).is_err(), "ya resuelta");
+        assert_eq!(json_of(&get(a, "GET", &format!("/api/v1/pair/wait?id={rid}&wait=0"), &[]))["status"], "rejected");
+        assert_eq!(json_of(&get(a, "GET", &format!("/api/v1/pair/wait?id={rid}&wait=0"), &[]))["status"], "expired");
+        assert!(devs.lock().unwrap().is_empty(), "rechazar no crea dispositivo");
+        // cancelar
+        let rid = body_of(&post(a, "/api/v1/pair/request", None, PAIR_BODY).1)["requestId"].as_str().unwrap().to_string();
+        assert_eq!(srv.pending_requests().len(), 1);
+        assert_eq!(post(a, &format!("/api/v1/pair/cancel?id={rid}"), None, "").0, 200);
+        assert!(srv.pending_requests().is_empty());
+        assert_eq!(json_of(&get(a, "GET", &format!("/api/v1/pair/wait?id={rid}&wait=0"), &[]))["status"], "expired");
+    }
+
+    #[test]
+    fn pair2_request_expires_with_injected_clock() {
+        let d = tempfile::tempdir().unwrap();
+        let p = paired_in(d.path());
+        let notes = p.notes.clone();
+        let inner = Inner::new(Arc::new(p), 47811);
+        let t0 = Instant::now();
+        let ip = "192.168.1.20";
+        let r = route_at(&inner, &rq("POST", "/api/v1/pair/request", ip, PAIR_BODY), t0);
+        assert_eq!(r.status, 200);
+        let rid = rj(&r)["requestId"].as_str().unwrap().to_string();
+        let wait = |t: Instant| rj(&route_at(&inner, &rq("GET", &format!("/api/v1/pair/wait?id={rid}&wait=0"), ip, ""), t))["status"].as_str().unwrap().to_string();
+        assert_eq!(wait(t0 + Duration::from_secs(119)), "pending");
+        assert_eq!(inner.pending_requests_at(t0 + Duration::from_secs(119)).len(), 1);
+        let changes = notes.lock().unwrap().iter().filter(|n| *n == "changed").count();
+        assert_eq!(wait(t0 + Duration::from_secs(121)), "expired");
+        assert!(notes.lock().unwrap().iter().filter(|n| *n == "changed").count() > changes, "caducar avisa");
+        assert!(inner.pending_requests_at(t0 + Duration::from_secs(121)).is_empty());
+        // una caducada tampoco se puede aprobar
+        route_at(&inner, &rq("POST", "/api/v1/pair/request", ip, PAIR_BODY), t0);
+        let id_public = inner.pending_requests_at(t0)[0].id_public.clone();
+        assert!(inner.approve_at(&id_public, t0 + Duration::from_secs(121)).is_err());
+        assert!(inner.pending_requests_at(t0 + Duration::from_secs(121)).is_empty());
+    }
+
+    #[test]
+    fn pair2_fourth_pending_is_429() {
+        let d = tempfile::tempdir().unwrap();
+        let inner = Inner::new(Arc::new(paired_in(d.path())), 47811);
+        let t0 = Instant::now();
+        let ip = "192.168.1.20";
+        for n in ["A", "B", "C"] {
+            assert_eq!(route_at(&inner, &rq("POST", "/api/v1/pair/request", ip, &named(n)), t0).status, 200, "{n}");
+        }
+        assert_eq!(route_at(&inner, &rq("POST", "/api/v1/pair/request", ip, &named("D")), t0).status, 429);
+        // repetir la misma solicitud (misma IP y nombre) la sustituye y no ocupa otro hueco
+        assert_eq!(route_at(&inner, &rq("POST", "/api/v1/pair/request", ip, &named("A")), t0).status, 200);
+        assert_eq!(inner.pending_requests_at(t0).len(), 3);
+        // al caducar se liberan los huecos
+        assert_eq!(route_at(&inner, &rq("POST", "/api/v1/pair/request", ip, &named("D")), t0 + Duration::from_secs(121)).status, 200);
+        // sin nombre: 400
+        assert_eq!(route_at(&inner, &rq("POST", "/api/v1/pair/request", ip, r#"{"name":" ","api":3}"#), t0).status, 400);
+    }
+
+    #[test]
+    fn pair2_ticket_valid_used_twice_expired_and_wrong() {
+        let d = tempfile::tempdir().unwrap();
+        let inner = Inner::new(Arc::new(paired_in(d.path())), 47811);
+        let t0 = Instant::now();
+        let ip = "192.168.1.30";
+        let use_ticket = |code: &str, api: u32, t: Instant| route_at(&inner, &rq("POST", "/api/v1/pair/ticket", ip, &ticket_body(code, api)), t);
+        // sin billete activo
+        assert_eq!(use_ticket("ABCD-EFGH", 3, t0).status, 401);
+        let tk = inner.new_ticket_at(t0);
+        assert_eq!(tk.code.len(), 9);
+        assert!(tk.expires_ms > now_ms());
+        assert_eq!(use_ticket("ZZZZ-ZZZZ", 3, t0).status, 401, "billete incorrecto");
+        assert_eq!(use_ticket(&tk.code, 2, t0).status, 426, "api vieja, y no se gasta");
+        // valido (se acepta en minusculas y sin guion)
+        let r = use_ticket(&tk.code.to_lowercase().replace('-', ""), 3, t0 + Duration::from_secs(10));
+        assert_eq!(r.status, 200);
+        let v = rj(&r);
+        assert_eq!((v["deviceId"].as_str(), v["token"].as_str(), v["hostId"].as_str()), (Some("dev1"), Some("tok1"), Some("host-1")));
+        assert!(v["addrs"].is_array());
+        // gastado
+        assert_eq!(use_ticket(&tk.code, 3, t0 + Duration::from_secs(11)).status, 401);
+        // caducado a los 5 minutos
+        let tk = inner.new_ticket_at(t0);
+        assert_eq!(use_ticket(&tk.code, 3, t0 + Duration::from_secs(301)).status, 401);
+        // uno nuevo sustituye al anterior
+        let (t1, t2) = (inner.new_ticket_at(t0), inner.new_ticket_at(t0));
+        assert_eq!(use_ticket(&t1.code, 3, t0).status, 401);
+        assert_eq!(use_ticket(&t2.code, 3, t0).status, 200);
+        // sin nombre: 400
+        let t3 = inner.new_ticket_at(t0);
+        let body = format!(r#"{{"ticket":"{}","name":"","api":3}}"#, t3.code);
+        assert_eq!(route_at(&inner, &rq("POST", "/api/v1/pair/ticket", ip, &body), t0).status, 400);
+    }
+
+    #[test]
+    fn pair2_bad_tickets_are_throttled() {
+        let d = tempfile::tempdir().unwrap();
+        let inner = Inner::new(Arc::new(paired_in(d.path())), 47811);
+        let t0 = Instant::now();
+        let tk = inner.new_ticket_at(t0);
+        for _ in 0..10 {
+            assert_eq!(route_at(&inner, &rq("POST", "/api/v1/pair/ticket", "192.168.1.40", &ticket_body("ZZZZ-ZZZZ", 3)), t0).status, 401);
+        }
+        assert_eq!(route_at(&inner, &rq("POST", "/api/v1/pair/ticket", "192.168.1.40", &ticket_body(&tk.code, 3)), t0).status, 429);
+        assert_eq!(route_at(&inner, &rq("POST", "/api/v1/pair/ticket", "192.168.1.41", &ticket_body(&tk.code, 3)), t0).status, 200, "otra IP no");
+    }
+
+    #[test]
+    fn pair_token_revoke_and_old_clients() {
+        let d = tempfile::tempdir().unwrap();
+        let p = paired_in(d.path());
+        let seen = p.seen.clone();
+        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), p).unwrap();
+        let a = srv.local_addr();
+        let tk = srv.new_ticket();
+        let (st, text) = post(a, "/api/v1/pair/ticket", None, &ticket_body(&tk.code, 3));
+        assert_eq!(st, 200, "{text}");
+        let body = body_of(&text);
         assert_eq!((body["deviceId"].as_str(), body["token"].as_str(), body["hostId"].as_str()), (Some("dev1"), Some("tok1"), Some("host-1")));
         // el token entra y el proveedor sabe quien llama; tambien apunta la version
         let (st, text) = post(a, "/api/v1/call", Some("tok1"), "{\"cmd\":\"whoami\"}");
         assert_eq!(st, 200);
         assert!(text.contains("\"device\":\"dev1\""), "{text}");
-        let r = get(a, "GET", "/api/v1/snapshot", &[("Authorization", "Bearer tok1"), ("X-Visor-Version", "1.1"), ("X-Visor-Api", "2")]);
+        let r = get(a, "GET", "/api/v1/snapshot", &[("Authorization", "Bearer tok1"), ("X-Visor-Version", "2.0.3"), ("X-Visor-Api", "3")]);
         assert_eq!(r.status, 200);
-        assert!(seen.lock().unwrap().contains(&("dev1".into(), "1.1".into(), 2)));
-        // el codigo antiguo sigue entrando como la tablet de siempre
-        let (_, text) = post(a, "/api/v1/call", Some("ABCD-EFGH"), "{\"cmd\":\"whoami\"}");
-        assert!(text.contains(LEGACY_TABLET), "{text}");
-        assert_eq!(post(a, "/api/v1/unpair", Some("ABCD-EFGH"), "").0, 400);
-        // api demasiado vieja: 426
-        assert_eq!(get(a, "GET", "/api/v1/snapshot", &[("Authorization", "Bearer tok1"), ("X-Visor-Api", "0")]).status, 426);
+        assert!(seen.lock().unwrap().contains(&("dev1".into(), "2.0.3".into(), 3)));
+        // sin token, token falso o el viejo codigo: 401
+        assert_eq!(get(a, "GET", "/api/v1/snapshot", &[]).status, 401);
+        assert_eq!(get(a, "GET", "/api/v1/snapshot", &[("Authorization", "Bearer nada")]).status, 401);
+        assert_eq!(post(a, "/api/v1/call", Some("ABCD-EFGH"), "{\"cmd\":\"whoami\"}").0, 401);
+        // api vieja: 426 (con token valido o sin el), y el /pair de antes tambien
+        for api in ["0", "2"] {
+            assert_eq!(get(a, "GET", "/api/v1/snapshot", &[("Authorization", "Bearer tok1"), ("X-Visor-Api", api)]).status, 426);
+        }
+        let (st, text) = post(a, "/api/v1/pair", None, "{\"code\":\"ABCD-EFGH\",\"name\":\"Portátil\",\"api\":2}");
+        assert_eq!(st, 426);
+        assert!(text.contains(UPDATE_MSG), "{text}");
+        assert_eq!(get(a, "GET", "/api/v1/pair", &[]).status, 426);
+        assert_eq!(post(a, "/api/v1/pair/request", None, r#"{"name":"X","api":2}"#).0, 426);
+        assert_eq!(post(a, "/api/v1/pair/request", None, r#"{"name":"X"}"#).0, 426);
+        assert_eq!(post(a, "/api/v1/pair/ticket", None, &ticket_body("ABCD-EFGH", 2)).0, 426);
+        // un billete anulado ya no vale
+        let tk = srv.new_ticket();
+        srv.cancel_ticket();
+        assert_eq!(post(a, "/api/v1/pair/ticket", None, &ticket_body(&tk.code, 3)).0, 401);
         // quitarse: el token deja de valer
         assert_eq!(post(a, "/api/v1/unpair", Some("tok1"), "").0, 200);
         assert_eq!(post(a, "/api/v1/call", Some("tok1"), "{\"cmd\":\"whoami\"}").0, 401);
@@ -1641,10 +2322,53 @@ mod tests {
     }
 
     #[test]
+    fn stream_pair_goes_to_the_provider() {
+        let d = tempfile::tempdir().unwrap();
+        let mut p = paired_in(d.path());
+        p.devs = Arc::new(Mutex::new(vec![("tokx".to_string(), Caller { device_id: "tab1".into(), name: "Tablet".into(), kind: "tablet".into() }, false)]));
+        let notes = p.notes.clone();
+        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), p).unwrap();
+        let a = srv.local_addr();
+        assert_eq!(post(a, "/api/v1/stream/pair", None, "{\"pin\":\"1234\"}").0, 401);
+        let (st, text) = post(a, "/api/v1/stream/pair", Some("tokx"), "{}");
+        assert_eq!(st, 200);
+        assert!(text.contains("\"passphrase\"") && text.contains("4321"), "{text}");
+        let (st, text) = post(a, "/api/v1/stream/pair", Some("tokx"), "{\"pin\":\"1234\"}");
+        assert_eq!(st, 200);
+        assert!(text.contains("\"ok\":true"), "{text}");
+        assert!(notes.lock().unwrap().contains(&"stream:tab1:1234".to_string()));
+        assert!(notes.lock().unwrap().contains(&"stream:tab1:-".to_string()));
+        assert_eq!(get(a, "GET", "/api/v1/stream/pair", &[("Authorization", "Bearer tokx")]).status, 405);
+        // por defecto el proveedor no puede
+        let fake = Fake { lib: lib_with(vec![]), dir: d.path().to_path_buf(), scans: Arc::new(AtomicU64::new(0)) };
+        let srv2 = RemoteServer::start("127.0.0.1:0".parse().unwrap(), fake).unwrap();
+        let (st, text) = post(srv2.local_addr(), "/api/v1/stream/pair", Some("ABCD-EFGH"), "{\"pin\":\"1234\"}");
+        assert_eq!(st, 409);
+        assert!(text.contains("no puede emparejar el streaming"), "{text}");
+    }
+
+    #[test]
+    fn qr_payload_and_host_addrs() {
+        let q = qr_payload("id1", "SALON", &["192.168.1.5:47811".to_string(), "100.64.0.2:47811".to_string()], 47811, "ABCD-EFGH");
+        let v: serde_json::Value = serde_json::from_str(&q).unwrap();
+        assert_eq!((v["v"].as_u64(), v["app"].as_str(), v["id"].as_str(), v["name"].as_str()), (Some(2), Some("visor-capturas"), Some("id1"), Some("SALON")));
+        assert_eq!((v["port"].as_u64(), v["ticket"].as_str(), v["addrs"].as_array().map(|a| a.len())), (Some(47811), Some("ABCD-EFGH"), Some(2)));
+        assert!(is_tailscale(&"100.64.0.1".parse().unwrap()) && is_tailscale(&"100.127.255.254".parse().unwrap()));
+        assert!(!is_tailscale(&"100.128.0.1".parse().unwrap()) && !is_tailscale(&"100.63.255.255".parse().unwrap()) && !is_tailscale(&"192.168.1.1".parse().unwrap()));
+        let addrs = host_addrs(1234);
+        assert!(addrs.iter().all(|x| x.ends_with(":1234") && !x.starts_with("127.")), "{addrs:?}");
+        // de casa primero, Tailscale despues
+        let first_ts = addrs.iter().position(|x| is_tailscale(&x.split(':').next().unwrap().parse().unwrap()));
+        if let Some(i) = first_ts {
+            assert!(addrs[i..].iter().all(|x| is_tailscale(&x.split(':').next().unwrap().parse().unwrap())), "{addrs:?}");
+        }
+    }
+
+    #[test]
     fn launch_and_capture_over_http() {
         let d = tempfile::tempdir().unwrap();
         let fake = Fake { lib: lib_with(vec![]), dir: d.path().to_path_buf(), scans: Arc::new(AtomicU64::new(0)) };
-        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), "ABCD-EFGH".into(), fake).unwrap();
+        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), fake).unwrap();
         let a = srv.local_addr();
         let hello = get(a, "GET", "/api/v1/hello", &[]);
         assert!(String::from_utf8_lossy(&hello.body).contains("\"launch\""));
@@ -1678,7 +2402,7 @@ mod tests {
         let shot_s = shot.to_string_lossy().into_owned();
         let scans = Arc::new(AtomicU64::new(0));
         let fake = Fake { lib: lib_with(vec![title("Juego A", &[&shot_s], None, None, None)]), dir: d.path().to_path_buf(), scans: scans.clone() };
-        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), "ABCD-EFGH".into(), fake).unwrap();
+        let srv = RemoteServer::start("127.0.0.1:0".parse().unwrap(), fake).unwrap();
         let a = srv.local_addr();
         let enc = |s: &str| s.bytes().map(|b| if b.is_ascii_alphanumeric() { (b as char).to_string() } else { format!("%{b:02X}") }).collect::<String>();
 
@@ -1695,8 +2419,8 @@ mod tests {
         assert_eq!(get(a, "GET", "/api/v1/snapshot", &[("Authorization", "Bearer ZZZZ-ZZZZ")]).status, 401);
         assert_eq!(scans.load(Ordering::SeqCst), 0, "sin codigo no se escanea");
 
-        // snapshot con codigo normalizado
-        let r = get(a, "GET", "/api/v1/snapshot", &[("Authorization", "Bearer abcd efgh")]);
+        // snapshot con token
+        let r = get(a, "GET", "/api/v1/snapshot", &[("Authorization", "Bearer ABCD-EFGH")]);
         assert_eq!(r.status, 200);
         let v: serde_json::Value = serde_json::from_slice(&r.body).unwrap();
         assert_eq!(v["api"], 1);
@@ -1726,33 +2450,31 @@ mod tests {
 
         // imagenes con ?k=
         let q = enc(&shot_s);
-        let r = get(a, "GET", &format!("/api/v1/thumb?p={q}&k=abcdefgh"), &[]);
+        let r = get(a, "GET", &format!("/api/v1/thumb?p={q}&k=ABCD-EFGH"), &[]);
         assert_eq!((r.status, r.h("Content-Type")), (200, Some("image/jpeg")));
         assert_eq!(imagesize::blob_size(&r.body).unwrap().width, 480);
-        let r = get(a, "GET", &format!("/api/v1/preview?p={q}&k=abcdefgh"), &[]);
+        let r = get(a, "GET", &format!("/api/v1/preview?p={q}&k=ABCD-EFGH"), &[]);
         assert_eq!(r.status, 200);
         assert_eq!(imagesize::blob_size(&r.body).unwrap().width, 1920);
         let et = r.h("ETag").unwrap().to_string();
-        assert_eq!(get(a, "GET", &format!("/api/v1/preview?p={q}&k=abcdefgh"), &[("If-None-Match", &et)]).status, 304);
-        let r = get(a, "GET", &format!("/api/v1/file?p={q}&k=abcdefgh"), &[]);
+        assert_eq!(get(a, "GET", &format!("/api/v1/preview?p={q}&k=ABCD-EFGH"), &[("If-None-Match", &et)]).status, 304);
+        let r = get(a, "GET", &format!("/api/v1/file?p={q}&k=ABCD-EFGH"), &[]);
         assert_eq!((r.status, r.h("Content-Type")), (200, Some("image/png")));
         assert_eq!(r.body, fs::read(&shot).unwrap());
 
         // rutas fuera de la instantanea, sin p, endpoint desconocido
-        assert_eq!(get(a, "GET", &format!("/api/v1/file?p={}&k=abcdefgh", enc(&secret.to_string_lossy())), &[]).status, 404);
-        assert_eq!(get(a, "GET", "/api/v1/file?k=abcdefgh", &[]).status, 400);
-        assert_eq!(get(a, "GET", "/api/v1/nada?k=abcdefgh", &[]).status, 404);
+        assert_eq!(get(a, "GET", &format!("/api/v1/file?p={}&k=ABCD-EFGH", enc(&secret.to_string_lossy())), &[]).status, 404);
+        assert_eq!(get(a, "GET", "/api/v1/file?k=ABCD-EFGH", &[]).status, 400);
+        assert_eq!(get(a, "GET", "/api/v1/nada?k=ABCD-EFGH", &[]).status, 404);
 
-        // cambio de codigo en caliente
-        srv.set_token("WXYZ-2345");
+        // el token se compara tal cual (ya no se normaliza como el codigo de antes)
         assert_eq!(get(a, "GET", &format!("/api/v1/file?p={q}&k=abcdefgh"), &[]).status, 401);
-        assert_eq!(get(a, "GET", &format!("/api/v1/file?p={q}&k=wxyz2345"), &[]).status, 200);
 
         // 429 tras 10 fallos (ya van 3)
         for _ in 0..7 {
             assert_eq!(get(a, "GET", "/api/v1/snapshot?k=MALO", &[]).status, 401);
         }
-        let r = get(a, "GET", "/api/v1/snapshot?k=WXYZ-2345", &[]);
+        let r = get(a, "GET", "/api/v1/snapshot?k=ABCD-EFGH", &[]);
         assert_eq!(r.status, 429, "bloqueado aunque el codigo sea bueno");
         assert!(String::from_utf8_lossy(&r.body).contains("error"));
         assert_eq!(get(a, "GET", "/api/v1/hello", &[]).status, 200, "hello no se bloquea");

@@ -45,6 +45,8 @@ pub struct Device {
     pub app_version: String,
     pub api: i64,
     pub revoked: bool,
+    /// Id del cliente en Apollo (streaming emparejado), si lo hay.
+    pub apollo_id: Option<String>,
 }
 
 fn now_ms() -> i64 {
@@ -69,10 +71,24 @@ fn row(r: &rusqlite::Row) -> rusqlite::Result<Device> {
         app_version: r.get(5)?,
         api: r.get(6)?,
         revoked: r.get::<_, i64>(7)? != 0,
+        apollo_id: r.get(8)?,
     })
 }
 
-const COLS: &str = "id, name, kind, created_ms, last_seen_ms, app_version, api, revoked";
+const COLS: &str = "id, name, kind, created_ms, last_seen_ms, app_version, api, revoked, apollo_id";
+
+/// Guarda (o quita, con `None`) el id del cliente en Apollo de un dispositivo.
+pub fn set_apollo_id(c: &Connection, device_id: &str, apollo_id: Option<&str>) -> Result<()> {
+    if c.execute("UPDATE devices SET apollo_id = ?2 WHERE id = ?1", params![device_id, apollo_id])? == 0 {
+        bail!("Ese dispositivo no existe");
+    }
+    Ok(())
+}
+
+/// Id del cliente en Apollo de un dispositivo (`None` si no esta emparejado el streaming o no existe).
+pub fn apollo_id(c: &Connection, device_id: &str) -> Result<Option<String>> {
+    Ok(c.query_row("SELECT apollo_id FROM devices WHERE id = ?1", [device_id], |r| r.get(0)).optional()?.flatten())
+}
 
 /// Da de alta un dispositivo y devuelve `(id, token)`. El token solo se conoce aqui: se guarda su SHA-256.
 pub fn create(c: &Connection, name: &str, kind: &str, version: &str, api: u32) -> Result<(String, String)> {
@@ -150,6 +166,23 @@ pub fn names(c: &Connection) -> Result<std::collections::HashMap<String, String>
 mod tests {
     use super::*;
     use crate::db::Db;
+
+    #[test]
+    fn apollo_id_is_saved_and_cleared() {
+        let d = tempfile::tempdir().unwrap();
+        let db = Db::open_path(&d.path().join("visor.db")).unwrap();
+        db.with(|c| {
+            let (id, _) = create(c, "Tablet", "tablet", "1.0", 3).unwrap();
+            assert_eq!(get(c, &id).unwrap().unwrap().apollo_id, None);
+            set_apollo_id(c, &id, Some("uuid-1")).unwrap();
+            assert_eq!(apollo_id(c, &id).unwrap().as_deref(), Some("uuid-1"));
+            assert_eq!(list(c).unwrap()[0].apollo_id.as_deref(), Some("uuid-1"));
+            set_apollo_id(c, &id, None).unwrap();
+            assert_eq!(apollo_id(c, &id).unwrap(), None);
+            assert!(set_apollo_id(c, "nada", Some("x")).is_err());
+            assert_eq!(apollo_id(c, "nada").unwrap(), None);
+        });
+    }
 
     #[test]
     fn create_find_rename_revoke() {

@@ -283,6 +283,8 @@ pub const MIGRATIONS: &[&str] = &[
     crate::installs::SCHEMA,
     // 18: marca de subida de las sesiones de lectura y las frases de un PC cliente (multi-PC, fase 4).
     crate::readsync::SCHEMA,
+    // 19: id del cliente en Apollo de cada dispositivo (para quitarlo al revocar).
+    "ALTER TABLE devices ADD COLUMN apollo_id TEXT;",
 ];
 
 /// Version del esquema que entiende esta compilacion.
@@ -574,6 +576,25 @@ mod tests {
             c.execute("UPDATE sessions SET uid = 'u1'", []).unwrap();
             let dup = c.execute("INSERT INTO sessions(game_id, start_ms, end_ms, uid) VALUES ('g', 7000, 8000, 'u1')", []);
             assert!(dup.is_err(), "uid es unico");
+        });
+    }
+
+    #[test]
+    fn migration_19_adds_apollo_id_keeping_devices() {
+        let d = tempfile::tempdir().unwrap();
+        let p = d.path().join("visor.db");
+        {
+            let mut c = Connection::open(&p).unwrap();
+            migrate(&mut c, &MIGRATIONS[..18]).unwrap();
+            c.execute("INSERT INTO devices (id, name, kind, token_sha256, created_ms) VALUES ('d1', 'Tablet', 'tablet', 'h', 1)", []).unwrap();
+        }
+        let db = Db::open_path(&p).unwrap();
+        db.with(|c| {
+            assert_eq!(c.query_row::<i64, _, _>("PRAGMA user_version", [], |r| r.get(0)).unwrap(), latest_version());
+            assert_eq!(latest_version(), 19);
+            let a: Option<String> = c.query_row("SELECT apollo_id FROM devices WHERE id = 'd1'", [], |r| r.get(0)).unwrap();
+            assert_eq!(a, None, "los dispositivos que ya estaban quedan sin id de Apollo");
+            c.execute("UPDATE devices SET apollo_id = 'uuid-1' WHERE id = 'd1'", []).unwrap();
         });
     }
 

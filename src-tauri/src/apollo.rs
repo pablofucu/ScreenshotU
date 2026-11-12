@@ -20,6 +20,7 @@ pub struct ApolloStatus {
 struct Found {
     apps_json: PathBuf,
     service: String,
+    conf: PathBuf,
 }
 
 fn run(cmd: &str, args: &[&str]) -> String {
@@ -79,7 +80,7 @@ fn locate() -> Option<Found> {
         };
         if apps.is_file() {
             let service = service.clone().unwrap_or_else(|| if root.to_string_lossy().to_lowercase().contains("apollo") { "ApolloService".into() } else { "SunshineService".into() });
-            return Some(Found { apps_json: apps, service });
+            return Some(Found { apps_json: apps, service, conf });
         }
     }
     None
@@ -232,5 +233,535 @@ mod imp {
     use std::path::Path;
     pub fn write_elevated(_: &Path, _: &Path, _: &str) -> Result<(), String> {
         Err("Solo disponible en Windows".into())
+    }
+}
+
+/// Cliente de la API web local de Apollo (`https://127.0.0.1:47990`): login por cookie de sesion, emparejamiento
+/// por PIN u OTP y lista de clientes. Ver `docs/referencia/emparejamiento-apollo.md`. Las credenciales viven en el
+/// Administrador de credenciales de Windows; nunca se devuelven al frontend ni van a `config.json` o a los registros.
+pub mod web {
+    use serde::Serialize;
+    use serde_json::{json, Value};
+    use std::sync::Mutex;
+    use std::time::{Duration, Instant};
+
+    const BASE_PORT_DEFAULT: u16 = 47989;
+
+    // ---------- funciones puras ----------
+
+    /// Un cliente emparejado en Apollo.
+    #[derive(Serialize, Debug, Clone, PartialEq)]
+    #[serde(rename_all = "camelCase")]
+    pub struct Client {
+        pub uuid: String,
+        pub name: String,
+        pub perm: Option<u64>,
+    }
+
+    /// Resultado de `web_check`, para ensenarlo en Ajustes.
+    #[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq)]
+    #[serde(rename_all = "camelCase")]
+    pub enum WebState {
+        NoCredentials,
+        BadCredentials,
+        ApolloOff,
+        Incompatible,
+        Ok,
+    }
+
+    /// Error interno: distingue los casos que la interfaz explica de forma distinta.
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    enum ApiErr {
+        NoCreds,
+        BadCreds,
+        Off,
+        Incompatible,
+        Other(String),
+    }
+
+    impl ApiErr {
+        fn text(&self) -> String {
+            match self {
+                ApiErr::NoCreds => "Faltan el usuario y la contraseña de Apollo. Guárdalos en Ajustes.".into(),
+                ApiErr::BadCreds => "Apollo no acepta el usuario o la contraseña guardados.".into(),
+                ApiErr::Off => "No se puede hablar con Apollo: está apagado o no se encuentra.".into(),
+                ApiErr::Incompatible => "Esta versión de Apollo no ofrece la API esperada.".into(),
+                ApiErr::Other(m) => m.clone(),
+            }
+        }
+    }
+
+    pub fn login_body(user: &str, pass: &str) -> Value {
+        json!({ "username": user, "password": pass })
+    }
+
+    pub fn pin_body(pin: &str, name: &str) -> Value {
+        json!({ "pin": pin, "name": name })
+    }
+
+    pub fn otp_body(passphrase: &str, device_name: &str) -> Value {
+        json!({ "passphrase": passphrase, "deviceName": device_name })
+    }
+
+    pub fn unpair_body(uuid: &str) -> Value {
+        json!({ "uuid": uuid })
+    }
+
+    /// El PIN de Apollo son exactamente 4 digitos.
+    pub fn valid_pin(pin: &str) -> bool {
+        pin.len() == 4 && pin.bytes().all(|b| b.is_ascii_digit())
+    }
+
+    /// Valor de la cookie `auth` a partir de las cabeceras `Set-Cookie`.
+    pub fn parse_auth_cookie(set_cookies: &[String]) -> Option<String> {
+        set_cookies.iter().find_map(|h| {
+            let first = h.split(';').next()?.trim();
+            let v = first.strip_prefix("auth=")?;
+            (!v.is_empty()).then(|| v.to_string())
+        })
+    }
+
+    /// `{"status":true}` -> true. Cualquier otra cosa -> false.
+    pub fn parse_status(v: &Value) -> bool {
+        v["status"].as_bool().unwrap_or(false)
+    }
+
+    pub fn parse_clients(v: &Value) -> Vec<Client> {
+        v["named_certs"]
+            .as_array()
+            .map(|a| {
+                a.iter()
+                    .filter_map(|c| {
+                        let uuid = c["uuid"].as_str()?.to_string();
+                        Some(Client { uuid, name: c["name"].as_str().unwrap_or("").to_string(), perm: c["perm"].as_u64() })
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    /// PIN del OTP: Apollo lo devuelve como texto, pero se admite tambien un numero.
+    pub fn parse_otp(v: &Value) -> Option<String> {
+        if !parse_status(v) {
+            return None;
+        }
+        match &v["otp"] {
+            Value::String(s) if !s.is_empty() => Some(s.clone()),
+            Value::Number(n) => Some(format!("{:04}", n.as_u64()?)),
+            _ => None,
+        }
+    }
+
+    /// Cliente con ese nombre (el ultimo de la lista si hay varios, que es el mas reciente).
+    pub fn client_by_name<'a>(clients: &'a [Client], name: &str) -> Option<&'a Client> {
+        clients.iter().rev().find(|c| c.name == name)
+    }
+
+    /// Passphrase aleatoria de `len` caracteres alfanumericos a partir de una fuente de u64.
+    pub fn passphrase_from(mut next: impl FnMut() -> u64, len: usize) -> String {
+        const ABC: &[u8] = b"abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        (0..len).map(|_| ABC[(next() % ABC.len() as u64) as usize] as char).collect()
+    }
+
+    fn random_u64() -> u64 {
+        use std::hash::{BuildHasher, Hasher};
+        let mut h = std::collections::hash_map::RandomState::new().build_hasher();
+        h.write_u128(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0));
+        h.finish()
+    }
+
+    /// Puerto de la API web: puerto base (`port` de sunshine.conf, 47989 por defecto) + 1.
+    pub fn web_port_from_conf(conf: &str) -> u16 {
+        let base = conf
+            .lines()
+            .find_map(|l| {
+                let (k, v) = l.split_once('=')?;
+                if k.trim() == "port" {
+                    v.trim().parse::<u16>().ok()
+                } else {
+                    None
+                }
+            })
+            .unwrap_or(BASE_PORT_DEFAULT);
+        base.saturating_add(1)
+    }
+
+    fn web_port() -> u16 {
+        super::locate()
+            .and_then(|f| std::fs::read_to_string(f.conf.join("sunshine.conf")).ok())
+            .map(|t| web_port_from_conf(&t))
+            .unwrap_or(BASE_PORT_DEFAULT + 1)
+    }
+
+    /// Puerto base de streaming de Apollo (47989 por defecto): el que usa Artemis para emparejar y conectar.
+    pub fn stream_port() -> u16 {
+        web_port().saturating_sub(1)
+    }
+
+    // ---------- credenciales ----------
+
+    const CRED_TARGET: &str = "visor-capturas/apollo-web";
+
+    pub fn creds_set(user: &str, pass: &str) -> Result<(), String> {
+        if user.trim().is_empty() || pass.is_empty() {
+            return Err("Indica el usuario y la contraseña de Apollo.".into());
+        }
+        cred::write(user.trim(), pass)?;
+        *SESSION.lock().unwrap() = None;
+        Ok(())
+    }
+
+    pub fn creds_clear() -> Result<(), String> {
+        *SESSION.lock().unwrap() = None;
+        cred::delete()
+    }
+
+    pub fn creds_present() -> bool {
+        matches!(cred::read(), Ok(Some(_)))
+    }
+
+    #[cfg(windows)]
+    mod cred {
+        use super::CRED_TARGET;
+        use windows::core::{PCWSTR, PWSTR};
+        use windows::Win32::Foundation::{ERROR_NOT_FOUND, FILETIME};
+        use windows::Win32::Security::Credentials::{CredDeleteW, CredFree, CredReadW, CredWriteW, CREDENTIALW, CRED_FLAGS, CRED_PERSIST_LOCAL_MACHINE, CRED_TYPE_GENERIC};
+
+        fn wide(s: &str) -> Vec<u16> {
+            s.encode_utf16().chain(std::iter::once(0)).collect()
+        }
+
+        pub fn write(user: &str, pass: &str) -> Result<(), String> {
+            let mut target = wide(CRED_TARGET);
+            let mut u = wide(user);
+            let mut blob = pass.as_bytes().to_vec();
+            let cred = CREDENTIALW {
+                Flags: CRED_FLAGS(0),
+                Type: CRED_TYPE_GENERIC,
+                TargetName: PWSTR(target.as_mut_ptr()),
+                Comment: PWSTR::null(),
+                LastWritten: FILETIME::default(),
+                CredentialBlobSize: blob.len() as u32,
+                CredentialBlob: blob.as_mut_ptr(),
+                Persist: CRED_PERSIST_LOCAL_MACHINE,
+                AttributeCount: 0,
+                Attributes: std::ptr::null_mut(),
+                TargetAlias: PWSTR::null(),
+                UserName: PWSTR(u.as_mut_ptr()),
+            };
+            // SAFETY: `cred` y los buffers a los que apunta viven hasta que vuelve la llamada.
+            unsafe { CredWriteW(&cred, 0) }.map_err(|e| format!("No se pudieron guardar las credenciales de Apollo: {e}"))
+        }
+
+        pub fn read() -> Result<Option<(String, String)>, String> {
+            let target = wide(CRED_TARGET);
+            let mut out: *mut CREDENTIALW = std::ptr::null_mut();
+            // SAFETY: `target` termina en 0; `out` recibe un bloque que se libera con `CredFree`.
+            match unsafe { CredReadW(PCWSTR(target.as_ptr()), CRED_TYPE_GENERIC, None, &mut out) } {
+                Ok(()) => {
+                    // SAFETY: tras un Ok, `out` apunta a una CREDENTIALW valida con su blob.
+                    let r = unsafe {
+                        let c = &*out;
+                        let bytes = if c.CredentialBlob.is_null() || c.CredentialBlobSize == 0 { &[][..] } else { std::slice::from_raw_parts(c.CredentialBlob, c.CredentialBlobSize as usize) };
+                        let pass = String::from_utf8_lossy(bytes).into_owned();
+                        let user = if c.UserName.is_null() { String::new() } else { c.UserName.to_string().unwrap_or_default() };
+                        CredFree(out as *const _);
+                        (user, pass)
+                    };
+                    Ok(Some(r))
+                }
+                Err(e) if e.code() == ERROR_NOT_FOUND.to_hresult() => Ok(None),
+                Err(e) => Err(format!("No se pudieron leer las credenciales de Apollo: {e}")),
+            }
+        }
+
+        pub fn delete() -> Result<(), String> {
+            let target = wide(CRED_TARGET);
+            // SAFETY: `target` termina en 0.
+            match unsafe { CredDeleteW(PCWSTR(target.as_ptr()), CRED_TYPE_GENERIC, None) } {
+                Ok(()) => Ok(()),
+                Err(e) if e.code() == ERROR_NOT_FOUND.to_hresult() => Ok(()),
+                Err(e) => Err(format!("No se pudieron borrar las credenciales de Apollo: {e}")),
+            }
+        }
+    }
+
+    #[cfg(not(windows))]
+    mod cred {
+        pub fn write(_: &str, _: &str) -> Result<(), String> {
+            Err("Solo disponible en Windows".into())
+        }
+        pub fn read() -> Result<Option<(String, String)>, String> {
+            Ok(None)
+        }
+        pub fn delete() -> Result<(), String> {
+            Ok(())
+        }
+    }
+
+    // ---------- TLS: certificado autofirmado, solo en 127.0.0.1 ----------
+
+    mod tls {
+        use rustls::client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier};
+        use rustls::crypto::{ring, verify_tls12_signature, verify_tls13_signature, CryptoProvider};
+        use rustls::pki_types::{CertificateDer, ServerName, UnixTime};
+        use rustls::{DigitallySignedStruct, SignatureScheme};
+        use std::net::{IpAddr, Ipv4Addr};
+        use std::sync::Arc;
+
+        /// Acepta cualquier certificado, pero solo si el servidor es 127.0.0.1; la firma se sigue comprobando.
+        #[derive(Debug)]
+        struct LoopbackOnly(Arc<CryptoProvider>);
+
+        impl ServerCertVerifier for LoopbackOnly {
+            fn verify_server_cert(&self, _: &CertificateDer<'_>, _: &[CertificateDer<'_>], name: &ServerName<'_>, _: &[u8], _: UnixTime) -> Result<ServerCertVerified, rustls::Error> {
+                match name {
+                    ServerName::IpAddress(ip) if IpAddr::from(*ip) == IpAddr::V4(Ipv4Addr::LOCALHOST) => Ok(ServerCertVerified::assertion()),
+                    _ => Err(rustls::Error::General("solo se acepta el certificado de 127.0.0.1".into())),
+                }
+            }
+            fn verify_tls12_signature(&self, m: &[u8], c: &CertificateDer<'_>, d: &DigitallySignedStruct) -> Result<HandshakeSignatureValid, rustls::Error> {
+                verify_tls12_signature(m, c, d, &self.0.signature_verification_algorithms)
+            }
+            fn verify_tls13_signature(&self, m: &[u8], c: &CertificateDer<'_>, d: &DigitallySignedStruct) -> Result<HandshakeSignatureValid, rustls::Error> {
+                verify_tls13_signature(m, c, d, &self.0.signature_verification_algorithms)
+            }
+            fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
+                self.0.signature_verification_algorithms.supported_schemes()
+            }
+        }
+
+        pub fn agent() -> Result<ureq::Agent, String> {
+            let provider = Arc::new(ring::default_provider());
+            let cfg = rustls::ClientConfig::builder_with_provider(provider.clone())
+                .with_safe_default_protocol_versions()
+                .map_err(|e| format!("No se pudo preparar la conexión segura: {e}"))?
+                .dangerous()
+                .with_custom_certificate_verifier(Arc::new(LoopbackOnly(provider)))
+                .with_no_client_auth();
+            Ok(ureq::AgentBuilder::new().tls_config(Arc::new(cfg)).timeout(std::time::Duration::from_secs(10)).redirects(0).build())
+        }
+    }
+
+    // ---------- sesion y peticiones ----------
+
+    /// Cookie `auth` viva (una sola sesion; otro login la invalida y se renueva ante un 401).
+    static SESSION: Mutex<Option<String>> = Mutex::new(None);
+
+    fn url(path: &str) -> String {
+        format!("https://127.0.0.1:{}{}", web_port(), path)
+    }
+
+    fn map_transport(e: ureq::Error) -> ApiErr {
+        match e {
+            ureq::Error::Status(code, _) => ApiErr::Other(format!("Apollo respondió con el error {code}.")),
+            ureq::Error::Transport(t) => match t.kind() {
+                ureq::ErrorKind::ConnectionFailed | ureq::ErrorKind::Dns | ureq::ErrorKind::Io => ApiErr::Off,
+                _ => ApiErr::Other(format!("No se pudo hablar con Apollo: {t}")),
+            },
+        }
+    }
+
+    fn login(agent: &ureq::Agent) -> Result<String, ApiErr> {
+        let (user, pass) = cred::read().map_err(ApiErr::Other)?.ok_or(ApiErr::NoCreds)?;
+        match agent.post(&url("/api/login")).send_json(login_body(&user, &pass)) {
+            Ok(resp) if resp.status() == 200 => {
+                let cookies: Vec<String> = resp.all("set-cookie").iter().map(|s| s.to_string()).collect();
+                let c = parse_auth_cookie(&cookies).ok_or(ApiErr::Incompatible)?;
+                *SESSION.lock().unwrap() = Some(c.clone());
+                Ok(c)
+            }
+            Ok(_) => Err(ApiErr::Other("Apollo todavía no tiene usuario: créalo primero en su página web.".into())),
+            Err(ureq::Error::Status(401, _)) => Err(ApiErr::BadCreds),
+            Err(ureq::Error::Status(404, _)) => Err(ApiErr::Incompatible),
+            Err(e) => Err(map_transport(e)),
+        }
+    }
+
+    fn send(agent: &ureq::Agent, method: &str, path: &str, body: &Option<Value>, cookie: &str) -> Result<ureq::Response, ureq::Error> {
+        let req = agent.request(method, &url(path)).set("Cookie", &format!("auth={cookie}"));
+        match body {
+            Some(b) => req.send_json(b.clone()),
+            None => req.call(),
+        }
+    }
+
+    /// Peticion con sesion: reutiliza la cookie y, si Apollo responde 401, vuelve a entrar una vez.
+    fn call(method: &str, path: &str, body: Option<Value>) -> Result<Value, ApiErr> {
+        let agent = tls::agent().map_err(ApiErr::Other)?;
+        let cached = SESSION.lock().unwrap().clone();
+        let mut cookie = match cached {
+            Some(c) => c,
+            None => login(&agent)?,
+        };
+        let mut retried = false;
+        loop {
+            match send(&agent, method, path, &body, &cookie) {
+                Ok(resp) if resp.status() == 200 => return resp.into_json::<Value>().map_err(|e| ApiErr::Other(format!("Apollo devolvió una respuesta ilegible: {e}"))),
+                Ok(resp) if resp.status() == 301 || resp.status() == 302 => {
+                    // Redirige a /login o /welcome: sesion caducada o sin usuario.
+                    if retried {
+                        return Err(ApiErr::BadCreds);
+                    }
+                    retried = true;
+                    cookie = login(&agent)?;
+                }
+                Ok(resp) => return Err(ApiErr::Other(format!("Apollo respondió con el código {}.", resp.status()))),
+                Err(ureq::Error::Status(401, _)) | Err(ureq::Error::Status(403, _)) if !retried => {
+                    retried = true;
+                    *SESSION.lock().unwrap() = None;
+                    cookie = login(&agent)?;
+                }
+                Err(ureq::Error::Status(401, _)) | Err(ureq::Error::Status(403, _)) => return Err(ApiErr::BadCreds),
+                Err(ureq::Error::Status(404, _)) => return Err(ApiErr::Incompatible),
+                Err(e) => return Err(map_transport(e)),
+            }
+        }
+    }
+
+    // ---------- API publica ----------
+
+    /// Comprueba credenciales, Apollo y version; para ensenarlo en Ajustes.
+    pub fn web_check() -> WebState {
+        match call("GET", "/api/clients/list", None) {
+            Ok(v) if v.get("named_certs").is_some() => WebState::Ok,
+            Ok(_) => WebState::Incompatible,
+            Err(ApiErr::NoCreds) => WebState::NoCredentials,
+            Err(ApiErr::BadCreds) => WebState::BadCredentials,
+            Err(ApiErr::Off) | Err(ApiErr::Other(_)) => WebState::ApolloOff,
+            Err(ApiErr::Incompatible) => WebState::Incompatible,
+        }
+    }
+
+    /// Envia el PIN a Apollo. Necesita un emparejamiento en curso: reintenta cada 500 ms durante unos 15 s.
+    pub fn pair_pin(pin: &str, name: &str) -> Result<(), String> {
+        if !valid_pin(pin) {
+            return Err("El PIN debe tener exactamente 4 cifras.".into());
+        }
+        let deadline = Instant::now() + Duration::from_secs(15);
+        loop {
+            match call("POST", "/api/pin", Some(pin_body(pin, name))) {
+                Ok(v) if parse_status(&v) => return Ok(()),
+                Ok(_) => {}
+                Err(e) => return Err(e.text()),
+            }
+            if Instant::now() >= deadline {
+                return Err("Apollo no recibió ninguna solicitud de emparejamiento a tiempo. Prueba de nuevo.".into());
+            }
+            std::thread::sleep(Duration::from_millis(500));
+        }
+    }
+
+    /// Crea un OTP (valido 3 minutos, un solo uso). Devuelve `(pin, passphrase)`.
+    pub fn otp_new(device_name: &str) -> Result<(String, String), String> {
+        let passphrase = passphrase_from(random_u64, 12);
+        let v = call("POST", "/api/otp", Some(otp_body(&passphrase, device_name))).map_err(|e| e.text())?;
+        let pin = parse_otp(&v).ok_or("Apollo no ha creado el código de emparejamiento.")?;
+        Ok((pin, passphrase))
+    }
+
+    pub fn clients() -> Result<Vec<Client>, String> {
+        call("GET", "/api/clients/list", None).map(|v| parse_clients(&v)).map_err(|e| e.text())
+    }
+
+    pub fn unpair_client(uuid: &str) -> Result<(), String> {
+        let v = call("POST", "/api/clients/unpair", Some(unpair_body(uuid))).map_err(|e| e.text())?;
+        if parse_status(&v) {
+            Ok(())
+        } else {
+            Err("Apollo no ha podido quitar el dispositivo.".into())
+        }
+    }
+
+    /// uuid del cliente con ese nombre (para guardar el id del recien emparejado).
+    pub fn client_uuid_by_name(name: &str) -> Result<Option<String>, String> {
+        Ok(client_by_name(&clients()?, name).map(|c| c.uuid.clone()))
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        const LIST: &str = r#"{"named_certs":[
+            {"name":"PC","uuid":"aaa-1","perm":234881024,"do":[],"undo":[]},
+            {"name":"Tablet","uuid":"bbb-2","perm":100663296},
+            {"name":"Tablet","uuid":"ccc-3"},
+            {"name":"sin uuid"}],"platform":"windows","status":true}"#;
+
+        #[test]
+        fn cuerpos() {
+            assert_eq!(login_body("u", "p"), json!({"username":"u","password":"p"}));
+            assert_eq!(pin_body("1234", "T"), json!({"pin":"1234","name":"T"}));
+            assert_eq!(otp_body("abcd", "T"), json!({"passphrase":"abcd","deviceName":"T"}));
+            assert_eq!(unpair_body("x"), json!({"uuid":"x"}));
+        }
+
+        #[test]
+        fn pin_valido() {
+            assert!(valid_pin("0123"));
+            assert!(!valid_pin("123"));
+            assert!(!valid_pin("12345"));
+            assert!(!valid_pin("12a4"));
+        }
+
+        #[test]
+        fn cookie() {
+            let h = vec!["other=1; Path=/".to_string(), "auth=abc123; Secure; SameSite=Strict; Max-Age=2592000".to_string()];
+            assert_eq!(parse_auth_cookie(&h).as_deref(), Some("abc123"));
+            assert_eq!(parse_auth_cookie(&["auth=; Max-Age=0".to_string()]), None);
+            assert_eq!(parse_auth_cookie(&[]), None);
+        }
+
+        #[test]
+        fn estado_y_otp() {
+            assert!(parse_status(&json!({"status":true})));
+            assert!(!parse_status(&json!({"status":false})));
+            assert!(!parse_status(&json!({})));
+            let ok = json!({"otp":"1234","ip":"1.2.3.4","name":"PC","status":true,"message":"OTP created, effective within 3 minutes."});
+            assert_eq!(parse_otp(&ok).as_deref(), Some("1234"));
+            assert_eq!(parse_otp(&json!({"otp":42,"status":true})).as_deref(), Some("0042"));
+            assert_eq!(parse_otp(&json!({"otp":"1234","status":false})), None);
+            assert_eq!(parse_otp(&json!({"status":true})), None);
+        }
+
+        #[test]
+        fn lista_de_clientes() {
+            let v: Value = serde_json::from_str(LIST).unwrap();
+            let cs = parse_clients(&v);
+            assert_eq!(cs.len(), 3);
+            assert_eq!(cs[0], Client { uuid: "aaa-1".into(), name: "PC".into(), perm: Some(234881024) });
+            assert_eq!(cs[2].perm, None);
+            assert_eq!(client_by_name(&cs, "Tablet").unwrap().uuid, "ccc-3");
+            assert!(client_by_name(&cs, "nadie").is_none());
+            assert!(parse_clients(&json!({})).is_empty());
+        }
+
+        #[test]
+        fn passphrase() {
+            let mut n = 0u64;
+            let p = passphrase_from(
+                || {
+                    n += 7;
+                    n
+                },
+                12,
+            );
+            assert_eq!(p.len(), 12);
+            assert!(p.chars().all(|c| c.is_ascii_alphanumeric()));
+            assert_eq!(passphrase_from(random_u64, 12).len(), 12);
+        }
+
+        #[test]
+        fn puerto_web() {
+            assert_eq!(web_port_from_conf(""), 47990);
+            assert_eq!(web_port_from_conf("sunshine_name = PC\nport = 48000\n"), 48001);
+            assert_eq!(web_port_from_conf("port = nada"), 47990);
+        }
+
+        #[test]
+        fn estados_serializan() {
+            assert_eq!(serde_json::to_string(&WebState::BadCredentials).unwrap(), "\"badCredentials\"");
+            assert_eq!(serde_json::to_string(&WebState::Ok).unwrap(), "\"ok\"");
+        }
     }
 }

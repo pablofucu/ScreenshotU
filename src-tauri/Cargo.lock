@@ -5340,6 +5340,7 @@ dependencies = [
  "chrono",
  "libloading 0.8.9",
  "qrcode",
+ "rustls",
  "serde",
  "serde_json",
  "sysinfo",

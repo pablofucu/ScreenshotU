@@ -6,9 +6,10 @@ use std::net::{Ipv4Addr, SocketAddr};
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Listener, Manager, State};
+use tauri_plugin_notification::{Action, ActionType, NotificationExt};
 use visor_core::db::data as dbd;
 use visor_core::devices;
-use visor_core::remote::{self, Caller, Discovery, Playing, Provider, RemoteConfig, RemoteServer, Snapshot};
+use visor_core::remote::{self, Caller, Discovery, PairRequest, Playing, Provider, RemoteConfig, RemoteServer, Snapshot};
 
 /// Respondedor UDP de "hay un visor por aqui?" (vive mientras el servidor esta activado).
 static DISCOVERY: Mutex<Option<Discovery>> = Mutex::new(None);
@@ -31,7 +32,6 @@ pub fn display_name(st: &AppState) -> String {
 pub fn device_label(st: &AppState, id: &str) -> String {
     match id {
         "" => String::new(),
-        remote::LEGACY_TABLET => "Tablet".into(),
         _ => st.db.with(|c| devices::get(c, id)).ok().flatten().map(|d| d.name).unwrap_or_else(|| "Otro dispositivo".into()),
     }
 }
@@ -86,10 +86,42 @@ impl Provider for AppProvider {
     }
 
     fn unpair(&self, caller: &Caller) -> anyhow::Result<()> {
-        let st = self.app.state::<AppState>();
-        st.db.with(|c| devices::revoke(c, &caller.device_id))?;
-        let _ = self.app.emit("devices-changed", ());
-        Ok(())
+        revoke_device(&self.app, &caller.device_id)
+    }
+
+    fn pair_requested(&self, req: &PairRequest) {
+        let _ = self.app.emit("pair-request", PairRequestView::from(req));
+        notify_request(&self.app, req);
+    }
+
+    fn pair_requests_changed(&self) {
+        // Sin lista adjunta: este aviso puede llegar con el servidor cogido, la interfaz pide `pair_pending`.
+        let _ = self.app.emit("pair-requests-changed", ());
+    }
+
+    fn stream_pair(&self, caller: &Caller, pin: Option<&str>) -> anyhow::Result<serde_json::Value> {
+        use crate::apollo::web;
+        if !web::creds_present() {
+            anyhow::bail!("Falta configurar Apollo en el PC principal: hay que guardar su usuario y contraseña en Ajustes.");
+        }
+        let name = caller.name.clone();
+        // Los clientes que ya habia, para reconocer despues el nuevo aunque comparta nombre con uno antiguo.
+        let before: Vec<String> = web::clients().map(|v| v.into_iter().map(|c| c.uuid).collect()).unwrap_or_default();
+        let (out, secs) = match pin {
+            Some(pin) => {
+                web::pair_pin(pin, &name).map_err(|e| anyhow::anyhow!(e))?;
+                (serde_json::json!({ "ok": true }), 30)
+            }
+            None => {
+                let (pin, passphrase) = web::otp_new(&name).map_err(|e| anyhow::anyhow!(e))?;
+                (serde_json::json!({ "pin": pin, "passphrase": passphrase, "port": web::stream_port() }), 190)
+            }
+        };
+        // El cliente aparece en Apollo cuando termina el emparejamiento (en el flujo OTP, cuando acaba Artemis):
+        // se busca en segundo plano para no dejar el hilo del servidor esperando.
+        let (app, id) = (self.app.clone(), caller.device_id.clone());
+        std::thread::spawn(move || link_apollo_client(&app, &id, &name, &before, secs));
+        Ok(out)
     }
 
     fn device_seen(&self, caller: &Caller, version: &str, api: u32) {
@@ -184,6 +216,7 @@ const FORWARDED_EVENTS: &[&str] = &[
 
 /// Escucha los eventos de `FORWARDED_EVENTS` y los deja en el bus de `visor_core::remote`. Se llama una vez.
 pub fn forward_events(app: &AppHandle) {
+    setup_notifications(app);
     for name in FORWARDED_EVENTS {
         app.listen_any(*name, move |ev| {
             let payload = serde_json::from_str(ev.payload()).unwrap_or(serde_json::Value::Null);
@@ -195,30 +228,22 @@ pub fn forward_events(app: &AppHandle) {
 /// El acceso desde el móvil está activo; el guard de apply() sirve como interruptor de desarrollo.
 const REMOTE_AVAILABLE: bool = true;
 
-/// Pone el servidor como dice la configuracion: lo arranca, lo para, lo reinicia si cambio el puerto o le
-/// pasa el codigo nuevo. Si esta activado y no hay codigo, genera uno y lo guarda.
+/// Pone el servidor como dice la configuracion: lo arranca, lo para o lo reinicia si cambio el puerto.
+/// Si esta activado y no hay identificador del PC, genera uno y lo guarda.
 pub fn apply(app: &AppHandle) {
     if !REMOTE_AVAILABLE {
         return;
     }
     let st = app.state::<AppState>();
-    let (enabled, port, token, id) = {
+    let (enabled, port, id) = {
         let mut c = st.config.lock().unwrap();
-        let mut dirty = false;
-        if c.remote_enabled && c.remote_token.is_empty() {
-            c.remote_token = remote::new_code();
-            dirty = true;
-        }
         if c.remote_id.is_empty() {
             c.remote_id = remote::new_id();
-            dirty = true;
-        }
-        if dirty {
             if let Err(e) = c.save(&st.config_file()) {
-                eprintln!("config (codigo del movil): {e:#}");
+                eprintln!("config (identificador del PC): {e:#}");
             }
         }
-        (c.remote_enabled, c.remote_port, c.remote_token.clone(), c.remote_id.clone())
+        (c.remote_enabled, c.remote_port, c.remote_id.clone())
     };
     let mut cur = st.remote.lock().unwrap();
     if !enabled {
@@ -231,7 +256,6 @@ pub fn apply(app: &AppHandle) {
     }
     if let Some(s) = cur.as_ref() {
         if s.local_addr().port() == port {
-            s.set_token(&token);
             return;
         }
     }
@@ -240,7 +264,7 @@ pub fn apply(app: &AppHandle) {
     }
     *DISCOVERY.lock().unwrap() = None; // libera el puerto UDP antes de abrirlo con el puerto nuevo
     let bind = SocketAddr::from((Ipv4Addr::UNSPECIFIED, port));
-    match RemoteServer::start(bind, token, AppProvider { app: app.clone() }) {
+    match RemoteServer::start(bind, AppProvider { app: app.clone() }) {
         Ok(s) => {
             *cur = Some(s);
             *st.remote_error.lock().unwrap() = None;
@@ -271,57 +295,35 @@ pub struct RemoteInfo {
     port: u16,
     /// IPv4 de la red local (la principal primero).
     addresses: Vec<String>,
-    code: String,
     /// Identificador fijo del PC.
     id: String,
     /// Nombre de este equipo para los demas dispositivos.
     name: String,
-    /// Enlace `visor://pair?...` que lleva el QR (vacio si no hay IP o no esta activado).
+    /// Obsoleto (el QR nuevo lo da `pair_ticket_new`): siempre vacio.
     link: String,
-    /// El QR de `link` como imagen SVG.
+    /// Obsoleto: siempre vacio.
     qr: String,
     /// Ultimo error al abrir el puerto (p. ej. ya en uso).
     error: Option<String>,
 }
 
-fn encode(s: &str) -> String {
-    s.bytes().map(|b| if b.is_ascii_alphanumeric() || b"-_.~".contains(&b) { (b as char).to_string() } else { format!("%{b:02X}") }).collect()
-}
-
-/// Enlace de emparejamiento que lee la tablet: direccion, codigo e identificador del PC.
-fn pair_link(ip: &str, port: u16, code: &str, id: &str, name: &str) -> String {
-    format!("visor://pair?h={}&p={port}&k={}&i={}&n={}", encode(ip), encode(code), encode(id), encode(name))
-}
-
-fn qr_svg(text: &str) -> String {
-    if text.is_empty() {
-        return String::new();
-    }
-    qrcode::QrCode::new(text.as_bytes())
-        .map(|q| q.render::<qrcode::render::svg::Color>().min_dimensions(240, 240).quiet_zone(true).build())
-        .unwrap_or_default()
-}
-
 fn info(st: &AppState) -> RemoteInfo {
-    let (enabled, port, code, id) = {
+    let (enabled, port, id) = {
         let c = st.config.lock().unwrap();
-        (c.remote_enabled, c.remote_port, c.remote_token.clone(), c.remote_id.clone())
+        (c.remote_enabled, c.remote_port, c.remote_id.clone())
     };
     let running = st.remote.lock().unwrap().is_some();
     let addresses = if running { remote::local_ipv4s() } else { Vec::new() };
     let name = display_name(st);
-    let link = addresses.first().map(|ip| pair_link(ip, port, &code, &id, &name)).unwrap_or_default();
-    let qr = qr_svg(&link);
     RemoteInfo {
         enabled,
         running,
         port,
         addresses,
-        code,
         id,
         name,
-        link,
-        qr,
+        link: String::new(),
+        qr: String::new(),
         error: st.remote_error.lock().unwrap().clone(),
     }
 }
@@ -329,20 +331,6 @@ fn info(st: &AppState) -> RemoteInfo {
 #[tauri::command]
 pub fn remote_info(state: State<'_, AppState>) -> RemoteInfo {
     info(&state)
-}
-
-/// Genera un codigo de emparejamiento nuevo (el movil tendra que escribirlo otra vez).
-#[tauri::command]
-pub fn remote_new_code(app: AppHandle, state: State<'_, AppState>) -> Result<RemoteInfo, String> {
-    {
-        let mut c = state.config.lock().unwrap();
-        let mut next = c.clone();
-        next.remote_token = remote::new_code();
-        next.save(&state.config_file()).map_err(|e| e.to_string())?;
-        *c = next;
-    }
-    apply(&app);
-    Ok(info(&state))
 }
 
 /* --- dispositivos emparejados (solo desde el escritorio del host; no estan en `remote_call::dispatch`) --- */
@@ -361,9 +349,24 @@ pub fn device_rename(app: AppHandle, state: State<'_, AppState>, id: String, nam
 
 /// Quita un dispositivo: su token deja de valer y tendra que emparejarse otra vez.
 #[tauri::command]
-pub fn device_revoke(app: AppHandle, state: State<'_, AppState>, id: String) -> Result<(), String> {
-    state.db.with(|c| devices::revoke(c, &id)).map_err(|e| e.to_string())?;
+pub fn device_revoke(app: AppHandle, id: String) -> Result<(), String> {
+    revoke_device(&app, &id).map_err(|e| e.to_string())
+}
+
+/// Revoca el token de un dispositivo y, si tenia el streaming emparejado, lo quita tambien de Apollo (en segundo
+/// plano: si Apollo falla se registra y se sigue, quitar el dispositivo no debe fallar por eso).
+fn revoke_device(app: &AppHandle, id: &str) -> anyhow::Result<()> {
+    let st = app.state::<AppState>();
+    let apollo_id = st.db.with(|c| devices::apollo_id(c, id)).ok().flatten();
+    st.db.with(|c| devices::revoke(c, id))?;
     let _ = app.emit("devices-changed", ());
+    if let Some(uuid) = apollo_id {
+        std::thread::spawn(move || {
+            if let Err(e) = crate::apollo::web::unpair_client(&uuid) {
+                eprintln!("apollo (quitar cliente): {e}");
+            }
+        });
+    }
     Ok(())
 }
 
@@ -383,4 +386,189 @@ pub fn set_device_name(state: State<'_, AppState>, name: String) -> Result<Remot
         start_discovery(&state, id, port);
     }
     Ok(info(&state))
+}
+
+/* --- solicitudes de emparejamiento, billetes y credenciales de Apollo --- */
+
+/// Solicitud pendiente tal como la ve la interfaz (evento `pair-request` y comando `pair_pending`).
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PairRequestView {
+    id: String,
+    name: String,
+    kind: String,
+    digits: String,
+    ip: String,
+    expires_ms: i64,
+}
+
+impl From<&PairRequest> for PairRequestView {
+    fn from(r: &PairRequest) -> Self {
+        Self { id: r.id_public.clone(), name: r.name.clone(), kind: r.kind.clone(), digits: r.digits.clone(), ip: r.ip.clone(), expires_ms: r.expires_ms }
+    }
+}
+
+const NOTIF_TYPE: &str = "pair-request";
+
+/// Registra los botones de la notificacion y el manejador de sus pulsaciones. Va antes de mostrar ninguna:
+/// sin manejador registrado, Windows no pinta los botones.
+fn setup_notifications(app: &AppHandle) {
+    let n = app.notification();
+    let buttons = vec![Action::builder("approve", "Aprobar").build(), Action::builder("reject", "Rechazar").build()];
+    if let Err(e) = n.register_action_types(vec![ActionType::builder(NOTIF_TYPE).actions(buttons).build()]) {
+        eprintln!("notificacion de solicitudes: {e}");
+    }
+    let handle = app.clone();
+    let _ = n.on_action(move |a| {
+        let req = a.notification().and_then(|n| n.extra().get("req")).and_then(|v| v.as_str()).map(str::to_string);
+        match (a.action_id(), req) {
+            ("approve", Some(id)) => {
+                let st = handle.state::<AppState>();
+                let r = st.remote.lock().unwrap().as_ref().map(|s| s.approve(&id));
+                if let Some(Err(e)) = r {
+                    eprintln!("aprobar desde la notificacion: {e:#}");
+                }
+            }
+            ("reject", Some(id)) => {
+                let st = handle.state::<AppState>();
+                let r = st.remote.lock().unwrap().as_ref().map(|s| s.reject(&id));
+                if let Some(Err(e)) = r {
+                    eprintln!("rechazar desde la notificacion: {e:#}");
+                }
+            }
+            // Pulsar la notificacion (no un boton): trae el visor al frente, donde esta el modal.
+            _ => crate::tray::show_main(&handle),
+        }
+    });
+}
+
+/// Notificacion normal de Windows: «<nombre> quiere conectarse» con el numero de 4 cifras y dos botones.
+fn notify_request(app: &AppHandle, req: &PairRequest) {
+    let r = app
+        .notification()
+        .builder()
+        .title(format!("{} quiere conectarse", req.name))
+        .body(format!("Comprueba que en su pantalla sale el número {}.", req.digits))
+        .action_type_id(NOTIF_TYPE)
+        .extra("req", req.id_public.clone())
+        .show();
+    if let Err(e) = r {
+        eprintln!("notificacion de solicitud: {e}");
+    }
+}
+
+/// Busca en Apollo el cliente recien emparejado y guarda su uuid en el dispositivo. Reintenta cada 2 s hasta `secs`.
+fn link_apollo_client(app: &AppHandle, device_id: &str, name: &str, before: &[String], secs: u64) {
+    use crate::apollo::web;
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(secs);
+    let mut found = None;
+    loop {
+        if let Ok(list) = web::clients() {
+            found = list.into_iter().find(|c| c.name == name && !before.contains(&c.uuid)).map(|c| c.uuid);
+        }
+        if found.is_some() || std::time::Instant::now() >= deadline {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_secs(2));
+    }
+    // Sin cliente nuevo (p. ej. se repitio el emparejamiento con el mismo nombre): se usa el que ya hubiera.
+    let found = found.or_else(|| web::client_uuid_by_name(name).ok().flatten());
+    match found {
+        Some(uuid) => {
+            let st = app.state::<AppState>();
+            state::log_db_err("dispositivos (id de Apollo)", st.db.with(|c| devices::set_apollo_id(c, device_id, Some(&uuid))));
+            let _ = app.emit("devices-changed", ());
+        }
+        None => eprintln!("apollo: no aparecio el cliente «{name}» tras emparejar"),
+    }
+}
+
+#[tauri::command]
+pub fn pair_pending(state: State<'_, AppState>) -> Vec<PairRequestView> {
+    state.remote.lock().unwrap().as_ref().map(|s| s.pending_requests().iter().map(PairRequestView::from).collect()).unwrap_or_default()
+}
+
+#[tauri::command]
+pub fn pair_approve(state: State<'_, AppState>, id: String) -> Result<(), String> {
+    let g = state.remote.lock().unwrap();
+    g.as_ref().ok_or("El acceso desde otros dispositivos está desactivado")?.approve(&id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn pair_reject(state: State<'_, AppState>, id: String) -> Result<(), String> {
+    let g = state.remote.lock().unwrap();
+    g.as_ref().ok_or("El acceso desde otros dispositivos está desactivado")?.reject(&id).map_err(|e| e.to_string())
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TicketInfo {
+    /// Billete `ABCD-EFGH` (para escribirlo a mano).
+    ticket: String,
+    expires_ms: i64,
+    /// Texto del QR v2 (JSON) para pintarlo en la interfaz.
+    qr: String,
+}
+
+#[tauri::command]
+pub fn pair_ticket_new(state: State<'_, AppState>) -> Result<TicketInfo, String> {
+    let id = state.config.lock().unwrap().remote_id.clone();
+    let name = display_name(&state);
+    let g = state.remote.lock().unwrap();
+    let s = g.as_ref().ok_or("El acceso desde otros dispositivos está desactivado")?;
+    let t = s.new_ticket();
+    let qr = remote::qr_payload(&id, &name, &s.addrs(), s.local_addr().port(), &t.code);
+    Ok(TicketInfo { ticket: t.code, expires_ms: t.expires_ms, qr })
+}
+
+#[tauri::command]
+pub fn pair_ticket_cancel(state: State<'_, AppState>) {
+    if let Some(s) = state.remote.lock().unwrap().as_ref() {
+        s.cancel_ticket();
+    }
+}
+
+/// Direcciones `ip:puerto` de este PC (vacio si el servidor no esta en marcha).
+#[tauri::command]
+pub fn host_addrs(state: State<'_, AppState>) -> Vec<String> {
+    state.remote.lock().unwrap().as_ref().map(|s| s.addrs()).unwrap_or_default()
+}
+
+/// Estado de la API web de Apollo y si hay credenciales guardadas (la contrasena nunca sale del backend).
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ApolloWebInfo {
+    /// `noCredentials`, `badCredentials`, `apolloOff`, `incompatible` u `ok`.
+    state: crate::apollo::web::WebState,
+    has_credentials: bool,
+}
+
+fn apollo_web_info() -> ApolloWebInfo {
+    use crate::apollo::web;
+    ApolloWebInfo { state: web::web_check(), has_credentials: web::creds_present() }
+}
+
+#[tauri::command]
+pub async fn apollo_creds_set(user: String, pass: String) -> Result<ApolloWebInfo, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::apollo::web::creds_set(&user, &pass)?;
+        Ok(apollo_web_info())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn apollo_creds_clear() -> Result<ApolloWebInfo, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::apollo::web::creds_clear()?;
+        Ok(apollo_web_info())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn apollo_web_state() -> Result<ApolloWebInfo, String> {
+    tauri::async_runtime::spawn_blocking(apollo_web_info).await.map_err(|e| e.to_string())
 }

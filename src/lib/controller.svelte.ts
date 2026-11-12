@@ -1373,7 +1373,7 @@ export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[
           'qmkey', 'qmpad', 'qmmouse', 'qmhold', 'qmpause',
           'capsound', 'cappeek', 'caprumble', 'caponly',
           'magpieexe', 'magpie',
-          ...(clientMode ? [] : ['remoteon', 'remoteqr', 'remoteaddr', 'remotecode', 'remotecursor', 'remotestream', 'remotehelp'] as SettingId[]),
+          ...(clientMode ? [] : ['remoteon', 'remoteqr', 'remoteaddr', 'remotecursor', 'remotestream', 'remotehelp'] as SettingId[]),
         ];
     },
   },

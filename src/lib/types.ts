@@ -170,7 +170,14 @@ export interface GameStatsDb {
   peakPpm: number;
 }
 /** Estado del acceso desde el móvil. `error`: último fallo al abrir el puerto (p. ej. en uso). */
-export interface RemoteInfo { enabled: boolean; running: boolean; port: number; addresses: string[]; code: string; id: string; link: string; qr: string; error: string | null }
+/** Solicitud de emparejamiento pendiente en el PC principal (evento `pair-request` y comando `pair_pending`). */
+export interface PairRequestInfo { id: string; name: string; kind: string; digits: string; ip: string; expiresMs: number }
+/** Billete de un solo uso: `ticket` para escribirlo, `qr` es el texto del QR v2. */
+export interface PairTicketInfo { ticket: string; expiresMs: number; qr: string }
+export type ApolloWebState = 'noCredentials' | 'badCredentials' | 'apolloOff' | 'incompatible' | 'ok';
+/** Estado de la API web de Apollo; la contraseña guardada nunca vuelve a la interfaz. */
+export interface ApolloWebInfo { state: ApolloWebState; hasCredentials: boolean }
+export interface RemoteInfo { enabled: boolean; running: boolean; port: number; addresses: string[]; id: string; link: string; qr: string; error: string | null }
 /** Tiempo de consola (Nintendo) ya sumado al del juego; solo en fichas de la categoría Switch. */
 export interface ConsoleTime {
   seconds: number;
@@ -417,8 +424,18 @@ export interface Backend {
   streamAppInstall(): Promise<StreamAppStatus>;
   /** Acceso desde el móvil: dirección, código y si el servidor está en marcha. */
   remoteInfo(): Promise<RemoteInfo>;
-  /** Genera otro código de emparejamiento (el móvil tendrá que escribirlo de nuevo). */
-  remoteNewCode(): Promise<RemoteInfo>;
+  /** Solicitudes de emparejamiento que esperan aprobación. */
+  pairPending(): Promise<PairRequestInfo[]>;
+  pairApprove(id: string): Promise<void>;
+  pairReject(id: string): Promise<void>;
+  /** Billete nuevo (5 minutos) con el texto del QR; sustituye al anterior. */
+  pairTicketNew(): Promise<PairTicketInfo>;
+  pairTicketCancel(): Promise<void>;
+  /** Direcciones `ip:puerto` de este PC (vacío si el servidor no está en marcha). */
+  hostAddrs(): Promise<string[]>;
+  apolloCredsSet(user: string, pass: string): Promise<ApolloWebInfo>;
+  apolloCredsClear(): Promise<ApolloWebInfo>;
+  apolloWebState(): Promise<ApolloWebInfo>;
   /** Colecciones guardadas (las sagas antiguas sin categoría vienen con `platform` null). */
   getCollections(): Promise<Collection[]>;
   saveCollections(list: Collection[]): Promise<Collection[]>;
@@ -464,4 +481,21 @@ export interface Backend {
   getAchievementsCardVariant(gameId: string): Promise<number>;
   detectGameSteamworks(gameDir: string, exePath?: string): Promise<GameDetection>;
   onEvent(cb: (e: BackendEvent) => void): void;
+}
+
+/* Emparejamiento del PC cliente (comandos `client_pair_*` de Tauri; se llaman con `invoke`, no son del Backend). */
+
+/** `client_pair_request(addr)`: el numero de 4 cifras sale igual en los dos PCs. */
+export interface PairRequestOut { requestId: string; digits: string; expiresMs: number; hostName: string }
+
+/** `client_pair_wait(addr, requestId)`: con `pending` hay que volver a llamar; `approved` ya ha guardado la conexion. */
+export interface PairWaitOut { status: 'pending' | 'approved' | 'rejected' | 'expired'; info: ClientInfoOut | null }
+
+/** Evento `client-unpaired`: el PC principal ya no reconoce a este equipo (token borrado). */
+export interface ClientUnpairedEvent { hostName: string; hostId: string }
+
+/** Forma de `client_info`. */
+export interface ClientInfoOut {
+  mode: 'host' | 'client'; hostId: string; hostName: string; hostAddr: string; hostAddrs: string[]; hostMac: string;
+  deviceId: string; deviceName: string; moonlightPath: string; moonlightFound: string; suggestedName: string;
 }

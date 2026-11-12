@@ -8,7 +8,7 @@ import { onServerUp, startEventLoop } from './event';
 export const OFFLINE_MSG = 'Sin conexión con el PC';
 
 /** Revisión del API que habla esta interfaz (el servidor responde 426 si es demasiado vieja). */
-const API_REV = '2';
+const API_REV = '3';
 
 /** Nombre del PC principal cuando esta interfaz es un PC cliente (null = tablet). */
 let clientPc: string | null = null;

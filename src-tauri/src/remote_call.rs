@@ -63,7 +63,6 @@ pub fn dispatch(app: &AppHandle, caller: &visor_core::remote::Caller, cmd: &str,
                 c.root = cur.root.clone();
                 c.remote_enabled = cur.remote_enabled;
                 c.remote_port = cur.remote_port;
-                c.remote_token = cur.remote_token.clone();
             }
             out(crate::save_config(app.clone(), st(), c))
         }

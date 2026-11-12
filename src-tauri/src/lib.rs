@@ -182,14 +182,11 @@ fn save_config(app: AppHandle, state: State<'_, AppState>, config: Config) -> Re
             hotkey_err = Some("El botón del ratón del menú no puede ser el mismo que el de captura.".to_string());
         }
     }
-    // El codigo del movil lo gestiona el nucleo (`remote_new_code`): se ignora el que mande la interfaz.
+    // El codigo fijo del movil ya no se usa (el emparejamiento es por solicitud): se conserva el guardado, sin leerlo.
     config.remote_token = state.config.lock().unwrap().remote_token.clone();
     config.remote_id = state.config.lock().unwrap().remote_id.clone();
     // El nombre del equipo se cambia con `set_device_name` (reinicia el descubrimiento).
     config.device_name = state.config.lock().unwrap().device_name.clone();
-    if config.remote_enabled && config.remote_token.is_empty() {
-        config.remote_token = visor_core::remote::new_code();
-    }
     // Las capturas van siempre en la biblioteca: la interfaz no elige la raiz.
     config.root = state.config.lock().unwrap().root.clone();
     // Sin biblioteca encontrada no se escribe nada (crearia la carpeta en un disco que no esta).
@@ -1399,7 +1396,15 @@ pub fn run() {
             saves::saves_status,
             saves::saves_update_manifest,
             remote::remote_info,
-            remote::remote_new_code,
+            remote::pair_pending,
+            remote::pair_approve,
+            remote::pair_reject,
+            remote::pair_ticket_new,
+            remote::pair_ticket_cancel,
+            remote::host_addrs,
+            remote::apollo_creds_set,
+            remote::apollo_creds_clear,
+            remote::apollo_web_state,
             remote::devices_list,
             remote::device_rename,
             remote::device_revoke,
@@ -1407,12 +1412,16 @@ pub fn run() {
             client::client_info,
             client::client_endpoint,
             client::client_discover,
-            client::client_pair,
+            client::client_pair_request,
+            client::client_pair_wait,
+            client::client_pair_cancel,
+            client::client_pair_ticket,
+            client::client_stream_pair,
+            client::client_mark_unpaired,
             client::client_unpair,
             client::client_open_stream,
             client::client_wake,
             client::client_set_moonlight,
-            client::client_set_addrs,
             client::client_add_game,
             client::client_local_games,
             client::client_launch,

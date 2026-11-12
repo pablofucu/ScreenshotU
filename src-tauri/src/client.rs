@@ -5,7 +5,7 @@ use crate::state::AppState;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 use visor_core::config::write_atomic;
 use visor_core::remote_client as rc;
 
@@ -26,14 +26,23 @@ pub struct ClientCfg {
     pub token: String,
     /// Ruta de Moonlight elegida a mano (vacia = buscarlo donde se instala).
     pub moonlight_path: String,
+    /// Carpeta de configuracion (no se guarda): para renovar las direcciones desde `probe`.
+    #[serde(skip)]
+    dir: PathBuf,
 }
 
 impl ClientCfg {
+    /// Lo guardado en `client.json` aunque el token ya no valga (para conservar la ruta de Moonlight y las direcciones).
+    fn raw(config_dir: &Path) -> Option<ClientCfg> {
+        let s = std::fs::read_to_string(config_dir.join(FILE)).ok()?;
+        let mut c: ClientCfg = serde_json::from_str(&s).ok()?;
+        c.dir = config_dir.to_path_buf();
+        Some(c)
+    }
+
     /// La configuracion de cliente, si este equipo esta emparejado con un host.
     pub fn load(config_dir: &Path) -> Option<ClientCfg> {
-        let s = std::fs::read_to_string(config_dir.join(FILE)).ok()?;
-        let c: ClientCfg = serde_json::from_str(&s).ok()?;
-        (!c.token.is_empty() && !c.host_addrs.is_empty()).then_some(c)
+        Self::raw(config_dir).filter(|c| !c.token.is_empty() && !c.host_addrs.is_empty())
     }
 
     fn save(&self, config_dir: &Path) -> Result<(), String> {
@@ -62,12 +71,22 @@ static ACTIVE: std::sync::Mutex<Option<Active>> = std::sync::Mutex::new(None);
 /// Cuanto vale la direccion elegida antes de volver a probarlas.
 const ACTIVE_TTL: Duration = Duration::from_secs(90);
 
-/// Prueba las direcciones del host en orden con `hello` y se queda con la primera que sea ese host.
-/// Con una sola direccion no hace nada. `force` = probar aunque la elegida sea reciente.
-fn probe(cfg: &ClientCfg, force: bool) -> Option<String> {
-    if cfg.host_addrs.len() < 2 {
-        return None;
+/// Normaliza, quita repetidas y se queda con 6 como mucho; `used` (la que ha contestado) se anade al final si falta.
+fn merge_addrs(list: &[String], used: &str) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for a in list.iter().map(String::as_str).chain(std::iter::once(used)) {
+        let a = rc::normalize_addr(a);
+        if !a.is_empty() && !out.contains(&a) {
+            out.push(a);
+        }
     }
+    out.truncate(6);
+    out
+}
+
+/// Prueba las direcciones del host en orden con `hello` y se queda con la primera que sea ese host. En cada `hello`
+/// renueva las direcciones guardadas con las que anuncia el PC. `force` = probar aunque la elegida sea reciente.
+fn probe(cfg: &ClientCfg, force: bool) -> Option<String> {
     if !force {
         let g = ACTIVE.lock().unwrap();
         if let Some(a) = g.as_ref().filter(|a| a.host_id == cfg.host_id && a.at.elapsed() < ACTIVE_TTL) {
@@ -77,12 +96,48 @@ fn probe(cfg: &ClientCfg, force: bool) -> Option<String> {
         }
     }
     for a in &cfg.host_addrs {
-        if rc::hello(a).is_ok_and(|h| cfg.host_id.is_empty() || h.id == cfg.host_id) {
-            *ACTIVE.lock().unwrap() = Some(Active { host_id: cfg.host_id.clone(), addr: a.clone(), at: std::time::Instant::now() });
-            return Some(a.clone());
+        let Ok(h) = rc::hello(a) else { continue };
+        if !(cfg.host_id.is_empty() || h.id == cfg.host_id) {
+            continue;
         }
+        let fresh = merge_addrs(&h.addrs, a);
+        if fresh != cfg.host_addrs && !cfg.dir.as_os_str().is_empty() {
+            if let Some(mut saved) = ClientCfg::raw(&cfg.dir).filter(|c| c.host_id == cfg.host_id) {
+                saved.host_addrs = fresh;
+                let _ = saved.save(&cfg.dir);
+            }
+        }
+        *ACTIVE.lock().unwrap() = Some(Active { host_id: cfg.host_id.clone(), addr: a.clone(), at: std::time::Instant::now() });
+        return Some(a.clone());
     }
     None
+}
+
+static HANDLE: std::sync::OnceLock<AppHandle> = std::sync::OnceLock::new();
+
+/// Este equipo ya no esta emparejado (el PC principal rechazo el token): se borra el token guardado y se avisa a la
+/// interfaz con `client-unpaired { hostName, hostId }`.
+fn mark_unpaired(dir: &Path) {
+    let Some(mut c) = ClientCfg::raw(dir) else { return };
+    if c.token.is_empty() {
+        return;
+    }
+    c.token.clear();
+    let _ = c.save(dir);
+    *ACTIVE.lock().unwrap() = None;
+    if let Some(app) = HANDLE.get() {
+        let _ = app.emit("client-unpaired", serde_json::json!({ "hostName": c.host_name, "hostId": c.host_id }));
+    }
+}
+
+/// Pasa un error del PC principal al frontend: un 401 borra el token y avisa; un 426 empieza por "Actualiza el visor".
+fn host_err(dir: &Path, e: String) -> String {
+    if e.contains("no está emparejado") {
+        mark_unpaired(dir);
+    } else if e.contains("versión más nueva") {
+        return format!("Actualiza el visor: {e}");
+    }
+    e
 }
 
 /// Moonlight elegido a mano o, si no, donde lo deja su instalador.
@@ -168,7 +223,8 @@ pub struct ClientEndpoint {
 
 /// Dirección y token para que la interfaz hable con el host (`None` en modo host). Con varias direcciones, la que conteste.
 #[tauri::command]
-pub async fn client_endpoint(state: State<'_, AppState>) -> Result<Option<ClientEndpoint>, String> {
+pub async fn client_endpoint(app: AppHandle, state: State<'_, AppState>) -> Result<Option<ClientEndpoint>, String> {
+    let _ = HANDLE.set(app);
     let Some(c) = ClientCfg::load(&state.config_dir) else { return Ok(None) };
     let c = blocking(move || {
         probe(&c, false);
@@ -178,25 +234,11 @@ pub async fn client_endpoint(state: State<'_, AppState>) -> Result<Option<Client
     Ok(Some(ClientEndpoint { base: format!("http://{}", rc::normalize_addr(c.addr())), token: c.token.clone(), host_id: c.host_id.clone() }))
 }
 
-/// Cambia las direcciones del PC principal (la primera se prueba antes; p. ej. la de casa y luego la de Tailscale).
+/// La interfaz recibió un 401 del PC principal directamente: borra el token y avisa con `client-unpaired`.
 #[tauri::command]
-pub fn client_set_addrs(state: State<'_, AppState>, addrs: Vec<String>) -> Result<ClientInfo, String> {
-    let mut cfg = current(&state)?;
-    let mut out: Vec<String> = Vec::new();
-    for a in addrs.iter().flat_map(|a| a.split([',', ';', ' '])) {
-        let a = rc::normalize_addr(a);
-        if !a.is_empty() && !out.contains(&a) {
-            out.push(a);
-        }
-    }
-    if out.is_empty() {
-        return Err("Hace falta al menos una dirección".into());
-    }
-    out.truncate(6);
-    cfg.host_addrs = out;
-    cfg.save(&state.config_dir)?;
-    *ACTIVE.lock().unwrap() = None;
-    Ok(info_of(Some(&cfg), &state))
+pub fn client_mark_unpaired(app: AppHandle, state: State<'_, AppState>) {
+    let _ = HANDLE.set(app);
+    mark_unpaired(&state.config_dir);
 }
 
 /// Visores en la red local (1,5 s esperando respuestas), sin este mismo equipo.
@@ -207,47 +249,159 @@ pub async fn client_discover(state: State<'_, AppState>) -> Result<Vec<rc::Found
     Ok(found.into_iter().filter(|f| me.is_empty() || f.id != me).collect())
 }
 
-/// Se empareja con el host de `addr` usando su código y guarda el token. La interfaz recarga después.
-#[tauri::command]
-pub async fn client_pair(app: AppHandle, state: State<'_, AppState>, addr: String, code: String, device_name: String) -> Result<ClientInfo, String> {
-    let addr = rc::normalize_addr(&addr);
+/// Guarda la conexion tras emparejar. Las direcciones son las del PC (de casa primero) mas la usada.
+fn save_paired(config_dir: &Path, addr: &str, h: &rc::Hello, p: rc::Paired, name: String, ver: &str) -> Result<ClientCfg, String> {
+    let addrs = merge_addrs(if p.addrs.is_empty() { &h.addrs } else { &p.addrs }, addr);
+    let mac = rc::call(addr, &p.token, ver, "pc_mac", serde_json::Value::Null).ok().and_then(|v| v.as_str().map(String::from)).unwrap_or_default();
+    let moonlight_path = ClientCfg::raw(config_dir).map(|c| c.moonlight_path).unwrap_or_default();
+    let cfg = ClientCfg {
+        host_id: p.host_id,
+        host_name: p.host_name,
+        host_addrs: addrs,
+        host_mac: mac,
+        device_id: p.device_id,
+        device_name: name,
+        token: p.token,
+        moonlight_path,
+        dir: config_dir.to_path_buf(),
+    };
+    cfg.save(config_dir)?;
+    *ACTIVE.lock().unwrap() = None;
+    Ok(cfg)
+}
+
+/// Error si `addr` es este mismo equipo (o los dos abren la misma biblioteca por red).
+fn not_me(me: &str, h: &rc::Hello) -> Result<(), String> {
+    if !me.is_empty() && h.id == me {
+        return Err("Esa dirección es este mismo equipo (o los dos usan la misma biblioteca por red)".into());
+    }
+    Ok(())
+}
+
+fn clean_addr(addr: &str) -> Result<String, String> {
+    let addr = rc::normalize_addr(addr);
     if addr.is_empty() {
         return Err("Escribe la dirección del PC principal".into());
     }
-    let name: String = device_name.trim().chars().take(60).collect();
-    if name.is_empty() {
-        return Err("Ponle un nombre a este equipo".into());
-    }
+    Ok(addr)
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PairRequestOut {
+    request_id: String,
+    digits: String,
+    expires_ms: u64,
+    host_name: String,
+}
+
+/// Pide entrar en el PC de `addr`: este devuelve un número de 4 cifras que se muestra igual en los dos y se aprueba allí.
+#[tauri::command]
+pub async fn client_pair_request(app: AppHandle, state: State<'_, AppState>, addr: String) -> Result<PairRequestOut, String> {
+    let _ = HANDLE.set(app.clone());
+    let addr = clean_addr(&addr)?;
     let me = state.config.lock().unwrap().remote_id.clone();
+    let name: String = crate::remote::display_name(&state).chars().take(60).collect();
+    let ver = version(&app);
+    blocking(move || {
+        let (h, r) = rc::pair_request(&addr, &name, "pc", &ver).map_err(|e| format!("{e:#}"))?;
+        not_me(&me, &h)?;
+        Ok(PairRequestOut { request_id: r.request_id, digits: r.digits, expires_ms: r.expires_ms, host_name: h.name })
+    })
+    .await
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PairWaitOut {
+    /// `pending` (volver a llamar), `approved`, `rejected` o `expired`.
+    status: &'static str,
+    /// Con `approved`: la conexion ya guardada (la interfaz recarga después).
+    info: Option<ClientInfo>,
+}
+
+/// Espera (hasta ~25 s) la respuesta del PC. Con `approved` guarda token, id, nombre y direcciones del PC.
+#[tauri::command]
+pub async fn client_pair_wait(app: AppHandle, state: State<'_, AppState>, addr: String, request_id: String) -> Result<PairWaitOut, String> {
+    let _ = HANDLE.set(app.clone());
+    let addr = clean_addr(&addr)?;
+    let config_dir = state.config_dir.clone();
+    let name: String = crate::remote::display_name(&state).chars().take(60).collect();
+    let ver = version(&app);
+    let st = blocking(move || {
+        let status = rc::pair_wait(&addr, &request_id, &ver).map_err(|e| format!("{e:#}"))?;
+        Ok(match status {
+            rc::PairStatus::Pending => ("pending", None),
+            rc::PairStatus::Rejected => ("rejected", None),
+            rc::PairStatus::Expired => ("expired", None),
+            rc::PairStatus::Approved(p) => {
+                let h = rc::hello(&addr).unwrap_or_default();
+                ("approved", Some(save_paired(&config_dir, &addr, &h, p, name, &ver)?))
+            }
+        })
+    })
+    .await?;
+    Ok(PairWaitOut { status: st.0, info: st.1.as_ref().map(|c| info_of(Some(c), &state)) })
+}
+
+/// Retira la solicitud pendiente.
+#[tauri::command]
+pub async fn client_pair_cancel(app: AppHandle, addr: String, request_id: String) -> Result<(), String> {
+    let addr = clean_addr(&addr)?;
+    let ver = version(&app);
+    blocking(move || rc::pair_cancel(&addr, &request_id, &ver).map_err(|e| format!("{e:#}"))).await
+}
+
+/// Se empareja con un billete de un solo uso (código o enlace del PC principal) y guarda la conexión.
+#[tauri::command]
+pub async fn client_pair_ticket(app: AppHandle, state: State<'_, AppState>, addr: String, ticket: String) -> Result<ClientInfo, String> {
+    let _ = HANDLE.set(app.clone());
+    let addr = clean_addr(&addr)?;
+    let me = state.config.lock().unwrap().remote_id.clone();
+    let name: String = crate::remote::display_name(&state).chars().take(60).collect();
     let config_dir = state.config_dir.clone();
     let ver = version(&app);
-    let moonlight_path = ClientCfg::load(&config_dir).map(|c| c.moonlight_path).unwrap_or_default();
     let cfg = blocking(move || {
-        let h = rc::hello(&addr).map_err(|e| format!("{e:#}"))?;
-        // Mismo id = es este equipo, o los dos abren la misma biblioteca por red.
-        if !me.is_empty() && h.id == me {
-            return Err("Esa dirección es este mismo equipo (o los dos usan la misma biblioteca por red)".into());
-        }
-        let (_, p) = rc::pair(&addr, code.trim(), &name, &ver).map_err(|e| format!("{e:#}"))?;
-        let mac = rc::call(&addr, &p.token, &ver, "pc_mac", serde_json::Value::Null)
-            .ok()
-            .and_then(|v| v.as_str().map(String::from))
-            .unwrap_or_default();
-        let cfg = ClientCfg {
-            host_id: p.host_id,
-            host_name: p.host_name,
-            host_addrs: vec![addr],
-            host_mac: mac,
-            device_id: p.device_id,
-            device_name: name,
-            token: p.token,
-            moonlight_path,
-        };
-        cfg.save(&config_dir)?;
-        Ok(cfg)
+        let (h, p) = rc::pair_with_ticket(&addr, ticket.trim(), &name, "pc", &ver).map_err(|e| format!("{e:#}"))?;
+        not_me(&me, &h)?;
+        save_paired(&config_dir, &addr, &h, p, name, &ver)
     })
     .await?;
     Ok(info_of(Some(&cfg), &state))
+}
+
+/// Empareja Moonlight con el streaming del PC principal: genera un PIN, abre `Moonlight.exe pair <host> --pin <pin>`
+/// (ventana visible; su código de salida es siempre 0) y a la vez se lo pasa al PC principal, cuya respuesta dice si
+/// ha ido bien.
+#[tauri::command]
+pub async fn client_stream_pair(app: AppHandle, state: State<'_, AppState>) -> Result<(), String> {
+    let _ = HANDLE.set(app.clone());
+    let cfg = current(&state)?;
+    let exe = moonlight(&cfg).ok_or("No se encuentra Moonlight: instálalo o elige dónde está en Ajustes → Este equipo")?;
+    let ver = version(&app);
+    let dir = state.config_dir.clone();
+    blocking(move || {
+        probe(&cfg, false);
+        let addr = cfg.addr().to_string();
+        let nanos = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.subsec_nanos() ^ (d.as_secs() as u32).rotate_left(13)).unwrap_or(1234);
+        let pin = format!("{:04}", nanos % 10000);
+        let mut child = std::process::Command::new(exe)
+            .args(["pair", &rc::addr_host(&addr), "--pin", &pin])
+            .spawn()
+            .map_err(|e| format!("No se pudo abrir Moonlight: {e}"))?;
+        match rc::stream_pair(&addr, &cfg.token, &ver, Some(&pin)) {
+            Ok(v) if v["ok"].as_bool().unwrap_or(false) => Ok(()),
+            Ok(v) => {
+                let _ = child.kill();
+                Err(v["error"].as_str().map(String::from).unwrap_or_else(|| "El PC principal no pudo emparejar el streaming".into()))
+            }
+            Err(e) => {
+                let _ = child.kill();
+                Err(host_err(&dir, format!("{e:#}")))
+            }
+        }
+    })
+    .await
 }
 
 /// Deja de ser cliente: avisa al host (si contesta) y borra `client.json`. La interfaz recarga después.
@@ -311,11 +465,11 @@ fn host_call(cfg: &ClientCfg, ver: &str, cmd: &str, args: serde_json::Value) -> 
         Err(e) if cfg.host_addrs.len() > 1 && e.chain().any(|c| c.downcast_ref::<rc::Unreachable>().is_some()) => {
             let before = cfg.addr().to_string();
             match probe(cfg, true) {
-                Some(a) if a != before => rc::call(&a, &cfg.token, ver, cmd, args).map_err(|e| format!("{e:#}")),
-                _ => Err(format!("{e:#}")),
+                Some(a) if a != before => rc::call(&a, &cfg.token, ver, cmd, args).map_err(|e| host_err(&cfg.dir, format!("{e:#}"))),
+                _ => Err(host_err(&cfg.dir, format!("{e:#}"))),
             }
         }
-        r => r.map_err(|e| format!("{e:#}")),
+        r => r.map_err(|e| host_err(&cfg.dir, format!("{e:#}"))),
     }
 }
 
@@ -520,6 +674,7 @@ pub async fn client_sync(app: AppHandle) -> Result<usize, String> {
 
 /// Hilo que sube las partidas locales al host cada minuto (si este equipo es cliente).
 pub fn spawn_sync(app: AppHandle) {
+    let _ = HANDLE.set(app.clone());
     let _ = std::thread::Builder::new().name("client-sync".into()).spawn(move || {
         std::thread::sleep(Duration::from_secs(15));
         loop {

@@ -1,4 +1,4 @@
-import type { Achievement, AchievementSummary, GameDetection, AddReport, AudioOutput, Backend, BackupResult, GameStatsDb, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, StreamAppStatus, MoveReport, TrashReport, RemoteInfo, NewGame, Collection, SortMode } from './types';
+import type { Achievement, AchievementSummary, GameDetection, AddReport, AudioOutput, Backend, BackupResult, GameStatsDb, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, StreamAppStatus, MoveReport, TrashReport, RemoteInfo, PairRequestInfo, PairTicketInfo, ApolloWebInfo, NewGame, Collection, SortMode } from './types';
 
 export const IS_TAURI = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 /** La UI de escritorio corre dentro del APK de la tablet (el arranque de `mobile/` lo marca antes de cargarla): habla con el PC por HTTP. */
@@ -169,7 +169,15 @@ async function tauriBackend(): Promise<Backend> {
     streamAppStatus: () => invoke<StreamAppStatus>('stream_app_status'),
     streamAppInstall: () => invoke<StreamAppStatus>('stream_app_install'),
     remoteInfo: () => invoke<RemoteInfo>('remote_info'),
-    remoteNewCode: () => invoke<RemoteInfo>('remote_new_code'),
+    pairPending: () => invoke<PairRequestInfo[]>('pair_pending'),
+    pairApprove: (id: string) => invoke<void>('pair_approve', { id }),
+    pairReject: (id: string) => invoke<void>('pair_reject', { id }),
+    pairTicketNew: () => invoke<PairTicketInfo>('pair_ticket_new'),
+    pairTicketCancel: () => invoke<void>('pair_ticket_cancel'),
+    hostAddrs: () => invoke<string[]>('host_addrs'),
+    apolloCredsSet: (user: string, pass: string) => invoke<ApolloWebInfo>('apollo_creds_set', { user, pass }),
+    apolloCredsClear: () => invoke<ApolloWebInfo>('apollo_creds_clear'),
+    apolloWebState: () => invoke<ApolloWebInfo>('apollo_web_state'),
     async pickSaveZip(defaultName: string) {
       const { save } = await import('@tauri-apps/plugin-dialog');
       return (await save({ title: 'Guardar copia de seguridad', defaultPath: defaultName, filters: [{ name: 'Copia de seguridad (.zip)', extensions: ['zip'] }] })) ?? null;

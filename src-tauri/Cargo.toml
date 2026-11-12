@@ -26,6 +26,8 @@ serde_json = "1"
 anyhow = "1"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 ureq = { version = "2", features = ["json"] }
+# Solo para aceptar el certificado autofirmado de la API web de Apollo en 127.0.0.1 (apollo.rs); ureq 2 ya usa rustls 0.23 con ring.
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 visor-core = { path = "visor-core" }
 # Novelas japonesas: LunaHook (FFI), servidor de la pagina de lectura y portapapeles.
 libloading = "0.8"
