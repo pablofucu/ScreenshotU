@@ -14,6 +14,7 @@
 |---|---|---|---|
 | Magpie y táctil en la tablet | [planes/magpie-tablet.md](planes/magpie-tablet.md) | A1, A2, B0, B1, B2 | A5 (pruebas de streaming y nitidez, las hace el usuario), A3 (modo por juego y destino), A4 (recalcular al reconectar), B3 (explicarlo en Ajustes) |
 | Tablet: menú sobre el juego y volver a la partida | [archivo/plan-tablet.md](archivo/plan-tablet.md), [archivo/plan-volver-partida.md](archivo/plan-volver-partida.md) | Código subido (T1–T4, volver a la partida, menú con la interfaz del overlay) | **Probar en la tablet real** y compilar la APK. Por confirmar si siguen pendientes: ocultar en la tablet las opciones que solo valen en el PC y la adaptación táctil (objetivos de 44 px, pulsación larga) |
+| Emparejamiento nuevo | [planes/emparejamiento.md](planes/emparejamiento.md) | Plan y decisiones (12-nov) | Fase 0 (estudio de Apollo, Moonlight, Artemis y la notificación) y fase M (maquetas) |
 | Multi-PC | [planes/multi-pc.md](planes/multi-pc.md) | Fases 1–5 (dispositivos, cliente PC, instalaciones en clientes, partidas de viaje, Tailscale) | Prueba con dos PCs en la red (1G) y fase 6 (nube personal) |
 | Acento vivo | [planes/acento-vivo.md](planes/acento-vivo.md) | Pasos 1–3 | Paso 4: repaso visual con los 7 tonos |
 | Guía de diseño | [guia-diseno.md](guia-diseno.md) | Fases 0–6 de la migración | Fase 7 |
