@@ -11,7 +11,8 @@
   import { lb } from '../lib/library.svelte';
   import { isReadingId, readingRow } from '../lib/reading.svelte';
   import { updateRow } from '../lib/updater.svelte';
-  import { isRemoteId, remoteRow, remoteView } from '../lib/remote.svelte';
+  import { closeWizard, connRow, connView, isConnId } from '../lib/connections.svelte';
+  import AddDevice from '../components/AddDevice.svelte';
   import { devicesRow, isDevicesId } from '../lib/devices.svelte';
   import Learn from '../components/Learn.svelte';
   import Hints from '../components/Hints.svelte';
@@ -98,7 +99,7 @@
 
   function row(id: SettingId): Row {
     if (isReadingId(id)) return readingRow(id);
-    if (isRemoteId(id)) return remoteRow(id);
+    if (isConnId(id)) return connRow(id);
     if (isDevicesId(id)) return devicesRow(id);
     return ROWS[id]?.() ?? { l: '', v: '', d: '' };
   }
@@ -107,8 +108,8 @@
   const sec = $derived(SETTING_SECTIONS[app.setSec]);
   const rows = $derived(sec.rows.map((id) => ({ id, ...row(id) })));
   const focused = $derived(rows[app.setRow]);
-  // El QR solo se ve mientras la fila «Conectar la tablet» sigue enfocada; al moverse se cierra.
-  $effect(() => { if (focused?.id !== 'remoteqr' && remoteView.qrOpen) remoteView.qrOpen = false; });
+  // Al cerrar Ajustes con el asistente abierto, se cierra también (y se anula el billete).
+  $effect(() => () => { if (connView.wizard) closeWizard(); });
 
   // Lista con desplazamiento: la fila enfocada siempre queda dentro de las VIS visibles.
   const VIS = 6, RH = 56;
@@ -204,12 +205,6 @@
       <div class="face">
         <h3>{sec.name}</h3>
         <div class="st-rows-wrap">
-        {#if remoteView.qrOpen && remoteView.info?.qr}
-          <div class="st-qr" role="presentation" onclick={() => (remoteView.qrOpen = false)}>
-            <div class="st-qr-img">{@html remoteView.info.qr}</div>
-            <p><b>Escanéalo con la tablet</b><br />Visor › Escanear QR. Pulsa A o B para cerrar.</p>
-          </div>
-        {/if}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div class="st-rows" style="height:{VIS * RH}px" onwheel={wheel} onpointerdown={rowsDown} onclickcapture={rowsClick}>
         <div class="st-track" style="transform:translateY({-off * RH}px)">
@@ -238,7 +233,7 @@
       </div>
     </div>
   </div>
-  <Hints list={[['LB/RB', 'Sección', 'rb'], ['A', 'Seleccionar', 'a'], ['B', setNav.zone === 'body' ? 'Menú' : 'Cerrar', 'b']]} />
+  {#if connView.wizard}<AddDevice />{:else}<Hints list={[['LB/RB', 'Sección', 'rb'], ['A', 'Seleccionar', 'a'], ['B', setNav.zone === 'body' ? 'Menú' : 'Cerrar', 'b']]} />{/if}
   {#if app.learn}<Learn />{/if}
 </div>
 
@@ -276,10 +271,5 @@
   .st-scroll i { position: absolute; right: 16px; width: 9px; min-height: 28px; border-radius: 5px; background: var(--g2); pointer-events: none; }
   .st-desc { flex: none; margin: auto 0 0; height: 124px; overflow: hidden; border-radius: var(--r-m); padding: 12px 18px; background: var(--glass-in); font-size: var(--t-s); font-weight: 500; line-height: 1.45; color: var(--ink-2); }
   .st-rows-wrap { position: relative; }
-  .st-qr { position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; gap: 28px; padding: 0 26px; border-radius: var(--r-m); background: var(--face-hi); }
-  .st-qr-img { flex: none; line-height: 0; border-radius: var(--r-s); overflow: hidden; box-shadow: 0 0 0 1px var(--glass-in); }
-  .st-qr-img :global(svg) { width: 300px; height: 300px; display: block; }
-  .st-qr p { margin: 0; font-size: var(--t-s); line-height: 1.5; color: var(--ink-2); }
-  .st-qr p b { color: var(--ink); font-size: var(--t-m, 18px); }
   .st-desc b { color: var(--ink); font-weight: 800; }
 </style>

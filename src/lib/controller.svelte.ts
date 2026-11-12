@@ -8,6 +8,7 @@ import { confirmTwice } from './confirm';
 import type { BackendEvent, Config, Library, MagpieMode, Shot, Title, TitlesTab } from './types';
 import { fmtDur } from './format';
 import { oskCmd, oskKeydown } from './osk.svelte';
+import { pairCmd } from './pair.svelte';
 import {
   accentCmd, addCmd, addShotsTo, curTitle, exitSel, formCmd, gdirCmd, hiddenCmd, moveCmd, onFilesDropped,
   openAccentPicker, openAdd, openHidden, openShotMenu, patchTitle, shotMenuAct, toggleHideTitle, toggleSel,
@@ -20,7 +21,7 @@ import { editSgdbKey, openSgdbPicker, openSgdbTitles, sgdbAuto, sgdbCmd, sgdbTit
 import { AUDIO_COMBO_PRESETS, AUDIO_HOTKEY_PRESETS, COMBO_PRESETS, HOTKEY_PRESETS, MOUSE_PRESETS, OVERLAY_COMBO_PRESETS, OVERLAY_HOTKEY_PRESETS, learnKeydown, learnMouse, onLearnKey, onLearnPad, startLearn } from './learn.svelte';
 import { READING_CYCLE, READING_ROWS, isReadingId, readingAct, type ReadingId } from './reading.svelte';
 import { checkUpdate, updateAct } from './updater.svelte';
-import { REMOTE_CYCLE, isRemoteId, remoteAct, type RemoteId } from './remote.svelte';
+import { CONN_CYCLE, CONN_ROWS, connAct, isConnId, refreshConnections, wizardCmd, type ConnId } from './connections.svelte';
 import { DEVICES_CYCLE, devicesAct, devicesRows, isDevicesId, refreshDevices, type DevicesId } from './devices.svelte';
 import { clientMode } from './ipc';
 import { openPhrases, phrasesCmd } from './phrases.svelte';
@@ -1341,7 +1342,7 @@ export type SettingId =
   | 'savesauto' | 'ludusavi' | 'inputmouse' | 'inputkeys' | 'update'
   | 'liststalled' | 'liststalleddays' | 'liststalledact' | 'listautoplay' | 'theme'
   | 'tabpc' | 'tabstate' | 'tabdisc'
-  | ReadingId | RemoteId | DevicesId;
+  | ReadingId | ConnId | DevicesId;
 /** Filas de lectura que en la tablet no existen (Anki y atajo de grabación son del PC). */
 const TABLET_HIDDEN_READING = new Set<string>(['ankiurl', 'ankitest', 'ankiauto', 'ankiexe', 'ankideck', 'ankicreate', 'ankimodel', 'ankistyle', 'map_word', 'map_reading', 'map_meaning', 'map_sentence', 'map_translation', 'map_shot', 'map_audio', 'rechotkey']);
 /** Secciones de Ajustes (LB/RB las recorren). `t` es la posición en el arcoíris (0..1) que da su color. */
@@ -1373,12 +1374,11 @@ export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[
           'qmkey', 'qmpad', 'qmmouse', 'qmhold', 'qmpause',
           'capsound', 'cappeek', 'caprumble', 'caponly',
           'magpieexe', 'magpie',
-          ...(clientMode ? [] : ['remoteon', 'remoteqr', 'remoteaddr', 'remotecursor', 'remotestream', 'remotehelp'] as SettingId[]),
         ];
     },
   },
-  // Solo en el PC: dispositivos emparejados, o conectarse a otro PC (modo cliente).
-  ...(IS_TABLET ? [] : [{ name: 'Equipos', t: 0.5, get rows(): SettingId[] { return devicesRows(); } }]),
+  // Solo en el PC: dispositivos emparejados y servidor (PC principal) o con qué PC está conectado (modo cliente).
+  ...(IS_TABLET ? [] : [{ name: 'Conexiones', t: 0.5, get rows(): SettingId[] { return clientMode ? devicesRows() : [...CONN_ROWS, ...devicesRows()]; } }]),
   {
     name: 'Biblioteca',
     t: 0.6,
@@ -1413,7 +1413,7 @@ export const SETTING_SECTIONS: Array<{ name: string; t: number; rows: SettingId[
 ];
 /** Filas que cambian de valor con izquierda/derecha (se marcan con ‹ ›). Las demás son acciones: izquierda vuelve al menú. */
 export const CYCLE = new Set<SettingId>(['theme', 'showhidden', 'view', 'shotsview', 'shotsorder', 'collstyle', 'achcardvariant', 'sound', 'fullscreen', 'monitor', 'oncursor', 'audioout', 'audiocombo', 'audiohotkey', 'hotkey', 'combo', 'mouse', 'qmkey', 'qmpad', 'qmmouse', 'qmhold', 'qmpause', 'magpie', 'magpieexe', 'capsound', 'sgdbauto', 'backupmedia', 'autobackup', 'savesauto', 'inputmouse', 'inputkeys', 'liststalled', 'liststalleddays', 'liststalledact', 'listautoplay', 'bgtray', 'bgstart', 'ntmin']);
-export const rowHasArrows = (id: SettingId | undefined) => !!id && (CYCLE.has(id) || READING_CYCLE.has(id as never) || REMOTE_CYCLE.has(id as never) || DEVICES_CYCLE.has(id as never));
+export const rowHasArrows = (id: SettingId | undefined) => !!id && (CYCLE.has(id) || READING_CYCLE.has(id as never) || CONN_CYCLE.has(id as never) || DEVICES_CYCLE.has(id as never));
 /** Zona de foco en Ajustes: el menú de secciones o la lista de opciones. */
 export const setNav = $state({ zone: 'menu' as 'menu' | 'body' });
 const secRows = () => SETTING_SECTIONS[app.setSec]?.rows ?? [];
@@ -1553,7 +1553,7 @@ export function openSettings() {
   void refreshSavesStatus();
   void refreshMonitor();
   void refreshAudio();
-  if (!IS_TABLET) void refreshDevices();
+  if (!IS_TABLET) { void refreshDevices(); void refreshConnections(); }
   app.overlayStack = [];
   app.overlay = 'settings';
   app.setRow = 0;
@@ -1672,7 +1672,7 @@ export function settingsAct(id: SettingId | undefined, dir: number) {
   else if (id === 'ntmin') nintendoCycleMin(dir);
   else if (id === 'ntimport' && dir === 0) void openNintendoImport();
   else if (id && isReadingId(id)) readingAct(id, dir);
-  else if (id && isRemoteId(id)) remoteAct(id, dir);
+  else if (id && isConnId(id)) connAct(id, dir);
   else if (id && isDevicesId(id)) devicesAct(id, dir);
 }
 
@@ -1701,6 +1701,8 @@ function overlayCmd(c: string) {
     case 'stalled': stalledCmd(c); return;
     case 'achievements': achievementsCmd(c); return;
   }
+  // El asistente «Añadir dispositivo» (Ajustes › Conexiones) se lleva las órdenes mientras está abierto.
+  if (wizardCmd(c)) return;
   // Menú (izquierda): arriba/abajo cambian de sección, derecha/A entran en la lista.
   // Lista (derecha): arriba/abajo recorren opciones; izquierda cambia el valor o, en acciones, vuelve al menú; B vuelve al menú.
   const rows = secRows();
@@ -1911,6 +1913,7 @@ export function cmd(c: string) {
   if (app.learn) return;
   wake();
   app.inputAt = Date.now();
+  if (pairCmd(c)) return;
   if (app.audioMenu) { audioCmd(c); return; }
   if (app.osk.open) { oskCmd(c); return; }
   if (app.overlay) { overlayCmd(c); return; }

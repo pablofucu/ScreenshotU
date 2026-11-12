@@ -1,7 +1,7 @@
 // Biblioteca simulada para desarrollo en navegador (sin Tauri). El arte procede del mockup aprobado.
 import { hash, rng } from './rng';
 import type {
-  Achievement, AchievementSummary, GameDetection, AccentInfo, AudioOutput, Backend, BackendEvent, Config, GameSource, HiddenEntry, Library, Platform, Collection, ReleaseDate, Shot, SortMode, Swatch, Title,
+  Achievement, AchievementSummary, GameDetection, AccentInfo, AudioOutput, Backend, BackendEvent, Config, GameSource, HiddenEntry, Library, PairedDevice, Platform, Collection, ReleaseDate, Shot, SortMode, Swatch, Title,
 } from './types';
 import { normalizeHex } from './oklch';
 
@@ -322,8 +322,19 @@ export async function mockBackend(): Promise<Backend> {
     platforms: MOCK_PLATS.map((p) => ({ id: p.id, name: p.name, folder: p.folder, accent: p.accent, icon: p.icon })),
     captureHotkey: 'F12', captureCombo: 'back+rb', captureMouse: '', captureMagpie: 'scaled', captureSound: true, capturePeek: true, captureOnlyGames: true, captureRumble: true, magpieExe: '', showHidden: false,
     sgdbKey: q.has('sgdb') ? 'mock' : '', sgdbAuto: true, deepseekKey: '', deepseekModel: 'deepseek-chat',
-    ankiUrl: 'http://127.0.0.1:8765', ankiDeck: 'Japonés::Novelas', ankiModel: '', ankiStyle: 'limpio', ankiAutostart: true, ankiExe: '', recordHotkey: 'F9', audioCombo: 'start+rb', audioHotkey: '', overlayHotkey: 'F24', overlayCombo: 'off', overlayMouse: '', overlayHoldForce: true, overlayHoldMs: 1500, overlayPause: true, autoBackup: true, openOnCursor: false, keepInTray: false, savesAuto: true, savesDir: '', goalVn: 60, goalJvn: 30, goalPc: 60, goalSwitch: 30, remoteEnabled: false, remotePort: 47811, remoteToken: '', remoteId: '', startWithWindows: false, streamHideCursor: true, titlesOrder: {}, titlesZoom: 0, collectionsStyle: 'aurora', listStalled: true, listStalledDays: 30, nintendoMinMinutes: 60, listStalledAction: 'ask', listAutoPlay: true, inputMouse: true, inputKeys: false, ankiMap: { word: 'Word', reading: 'WordReading', meaning: 'PrimaryDefinition', sentence: 'Sentence', translation: 'SentenceTranslation', shot: 'Picture', audio: 'SentenceAudio' } };
+    ankiUrl: 'http://127.0.0.1:8765', ankiDeck: 'Japonés::Novelas', ankiModel: '', ankiStyle: 'limpio', ankiAutostart: true, ankiExe: '', recordHotkey: 'F9', audioCombo: 'start+rb', audioHotkey: '', overlayHotkey: 'F24', overlayCombo: 'off', overlayMouse: '', overlayHoldForce: true, overlayHoldMs: 1500, overlayPause: true, autoBackup: true, openOnCursor: false, keepInTray: false, savesAuto: true, savesDir: '', goalVn: 60, goalJvn: 30, goalPc: 60, goalSwitch: 30, remoteEnabled: true, remotePort: 8787, remoteToken: '', remoteId: '', startWithWindows: false, streamHideCursor: true, titlesOrder: {}, titlesZoom: 0, collectionsStyle: 'aurora', listStalled: true, listStalledDays: 30, nintendoMinMinutes: 60, listStalledAction: 'ask', listAutoPlay: true, inputMouse: true, inputKeys: false, ankiMap: { word: 'Word', reading: 'WordReading', meaning: 'PrimaryDefinition', sentence: 'Sentence', translation: 'SentenceTranslation', shot: 'Picture', audio: 'SentenceAudio' } };
   let cfg: Config = base;
+  let mockDeviceName = 'Sobremesa de Pablo';
+  const mockRemoteInfo = () => {
+    const on = cfg.remoteEnabled;
+    return { enabled: on, running: on, port: cfg.remotePort, addresses: on ? ['192.168.1.20', '100.88.14.7'] : [], id: 'mock', name: mockDeviceName, link: '', qr: '', error: null };
+  };
+  const ago = (h: number) => Date.now() - h * 3600_000;
+  const mockDevices: PairedDevice[] = [
+    { id: 'd1', name: 'Tablet de Pablo', kind: 'tablet', createdMs: ago(900), lastSeenMs: ago(2), appVersion: '2.0.2', api: 2, revoked: false, apolloId: 'uuid-1' },
+    { id: 'd2', name: 'Portátil del salón', kind: 'pc', createdMs: ago(500), lastSeenMs: ago(26), appVersion: '2.0.2', api: 2, revoked: false, apolloId: null },
+    { id: 'd3', name: 'Tablet de Lucía', kind: 'tablet', createdMs: ago(2000), lastSeenMs: ago(290), appVersion: '2.0.1', api: 2, revoked: false, apolloId: 'uuid-3' },
+  ];
   try { const s = store()?.getItem(LS); if (s) cfg = { ...base, ...JSON.parse(s) }; } catch {}
   if (q.has('empty')) cfg = { ...cfg, root: null };
   if (q.get('view') === 'carousel') cfg = { ...cfg, titlesView: 'carousel' };
@@ -578,16 +589,19 @@ export async function mockBackend(): Promise<Backend> {
       const t = lib.platforms.flatMap((p) => p.titles).find((x) => x.id === id);
       if (t) t.magpieMode = mode;
     },
-    async remoteInfo() {
-      const on = cfg.remoteEnabled;
-      return { enabled: on, running: on, port: cfg.remotePort, addresses: on ? ['192.168.1.20'] : [], id: 'mock', link: '', qr: '', error: null };
-    },
+    async remoteInfo() { return mockRemoteInfo(); },
+    async devicesList() { return mockDevices.map((d) => ({ ...d })); },
+    async deviceRename(id, name) { const d = mockDevices.find((x) => x.id === id); if (d) d.name = name; },
+    async deviceRevoke(id) { const d = mockDevices.find((x) => x.id === id); if (d) d.revoked = true; },
+    async setDeviceName(name) { mockDeviceName = name || 'Sobremesa de Pablo'; return mockRemoteInfo(); },
     async pairPending() { return []; },
     async pairApprove() {},
     async pairReject() {},
-    async pairTicketNew() { return { ticket: 'K7QM-4XTR', expiresMs: Date.now() + 300000, qr: '' }; },
+    async pairTicketNew() {
+      return { ticket: 'K7QM-4XTR', expiresMs: Date.now() + 300000, qr: JSON.stringify({ v: 2, app: 'visor-capturas', id: 'mock', name: mockDeviceName, addrs: ['192.168.1.20:' + cfg.remotePort, '100.88.14.7:' + cfg.remotePort], port: cfg.remotePort, ticket: 'K7QM-4XTR' }) };
+    },
     async pairTicketCancel() {},
-    async hostAddrs() { return cfg.remoteEnabled ? ['192.168.1.20:' + cfg.remotePort] : []; },
+    async hostAddrs() { return cfg.remoteEnabled ? ['192.168.1.20:' + cfg.remotePort, '100.88.14.7:' + cfg.remotePort] : []; },
     async apolloCredsSet() { return { state: 'ok' as const, hasCredentials: true }; },
     async apolloCredsClear() { return { state: 'noCredentials' as const, hasCredentials: false }; },
     async apolloWebState() { return { state: 'noCredentials' as const, hasCredentials: false }; },

@@ -177,7 +177,9 @@ export interface PairTicketInfo { ticket: string; expiresMs: number; qr: string 
 export type ApolloWebState = 'noCredentials' | 'badCredentials' | 'apolloOff' | 'incompatible' | 'ok';
 /** Estado de la API web de Apollo; la contraseña guardada nunca vuelve a la interfaz. */
 export interface ApolloWebInfo { state: ApolloWebState; hasCredentials: boolean }
-export interface RemoteInfo { enabled: boolean; running: boolean; port: number; addresses: string[]; id: string; link: string; qr: string; error: string | null }
+export interface RemoteInfo { enabled: boolean; running: boolean; port: number; addresses: string[]; id: string; name?: string; link: string; qr: string; error: string | null }
+/** Dispositivo emparejado con este PC (tablet u otro PC); `apolloId` = streaming emparejado. */
+export interface PairedDevice { id: string; name: string; kind: string; createdMs: number; lastSeenMs: number; appVersion: string; api: number; revoked: boolean; apolloId: string | null }
 /** Tiempo de consola (Nintendo) ya sumado al del juego; solo en fichas de la categoría Switch. */
 export interface ConsoleTime {
   seconds: number;
@@ -424,6 +426,13 @@ export interface Backend {
   streamAppInstall(): Promise<StreamAppStatus>;
   /** Acceso desde el móvil: dirección, código y si el servidor está en marcha. */
   remoteInfo(): Promise<RemoteInfo>;
+  /** Dispositivos emparejados (solo en el escritorio del PC principal). */
+  devicesList(): Promise<PairedDevice[]>;
+  deviceRename(id: string, name: string): Promise<void>;
+  /** Quita un dispositivo (y su streaming en Apollo): tendrá que emparejarse otra vez. */
+  deviceRevoke(id: string): Promise<void>;
+  /** Nombre de este equipo para los demás dispositivos (vacío = el de Windows). */
+  setDeviceName(name: string): Promise<RemoteInfo>;
   /** Solicitudes de emparejamiento que esperan aprobación. */
   pairPending(): Promise<PairRequestInfo[]>;
   pairApprove(id: string): Promise<void>;

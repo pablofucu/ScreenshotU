@@ -1,4 +1,4 @@
-import type { Achievement, AchievementSummary, GameDetection, AddReport, AudioOutput, Backend, BackupResult, GameStatsDb, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, StreamAppStatus, MoveReport, TrashReport, RemoteInfo, PairRequestInfo, PairTicketInfo, ApolloWebInfo, NewGame, Collection, SortMode } from './types';
+import type { Achievement, AchievementSummary, GameDetection, AddReport, AudioOutput, Backend, BackupResult, GameStatsDb, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, StreamAppStatus, MoveReport, TrashReport, RemoteInfo, PairedDevice, PairRequestInfo, PairTicketInfo, ApolloWebInfo, NewGame, Collection, SortMode } from './types';
 
 export const IS_TAURI = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 /** La UI de escritorio corre dentro del APK de la tablet (el arranque de `mobile/` lo marca antes de cargarla): habla con el PC por HTTP. */
@@ -169,6 +169,10 @@ async function tauriBackend(): Promise<Backend> {
     streamAppStatus: () => invoke<StreamAppStatus>('stream_app_status'),
     streamAppInstall: () => invoke<StreamAppStatus>('stream_app_install'),
     remoteInfo: () => invoke<RemoteInfo>('remote_info'),
+    devicesList: () => invoke<PairedDevice[]>('devices_list'),
+    deviceRename: (id: string, name: string) => invoke<void>('device_rename', { id, name }),
+    deviceRevoke: (id: string) => invoke<void>('device_revoke', { id }),
+    setDeviceName: (name: string) => invoke<RemoteInfo>('set_device_name', { name }),
     pairPending: () => invoke<PairRequestInfo[]>('pair_pending'),
     pairApprove: (id: string) => invoke<void>('pair_approve', { id }),
     pairReject: (id: string) => invoke<void>('pair_reject', { id }),
