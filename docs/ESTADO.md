@@ -12,19 +12,21 @@
 
 | Proyecto | Plan | Hecho | Qué falta |
 |---|---|---|---|
-| Magpie y táctil en la tablet | [planes/magpie-tablet.md](planes/magpie-tablet.md) | A1, A2, B0, B1, B2 | A5 (pruebas de streaming y nitidez, las hace el usuario), A3 (modo por juego y destino), A4 (recalcular al reconectar), B3 (explicarlo en Ajustes) |
+| Magpie y táctil en la tablet | [planes/magpie-tablet.md](planes/magpie-tablet.md) | A1, A2, B0, B1, B2 | A5 (pruebas de streaming y nitidez, las hace el usuario), A3 (modo de escalado **por juego**, decidido el 12-nov), A4 (recalcular al reconectar), B3 (explicarlo en Ajustes) |
 | Tablet: menú sobre el juego y volver a la partida | [archivo/plan-tablet.md](archivo/plan-tablet.md), [archivo/plan-volver-partida.md](archivo/plan-volver-partida.md) | Código subido (T1–T4, volver a la partida, menú con la interfaz del overlay) | **Probar en la tablet real** y compilar la APK. Por confirmar si siguen pendientes: ocultar en la tablet las opciones que solo valen en el PC y la adaptación táctil (objetivos de 44 px, pulsación larga) |
-| Emparejamiento nuevo | [planes/emparejamiento.md](planes/emparejamiento.md) | Plan y decisiones (12-nov) | Fase 0 (estudio de Apollo, Moonlight, Artemis y la notificación) y fase M (maquetas) |
-| Multi-PC | [planes/multi-pc.md](planes/multi-pc.md) | Fases 1–5 (dispositivos, cliente PC, instalaciones en clientes, partidas de viaje, Tailscale) | Prueba con dos PCs en la red (1G) y fase 6 (nube personal) |
+| Emparejamiento nuevo (**va primero**, decidido el 12-nov) | [planes/emparejamiento.md](planes/emparejamiento.md) | Plan y decisiones, fase 0 (estudio en [referencia/emparejamiento-apollo.md](referencia/emparejamiento-apollo.md)), maquetas 1–4 aprobadas | Fase 1 (protocolo en visor-core), maqueta 5 (PC cliente), fases 2–4 (PC principal, PC cliente, tablet) y 5 (limpieza). Después se vuelve a Interfaz y estadísticas |
+| Multi-PC | [planes/multi-pc.md](planes/multi-pc.md) | Fases 1–5 (dispositivos, cliente PC, instalaciones en clientes, partidas de viaje, Tailscale) | Prueba con dos PCs en la red (1G). La fase 6 (nube personal) queda aparcada (12-nov) |
 | Acento vivo | [planes/acento-vivo.md](planes/acento-vivo.md) | Pasos 1–3 | Paso 4: repaso visual con los 7 tonos |
 | Guía de diseño | [guia-diseno.md](guia-diseno.md) | Fases 0–6 de la migración | Fase 7 |
 
 ## Decisiones que esperan al usuario
 
-- **Colecciones (C1):** elegir una de las maquetas A–E de [maquetas/colecciones/](maquetas/colecciones/).
 - **Inicio (H1):** confirmar los retoques A–D de [maquetas/menu-principal/](maquetas/menu-principal/).
 
 ## Aparcado
+
+- **Colecciones (C1):** aparcado el 12-nov. Quedan las maquetas A–E en [maquetas/colecciones/](maquetas/colecciones/) sin elegir.
+- **Nube personal (Multi-PC, fase 6):** aparcada el 12-nov.
 
 - **Switch, importar capturas al conectar la consola:** solo estudio (MTP, microSD, hash → id de título). El tiempo de juego de Switch está terminado y publicado.
 - **Ideas con maqueta y sin plan:** comparador de capturas A/B y salvapantallas de ambiente ([maquetas/ideas/](maquetas/ideas/)); exportar .apkg y ritmo de lectura ([archivo/propuestas-antigravity.md](archivo/propuestas-antigravity.md)).

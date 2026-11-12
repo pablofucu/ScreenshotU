@@ -75,6 +75,13 @@ estilo claro Wii U glass). Una o dos variantes de cada pantalla:
 
 La elegida se anota aquí y las demás se borran.
 
+**Estado (12-nov):** las maquetas 1 a 4 están aprobadas tal cual. La notificación de Windows es la normal del
+sistema con Aprobar/Rechazar (se descarta la variante arcoíris). Falta la 5 (PC cliente).
+
+**Emparejar el streaming (según la fase 0):** `POST /api/v1/stream/pair` con `{pin}` lo usa el PC cliente (Moonlight
+genera el PIN y el PC principal lo mete en Apollo); sin `pin`, el PC principal pide un OTP a Apollo y responde
+`{pin, passphrase, port}` para que la tablet abra Artemis con `art://`.
+
 ## Fase 1: protocolo (visor-core)
 
 `src-tauri/visor-core/src/remote.rs`, `devices.rs`, `remote_client.rs`, `config.rs`.
