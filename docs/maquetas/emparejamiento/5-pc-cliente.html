@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>PC cliente · Usar la biblioteca de otro PC</title>
+<style>
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;color-scheme:light;
+  --ink:#3a414e;--ink-2:#5f6776;--ink-3:#757d8c;--line:rgba(95,110,135,.24);--line-2:rgba(150,160,180,.35);
+  --face:#dfe3e9;--face-hi:rgba(247,249,252,.94);--panel:rgba(255,255,255,.75);--scrim:rgba(20,26,36,.45);
+  --glass-top:rgba(255,255,255,.72);--glass-mid:rgba(255,255,255,.30);--glass-bot:rgba(225,234,246,.22);
+  --glass-in:rgba(255,255,255,.55);--glass-chip:rgba(255,255,255,.80);
+  --pill-top:rgba(255,255,255,.80);--pill-bot:rgba(255,255,255,.52);--pill-glow:rgba(255,255,255,.9);
+  --tile-bg:rgba(255,255,255,.62);--hl:#fff;--hl-ring:rgba(255,255,255,.55);--hl-bot:rgba(255,255,255,.95);--tint-base:#fff;
+  --ok:#3BB54A;--bad:#E8384F;--warn:#F2B807;--ok-f:#27833a;--bad-f:#d92c44;
+  --arc-rojo:#E8384F;--arc-naranja:#F27A1A;--arc-amarillo:#F2B807;--arc-verde:#3BB54A;--arc-azul:#00A0D8;--arc-anil:#3F63E0;--arc-violeta:#9A4BD8;
+  --arco:linear-gradient(90deg,#E8384F,#F27A1A,#F2B807,#3BB54A,#00A0D8,#3F63E0,#9A4BD8);
+  --r-xs:6px;--r-s:12px;--r-m:18px;--r-l:28px;--r-pill:999px;
+  --t-xs:11px;--t-s:13px;--t-m:15px;--t-l:17px;--t-xl:20px;--t-2xl:28px;--t-3xl:44px;
+  --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:24px;--s-6:32px;
+  --d-1:120ms;--d-2:200ms;--d-3:300ms;--e-soft:cubic-bezier(.2,.8,.3,1);--e-bounce:cubic-bezier(.34,1.32,.64,1);
+  --ring:0 0 0 3px var(--f1),0 0 22px 2px color-mix(in srgb,var(--f2) 45%,transparent);
+  --sh-1:0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42);
+  --sh-3:0 0 0 1px rgba(95,110,135,.24),0 8px 14px -6px rgba(20,26,36,.22),0 36px 64px -22px rgba(20,26,36,.55);
+  --acc:#00A0D8;--f1:#0089be;--f2:#3253c5;--gf:linear-gradient(115deg,#0089be,#3253c5);--g1:#00A0D8;--on:#fff}
+*{box-sizing:border-box}
+html,body{margin:0;background:#0f1218;font-family:var(--round);color:var(--ink)}
+button{font-family:inherit;border:0;background:none;color:inherit;padding:0}
+#stage{position:relative;width:1280px;height:720px;overflow:hidden;background:#eceef2;user-select:none}
+.bg{position:absolute;inset:0;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+.blob{position:absolute;border-radius:50%;opacity:.5;background:radial-gradient(circle,var(--b),color-mix(in srgb,var(--b) 45%,transparent) 35%,transparent 70%)}
+.blob.a{--b:#00A0D8;width:620px;height:620px;left:-160px;top:-200px}
+.blob.b{--b:#9A4BD8;width:560px;height:560px;right:-180px;top:120px;opacity:.38}
+.blob.c{--b:#3BB54A;width:520px;height:520px;left:340px;bottom:-320px;opacity:.34}
+.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.s{width:16px;height:16px}.ic.l{width:28px;height:28px}.ic.xl{width:40px;height:40px}
+.glass{position:absolute;border-radius:var(--r-l);isolation:isolate;overflow:hidden;
+  background:linear-gradient(180deg,var(--glass-top),var(--glass-mid) 46%,var(--glass-bot));backdrop-filter:blur(14px) saturate(1.7);
+  box-shadow:inset 0 1.5px 0 var(--hl),inset 0 0 0 1px var(--hl-ring),inset 0 -1.5px 0 rgba(110,125,150,.30),var(--sh-1)}
+.glass.float{box-shadow:inset 0 1.5px 0 var(--hl),inset 0 0 0 1px var(--hl-ring),var(--sh-3)}
+.glass-in{border-radius:var(--r-m);background:var(--glass-in);box-shadow:inset 0 1px 0 var(--hl-ring),inset 0 0 0 1px var(--line)}
+.pill{backdrop-filter:blur(16px) saturate(1.7);background:linear-gradient(180deg,var(--pill-top),var(--pill-bot));
+  box-shadow:inset 0 1px 0 var(--glass-top),inset 0 -6px 10px -6px var(--pill-glow),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
+.avatar,.crumb,.clock{z-index:6}
+.avatar{position:absolute;left:22px;top:12px;width:60px;height:60px;border-radius:16px;display:grid;place-items:center;color:#fff;z-index:6;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,#fff),var(--acc));box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black),0 8px 14px -8px rgba(40,50,70,.5)}
+.crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:var(--r-pill);font-size:var(--t-xl);font-weight:700;color:var(--ink-2)}
+.crumb .sep{color:var(--ink-3);font-weight:500}.crumb .cur{color:var(--acc)}
+.clock{position:absolute;right:24px;top:24px;font-size:var(--t-xl);font-weight:700;color:var(--ink-2)}
+.hints{position:absolute;right:24px;bottom:13px;display:flex;gap:10px}
+.hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:var(--r-pill);font-size:var(--t-m);font-weight:700;color:var(--ink-2)}
+.btn{min-width:28px;height:28px;border-radius:var(--r-s);display:grid;place-items:center;font-size:var(--t-s);font-weight:800;color:#fff;--b:var(--ink-2);padding:0 6px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,#fff),var(--b) 55%,color-mix(in srgb,var(--b) 85%,black));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--b) 70%,black),0 1px 2px rgba(0,0,0,.2);text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.btn.a{--b:var(--ok)}.btn.b{--b:var(--bad)}.btn.x{--b:var(--acc)}.btn.y{--b:var(--warn);color:var(--ink);text-shadow:none}
+.btn.big{min-width:36px;height:36px;font-size:var(--t-l);border-radius:14px}
+.b-main{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);height:44px;padding:0 var(--s-5);border-radius:var(--r-pill);font:800 var(--t-l)/1 var(--round);color:var(--on);background:var(--gf);white-space:nowrap;
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.55),inset 0 -8px 12px -8px rgba(0,0,0,.25),0 0 0 1px color-mix(in srgb,var(--f2) 75%,black),0 12px 20px -12px color-mix(in srgb,var(--f2) 70%,black)}
+.b-main.f{transform:scale(1.06);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.55),var(--ring)}
+.b-soft{display:inline-flex;align-items:center;justify-content:center;gap:var(--s-2);height:44px;padding:0 var(--s-5);border-radius:var(--r-pill);font:700 var(--t-l)/1 var(--round);color:var(--ink);white-space:nowrap}
+.b-soft.f{transform:scale(1.06);box-shadow:var(--ring)}
+.chip{display:inline-flex;align-items:center;gap:var(--s-2);height:36px;padding:0 var(--s-4);border-radius:var(--r-pill);font:700 var(--t-m)/1 var(--round);color:var(--ink-2);background:var(--glass-chip);box-shadow:inset 0 0 0 1px var(--line);white-space:nowrap}
+.st{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 12px 0 10px;border-radius:var(--r-pill);font-size:var(--t-s);font-weight:800;white-space:nowrap;
+  color:var(--ok-f);background:color-mix(in srgb,var(--ok) 14%,#fff);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ok) 40%,transparent)}
+.st::before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor}
+.st.no{color:#8a6a00;background:color-mix(in srgb,var(--warn) 18%,#fff);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--warn) 55%,transparent)}
+.st.bad{color:var(--bad-f);background:color-mix(in srgb,var(--bad) 12%,#fff);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bad) 40%,transparent)}
+.mono{font-family:ui-monospace,Consolas,monospace;letter-spacing:1px}
+/* Ajustes (igual que la maqueta 1) */
+.secpanel{left:130px;top:46px;width:1020px;height:600px;display:flex}
+.scats{flex:none;width:250px;padding:24px 14px;background:rgba(214,220,230,.5);display:flex;flex-direction:column;gap:6px;box-shadow:inset -1px 0 rgba(95,110,135,.15)}
+.scats h2{margin:0 10px 14px;font-size:var(--t-xl);font-weight:800;color:var(--ink-2)}
+.scat{height:48px;border-radius:var(--r-s);display:flex;align-items:center;gap:12px;padding:0 12px;font-size:var(--t-l);font-weight:700;color:var(--ink-2)}
+.scat i{flex:none;width:32px;height:32px;border-radius:var(--r-s);display:grid;place-items:center;color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 30%,#fff),var(--c));box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--c) 70%,black)}
+.scat i .ic{width:18px;height:18px}
+.scat.on{background:var(--face-hi);color:var(--c);box-shadow:0 0 0 1px rgba(95,110,135,.18),0 6px 14px -8px rgba(40,50,70,.4)}
+.sbody{flex:1;min-width:0;position:relative;padding:20px 28px 0;display:flex;flex-direction:column}
+.sbody h3{margin:12px 0 6px;font-size:var(--t-s);font-weight:800;color:var(--ink-3);letter-spacing:.4px;text-transform:uppercase}
+.sbody h3:first-child{margin-top:0}
+.srow{flex:none;display:flex;align-items:center;gap:14px;height:52px;padding:0 22px;border-radius:var(--r-m);font-size:var(--t-l);font-weight:700;color:var(--ink-2);margin-bottom:4px}
+.srow .sl{flex:1;white-space:nowrap}.srow .sv{font-weight:700;color:var(--ink-2);display:flex;align-items:center;gap:10px}
+.srow.f{background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 60%),var(--gf);color:var(--on);text-shadow:0 1px 2px rgba(0,0,0,.28);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--f2) 75%,black),0 0 18px -2px color-mix(in srgb,var(--f1) 45%,transparent),0 6px 12px -8px color-mix(in srgb,var(--f2) 70%,black)}
+.srow.f .sv{color:inherit}
+.srow.dng.f{background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 60%),linear-gradient(115deg,#e8384f,#c42a6a);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px #a8203f,0 0 18px -2px rgba(232,56,79,.5),0 6px 12px -8px #a8203f}
+.srow.off{opacity:.55}
+.sdesc{flex:none;margin:auto 0 22px;height:92px;overflow:hidden;border-radius:var(--r-m);padding:12px 18px;background:rgba(214,220,230,.45);font-size:var(--t-s);font-weight:500;line-height:1.4;color:var(--ink-2)}
+.sdesc b{color:var(--ink);font-weight:800}
+/* asistente */
+.wiz{left:130px;top:46px;width:1020px;height:600px}
+.wc{position:absolute;inset:0;padding:34px 56px 0;display:flex;flex-direction:column}
+.wc.mid{align-items:center;text-align:center}
+h1{margin:0 0 8px;font-size:var(--t-2xl);font-weight:800;line-height:1.2;color:var(--ink)}
+.lead{margin:0;font-size:var(--t-m);font-weight:500;line-height:1.4;color:var(--ink-2);max-width:560px}
+.steps{display:flex;gap:8px;margin-bottom:22px}
+.steps span{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px 0 6px;border-radius:var(--r-pill);font-size:var(--t-s);font-weight:800;color:var(--ink-3);background:var(--glass-chip);box-shadow:inset 0 0 0 1px var(--line)}
+.steps span i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:var(--t-xs);color:var(--ink-2);background:var(--line)}
+.steps span.on{color:var(--on);background:var(--gf);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--f2) 75%,black)}
+.steps span.on i{background:rgba(255,255,255,.3);color:#fff}
+.steps span.done{color:var(--ok-f)}.steps span.done i{background:var(--ok);color:#fff}.steps span.done i .ic{width:12px;height:12px;stroke-width:3}
+.tileic{width:72px;height:72px;margin:0 auto 14px;border-radius:22px;display:grid;place-items:center;color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--c,var(--acc)) 40%,#fff),var(--c,var(--acc)));box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--c,var(--acc)) 70%,black),0 12px 20px -12px color-mix(in srgb,var(--c,var(--acc)) 80%,black)}
+.tileic .ic{width:38px;height:38px}
+.stat{display:inline-flex;align-items:center;gap:10px;height:36px;padding:0 16px;border-radius:var(--r-pill);font-size:var(--t-m);font-weight:700;color:var(--ink-2);margin:0 0 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{width:18px;height:18px;border-radius:50%;border:3px solid var(--line-2);border-top-color:var(--acc);animation:spin 1s linear infinite;flex:none}
+.pcs{display:flex;flex-direction:column;gap:10px;width:100%;max-width:760px}
+.pcrow{display:flex;align-items:center;gap:16px;height:84px;padding:0 20px 0 18px;border-radius:var(--r-m);color:var(--ink-2)}
+.pcrow .tile{width:52px;height:52px;border-radius:var(--r-s);display:grid;place-items:center;color:var(--ink-2);background:var(--glass-in);box-shadow:inset 0 0 0 1px var(--line)}
+.pcrow .nm{flex:1;min-width:0;line-height:1.25}
+.pcrow .nm b{display:block;font-size:var(--t-xl);font-weight:800;color:var(--ink)}
+.pcrow .nm small{font-size:var(--t-s);font-weight:500;color:var(--ink-2)}
+.pcrow.f{background:linear-gradient(180deg,rgba(255,255,255,.22),rgba(255,255,255,0) 60%),var(--gf);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 0 0 1px color-mix(in srgb,var(--f2) 75%,black),0 0 18px -2px color-mix(in srgb,var(--f1) 45%,transparent),0 6px 12px -8px color-mix(in srgb,var(--f2) 70%,black)}
+.pcrow.f .nm b,.pcrow.f .nm small{color:#fff}.pcrow.f .nm b{text-shadow:0 1px 2px rgba(0,0,0,.28)}
+.pcrow.f .tile{background:rgba(255,255,255,.28);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.5)}
+.pcrow.f .st{color:var(--ok-f)}
+.alt2{margin-top:auto;margin-bottom:34px;display:flex;align-items:center;gap:16px;width:100%;max-width:760px;padding:14px 20px}
+.alt2 p{margin:0;flex:1;font-size:var(--t-s);font-weight:500;line-height:1.35;color:var(--ink-2)}
+.alt2 p b{display:block;font-size:var(--t-m);font-weight:800;color:var(--ink)}
+.num{margin:12px auto 0;display:inline-block;padding:6px 40px 10px 54px;border-radius:var(--r-l);background:var(--face-hi);box-shadow:inset 0 0 0 1px var(--line),inset 0 3px 8px -4px rgba(40,50,70,.25);
+  font-size:96px;line-height:1.05;font-weight:800;letter-spacing:14px;color:var(--ink)}
+.cd{display:flex;align-items:center;gap:12px;margin:22px 0 4px;width:420px;font-size:var(--t-l);font-weight:800;color:var(--ink)}
+.cd .bar{flex:1;height:8px;border-radius:4px;background:var(--line);overflow:hidden}.cd .bar i{display:block;height:100%;width:90%;background:var(--arco)}
+.cap{margin:14px 0 0;max-width:520px;font-size:var(--t-s);font-weight:500;line-height:1.4;color:var(--ink-2)}
+.cbtn{display:flex;gap:16px;justify-content:center;margin-top:26px}
+.cbtn .b-main,.cbtn .b-soft{height:52px;padding:0 28px 0 12px;font-size:var(--t-xl)}
+.cbtn .b-main .btn{background:#fff;color:#27833a;text-shadow:none;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.chk{display:flex;flex-direction:column;gap:8px;width:480px;margin-top:20px;text-align:left}
+.chk div{display:flex;align-items:center;gap:14px;height:52px;padding:0 18px;font-size:var(--t-l);font-weight:700;color:var(--ink-2)}
+.chk div span{flex:1}.chk div small{font-size:var(--t-s);font-weight:500;color:var(--ink-3)}
+.chk .ok{color:var(--ok-f)}.chk .wait{color:var(--ink-3)}
+.prog{width:480px;height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:22px;position:relative}
+@keyframes slide{0%{left:-40%}100%{left:100%}}
+.prog i{position:absolute;top:0;height:100%;width:40%;background:var(--arco);animation:slide 1.8s var(--e-soft) infinite}
+.bigok{width:96px;height:96px;margin:10px auto 18px;border-radius:50%;display:grid;place-items:center;color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--ok) 40%,#fff),var(--ok));box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--ok) 70%,black),0 16px 26px -14px var(--ok)}
+.bigok .ic{width:52px;height:52px;stroke-width:2.6}
+.chips{display:flex;gap:10px;margin-top:20px;justify-content:center}
+/* formulario manual */
+.manual{display:flex;gap:36px;flex:1;margin-top:6px}
+.mform{flex:none;width:440px}
+.fld{margin-bottom:14px}
+.fld label{display:block;margin:0 0 6px 6px;font-size:var(--t-s);font-weight:800;color:var(--ink-3);letter-spacing:.4px;text-transform:uppercase}
+.fld .in{display:flex;align-items:center;height:56px;padding:0 20px;border-radius:var(--r-m);font-size:var(--t-xl);font-weight:800;color:var(--ink);background:var(--face-hi);box-shadow:inset 0 0 0 1px var(--line),inset 0 3px 8px -4px rgba(40,50,70,.25)}
+.fld .in.f{box-shadow:var(--ring),inset 0 3px 8px -4px rgba(40,50,70,.25)}
+.fld .in .ph{color:var(--ink-3);font-weight:500}
+.caret{display:inline-block;width:2px;height:26px;margin-left:2px;background:var(--acc);animation:bl 1s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}
+.fld small{display:block;margin:6px 6px 0;font-size:var(--t-s);font-weight:500;color:var(--ink-3);line-height:1.35}
+.osk{flex:1;padding:16px;display:flex;flex-direction:column;gap:8px;align-self:flex-start}
+.osk .row{display:flex;gap:8px}
+.key{flex:1;height:50px;border-radius:var(--r-s);display:grid;place-items:center;font-size:var(--t-xl);font-weight:800;color:var(--ink);background:var(--face-hi);box-shadow:inset 0 0 0 1px var(--line),0 2px 3px -1px rgba(40,50,70,.25)}
+.key.f{background:var(--gf);color:#fff;box-shadow:var(--ring);transform:scale(1.08);position:relative;z-index:1}
+.key.w{flex:2;font-size:var(--t-m);gap:6px;display:flex;align-items:center;justify-content:center}
+/* errores */
+.errbox{display:flex;align-items:flex-start;gap:12px;margin-top:20px;max-width:520px;padding:14px 18px;text-align:left;font-size:var(--t-s);font-weight:500;line-height:1.4;color:var(--ink-2)}
+.errbox b{display:block;font-size:var(--t-m);font-weight:800;color:var(--ink)}
+.errbox .ic{color:var(--c,var(--bad));margin-top:2px}
+/* modal */
+.tl{position:absolute;width:230px;height:230px;border-radius:38px;background:linear-gradient(150deg,color-mix(in srgb,var(--c) 30%,#fff),var(--c));box-shadow:var(--sh-1)}
+.scrim{position:absolute;inset:0;background:rgba(20,26,36,.62);backdrop-filter:blur(4px)}
+.modal{left:320px;top:100px;width:640px;height:490px;background:linear-gradient(180deg,rgba(255,255,255,.95),rgba(236,240,246,.93));padding:34px 44px 0;text-align:center}
+.modal::before{content:'';position:absolute;left:0;right:0;top:0;height:6px;background:var(--arco)}
+.modal h1{font-size:var(--t-2xl)}
+.modal .lead{margin:8px auto 0;max-width:500px}
+.modal .steps2{margin:20px auto 0;display:flex;flex-direction:column;gap:8px;width:440px;text-align:left}
+.modal .steps2 div{display:flex;align-items:center;gap:12px;height:44px;padding:0 16px;font-size:var(--t-m);font-weight:700;color:var(--ink-2)}
+.modal .steps2 .ic{color:var(--acc)}
+/* selector de maqueta (no es parte de la app) */
+.demo{position:absolute;left:24px;bottom:8px;z-index:50;display:flex;flex-wrap:wrap;gap:4px;max-width:640px;padding:4px;border-radius:18px;background:rgba(20,26,36,.78);backdrop-filter:blur(8px)}
+.demo a{padding:0 11px;height:24px;display:flex;align-items:center;border-radius:var(--r-pill);font-size:var(--t-xs);font-weight:800;color:#d7dce6;text-decoration:none;cursor:pointer;white-space:nowrap}
+.demo a.on{background:#fff;color:#20242c}
+.demo .g{width:100%;padding:0 8px;font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#8d96a8;height:auto}
+.scr{position:absolute;inset:0;display:none}.scr.on{display:block}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-pc" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+<symbol id="i-tablet" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M11 16h2"/></symbol>
+<symbol id="i-laptop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="10" rx="2"/><path d="M3 19h18"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
+<symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r=".6"/></symbol>
+<symbol id="i-kbd" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2.5"/><path d="M6 10h1M10 10h1M14 10h1M18 10h0M7 14h10"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></symbol>
+<symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v9M6.5 6.5a8 8 0 1 0 11 0"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3M14 9l2 2"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18.5v.1"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+<symbol id="i-lib" viewBox="0 0 24 24"><rect x="3" y="4" width="6" height="16" rx="1.5"/><rect x="11" y="4" width="4" height="16" rx="1.5"/><path d="M17 6l4 1-3 13-4-1z"/></symbol>
+<symbol id="i-pad" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="10" rx="5"/><path d="M7 10v4M5 12h4M16 11h.1M18 13h.1"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14-4L4 9M4 4v5h5M4 13a8 8 0 0 0 14 4l2-2M20 20v-5h-5"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-7 8 7M6 10v10h12V10"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></symbol>
+<symbol id="i-back" viewBox="0 0 24 24"><path d="M10 6l-6 6 6 6M4 12h16"/></symbol>
+<symbol id="i-paste" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6"/></symbol>
+<symbol id="i-off" viewBox="0 0 24 24"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><path d="M3 3l18 18"/></symbol>
+<symbol id="i-unlink" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/><path d="M3 3l18 18"/></symbol>
+</defs></svg>
+
+<div id="stage"><div class="bg"><div class="blob a"></div><div class="blob b"></div><div class="blob c"></div></div>
+<nav class="demo">
+ <span class="demo g" style="background:none;position:static;padding:0 8px;height:auto;display:block;backdrop-filter:none">Asistente</span>
+ <a href="#1" data-s="1">PCs</a><a href="#2" data-s="2">Aprobación</a><a href="#3" data-s="3">Streaming</a><a href="#4" data-s="4">Listo</a><a href="#5" data-s="5">Dirección y billete</a>
+ <a href="#6" data-s="6">Rechazada</a><a href="#7" data-s="7">Caducada</a><a href="#8" data-s="8">Actualiza</a>
+ <span class="demo g" style="background:none;position:static;padding:0 8px;height:auto;display:block;backdrop-filter:none">Ajustes y aviso</span>
+ <a href="#9" data-s="9">En casa</a><a href="#10" data-s="10">Tailscale</a><a href="#11" data-s="11">Sin conexión</a><a href="#12" data-s="12">Desconectar</a><a href="#13" data-s="13">Aviso</a>
+</nav>
+<div class="avatar"><svg class="ic l"><use href="#i-gear"/></svg></div>
+<div class="clock">21:04</div>
+
+<!-- 1: PCs en la red -->
+<div class="scr" data-s="1">
+ <div class="crumb pill"><span>Conexiones</span><span class="sep">›</span><span class="cur">Usar la biblioteca de otro PC</span></div>
+ <div class="glass wiz"><div class="wc">
+  <div class="steps"><span class="on"><i>1</i>Elegir PC</span><span><i>2</i>Aprobación</span><span><i>3</i>Streaming</span><span><i>4</i>Listo</span></div>
+  <h1>Usar la biblioteca de otro PC</h1>
+  <p class="lead">Elige el PC cuya biblioteca quieres ver aquí. Tendrá que aprobarte con un número de 4 cifras.</p>
+  <div style="height:18px"></div>
+  <span class="stat glass-in"><span class="spin"></span>Buscando PCs en la red…</span>
+  <div class="pcs">
+   <div class="pcrow f"><span class="tile"><svg class="ic l"><use href="#i-pc"/></svg></span><span class="nm"><b>Sobremesa de Pablo</b><small>192.168.1.20 · Visor 2.0.2</small></span><span class="st">En tu red</span><svg class="ic"><use href="#i-chev"/></svg></div>
+   <div class="pcrow glass-in"><span class="tile"><svg class="ic l"><use href="#i-laptop"/></svg></span><span class="nm"><b>Estudio</b><small>192.168.1.41 · Visor 2.0.2</small></span><span class="st">En tu red</span><svg class="ic"><use href="#i-chev"/></svg></div>
+  </div>
+  <div class="alt2 glass-in"><p><b>¿El PC no sale en la lista?</b>Otra red o Tailscale: escribe su dirección y el billete de un solo uso que ese PC te muestra.</p><span class="b-soft pill"><svg class="ic"><use href="#i-kbd"/></svg>Escribir dirección y billete</span></div>
+ </div></div>
+ <div class="hints"><span class="hint pill"><span class="btn a">A</span>Elegir</span><span class="hint pill"><span class="btn x">X</span>Escribir dirección</span><span class="hint pill"><span class="btn y">Y</span>Buscar de nuevo</span><span class="hint pill"><span class="btn b">B</span>Cancelar</span></div>
+</div>
+
+<!-- 2: esperando aprobación -->
+<div class="scr" data-s="2">
+ <div class="crumb pill"><span>Conexiones</span><span class="sep">›</span><span class="cur">Usar la biblioteca de otro PC</span></div>
+ <div class="glass wiz"><div class="wc mid">
+  <div class="steps"><span class="done"><i><svg class="ic"><use href="#i-check"/></svg></i>Elegir PC</span><span class="on"><i>2</i>Aprobación</span><span><i>3</i>Streaming</span><span><i>4</i>Listo</span></div>
+  <h1>Esperando aprobación en Sobremesa de Pablo</h1>
+  <p class="lead">En ese PC ha aparecido una solicitud. Debe aprobarla con A comprobando que ve este mismo número.</p>
+  <div class="num mono">4821</div>
+  <div class="cd"><svg class="ic"><use href="#i-clock"/></svg>Caduca en 1:48<span class="bar"><i></i></span></div>
+  <div class="cbtn"><span class="b-soft pill f"><span class="btn b big">B</span>Cancelar</span></div>
+ </div></div>
+ <div class="hints"><span class="hint pill"><span class="btn b">B</span>Cancelar</span></div>
+</div>
+
+<!-- 3: emparejando el streaming -->
+<div class="scr" data-s="3">
+ <div class="crumb pill"><span>Conexiones</span><span class="sep">›</span><span class="cur">Usar la biblioteca de otro PC</span></div>
+ <div class="glass wiz"><div class="wc mid">
+  <div class="steps"><span class="done"><i><svg class="ic"><use href="#i-check"/></svg></i>Elegir PC</span><span class="done"><i><svg class="ic"><use href="#i-check"/></svg></i>Aprobación</span><span class="on"><i>3</i>Streaming</span><span><i>4</i>Listo</span></div>
+  <h1>Emparejando el streaming</h1>
+  <p class="lead">Moonlight se empareja con Sobremesa de Pablo por sí solo. No tienes que escribir ningún PIN.</p>
+  <div class="chk">
+   <div class="glass-in ok"><svg class="ic"><use href="#i-check"/></svg><span>Aprobado por Sobremesa de Pablo</span></div>
+   <div class="glass-in ok"><svg class="ic"><use href="#i-check"/></svg><span>Acceso a la biblioteca guardado</span></div>
+   <div class="glass-in"><span class="spin"></span><span>Emparejando Moonlight</span><small>Unos segundos</small></div>
+   <div class="glass-in wait"><svg class="ic"><use href="#i-lib"/></svg><span>Cargar la biblioteca</span></div>
+  </div>
+  <div class="prog"><i></i></div>
+ </div></div>
+ <div class="hints"><span class="hint pill"><span class="btn b">B</span>Cancelar</span></div>
+</div>
+
+<!-- 4: listo -->
+<div class="scr" data-s="4">
+ <div class="crumb pill"><span>Conexiones</span><span class="sep">›</span><span class="cur">Usar la biblioteca de otro PC</span></div>
+ <div class="glass wiz"><div class="wc mid">
+  <div class="steps"><span class="done"><i><svg class="ic"><use href="#i-check"/></svg></i>Elegir PC</span><span class="done"><i><svg class="ic"><use href="#i-check"/></svg></i>Aprobación</span><span class="done"><i><svg class="ic"><use href="#i-check"/></svg></i>Streaming</span><span class="on"><i>4</i>Listo</span></div>
+  <div class="bigok"><svg class="ic"><use href="#i-check"/></svg></div>
+  <h1>Listo</h1>
+  <p class="lead">Este PC ya usa la biblioteca de Sobremesa de Pablo. Se recarga ahora para que veas sus juegos.</p>
+  <div class="chips"><span class="chip"><svg class="ic s"><use href="#i-lib"/></svg>Biblioteca conectada</span><span class="chip"><svg class="ic s"><use href="#i-shield"/></svg>Streaming emparejado</span><span class="chip"><svg class="ic s"><use href="#i-home"/></svg>En casa</span></div>
+  <div class="cbtn"><span class="b-main f"><span class="btn a big">A</span>Ver la biblioteca</span></div>
+ </div></div>
+ <div class="hints"><span class="hint pill"><span class="btn a">A</span>Ver la biblioteca</span></div>
+</div>
+
+<!-- 5: dirección y billete -->
+<div class="scr" data-s="5">
+ <div class="crumb pill"><span>Conexiones</span><span class="sep">›</span><span>Usar la biblioteca de otro PC</span><span class="sep">›</span><span class="cur">Dirección y billete</span></div>
+ <div class="glass wiz"><div class="wc">
+  <h1>Escribir dirección y billete</h1>
+  <p class="lead">En el otro PC: Conexiones › Añadir dispositivo › Mostrar QR de un solo uso. Copia la dirección y el billete tal como salen allí.</p>
+  <div class="manual">
+   <div class="mform">
+    <div style="height:14px"></div>
+    <div class="fld"><label>Dirección del PC</label><div class="in mono"><span>100.88.14.7:8787</span></div><small>La que sale junto al QR, la de casa o la de Tailscale.</small></div>
+    <div class="fld"><label>Billete</label><div class="in f mono"><span>ABCD-EF</span><span class="caret"></span></div><small>8 letras y cifras; el guion se pone solo. Vale una vez y caduca a los 5 minutos.</small></div>
+    <div class="cbtn" style="justify-content:flex-start;margin-top:22px"><span class="b-main" style="opacity:.55"><svg class="ic"><use href="#i-link"/></svg>Conectar</span></div>
+   </div>
+   <div class="osk glass-in">
+    <div class="row"><span class="key">A</span><span class="key">B</span><span class="key">C</span><span class="key">D</span><span class="key">E</span><span class="key">F</span><span class="key">G</span><span class="key">H</span><span class="key">J</span></div>
+    <div class="row"><span class="key">K</span><span class="key">L</span><span class="key">M</span><span class="key">N</span><span class="key">P</span><span class="key f">Q</span><span class="key">R</span><span class="key">S</span><span class="key">T</span></div>
+    <div class="row"><span class="key">U</span><span class="key">V</span><span class="key">W</span><span class="key">X</span><span class="key">Y</span><span class="key">Z</span><span class="key">2</span><span class="key">3</span><span class="key">4</span></div>
+    <div class="row"><span class="key">5</span><span class="key">6</span><span class="key">7</span><span class="key">8</span><span class="key">9</span><span class="key w"><svg class="ic s"><use href="#i-paste"/></svg>Pegar</span><span class="key w"><svg class="ic s"><use href="#i-back"/></svg>Borrar</span></div>
+   </div>
+  </div>
+ </div></div>
+ <div class="hints"><span class="hint pill"><span class="btn a">A</span>Escribir</span><span class="hint pill"><span class="btn x">X</span>Borrar</span><span class="hint pill"><span class="btn y">Y</span>Pegar</span><span class="hint pill"><span class="btn b">B</span>Volver</span></div>
+</div>
+
+<!-- 6: rechazada -->
+<div class="scr" data-s="6">
+ <div class="crumb pill"><span>Conexiones</span><span class="sep">›</span><span class="cur">Usar la biblioteca de otro PC</span></div>
+ <div class="glass wiz"><div class="wc mid" style="padding-top:110px">
+  <div class="tileic" style="--c:#E8384F"><svg class="ic"><use href="#i-x"/></svg></div>
+  <h1>Solicitud rechazada</h1>
+  <p class="lead">Sobremesa de Pablo ha rechazado la solicitud. Si querías entrar, pídele a quien está delante que la apruebe y vuelve a intentarlo.</p>
+  <div class="cbtn"><span class="b-main f"><span class="btn a big">A</span>Intentarlo de nuevo</span><span class="b-soft pill"><span class="btn b big">B</span>Cerrar</span></div>
+ </div></div>
+ <div class="hints"><span class="hint pill"><span class="btn a">A</span>Intentarlo de nuevo</span><span class="hint pill"><span class="btn b">B</span>Cerrar</span></div>
+</div>
+
+<!-- 7: caducada -->
+<div class="scr" data-s="7">
+ <div class="crumb pill"><span>Conexiones</span><span class="sep">›</span><span class="cur">Usar la biblioteca de otro PC</span></div>
+ <div class="glass wiz"><div class="wc mid" style="padding-top:110px">
+  <div class="tileic" style="--c:#F2B807;color:#3a414e"><svg class="ic"><use href="#i-clock"/></svg></div>
+  <h1>Solicitud caducada</h1>
+  <p class="lead">Nadie respondió en Sobremesa de Pablo en 2 minutos. Si venías con un billete, puede que también haya caducado: genera uno nuevo en ese PC.</p>
+  <div class="cbtn"><span class="b-main f"><span class="btn a big">A</span>Pedir de nuevo</span><span class="b-soft pill"><span class="btn b big">B</span>Cerrar</span></div>
+ </div></div>
+ <div class="hints"><span class="hint pill"><span class="btn a">A</span>Pedir de nuevo</span><span class="hint pill"><span class="btn b">B</span>Cerrar</span></div>
+</div>
+
+<!-- 8: actualiza el visor (426) -->
+<div class="scr" data-s="8">
+ <div class="crumb pill"><span>Conexiones</span><span class="sep">›</span><span class="cur">Usar la biblioteca de otro PC</span></div>
+ <div class="glass wiz"><div class="wc mid" style="padding-top:110px">
+  <div class="tileic" style="--c:#F27A1A"><svg class="ic"><use href="#i-refresh"/></svg></div>
+  <h1>Actualiza el visor</h1>
+  <p class="lead">Este PC tiene la versión 1.9.4 y Sobremesa de Pablo pide la 2.0 o posterior. Instala la última versión del visor y vuelve a conectar.</p>
+  <div class="chips"><span class="chip">Este PC · 1.9.4</span><span class="chip">Sobremesa de Pablo · 2.0.2</span></div>
+  <div class="cbtn"><span class="b-main f"><span class="btn a big">A</span>Entendido</span></div>
+ </div></div>
+ <div class="hints"><span class="hint pill"><span class="btn a">A</span>Entendido</span></div>
+</div>
+
+<!-- 9-12: Ajustes en modo cliente (se rellenan con JS) -->
+<div class="scr" data-s="9"></div><div class="scr" data-s="10"></div><div class="scr" data-s="11"></div><div class="scr" data-s="12"></div>
+
+<!-- 13: aviso ya no emparejado -->
+<div class="scr" data-s="13">
+ <div class="tl" style="--c:#00A0D8;left:120px;top:150px"></div><div class="tl" style="--c:#e0384a;left:400px;top:150px"></div>
+ <div class="tl" style="--c:#19b8a6;left:120px;top:420px"></div><div class="tl" style="--c:#E5487A;left:400px;top:420px"></div>
+ <div class="tl" style="--c:#F27A1A;left:680px;top:150px"></div><div class="tl" style="--c:#9A4BD8;left:680px;top:420px"></div>
+ <div class="scrim"></div>
+ <div class="glass float modal">
+  <div class="tileic" style="--c:#F2B807;color:#3a414e"><svg class="ic"><use href="#i-unlink"/></svg></div>
+  <h1>Este PC ya no está emparejado con Sobremesa de Pablo</h1>
+  <p class="lead">Ese PC te ha quitado de sus dispositivos o has sido desconectado. Para volver a usar su biblioteca hay que emparejar de nuevo.</p>
+  <div class="cbtn" style="margin-top:34px"><span class="b-main f"><span class="btn a big">A</span>Emparejar de nuevo</span><span class="b-soft pill"><span class="btn b big">B</span>Ahora no</span></div>
+ </div>
+</div>
+</div>
+<script>
+// Ajustes › Conexiones en modo cliente: cuatro variantes con la misma plantilla
+function ajustes(o){
+ var h='<div class="crumb pill"><span>Ajustes</span><span class="sep">›</span><span class="cur">Conexiones</span></div>'
+ +'<div class="glass secpanel"><div class="scats"><h2>Ajustes</h2>'
+ +'<div class="scat" style="--c:#F27A1A"><i><svg class="ic"><use href="#i-sun"/></svg></i>Apariencia</div>'
+ +'<div class="scat" style="--c:#3BB54A"><i><svg class="ic"><use href="#i-lib"/></svg></i>Biblioteca</div>'
+ +'<div class="scat" style="--c:#9A4BD8"><i><svg class="ic"><use href="#i-pad"/></svg></i>Mando</div>'
+ +'<div class="scat on" style="--c:#00A0D8"><i><svg class="ic"><use href="#i-wifi"/></svg></i>Conexiones</div>'
+ +'<div class="scat" style="--c:#E8384F"><i><svg class="ic"><use href="#i-gear"/></svg></i>Sistema</div></div>'
+ +'<div class="sbody"><h3>Biblioteca de otro PC</h3>'
+ +'<div class="srow"><span class="sl">Conectado a</span><span class="sv">Sobremesa de Pablo<svg class="ic s"><use href="#i-pc"/></svg></span></div>'
+ +'<div class="srow"><span class="sl">Estado</span><span class="sv">'+o.estado+'</span></div>'
+ +'<div class="srow"><span class="sl">Streaming (Moonlight)</span><span class="sv">'+o.moon+'</span></div>'
+ +'<div class="srow"><span class="sl">Versión del PC principal</span><span class="sv">Visor 2.0.2</span></div>'
+ +'<h3>Acciones</h3>'
+ +'<div class="srow'+o.fe+(o.off?' off':'')+'"><span class="sl">Encender el PC principal</span><span class="sv">'+o.enc+'<svg class="ic"><use href="#i-power"/></svg></span></div>'
+ +'<div class="srow dng'+o.fd+'"><span class="sl">'+o.des+'</span><span class="sv">'+o.desv+'<svg class="ic"><use href="#i-unlink"/></svg></span></div>'
+ +'<div class="sdesc">'+o.desc+'</div></div></div>'
+ +'<div class="hints"><span class="hint pill"><span class="btn a">A</span>'+o.a+'</span><span class="hint pill"><span class="btn b">B</span>Volver</span></div>';
+ return h}
+var casa='<span class="st">En casa</span><span class="mono">192.168.1.20</span>';
+var S={
+ 9:{estado:casa,moon:'<span class="st">Emparejado</span>',fe:'',fd:' f',enc:'',off:1,des:'Desconectar de este PC',desv:'',a:'Desconectar',
+  desc:'<b>Conectado en casa.</b> Este PC usa la biblioteca y el streaming de Sobremesa de Pablo. Aquí no hay dispositivos conectados: eso se gestiona en el PC principal. Para cambiar de PC principal, primero desconecta.'},
+ 10:{estado:'<span class="st">Por Tailscale</span><span class="mono">100.88.14.7</span>',moon:'<span class="st">Emparejado</span>',fe:'',fd:' f',enc:'',off:1,des:'Desconectar de este PC',desv:'',a:'Desconectar',
+  desc:'<b>Conectado fuera de casa.</b> El visor ha pasado solo a la dirección de Tailscale que el PC principal le dio al emparejar. No hay que escribir ninguna dirección.'},
+ 11:{estado:'<span class="st bad">Sin conexión</span><span class="mono">Último: 192.168.1.20</span>',moon:'<span class="st no">Sin emparejar</span>',fe:' f',fd:'',enc:'',off:0,des:'Desconectar de este PC',desv:'',a:'Encender el PC principal',
+  desc:'<b>No se ve el PC principal.</b> Puede estar apagado o en suspensión: «Encender el PC principal» le envía la señal de arranque por la red. Moonlight aparece sin emparejar hasta que haya conexión y se repita el paso.'},
+ 12:{estado:casa,moon:'<span class="st">Emparejado</span>',fe:'',fd:' f',enc:'',off:1,des:'Pulsa A otra vez para desconectar',desv:'3 s',a:'Confirmar',
+  desc:'<b>Desconectar de Sobremesa de Pablo.</b> Se borra el acceso de este PC y el PC principal lo quita de sus dispositivos y de Apollo. Para volver a usarlo hay que emparejar de nuevo. Si no confirmas, no pasa nada.'}};
+Object.keys(S).forEach(function(k){document.querySelector('.scr[data-s="'+k+'"]').innerHTML=ajustes(S[k])});
+function go(){var s=(location.hash||'#1').slice(1);document.querySelectorAll('.scr').forEach(e=>e.classList.toggle('on',e.dataset.s==s));
+document.querySelectorAll('.demo a').forEach(a=>a.classList.toggle('on',a.dataset.s==s))}
+addEventListener('hashchange',go);go();
+</script></body></html>
