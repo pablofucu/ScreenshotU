@@ -14,7 +14,6 @@
 |---|---|---|---|
 | Magpie y táctil en la tablet | [planes/magpie-tablet.md](planes/magpie-tablet.md) | A1, A2, B0, B1, B2 | A5 (pruebas de streaming y nitidez, las hace el usuario), A3 (modo de escalado **por juego**, decidido el 12-nov), A4 (recalcular al reconectar), B3 (explicarlo en Ajustes) |
 | Tablet: menú sobre el juego y volver a la partida | [archivo/plan-tablet.md](archivo/plan-tablet.md), [archivo/plan-volver-partida.md](archivo/plan-volver-partida.md) | Código subido (T1–T4, volver a la partida, menú con la interfaz del overlay) | **Probar en la tablet real** y compilar la APK. Por confirmar si siguen pendientes: ocultar en la tablet las opciones que solo valen en el PC y la adaptación táctil (objetivos de 44 px, pulsación larga) |
-| Emparejamiento nuevo (**va primero**, decidido el 12-nov) | [planes/emparejamiento.md](planes/emparejamiento.md) | Plan y decisiones, fase 0 (estudio en [referencia/emparejamiento-apollo.md](referencia/emparejamiento-apollo.md)), maquetas 1–4 aprobadas | Fase 1 (protocolo en visor-core), maqueta 5 (PC cliente), fases 2–4 (PC principal, PC cliente, tablet) y 5 (limpieza). Después se vuelve a Interfaz y estadísticas |
 | Multi-PC | [planes/multi-pc.md](planes/multi-pc.md) | Fases 1–5 (dispositivos, cliente PC, instalaciones en clientes, partidas de viaje, Tailscale) | Prueba con dos PCs en la red (1G). La fase 6 (nube personal) queda aparcada (12-nov) |
 | Acento vivo | [planes/acento-vivo.md](planes/acento-vivo.md) | Pasos 1–3 | Paso 4: repaso visual con los 7 tonos |
 | Guía de diseño | [guia-diseno.md](guia-diseno.md) | Fases 0–6 de la migración | Fase 7 |
@@ -34,4 +33,4 @@
 
 ## Terminado (planes en `archivo/`)
 
-Revisión del 9 de noviembre (fases 2 y 3), metas de juegos, menú del juego, overlay (v3 es el último), tiempo de juego de Switch (fases 1–4), streaming a la tablet T1–T4, lectura de estudio, versiones 1.4.0 y 1.7.0.
+Emparejamiento nuevo (12-nov: solicitud con 4 cifras o billete de un solo uso, Conexiones en el PC principal y en el cliente, tablet con Artemis; [archivo/emparejamiento.md](archivo/emparejamiento.md); falta probarlo con dispositivos reales), Revisión del 9 de noviembre (fases 2 y 3), metas de juegos, menú del juego, overlay (v3 es el último), tiempo de juego de Switch (fases 1–4), streaming a la tablet T1–T4, lectura de estudio, versiones 1.4.0 y 1.7.0.

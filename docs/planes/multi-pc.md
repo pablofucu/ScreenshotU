@@ -93,6 +93,9 @@ ALTER TABLE read_sessions ADD COLUMN uid TEXT;
 
 ### 1C. Servidor: quién llama (dispositivo) y emparejamiento
 
+> **Sustituido (12-nov-2026):** el emparejamiento por código de este punto lo reemplaza el emparejamiento nuevo
+> (solicitud con 4 cifras o billete de un solo uso); ver `docs/archivo/emparejamiento.md` y `docs/referencia/api-movil.md`.
+
 `src-tauri/visor-core/src/remote.rs`:
 
 - Tipo nuevo `pub struct Caller { pub device_id: String, pub name: String, pub kind: String }`.
@@ -155,6 +158,9 @@ Comandos (registrar en `lib.rs:1312`, nunca en `remote_call.rs`):
   arrancar.
 
 ### 1E. Cliente PC (interfaz)
+
+> **Sustituido (12-nov-2026):** el emparejamiento por código de este punto lo reemplaza el emparejamiento nuevo
+> (solicitud con 4 cifras o billete de un solo uso); ver `docs/archivo/emparejamiento.md` y `docs/referencia/api-movil.md`.
 
 - `src/lib/ipc.ts` (nuevo): exporta `invoke`, `convertFileSrc`, `listen`, `once`.
   - Modo host (o sin `client.json`): reexporta Tauri tal cual.
@@ -314,7 +320,7 @@ Comandos (registrar en `lib.rs:1312`, nunca en `remote_call.rs`):
 6. **Rutas de `Title`/`Shot` son rutas del host.** El cliente las trata como opacas (como la tablet). Cualquier
    código del escritorio que haga algo local con ellas (abrir carpeta, arrastrar, `reveal`) debe ocultarse en modo
    cliente: revisar en la fase 1 con grep de `open_folder`/`reveal_in_explorer`/`move_shots`.
-7. **Emparejar Moonlight con Apollo** es un paso aparte (PIN) en cada PC cliente; el visor solo puede explicarlo y
+7. *(Resuelto por el emparejamiento nuevo: el visor empareja Moonlight solo con `stream/pair`.)* **Emparejar Moonlight con Apollo** es un paso aparte (PIN) en cada PC cliente; el visor solo puede explicarlo y
    comprobarlo. Por verificar si Moonlight acepta `stream <host> "<app>"` con el host por IP y por nombre de
    Tailscale.
 8. **Stats en memoria** (`games::add_session`, `launcher.rs:389`) siguen sin dispositivo; las estadísticas por

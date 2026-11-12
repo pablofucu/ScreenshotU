@@ -263,23 +263,36 @@
               "id": "EN-5",
               "title": "Asistente Conexiones en PC host y emparejamiento automático Apollo",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-12T04:25:47+01:00",
                   "by": "claude",
                   "kind": "start",
                   "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-12T23:05:31+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Sección Conexiones con dispositivos, Apollo y asistente (espera + QR de un solo uso). svelte-check limpio y probado en el navegador con el mock. Commit 3d7da06."
+                },
+                {
+                  "at": "2026-11-12T23:12:33+01:00",
+                  "by": "claude",
+                  "kind": "note",
+                  "text": "Comprobado: svelte-check sin errores y en el navegador con el mock (sección Conexiones, paso de espera y paso QR con billete, cuenta atrás y direcciones)."
                 }
               ],
-              "updated": "2026-11-12T04:25:47+01:00",
-              "cat": "codigo"
+              "updated": "2026-11-12T23:12:33+01:00",
+              "cat": "codigo",
+              "result": "Sección Conexiones con dispositivos, Apollo y asistente (espera + QR de un solo uso). svelte-check limpio y probado en el navegador con el mock. Commit 3d7da06."
             },
             {
               "id": "EN-6",
               "title": "Aviso modal en visor y notificación en Windows",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-12T02:37:05+01:00",
@@ -304,11 +317,29 @@
                   "by": "claude",
                   "kind": "start",
                   "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-12T22:54:01+01:00",
+                  "by": "claude",
+                  "kind": "note",
+                  "text": "Decidido en el chat (12-nov): se olvida lo del arcoiris. Notificacion normal de Windows con Aprobar/Rechazar y el modal de la maqueta 3."
+                },
+                {
+                  "at": "2026-11-12T23:05:31+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Modal con las 4 cifras (A/B) + notificación normal de Windows; sin arcoíris por decisión de la persona. Commit 3d7da06."
+                },
+                {
+                  "at": "2026-11-12T23:12:33+01:00",
+                  "by": "claude",
+                  "kind": "note",
+                  "text": "Comprobado: svelte-check sin errores; cargo check del backend con la notificación de Windows."
                 }
               ],
-              "change": "Ten en ceunta qye quiero la notificacion arcoiris",
-              "updated": "2026-11-12T22:11:26+01:00",
-              "cat": "interfaz"
+              "updated": "2026-11-12T23:12:33+01:00",
+              "cat": "interfaz",
+              "result": "Modal con las 4 cifras (A/B) + notificación normal de Windows; sin arcoíris por decisión de la persona. Commit 3d7da06."
             }
           ]
         },
@@ -320,25 +351,76 @@
               "id": "EN-7",
               "title": "Modo cliente en PC escritorio y asistente Usar biblioteca de otro PC",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-12T23:05:32+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-12T23:12:22+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Asistente UseOtherPc (elegir PC, aprobación, streaming, listo, manual) y aviso client-unpaired; filas antiguas fuera. svelte-check limpio y pantallas comprobadas en el navegador (sin Tauri, el descubrimiento da error como se espera)."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-12T23:12:22+01:00",
+              "result": "Asistente UseOtherPc (elegir PC, aprobación, streaming, listo, manual) y aviso client-unpaired; filas antiguas fuera. svelte-check limpio y pantallas comprobadas en el navegador (sin Tauri, el descubrimiento da error como se espera)."
             },
             {
               "id": "EN-8",
               "title": "Pantalla Connect en tablet (PCs en red, 4 cifras, Artemis)",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-12T22:55:04+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-12T22:55:05+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Connect.svelte nuevo (PCs en red, 4 cifras, QR v2, billete a mano, Artemis con art:// y OTP del PC), ServerCfg con token/id/addrs leyendo lo viejo, 401/426. Commit 33df075. node --test mobile/tests/pairing.test.ts: 6 en verde. Falta probarlo en la tablet real."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-12T22:55:05+01:00",
+              "result": "Connect.svelte nuevo (PCs en red, 4 cifras, QR v2, billete a mano, Artemis con art:// y OTP del PC), ServerCfg con token/id/addrs leyendo lo viejo, 401/426. Commit 33df075. node --test mobile/tests/pairing.test.ts: 6 en verde. Falta probarlo en la tablet real."
             },
             {
               "id": "EN-9",
               "title": "Retirada de código fijo y actualización de docs",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-12T23:12:22+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-12T23:12:27+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "api-movil.md con el protocolo nuevo, multi-pc.md anotado (1C, 1E y riesgo 7), ESTADO.md al día y plan movido a docs/archivo. Restos: remoteToken queda como campo viejo de config sin uso; el campo code de la tablet se mantiene a propósito."
+                },
+                {
+                  "at": "2026-11-12T23:12:33+01:00",
+                  "by": "claude",
+                  "kind": "note",
+                  "text": "Comprobado: grep sin restos del código fijo en src, mobile y src-tauri; svelte-check sin errores."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-12T23:12:33+01:00",
+              "result": "api-movil.md con el protocolo nuevo, multi-pc.md anotado (1C, 1E y riesgo 7), ESTADO.md al día y plan movido a docs/archivo. Restos: remoteToken queda como campo viejo de config sin uso; el campo code de la tablet se mantiene a propósito."
             }
           ]
         }

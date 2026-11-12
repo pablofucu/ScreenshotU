@@ -1,54 +1,81 @@
 # API del visor para la app móvil (v1)
 
 La app de Android (carpeta `mobile/`) no lee archivos: todo lo pide por HTTP a un **servidor del visor**.
-Hoy ese servidor es la propia app de escritorio (Ajustes → *Acceso desde el móvil*); más adelante será un
+Hoy ese servidor es la propia app de escritorio (Ajustes › Conexiones); más adelante será un
 servidor en la nube con **la misma API**, así que el móvil y el escritorio podrán sacar los datos de él sin
 cambiar nada en la app móvil salvo la dirección.
 
 - Base: `http://<ip-del-pc>:<puerto>` (puerto por defecto **47811**).
 - Todas las respuestas JSON van en UTF-8 y con los nombres en `camelCase` (los mismos tipos que `src/lib/types.ts`).
 - CORS abierto: `Access-Control-Allow-Origin: *`, se permite la cabecera `Authorization` y las peticiones
-  `OPTIONS` (preflight) se contestan con `204` sin pedir código.
+  `OPTIONS` (preflight) se contestan con `204` sin pedir token.
 
 ## Autenticación
 
-El servidor muestra un **código de emparejamiento** de 8 caracteres (`ABCD-EFGH`, alfabeto sin caracteres
-ambiguos: `ABCDEFGHJKMNPQRSTUVWXYZ23456789`). Se compara sin guiones ni espacios y sin distinguir mayúsculas.
+Cada dispositivo (la tablet u otro PC) se empareja una vez y recibe un **token propio** (64 caracteres hex):
 
-- JSON: cabecera `Authorization: Bearer <código>`.
-- Imágenes (`<img src>`): parámetro `?k=<código>`.
+- JSON: cabecera `Authorization: Bearer <token>`.
+- Imágenes (`<img src>`): parámetro `?k=<token>`.
 
-Sin código o con uno incorrecto: `401` con `{"error":"..."}`. Tras 10 intentos fallidos en un minuto desde la
-misma IP se responde `429` durante ese minuto.
+Sin token o con uno que ya no vale: `401` con `{"error":"..."}` (el dispositivo debe volver a emparejarse). Tras
+10 intentos fallidos en un minuto desde la misma IP se responde `429` durante ese minuto. Opcionales en cada
+petición: `X-Visor-Version` (versión de la app) y `X-Visor-Api` (revisión que usa el cliente); si `X-Visor-Api` es
+menor que `apiMin`, `426` «Actualiza el visor de este equipo». Ya no hay código fijo de emparejamiento: el antiguo
+`POST /api/v1/pair` responde siempre `426`.
 
-**Token de dispositivo (apiRev 2).** Cada dispositivo (otro PC o la tablet) se empareja una vez con
-`POST /api/v1/pair` y recibe un token propio (64 caracteres hex), que manda igual que el código
-(`Authorization: Bearer <token>` o `?k=<token>`). Así el host sabe quién llama y guarda sus partidas a su nombre.
-El código de siempre sigue entrando, como «Tablet» (`legacy-tablet`). Opcionales en cada petición:
-`X-Visor-Version` (versión de la app) y `X-Visor-Api` (revisión que usa el cliente); si `X-Visor-Api` es menor que
-`apiMin`, `426` «Actualiza el visor de este equipo».
+**Dos formas de emparejarse:**
+
+1. **Solicitud con aprobación** (en la misma red): el dispositivo pide entrar, los dos muestran el mismo número de
+   4 cifras y la persona aprueba en el PC (aviso en el visor o notificación de Windows). Caduca a los 2 minutos;
+   como mucho 3 pendientes a la vez (`429`).
+2. **Billete de un solo uso** (otra red, Tailscale): el PC muestra un QR o un billete `ABCD-EFGH` que vale una vez
+   durante 5 minutos (alfabeto `ABCDEFGHJKMNPQRSTUVWXYZ23456789`, sin distinguir mayúsculas ni guiones). Escanear
+   el QR ya cuenta como aprobación. El QR lleva
+   `{"v":2,"app":"visor-capturas","id","name","addrs":["ip:puerto",…],"port","ticket"}`.
 
 ## Endpoints
 
-### `GET /api/v1/hello` (sin código)
+### `GET /api/v1/hello` (sin token)
 
 ```json
-{ "app": "visor-capturas", "api": 1, "apiRev": 2, "apiMin": 1, "name": "PC-SALON", "version": "0.1.0", "features": ["launch", "capture", "call", "events", "asset", "pair", "devices"] }
+{ "app": "visor-capturas", "api": 1, "apiRev": 3, "apiMin": 3, "name": "PC-SALON", "id": "…", "version": "0.1.0",
+  "addrs": ["192.168.1.20:47811", "100.88.14.7:47811"],
+  "features": ["launch", "capture", "call", "events", "asset", "discover", "close", "session", "pair2", "devices", "install"] }
 ```
 
-`api` se queda en 1 (las rutas `/api/v1` no cambian y la APK antigua solo acepta 1); lo nuevo se mira en `apiRev`.
+`api` se queda en 1 (las rutas `/api/v1` no cambian); lo nuevo se mira en `apiRev`. `addrs` son las direcciones
+por las que se llega a este PC (la de casa primero); el dispositivo las guarda y prueba en orden. `features` lista
+las acciones que ofrece. Sirve para comprobar que en esa dirección hay un visor antes de emparejarse.
 
-### `POST /api/v1/pair` (sin cabecera)
+### `POST /api/v1/pair/request` (sin token)
 
-Cuerpo `{ "code": "ABCD-EFGH", "name": "Portátil", "kind": "pc"|"tablet", "appVersion": "0.9.0", "api": 2 }` →
-`{ "deviceId", "token", "hostId", "hostName", "api" }`. Código malo: `401` (cuenta para el `429`); sin nombre: `400`.
+Cuerpo `{ "name": "Tablet de Pablo", "kind": "tablet"|"pc", "appVersion": "0.9.0", "api": 3 }` →
+`{ "requestId", "digits": "4821", "expiresMs": 120000 }`. Sin `api` o menor que `apiMin`: `426`; sin nombre: `400`;
+demasiadas pendientes: `429`.
+
+### `GET /api/v1/pair/wait?id=<requestId>[&wait=<s>]` (sin token)
+
+Espera hasta 25 s a que el PC resuelva. `{ "status": "pending"|"approved"|"rejected"|"expired" }`; con `approved`
+además `{ "deviceId", "token", "hostId", "hostName", "addrs" }`, una sola vez. Con `pending`, se vuelve a llamar.
+
+### `POST /api/v1/pair/cancel?id=<requestId>` (sin token)
+
+El dispositivo retira su solicitud → `{ "ok": true }`.
+
+### `POST /api/v1/pair/ticket` (sin token)
+
+Cuerpo `{ "ticket": "ABCD-EFGH", "name", "kind", "appVersion", "api": 3 }` → lo mismo que un `approved`. Billete
+malo o caducado: `401` (cuenta para el `429`).
+
+### `POST /api/v1/stream/pair` (con token)
+
+Empareja el streaming (Apollo) del dispositivo. Con `{ "pin": "1234" }` (PC cliente: Moonlight genera el PIN) →
+`{ "ok": true }`. Sin `pin` (tablet con Artemis) → `{ "pin", "passphrase", "port" }`, un OTP de Apollo que la
+tablet pasa a Artemis.
 
 ### `POST /api/v1/unpair` (con token)
 
-El dispositivo se quita a sí mismo: su token deja de valer. Con el código antiguo: `400`.
-
-Sirve para comprobar que en esa dirección hay un visor antes de pedir el código. `features` lista las acciones
-(`POST`) que ofrece este PC.
+El dispositivo se quita a sí mismo: su token deja de valer.
 
 ### `GET /api/v1/snapshot`
 
@@ -83,15 +110,15 @@ Todo lo que necesita la app móvil, de una vez:
 - Responde con `ETag`; si el cliente manda `If-None-Match` con el mismo valor, `304` sin cuerpo.
 - Si el cliente acepta `gzip` (`Accept-Encoding`), la respuesta va comprimida.
 
-### `GET /api/v1/thumb?p=<ruta>&k=<código>`
+### `GET /api/v1/thumb?p=<ruta>&k=<token>`
 
 Miniatura JPEG de 480 px de ancho (la misma caché que usa el escritorio). `Cache-Control: private, max-age=604800`.
 
-### `GET /api/v1/preview?p=<ruta>&k=<código>`
+### `GET /api/v1/preview?p=<ruta>&k=<token>`
 
 JPEG de como mucho 1920 px de ancho para el visor del móvil (se guarda en caché en el servidor).
 
-### `GET /api/v1/file?p=<ruta>&k=<código>`
+### `GET /api/v1/file?p=<ruta>&k=<token>`
 
 El archivo original tal cual (`image/png`, `image/jpeg` o `image/webp`). Se usa para los grafismos con
 transparencia (logos), los hero y para «Ver original».
@@ -109,7 +136,7 @@ cuenta el tiempo de juego. Si el juego no está en el último escaneo se escanea
 ### `POST /api/v1/capture`
 
 Sin cuerpo. Hace una captura ahora, como el atajo del escritorio, y responde `{"ok": true}` en cuanto la lanza (la
-captura se hace en segundo plano; si no hay juego abierto el visor lo avisa en el PC). Mismo código y mismo límite
+captura se hace en segundo plano; si no hay juego abierto el visor lo avisa en el PC). Mismo token y mismo límite
 de intentos que el resto; con `GET` da `405`.
 
 ### `POST /api/v1/call`
@@ -129,7 +156,7 @@ long-poll: si hay eventos con `seq > since` los devuelve ya; si no, espera hasta
 la lista vacía. Con `since` ausente o `0` devuelve solo la `seq` actual (punto de partida). El servidor guarda los
 últimos 200; si `since` es mayor que `seq` (el PC se reinició) también devuelve solo la `seq` actual.
 
-### `GET /api/v1/asset?p=<ruta absoluta>&k=<código>`
+### `GET /api/v1/asset?p=<ruta absoluta>&k=<token>`
 
 Sirve un archivo cualquiera de las carpetas de datos que la interfaz muestra con `convertFileSrc`: raíz de la
 biblioteca, miniaturas, vistas previas, grafismos (`art`), partidas/capturas de partidas y medios de las frases. La
@@ -139,5 +166,5 @@ ruta se canoniza y debe quedar dentro de una de esas carpetas (`..` o enlaces qu
 
 ## Errores
 
-`{"error": "mensaje en español"}` con `400` (parámetros), `401` (código), `403` (comando no disponible), `404` (ruta desconocida o
+`{"error": "mensaje en español"}` con `400` (parámetros), `401` (token), `403` (comando no disponible), `404` (ruta desconocida o
 desaparecida), `405` (método), `409` (acción rechazada), `426` (cliente demasiado antiguo), `429` (demasiados intentos) o `500`.

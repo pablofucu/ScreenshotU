@@ -87,7 +87,7 @@ export interface Config {
   goalJvn: number;
   goalPc: number;
   goalSwitch: number;
-  /** Servidor para la app del móvil (misma red): activado, puerto y código de emparejamiento (lo gestiona el núcleo). */
+  /** Servidor para la app del móvil (misma red): activado y puerto. `remoteToken` es un resto del código fijo antiguo: ya no se usa. */
   remoteEnabled: boolean;
   remotePort: number;
   remoteToken: string;
