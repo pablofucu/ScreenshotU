@@ -1,7 +1,7 @@
 // Streaming con Moonlight (solo en tablet): estado del plugin nativo `Streaming` y ajustes del usuario.
 // En el móvil (pantalla pequeña) nada de esto se muestra y la app se comporta como antes.
 import { registerPlugin } from '@capacitor/core';
-import { authOf, type ServerCfg } from './source';
+import type { ServerCfg } from './source';
 
 interface StreamingPlugin {
   isTablet(): Promise<{ tablet: boolean }>;
@@ -11,7 +11,10 @@ interface StreamingPlugin {
   discover(o?: { timeoutMs?: number }): Promise<{ found: { id: string; name: string; host: string; port: number }[] }>;
   /** Wake-on-LAN: paquete mágico por difusión a la MAC dada. */
   wake(o: { mac: string }): Promise<void>;
+  /** `code` es el token del dispositivo (el nombre se conserva por el lado nativo). */
   setConnection(o: { base: string; code: string }): Promise<void>;
+  /** Abre Artemis; con `url` (`art://…`) empareja solo. Rechaza si no está instalado o no admite `art://`. */
+  openArtemis(o?: { url?: string }): Promise<void>;
   openAccessibilitySettings(): Promise<void>;
   isCaptureServiceEnabled(): Promise<{ enabled: boolean }>;
 }
@@ -52,8 +55,8 @@ class StreamState {
 export const stream = new StreamState();
 void stream.init();
 
-/** Pasa al servicio nativo dónde está el visor y el código, para que pueda pedir la captura con la tecla de volumen. */
+/** Pasa al servicio nativo dónde está el visor y el token, para que pueda pedir la captura con la tecla de volumen. */
 export function pushConnection(s: ServerCfg | 'demo' | null) {
-  const o = s && s !== 'demo' ? { base: `http://${s.host}:${s.port}`, code: authOf(s) } : { base: '', code: '' };
+  const o = s && s !== 'demo' ? { base: `http://${s.host}:${s.port}`, code: s.token } : { base: '', code: '' };
   Streaming.setConnection(o).catch(() => { /* fuera de Android */ });
 }

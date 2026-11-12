@@ -246,6 +246,42 @@ public class StreamingPlugin extends Plugin {
         return a < 0 || b < a ? "" : xml.substring(a + tag.length() + 2, b).trim();
     }
 
+    /**
+     * Abre Artemis. Con {url} (`art://host:puerto?pin=…&passphrase=…`) Artemis añade el PC y lo empareja solo;
+     * solo la rama noir lo entiende. Sin url, simplemente se abre la app.
+     */
+    @PluginMethod
+    public void openArtemis(PluginCall call) {
+        String pkg = installedMoonlight();
+        if (pkg == null) {
+            call.reject("No está instalado Artemis ni Moonlight");
+            return;
+        }
+        String url = call.getString("url", "");
+        Intent i;
+        if (url != null && !url.isEmpty()) {
+            if (!pkg.contains("noir")) {
+                call.reject("Esta versión de Moonlight no admite el emparejamiento automático; usa Artemis");
+                return;
+            }
+            i = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            i.setPackage(pkg);
+        } else {
+            i = getContext().getPackageManager().getLaunchIntentForPackage(pkg);
+            if (i == null) {
+                call.reject("No se puede abrir Artemis");
+                return;
+            }
+        }
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            getContext().startActivity(i);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("No se pudo abrir Artemis");
+        }
+    }
+
     /** Guarda dónde está el visor del PC para que el servicio de accesibilidad pueda pedir la captura. */
     @PluginMethod
     public void setConnection(PluginCall call) {

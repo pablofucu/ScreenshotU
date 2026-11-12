@@ -1,6 +1,7 @@
 // Modo tablet: la interfaz de escritorio (src/App.svelte) tal cual, hablando con el PC por HTTP (src/lib/remote/).
 // Sin servidor guardado se enseña antes la pantalla de conexión del móvil y se recarga al conectar.
-import { loadServer } from './lib/cache';
+import { loadServer, saveServer, setLostNotice } from './lib/cache';
+import { unpairedMsg } from './lib/source';
 import { pushConnection, Streaming } from './lib/streaming.svelte';
 import { relocate } from './lib/locate';
 
@@ -10,7 +11,7 @@ const server = saved && saved !== 'demo' ? saved : null;
 if (!server) {
   await import('./phone');
   const { app } = await import('./lib/store.svelte');
-  // Cuando ya hay una instantánea del PC, el código es válido: se recarga y arranca la interfaz de escritorio.
+  // Cuando ya hay una instantánea del PC, el token es válido: se recarga y arranca la interfaz de escritorio.
   setInterval(() => { if (app.snap && app.server && app.server !== 'demo') location.reload(); }, 400);
 } else {
   // Antes de cargar nada de escritorio: así `IS_TAURI` es cierto y `IS_TABLET` también.
@@ -92,7 +93,14 @@ if (!server) {
     if (!ep) return;
     syncing = true;
     try {
-      const r = await fetch(`${ep.base}/api/v1/session`, { headers: { Authorization: `Bearer ${ep.code}` }, cache: 'no-store' });
+      const r = await fetch(`${ep.base}/api/v1/session`, { headers: { Authorization: `Bearer ${ep.code}`, 'X-Visor-Api': '3' }, cache: 'no-store' });
+      if (r.status === 401) {
+        // El PC quitó este dispositivo: se olvida el servidor y se vuelve al asistente con el aviso.
+        setLostNotice(unpairedMsg(server.name));
+        saveServer(null);
+        location.reload();
+        return;
+      }
       if (!r.ok) return;
       const j = (await r.json()) as { state?: string; game?: { id: string } | null; app?: string | null; elapsedSeconds?: number };
       if (j.app) streamApp = j.app;

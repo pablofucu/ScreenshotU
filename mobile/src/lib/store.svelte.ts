@@ -5,8 +5,9 @@ import { inkDark } from '@shared/oklch';
 import type { Saga } from '@shared/types';
 import type { Library, Shot, Title } from '@shared/types';
 import type { EvoKind, PeriodKind } from '@shared/stats';
-import { AuthError, demoSource, pairDevice, RemoteSource, unpairDevice, type Playing, type RemoteConfig, type ServerCfg, type Snapshot, type Source } from './source';
+import { AuthError, demoSource, NetError, RemoteSource, unpairDevice, type Playing, type RemoteConfig, type ServerCfg, type Snapshot, type Source } from './source';
 import { pushConnection } from './streaming.svelte';
+import { relocate } from './locate';
 import { DEFAULT_PREFS, loadPrefs, loadServer, readSnap, saveServer, savePrefs, serverKey, writeSnap, type Prefs } from './cache';
 
 export type Tab = 'home' | 'games' | 'stats' | 'favs' | 'settings';
@@ -197,7 +198,6 @@ class Store {
     }
     const src = new RemoteSource(s);
     this.source = src;
-    if (!s.token) void this.pair(src);
     const cached = await readSnap(serverKey(s));
     if (cached) {
       this.apply(cached.snap);
@@ -208,10 +208,12 @@ class Store {
     }
     await this.sync();
     this.loading = false;
+    // Renueva las direcciones del PC (casa, Tailscale) que se usan si cambia de IP.
+    void relocate(s).then((n) => { if (this.source === src && this.server && this.server !== 'demo') { this.server = n; src.server = n; } });
   }
 
   /** Pide la instantánea al PC (si no ha cambiado, el PC contesta 304 y no se baja nada). */
-  async sync(fresh = false) {
+  async sync(fresh = false, retried = false): Promise<void> {
     const src = this.source;
     if (!src || this.syncing) return;
     this.syncing = true;
@@ -233,24 +235,21 @@ class Store {
     } catch (e) {
       this.offline = true;
       this.error = e instanceof Error ? e.message : String(e);
-      if (e instanceof AuthError && !this.snap) this.disconnect(this.error);
+      if (e instanceof AuthError) { this.disconnect(this.error); return; }
+      // El PC pudo cambiar de dirección: se prueban las guardadas y la red antes de rendirse.
+      if (e instanceof NetError && !retried && src instanceof RemoteSource && this.server && this.server !== 'demo') {
+        this.syncing = false;
+        const cur: ServerCfg = this.server;
+        const n = await relocate(cur);
+        if (this.source === src && (n.host !== cur.host || n.port !== cur.port)) {
+          this.server = n; src.server = n; pushConnection(n);
+          return this.sync(fresh, true);
+        }
+        return;
+      }
     } finally {
       this.syncing = false;
     }
-  }
-
-  /**
-   * Pide al PC un token propio para este dispositivo (en segundo plano: sin red o con un visor viejo se sigue con el
-   * código). Con el token, cambiar el código en el PC ya no desconecta esta tablet.
-   */
-  private async pair(src: RemoteSource) {
-    let token = '';
-    try { token = await pairDevice(src.server); } catch { return; /* código mal: ya lo dirá la sincronización */ }
-    if (!token || this.source !== src || !this.server || this.server === 'demo') return;
-    this.server = { ...this.server, token };
-    src.server = this.server;
-    saveServer(this.server);
-    pushConnection(this.server);
   }
 
   connect(s: ServerCfg | 'demo') {

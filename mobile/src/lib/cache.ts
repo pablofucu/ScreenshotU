@@ -1,5 +1,6 @@
 // Persistencia local del móvil: el servidor elegido y sus preferencias en localStorage, y la última
 // instantánea en IndexedDB (puede ocupar varios MB) para abrir al instante y funcionar sin conexión.
+import { migrateServer, toStored } from './pairing';
 import type { ServerCfg, Snapshot } from './source';
 
 const LS_SERVER = 'visor.m.server';
@@ -22,11 +23,17 @@ export function loadServer(): ServerCfg | 'demo' | null {
   try {
     const s = ls()?.getItem(LS_SERVER);
     if (!s) return null;
-    return s === '"demo"' ? 'demo' : (JSON.parse(s) as ServerCfg);
+    return s === '"demo"' ? 'demo' : migrateServer(JSON.parse(s));
   } catch { return null; }
 }
 export function saveServer(s: ServerCfg | 'demo' | null) {
-  try { if (s === null) ls()?.removeItem(LS_SERVER); else ls()?.setItem(LS_SERVER, JSON.stringify(s)); } catch { /* sin almacenamiento */ }
+  try { if (s === null) ls()?.removeItem(LS_SERVER); else ls()?.setItem(LS_SERVER, JSON.stringify(s === 'demo' ? s : toStored(s))); } catch { /* sin almacenamiento */ }
+}
+/** Aviso para la pantalla de conexión: el PC quitó este dispositivo (se guarda porque la app puede recargarse). */
+const LS_LOST = 'visor.m.lost';
+export function setLostNotice(msg: string) { try { ls()?.setItem(LS_LOST, msg); } catch { /* sin almacenamiento */ } }
+export function takeLostNotice(): string {
+  try { const m = ls()?.getItem(LS_LOST) ?? ''; ls()?.removeItem(LS_LOST); return m; } catch { return ''; }
 }
 export function loadPrefs(): Prefs {
   try { return { ...DEFAULT_PREFS, ...JSON.parse(ls()?.getItem(LS_PREFS) ?? '{}') }; } catch { return { ...DEFAULT_PREFS }; }
