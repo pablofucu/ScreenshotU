@@ -1,0 +1,543 @@
+{
+  "version": 1,
+  "title": "Visor de capturas",
+  "branches": [
+    {
+      "key": "IYE",
+      "name": "Interfaz y estadísticas",
+      "goal": "Estadísticas nuevas (Semana, Terminados, Panorama), Mi lista, Inicio, Colecciones y animaciones",
+      "icon": "📊",
+      "color": 0,
+      "created": "2026-11-12T02:19:11+01:00",
+      "by": "ia",
+      "next_id": 11,
+      "phases": [
+        {
+          "name": "Semana y Terminados",
+          "icon": "",
+          "steps": [
+            {
+              "id": "IYE-1",
+              "title": "E2: Contenido de la pestaña Semana (columnas por categoría y kind)",
+              "desc": "",
+              "state": "pending",
+              "notes": [
+                {
+                  "at": "2026-11-12T02:34:30+01:00",
+                  "by": "persona",
+                  "kind": "reopen",
+                  "text": "Vuelve a pendiente."
+                }
+              ],
+              "updated": "2026-11-12T02:34:30+01:00",
+              "cat": "interfaz"
+            },
+            {
+              "id": "IYE-2",
+              "title": "E3: Contenido de la pestaña Terminados (estantería cronológica)",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            }
+          ]
+        },
+        {
+          "name": "Panorama y Chips",
+          "icon": "",
+          "steps": [
+            {
+              "id": "IYE-3",
+              "title": "E4: Chips de estadísticas (días activos, récord, mapa de calor, reparto)",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            },
+            {
+              "id": "IYE-4",
+              "title": "E5: Pestaña Panorama con rejilla de chips",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            },
+            {
+              "id": "IYE-5",
+              "title": "E6: Navegación y pulido con mando en Estadísticas",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            }
+          ]
+        },
+        {
+          "name": "Resumen e Inicio",
+          "icon": "",
+          "steps": [
+            {
+              "id": "IYE-6",
+              "title": "R3: Aviso de resumen semanal en Inicio",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            },
+            {
+              "id": "IYE-7",
+              "title": "R4: Sistema de racha y días activos",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "IYE-8",
+              "title": "H1: Retoques del menú principal e Inicio",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            }
+          ]
+        },
+        {
+          "name": "Mi lista y Colecciones",
+          "icon": "",
+          "steps": [
+            {
+              "id": "IYE-9",
+              "title": "L1: Selector de portadas y estilos en Mi lista",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            },
+            {
+              "id": "IYE-10",
+              "title": "C1: Vista de colecciones según maqueta elegida",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "EN",
+      "name": "Emparejamiento nuevo",
+      "goal": "Rediseño completo de la conexión tablet y PC cliente sin código fijo ni PIN manual",
+      "icon": "🔄",
+      "color": 1,
+      "created": "2026-11-12T02:19:11+01:00",
+      "by": "ia",
+      "next_id": 10,
+      "phases": [
+        {
+          "name": "Estudio previo",
+          "icon": "",
+          "steps": [
+            {
+              "id": "EN-1",
+              "title": "Estudio de APIs Apollo, Moonlight, Artemis y notificaciones Windows",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-12T04:18:45+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-12T04:18:45+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Estudio hecho en docs/referencia/emparejamiento-apollo.md: Apollo usa cookie de sesion (no Basic), OTP + art:// para Artemis, Moonlight pair --pin con ventana, el plugin de notificaciones admite botones desde 2.6.0, credenciales con el Administrador de credenciales (secrets.rs)."
+                }
+              ],
+              "updated": "2026-11-12T04:18:45+01:00",
+              "result": "Estudio hecho en docs/referencia/emparejamiento-apollo.md: Apollo usa cookie de sesion (no Basic), OTP + art:// para Artemis, Moonlight pair --pin con ventana, el plugin de notificaciones admite botones desde 2.6.0, credenciales con el Administrador de credenciales (secrets.rs).",
+              "cat": "investigar"
+            },
+            {
+              "id": "EN-2",
+              "title": "Revisión y aprobación de maquetas de emparejamiento",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-12T04:18:45+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-12T04:18:46+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Maquetas 1-4 aprobadas en el chat. Falta la 5 (PC cliente), que se hace con el mismo estilo antes de programar esa fase."
+                }
+              ],
+              "updated": "2026-11-12T04:18:46+01:00",
+              "result": "Maquetas 1-4 aprobadas en el chat. Falta la 5 (PC cliente), que se hace con el mismo estilo antes de programar esa fase.",
+              "cat": "decidir"
+            }
+          ]
+        },
+        {
+          "name": "Protocolo visor-core",
+          "icon": "",
+          "steps": [
+            {
+              "id": "EN-3",
+              "title": "Protocolo de solicitudes, billetes de un solo uso y tokens en visor-core",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-12T04:20:28+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-12T04:24:59+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Protocolo nuevo en visor-core: solicitudes con aprobación, billete de un solo uso, solo tokens, addrs en hello, stream/pair con PIN u OTP, migración 19 (apollo_id) y cliente nuevo en remote_client. cargo test -p visor-core: 338 en verde."
+                }
+              ],
+              "updated": "2026-11-12T04:24:59+01:00",
+              "result": "Protocolo nuevo en visor-core: solicitudes con aprobación, billete de un solo uso, solo tokens, addrs en hello, stream/pair con PIN u OTP, migración 19 (apollo_id) y cliente nuevo en remote_client. cargo test -p visor-core: 338 en verde.",
+              "cat": "codigo"
+            },
+            {
+              "id": "EN-4",
+              "title": "Tests unitarios de emparejamiento en visor-core",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-12T04:24:59+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-12T04:25:00+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Pruebas de solicitud aprobada/rechazada/caducada, límite de 3, billete (válido, repetido, caducado), token revocado, código viejo 426, addrs e ida y vuelta cliente-servidor. 338 en verde, pasadas por mí."
+                }
+              ],
+              "updated": "2026-11-12T04:25:00+01:00",
+              "result": "Pruebas de solicitud aprobada/rechazada/caducada, límite de 3, billete (válido, repetido, caducado), token revocado, código viejo 426, addrs e ida y vuelta cliente-servidor. 338 en verde, pasadas por mí.",
+              "cat": "pruebas"
+            }
+          ]
+        },
+        {
+          "name": "PC Principal",
+          "icon": "",
+          "steps": [
+            {
+              "id": "EN-5",
+              "title": "Asistente Conexiones en PC host y emparejamiento automático Apollo",
+              "desc": "",
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-12T04:25:47+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                }
+              ],
+              "updated": "2026-11-12T04:25:47+01:00",
+              "cat": "codigo"
+            },
+            {
+              "id": "EN-6",
+              "title": "Aviso modal en visor y notificación en Windows",
+              "desc": "",
+              "state": "pending",
+              "notes": [
+                {
+                  "at": "2026-11-12T02:37:05+01:00",
+                  "by": "persona",
+                  "kind": "change",
+                  "text": "Ten en ceunta qye quiero la notificacion arcoiris"
+                },
+                {
+                  "at": "2026-11-12T04:18:45+01:00",
+                  "by": "claude",
+                  "kind": "note",
+                  "text": "Dicho en el chat (12-nov): olvidar la notificacion arcoiris. El aviso sera la notificacion normal de Windows con Aprobar/Rechazar y el modal del visor."
+                },
+                {
+                  "at": "2026-11-12T12:03:25+01:00",
+                  "by": "claude",
+                  "kind": "note",
+                  "text": "La notificacion y el aviso deben ser arcoiris (pedido por la persona); se aplicara al hacer este paso."
+                }
+              ],
+              "change": "Ten en ceunta qye quiero la notificacion arcoiris",
+              "updated": "2026-11-12T12:03:25+01:00",
+              "cat": "interfaz"
+            }
+          ]
+        },
+        {
+          "name": "Clientes y Limpieza",
+          "icon": "",
+          "steps": [
+            {
+              "id": "EN-7",
+              "title": "Modo cliente en PC escritorio y asistente Usar biblioteca de otro PC",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "EN-8",
+              "title": "Pantalla Connect en tablet (PCs en red, 4 cifras, Artemis)",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            },
+            {
+              "id": "EN-9",
+              "title": "Retirada de código fijo y actualización de docs",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            }
+          ]
+        }
+      ],
+      "nonstop": true
+    },
+    {
+      "key": "MYT",
+      "name": "Magpie y tablet",
+      "goal": "Escalado óptimo de novelas y corrección de toques dobles en tablet POCO Pad",
+      "icon": "📱",
+      "color": 2,
+      "created": "2026-11-12T02:19:11+01:00",
+      "by": "ia",
+      "next_id": 5,
+      "phases": [
+        {
+          "name": "Perfil y Destino",
+          "icon": "",
+          "steps": [
+            {
+              "id": "MYT-1",
+              "title": "A3: Modo de escalado independiente por juego y monitor/tablet",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "MYT-2",
+              "title": "A4: Recalcular perfil al reconectar streaming con juego abierto",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            }
+          ]
+        },
+        {
+          "name": "Pruebas y Ajustes",
+          "icon": "",
+          "steps": [
+            {
+              "id": "MYT-3",
+              "title": "A5: Pruebas de nitidez y streaming en tablet real",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "pruebas"
+            },
+            {
+              "id": "MYT-4",
+              "title": "B3: Explicación y conmutador táctil en Ajustes",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "MPY",
+      "name": "Multi-PC y Red",
+      "goal": "Juego en streaming y biblioteca sincronizada entre múltiples PCs",
+      "icon": "🖥️",
+      "color": 3,
+      "created": "2026-11-12T02:19:11+01:00",
+      "by": "ia",
+      "next_id": 4,
+      "phases": [
+        {
+          "name": "Pruebas en red local",
+          "icon": "",
+          "steps": [
+            {
+              "id": "MPY-1",
+              "title": "Prueba de streaming y biblioteca entre dos PCs en red local (1G)",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "pruebas"
+            },
+            {
+              "id": "MPY-2",
+              "title": "Detección automática de IPs de Tailscale sin configuración manual",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            }
+          ]
+        },
+        {
+          "name": "Nube Personal",
+          "icon": "",
+          "steps": [
+            {
+              "id": "MPY-3",
+              "title": "Sincronización de partidas y capturas por SHA-256 en nube personal",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "AVY",
+      "name": "Acento vivo y Diseño",
+      "goal": "Migración completa a tokens de diseño y acento vivo sin texto ilegible",
+      "icon": "🎨",
+      "color": 4,
+      "created": "2026-11-12T02:19:11+01:00",
+      "by": "ia",
+      "next_id": 3,
+      "phases": [
+        {
+          "name": "Acento Vivo",
+          "icon": "",
+          "steps": [
+            {
+              "id": "AVY-1",
+              "title": "Repaso visual con los 7 tonos de acento en claro y oscuro",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            }
+          ]
+        },
+        {
+          "name": "Guía de Diseño",
+          "icon": "",
+          "steps": [
+            {
+              "id": "AVY-2",
+              "title": "Cierre y verificación de tokens en todos los componentes",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "pruebas"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "asks": [
+    {
+      "id": "P-1",
+      "kind": "proposal",
+      "title": "Maquetas del Emparejamiento nuevo",
+      "text": "Pantallas del rediseño: Ajustes host, asistente de añadir, aviso modal/notificación y pantalla tablet",
+      "step": "EN-2",
+      "branch": "EN",
+      "options": [
+        {
+          "label": "1. Conexiones Host",
+          "file": ".unificador/propuestas/P-1/1.html"
+        },
+        {
+          "label": "2. Añadir Dispositivo",
+          "file": ".unificador/propuestas/P-1/2.html"
+        },
+        {
+          "label": "3. Aviso Solicitud",
+          "file": ".unificador/propuestas/P-1/3.html"
+        },
+        {
+          "label": "4. Tablet Connect",
+          "file": ".unificador/propuestas/P-1/4.html"
+        }
+      ],
+      "answer": {
+        "option": null,
+        "text": "En el chat (12-nov): da por buenas las cuatro maquetas del emparejamiento",
+        "by": "persona",
+        "at": "2026-11-12T04:18:45+01:00",
+        "seen": true
+      },
+      "by": "ia",
+      "created": "2026-11-12T02:19:27+01:00"
+    },
+    {
+      "id": "P-2",
+      "kind": "proposal",
+      "title": "Estilo visual de Colecciones (C1)",
+      "text": "Cinco estilos para la vista de colecciones: mosaico, lomos de estantería, ficha técnica, ruta o mural",
+      "step": "IYE-10",
+      "branch": "IYE",
+      "options": [
+        {
+          "label": "A. Mosaico",
+          "file": ".unificador/propuestas/P-2/1.html"
+        },
+        {
+          "label": "B. Lomos",
+          "file": ".unificador/propuestas/P-2/2.html"
+        },
+        {
+          "label": "C. Ficha",
+          "file": ".unificador/propuestas/P-2/3.html"
+        },
+        {
+          "label": "D. Ruta",
+          "file": ".unificador/propuestas/P-2/4.html"
+        },
+        {
+          "label": "E. Mural",
+          "file": ".unificador/propuestas/P-2/5.html"
+        }
+      ],
+      "answer": null,
+      "by": "ia",
+      "created": "2026-11-12T02:19:27+01:00"
+    }
+  ],
+  "next_ask": 3
+}

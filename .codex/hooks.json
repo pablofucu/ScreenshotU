@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .unificador/uni.py status",
+            "commandWindows": "python .unificador/uni.py status",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .unificador/uni.py inbox",
+            "commandWindows": "python .unificador/uni.py inbox",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

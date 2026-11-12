@@ -36,3 +36,5 @@ App de escritorio (`src/` Svelte, `src-tauri/` Rust con el núcleo en `src-tauri
 
 - Grep y rangos de líneas; no volcar ficheros enteros (los `.svelte` y `src-tauri/src` son grandes).
 - Los subagentes reciben un brief corto con los ficheros o rangos que deben leer o tocar, no «explora el proyecto».
+
+@AGENTS.md
