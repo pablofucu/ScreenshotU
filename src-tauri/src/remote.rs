@@ -110,7 +110,7 @@ impl Provider for AppProvider {
         let (out, secs) = match pin {
             Some(pin) => {
                 web::pair_pin(pin, &name).map_err(|e| anyhow::anyhow!(e))?;
-                (serde_json::json!({ "ok": true }), 30)
+                (serde_json::json!({ "ok": true }), 90)
             }
             None => {
                 let (pin, passphrase) = web::otp_new(&name).map_err(|e| anyhow::anyhow!(e))?;
@@ -477,6 +477,10 @@ fn link_apollo_client(app: &AppHandle, device_id: &str, name: &str, before: &[St
         Some(uuid) => {
             let st = app.state::<AppState>();
             state::log_db_err("dispositivos (id de Apollo)", st.db.with(|c| devices::set_apollo_id(c, device_id, Some(&uuid))));
+            // Apollo solo da permiso de lanzar al primer cliente: sin esto Moonlight falla con «Permission denied» (503).
+            if let Err(e) = web::grant_full(&uuid) {
+                eprintln!("apollo: no se pudieron dar permisos a «{name}»: {e}");
+            }
             let _ = app.emit("devices-changed", ());
         }
         None => eprintln!("apollo: no aparecio el cliente «{name}» tras emparejar"),

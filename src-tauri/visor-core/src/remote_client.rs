@@ -269,7 +269,7 @@ pub fn pair_with_ticket(addr: &str, ticket: &str, name: &str, kind: &str, versio
 /// Empareja el streaming (`POST /stream/pair`). Con `pin` el PC lo mete en Apollo (`{"ok":true}`); sin `pin` pide un
 /// OTP a Apollo y devuelve `{"pin","passphrase","port"}`.
 pub fn stream_pair(addr: &str, token: &str, version: &str, pin: Option<&str>) -> Result<serde_json::Value> {
-    let a = ureq::AgentBuilder::new().timeout_connect(TIMEOUT).timeout(Duration::from_secs(30)).build();
+    let a = ureq::AgentBuilder::new().timeout_connect(TIMEOUT).timeout(Duration::from_secs(75)).build();
     let body = match pin {
         Some(p) => serde_json::json!({ "pin": p }),
         None => serde_json::json!({}),

@@ -326,6 +326,20 @@ pub mod web {
         v["status"].as_bool().unwrap_or(false)
     }
 
+    /// Permisos completos de un cliente de Apollo: ver, listar y lanzar apps (bits 24-26) mas todas las operaciones
+    /// (16-20) y entradas (8-12). Es el `perm` del primer cliente emparejado; los demas nacen solo con ver y listar,
+    /// y Moonlight dice entonces «Permission denied» (503) al lanzar.
+    pub const PERM_ALL: u64 = 0x071F_1F00;
+
+    /// Cuerpo de `/api/clients/update` para un cliente: su ficha tal cual la dio la lista, con `perm` cambiado
+    /// (Apollo sustituye la ficha entera, asi que no se pueden mandar solo los campos que cambian).
+    pub fn update_body(client: &Value, perm: u64) -> Option<Value> {
+        let mut o = client.as_object()?.clone();
+        o.get("uuid")?.as_str()?;
+        o.insert("perm".into(), json!(perm));
+        Some(Value::Object(o))
+    }
+
     pub fn parse_clients(v: &Value) -> Vec<Client> {
         v["named_certs"]
             .as_array()
@@ -633,12 +647,12 @@ pub mod web {
         }
     }
 
-    /// Envia el PIN a Apollo. Necesita un emparejamiento en curso: reintenta cada 500 ms durante unos 15 s.
+    /// Envia el PIN a Apollo. Necesita un emparejamiento en curso: reintenta cada 500 ms durante 60 s (Moonlight tarda en abrirse y llegar a ese punto).
     pub fn pair_pin(pin: &str, name: &str) -> Result<(), String> {
         if !valid_pin(pin) {
             return Err("El PIN debe tener exactamente 4 cifras.".into());
         }
-        let deadline = Instant::now() + Duration::from_secs(15);
+        let deadline = Instant::now() + Duration::from_secs(60);
         loop {
             match call("POST", "/api/pin", Some(pin_body(pin, name))) {
                 Ok(v) if parse_status(&v) => return Ok(()),
@@ -673,6 +687,22 @@ pub mod web {
         }
     }
 
+    /// Da permisos completos al cliente (si no los tiene ya), para que pueda lanzar apps y usar el mando.
+    pub fn grant_full(uuid: &str) -> Result<(), String> {
+        let v = call("GET", "/api/clients/list", None).map_err(|e| e.text())?;
+        let raw = v["named_certs"].as_array().and_then(|a| a.iter().find(|c| c["uuid"].as_str() == Some(uuid))).ok_or("Apollo no conoce ese dispositivo.")?;
+        if raw["perm"].as_u64().is_some_and(|p| p & PERM_ALL == PERM_ALL) {
+            return Ok(());
+        }
+        let body = update_body(raw, PERM_ALL).ok_or("Ficha de dispositivo ilegible.")?;
+        let r = call("POST", "/api/clients/update", Some(body)).map_err(|e| e.text())?;
+        if parse_status(&r) {
+            Ok(())
+        } else {
+            Err("Apollo no ha cambiado los permisos del dispositivo.".into())
+        }
+    }
+
     /// uuid del cliente con ese nombre (para guardar el id del recien emparejado).
     pub fn client_uuid_by_name(name: &str) -> Result<Option<String>, String> {
         Ok(client_by_name(&clients()?, name).map(|c| c.uuid.clone()))
@@ -694,6 +724,16 @@ pub mod web {
             assert_eq!(pin_body("1234", "T"), json!({"pin":"1234","name":"T"}));
             assert_eq!(otp_body("abcd", "T"), json!({"passphrase":"abcd","deviceName":"T"}));
             assert_eq!(unpair_body("x"), json!({"uuid":"x"}));
+        }
+
+        #[test]
+        fn update_conserva_la_ficha_y_cambia_perm() {
+            let c = json!({"name":"T","uuid":"u1","perm":50331648,"do":[{"cmd":"x"}],"display_mode":"1920x1080x60"});
+            let b = update_body(&c, PERM_ALL).unwrap();
+            assert_eq!(b["perm"], json!(119480064));
+            assert_eq!(b["do"], c["do"]);
+            assert_eq!(b["name"], "T");
+            assert!(update_body(&json!({"name":"x"}), PERM_ALL).is_none());
         }
 
         #[test]
