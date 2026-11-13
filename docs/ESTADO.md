@@ -7,6 +7,7 @@
 | Proyecto | Plan | Hecho | Siguiente paso |
 |---|---|---|---|
 | Interfaz y estadísticas | [planes/interfaz-pendiente.md](planes/interfaz-pendiente.md) (anexo: [planes/resumen-semanal.md](planes/resumen-semanal.md)) | R1 (`weekReview` con tests) y E1 (pestañas Semana, Terminados, Panorama) | E2: contenido de la pestaña Semana. Después E3–E6, R3–R6, L1–L3 (Mi lista), H1 (Inicio), C1 (Colecciones), A1–A5 (animaciones) |
+| Arreglos de interfaz | [planes/arreglos-interfaz.md](planes/arreglos-interfaz.md) | Fallos localizados (14-nov) | ADI-1: textos grises de Inicio. Va antes que E2 |
 
 ## Siguiente (empezados, con trabajo pendiente)
 
