@@ -570,6 +570,196 @@
           ]
         }
       ]
+    },
+    {
+      "key": "CJY",
+      "name": "Cerrar juego y sesión de streaming",
+      "goal": "Al cerrar el juego se cierra también la sesión de Apollo y el cliente (tablet y PC), y se puede cerrar el juego desde el menú del cliente",
+      "icon": "🔌",
+      "color": 5,
+      "created": "2026-11-13T02:16:47+01:00",
+      "by": "claude",
+      "next_id": 9,
+      "phases": [
+        {
+          "name": "Diagnóstico",
+          "icon": "",
+          "steps": [
+            {
+              "id": "CJY-1",
+              "title": "Ver qué hace hoy Cerrar desde la tablet y el PC cliente (stream.rs close, comandos remotos)",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "investigar"
+            },
+            {
+              "id": "CJY-2",
+              "title": "Averiguar por qué Apollo y Moonlight/Artemis no cierran la sesión al acabar el juego (ayudante --stream-session, log visor-stream.log)",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "investigar"
+            }
+          ]
+        },
+        {
+          "name": "Cierre en el PC principal",
+          "icon": "",
+          "steps": [
+            {
+              "id": "CJY-3",
+              "title": "Al terminar el juego, cerrar la sesión de Apollo desde el PC principal (API de Apollo)",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "CJY-4",
+              "title": "Cerrar el juego desde el cliente (tablet y PC) llama al PC principal y cierra la sesión",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "CJY-5",
+              "title": "Pruebas del cierre y de los casos raros (juego ya cerrado, cliente desconectado)",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "pruebas",
+              "together": true
+            }
+          ]
+        },
+        {
+          "name": "Cierre en el cliente",
+          "icon": "",
+          "steps": [
+            {
+              "id": "CJY-6",
+              "title": "La tablet (Artemis) vuelve sola al visor cuando cae la sesión",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "CJY-7",
+              "title": "El PC cliente cierra Moonlight y vuelve al visor cuando cae la sesión",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "CJY-8",
+              "title": "Probar en la tablet real y con otro PC: cerrar juego y comprobar que no queda conexión",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "pruebas"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "ODD",
+      "name": "Overlay dentro del streaming",
+      "goal": "Ver y abrir el overlay, las capturas y los paneles (logros, etc.) cuando se juega por streaming, en la tablet y en el PC cliente",
+      "icon": "🪟",
+      "color": 6,
+      "created": "2026-11-13T02:16:51+01:00",
+      "by": "claude",
+      "next_id": 9,
+      "phases": [
+        {
+          "name": "Diagnóstico",
+          "icon": "",
+          "steps": [
+            {
+              "id": "ODD-1",
+              "title": "Ver por qué overlay y paneles no salen en el stream (pantalla virtual de Apollo, exclusión de captura, monitor del juego)",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "investigar"
+            },
+            {
+              "id": "ODD-2",
+              "title": "Elegir cómo mostrarlo: ventana en la pantalla virtual o dibujado en el propio cliente",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "decidir"
+            }
+          ]
+        },
+        {
+          "name": "Overlay en el stream",
+          "icon": "",
+          "steps": [
+            {
+              "id": "ODD-3",
+              "title": "Colocar overlay, logros y paneles en la pantalla virtual cuando hay streaming",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "ODD-4",
+              "title": "No excluir de la captura el menú y los paneles cuando hay streaming",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "ODD-5",
+              "title": "Pruebas de la elección de monitor con y sin streaming",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "pruebas",
+              "together": true
+            }
+          ]
+        },
+        {
+          "name": "Abrirlo desde el cliente",
+          "icon": "",
+          "steps": [
+            {
+              "id": "ODD-6",
+              "title": "Atajo de la tablet (volumen arriba) que abre el overlay del PC principal",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "ODD-7",
+              "title": "Atajo en el PC cliente que se pueda pulsar con Moonlight capturando el teclado (tecla reservada o botón del mando)",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "ODD-8",
+              "title": "Probar en la tablet real y en el PC cliente: abrir overlay, ver capturas y logros, cerrar",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "pruebas"
+            }
+          ]
+        }
+      ]
     }
   ],
   "asks": [

@@ -24,19 +24,24 @@ y las preguntas y propuestas (``ask``/``propose``) se contestan en el chat o en 
 from __future__ import annotations
 
 import argparse
+import hashlib
+import http.client
 import json
 import os
 import re
-import unicodedata
 import shutil
+import subprocess
 import sys
+import tempfile
 import time
+import unicodedata
 from datetime import datetime
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
 VERSION = 1
+DEFAULT_SERVER_PORT = 8766
 PLAN_FILE = "unificador.json"
 PENDING, DOING, DONE = "pending", "doing", "done"
 STATES = (PENDING, DOING, DONE)
@@ -1334,6 +1339,172 @@ def _print_ask(ask: dict, path: Path) -> None:
           f"Para esperar a la web: {UNI} wait {ask['id']}")
 
 
+# ── Autoarranque y proyecto activo (sin dependencias de unificador.*) ─────────
+
+def _uni_home() -> Path:
+    env = os.environ.get("UNIFICADOR_HOME")
+    return Path(env) if env else Path.home() / ".unificador"
+
+
+def _read_home_json(name: str) -> Dict[str, Any]:
+    try:
+        data = json.loads((_uni_home() / name).read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError, TypeError):
+        return {}
+
+
+def _write_home_json(target: Path, payload: Dict[str, Any]) -> None:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=str(target.parent), suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(payload, f, indent=2, ensure_ascii=False)
+            f.write("\n")
+        os.replace(tmp, target)
+    except OSError:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+        raise
+
+
+def _project_id(path: Path) -> str:
+    norm = os.path.normcase(os.path.abspath(str(path)))
+    return hashlib.sha1(norm.encode("utf-8")).hexdigest()[:10]
+
+
+def _register_and_activate(project_root: Path) -> None:
+    home = _uni_home()
+    absolute = os.path.abspath(str(project_root))
+    target_norm = os.path.normcase(absolute)
+    reg = _read_home_json("proyectos.json")
+    raw_list = reg.get("projects")
+    paths = [p for p in raw_list if isinstance(p, str)] if isinstance(raw_list, list) else []
+    if not any(os.path.normcase(os.path.abspath(p)) == target_norm for p in paths):
+        _write_home_json(home / "proyectos.json", {"projects": paths + [absolute]})
+    _write_home_json(home / "active.json", {
+        "id": _project_id(project_root),
+        "path": absolute,
+        "updated": int(time.time()),
+    })
+
+
+def _health_ok(port: int, timeout: float = 0.15) -> bool:
+    conn: Optional[http.client.HTTPConnection] = None
+    try:
+        conn = http.client.HTTPConnection("127.0.0.1", int(port), timeout=timeout)
+        conn.request("GET", "/api/health", headers={"Host": f"127.0.0.1:{int(port)}"})
+        resp = conn.getresponse()
+        raw = resp.read()
+        return resp.status == 200 and b'"ok"' in raw
+    except (OSError, http.client.HTTPException, ValueError):
+        return False
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except OSError:
+                pass
+
+
+def _ensure_daemon(project_root: Path, srv: Dict[str, Any]) -> None:
+    if not (srv.get("autostart") or os.environ.get("UNI_AUTOSTART") == "1"):
+        return
+    fcfg = _read_home_json("funnel.json")
+    port = int(srv.get("port") or fcfg.get("server_port") or DEFAULT_SERVER_PORT)
+    if _health_ok(port):
+        return
+    home = _uni_home()
+    home.mkdir(parents=True, exist_ok=True)
+    lock = home / "server.lock"
+    try:
+        fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        os.close(fd)
+    except FileExistsError:
+        try:
+            if time.time() - lock.stat().st_mtime > 15:
+                os.unlink(lock)
+                fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                os.close(fd)
+            else:
+                deadline = time.time() + 1.5
+                while time.time() < deadline:
+                    if _health_ok(port):
+                        return
+                    time.sleep(0.08)
+                return
+        except OSError:
+            return
+    try:
+        if _health_ok(port):
+            return
+        exe = str(srv.get("python") or sys.executable)
+        if not Path(exe).is_file():
+            exe = sys.executable
+        env = dict(os.environ)
+        pkg_dir = srv.get("package_dir")
+        if isinstance(pkg_dir, str) and pkg_dir and (Path(pkg_dir) / "unificador" / "__main__.py").is_file():
+            cur = [p for p in env.get("PYTHONPATH", "").split(os.pathsep) if p]
+            if pkg_dir not in cur:
+                cur.append(pkg_dir)
+                env["PYTHONPATH"] = os.pathsep.join(cur)
+        cmd = [exe, "-m", "unificador", str(project_root), "--port", str(port), "--no-open", "--daemon"]
+        kwargs: Dict[str, Any] = {"cwd": str(project_root), "env": env,
+                                  "stdin": subprocess.DEVNULL, "stdout": subprocess.DEVNULL}
+        if sys.platform == "win32":
+            kwargs["creationflags"] = (getattr(subprocess, "DETACHED_PROCESS", 0)
+                                       | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+                                       | getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        else:
+            kwargs["start_new_session"] = True
+        log_f = open(home / "server.log", "ab")
+        try:
+            kwargs["stderr"] = log_f
+            proc = subprocess.Popen(cmd, **kwargs)
+        finally:
+            log_f.close()
+        deadline = time.time() + 2.0
+        while time.time() < deadline:
+            if _health_ok(port):
+                return
+            if proc.poll() is not None:
+                return
+            time.sleep(0.08)
+    finally:
+        try:
+            os.unlink(lock)
+        except OSError:
+            pass
+
+
+def _touch_runtime(plan_path: Path) -> None:
+    """Apunta el proyecto activo en ~/.unificador y despierta el servidor si está en autoarranque."""
+    try:
+        if os.environ.get("UNI_NO_AUTOSTART") == "1":
+            return
+        root = Path(plan_path).resolve().parent
+        if not root.is_dir() or not ((root / PLAN_FILE).is_file() or (root / ".unificador").is_dir()):
+            return
+        _register_and_activate(root)
+        _ensure_daemon(root, _read_home_json("server.json"))
+    except Exception:
+        pass
+
+
+def _funnel_status_line(plan_path: Path) -> str:
+    try:
+        cfg = _read_home_json("funnel.json")
+        url = (cfg.get("public_url") or "").strip() if isinstance(cfg.get("public_url"), str) else ""
+        if cfg.get("enabled") and url:
+            pid = _project_id(Path(plan_path).resolve().parent)
+            return f"Web: {url.rstrip('/')}/#p={pid}"
+    except Exception:
+        pass
+    return ""
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     for stream in (sys.stdout, sys.stderr):
         try:
@@ -1356,7 +1527,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     path = Path(args.plan_file) if args.plan_file else find_plan()
     by = args.by or os.environ.get("UNI_AGENT") or "ia"
     cmd = args.cmd or "status"
+    allow_runtime = (os.environ.get("UNI_NO_AUTOSTART") != "1"
+                     and ("unittest" not in sys.modules or bool(os.environ.get("UNIFICADOR_HOME"))))
     if cmd == "inbox":  # se ejecuta sola en cada mensaje: nunca falla ni hace ruido
+        if allow_runtime:
+            _touch_runtime(path)
         try:
             text = inbox(path)
             if text:
@@ -1364,9 +1539,15 @@ def main(argv: Optional[List[str]] = None) -> int:
         except Exception:
             pass
         return 0
+    if allow_runtime and cmd not in ("plan", "branch"):
+        _touch_runtime(path)
     try:
         if cmd == "status":
             print(render_status(load(path)))
+            if allow_runtime:
+                web = _funnel_status_line(path)
+                if web:
+                    print(f"\n{web}")
         elif cmd == "check":
             items = audit_file(path)
             print(render_audit(items))
@@ -1393,6 +1574,8 @@ def main(argv: Optional[List[str]] = None) -> int:
                 for ph in b["phases"]:
                     print(f"    {ph['name']}: " + ", ".join(s["id"] for s in ph["steps"]))
                 first = first or next((s["id"] for ph in b["phases"] for s in ph["steps"]), "")
+            if allow_runtime:
+                _touch_runtime(path)
             print(f"Plan guardado. Ahora empieza el primer paso: python .unificador/uni.py start {first}")
         elif cmd == "add":
             s = mutate(path, lambda plan: add_step(plan, args.branch, args.phase, args.title, args.desc, by))

@@ -25,6 +25,42 @@
         "--strictPort"
       ],
       "port": 5174
+    },
+    {
+      "name": "vite-node",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "node_modules/vite/bin/vite.js",
+        "--port",
+        "5175",
+        "--strictPort"
+      ],
+      "port": 5175
+    },
+    {
+      "name": "vite-lan",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "node_modules/vite/bin/vite.js",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "5176",
+        "--strictPort"
+      ],
+      "port": 5176
+    },
+    {
+      "name": "maquetas",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8095", "--bind", "0.0.0.0", "--directory", "docs"],
+      "port": 8095
+    },
+    {
+      "name": "raiz-estatica",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8096", "--bind", "127.0.0.1"],
+      "port": 8096
     }
   ]
 }
