@@ -107,7 +107,7 @@ public class CaptureKeyService extends AccessibilityService {
         if (!StreamingPlugin.isMoonlight(foreground)) return false;
         if (down) swallowDownUp = true; else swallowVolUpUp = true;
         if (e.getRepeatCount() == 0) {
-            if (down) capture(); else ui.post(this::toggleMenu);
+            if (down) capture(); else toggleOverlay();
         }
         return true;
     }
@@ -359,6 +359,10 @@ public class CaptureKeyService extends AccessibilityService {
 
     private void capture() {
         new Thread(() -> vibrate(post("/api/v1/capture", null) != null), "visor-capture").start();
+    }
+
+    private void toggleOverlay() {
+        new Thread(() -> vibrate(post("/api/v1/overlay", null) != null), "visor-overlay").start();
     }
 
     /** GET al visor con el codigo guardado. Devuelve el cuerpo si fue 200, o null. Bloquea: hilo aparte. */

@@ -213,6 +213,10 @@ pub trait Provider: Send + Sync + 'static {
     fn capture(&self) -> Result<()> {
         anyhow::bail!("Este equipo no puede hacer capturas")
     }
+    /// Abre o cierra el overlay (`quickmenu`) sobre el juego en el PC.
+    fn overlay(&self) -> Result<()> {
+        anyhow::bail!("Este equipo no tiene overlay sobre el juego")
+    }
     /// Ejecuta un comando del visor por su nombre (`POST /call`). `Err(CALL_NOT_ALLOWED)` = no permitido.
     fn call(&self, _caller: &Caller, _cmd: &str, _args: serde_json::Value) -> std::result::Result<serde_json::Value, String> {
         Err(CALL_NOT_ALLOWED.into())
@@ -968,6 +972,7 @@ fn route_at(inner: &Inner, req: &Req, now: Instant) -> Reply {
         "/api/v1/pair" => return Reply::error(426, UPDATE_MSG),
         "/api/v1/launch"
         | "/api/v1/capture"
+        | "/api/v1/overlay"
         | "/api/v1/call"
         | "/api/v1/close"
         | "/api/v1/session/start"
@@ -990,6 +995,7 @@ fn route_at(inner: &Inner, req: &Req, now: Instant) -> Reply {
         "/api/v1/session/start" => "session_start",
         "/api/v1/call" => "call",
         "/api/v1/capture" => "capture",
+        "/api/v1/overlay" => "overlay",
         _ if post => return Reply::error(405, "Método no permitido"),
         "/api/v1/pair/wait" => "pair_wait",
         "/api/v1/session" => "session",
@@ -1087,6 +1093,12 @@ fn route_at(inner: &Inner, req: &Req, now: Instant) -> Reply {
     }
     if ep == "capture" {
         return match inner.provider.capture() {
+            Ok(()) => Reply::json(200, &serde_json::json!({ "ok": true })),
+            Err(e) => Reply::error(409, &format!("{e:#}")),
+        };
+    }
+    if ep == "overlay" {
+        return match inner.provider.overlay() {
             Ok(()) => Reply::json(200, &serde_json::json!({ "ok": true })),
             Err(e) => Reply::error(409, &format!("{e:#}")),
         };
@@ -1778,6 +1790,9 @@ mod tests {
         fn capture(&self) -> Result<()> {
             Ok(())
         }
+        fn overlay(&self) -> Result<()> {
+            Ok(())
+        }
         fn close(&self, force: bool) -> Result<serde_json::Value> {
             Ok(serde_json::json!({ "closed": if force { "forced" } else { "asked" } }))
         }
@@ -2376,6 +2391,9 @@ mod tests {
         assert_eq!(post(a, "/api/v1/capture", None, "").0, 401);
         assert_eq!(post(a, "/api/v1/launch", None, "{\"id\":\"pc/A\"}").0, 401);
         assert_eq!(post(a, "/api/v1/capture", Some("ABCD-EFGH"), "").0, 200);
+        assert_eq!(post(a, "/api/v1/overlay", None, "").0, 401);
+        assert_eq!(post(a, "/api/v1/overlay", Some("ABCD-EFGH"), "").0, 200);
+        assert_eq!(get(a, "GET", "/api/v1/overlay", &[("Authorization", "Bearer ABCD-EFGH")]).status, 405);
         assert_eq!(post(a, "/api/v1/launch", Some("ABCD-EFGH"), "{\"id\":\"pc/A\"}").0, 200);
         assert_eq!(post(a, "/api/v1/launch", Some("ABCD-EFGH"), "{\"id\":\"otro\"}").0, 409);
         assert_eq!(post(a, "/api/v1/launch", Some("ABCD-EFGH"), "no es json").0, 400);

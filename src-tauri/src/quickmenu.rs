@@ -188,6 +188,32 @@ pub fn trigger_up(app: &AppHandle, src: Src) {
     run_act(app, act, pads);
 }
 
+static LAST_TOGGLE_MS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// Abre o cierra el menu desde un cliente remoto (tablet o PC cliente).
+pub fn toggle(app: &AppHandle) -> Result<(), String> {
+    if active_pids(app).is_none() {
+        return Err("No hay ningún juego en marcha".into());
+    }
+    if ENDING.load(Ordering::SeqCst) || force_requested() {
+        return Ok(());
+    }
+    let now = now_ms();
+    let prev = LAST_TOGGLE_MS.load(Ordering::SeqCst);
+    if now.saturating_sub(prev) < 350 {
+        return Ok(());
+    }
+    LAST_TOGGLE_MS.store(now, Ordering::SeqCst);
+    let was_open = is_open();
+    if !was_open && exclusive_fullscreen() {
+        beep();
+        return Err("El juego está en pantalla completa exclusiva".into());
+    }
+    log(&format!("atajo remoto (menu abierto: {was_open})"));
+    in_thread(app, if was_open { close } else { open });
+    Ok(())
+}
+
 fn run_act(app: &AppHandle, act: TriggerAct, pads: u8) {
     match act {
         TriggerAct::None => {}
@@ -679,8 +705,8 @@ pub fn recover(app: &AppHandle) {
 
 /// Cierre forzado e inmediato. El vigilante de la partida ve que no quedan procesos y guarda la sesion.
 pub fn force_close_game(app: &AppHandle) {
-    FORCED.store(true, Ordering::SeqCst);
-    let mut pids = active_pids(app).unwrap_or_default();
+    let active = active_pids(app);
+    let mut pids = active.clone().unwrap_or_default();
     {
         // `TerminateProcess` funciona igual con procesos suspendidos: no hace falta reanudarlos antes.
         let mut s = lock(&SUSPENDED);
@@ -690,6 +716,12 @@ pub fn force_close_game(app: &AppHandle) {
             }
         }
     }
+    if active.is_none() && pids.is_empty() {
+        log("cierre forzado pedido sin juego activo");
+        close(app);
+        return;
+    }
+    FORCED.store(true, Ordering::SeqCst);
     log(&format!("cierre forzado pedido; pids: {pids:?}"));
     for pid in pids {
         let exe = crate::snap::exe_of(pid).unwrap_or_default();

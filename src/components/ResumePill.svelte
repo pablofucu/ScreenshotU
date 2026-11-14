@@ -24,10 +24,10 @@
   }
 </script>
 
-{#if canResume() && app.playing && !here && app.view !== 'viewer'}
+{#if canResume() && app.playing && app.view !== 'viewer'}
   <div class="rp" role="status">
     <span class="t">{name} · {mins} min</span>
-    <button class="go" onclick={() => void resumeGame()}>Volver</button>
+    {#if !here}<button class="go" onclick={() => void resumeGame()}>Volver</button>{/if}
     <button class="x" onclick={close}>{force ? 'Forzar' : confirming ? '¿Cerrar?' : 'Cerrar'}</button>
   </div>
 {/if}

@@ -589,19 +589,56 @@
               "id": "CJY-1",
               "title": "Ver qué hace hoy Cerrar desde la tablet y el PC cliente (stream.rs close, comandos remotos)",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "investigar"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:41:18+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T00:44:54+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Revisados stream.rs::close, remote.rs, remote_call.rs, quickmenu.rs, mobile/src/tablet.ts, ResumePill.svelte, src/lib/ipc.ts y client.rs: en tablet POST /api/v1/close y quickmenu_close_game solo cierran el juego en el PC sin cortar la sesion de Apollo ni cerrar Artemis; en PC cliente no hay resumeHandler ni cierre remoto, client_open_stream suelta Moonlight sin trackear ni --quit-after, y quickmenu_* va al proceso local en lugar del host."
+                }
+              ],
+              "cat": "investigar",
+              "updated": "2026-11-14T00:44:54+01:00",
+              "result": "Revisados stream.rs::close, remote.rs, remote_call.rs, quickmenu.rs, mobile/src/tablet.ts, ResumePill.svelte, src/lib/ipc.ts y client.rs: en tablet POST /api/v1/close y quickmenu_close_game solo cierran el juego en el PC sin cortar la sesion de Apollo ni cerrar Artemis; en PC cliente no hay resumeHandler ni cierre remoto, client_open_stream suelta Moonlight sin trackear ni --quit-after, y quickmenu_* va al proceso local en lugar del host."
             },
             {
               "id": "CJY-2",
               "title": "Averiguar por qué Apollo y Moonlight/Artemis no cierran la sesión al acabar el juego (ayudante --stream-session, log visor-stream.log)",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "investigar"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:44:54+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T00:44:55+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Comprobados apollo.rs, stream.rs::helper_main, apps.json y sunshine.log en C:\\Program Files\\Apollo\\config\\, TEMP\\visor-stream.log y JS web de Apollo 0.4.6: en este PC Juego actual no esta instalada (apps.json solo tiene Desktop y Steam Big Picture), no existe visor-stream.log y todas las sesiones en sunshine.log corren bajo [Desktop] quedando en pausa al desconectar; ademas apollo::install escribe auto-detach/wait-all/exit-timeout como strings, el visor nunca llama a POST /api/apps/close ni /api/clients/disconnect al terminar la partida, y Moonlight/Artemis no reciben cierre de sesion."
+                }
+              ],
+              "cat": "investigar",
+              "updated": "2026-11-14T00:44:55+01:00",
+              "result": "Comprobados apollo.rs, stream.rs::helper_main, apps.json y sunshine.log en C:\\Program Files\\Apollo\\config\\, TEMP\\visor-stream.log y JS web de Apollo 0.4.6: en este PC Juego actual no esta instalada (apps.json solo tiene Desktop y Steam Big Picture), no existe visor-stream.log y todas las sesiones en sunshine.log corren bajo [Desktop] quedando en pausa al desconectar; ademas apollo::install escribe auto-detach/wait-all/exit-timeout como strings, el visor nunca llama a POST /api/apps/close ni /api/clients/disconnect al terminar la partida, y Moonlight/Artemis no reciben cierre de sesion."
             }
-          ]
+          ],
+          "review": {
+            "state": "approved",
+            "text": "",
+            "by": "persona",
+            "at": "2026-11-14T00:49:18+01:00",
+            "seen": true
+          }
         },
         {
           "name": "Cierre en el PC principal",
@@ -611,28 +648,80 @@
               "id": "CJY-3",
               "title": "Al terminar el juego, cerrar la sesión de Apollo desde el PC principal (API de Apollo)",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:49:19+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:02:27+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Al salir de un juego en streaming (o pedir cierre remoto sin juego activo), stream.rs cierra la app y desconecta clientes en Apollo via Web API; corregidos tipos JSON en apps.json y espera de --stream-session a 250ms. Tests apollo (10), stream (7) y visor-core (338) en verde."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-14T01:02:27+01:00",
+              "result": "Al salir de un juego en streaming (o pedir cierre remoto sin juego activo), stream.rs cierra la app y desconecta clientes en Apollo via Web API; corregidos tipos JSON en apps.json y espera de --stream-session a 250ms. Tests apollo (10), stream (7) y visor-core (338) en verde."
             },
             {
               "id": "CJY-4",
               "title": "Cerrar el juego desde el cliente (tablet y PC) llama al PC principal y cierra la sesión",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T01:02:27+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:04:33+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "PC cliente registra setResumeHandler en ipc.ts (reanudar y close_game), tablet.ts parsea none/asked/forced, controller.svelte.ts gestiona cierre en dos pasos y fuerza, y ResumePill/ActionMenu/GameSettings exponen cerrar juego desde cliente y ficha. npm run check con 0 errores."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-14T01:04:33+01:00",
+              "result": "PC cliente registra setResumeHandler en ipc.ts (reanudar y close_game), tablet.ts parsea none/asked/forced, controller.svelte.ts gestiona cierre en dos pasos y fuerza, y ResumePill/ActionMenu/GameSettings exponen cerrar juego desde cliente y ficha. npm run check con 0 errores."
             },
             {
               "id": "CJY-5",
               "title": "Pruebas del cierre y de los casos raros (juego ya cerrado, cliente desconectado)",
               "desc": "",
-              "state": "pending",
-              "notes": [],
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T01:04:33+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:06:45+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Añadidas pruebas unitarias para juego ya cerrado/pendiente/forzado (stream.rs), objetivos de desconexión con cliente desconectado (apollo.rs) y helper compartido de respuesta/sesión remota (tests/remoteclose.test.ts). Todo pasado: npm run check (0 errores), node --test (25/25), cargo test --lib (43 ok, 1 ignored) y cargo test -p visor-core (338 ok, 1 ignored)."
+                }
+              ],
               "cat": "pruebas",
-              "together": true
+              "together": true,
+              "updated": "2026-11-14T01:06:45+01:00",
+              "result": "Añadidas pruebas unitarias para juego ya cerrado/pendiente/forzado (stream.rs), objetivos de desconexión con cliente desconectado (apollo.rs) y helper compartido de respuesta/sesión remota (tests/remoteclose.test.ts). Todo pasado: npm run check (0 errores), node --test (25/25), cargo test --lib (43 ok, 1 ignored) y cargo test -p visor-core (338 ok, 1 ignored)."
             }
-          ]
+          ],
+          "review": {
+            "state": "approved",
+            "text": "",
+            "by": "persona",
+            "at": "2026-11-14T01:31:56+01:00",
+            "seen": true
+          }
         },
         {
           "name": "Cierre en el cliente",
@@ -642,9 +731,17 @@
               "id": "CJY-6",
               "title": "La tablet (Artemis) vuelve sola al visor cuando cae la sesión",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-14T01:32:03+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-14T01:32:03+01:00"
             },
             {
               "id": "CJY-7",
@@ -684,19 +781,56 @@
               "id": "ODD-1",
               "title": "Ver por qué overlay y paneles no salen en el stream (pantalla virtual de Apollo, exclusión de captura, monitor del juego)",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "investigar"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:39:53+01:00",
+                  "by": "ia",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T00:41:07+01:00",
+                  "by": "ia",
+                  "kind": "done",
+                  "text": "Diagnóstico completado: no_activate y no_activate_clickable en overlay.rs aplican WDA_EXCLUDEFROMCAPTURE a quickmenu, recindicator, achpop y peek (invisible para Apollo/Sunshine), y game_monitor(pid) no prioriza la pantalla virtual de Apollo durante el streaming."
+                }
+              ],
+              "cat": "investigar",
+              "updated": "2026-11-14T00:41:07+01:00",
+              "result": "Diagnóstico completado: no_activate y no_activate_clickable en overlay.rs aplican WDA_EXCLUDEFROMCAPTURE a quickmenu, recindicator, achpop y peek (invisible para Apollo/Sunshine), y game_monitor(pid) no prioriza la pantalla virtual de Apollo durante el streaming."
             },
             {
               "id": "ODD-2",
               "title": "Elegir cómo mostrarlo: ventana en la pantalla virtual o dibujado en el propio cliente",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "decidir"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:41:07+01:00",
+                  "by": "ia",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T00:42:29+01:00",
+                  "by": "ia",
+                  "kind": "done",
+                  "text": "Elegida la opción 1: ventana en la pantalla virtual de Apollo (reutiliza quickmenu, logros, REC y peek quitando WDA_EXCLUDEFROMCAPTURE en streaming)."
+                }
+              ],
+              "cat": "decidir",
+              "updated": "2026-11-14T00:42:29+01:00",
+              "result": "Elegida la opción 1: ventana en la pantalla virtual de Apollo (reutiliza quickmenu, logros, REC y peek quitando WDA_EXCLUDEFROMCAPTURE en streaming)."
             }
-          ]
+          ],
+          "review": {
+            "state": "approved",
+            "text": "",
+            "by": "persona",
+            "at": "2026-11-14T00:43:14+01:00",
+            "seen": true
+          }
         },
         {
           "name": "Overlay en el stream",
@@ -706,28 +840,80 @@
               "id": "ODD-3",
               "title": "Colocar overlay, logros y paneles en la pantalla virtual cuando hay streaming",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:43:14+01:00",
+                  "by": "ia",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T00:45:47+01:00",
+                  "by": "ia",
+                  "kind": "done",
+                  "text": "Añadido stream::is_streaming() y actualizado reader::monitor::game_monitor (con pick_game_monitor) para priorizar la pantalla virtual de Apollo durante el streaming en quickmenu, recindicator, achpop y peek. Comprobado compilando visor-capturas."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-14T00:45:47+01:00",
+              "result": "Añadido stream::is_streaming() y actualizado reader::monitor::game_monitor (con pick_game_monitor) para priorizar la pantalla virtual de Apollo durante el streaming en quickmenu, recindicator, achpop y peek. Comprobado compilando visor-capturas."
             },
             {
               "id": "ODD-4",
               "title": "No excluir de la captura el menú y los paneles cuando hay streaming",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:45:47+01:00",
+                  "by": "ia",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T00:45:47+01:00",
+                  "by": "ia",
+                  "kind": "done",
+                  "text": "En overlay.rs, sync_capture_affinity aplica WDA_NONE cuando hay streaming o pantalla virtual de Apollo y WDA_EXCLUDEFROMCAPTURE en local, actualizándolo también en show_quiet y raise_menu para ventanas reutilizadas. Comprobado compilando visor-capturas."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-14T00:45:47+01:00",
+              "result": "En overlay.rs, sync_capture_affinity aplica WDA_NONE cuando hay streaming o pantalla virtual de Apollo y WDA_EXCLUDEFROMCAPTURE en local, actualizándolo también en show_quiet y raise_menu para ventanas reutilizadas. Comprobado compilando visor-capturas."
             },
             {
               "id": "ODD-5",
               "title": "Pruebas de la elección de monitor con y sin streaming",
               "desc": "",
-              "state": "pending",
-              "notes": [],
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:45:48+01:00",
+                  "by": "ia",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T00:45:48+01:00",
+                  "by": "ia",
+                  "kind": "done",
+                  "text": "Añadidos 3 tests unitarios en reader::monitor::tests (con y sin streaming, con y sin pantalla virtual); cargo test --lib reader::monitor: 3 passed, 0 failed."
+                }
+              ],
               "cat": "pruebas",
-              "together": true
+              "together": true,
+              "updated": "2026-11-14T00:45:48+01:00",
+              "result": "Añadidos 3 tests unitarios en reader::monitor::tests (con y sin streaming, con y sin pantalla virtual); cargo test --lib reader::monitor: 3 passed, 0 failed."
             }
-          ]
+          ],
+          "review": {
+            "state": "approved",
+            "text": "",
+            "by": "persona",
+            "at": "2026-11-14T00:49:03+01:00",
+            "seen": true
+          }
         },
         {
           "name": "Abrirlo desde el cliente",
@@ -737,27 +923,580 @@
               "id": "ODD-6",
               "title": "Atajo de la tablet (volumen arriba) que abre el overlay del PC principal",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:49:04+01:00",
+                  "by": "ia",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T00:50:57+01:00",
+                  "by": "ia",
+                  "kind": "done",
+                  "text": "Añadido quickmenu::toggle y endpoint POST /api/v1/overlay en visor-core y src-tauri/remote.rs; CaptureKeyService.java ahora llama a POST /api/v1/overlay al pulsar Volumen + en Artemis/Moonlight. Comprobado con cargo test -p visor-core (338 passed, 0 failed, incluido el test HTTP de /api/v1/overlay)."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-14T00:50:57+01:00",
+              "result": "Añadido quickmenu::toggle y endpoint POST /api/v1/overlay en visor-core y src-tauri/remote.rs; CaptureKeyService.java ahora llama a POST /api/v1/overlay al pulsar Volumen + en Artemis/Moonlight. Comprobado con cargo test -p visor-core (338 passed, 0 failed, incluido el test HTTP de /api/v1/overlay)."
             },
             {
               "id": "ODD-7",
               "title": "Atajo en el PC cliente que se pueda pulsar con Moonlight capturando el teclado (tecla reservada o botón del mando)",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:50:57+01:00",
+                  "by": "ia",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T00:53:20+01:00",
+                  "by": "ia",
+                  "kind": "done",
+                  "text": "Añadido remote_client::overlay y client::toggle_remote_overlay; input::spawn_key_sink (Raw Input RIDEV_INPUTSINK para F13..F24, por defecto F24) y pad.rs envían POST /api/v1/overlay al PC principal cuando Moonlight está en primer plano. Comprobado con cargo test --lib input::tests (4 passed, 0 failed) y reader::monitor::tests (3 passed, 0 failed)."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-14T00:53:20+01:00",
+              "result": "Añadido remote_client::overlay y client::toggle_remote_overlay; input::spawn_key_sink (Raw Input RIDEV_INPUTSINK para F13..F24, por defecto F24) y pad.rs envían POST /api/v1/overlay al PC principal cuando Moonlight está en primer plano. Comprobado con cargo test --lib input::tests (4 passed, 0 failed) y reader::monitor::tests (3 passed, 0 failed)."
             },
             {
               "id": "ODD-8",
               "title": "Probar en la tablet real y en el PC cliente: abrir overlay, ver capturas y logros, cerrar",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "pruebas"
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:53:20+01:00",
+                  "by": "ia",
+                  "kind": "start",
+                  "text": "Empezado."
+                }
+              ],
+              "cat": "pruebas",
+              "updated": "2026-11-14T00:53:20+01:00"
             }
           ]
+        }
+      ]
+    },
+    {
+      "key": "ADI",
+      "name": "Arreglos de interfaz",
+      "goal": "Quitar los fallos visuales de Inicio, Rachas, Mi lista, Colecciones, Catálogo y Estadísticas",
+      "icon": "🩹",
+      "color": 7,
+      "created": "2026-11-14T00:52:13+01:00",
+      "by": "claude",
+      "next_id": 17,
+      "phases": [
+        {
+          "name": "Inicio y Rachas",
+          "icon": "",
+          "steps": [
+            {
+              "id": "ADI-1",
+              "title": "Inicio: textos grises bajo las tarjetas dentro de la tarjeta, sin cortarse",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:57:23+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:04:15+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": ".rmeta más arriba (566), dos líneas y sin «en total». Visto en el navegador."
+                },
+                {
+                  "at": "2026-11-14T01:04:35+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": ".rmeta más arriba (566), dos líneas y sin «en total». Comprobado en el navegador."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-14T01:04:35+01:00",
+              "result": ".rmeta más arriba (566), dos líneas y sin «en total». Comprobado en el navegador."
+            },
+            {
+              "id": "ADI-2",
+              "title": "Inicio: espacio antes de «· Últimos 7 días»",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:57:23+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:04:15+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "&nbsp; antes de «· Últimos 7 días». Visto en el navegador."
+                },
+                {
+                  "at": "2026-11-14T01:04:35+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "&nbsp; antes de «· Últimos 7 días». Comprobado en el navegador."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-14T01:04:35+01:00",
+              "result": "&nbsp; antes de «· Últimos 7 días». Comprobado en el navegador."
+            },
+            {
+              "id": "ADI-3",
+              "title": "Rachas: quitar la barra LB Novelas PC Switch RB duplicada",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:57:23+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:04:15+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Quitado el bloque LB/RB de Rachas y su CSS. Visto."
+                },
+                {
+                  "at": "2026-11-14T01:04:36+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Quitado el bloque LB/RB de Rachas y su CSS. Comprobado en el navegador."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-14T01:04:36+01:00",
+              "result": "Quitado el bloque LB/RB de Rachas y su CSS. Comprobado en el navegador."
+            },
+            {
+              "id": "ADI-4",
+              "title": "Rachas: sin raya suelta en «A qué hora juegas» sin datos",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:57:23+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:04:16+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Barras de hora a 0 sin datos y borde transparente. Visto."
+                },
+                {
+                  "at": "2026-11-14T01:04:36+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Barras de hora a 0 sin datos y borde transparente. Comprobado en el navegador."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-14T01:04:36+01:00",
+              "result": "Barras de hora a 0 sin datos y borde transparente. Comprobado en el navegador."
+            },
+            {
+              "id": "ADI-5",
+              "title": "Duraciones «1 h 30 min» en vez de «1 h 30»",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:57:24+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:04:16+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "fmtMin da «1 h» / «1 h 05 min». Test tests/readfmt.test.ts 2/2."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-14T01:04:16+01:00",
+              "result": "fmtMin da «1 h» / «1 h 05 min». Test tests/readfmt.test.ts 2/2."
+            }
+          ],
+          "review": {
+            "state": "approved",
+            "text": "",
+            "by": "persona",
+            "at": "2026-11-14T01:04:39+01:00",
+            "seen": true
+          }
+        },
+        {
+          "name": "Mi lista y Colecciones",
+          "icon": "",
+          "steps": [
+            {
+              "id": "ADI-6",
+              "title": "Quitar la raya naranja bajo las pestañas",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:59:24+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:04:16+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "::after solo en .stabs. Visto en Mi lista."
+                },
+                {
+                  "at": "2026-11-14T01:04:36+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "::after solo en .stabs. Comprobado en el navegador en Mi lista."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-14T01:04:36+01:00",
+              "result": "::after solo en .stabs. Comprobado en el navegador en Mi lista."
+            },
+            {
+              "id": "ADI-7",
+              "title": "Mi lista: no pintar franjas vacías («En marcha · 0»)",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:59:24+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:04:16+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Solo se pintan bandas con títulos. Visto."
+                },
+                {
+                  "at": "2026-11-14T01:04:36+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Solo se pintan bandas con títulos. Comprobado en el navegador."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-14T01:04:36+01:00",
+              "result": "Solo se pintan bandas con títulos. Comprobado en el navegador."
+            },
+            {
+              "id": "ADI-8",
+              "title": "Mi lista: títulos largos sin desbordar en Terminado",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:59:24+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:04:16+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "overflow-wrap:anywhere y .tx 84 px en compacto. Visto con Red Dead Redemption 2."
+                },
+                {
+                  "at": "2026-11-14T01:04:36+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "overflow-wrap:anywhere y .tx 84 px en compacto. Comprobado con Red Dead Redemption 2."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-14T01:04:36+01:00",
+              "result": "overflow-wrap:anywhere y .tx 84 px en compacto. Comprobado con Red Dead Redemption 2."
+            },
+            {
+              "id": "ADI-9",
+              "title": "Pestañas a la misma altura en Mi lista, Colecciones y Catálogo",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:59:24+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:04:17+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Quitado .list-tabs: misma altura en las tres pestañas; .board ajustado."
+                },
+                {
+                  "at": "2026-11-14T01:04:37+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Quitado .list-tabs: misma altura en las tres pestañas. Comprobado en el navegador."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-14T01:04:37+01:00",
+              "result": "Quitado .list-tabs: misma altura en las tres pestañas. Comprobado en el navegador."
+            },
+            {
+              "id": "ADI-10",
+              "title": "Colecciones: línea de tiempo sin tapar portadas y sin franja blanca",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:59:24+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:04:17+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Rail con margen y .slip.railed sin fondo. Visto en Colecciones."
+                },
+                {
+                  "at": "2026-11-14T01:04:37+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Rail con margen y .slip.railed sin fondo. Comprobado en Colecciones."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-14T01:04:37+01:00",
+              "result": "Rail con margen y .slip.railed sin fondo. Comprobado en Colecciones."
+            },
+            {
+              "id": "ADI-11",
+              "title": "Colecciones: que la segunda colección no quede cortada",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:59:25+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:04:17+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "COLL_DY 12 y .lclip más alto: cabe la segunda colección. Visto."
+                },
+                {
+                  "at": "2026-11-14T01:04:37+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "COLL_DY 12 y .lclip más alto: cabe la segunda colección. Comprobado en el navegador."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-14T01:04:37+01:00",
+              "result": "COLL_DY 12 y .lclip más alto: cabe la segunda colección. Comprobado en el navegador."
+            }
+          ],
+          "review": {
+            "state": "approved",
+            "text": "",
+            "by": "persona",
+            "at": "2026-11-14T01:30:49+01:00",
+            "seen": true
+          }
+        },
+        {
+          "name": "Catálogo y Estadísticas",
+          "icon": "",
+          "steps": [
+            {
+              "id": "ADI-12",
+              "title": "Catálogo: un solo indicador de página",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:57:24+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:04:17+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "pageFam sin «Página X/Y»; queda un solo indicador. Visto."
+                },
+                {
+                  "at": "2026-11-14T01:04:37+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "pageFam sin «Página X/Y»; un solo indicador. Comprobado en el navegador."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-14T01:04:37+01:00",
+              "result": "pageFam sin «Página X/Y»; un solo indicador. Comprobado en el navegador."
+            },
+            {
+              "id": "ADI-13",
+              "title": "Catálogo: tarjeta gris vacía de relleno",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:57:24+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:04:18+01:00",
+                  "by": "claude",
+                  "kind": "note",
+                  "text": "No hay baldosa de relleno en el código: la tarjeta gris era una portada sin cargar. No se cambia nada."
+                },
+                {
+                  "at": "2026-11-14T01:04:18+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Sin cambios: era una miniatura sin cargar; en el repaso la última página sale bien."
+                },
+                {
+                  "at": "2026-11-14T01:04:38+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Sin cambios: era una miniatura sin cargar. Comprobado: la última página sale bien."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-14T01:04:38+01:00",
+              "result": "Sin cambios: era una miniatura sin cargar. Comprobado: la última página sale bien."
+            },
+            {
+              "id": "ADI-14",
+              "title": "Estadísticas: pestañas que caben en el ancho",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:57:24+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:04:18+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Pestañas más compactas, desplazables y la activa se centra. Visto."
+                },
+                {
+                  "at": "2026-11-14T01:04:38+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Pestañas compactas y desplazables; la activa se centra. Comprobado en el navegador."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-14T01:04:38+01:00",
+              "result": "Pestañas compactas y desplazables; la activa se centra. Comprobado en el navegador."
+            },
+            {
+              "id": "ADI-15",
+              "title": "Estadísticas: clic con ratón en las pestañas no cambia",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T00:57:24+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:04:18+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Ya funcionaba (setStatsTab); fallaba por el desbordamiento. Clic comprobado."
+                },
+                {
+                  "at": "2026-11-14T01:04:38+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Ya funcionaba (setStatsTab); fallaba por el desbordamiento. Comprobado con clic."
+                }
+              ],
+              "cat": "investigar",
+              "updated": "2026-11-14T01:04:38+01:00",
+              "result": "Ya funcionaba (setStatsTab); fallaba por el desbordamiento. Comprobado con clic."
+            },
+            {
+              "id": "ADI-16",
+              "title": "Repaso visual de todas las pantallas a 1280x720 y npm run check",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T01:04:18+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:04:19+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Repaso de Inicio, Rachas, Mi lista, Colecciones, Catálogo y Estadísticas. svelte-check sin errores en estos ficheros (los 2 que hay son de controller.svelte.ts, trabajo de CJY-4)."
+                },
+                {
+                  "at": "2026-11-14T01:04:38+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Repaso de las seis pantallas y svelte-check ejecutado: sin errores en estos ficheros (los 2 de controller.svelte.ts son de CJY-4)."
+                }
+              ],
+              "cat": "pruebas",
+              "updated": "2026-11-14T01:04:38+01:00",
+              "result": "Repaso de las seis pantallas y svelte-check ejecutado: sin errores en estos ficheros (los 2 de controller.svelte.ts son de CJY-4)."
+            }
+          ],
+          "review": {
+            "state": "approved",
+            "text": "",
+            "by": "persona",
+            "at": "2026-11-14T01:30:46+01:00",
+            "seen": true
+          }
         }
       ]
     }
@@ -836,7 +1575,35 @@
       },
       "by": "ia",
       "created": "2026-11-12T02:19:27+01:00"
+    },
+    {
+      "id": "P-3",
+      "kind": "question",
+      "title": "¿Cómo mostramos el overlay y los paneles en streaming?",
+      "text": "Las ventanas (quickmenu, logros, REC y peek) ya existen en el PC y hoy no salen en el stream por WDA_EXCLUDEFROMCAPTURE y por usar game_monitor(pid) sin priorizar la pantalla virtual de Apollo.",
+      "step": "ODD-2",
+      "branch": "ODD",
+      "options": [
+        {
+          "desc": "Reutiliza el overlay y paneles actuales quitando WDA_EXCLUDEFROMCAPTURE en streaming; vale igual para Artemis y Moonlight.",
+          "label": "Ventana en la pantalla virtual"
+        },
+        {
+          "desc": "Obligaría a reimplementar la UI encima de Artemis (tablet) y sobre Moonlight (PC cliente), duplicando interfaz y sincronización.",
+          "label": "Dibujado en el propio cliente"
+        }
+      ],
+      "recommend": 1,
+      "answer": {
+        "option": 1,
+        "text": "Ventana en la pantalla virtual",
+        "by": "persona",
+        "at": "2026-11-14T00:42:28+01:00",
+        "seen": true
+      },
+      "by": "ia",
+      "created": "2026-11-14T00:41:11+01:00"
     }
   ],
-  "next_ask": 3
+  "next_ask": 4
 }

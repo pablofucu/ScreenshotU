@@ -672,9 +672,47 @@ pub async fn client_sync(app: AppHandle) -> Result<usize, String> {
     blocking(move || sync_once(&app)).await
 }
 
+/// `true` si este equipo esta emparejado como cliente de un PC principal.
+pub fn is_paired(app: &AppHandle) -> bool {
+    ClientCfg::load(&app.state::<AppState>().config_dir).is_some()
+}
+
+/// `true` si Moonlight esta en primer plano en este equipo.
+pub fn moonlight_in_foreground() -> bool {
+    crate::platform::foreground_info()
+        .map(|(_, info)| info.exe_name.eq_ignore_ascii_case("moonlight.exe"))
+        .unwrap_or(false)
+}
+
+/// Pide al PC principal abrir o cerrar su overlay sobre el streaming.
+pub fn toggle_remote_overlay(app: &AppHandle) {
+    let dir = app.state::<AppState>().config_dir.clone();
+    let Some(cfg) = ClientCfg::load(&dir) else { return };
+    let ver = version(app);
+    std::thread::spawn(move || {
+        let _ = rc::overlay(cfg.addr(), &cfg.token, &ver);
+    });
+}
+
+fn spawn_overlay_hotkey(app: AppHandle) {
+    let app_vk = app.clone();
+    crate::input::spawn_key_sink(
+        move || {
+            let hk = app_vk.state::<AppState>().config.lock().unwrap().overlay_hotkey.clone();
+            crate::input::reserved_fkey_vk(&hk)
+        },
+        move || {
+            if is_paired(&app) && moonlight_in_foreground() {
+                toggle_remote_overlay(&app);
+            }
+        },
+    );
+}
+
 /// Hilo que sube las partidas locales al host cada minuto (si este equipo es cliente).
 pub fn spawn_sync(app: AppHandle) {
     let _ = HANDLE.set(app.clone());
+    spawn_overlay_hotkey(app.clone());
     let _ = std::thread::Builder::new().name("client-sync".into()).spawn(move || {
         std::thread::sleep(Duration::from_secs(15));
         loop {

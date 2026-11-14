@@ -427,7 +427,13 @@ pub fn spawn(app: AppHandle) {
             menu_det.mask = menu_mask;
             match menu_det.update(buttons) {
                 // La ventana principal del visor delante no abre el menu, pero si el menu ya esta abierto el mando lo cierra.
-                Some(true) if !crate::platform::own_window_focused() || quickmenu::is_open() => quickmenu::trigger_down(&app, Src::Pad, pressing),
+                Some(true) if !crate::platform::own_window_focused() || quickmenu::is_open() => {
+                    if crate::client::is_paired(&app) && crate::client::moonlight_in_foreground() {
+                        crate::client::toggle_remote_overlay(&app);
+                    } else {
+                        quickmenu::trigger_down(&app, Src::Pad, pressing);
+                    }
+                }
                 Some(false) => quickmenu::trigger_up(&app, Src::Pad),
                 _ => {}
             }

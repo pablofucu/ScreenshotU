@@ -394,16 +394,57 @@ export function closeOverlay() {
 /** Hay que reescanear en cuanto se cierren los paneles. */
 export function markRefresh() { pendingRefresh = true; }
 
-/** Tablet: abre otra vez el stream de la partida en marcha (lo registra `mobile/src/tablet.ts`; en el escritorio queda vacío). */
-type ResumeHandler = { resume: () => Promise<void>; close: (force: boolean) => Promise<boolean> };
+/** Cliente (tablet o PC cliente): vuelve a abrir el stream o cierra el juego del PC principal. */
+type CloseResult = 'none' | 'asked' | 'forced' | boolean;
+type ResumeHandler = { resume: () => Promise<void>; close: (force: boolean) => Promise<CloseResult>; can?: () => boolean };
 let resumeHandler: ResumeHandler | null = null;
+export const closePrompt = $state({ force: false });
 export function setResumeHandler(h: ResumeHandler | null) { resumeHandler = h; }
 /** Cierra el juego en marcha; devuelve `true` si el PC pide forzar el cierre. */
-export async function closeRunning(force: boolean) { return resumeHandler ? resumeHandler.close(force) : false; }
-export function canResume(gameId?: string | null) { return !!resumeHandler && !!app.playing && (!gameId || app.playing.id === gameId); }
+export async function closeRunning(force: boolean): Promise<boolean> {
+  if (!resumeHandler) return false;
+  const r = await resumeHandler.close(force);
+  if (r === 'none') {
+    app.playing = null;
+    void softRefresh();
+    return false;
+  }
+  return r === true || r === 'asked';
+}
+export function canResume(gameId?: string | null) {
+  return !!resumeHandler && (!resumeHandler.can || resumeHandler.can()) && !!app.playing && (!gameId || app.playing.id === gameId);
+}
 export async function resumeGame() {
   if (!resumeHandler) return;
   try { await resumeHandler.resume(); } catch (e) { toast(typeof e === 'string' ? e : e instanceof Error ? e.message : 'No se pudo volver a la partida', 3200); }
+}
+/** Cierre en dos pasos desde un panel con mando (pide forzar si el juego no cerró). */
+export async function closeGamePanel(panel: { confirm: boolean }) {
+  if (!panel.confirm) {
+    closePrompt.force = false;
+    confirmTwice(panel);
+    return;
+  }
+  const force = closePrompt.force;
+  try {
+    const asked = await closeRunning(force);
+    if (asked) {
+      closePrompt.force = true;
+      panel.confirm = false;
+      confirmTwice(panel);
+      return;
+    }
+    closePrompt.force = false;
+    panel.confirm = false;
+    closeOverlay();
+    toast(app.playing ? 'Cerrando el juego…' : 'El juego ya se había cerrado');
+    blip(1320);
+  } catch (e) {
+    closePrompt.force = false;
+    panel.confirm = false;
+    toast(typeof e === 'string' ? e : e instanceof Error ? e.message : 'No se pudo cerrar el juego', 3200);
+    blip(220);
+  }
 }
 
 export async function playTitle(t: Title) {
@@ -430,6 +471,10 @@ export async function menuAct(item: MenuItem) {
     closeOverlay();
     const t = app.platform?.titles[app.menu.title];
     if (t) void playTitle(t);
+    return;
+  }
+  if (item === 'closegame') {
+    void closeGamePanel(app.menu);
     return;
   }
   if (item === 'listopts' || item === 'filter' || item.startsWith('flt:') || item === 'order' || item === 'tsize' || item === 'gstats' || item === 'settings') {
@@ -1126,6 +1171,7 @@ export function openTitlesMenu() {
   if (t) {
     if (app.titlesTab === 'list' && t.id && t.status === 'playing') items.push('pin');
     if (t.launchable && (!app.playing || canResume(t.gameId))) items.push('play');
+    if (canResume(t.gameId)) items.push('closegame');
     if (!t.members && t.id) items.push('status');
     items.push('sgdb', 'addcoll', 'accent');
     if (t.gameId && !t.members) items.push('saves');

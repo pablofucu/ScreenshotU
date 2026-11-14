@@ -14,7 +14,7 @@ use visor_core::games::Game;
 /// Segundos en los que una segunda peticion de cierre fuerza el cierre.
 const CLOSE_AGAIN: Duration = Duration::from_secs(60);
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Phase {
     Idle,
     /// La tablet pidio jugar y aun no ha conectado: el juego no se ha abierto.
@@ -55,7 +55,74 @@ struct Session {
     device: String,
 }
 
-static SESSION: Mutex<Session> = Mutex::new(Session { phase: Phase::Idle, streamed: false, game: None, started_ms: 0, shots: 0, last: None, close_asked: None, pending: None, epoch: 0, stream_app: None, device: String::new() });
+impl Session {
+    const fn new() -> Self {
+        Self { phase: Phase::Idle, streamed: false, game: None, started_ms: 0, shots: 0, last: None, close_asked: None, pending: None, epoch: 0, stream_app: None, device: String::new() }
+    }
+
+    fn reset_idle(&mut self) {
+        self.phase = Phase::Idle;
+        self.streamed = false;
+        self.game = None;
+        self.stream_app = None;
+        self.pending = None;
+        self.device.clear();
+        self.epoch += 1;
+    }
+
+    fn on_started(&mut self, id: String, name: String, started_ms: i64) -> bool {
+        self.game = Some((id, name));
+        self.phase = Phase::Playing;
+        self.started_ms = started_ms;
+        self.shots = 0;
+        self.close_asked = None;
+        self.streamed
+    }
+
+    fn on_exited(&mut self, id: String, name: String, platform: String, seconds: u64, ended_ms: i64) -> (Summary, Option<String>, bool) {
+        let sum = Summary {
+            id,
+            name,
+            platform,
+            started_ms: if self.started_ms > 0 { self.started_ms } else { ended_ms - seconds as i64 * 1000 },
+            ended_ms,
+            seconds,
+            shots: self.shots,
+            streamed: self.streamed,
+        };
+        let was_streamed = self.streamed || self.stream_app.is_some();
+        let was_app = self.stream_app.take();
+        self.last = Some(sum.clone());
+        self.phase = Phase::Idle;
+        self.game = None;
+        self.streamed = false;
+        self.device.clear();
+        self.shots = 0;
+        self.close_asked = None;
+        (sum, was_app, was_streamed)
+    }
+
+    fn cancel_pending(&mut self) -> bool {
+        if self.phase == Phase::Pending {
+            self.reset_idle();
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Limpia sesión pendiente o en memoria cuando el juego ya cerró antes de recibir `close`.
+    fn close_without_active(&mut self) -> (bool, Option<String>) {
+        let app_name = self.stream_app.clone();
+        let pending = self.cancel_pending();
+        if !pending {
+            self.reset_idle();
+        }
+        (pending, app_name)
+    }
+}
+
+static SESSION: Mutex<Session> = Mutex::new(Session::new());
 
 fn session() -> std::sync::MutexGuard<'static, Session> {
     SESSION.lock().unwrap_or_else(|e| e.into_inner())
@@ -70,14 +137,11 @@ pub fn init(app: &AppHandle) {
     let h = app.clone();
     app.listen_any("game-started", move |ev| {
         let p: Value = serde_json::from_str(ev.payload()).unwrap_or(Value::Null);
-        let mut s = session();
-        s.game = Some((p["id"].as_str().unwrap_or_default().to_string(), p["name"].as_str().unwrap_or_default().to_string()));
-        s.phase = Phase::Playing;
-        s.started_ms = now_ms();
-        s.shots = 0;
-        s.close_asked = None;
-        let hide = s.streamed;
-        drop(s);
+        let hide = session().on_started(
+            p["id"].as_str().unwrap_or_default().to_string(),
+            p["name"].as_str().unwrap_or_default().to_string(),
+            now_ms(),
+        );
         if hide {
             hide_cursor_if_enabled(&h);
         }
@@ -95,21 +159,12 @@ pub fn init(app: &AppHandle) {
         let name = p["name"].as_str().unwrap_or_default().to_string();
         let seconds = p["seconds"].as_u64().unwrap_or(0);
         let platform = a.state::<AppState>().games.lock().unwrap().iter().find(|g| g.id == id).map(|g| g.platform.clone()).unwrap_or_default();
-        let summary = {
-            let mut s = session();
-            let ended_ms = now_ms();
-            let sum = Summary { id, name, platform, started_ms: if s.started_ms > 0 { s.started_ms } else { ended_ms - seconds as i64 * 1000 }, ended_ms, seconds, shots: s.shots, streamed: s.streamed };
-            s.last = Some(sum.clone());
-            s.phase = Phase::Idle;
-            s.game = None;
-            s.streamed = false;
-            s.stream_app = None;
-            s.shots = 0;
-            s.close_asked = None;
-            sum
-        };
+        let (summary, was_app, was_streamed) = session().on_exited(id, name, platform, seconds, now_ms());
         crate::stream_touch::stop();
         restore_cursor(&cursor_dir(&a));
+        if was_streamed {
+            spawn_apollo_close(was_app);
+        }
         let _ = a.emit("session-summary", summary);
     });
 }
@@ -145,7 +200,7 @@ fn watch_cursor(app: &AppHandle) {
     let dir = cursor_dir(app);
     let (mut seen, mut missing) = (false, 0u32);
     loop {
-        std::thread::sleep(Duration::from_secs(1));
+        std::thread::sleep(Duration::from_millis(250));
         if session().phase != Phase::Playing {
             return;
         }
@@ -286,16 +341,25 @@ fn take_pending(epoch: u64) -> Option<Game> {
 }
 
 fn reset_idle() {
-    let mut s = session();
-    s.phase = Phase::Idle;
-    s.streamed = false;
-    s.game = None;
-    s.stream_app = None;
-    s.pending = None;
-    s.device.clear();
-    s.epoch += 1;
-    drop(s);
+    session().reset_idle();
     crate::stream_touch::stop();
+}
+
+/// Marca la sesión actual como remota para cerrar Apollo si hace falta al terminar.
+pub fn mark_remote_close() {
+    session().streamed = true;
+}
+
+fn spawn_apollo_close(was_app: Option<String>) {
+    let wait_helper = was_app.as_deref() == Some("Juego actual");
+    std::thread::spawn(move || {
+        if wait_helper {
+            std::thread::sleep(Duration::from_millis(500));
+        }
+        if let Err(e) = crate::apollo::web::close_session(None) {
+            eprintln!("[stream] apollo close_session: {e}");
+        }
+    });
 }
 
 /// Espera la pantalla virtual (hasta `wait`), la deja asentar y abre el juego en ella. Bloquea: va en un hilo.
@@ -444,11 +508,15 @@ pub fn helper_main() -> Option<i32> {
 
 /// La tablet no llego a abrir Artemis: se descarta el juego pendiente.
 pub fn cancel() -> Value {
-    let was = session().phase == Phase::Pending;
+    let was = session().cancel_pending();
     if was {
-        reset_idle();
+        crate::stream_touch::stop();
     }
     json!({ "cancelled": was })
+}
+
+fn should_force_close(force: bool, close_asked: Option<Instant>) -> bool {
+    force || close_asked.is_some_and(|t| t.elapsed() < CLOSE_AGAIN)
 }
 
 /// Cierra el juego en marcha. `none` = no hay juego; `asked` = se le pidio cerrar; `forced` = se mato.
@@ -457,12 +525,24 @@ pub fn close(app: &AppHandle, force: bool) -> Result<Value, String> {
         let st = app.state::<AppState>();
         let a = st.active.lock().unwrap();
         match a.as_ref() {
-            None => return Ok(json!({ "closed": "none" })),
-            Some(a) => a.pids.lock().unwrap().clone(),
+            None => None,
+            Some(a) => Some(a.pids.lock().unwrap().clone()),
         }
     };
-    let again = session().close_asked.is_some_and(|t| t.elapsed() < CLOSE_AGAIN);
-    if force || again {
+    let Some(pids) = pids else {
+        let (was_pending, was_app) = session().close_without_active();
+        if was_pending {
+            crate::stream_touch::stop();
+        }
+        spawn_apollo_close(was_app);
+        return Ok(json!({ "closed": "none" }));
+    };
+    let asked = {
+        let mut s = session();
+        s.streamed = true;
+        s.close_asked
+    };
+    if should_force_close(force, asked) {
         return Ok(forced(app));
     }
     let Some(hwnd) = crate::display::game_window(&pids) else {
@@ -497,6 +577,12 @@ fn ask_close(_: isize) -> bool {
     false
 }
 
+/// Hay una sesion de streaming activa (lanzada desde un cliente o reenganchada por Apollo/Artemis).
+pub fn is_streaming() -> bool {
+    let s = session();
+    s.streamed && s.phase != Phase::Idle
+}
+
 /// Estado ligero de la sesion (`GET /api/v1/session`).
 pub fn session_json() -> Value {
     let s = session();
@@ -508,4 +594,66 @@ pub fn session_json() -> Value {
     };
     let elapsed = if s.started_ms > 0 && matches!(s.phase, Phase::Starting | Phase::Playing) { ((now_ms() - s.started_ms) / 1000).max(0) } else { 0 };
     json!({ "state": state, "game": s.game.as_ref().map(|(id, name)| json!({ "id": id, "name": name })), "streamed": s.streamed, "last": s.last, "app": s.stream_app, "elapsedSeconds": elapsed })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ciclo_sesion_streaming_y_local() {
+        let mut s = Session::new();
+        s.streamed = true;
+        s.stream_app = Some("Juego actual".into());
+        s.device = "tablet".into();
+        assert!(s.on_started("g1".into(), "Juego 1".into(), 1000));
+        let (sum, was_app, was_streamed) = s.on_exited("g1".into(), "Juego 1".into(), "PC".into(), 12, 13000);
+        assert!(sum.streamed);
+        assert_eq!(was_app.as_deref(), Some("Juego actual"));
+        assert!(was_streamed);
+        assert_eq!(s.phase, Phase::Idle);
+        assert!(!s.streamed);
+        assert!(s.stream_app.is_none());
+        assert!(s.device.is_empty());
+
+        assert!(!s.on_started("g2".into(), "Juego 2".into(), 20000));
+        let (sum2, app2, streamed2) = s.on_exited("g2".into(), "Juego 2".into(), "PC".into(), 5, 25000);
+        assert!(!sum2.streamed);
+        assert!(app2.is_none());
+        assert!(!streamed2);
+    }
+
+    #[test]
+    fn cancelar_pendiente_limpia_estado() {
+        let mut s = Session::new();
+        s.phase = Phase::Pending;
+        s.streamed = true;
+        s.stream_app = Some("Desktop".into());
+        s.device = "pc-salon".into();
+        assert!(s.cancel_pending());
+        assert_eq!(s.phase, Phase::Idle);
+        assert!(!s.streamed);
+        assert!(s.stream_app.is_none());
+        assert!(s.device.is_empty());
+        assert_eq!(s.epoch, 1);
+        assert!(!s.cancel_pending());
+    }
+
+    #[test]
+    fn cierre_con_juego_ya_cerrado_y_forzado() {
+        let mut s = Session::new();
+        s.phase = Phase::Playing;
+        s.streamed = true;
+        s.stream_app = Some("Juego actual".into());
+        let (was_pending, was_app) = s.close_without_active();
+        assert!(!was_pending);
+        assert_eq!(was_app.as_deref(), Some("Juego actual"));
+        assert_eq!(s.phase, Phase::Idle);
+        assert!(s.stream_app.is_none());
+
+        assert!(!should_force_close(false, None));
+        assert!(should_force_close(true, None));
+        assert!(should_force_close(false, Some(Instant::now())));
+        assert!(!should_force_close(false, Some(Instant::now() - CLOSE_AGAIN - Duration::from_secs(1))));
+    }
 }

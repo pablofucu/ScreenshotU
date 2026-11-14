@@ -42,24 +42,56 @@ async function detect() {
   setInterval(() => {
     core.invoke<Endpoint | null>('client_endpoint').then((e) => { if (e) ep = e; }).catch(() => {});
   }, 60_000);
-  const [{ setEndpointProvider }, rc, rev] = await Promise.all([
+  const [{ setEndpointProvider }, rc, rev, sc, ctrl, store] = await Promise.all([
     import('./remote/config'), import('./remote/core'), import('./remote/event'),
+    import('./remote/session_close'), import('./controller.svelte'), import('./store.svelte'),
   ]);
   const name = info.hostName || ep.base.replace(/^https?:\/\//, '');
   setEndpointProvider(() => ({ base: ep!.base, code: ep!.token, name }));
   rc.setClientPc(name);
+  let streamApp = '';
+  let localPlayingId: string | null = null;
   // «Jugar» desde aquí: el PC principal lanza el juego y este equipo abre Moonlight con el stream.
   rc.setAfterLaunch(async (_args, res) => {
-    const app = (res as { app?: string | null } | null)?.app || '';
+    const nextApp = (res as { app?: string | null } | null)?.app || '';
+    streamApp = nextApp;
     try {
-      await core.invoke('client_open_stream', { app });
+      await core.invoke('client_open_stream', { app: nextApp });
     } catch (e) {
+      streamApp = '';
       void rc.invoke('stream_cancel').catch(() => {});
       throw e;
     }
   });
   remote = { invoke: rc.invoke, convertFileSrc: rc.convertFileSrc, listen: rev.listen };
   clientMode = { host: ep.base, hostName: name };
+  const syncRemoteSession = async () => {
+    try {
+      const r = await fetch(`${ep!.base}/api/v1/session`, { headers: { Authorization: `Bearer ${ep!.token}` } });
+      if (!r.ok) return;
+      const u = sc.remotePlayingFromSession(await r.json());
+      if (u.app !== null) streamApp = u.app;
+      if (!localPlayingId) {
+        if (u.active) {
+          store.app.playing = { id: u.id, since: u.since };
+        } else if (store.app.playing) {
+          store.app.playing = null;
+        }
+      }
+    } catch { /* sin conexión */ }
+  };
+  void local!.listen<{ id?: string }>('game-started', (ev) => { localPlayingId = ev.payload?.id || '__local__'; });
+  void local!.listen('game-exited', () => { localPlayingId = null; });
+  void rev.listen('game-exited', () => { streamApp = ''; });
+  ctrl.setResumeHandler({
+    can: () => !localPlayingId,
+    resume: async () => { await core.invoke('client_open_stream', { app: streamApp }); },
+    close: async (force) => sc.parseCloseStatus(await rc.invoke('close_game', { force })),
+  });
+  void syncRemoteSession();
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void syncRemoteSession(); });
+  }
 }
 
 /** Se resuelve cuando ya se sabe si este equipo es cliente (hay que esperarlo antes de usar `convertFileSrc`). */

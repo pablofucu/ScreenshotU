@@ -51,6 +51,18 @@ pub fn game_monitor(game_pid: Option<u32>) -> Rect {
     }
 }
 
+/// Elige el monitor donde colocar overlay, logros y paneles: durante el streaming prioriza la pantalla
+/// virtual de Apollo si existe; sin streaming (o sin pantalla virtual, p. ej. Sunshine), usa el monitor
+/// detectado del juego.
+#[allow(dead_code)]
+fn pick_game_monitor(detected: Rect, virtual_mon: Option<Rect>, streaming: bool) -> Rect {
+    if streaming {
+        virtual_mon.unwrap_or(detected)
+    } else {
+        detected
+    }
+}
+
 /// Elige el monitor de lectura entre `mons` = (monitor completo, area de trabajo) dado el indice del monitor del juego.
 /// Separado de la API de Windows para poder razonarlo/probarlo.
 #[allow(dead_code)]
@@ -80,7 +92,7 @@ fn pick_left(mons: &[(Rect, Rect)], game: usize) -> usize {
 
 #[cfg(windows)]
 mod imp {
-    use super::{pick_left, Rect};
+    use super::{pick_game_monitor, pick_left, Rect};
     use windows::core::BOOL;
     use windows::Win32::Foundation::{HWND, LPARAM, RECT};
     use windows::Win32::Graphics::Gdi::{
@@ -159,7 +171,10 @@ mod imp {
         let h = win
             .map(|h| unsafe { MonitorFromWindow(h, MONITOR_DEFAULTTONEAREST) })
             .unwrap_or_else(|| unsafe { MonitorFromPoint(Default::default(), MONITOR_DEFAULTTOPRIMARY) });
-        info(h).map(|(full, _)| full).unwrap_or(Rect { x: 0, y: 0, w: 1920, h: 1080 })
+        let detected = info(h).map(|(full, _)| full).unwrap_or(Rect { x: 0, y: 0, w: 1920, h: 1080 });
+        let vm = crate::display::virtual_monitor().map(|m| Rect { x: m.x, y: m.y, w: m.w, h: m.h });
+        let streaming = crate::stream::is_streaming() || vm.is_some();
+        pick_game_monitor(detected, vm, streaming)
     }
 
     pub fn reading_monitor(game_pid: Option<u32>) -> Rect {
@@ -174,5 +189,32 @@ mod imp {
         let game = mons.iter().position(|(h, ..)| *h == game_h).unwrap_or(0);
         let pairs: Vec<(Rect, Rect)> = mons.iter().map(|(_, f, w)| (*f, *w)).collect();
         pairs[pick_left(&pairs, game)].1
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn game_monitor_without_streaming_uses_detected() {
+        let pc = Rect { x: 0, y: 0, w: 1920, h: 1080 };
+        let vm = Rect { x: 1920, y: 0, w: 2560, h: 1600 };
+        assert_eq!(pick_game_monitor(pc, None, false), pc);
+        assert_eq!(pick_game_monitor(pc, Some(vm), false), pc);
+    }
+
+    #[test]
+    fn game_monitor_with_streaming_prefers_virtual_monitor() {
+        let pc = Rect { x: 0, y: 0, w: 1920, h: 1080 };
+        let vm = Rect { x: 1920, y: 0, w: 2560, h: 1600 };
+        assert_eq!(pick_game_monitor(pc, Some(vm), true), vm);
+    }
+
+    #[test]
+    fn game_monitor_with_streaming_without_virtual_falls_back_to_detected() {
+        let pc = Rect { x: 0, y: 0, w: 1920, h: 1080 };
+        assert_eq!(pick_game_monitor(pc, None, true), pc);
     }
 }

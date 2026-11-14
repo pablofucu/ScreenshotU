@@ -4,6 +4,7 @@ import { loadServer, saveServer, setLostNotice } from './lib/cache';
 import { unpairedMsg } from './lib/source';
 import { pushConnection, Streaming } from './lib/streaming.svelte';
 import { relocate } from './lib/locate';
+import { parseCloseStatus } from '@shared/remote/session_close';
 
 const saved = loadServer();
 // El modo demostración no sirve para la interfaz de escritorio: cuenta como sin servidor.
@@ -61,7 +62,8 @@ if (!server) {
       if (!ep) throw 'Sin servidor configurado';
       const r = await fetch(`${ep.base}/api/v1/close`, { method: 'POST', headers: { Authorization: `Bearer ${ep.code}`, 'Content-Type': 'application/json' }, body: force ? '{"force":true}' : '{}' });
       if (!r.ok) throw 'No se pudo cerrar el juego';
-      return (await r.text()).includes('"asked"');
+      const data = await r.json().catch(() => ({}));
+      return parseCloseStatus(data);
     },
   });
 

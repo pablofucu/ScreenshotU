@@ -168,38 +168,52 @@ fn build(app: &AppHandle, state: &str, secs: u64, text: &str) -> Option<tauri::W
     Some(w)
 }
 
-/// Estilos de Windows para que nunca robe el foco ni salga en Alt+Tab, y que no salga en las capturas (las de
-/// monitor completo lo incluirian).
+#[cfg(windows)]
+fn should_exclude_from_capture() -> bool {
+    !crate::stream::is_streaming() && crate::display::virtual_monitor().is_none()
+}
+
+#[cfg(windows)]
+fn sync_capture_affinity(hwnd: windows::Win32::Foundation::HWND) {
+    use windows::Win32::UI::WindowsAndMessaging::{SetWindowDisplayAffinity, WDA_EXCLUDEFROMCAPTURE, WDA_NONE};
+    let affinity = if should_exclude_from_capture() { WDA_EXCLUDEFROMCAPTURE } else { WDA_NONE };
+    unsafe {
+        let _ = SetWindowDisplayAffinity(hwnd, affinity);
+    }
+}
+
+/// Estilos de Windows para que nunca robe el foco ni salga en Alt+Tab, y que no salga en las capturas (salvo
+/// durante el streaming, para que Apollo/Sunshine capture el overlay y los paneles).
 #[cfg(windows)]
 pub(crate) fn no_activate(w: &tauri::WebviewWindow) {
     use windows::Win32::Foundation::HWND;
-    use windows::Win32::UI::WindowsAndMessaging::{GetWindowLongPtrW, SetWindowDisplayAffinity, SetWindowLongPtrW, GWL_EXSTYLE, WDA_EXCLUDEFROMCAPTURE, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TRANSPARENT};
+    use windows::Win32::UI::WindowsAndMessaging::{GetWindowLongPtrW, SetWindowLongPtrW, GWL_EXSTYLE, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_EX_TRANSPARENT};
     if let Ok(h) = w.hwnd() {
         let hwnd = HWND(h.0);
         unsafe {
             let ex = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
             SetWindowLongPtrW(hwnd, GWL_EXSTYLE, ex | (WS_EX_NOACTIVATE.0 | WS_EX_TOOLWINDOW.0 | WS_EX_TRANSPARENT.0) as isize);
-            let _ = SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE);
         }
+        sync_capture_affinity(hwnd);
     }
 }
 
 #[cfg(not(windows))]
 pub(crate) fn no_activate(_w: &tauri::WebviewWindow) {}
 
-/// Estilos para la ventana del menu sobre el juego: oculta en Alt+Tab y excluida de las capturas, pero sin
-/// `WS_EX_NOACTIVATE` para que pueda tomar el foco y hacer que Magpie ceda el `HWND_TOPMOST`.
+/// Estilos para la ventana del menu sobre el juego: oculta en Alt+Tab y excluida de las capturas (salvo en
+/// streaming), pero sin `WS_EX_NOACTIVATE` para que pueda tomar el foco y hacer que Magpie ceda el `HWND_TOPMOST`.
 #[cfg(windows)]
 pub(crate) fn no_activate_clickable(w: &tauri::WebviewWindow) {
     use windows::Win32::Foundation::HWND;
-    use windows::Win32::UI::WindowsAndMessaging::{GetWindowLongPtrW, SetWindowDisplayAffinity, SetWindowLongPtrW, GWL_EXSTYLE, WDA_EXCLUDEFROMCAPTURE, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW};
+    use windows::Win32::UI::WindowsAndMessaging::{GetWindowLongPtrW, SetWindowLongPtrW, GWL_EXSTYLE, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW};
     if let Ok(h) = w.hwnd() {
         let hwnd = HWND(h.0);
         unsafe {
             let ex = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
             SetWindowLongPtrW(hwnd, GWL_EXSTYLE, (ex | WS_EX_TOOLWINDOW.0 as isize) & !(WS_EX_NOACTIVATE.0 as isize));
-            let _ = SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE);
         }
+        sync_capture_affinity(hwnd);
     }
 }
 
@@ -301,8 +315,10 @@ pub(crate) fn show_quiet(w: &tauri::WebviewWindow) {
     use windows::Win32::Foundation::HWND;
     use windows::Win32::UI::WindowsAndMessaging::{SetWindowPos, HWND_TOPMOST, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOOWNERZORDER, SWP_NOSIZE, SWP_SHOWWINDOW};
     if let Ok(h) = w.hwnd() {
+        let hwnd = HWND(h.0);
+        sync_capture_affinity(hwnd);
         unsafe {
-            let _ = SetWindowPos(HWND(h.0), Some(HWND_TOPMOST), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
+            let _ = SetWindowPos(hwnd, Some(HWND_TOPMOST), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
         }
     }
 }

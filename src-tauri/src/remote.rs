@@ -161,6 +161,10 @@ impl Provider for AppProvider {
         Ok(())
     }
 
+    fn overlay(&self) -> anyhow::Result<()> {
+        crate::quickmenu::toggle(&self.app).map_err(|e| anyhow::anyhow!(e))
+    }
+
     fn close(&self, force: bool) -> anyhow::Result<serde_json::Value> {
         crate::stream::close(&self.app, force).map_err(|e| anyhow::anyhow!(e))
     }

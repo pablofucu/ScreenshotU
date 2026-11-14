@@ -326,6 +326,120 @@ mod imp {
             }
         });
     }
+
+    struct KeySinkCtx {
+        target_vk: Box<dyn Fn() -> u16 + Send>,
+        on_press: Box<dyn Fn() + Send>,
+        down: bool,
+    }
+
+    thread_local! {
+        static KEY_SINK: RefCell<Option<KeySinkCtx>> = const { RefCell::new(None) };
+    }
+
+    pub fn run_key_sink(target_vk: Box<dyn Fn() -> u16 + Send>, on_press: Box<dyn Fn() + Send>) {
+        unsafe {
+            let Ok(hinst) = GetModuleHandleW(None) else { return };
+            let class = w!("VisorClientKeySink");
+            let wc = WNDCLASSW { lpfnWndProc: Some(key_sink_wndproc), hInstance: hinst.into(), lpszClassName: class, ..Default::default() };
+            RegisterClassW(&wc);
+            let Ok(hwnd) = CreateWindowExW(
+                WINDOW_EX_STYLE(0), class, w!(""), WINDOW_STYLE(0), 0, 0, 0, 0, Some(HWND_MESSAGE), None, Some(hinst.into()), None,
+            ) else {
+                let _ = UnregisterClassW(class, Some(hinst.into()));
+                return;
+            };
+            let dev = RAWINPUTDEVICE { usUsagePage: 0x01, usUsage: 0x06, dwFlags: RIDEV_INPUTSINK, hwndTarget: hwnd };
+            if RegisterRawInputDevices(&[dev], std::mem::size_of::<RAWINPUTDEVICE>() as u32).is_err() {
+                let _ = DestroyWindow(hwnd);
+                let _ = UnregisterClassW(class, Some(hinst.into()));
+                return;
+            }
+            KEY_SINK.with(|c| {
+                *c.borrow_mut() = Some(KeySinkCtx { target_vk, on_press, down: false });
+            });
+            let mut msg = MSG::default();
+            while GetMessageW(&mut msg, None, 0, 0).as_bool() {
+                DispatchMessageW(&msg);
+            }
+            let rm = RAWINPUTDEVICE { usUsagePage: 0x01, usUsage: 0x06, dwFlags: RIDEV_REMOVE, hwndTarget: HWND::default() };
+            let _ = RegisterRawInputDevices(&[rm], std::mem::size_of::<RAWINPUTDEVICE>() as u32);
+            KEY_SINK.with(|c| {
+                *c.borrow_mut() = None;
+            });
+            let _ = DestroyWindow(hwnd);
+            let _ = UnregisterClassW(class, Some(hinst.into()));
+        }
+    }
+
+    unsafe extern "system" fn key_sink_wndproc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPARAM) -> LRESULT {
+        if msg == WM_INPUT {
+            let mut size = 0u32;
+            let hdr = std::mem::size_of::<RAWINPUTHEADER>() as u32;
+            GetRawInputData(HRAWINPUT(lp.0 as *mut _), RID_INPUT, None, &mut size, hdr);
+            if size > 0 && size <= 1024 {
+                let mut buf = [0u8; 1024];
+                if GetRawInputData(HRAWINPUT(lp.0 as *mut _), RID_INPUT, Some(buf.as_mut_ptr() as *mut _), &mut size, hdr) == size {
+                    let raw = &*(buf.as_ptr() as *const RAWINPUT);
+                    if raw.header.dwType == RIM_TYPEKEYBOARD {
+                        let k = raw.data.keyboard;
+                        let is_break = (k.Flags & KEY_BREAK) != 0;
+                        let fire = KEY_SINK.with(|c| {
+                            let mut b = c.borrow_mut();
+                            let Some(ctx) = b.as_mut() else { return false };
+                            if k.VKey != (ctx.target_vk)() {
+                                return false;
+                            }
+                            if is_break {
+                                ctx.down = false;
+                                false
+                            } else if !ctx.down {
+                                ctx.down = true;
+                                true
+                            } else {
+                                false
+                            }
+                        });
+                        if fire {
+                            KEY_SINK.with(|c| {
+                                if let Some(ctx) = c.borrow().as_ref() {
+                                    (ctx.on_press)();
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+            return LRESULT(0);
+        }
+        DefWindowProcW(hwnd, msg, wp, lp)
+    }
+}
+
+/// Tecla virtual de una tecla reservada `F13`..`F24` (por defecto `VK_F24` = 0x87).
+pub fn reserved_fkey_vk(hotkey: &str) -> u16 {
+    let s = hotkey.trim();
+    if let Some(n) = s.strip_prefix('F').or_else(|| s.strip_prefix('f')).and_then(|n| n.parse::<u16>().ok()) {
+        if (13..=24).contains(&n) {
+            return 0x6F + n;
+        }
+    }
+    0x87
+}
+
+/// Escucha por Raw Input (`RIDEV_INPUTSINK`) una tecla concreta en segundo plano: sigue funcionando aunque
+/// Moonlight capture el teclado a pantalla completa. `target_vk` se consulta en cada pulsacion.
+pub fn spawn_key_sink(target_vk: impl Fn() -> u16 + Send + 'static, on_press: impl Fn() + Send + 'static) {
+    #[cfg(windows)]
+    {
+        let _ = std::thread::Builder::new()
+            .name("client-key-sink".into())
+            .spawn(move || imp::run_key_sink(Box::new(target_vk), Box::new(on_press)));
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (target_vk, on_press);
+    }
 }
 
 #[cfg(test)]
@@ -366,5 +480,13 @@ mod tests {
         assert!(key_pressed_now(&mut down, 66, false));
         assert!(!key_pressed_now(&mut down, 65, true)); // suelta
         assert!(key_pressed_now(&mut down, 65, false)); // otra vez
+    }
+
+    #[test]
+    fn reserved_fkey_maps_f13_to_f24_and_defaults_to_f24() {
+        assert_eq!(reserved_fkey_vk("F13"), 0x7C);
+        assert_eq!(reserved_fkey_vk("f24"), 0x87);
+        assert_eq!(reserved_fkey_vk("F12"), 0x87);
+        assert_eq!(reserved_fkey_vk(""), 0x87);
     }
 }

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { app, STATUS_LABEL, type MenuItem } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
-  import { closeOverlay, MAGPIE_LABEL, MAGPIE_ORDER } from '../lib/controller.svelte';
+  import { closeOverlay, closePrompt, MAGPIE_LABEL, MAGPIE_ORDER } from '../lib/controller.svelte';
   import { GAME_TABS, TAB_HELP, gameSetAct, gameSetListAct, gameTabItems, otherPlatforms, selectTab, copying } from '../lib/gameset.svelte';
   import { platformCollections } from '../lib/coleccion.svelte';
   import { fmtRelease } from '../lib/release.svelte';
@@ -27,6 +27,9 @@
       case 'accent': return { l: 'Color del juego…' };
       case 'reload': return { l: 'Volver a cargar las imágenes' };
       case 'magpie': return { l: 'Escalado con Magpie…', s: magpie.detail, v: magpie.label };
+      case 'closegame': return g.confirm
+        ? { l: closePrompt.force ? 'Pulsa A otra vez para forzar' : 'Pulsa A otra vez para cerrar' }
+        : { l: 'Cerrar juego', s: 'Termina la partida en el PC principal' };
       case 'setexe': return { l: 'Ejecutable…' };
       case 'setdir': return { l: 'Carpeta de trabajo…' };
       case 'copyhere': return copying.id
@@ -49,7 +52,7 @@
     }
   }
   const icon = (it: MenuItem) => ({
-    sgdb: ICON.search, accent: ICON.palette, reload: ICON.reload, magpie: ICON.image, setexe: ICON.folder, setdir: ICON.folder, copyhere: ICON.import,
+    sgdb: ICON.search, accent: ICON.palette, reload: ICON.reload, closegame: ICON.power, magpie: ICON.image, setexe: ICON.folder, setdir: ICON.folder, copyhere: ICON.import,
     folder: ICON.folder, addshots: ICON.image, saves: ICON.import, phrases: ICON.jvn, addcoll: ICON.saga, status: ICON.checks,
     release: ICON.calendar, category: ICON.move, hide: ICON.eyeOff, unhide: ICON.eye, remove: ICON.trash,
   } as Record<string, string>)[it] ?? '';

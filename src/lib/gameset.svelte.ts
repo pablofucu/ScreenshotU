@@ -5,7 +5,7 @@ import { IS_TABLET } from './backend';
 import { blip } from './sound';
 import { confirmTwice } from './confirm';
 import { ICON } from './icons';
-import { closeOverlay, fmtBytes, hideToast, MAGPIE_ORDER, menuAct, pushOverlay, setMagpie, softRefresh, toast } from './controller.svelte';
+import { canResume, closeGamePanel, closeOverlay, fmtBytes, hideToast, MAGPIE_ORDER, menuAct, pushOverlay, setMagpie, softRefresh, toast } from './controller.svelte';
 import { copyCancel, copyGame, copyInfo, installedHere, isClient, type CopyProgress } from './clientgames';
 import { listen } from './ipc';
 import type { Title } from './types';
@@ -34,6 +34,7 @@ export function gameTabItems(t: Title | undefined, tab: GameTab): MenuItem[] {
   if (tab === 'asp') {
     items.push('sgdb', 'accent', 'reload');
   } else if (tab === 'jug') {
+    if (canResume(t.gameId)) items.push('closegame');
     if (manualExe) items.push('magpie');
     if (manualExe && !IS_TABLET) items.push('setexe', 'setdir');
     if (isClient() && !IS_TABLET && t.id && t.gameId && !t.members && (!installedHere(t) || copying.id === t.id)) items.push('copyhere');
@@ -89,6 +90,8 @@ export function gameSetAct(item: MenuItem) {
   } else if (item === 'copyhere') {
     if (copying.id) { void copyCancel(); toast('Cancelando la copia窶ｦ'); blip(520); return; }
     void copyHere(t.id!, t.name);
+  } else if (item === 'closegame') {
+    void closeGamePanel(g);
   } else if (item === 'remove') {
     if (!confirmTwice(g)) return;
     viaMenu('remove', true);

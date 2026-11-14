@@ -134,9 +134,9 @@ pub fn install(port: u16) -> Result<ApolloStatus, String> {
     let o = entry.as_object_mut().ok_or("La app «Desktop» de apps.json no es válida")?;
     o.insert("name".into(), json!(APP_NAME));
     o.insert("cmd".into(), json!(expected_cmd(port)));
-    o.insert("auto-detach".into(), json!("false"));
-    o.insert("wait-all".into(), json!("true"));
-    o.insert("exit-timeout".into(), json!("5"));
+    o.insert("auto-detach".into(), json!(false));
+    o.insert("wait-all".into(), json!(true));
+    o.insert("exit-timeout".into(), json!(5));
     o.remove("detached");
     if had_uuid {
         o.insert("uuid".into(), json!(new_uuid()));
@@ -256,6 +256,7 @@ pub mod web {
         pub uuid: String,
         pub name: String,
         pub perm: Option<u64>,
+        pub connected: Option<bool>,
     }
 
     /// Resultado de `web_check`, para ensenarlo en Ajustes.
@@ -307,6 +308,19 @@ pub mod web {
         json!({ "uuid": uuid })
     }
 
+    pub fn disconnect_body(uuid: &str) -> Value {
+        json!({ "uuid": uuid })
+    }
+
+    /// `current_app` de `GET /api/apps`: cadena no vacía o id positivo si hay una app de streaming abierta.
+    pub fn parse_current_app(v: &Value) -> Option<String> {
+        match &v["current_app"] {
+            Value::String(s) if !s.is_empty() => Some(s.clone()),
+            Value::Number(n) if n.as_i64().is_some_and(|x| x > 0) => Some(n.to_string()),
+            _ => None,
+        }
+    }
+
     /// El PIN de Apollo son exactamente 4 digitos.
     pub fn valid_pin(pin: &str) -> bool {
         pin.len() == 4 && pin.bytes().all(|b| b.is_ascii_digit())
@@ -347,11 +361,27 @@ pub mod web {
                 a.iter()
                     .filter_map(|c| {
                         let uuid = c["uuid"].as_str()?.to_string();
-                        Some(Client { uuid, name: c["name"].as_str().unwrap_or("").to_string(), perm: c["perm"].as_u64() })
+                        Some(Client {
+                            uuid,
+                            name: c["name"].as_str().unwrap_or("").to_string(),
+                            perm: c["perm"].as_u64(),
+                            connected: c["connected"].as_bool(),
+                        })
                     })
                     .collect()
             })
             .unwrap_or_default()
+    }
+
+    /// Clientes a los que conviene pedir desconexión al acabar la partida.
+    /// Si se conoce el `uuid` del dispositivo que jugaba, se desconecta solo si sigue conectado (o si Apollo no
+    /// informa `connected`); si no se conoce, se desconectan los que aparezcan conectados.
+    pub fn disconnect_targets(clients: &[Client], target_uuid: Option<&str>) -> Vec<String> {
+        let target = target_uuid.map(str::trim).filter(|s| !s.is_empty());
+        if let Some(u) = target {
+            return clients.iter().filter(|c| c.uuid == u && c.connected != Some(false)).map(|c| c.uuid.clone()).collect();
+        }
+        clients.iter().filter(|c| c.connected == Some(true)).map(|c| c.uuid.clone()).collect()
     }
 
     /// PIN del OTP: Apollo lo devuelve como texto, pero se admite tambien un numero.
@@ -708,13 +738,53 @@ pub mod web {
         Ok(client_by_name(&clients()?, name).map(|c| c.uuid.clone()))
     }
 
+    /// Cierra cualquier sesión abierta en Apollo al acabar el juego: primero cierra la app en marcha (si hay una,
+    /// p. ej. «Desktop» o «Juego actual» si no cerró sola) y después desconecta al cliente si sigue conectado.
+    pub fn close_session(apollo_uuid: Option<&str>) -> Result<(), String> {
+        if !creds_present() {
+            return Ok(());
+        }
+        let mut first_err: Option<String> = None;
+        match call("GET", "/api/apps", None) {
+            Ok(v) if parse_current_app(&v).is_some() => {
+                if let Err(e) = call("POST", "/api/apps/close", Some(json!({}))) {
+                    first_err = Some(e.text());
+                }
+            }
+            Ok(_) => {}
+            Err(ApiErr::NoCreds) => return Ok(()),
+            Err(e) => first_err = Some(e.text()),
+        }
+        match call("GET", "/api/clients/list", None) {
+            Ok(v) => {
+                for uuid in disconnect_targets(&parse_clients(&v), apollo_uuid) {
+                    if let Err(e) = call("POST", "/api/clients/disconnect", Some(disconnect_body(&uuid))) {
+                        if first_err.is_none() {
+                            first_err = Some(e.text());
+                        }
+                    }
+                }
+            }
+            Err(ApiErr::NoCreds) => return Ok(()),
+            Err(e) => {
+                if first_err.is_none() {
+                    first_err = Some(e.text());
+                }
+            }
+        }
+        match first_err {
+            Some(e) => Err(e),
+            None => Ok(()),
+        }
+    }
+
     #[cfg(test)]
     mod tests {
         use super::*;
 
         const LIST: &str = r#"{"named_certs":[
-            {"name":"PC","uuid":"aaa-1","perm":234881024,"do":[],"undo":[]},
-            {"name":"Tablet","uuid":"bbb-2","perm":100663296},
+            {"name":"PC","uuid":"aaa-1","perm":234881024,"connected":true,"do":[],"undo":[]},
+            {"name":"Tablet","uuid":"bbb-2","perm":100663296,"connected":false},
             {"name":"Tablet","uuid":"ccc-3"},
             {"name":"sin uuid"}],"platform":"windows","status":true}"#;
 
@@ -724,6 +794,7 @@ pub mod web {
             assert_eq!(pin_body("1234", "T"), json!({"pin":"1234","name":"T"}));
             assert_eq!(otp_body("abcd", "T"), json!({"passphrase":"abcd","deviceName":"T"}));
             assert_eq!(unpair_body("x"), json!({"uuid":"x"}));
+            assert_eq!(disconnect_body("x"), json!({"uuid":"x"}));
         }
 
         #[test]
@@ -769,11 +840,31 @@ pub mod web {
             let v: Value = serde_json::from_str(LIST).unwrap();
             let cs = parse_clients(&v);
             assert_eq!(cs.len(), 3);
-            assert_eq!(cs[0], Client { uuid: "aaa-1".into(), name: "PC".into(), perm: Some(234881024) });
+            assert_eq!(cs[0], Client { uuid: "aaa-1".into(), name: "PC".into(), perm: Some(234881024), connected: Some(true) });
+            assert_eq!(cs[1].connected, Some(false));
             assert_eq!(cs[2].perm, None);
+            assert_eq!(cs[2].connected, None);
             assert_eq!(client_by_name(&cs, "Tablet").unwrap().uuid, "ccc-3");
             assert!(client_by_name(&cs, "nadie").is_none());
             assert!(parse_clients(&json!({})).is_empty());
+        }
+
+        #[test]
+        fn app_y_objetivos_desconexion() {
+            assert_eq!(parse_current_app(&json!({})), None);
+            assert_eq!(parse_current_app(&json!({"current_app": ""})), None);
+            assert_eq!(parse_current_app(&json!({"current_app": 0})), None);
+            assert_eq!(parse_current_app(&json!({"current_app": "app-uuid"})).as_deref(), Some("app-uuid"));
+            assert_eq!(parse_current_app(&json!({"current_app": 42})).as_deref(), Some("42"));
+
+            let v: Value = serde_json::from_str(LIST).unwrap();
+            let cs = parse_clients(&v);
+            assert_eq!(disconnect_targets(&cs, Some("aaa-1")), vec!["aaa-1"]);
+            assert!(disconnect_targets(&cs, Some("bbb-2")).is_empty());
+            assert_eq!(disconnect_targets(&cs, Some("ccc-3")), vec!["ccc-3"]);
+            assert!(disconnect_targets(&cs, Some("inexistente")).is_empty());
+            assert_eq!(disconnect_targets(&cs, None), vec!["aaa-1"]);
+            assert_eq!(disconnect_targets(&cs, Some("")), vec!["aaa-1"]);
         }
 
         #[test]

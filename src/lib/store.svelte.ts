@@ -86,7 +86,7 @@ export type MenuItem =
   | 'folder' | 'reload' | 'remove' | 'hide' | 'unhide' | 'addshots' | 'accent'
   | 'select' | 'unselect' | 'selall' | 'move' | 'reveal' | 'addcoll' | 'sgdb' | 'magpie' | 'phrases' | 'status' | 'release' | 'saves' | 'category' | 'delshot' | 'delsel' | 'setexe' | 'setdir' | 'copyhere' | `cat:${string}`
   /* Menú de Start de la lista de juegos (y «Salida de audio», también en el de capturas). */
-  | 'filter' | `flt:${string}` | 'order' | 'tsize' | 'audio' | 'settings' | 'gstats' | 'play' | 'listopts' | 'copy' | 'pin' | 'collshots';
+  | 'filter' | `flt:${string}` | 'order' | 'tsize' | 'audio' | 'settings' | 'gstats' | 'play' | 'closegame' | 'listopts' | 'copy' | 'pin' | 'collshots';
 export type Overlay = '' | 'settings' | 'menu' | 'form' | 'add' | 'gdir' | 'hidden' | 'moveto' | 'accent' | 'collform' | 'picker' | 'addcoll' | 'sgdb' | 'sgdbtitles' | 'phrases' | 'saves' | 'library' | 'status' | 'release' | 'stalled' | 'achievements' | 'gameset' | 'ntimport' | 'search';
 export const titleMatches = (name: string, q: string): boolean => name.toLowerCase().includes(q.toLowerCase().trim());
 /** «Nueva colección» / «Editar colección». */
