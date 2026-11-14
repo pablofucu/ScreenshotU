@@ -5,7 +5,7 @@ use crate::state::AppState;
 use serde::Serialize;
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter, Listener, Manager};
@@ -53,11 +53,13 @@ struct Session {
     stream_app: Option<String>,
     /// Dispositivo que pidió el juego (id del cliente; `''` = la tablet antigua o el propio equipo).
     device: String,
+    /// Tipo del dispositivo que esta en streaming (`"tablet"`, `"pc"` o `""` si no se conoce).
+    device_kind: String,
 }
 
 impl Session {
     const fn new() -> Self {
-        Self { phase: Phase::Idle, streamed: false, game: None, started_ms: 0, shots: 0, last: None, close_asked: None, pending: None, epoch: 0, stream_app: None, device: String::new() }
+        Self { phase: Phase::Idle, streamed: false, game: None, started_ms: 0, shots: 0, last: None, close_asked: None, pending: None, epoch: 0, stream_app: None, device: String::new(), device_kind: String::new() }
     }
 
     fn reset_idle(&mut self) {
@@ -67,7 +69,13 @@ impl Session {
         self.stream_app = None;
         self.pending = None;
         self.device.clear();
+        self.device_kind.clear();
         self.epoch += 1;
+    }
+
+    /// Solo se oculta el cursor del sistema cuando quien recibe el streaming es una tablet.
+    fn should_hide_cursor(&self) -> bool {
+        self.streamed && self.device_kind == "tablet"
     }
 
     fn on_started(&mut self, id: String, name: String, started_ms: i64) -> bool {
@@ -76,7 +84,7 @@ impl Session {
         self.started_ms = started_ms;
         self.shots = 0;
         self.close_asked = None;
-        self.streamed
+        self.should_hide_cursor()
     }
 
     fn on_exited(&mut self, id: String, name: String, platform: String, seconds: u64, ended_ms: i64) -> (Summary, Option<String>, bool) {
@@ -97,8 +105,10 @@ impl Session {
         self.game = None;
         self.streamed = false;
         self.device.clear();
+        self.device_kind.clear();
         self.shots = 0;
         self.close_asked = None;
+        self.epoch += 1;
         (sum, was_app, was_streamed)
     }
 
@@ -174,40 +184,133 @@ fn cursor_dir(app: &AppHandle) -> PathBuf {
 }
 
 static CURSOR_HIDDEN: AtomicBool = AtomicBool::new(false);
-static WATCHING: AtomicBool = AtomicBool::new(false);
+static WATCH_SEQ: AtomicU64 = AtomicU64::new(0);
 
 fn marker(dir: &Path) -> PathBuf {
     dir.join("cursor-oculto")
 }
 
+/// Tipo del cliente conectado segun la lista de Apollo y los dispositivos emparejados.
+/// Si hay un PC conectado a la vez que una tablet, gana `"pc"` para no ocultar el cursor al PC.
+fn connected_kind_from_apollo(
+    apollo_clients: &[crate::apollo::web::Client],
+    paired: &[visor_core::devices::Device],
+) -> Option<&'static str> {
+    let mut saw_tablet = false;
+    for c in apollo_clients.iter().filter(|c| c.connected == Some(true)) {
+        let matched = paired
+            .iter()
+            .find(|d| !d.revoked && d.apollo_id.as_deref() == Some(c.uuid.as_str()))
+            .or_else(|| paired.iter().find(|d| !d.revoked && d.apollo_id.is_none() && d.name == c.name));
+        if let Some(d) = matched {
+            if d.kind == "pc" {
+                return Some("pc");
+            }
+            if d.kind == "tablet" {
+                saw_tablet = true;
+            }
+        }
+    }
+    saw_tablet.then_some("tablet")
+}
+
+fn has_active_pc(paired: &[visor_core::devices::Device]) -> bool {
+    paired.iter().any(|d| !d.revoked && d.kind == "pc")
+}
+
+fn resolve_connected_kind(app: &AppHandle) -> Option<&'static str> {
+    if !crate::apollo::web::creds_present() {
+        return None;
+    }
+    let clients = crate::apollo::web::clients().ok()?;
+    let paired = app.state::<AppState>().db.with(visor_core::devices::list).unwrap_or_default();
+    connected_kind_from_apollo(&clients, &paired)
+}
+
+fn resolve_fallback_tablet(app: &AppHandle) -> bool {
+    let paired = app.state::<AppState>().db.with(visor_core::devices::list).unwrap_or_default();
+    !has_active_pc(&paired)
+}
+
+fn apply_reconciled_kind(app: &AppHandle, expected_epoch: u64, kind: &str) {
+    {
+        let mut s = session();
+        if s.epoch != expected_epoch || s.phase != Phase::Playing {
+            return;
+        }
+        s.device_kind = kind.to_string();
+    }
+    if kind == "tablet" {
+        hide_cursor_if_enabled(app);
+    } else {
+        restore_cursor(&cursor_dir(app));
+    }
+}
+
+fn spawn_cursor_reconcile(app: AppHandle, expected_epoch: u64) {
+    std::thread::spawn(move || {
+        let delays = [Duration::ZERO, Duration::from_millis(400), Duration::from_millis(1000)];
+        for d in delays {
+            if !d.is_zero() {
+                std::thread::sleep(d);
+            }
+            {
+                let s = session();
+                if s.epoch != expected_epoch || s.phase != Phase::Playing {
+                    return;
+                }
+            }
+            if let Some(kind) = resolve_connected_kind(&app) {
+                apply_reconciled_kind(&app, expected_epoch, kind);
+                return;
+            }
+            if !crate::apollo::web::creds_present() {
+                break;
+            }
+        }
+        let kind = if resolve_fallback_tablet(&app) { "tablet" } else { "pc" };
+        apply_reconciled_kind(&app, expected_epoch, kind);
+    });
+}
+
 fn hide_cursor_if_enabled(app: &AppHandle) {
-    if !app.state::<AppState>().config.lock().unwrap().stream_hide_cursor {
+    if !app.state::<AppState>().config.lock().unwrap().stream_hide_cursor || !session().should_hide_cursor() {
         return;
     }
     hide_cursor(&cursor_dir(app));
-    if !WATCHING.swap(true, Ordering::SeqCst) {
-        let a = app.clone();
-        std::thread::spawn(move || {
-            watch_cursor(&a);
-            WATCHING.store(false, Ordering::SeqCst);
-        });
-    }
+    let seq = WATCH_SEQ.fetch_add(1, Ordering::SeqCst) + 1;
+    let a = app.clone();
+    std::thread::spawn(move || watch_cursor(&a, seq));
 }
 
 /// Vigila la pantalla virtual mientras el cursor esta oculto: si desaparece mas de 5 s (Artemis se desconecto a
 /// mitad) lo restaura; si vuelve, lo oculta otra vez. Sin pantalla virtual (Sunshine) no hace nada.
-fn watch_cursor(app: &AppHandle) {
+fn watch_cursor(app: &AppHandle, seq: u64) {
     let dir = cursor_dir(app);
     let (mut seen, mut missing) = (false, 0u32);
     loop {
         std::thread::sleep(Duration::from_millis(250));
-        if session().phase != Phase::Playing {
+        if WATCH_SEQ.load(Ordering::SeqCst) != seq {
+            return;
+        }
+        let allow = {
+            let s = session();
+            s.phase == Phase::Playing && s.should_hide_cursor()
+        } && app.state::<AppState>().config.lock().unwrap().stream_hide_cursor;
+        if !allow {
+            if CURSOR_HIDDEN.load(Ordering::SeqCst) {
+                restore_cursor(&dir);
+            }
             return;
         }
         if crate::display::virtual_monitor().is_some() {
             seen = true;
             missing = 0;
             if !CURSOR_HIDDEN.load(Ordering::SeqCst) {
+                if resolve_connected_kind(app) == Some("pc") {
+                    session().device_kind = "pc".into();
+                    return;
+                }
                 hide_cursor(&dir);
             }
         } else if seen {
@@ -279,8 +382,8 @@ fn app_installed(app: &AppHandle) -> bool {
 /// «Jugar» desde la tablet. Con el ayudante el juego queda pendiente hasta que la tablet conecte; sin el
 /// (app «Desktop» o Sunshine) se sondea la pantalla virtual y, si no aparece, se abre en el monitor del PC.
 /// Devuelve `{app}`: el nombre de la app de Apollo que debe abrir la tablet, o `null` para usar su ajuste.
-/// `device`: id del dispositivo que juega (se guarda en la partida).
-pub fn launch(app: &AppHandle, game: Game, device: String) -> Result<Value, String> {
+/// `device`: id del dispositivo que juega (se guarda en la partida). `device_kind`: `"tablet"` o `"pc"`.
+pub fn launch(app: &AppHandle, game: Game, device: String, device_kind: String) -> Result<Value, String> {
     if let Some(a) = app.state::<AppState>().active.lock().unwrap().as_ref() {
         return Err(format!("Ya hay un juego en marcha: {}", a.name));
     }
@@ -295,6 +398,7 @@ pub fn launch(app: &AppHandle, game: Game, device: String) -> Result<Value, Stri
         s.game = Some((game.id.clone(), game.name.clone()));
         s.pending = Some(game.clone());
         s.device = device;
+        s.device_kind = device_kind;
         s.epoch
     };
     let app = app.clone();
@@ -404,17 +508,46 @@ pub fn session_start(app: &AppHandle, _w: u32, _h: u32, _fps: u32) -> Result<Val
                 std::thread::spawn(move || launch_now(&a, g, Duration::from_secs(10)));
             }
         }
-        Phase::Starting | Phase::Playing => {}
+        Phase::Starting => {}
+        Phase::Playing => {
+            if crate::apollo::web::creds_present() {
+                let new_epoch = {
+                    let mut s = session();
+                    s.epoch += 1;
+                    s.device_kind.clear();
+                    s.epoch
+                };
+                restore_cursor(&cursor_dir(app));
+                spawn_cursor_reconcile(app.clone(), new_epoch);
+            } else {
+                let kind = session().device_kind.clone();
+                let should_hide = match kind.as_str() {
+                    "tablet" => true,
+                    "" => resolve_fallback_tablet(app),
+                    _ => false,
+                };
+                if should_hide {
+                    session().device_kind = "tablet".into();
+                    hide_cursor_if_enabled(app);
+                } else {
+                    restore_cursor(&cursor_dir(app));
+                }
+            }
+        }
         Phase::Idle => {
             if app.state::<AppState>().active.lock().unwrap().is_none() {
                 return Err("No hay ningún juego pendiente ni en marcha".to_string());
             }
-            // Artemis se reconecto con el juego aun abierto en el PC.
-            let mut s = session();
-            s.phase = Phase::Playing;
-            s.streamed = true;
-            drop(s);
-            hide_cursor_if_enabled(app);
+            // Un cliente se conecto con el juego aun abierto en el PC.
+            let new_epoch = {
+                let mut s = session();
+                s.epoch += 1;
+                s.phase = Phase::Playing;
+                s.streamed = true;
+                s.device_kind.clear();
+                s.epoch
+            };
+            spawn_cursor_reconcile(app.clone(), new_epoch);
         }
     }
     crate::stream_touch::start();
@@ -605,7 +738,8 @@ mod tests {
         let mut s = Session::new();
         s.streamed = true;
         s.stream_app = Some("Juego actual".into());
-        s.device = "tablet".into();
+        s.device = "tablet-1".into();
+        s.device_kind = "tablet".into();
         assert!(s.on_started("g1".into(), "Juego 1".into(), 1000));
         let (sum, was_app, was_streamed) = s.on_exited("g1".into(), "Juego 1".into(), "PC".into(), 12, 13000);
         assert!(sum.streamed);
@@ -615,12 +749,64 @@ mod tests {
         assert!(!s.streamed);
         assert!(s.stream_app.is_none());
         assert!(s.device.is_empty());
+        assert!(s.device_kind.is_empty());
+
+        // Otro PC en streaming no debe ocultar el cursor.
+        s.streamed = true;
+        s.device = "pc-2".into();
+        s.device_kind = "pc".into();
+        assert!(!s.on_started("g3".into(), "Juego 3".into(), 15000));
+        s.on_exited("g3".into(), "Juego 3".into(), "PC".into(), 2, 17000);
 
         assert!(!s.on_started("g2".into(), "Juego 2".into(), 20000));
         let (sum2, app2, streamed2) = s.on_exited("g2".into(), "Juego 2".into(), "PC".into(), 5, 25000);
         assert!(!sum2.streamed);
         assert!(app2.is_none());
         assert!(!streamed2);
+    }
+
+    fn dev(id: &str, name: &str, kind: &str, apollo_id: Option<&str>, revoked: bool) -> visor_core::devices::Device {
+        visor_core::devices::Device {
+            id: id.into(),
+            name: name.into(),
+            kind: kind.into(),
+            created_ms: 0,
+            last_seen_ms: 0,
+            app_version: String::new(),
+            api: 3,
+            revoked,
+            apollo_id: apollo_id.map(str::to_string),
+        }
+    }
+
+    fn apollo_client(uuid: &str, name: &str, connected: Option<bool>) -> crate::apollo::web::Client {
+        crate::apollo::web::Client { uuid: uuid.into(), name: name.into(), perm: None, connected }
+    }
+
+    #[test]
+    fn detecta_tipo_conectado_desde_apollo() {
+        let devs = vec![
+            dev("d1", "Mi Tablet", "tablet", Some("u-tab"), false),
+            dev("d2", "Portátil", "pc", Some("u-pc"), false),
+            dev("d3", "Tablet vieja", "tablet", None, false),
+            dev("d4", "PC revocado", "pc", Some("u-rev"), true),
+        ];
+        // Solo tablet conectada -> tablet.
+        assert_eq!(connected_kind_from_apollo(&[apollo_client("u-tab", "Mi Tablet", Some(true))], &devs), Some("tablet"));
+        // Solo PC conectado -> pc.
+        assert_eq!(connected_kind_from_apollo(&[apollo_client("u-pc", "Portátil", Some(true))], &devs), Some("pc"));
+        // Si hay PC y tablet conectados a la vez, gana pc para no dejarle sin cursor.
+        assert_eq!(
+            connected_kind_from_apollo(&[apollo_client("u-tab", "Mi Tablet", Some(true)), apollo_client("u-pc", "Portátil", Some(true))], &devs),
+            Some("pc")
+        );
+        // Emparejado sin apollo_id: coincide por nombre si sigue activo.
+        assert_eq!(connected_kind_from_apollo(&[apollo_client("otra", "Tablet vieja", Some(true))], &devs), Some("tablet"));
+        // Desconectados o revocados no cuentan.
+        assert_eq!(connected_kind_from_apollo(&[apollo_client("u-tab", "Mi Tablet", Some(false))], &devs), None);
+        assert_eq!(connected_kind_from_apollo(&[apollo_client("u-rev", "PC revocado", Some(true))], &devs), None);
+        assert!(!has_active_pc(&[dev("d1", "Mi Tablet", "tablet", None, false), dev("d4", "PC revocado", "pc", None, true)]));
+        assert!(has_active_pc(&devs));
     }
 
     #[test]

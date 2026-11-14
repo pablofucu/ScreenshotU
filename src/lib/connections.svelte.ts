@@ -139,7 +139,7 @@ export function connRow(id: ConnId): { l: string; v: string; d: string } {
     case 'conncredsclear':
       return { l: 'Olvidar credenciales de Apollo', v: cn.confirm === 'creds' ? 'Pulsa otra vez' : cn.web?.hasCredentials ? '' : '—', d: 'Borra el usuario y la contraseña guardados. El streaming de los dispositivos ya emparejados sigue funcionando; para emparejar otros nuevos tendrás que volver a guardarlos.' };
     case 'conncursor':
-      return { l: 'Ocultar el cursor en el streaming', v: yn(app.config.streamHideCursor), d: 'Mientras juegas desde la tablet, el cursor del PC se vuelve transparente para que no salga sobre el juego. Desactívalo si usas el modo trackpad de Artemis, donde el puntero tiene que verse.' };
+      return { l: 'Ocultar el cursor en el streaming', v: yn(app.config.streamHideCursor), d: 'Mientras juegas desde la tablet, el cursor del PC se vuelve transparente para que no salga sobre el juego (desde otro PC siempre se ve). Desactívalo si usas el modo trackpad de Artemis, donde el puntero tiene que verse.' };
   }
 }
 

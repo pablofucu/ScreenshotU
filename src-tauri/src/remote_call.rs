@@ -83,7 +83,7 @@ pub fn dispatch(app: &AppHandle, caller: &visor_core::remote::Caller, cmd: &str,
                 *state.games.lock().unwrap() = found;
             }
             // La partida queda a nombre de quien la pide (streaming desde la tablet o desde otro PC).
-            out(crate::stream::launch(app, game.ok_or("Juego no encontrado")?, caller.device_id.clone()))
+            out(crate::stream::launch(app, game.ok_or("Juego no encontrado")?, caller.device_id.clone(), caller.kind.clone()))
         }
         "stream_cancel" => val(crate::stream::cancel()),
         "close_game" => out(crate::stream::close(app, arg(a, "force").unwrap_or(false))),
