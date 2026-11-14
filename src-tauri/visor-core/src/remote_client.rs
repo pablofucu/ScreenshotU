@@ -304,6 +304,15 @@ pub fn overlay(addr: &str, token: &str, version: &str) -> Result<()> {
     Ok(())
 }
 
+/// `GET /api/v1/session` con el token del dispositivo: estado actual de la sesión en el PC principal.
+pub fn session(addr: &str, token: &str, version: &str) -> Result<serde_json::Value> {
+    let r = with_headers(agent().get(&url(addr, "/api/v1/session")), version)
+        .set("Authorization", &format!("Bearer {token}"))
+        .call()
+        .map_err(|e| http_err(addr, e))?;
+    Ok(r.into_json().context("estado de sesión del PC principal")?)
+}
+
 /// Como `call`, con mas tiempo (subidas grandes, p. ej. el audio de una frase).
 pub fn call_long(addr: &str, token: &str, version: &str, cmd: &str, args: serde_json::Value) -> Result<serde_json::Value> {
     let a = ureq::AgentBuilder::new().timeout_connect(TIMEOUT).timeout(Duration::from_secs(120)).build();

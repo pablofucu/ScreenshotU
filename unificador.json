@@ -731,33 +731,69 @@
               "id": "CJY-6",
               "title": "La tablet (Artemis) vuelve sola al visor cuando cae la sesión",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-14T01:32:03+01:00",
                   "by": "antigravity",
                   "kind": "start",
                   "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:34:35+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "CaptureKeyService usa la maquina SessionWatch (encuesta cada 1 s en primer plano, detecta idle sin requerir cambio de last.endedMs, detecta cancelacion desde pending y caida del host tras 5 fallos) y vuelve al visor con FLAG_ACTIVITY_SINGLE_TOP|CLEAR_TOP|REORDER_TO_FRONT. Compilado con gradlew compileDebugUnitTestJavaWithJavac."
                 }
               ],
               "cat": "codigo",
-              "updated": "2026-11-14T01:32:03+01:00"
+              "updated": "2026-11-14T01:34:35+01:00",
+              "result": "CaptureKeyService usa la maquina SessionWatch (encuesta cada 1 s en primer plano, detecta idle sin requerir cambio de last.endedMs, detecta cancelacion desde pending y caida del host tras 5 fallos) y vuelve al visor con FLAG_ACTIVITY_SINGLE_TOP|CLEAR_TOP|REORDER_TO_FRONT. Compilado con gradlew compileDebugUnitTestJavaWithJavac."
             },
             {
               "id": "CJY-7",
               "title": "El PC cliente cierra Moonlight y vuelve al visor cuando cae la sesión",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-14T01:34:35+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:36:52+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "client_open_stream registra el proceso de Moonlight y vigila GET /api/v1/session (visor_core::remote_client::session); si termina o cae el host tras 5 fallos, o al recibir game-exited / close_game en ipc.ts, client_close_stream cierra Moonlight y devuelve el visor al frente con allow_foreground y show_main. Verificado con npm run check (0 errores), node --test (25/25), SessionWatchTest JUnit (3/3), cargo test --lib (44 ok, 1 ignored) y cargo test -p visor-core (338 ok, 1 ignored)."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-14T01:36:52+01:00",
+              "result": "client_open_stream registra el proceso de Moonlight y vigila GET /api/v1/session (visor_core::remote_client::session); si termina o cae el host tras 5 fallos, o al recibir game-exited / close_game en ipc.ts, client_close_stream cierra Moonlight y devuelve el visor al frente con allow_foreground y show_main. Verificado con npm run check (0 errores), node --test (25/25), SessionWatchTest JUnit (3/3), cargo test --lib (44 ok, 1 ignored) y cargo test -p visor-core (338 ok, 1 ignored)."
             },
             {
               "id": "CJY-8",
               "title": "Probar en la tablet real y con otro PC: cerrar juego y comprobar que no queda conexión",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "pruebas"
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-14T01:36:52+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T01:36:52+01:00",
+                  "by": "antigravity",
+                  "kind": "note",
+                  "text": "Implementación y pruebas automáticas listas en cliente PC y Android; falta validación manual con tablet real (Artemis) y segundo PC (Moonlight)."
+                }
+              ],
+              "cat": "pruebas",
+              "updated": "2026-11-14T01:36:52+01:00"
             }
           ]
         }

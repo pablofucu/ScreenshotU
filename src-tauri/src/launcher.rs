@@ -70,7 +70,7 @@ pub fn main_hwnd(app: &AppHandle) -> isize {
 }
 
 /// Deja que el juego que se va a lanzar se ponga delante aunque tarde en abrir su ventana.
-fn allow_foreground() {
+pub(crate) fn allow_foreground() {
     #[cfg(windows)]
     unsafe {
         use windows::Win32::UI::WindowsAndMessaging::{AllowSetForegroundWindow, ASFW_ANY};

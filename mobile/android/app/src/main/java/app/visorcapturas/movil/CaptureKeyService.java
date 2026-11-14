@@ -225,7 +225,7 @@ public class CaptureKeyService extends AccessibilityService {
     private void returnToApp() {
         Intent i = getPackageManager().getLaunchIntentForPackage(getPackageName());
         if (i == null) return;
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         try {
             startActivity(i);
         } catch (Exception ignored) {
@@ -255,64 +255,66 @@ public class CaptureKeyService extends AccessibilityService {
     private volatile long moonlightMs = 0;
 
     /**
-     * Mientras la partida siga en marcha pregunta al PC por la sesion: cada 2 s con Artemis delante y cada 5 s fuera.
-     * Con Artemis fuera (y el visor tambien) muestra la notificacion de partida en curso. Cuando ve una partida y despues el
-     * reposo con un resumen nuevo, la partida acabo. Si el PC no responde unos 2,5 min seguidos, se rinde.
+     * Mientras la partida siga en marcha pregunta al PC por la sesion: cada 1 s con Artemis delante y cada 5 s fuera.
+     * Con Artemis fuera (y el visor tambien) muestra la notificacion de partida en curso. Cuando termina o se pierde
+     * la sesion del host, trae el visor de vuelta (o avisa si otra app esta delante).
      */
     private void startWatch() {
         if (watching) return;
         watching = true;
         new Thread(() -> {
             try {
-                long baseline = -2;
-                boolean seen = false;
+                SessionWatch watch = new SessionWatch();
                 boolean done = false;
-                int fails = 0;
                 while (true) {
                     boolean front = StreamingPlugin.isMoonlight(foreground);
                     if (front) moonlightMs = System.currentTimeMillis();
                     Object[] s = sessionState();
-                    if (s == null) {
-                        if (++fails >= 30) break;
-                    } else {
-                        fails = 0;
-                        String state = (String) s[0];
-                        long ended = (Long) s[1];
-                        boolean active = "starting".equals(state) || "playing".equals(state);
-                        if (baseline == -2) baseline = ended;
+                    String state = s == null ? "" : (String) s[0];
+                    long ended = s == null ? -1L : (Long) s[1];
+                    if (s != null) {
                         String app = (String) s[3];
                         if (!app.isEmpty()) getSharedPreferences(StreamingPlugin.PREFS, Context.MODE_PRIVATE).edit().putString("r_app", app).apply();
-                        if (active) {
-                            seen = true;
-                            final String name = (String) s[2];
-                            final boolean show = !front && !getPackageName().equals(foreground);
-                            ui.post(() -> { if (show) showOngoing(name); else hideOngoing(); });
-                        } else {
-                            if (seen && "idle".equals(state) && ended != baseline) { done = true; break; }
-                            // Sin partida en marcha y Artemis fuera: no hay nada que vigilar.
-                            if (!front) break;
-                        }
                     }
-                    try { Thread.sleep(front ? 2000 : 5000); } catch (InterruptedException ignored) { }
+                    SessionWatch.Action act = watch.step(s != null, state, ended, front);
+                    if (act == SessionWatch.Action.ACTIVE) {
+                        final String name = (String) s[2];
+                        final boolean show = !front && !getPackageName().equals(foreground);
+                        ui.post(() -> { if (show) showOngoing(name); else hideOngoing(); });
+                    } else if (act == SessionWatch.Action.RETURN_TO_APP) {
+                        done = true;
+                        break;
+                    } else if (act == SessionWatch.Action.STOP) {
+                        break;
+                    }
+                    try { Thread.sleep(front ? 1000 : 5000); } catch (InterruptedException ignored) { }
                 }
                 ui.post(this::hideOngoing);
-                if (done) ui.post(this::sessionEnded);
+                if (done) {
+                    boolean notifyOnly = !watch.wasSeen();
+                    ui.post(() -> sessionEnded(notifyOnly));
+                }
             } finally {
                 watching = false;
             }
         }, "visor-watch").start();
     }
 
-    private void sessionEnded() {
+    private void sessionEnded(boolean silentReturn) {
         removeMenu();
         // Solo se trae el visor al frente si Artemis estaba delante o acababa de salir; en otra app, solo el aviso.
         boolean recent = StreamingPlugin.isMoonlight(foreground) || System.currentTimeMillis() - moonlightMs < 10000;
-        if (!recent) { notifyEnded(); return; }
+        if (!recent) {
+            if (!silentReturn) notifyEnded();
+            return;
+        }
         returnToApp();
         // Android bloquea en silencio el arranque desde segundo plano en algunos dispositivos: si no funciono, aviso.
-        ui.postDelayed(() -> {
-            if (!getPackageName().equals(foreground)) notifyEnded();
-        }, 1500);
+        if (!silentReturn) {
+            ui.postDelayed(() -> {
+                if (!getPackageName().equals(foreground)) notifyEnded();
+            }, 1500);
+        }
     }
 
     private void showOngoing(String name) {
@@ -377,6 +379,7 @@ public class CaptureKeyService extends AccessibilityService {
             c.setConnectTimeout(3000);
             c.setReadTimeout(5000);
             c.setRequestProperty("Authorization", "Bearer " + code);
+            c.setRequestProperty("X-Visor-Api", "3");
             if (c.getResponseCode() != 200) return null;
             BufferedReader r = new BufferedReader(new InputStreamReader(c.getInputStream(), "UTF-8"));
             StringBuilder sb = new StringBuilder();
@@ -405,6 +408,7 @@ public class CaptureKeyService extends AccessibilityService {
             c.setReadTimeout(5000);
             c.setDoOutput(true);
             c.setRequestProperty("Authorization", "Bearer " + code);
+            c.setRequestProperty("X-Visor-Api", "3");
             byte[] body = json == null ? new byte[0] : json.getBytes("UTF-8");
             if (json != null) c.setRequestProperty("Content-Type", "application/json");
             c.setFixedLengthStreamingMode(body.length);

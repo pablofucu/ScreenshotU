@@ -82,11 +82,18 @@ async function detect() {
   };
   void local!.listen<{ id?: string }>('game-started', (ev) => { localPlayingId = ev.payload?.id || '__local__'; });
   void local!.listen('game-exited', () => { localPlayingId = null; });
-  void rev.listen('game-exited', () => { streamApp = ''; });
+  void rev.listen('game-exited', () => {
+    streamApp = '';
+    void core.invoke('client_close_stream').catch(() => {});
+  });
   ctrl.setResumeHandler({
     can: () => !localPlayingId,
     resume: async () => { await core.invoke('client_open_stream', { app: streamApp }); },
-    close: async (force) => sc.parseCloseStatus(await rc.invoke('close_game', { force })),
+    close: async (force) => {
+      const s = sc.parseCloseStatus(await rc.invoke('close_game', { force }));
+      if (s !== 'asked') void core.invoke('client_close_stream').catch(() => {});
+      return s;
+    },
   });
   void syncRemoteSession();
   if (typeof document !== 'undefined') {

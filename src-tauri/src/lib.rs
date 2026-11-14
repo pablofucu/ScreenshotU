@@ -1420,6 +1420,7 @@ pub fn run() {
             client::client_mark_unpaired,
             client::client_unpair,
             client::client_open_stream,
+            client::client_close_stream,
             client::client_wake,
             client::client_set_moonlight,
             client::client_add_game,

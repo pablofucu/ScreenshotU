@@ -420,16 +420,165 @@ pub async fn client_unpair(app: AppHandle, state: State<'_, AppState>) -> Result
     Ok(info_of(None, &state))
 }
 
-/// Abre Moonlight con la app de Apollo que devolvió `launch_stream` («Juego actual»).
+/// Abre Moonlight con la app de Apollo que devolvió `launch_stream` («Juego actual»)
+/// y vigila la sesión para cerrar Moonlight y devolver el visor al frente cuando acabe o se corte.
 #[tauri::command]
-pub fn client_open_stream(state: State<'_, AppState>, app: String) -> Result<(), String> {
+pub fn client_open_stream(handle: AppHandle, state: State<'_, AppState>, app: String) -> Result<(), String> {
     let cfg = current(&state)?;
     let exe = moonlight(&cfg).ok_or("No se encuentra Moonlight: instálalo o elige dónde está en Ajustes → Este equipo")?;
     let host = rc::addr_host(cfg.addr());
     // Sin app «Juego actual» en Apollo, el escritorio (como la tablet).
     let app = if app.trim().is_empty() { "Desktop".to_string() } else { app };
-    std::process::Command::new(exe).args(["stream", &host, &app]).spawn().map_err(|e| format!("No se pudo abrir Moonlight: {e}"))?;
+    let child = std::process::Command::new(exe).args(["stream", &host, &app]).spawn().map_err(|e| format!("No se pudo abrir Moonlight: {e}"))?;
+    start_stream_watch(handle, cfg, child);
     Ok(())
+}
+
+/// Cierra Moonlight si se abrió desde el visor y lo devuelve al primer plano.
+#[tauri::command]
+pub fn client_close_stream(app: AppHandle) {
+    if !STREAM_ACTIVE.swap(false, std::sync::atomic::Ordering::SeqCst) {
+        return;
+    }
+    STREAM_EPOCH.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    close_moonlight_processes();
+    restore_visor_window(&app);
+}
+
+static STREAM_EPOCH: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+static STREAM_ACTIVE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static MOONLIGHT_CHILD: std::sync::Mutex<Option<std::process::Child>> = std::sync::Mutex::new(None);
+
+fn restore_visor_window(app: &AppHandle) {
+    crate::launcher::allow_foreground();
+    crate::tray::show_main(app);
+}
+
+fn scan_moonlight_processes(kill: bool) -> bool {
+    use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
+    let mut sys = System::new();
+    sys.refresh_processes_specifics(ProcessesToUpdate::All, true, ProcessRefreshKind::nothing());
+    let mut found = false;
+    for p in sys.processes().values() {
+        if p.name().to_string_lossy().eq_ignore_ascii_case("Moonlight.exe") {
+            found = true;
+            if kill {
+                p.kill();
+            }
+        }
+    }
+    found
+}
+
+fn close_moonlight_processes() {
+    if let Some(mut c) = MOONLIGHT_CHILD.lock().unwrap().take() {
+        let _ = c.kill();
+        let _ = c.wait();
+    }
+    scan_moonlight_processes(true);
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum WatchAction {
+    Continue,
+    CloseAndReturn,
+}
+
+struct StreamWatchState {
+    seen_active: bool,
+    saw_pending: bool,
+    idle_polls: u32,
+    fails: u32,
+}
+
+impl StreamWatchState {
+    fn new() -> Self {
+        Self { seen_active: false, saw_pending: false, idle_polls: 0, fails: 0 }
+    }
+
+    fn step(&mut self, poll_ok: bool, state: &str) -> WatchAction {
+        if !poll_ok {
+            self.fails += 1;
+            if self.fails >= 5 {
+                return WatchAction::CloseAndReturn;
+            }
+            return WatchAction::Continue;
+        }
+        self.fails = 0;
+        if state == "starting" || state == "playing" {
+            self.seen_active = true;
+            self.idle_polls = 0;
+            return WatchAction::Continue;
+        }
+        if state == "pending" {
+            self.saw_pending = true;
+            self.idle_polls = 0;
+            return WatchAction::Continue;
+        }
+        self.idle_polls += 1;
+        if self.seen_active || self.saw_pending || self.idle_polls >= 3 {
+            return WatchAction::CloseAndReturn;
+        }
+        WatchAction::Continue
+    }
+}
+
+fn start_stream_watch(app: AppHandle, cfg: ClientCfg, child: std::process::Child) {
+    let epoch = STREAM_EPOCH.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+    STREAM_ACTIVE.store(true, std::sync::atomic::Ordering::SeqCst);
+    *MOONLIGHT_CHILD.lock().unwrap() = Some(child);
+    let ver = version(&app);
+    std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(400));
+        let mut watch = StreamWatchState::new();
+        let started = std::time::Instant::now();
+        loop {
+            if STREAM_EPOCH.load(std::sync::atomic::Ordering::SeqCst) != epoch || !STREAM_ACTIVE.load(std::sync::atomic::Ordering::SeqCst) {
+                break;
+            }
+            let child_exited = {
+                let mut g = MOONLIGHT_CHILD.lock().unwrap();
+                match g.as_mut() {
+                    Some(c) => match c.try_wait() {
+                        Ok(Some(_)) | Err(_) => {
+                            *g = None;
+                            true
+                        }
+                        Ok(None) => false,
+                    },
+                    None => true,
+                }
+            };
+            if child_exited && started.elapsed() >= Duration::from_secs(2) && !scan_moonlight_processes(false) {
+                if STREAM_ACTIVE.swap(false, std::sync::atomic::Ordering::SeqCst) {
+                    restore_visor_window(&app);
+                }
+                break;
+            }
+            let res = match rc::session(cfg.addr(), &cfg.token, &ver) {
+                Err(e) if cfg.host_addrs.len() > 1 && e.chain().any(|c| c.downcast_ref::<rc::Unreachable>().is_some()) => {
+                    let before = cfg.addr().to_string();
+                    match probe(&cfg, true) {
+                        Some(a) if a != before => rc::session(&a, &cfg.token, &ver),
+                        _ => Err(e),
+                    }
+                }
+                r => r,
+            };
+            let act = match res {
+                Ok(v) => watch.step(true, v["state"].as_str().unwrap_or("idle")),
+                Err(_) => watch.step(false, ""),
+            };
+            if act == WatchAction::CloseAndReturn {
+                if STREAM_ACTIVE.swap(false, std::sync::atomic::Ordering::SeqCst) {
+                    close_moonlight_processes();
+                    restore_visor_window(&app);
+                }
+                break;
+            }
+            std::thread::sleep(Duration::from_secs(1));
+        }
+    });
 }
 
 /// Enciende el PC principal (Wake-on-LAN, solo en la red local).
@@ -806,4 +955,33 @@ pub async fn client_copy_game(app: AppHandle, state: State<'_, AppState>, id: St
 #[tauri::command]
 pub fn client_copy_cancel() {
     COPY_CANCEL.store(true, std::sync::atomic::Ordering::Relaxed);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn vigilancia_moonlight_cierra_al_terminar_o_caer_host() {
+        let mut w = StreamWatchState::new();
+        assert_eq!(w.step(true, "pending"), WatchAction::Continue);
+        assert_eq!(w.step(true, "playing"), WatchAction::Continue);
+        assert_eq!(w.step(true, "idle"), WatchAction::CloseAndReturn);
+
+        let mut caido = StreamWatchState::new();
+        assert_eq!(caido.step(true, "playing"), WatchAction::Continue);
+        for _ in 0..4 {
+            assert_eq!(caido.step(false, ""), WatchAction::Continue);
+        }
+        assert_eq!(caido.step(true, "playing"), WatchAction::Continue);
+        for _ in 0..4 {
+            assert_eq!(caido.step(false, ""), WatchAction::Continue);
+        }
+        assert_eq!(caido.step(false, ""), WatchAction::CloseAndReturn);
+
+        let mut ya_libre = StreamWatchState::new();
+        assert_eq!(ya_libre.step(true, "idle"), WatchAction::Continue);
+        assert_eq!(ya_libre.step(true, "idle"), WatchAction::Continue);
+        assert_eq!(ya_libre.step(true, "idle"), WatchAction::CloseAndReturn);
+    }
 }
