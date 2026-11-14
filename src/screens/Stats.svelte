@@ -78,6 +78,11 @@
   };
   const dayTotal = $derived(plays.reduce((a, p) => a + p.ms, 0));
   const SHOW = 4;
+  // Si las pestañas no caben, la activa se desplaza hasta verse.
+  $effect(() => {
+    void app.statsTab;
+    queueMicrotask(() => document.querySelector<HTMLElement>('.sx .vsw .gem')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+  });
 </script>
 
 <TopBar crumbs={['Inicio', 'Estadísticas', VIEW_LABEL[app.statsTab]]} />
@@ -266,6 +271,8 @@
 {/if}
 
 <style>
-  :global(.sx .vsw) { margin-left: auto; gap: 3px; padding: 4px; cursor: default; }
-  :global(.sx .vsw .o) { display: grid; place-items: center; padding: 0 16px; height: 36px; border-radius: var(--r-pill); cursor: pointer; white-space: nowrap; }
+  /* Las pestañas se compactan y, si aun así no caben, se desplazan (la activa se centra con el efecto de abajo). */
+  :global(.sx .vsw) { margin-left: auto; gap: 2px; padding: 4px; cursor: default; min-width: 0; flex-shrink: 1; overflow-x: auto; scrollbar-width: none; }
+  :global(.sx .vsw::-webkit-scrollbar) { display: none; }
+  :global(.sx .vsw .o) { display: grid; place-items: center; flex-shrink: 0; padding: 0 11px; height: 36px; border-radius: var(--r-pill); cursor: pointer; white-space: nowrap; font-size: var(--t-m); }
 </style>

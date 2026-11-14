@@ -20,7 +20,7 @@
   const idx = $derived(Array.from({ length: Math.max(0, range[1] - range[0]) }, (_, k) => range[0] + k));
 
   /** Las estanterías bajan unos píxeles para que el rótulo no choque con las pestañas de arriba. */
-  const COLL_DY = 16;
+  const COLL_DY = 12;
   const coverOf = (ti: number) => titles[ti].cover ?? titles[ti].shots[0]?.path ?? null;
 
   function itemsOf(k: number): ShelfItem[] {

@@ -463,7 +463,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .rplaying i{width:22px;height:22px;border-radius:50%;background:var(--on);display:grid;place-items:center;animation:pulse 1.1s ease-in-out infinite}
 .rplaying i svg{width:12px;height:12px;margin-left:2px}
 .rplaying i svg path{fill:var(--acc)}
-.rmeta{position:absolute;top:574px;width:346px;font-size:var(--t-m);font-weight:700;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rmeta{position:absolute;top:566px;width:346px;font-size:var(--t-m);font-weight:700;color:var(--ink-2);line-height:1.25;white-space:normal;overflow:hidden;max-height:2.5em}
 .rmeta span{font-weight:500;color:var(--ink-3)}
 .rnone{position:absolute;left:96px;top:412px;font-size:var(--t-l);font-weight:600;color:var(--ink-3)}
 .hdock{position:absolute;left:var(--gut);bottom:calc((var(--band) - 38px) / 2);display:flex;gap:10px;z-index:5}
@@ -552,8 +552,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .stabs .t,.stview .t{height:36px;padding:0 16px;border-radius:var(--r-pill);display:grid;place-items:center;font-size:var(--t-m);font-weight:800;color:var(--ink-2);white-space:nowrap}
 .stabs .t.on,.stview .t.on{background:var(--gf);color:var(--on);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--f2) 75%,black)}
 .stabs{position:relative}
-.stabs::after,.ttabs::after{content:'';position:absolute;left:16px;right:16px;bottom:2px;height:3px;border-radius:2px;background:var(--rbsec,var(--grad));opacity:.9;pointer-events:none}
-.ttabs::after{left:4px;right:4px;bottom:-9px}
+.stabs::after{content:'';position:absolute;left:16px;right:16px;bottom:2px;height:3px;border-radius:2px;background:var(--rbsec,var(--grad));opacity:.9;pointer-events:none}
 .stabs .btn,.stper .btn{cursor:pointer}
 .stabs .t{padding:0 12px}
 .stabs .t,.stview .t{cursor:pointer}.stabs .t.on,.stview .t.on{cursor:default}
@@ -824,7 +823,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 
 /* Zona de las estanterías de «Mi lista» y «Colecciones» (recorta lo que se desplaza fuera, a ancho completo para no cortar las sombras). */
 /* Acaba donde empieza la banda de pistas: de la tercera estantería solo asoma el borde de su pestaña. */
-.lclip{position:absolute;left:0;top:166px;width:1280px;height:calc(var(--content-end) - 166px);overflow:hidden}
+.lclip{position:absolute;left:0;top:166px;width:1280px;height:calc(var(--content-end) - 154px);overflow:hidden}
 /* Rescate de racha: color propio por categoría (nunca el de la categoría). */
 .r-vn{--rc:#E9A100;--rsoft:#fcefc7;--rink:#8a5d00;--rmid:#f1dca0}
 .r-jv{--rc:#6E56CF;--rsoft:#e8e3fb;--rink:#4a3aa0;--rmid:#cdc3f2}

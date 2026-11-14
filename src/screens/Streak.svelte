@@ -216,9 +216,7 @@
         <span>Últimos 6 meses{#if !many} <small>meta {goalLabel(sel.goal)} al día</small>{/if}</span>
         {#if tracks.length > 1}
           <span class="stabs pill">
-            <span class="btn sh" data-hact="lb">LB</span>
             {#each tracks as t (t.key)}<span class="t" class:on={t.key === sel.key} style="--c:{GOAL_COL[t.key].c}" data-hact={t.key === sel.key ? '' : 'goal:' + t.key}>{many ? GOAL_COL[t.key].tab : GOAL_COL[t.key].full}</span>{/each}
-            <span class="btn sh" data-hact="rb">RB</span>
           </span>
         {/if}
       </div>
@@ -265,8 +263,8 @@
     <!-- A qué hora lees -->
     <div class="stpanel shours in" style="--c:{C.c};--d:.5s">
       <div class="sth">{T.when} <small>30 días</small></div>
-      <div class="shb">
-        {#each det.hours as h, i}<i class:pk={h > 0 && h === hmax} style="height:{drawn ? Math.max(h > 0 ? 4 : 2, (h / hmax) * 100) : 0}%;transition-delay:{0.5 + i * 0.02}s"></i>{/each}
+      <div class="shb" class:nil={!det.hours.some((h) => h > 0)}>
+        {#each det.hours as h, i}<i class:pk={h > 0 && h === hmax} style="height:{drawn && h > 0 ? Math.max(4, (h / hmax) * 100) : 0}%;transition-delay:{0.5 + i * 0.02}s"></i>{/each}
       </div>
       <div class="shl"><span>7:00</span><span>13:00</span><span>19:00</span><span>1:00</span></div>
       <div class="speak">{peak || T.none30}</div>
@@ -344,7 +342,6 @@
   .stabs{display:flex;align-items:center;gap:3px;height:28px;margin:-4px 0;padding:0 3px;border-radius:var(--r-pill)}
   .stabs .t{height:22px;padding:0 11px;border-radius:var(--r-pill);display:grid;place-items:center;font-size:var(--t-s);font-weight:800;color:var(--ink-2);cursor:pointer}
   .stabs .t.on{background:var(--c);color:var(--on);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--c) 70%,black);cursor:default}
-  .stabs .btn{cursor:pointer;transform:scale(.78);margin:0 -3px}
   .smrow{display:flex;gap:18px;margin-top:6px}
   .sheat{flex:none}
   .scols{display:flex;gap:3px}
@@ -408,6 +405,7 @@
   .snone{margin-top:40px;font-size:var(--t-m);font-weight:700;color:var(--ink-3);text-align:center}
   .shb{display:flex;align-items:flex-end;gap:3px;height:120px;margin-top:12px;border-bottom:2px solid var(--line)}
   .shb i{flex:1;border-radius:3px 3px 1px 1px;background:color-mix(in srgb,var(--c) 45%,var(--tint-base));transition:height .7s cubic-bezier(.3,.8,.3,1)}
+  .shb.nil{border-bottom-color:transparent}
   .shb i.pk{background:var(--c)}
   .shl{display:flex;justify-content:space-between;margin-top:4px;font-size:var(--t-xs);font-weight:700;color:var(--ink-3)}
   .speak{margin-top:6px;font-size:var(--t-s);font-weight:800;color:var(--ink-2)}

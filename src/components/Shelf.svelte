@@ -109,7 +109,7 @@
   const segX = $derived(positions && positions.length ? [positions[0] + SHELF_CW / 2, positions[positions.length - 1] + SHELF_CW / 2] : [0, 0]);
 </script>
 
-<div class="shelf" class:dim class:dk={ink !== '#fff'} class:with-ord={hasOrd} class:tinted={!!vars} style="top:{top}px;--acc:{acc};--accv:{accv(acc)};--on-acc:{ink}{vars ? ';' + vars : ';--ink:' + ink}">
+<div class="shelf" class:dim class:dk={ink !== '#fff'} class:with-ord={hasOrd} class:tinted={!!vars} class:railed={!!rail && !!positions} style="top:{top}px;--acc:{acc};--accv:{accv(acc)};--on-acc:{ink}{vars ? ';' + vars : ';--ink:' + ink}">
   <div class="bsh" class:lit={!dim} class:soft={dim} class:hasaur={aurora.length > 0 || !!tabStyle} class:noic={!icon}>
     {#if aurora.length}
       <div class="aur">{#each aurora as c, k}<b style="left:{4 + k * 20}%;background:{c}"></b>{/each}</div>
@@ -268,7 +268,9 @@
 
   /* ---- Línea de tiempo (colecciones), «regla»: tallo bajo cada portada, línea gris con el tramo de color de sus juegos,
      puntos blancos con anillo del color del juego y un rótulo por año (el enfocado, en píldora con el degradado) ---- */
-  .slip.railed{height:40px}
+  .slip.railed{height:40px;background:none;box-shadow:none}
+  .shelf.railed .rtrack.view{top:5px}
+  .shelf.railed.with-ord .rtrack.view{top:7px}
   .rline{position:absolute;left:0;top:9px;height:2px;border-radius:2px;background:rgba(60,70,90,.16)}
   .rail{position:absolute;top:8px;height:4px;border-radius:4px}
   .rstem{position:absolute;top:0;width:2px;height:9px;margin-left:-1px;background:rgba(60,70,90,.2)}

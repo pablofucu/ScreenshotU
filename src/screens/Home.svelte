@@ -35,7 +35,7 @@
   const focusRec = $derived(app.focus.startsWith('rec') ? recent[+app.focus.slice(3)] : undefined);
   function meta(t: (typeof recent)[number]['t'], pname: string) {
     const when = t.lastPlayed ? `Jugado ${fmtAgo(t.lastPlayed)}` : t.shots[0] ? `Captura del ${fmtShort(t.shots[0].date)}` : '';
-    const rest = [t.playSeconds >= 60 ? `${fmtDur(t.playSeconds)} en total` : pname, t.shots.length ? nCapturas(t.shots.length) : ''].filter(Boolean);
+    const rest = [t.playSeconds >= 60 ? fmtDur(t.playSeconds) : pname, t.shots.length ? nCapturas(t.shots.length) : ''].filter(Boolean);
     return { when, rest: rest.join(' · ') };
   }
 
@@ -88,7 +88,7 @@
   {/if}
 
   {#if recent.length}
-    <div class="hsect" style="left:{cx0}px">Seguir jugando{#if week.min > 0 || week.shots > 0}<small> · Últimos 7 días: <b>{week.min > 0 ? fmtDur(week.min * 60) : 'sin partidas'}</b> · <b>{nCapturas(week.shots)}</b></small>{/if}</div>
+    <div class="hsect" style="left:{cx0}px">Seguir jugando{#if week.min > 0 || week.shots > 0}<small>&nbsp;· Últimos 7 días: <b>{week.min > 0 ? fmtDur(week.min * 60) : 'sin partidas'}</b> · <b>{nCapturas(week.shots)}</b></small>{/if}</div>
     {#each recent as r, i (r.t.id)}
       {@const x = cx0 + i * (CW + CGAP)}
       {@const m = meta(r.t, app.lib.platforms[r.pi].name)}

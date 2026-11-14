@@ -7,7 +7,6 @@
 | Proyecto | Plan | Hecho | Siguiente paso |
 |---|---|---|---|
 | Interfaz y estadísticas | [planes/interfaz-pendiente.md](planes/interfaz-pendiente.md) (anexo: [planes/resumen-semanal.md](planes/resumen-semanal.md)) | R1 (`weekReview` con tests) y E1 (pestañas Semana, Terminados, Panorama) | E2: contenido de la pestaña Semana. Después E3–E6, R3–R6, L1–L3 (Mi lista), H1 (Inicio), C1 (Colecciones), A1–A5 (animaciones) |
-| Arreglos de interfaz | [planes/arreglos-interfaz.md](planes/arreglos-interfaz.md) | Fallos localizados (14-nov) | ADI-1: textos grises de Inicio. Va antes que E2 |
 
 ## Siguiente (empezados, con trabajo pendiente)
 
@@ -34,4 +33,4 @@
 
 ## Terminado (planes en `archivo/`)
 
-Emparejamiento nuevo (12-nov: solicitud con 4 cifras o billete de un solo uso, Conexiones en el PC principal y en el cliente, tablet con Artemis; [archivo/emparejamiento.md](archivo/emparejamiento.md); falta probarlo con dispositivos reales), Revisión del 9 de noviembre (fases 2 y 3), metas de juegos, menú del juego, overlay (v3 es el último), tiempo de juego de Switch (fases 1–4), streaming a la tablet T1–T4, lectura de estudio, versiones 1.4.0 y 1.7.0.
+Arreglos de interfaz (14-nov, ADI-1 a 16; [archivo/arreglos-interfaz.md](archivo/arreglos-interfaz.md)), Emparejamiento nuevo (12-nov: solicitud con 4 cifras o billete de un solo uso, Conexiones en el PC principal y en el cliente, tablet con Artemis; [archivo/emparejamiento.md](archivo/emparejamiento.md); falta probarlo con dispositivos reales), Revisión del 9 de noviembre (fases 2 y 3), metas de juegos, menú del juego, overlay (v3 es el último), tiempo de juego de Switch (fases 1–4), streaming a la tablet T1–T4, lectura de estudio, versiones 1.4.0 y 1.7.0.

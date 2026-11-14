@@ -1,5 +1,5 @@
 // Textos de la racha y de la hucha, sin dependencias de la app (también los usa el menú sobre el juego).
-import { dayDate, type Rescue } from './readgoals';
+import { dayDate, type Rescue } from './readgoals.ts';
 
 const WD_S = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
 const WD_L = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
@@ -22,11 +22,11 @@ export function rescueClose(r: Rescue, long = false) {
 export const rescueFailed = (r: Rescue) => rescueDay(r.day, true);
 export const monthName = (d: number) => MON_L[dayDate(d).getUTCMonth()];
 
-/** Minutos como texto: corto («45m», «1h 05m») o largo («45 min», «1 h 05»). */
+/** Minutos como texto: corto («45m», «1h 05m») o largo («45 min», «1 h 05 min»). */
 export function fmtMin(m: number, long = false) {
   const n = Math.floor(m);
-  if (long) return n < 60 ? `${n} min` : `${Math.floor(n / 60)} h ${String(n % 60).padStart(2, '0')}`;
-  return n < 60 ? `${n}m` : `${Math.floor(n / 60)}h ${String(n % 60).padStart(2, '0')}m`;
+  if (long) return n < 60 ? `${n} min` : n % 60 === 0 ? `${n / 60} h` : `${Math.floor(n / 60)} h ${String(n % 60).padStart(2, '0')} min`;
+  return n < 60 ? `${n}m` : n % 60 === 0 ? `${n / 60}h` : `${Math.floor(n / 60)}h ${String(n % 60).padStart(2, '0')}m`;
 }
 
 /** Meta en minutos como texto corto: «1 h», «1 h 30 min», «45 min». */

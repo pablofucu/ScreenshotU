@@ -163,13 +163,13 @@
     if (e.buttons & 1) barJump(a.pos);
   };
   const hovTi = $derived(hov ? realAt(hov.pos) : -1);
-  // Con el orden «Por color»: familias de la primera y la última portada de la página («Página 2/3 · Verdes–Azules»).
+  // Con el orden «Por color»: familias de la primera y la última portada de la página («Verdes–Azules»); el número de página lo da la TopBar.
   const pageFam = $derived.by(() => {
     if (app.titleOrder !== 'color' || !grid || tab !== 'all' || pages < 2) return '';
     const a = pg * PS, b = Math.min(vis.length - 1, a + PS - 1);
     if (a > b) return '';
     const f1 = FAMS[famOf(vis[a])], f2 = FAMS[famOf(vis[b])];
-    return `Página ${pg + 1}/${pages} · ${f1 === f2 ? f1 : f1 + '–' + f2}`;
+    return f1 === f2 ? f1 : f1 + '–' + f2;
   });
 </script>
 
@@ -187,7 +187,7 @@
 <div class="ambwash" style={wash}></div>
 <TopBar crumbs={['Inicio', P?.name ?? '']} dots={grid && tab === 'all' ? pages : 0} dot={pg} />
 
-<div class="ttabs" class:car={!grid && tab === 'all'} class:list-tabs={tab === 'list'} style={tabsAcc ? `--acc:${tabsAcc.c};--accv:${accv(tabsAcc)};--acc-ink:#fff` : ''}>
+<div class="ttabs" class:car={!grid && tab === 'all'} style={tabsAcc ? `--acc:${tabsAcc.c};--accv:${accv(tabsAcc)};--acc-ink:#fff` : ''}>
   <span class="btn sh" data-hact="lt">LT</span>
   {#each TITLES_TABS as [f, label]}
     <button type="button" class="tflt" class:on={tab === f} onclick={() => setTitlesTab(f)}>{label}</button>
@@ -362,8 +362,6 @@
   <style>
   button.tflt { border: none; font-family: var(--round); font-size: var(--t-m); font-weight: 800; cursor: pointer; }
   button.tflt.tord { background: transparent; box-shadow: none; font-family: var(--round); font-size: var(--t-m); font-weight: 800; }
-  button.btn.x { border: none; font-family: var(--round); font-size: var(--t-s); font-weight: 800; cursor: pointer; }
-  .ttabs.list-tabs { top: 72px; }
   .tsearch {
     height: 32px;
     display: inline-flex;

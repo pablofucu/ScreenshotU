@@ -1,6 +1,6 @@
 <script lang="ts">
   import { app } from '../lib/store.svelte';
-  import { buildBoard, BAND_DEF } from '../lib/milista.svelte';
+  import { buildBoard } from '../lib/milista.svelte';
   import { setTitlesTab } from '../lib/controller.svelte';
   import { fmtDur } from '../lib/format';
   import Thumb from '../components/Thumb.svelte';
@@ -9,27 +9,28 @@
   // Las franjas se recalculan al cambiar estados, fijados o la categoría (nunca mezclan categorías).
   const bands = $derived(buildBoard());
 
-  // Carriles fijos (todos los de BAND_DEF, aunque estén vacíos).
-  const lanes = $derived(
-    BAND_DEF.map((d: any) => bands.find((b) => b.key === d.key) ?? { ...d, compact: d.key === 'done', items: [] as any[] })
-  );
+  // Solo hay carriles para las franjas con juegos (buildBoard ya descarta las vacías): el espacio se reparte entre ellas.
+  const lanes = $derived(bands);
 
-  // Filas por carril: 1 por carril no vacío y el resto al que más lo necesita.
+  // Alto del tablero: de debajo de las pestañas (y 182) al final del contenido (644).
+  const H = 462, GAP = 6, ROW = 100;
+  // Alto de cada fila: 100 px, o menos si hay tantas franjas que no caben.
+  const rowH = $derived(lanes.length ? Math.min(ROW, Math.floor((H - GAP * (lanes.length - 1)) / lanes.length)) : ROW);
+
+  // Filas por carril: 1 por carril y el resto al que más lo necesita.
   const rowsOf = $derived.by(() => {
-    const H = 532, EMPTY = 30, GAP = 6, ROW = 100; // de y 112 al final del contenido (644)
     const need = lanes.map((l: any) => {
       const per = l.key === 'done' ? 6 : 5;
       const n = l.items.length + (l.key === 'done' ? l.items.filter((i: any) => i.yearStart).length : 0);
-      return { n, per, want: Math.ceil(n / per) };
+      return { n, per, want: Math.max(1, Math.ceil(n / per)) };
     });
-    const rows: number[] = need.map((x) => (x.n ? 1 : 0));
-    const empties = rows.filter((r) => !r).length;
-    let spare = Math.floor((H - empties * EMPTY - GAP * (lanes.length - 1)) / ROW) - rows.reduce((a, b) => a + b, 0);
+    const rows: number[] = need.map(() => 1);
+    let spare = Math.floor((H - GAP * (lanes.length - 1)) / rowH) - rows.reduce((a, b) => a + b, 0);
     while (spare > 0) {
       let best = -1, bestGap = 0;
       need.forEach((x, i) => {
         const g = x.want - rows[i];
-        if (rows[i] && g > bestGap) { best = i; bestGap = g; }
+        if (g > bestGap) { best = i; bestGap = g; }
       });
       if (best < 0) break;
       rows[best]++;
@@ -65,15 +66,10 @@
   });
 </script>
 
-<div class="board">
+<div class="board" style="--rh:{rowH}px">
   {#each lanes as band, li (band.key)}
     {@const rows = rowsOf[li]}
-    {#if !band.items.length}
-    <section class="band empty st-{band.key}" data-band={band.key} style="--c:{band.color}; height:30px">
-      <span class="et">{band.label} · 0</span>
-    </section>
-    {:else}
-    <section class="band st-{band.key}" data-band={band.key} style="--c:{band.color}; height:{rows * 100}px">
+    <section class="band st-{band.key}" data-band={band.key} style="--c:{band.color}; height:{rows * rowH}px">
       <div class="vt"><span>{band.label}</span></div>
       <div class="its" onwheel={(e) => {
         if (!e.deltaY) return;
@@ -134,7 +130,6 @@
         {/each}
       </div>
     </section>
-    {/if}
   {/each}
   {#if !bands.length}
     <button
@@ -159,7 +154,7 @@
     position: absolute;
     left: 40px;
     right: 40px;
-    top: 112px;
+    top: 182px;
     bottom: calc(720px - var(--content-end));
     display: flex;
     flex-direction: column;
@@ -239,13 +234,11 @@
     box-sizing: border-box;
     overflow: hidden;
   }
-  .band.empty { display: flex; align-items: center; padding: 0 14px; }
-  .band.empty .et { font-size: var(--t-s); font-weight: 700; color: var(--ink-3); }
   .it {
     display: flex;
     flex: none;
     gap: 9px;
-    height: 92px;
+    height: calc(var(--rh, 100px) - 8px);
     padding: 0 10px 0 0;
     border-radius: var(--r-s);
     align-items: center;
@@ -270,7 +263,7 @@
     position: relative;
     flex: none;
     width: 62px;
-    height: 92px;
+    height: calc(var(--rh, 100px) - 8px);
     padding: 4px;
     box-sizing: border-box;
     border-radius: var(--r-s);
@@ -324,7 +317,7 @@
     gap: 3px;
     min-width: 0;
   }
-  .it.compact .tx { width: 72px; }
+  .it.compact .tx { width: 84px; }
   .tx b {
     font-size: var(--t-s);
     font-weight: 800;
@@ -335,6 +328,7 @@
     line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    overflow-wrap: anywhere;
   }
   .tx small { font-size: var(--t-s); font-weight: 700; color: var(--ink-2); }
   .wtxt, .ptxt {
