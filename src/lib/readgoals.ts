@@ -52,7 +52,7 @@ export const RESCUE_MIN_PLAY = 10;
 export const RESCUE_MIN_DAY = 10;
 export const RESCUE_PRIOR_DAYS = 3;
 /** Días de la ventana tras el día fallado; los rescates son ilimitados (cada uno exige `RESCUE_PRIOR_DAYS` días cumplidos antes, así que nunca van seguidos); `RESCUE_PERIOD` solo es el periodo del contador. */
-export const RESCUE_WINDOW = 3;
+export const RESCUE_WINDOW = 7;
 export const RESCUE_PERIOD = 30;
 
 /** Partida (unida) dentro de la ventana de un rescate. */
@@ -67,7 +67,7 @@ export interface RescuePlay {
   /** Inicio real (ms), para ordenar. */
   at: number;
 }
-/** Un rescate pendiente: el día fallado `day` se recupera leyendo de más en los 3 días siguientes. */
+/** Un rescate pendiente: el día fallado `day` se recupera leyendo de más en los 7 días siguientes. */
 export interface Rescue {
   key: GoalKey;
   /** Día fallado (D). */
@@ -84,7 +84,7 @@ export interface Rescue {
   gotToday: number;
   /** Rescates (incluido este) en el periodo de 30 días, (sin tope). */
   used: number;
-  /** Ventana: primer y último día (D+1 a D+3). */
+  /** Ventana: primer y último día (D+1 a D+7). */
   from: number;
   to: number;
   /** Hoy es el último día de la ventana. */
@@ -216,7 +216,7 @@ export function goalTrack(key: GoalKey, goal: number, platforms: Platform[], liv
   const today = localDay(now);
 
   // Rescates (retroactivo, sobre todo el historial): un día fallado D con 3 días cumplidos antes y al menos 10 min jugados
-  // (sin tope de rescates) se recupera leyendo de más en D+1..D+3.
+  // (sin tope de rescates) se recupera leyendo de más en D+1..D+7.
   const repaired = new Set<number>();
   const paidDays: number[] = [];
   let rescue: Rescue | null = null;

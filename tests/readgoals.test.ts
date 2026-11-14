@@ -75,18 +75,23 @@ test('pago parcial con 2 días: 12 + 6 = 18 de 22 y la racha sigue pendiente', (
   assert.deepEqual(t.rescue!.plays.map((x) => x.counts), [true, true, false]);
   assert.equal(t.streak, 6); // pendiente: no se rompe en pantalla
   assert.equal(cell(t, 2).rescued, false);
-  assert.equal(t.rescue!.closeAt, new Date(2026, 9, 22, 7, 0).getTime());
+  assert.equal(t.rescue!.closeAt, new Date(2026, 9, 26, 7, 0).getTime());
 });
 
 test('la ventana cierra sin pagar: se rompe y la racha vuelve a empezar tras el día fallado', () => {
   const p = base();
-  day(p, 1, 61);
-  day(p, 0, 61);
-  // Cuatro días después (jueves 22 a las 7:00 ya pasó): hoy es el día 4 tras el fallo.
-  const later = new Date(2026, 9, 23, 12, 0).getTime();
+  fill(p, 1, -5, 61); // 7 días cumplidos (D+1..D+7) con +7 de 22
+  // En el día 7 (domingo 25 a las 22:40) sigue abierto como último día.
+  const day7 = new Date(2026, 9, 25, 22, 40).getTime();
+  const tOpen = goalTrack('vn', 60, lib('vn', p), null, day7, 10);
+  assert.ok(tOpen.rescue);
+  assert.equal(tOpen.rescue!.last, true);
+  assert.equal(tOpen.streak, 11);
+  // Ocho días después (lunes 26 a las 7:00 ya pasó): la ventana cerró sin pagar y la racha queda en los 7 días posteriores al fallo.
+  const later = new Date(2026, 9, 26, 12, 0).getTime();
   const t = goalTrack('vn', 60, lib('vn', p), null, later, 10);
   assert.equal(t.rescue, null);
-  assert.equal(t.streak, 0);
+  assert.equal(t.streak, 7);
   assert.equal(t.weeks.flat().filter((c) => c.rescued).length, 0);
 });
 
@@ -192,4 +197,31 @@ test('mínimo de rescate: 10 min bastan, 9 no', () => {
     const t = vn(p);
     assert.equal(cell(t, 2).rescued, ok, `${played} min`);
   }
+});
+
+test('pago en el día 7 de la ventana: se rescata y avisa paidDay', () => {
+  const p: Plays = [];
+  fill(p, 10, 8, 60); // 3 días previos
+  day(p, 7, 38); // D: faltan 22
+  fill(p, 6, 1, 62); // D+1..D+6: +12
+  day(p, 0, 70); // D+7 (hoy): +10 -> 22
+  const t = vn(p);
+  assert.equal(t.rescue, null);
+  assert.equal(t.paidDay, T - 7);
+  assert.equal(cell(t, 7).rescued, true);
+  assert.equal(t.streak, 11);
+});
+
+test('aplicación retroactiva: un fallo antiguo pagado entre D+4 y D+7 repara el historial', () => {
+  const p: Plays = [];
+  fill(p, 24, 22, 60); // 3 días previos
+  day(p, 21, 38); // D: faltan 22
+  fill(p, 20, 17, 60); // D+1..D+4 sin extra
+  day(p, 16, 85); // D+5: +25 >= 22 (fuera de 3 días, dentro de 7)
+  fill(p, 15, 0, 60);
+  const t = vn(p);
+  assert.equal(t.rescue, null);
+  assert.equal(cell(t, 21).rescued, true);
+  assert.equal(t.streak, 25);
+  assert.equal(t.best, 25);
 });
