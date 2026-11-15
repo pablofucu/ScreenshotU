@@ -1,25 +1,22 @@
-// Textos de la racha y de la hucha, sin dependencias de la app (también los usa el menú sobre el juego).
-import { dayDate, type Rescue } from './readgoals.ts';
+// Textos de la racha y los días libres, sin dependencias de la app (también los usa el menú sobre el juego).
+import { dayDate, type FreeDay } from './readgoals.ts';
 
 const WD_S = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
 const WD_L = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MON_L = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-/** Día local como «Lun 19» (corto) o «lunes 19» (largo). */
-export function rescueDay(d: number, long = false) {
+/** Día local como «lun 19» (corto) o «lunes 19» (largo). */
+export function freeDayName(d: number, long = false) {
   const x = dayDate(d);
-  return long ? `${WD_L[x.getUTCDay()]} ${x.getUTCDate()}` : `${WD_S[x.getUTCDay()][0].toUpperCase()}${WD_S[x.getUTCDay()].slice(1)} ${x.getUTCDate()}`;
+  return long ? `${WD_L[x.getUTCDay()]} ${x.getUTCDate()}` : `${WD_S[x.getUTCDay()]} ${x.getUTCDate()}`;
 }
-/** Cuenta atrás del rescate: «32 h» (o «45 min» en la última hora). */
-export function rescueLeft(r: Rescue, now: number) {
-  const ms = Math.max(0, r.closeAt - now);
-  return ms < 3600000 ? `${Math.max(1, Math.ceil(ms / 60000))} min` : `${Math.floor(ms / 3600000)} h`;
+/** Plazo que queda para recuperar un día libre: «hoy», «hoy y mañana» o «quedan N días». */
+export function freeLeft(f: FreeDay) {
+  return f.left <= 1 ? 'hoy' : f.left === 2 ? 'hoy y mañana' : `quedan ${f.left} días`;
 }
-/** Cuándo cierra el rescate: «jueves 22 a las 7:00» (largo) o «jue 7:00» (corto). */
-export function rescueClose(r: Rescue, long = false) {
-  return long ? `${rescueDay(r.to + 1, true)} a las 7:00` : `${WD_S[dayDate(r.to + 1).getUTCDay()]} 7:00`;
+/** Cuándo cierra el plazo del día libre: «jueves 22 a las 7:00» (largo) o «jue 7:00» (corto). */
+export function freeClose(f: FreeDay, long = false) {
+  return long ? `${freeDayName(f.deadline + 1, true)} a las 7:00` : `${WD_S[dayDate(f.deadline + 1).getUTCDay()]} 7:00`;
 }
-/** Nombre largo del día fallado: «domingo 18». */
-export const rescueFailed = (r: Rescue) => rescueDay(r.day, true);
 export const monthName = (d: number) => MON_L[dayDate(d).getUTCMonth()];
 
 /** Minutos como texto: corto («45m», «1h 05m») o largo («45 min», «1 h 05 min»). */

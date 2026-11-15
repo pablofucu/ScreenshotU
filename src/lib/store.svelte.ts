@@ -461,6 +461,8 @@ class Store {
   /** Pantalla de racha: anillo elegido (mapa y cifras) y pantalla a la que vuelve B. */
   streakKey = $state<GoalKey>('vn');
   streakFrom = $state<View>('home');
+  /** Desde dónde se abrió Estadísticas (B vuelve allí). */
+  statsFrom = $state<'home' | 'streak'>('home');
   /** Meta elegida en la ficha de Inicio ('' = la primera). */
   homeGoal = $state<GoalKey | ''>('');
   inputAt = $state(0);
@@ -667,6 +669,7 @@ class Store {
     if (this.favView) return N;
     if (this.view === 'home') return this.hp;
     if (this.view === 'titles') return this.p;
+    if (this.view === 'stats' && this.statsTab === 'streak') return null;
     if (this.view === 'stats' || this.view === 'evo') return N + 1;
     return null;
   });
@@ -685,8 +688,9 @@ class Store {
     }
     // Un tramo igual de arcoíris por sección: las plataformas en su orden y, detrás, Mi lista, Estadísticas y Ajustes.
     if (this.secK !== null) return this.secPair(this.secK);
-    if (this.view === 'streak') {
-      const h1 = hueOf(GOAL_COL[this.streakKey].c);
+    if (this.view === 'streak' || (this.view === 'stats' && this.statsTab === 'streak')) {
+      const k = this.goalKeys.includes(this.streakKey) ? this.streakKey : (this.goalKeys[0] ?? this.streakKey);
+      const h1 = hueOf(GOAL_COL[k].c);
       return { h1, h2: (h1 + 35) % 360 };
     }
     const t = this.collTitle ?? this.lib.platforms[this.p]?.titles[this.t];

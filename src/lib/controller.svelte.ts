@@ -27,7 +27,7 @@ import { DEVICES_CYCLE, devicesAct, devicesRows, isDevicesId, refreshDevices, ty
 import { clientMode } from './ipc';
 import { openPhrases, phrasesCmd } from './phrases.svelte';
 import { gameSetCmd, openGameSettings } from './gameset.svelte';
-import { GOAL_TXT, goalMin, goalMinLeft, goalTrack, groupOf, localDay, RESCUE_MIN_PLAY, type GoalKey } from './readgoals';
+import { GOAL_TXT, goalMin, goalMinLeft, goalTrack, goalHistOf, groupOf, localDay, EXTRA_MIN_PLAY, type GoalKey } from './readgoals';
 import { openSearch, searchCmd } from './search.svelte';
 import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
 import { libraryCmd, loadLibraryInfo, openLibrary } from './library.svelte';
@@ -152,7 +152,7 @@ function defaultKey(view: View): string {
   }
   if (view === 'shots') return app.cur.shots.length ? 'shot0' : '';
   if (view === 'stats') {
-    if (app.statsTab === 'year') return '';
+    if (app.statsTab === 'year' || app.statsTab === 'streak') return '';
     if (app.statsTab === 'week') return 'wk0';
     if (app.statsTab === 'fin') return 'fn0';
     if (app.statsTab === 'pano') return 'pn0';
@@ -735,17 +735,18 @@ function stepReadFace(d: number) {
   const i = Math.max(0, keys.indexOf(app.homeGoal || keys[0]));
   setHomeGoal(keys[(i + (d < 0 ? -1 : 1) + keys.length) % keys.length]);
 }
-/** LB/RB en la racha: el otro anillo. */
+/** LB/RB en la racha (y en Estadísticas › Rachas): el otro anillo. */
 function streakSwitch(d: number) {
   const keys = goalKeys();
-  const i = keys.indexOf(app.streakKey) + d;
+  const cur = keys.includes(app.streakKey) ? app.streakKey : keys[0];
+  const i = (cur ? keys.indexOf(cur) : -1) + d;
   if (i < 0 || i >= keys.length) { bump(screenEl()?.querySelector('.smap'), d, 0); return; }
   app.streakKey = keys[i];
   blip(700);
 }
 
 /** Datos que el menú sobre el juego no puede sacar por sí mismo: se quedan en el núcleo para toda la partida. Solo
- *  títulos de la categoría del juego (la racha y la hucha nunca mezclan categorías). */
+ *  títulos de la categoría del juego (la racha nunca mezcla categorías). */
 function pushQuickmenuContext(gameId: string) {
   const plat = app.lib.platforms.find((p) => p.titles.some((t) => t.gameId === gameId));
   const t = plat?.titles.find((x) => x.gameId === gameId);
@@ -760,31 +761,32 @@ function pushQuickmenuContext(gameId: string) {
   }).catch((e) => console.error(e));
 }
 
-/** Al empezar un juego con meta: pide al núcleo un aviso sobre el juego para cuando se llegue a la meta de hoy. */
+/** Al empezar un juego con meta: pide al núcleo un aviso sobre el juego para cuando se llegue a la meta de hoy o, si ya
+ *  está cumplida, para cuando lo leído de más salde todos los días libres abiertos. */
 function scheduleGoalNotice(gameId: string) {
   const k = goalKeyOf(gameId);
   if (!k) return;
-  const now = Date.now(), goal = goalOf(k);
-  const t = goalTrack(k, goal, app.lib.platforms, null, now);
+  const now = Date.now(), goal = goalOf(k), hist = goalHistOf(app.config, k);
+  const t = goalTrack(k, goal, app.lib.platforms, null, now, undefined, hist);
   if (t.done) {
-    // Meta de hoy ya cumplida y un rescate pendiente: el aviso sale al llenarse la hucha. Solo cuentan las partidas de
-    // 10 min o más, así que no antes de esos 10 min; el núcleo admite un único aviso por partida (el de meta, si falta).
-    const r = t.rescue;
-    if (!r) return;
-    const at = now + Math.max(r.need - r.got, RESCUE_MIN_PLAY) * 60000 + 15000;
-    if (localDay(at) !== localDay(now) || (r.last && at > r.closeAt)) return;
-    backend.goalNotice(gameId, at, '¡Racha recuperada!', t.streak, k).catch((e) => console.error(e));
+    // Meta de hoy ya cumplida y días libres por recuperar: lo de más de esta partida paga la deuda. Solo cuentan las
+    // partidas de 10 min o más, así que no antes de esos 10 min; el núcleo admite un único aviso por partida.
+    if (t.owe <= 0) return;
+    const at = now + Math.max(t.owe, EXTRA_MIN_PLAY) * 60000 + 15000;
+    if (localDay(at) !== localDay(now)) return;
+    backend.goalNotice(gameId, at, '¡Día libre recuperado!', t.streak, k, 'Tu racha sigue a salvo').catch((e) => console.error(e));
     return;
   }
   // Con la partida que empieza ya contada: si la anterior de este juego terminó hace menos de 2 min, se unen y el
   // hueco cuenta (como en el anillo); la meta se da por cumplida al llegar a `goal - 0,5` min (minutos redondeados).
-  const t2 = goalTrack(k, goal, app.lib.platforms, { id: gameId, since: now }, now);
+  const t2 = goalTrack(k, t.goal, app.lib.platforms, { id: gameId, since: now }, now, undefined, hist);
   // Unos segundos de margen: el núcleo empieza a contar cuando ve el proceso del juego.
-  const at = now + goalMinLeft(t2.today, goal) * 60000 + 15000;
+  const at = now + goalMinLeft(t2.today, t.goal) * 60000 + 15000;
   if (localDay(at) !== localDay(now)) return;
   const n = t.streak + 1;
   const text = n > 1 ? '¡Meta cumplida!' : GOAL_TXT[groupOf(k)].notice1;
-  backend.goalNotice(gameId, at, text, n, k).catch((e) => console.error(e));
+  const sub = t.owe > 0 ? `Lo que leas de más paga el día libre · faltan ${t.owe} min` : '';
+  backend.goalNotice(gameId, at, text, n, k, sub).catch((e) => console.error(e));
 }
 
 /** Cuántas filas de la clasificación de categoría caben sin desplazar. */
@@ -805,11 +807,19 @@ function openGameStats(scope: 'title' | 'cat') {
   go('gstats', 'fwd');
 }
 
-export function openStats() {
+export function openStats(from: 'home' | 'streak' = 'home') {
+  app.statsFrom = from;
   app.statsOff = 0; app.calOff = 0; app.yearSel = null; app.yearCard = 0;
   for (let k = 0; k < 240 && !app.rank.rows.length && app.rank.older; k++) app.statsOff--;
   delete app.fk.stats;
   go('stats', 'fwd');
+}
+
+/** Desde la pantalla de racha (Y): abre Estadísticas en la pestaña Rachas con la misma meta. */
+function openStreakStats() {
+  app.statsTab = 'streak';
+  openStats('streak');
+  blip(700);
 }
 
 export const YEAR_CARDS = 8;
@@ -830,9 +840,9 @@ function yearShift(d: number) {
   blip(700);
 }
 
-const STATS_TABS: Array<typeof app.statsTab> = ['week', 'fin', 'pano', 'rank', 'cal', 'year'];
+const STATS_TABS: Array<typeof app.statsTab> = ['week', 'fin', 'pano', 'streak', 'rank', 'cal', 'year'];
 
-/** Y recorre Semana > Terminados > Panorama > Clasificación > Calendario > Resumen anual. */
+/** Y recorre Semana > Terminados > Panorama > Rachas > Clasificación > Calendario > Resumen anual. */
 function toggleStatsTab() {
   setStatsTab(STATS_TABS[(STATS_TABS.indexOf(app.statsTab) + 1) % STATS_TABS.length]);
 }
@@ -948,6 +958,7 @@ function statsKind(d: number) {
 /** LT/RT: periodo anterior/siguiente (en el calendario, 26 semanas). */
 function statsShift(d: number) {
   if (app.view === 'stats' && app.statsTab === 'year') { yearShift(d); return; }
+  if (app.view === 'stats' && app.statsTab === 'streak') { streakSwitch(d); return; }
   if (app.view === 'evo') { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
   if (app.statsTab === 'week') {
     const cur = new Date(app.now); cur.setHours(0, 0, 0, 0);
@@ -1051,8 +1062,12 @@ export function back() {
     if (app.gsFrom === 'evo') go('evo', 'back');
     else go('titles', 'back');
   } else if (app.view === 'stats') {
-    app.fk.home = 'dock2';
-    go('home', 'back');
+    if (app.statsFrom === 'streak') {
+      go('streak', 'back');
+    } else {
+      app.fk.home = 'dock2';
+      go('home', 'back');
+    }
   } else if (app.view === 'streak') {
     if (app.streakFrom === 'home') app.fk.home = 'read';
     go(app.streakFrom, 'back');
@@ -1071,7 +1086,7 @@ export const goBack = back;
 export function page(d: number) {
   if (app.view === 'home') { if (app.focus === 'read') stepReadFace(d); return; }
   if (app.view === 'viewer') { stepViewer(d * 10); return; }
-  if (app.view === 'streak') { streakSwitch(d); return; }
+  if (app.view === 'streak' || (app.view === 'stats' && app.statsTab === 'streak')) { streakSwitch(d); return; }
   if (app.view === 'stats' || app.view === 'evo') { statsKind(d); return; }
   if (app.view === 'gstats') { gsMetric(d); return; }
   if (app.view === 'titles') {
@@ -2025,6 +2040,7 @@ export function cmd(c: string) {
       else if (app.view === 'viewer') { app.vinfoMore = !app.vinfoMore; wake(); blip(700); }
       else if (app.view === 'shots') cycleSort();
       else if (app.view === 'stats') toggleStatsTab();
+      else if (app.view === 'streak') openStreakStats();
       else if (app.view === 'evo') openGameStats('title');
       else if (app.view === 'gstats' && app.gsScope === 'title') { app.gsPage = app.gsPage === 'sum' ? 'io' : 'sum'; blip(700); }
       break;

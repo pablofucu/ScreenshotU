@@ -3,7 +3,7 @@
   // minutos de hoy (azul = novelas visuales, rosa = novelas japonesas), la racha de cada una y el mapa de las
   // últimas semanas. Al cumplir una meta «se enciende la racha» (una vez por día y anillo, como en el PC).
   import { onDestroy, onMount, tick } from 'svelte';
-  import { goalTrack, localDay, type GoalKey, type GoalTrack } from '@shared/readgoals';
+  import { goalHistOf, goalTrack, localDay, type GoalKey, type GoalTrack } from '@shared/readgoals';
   import { MI } from '../lib/icons';
   import { app } from '../lib/store.svelte';
 
@@ -20,7 +20,7 @@
   const tracks = $derived(
     (['vn', 'jvn'] as GoalKey[])
       .filter((k) => app.lib.platforms.some((p) => p.id === k))
-      .map((k) => goalTrack(k, k === 'vn' ? app.cfg.goalVn : app.cfg.goalJvn, app.lib.platforms, app.playing, now)),
+      .map((k) => goalTrack(k, k === 'vn' ? app.cfg.goalVn : app.cfg.goalJvn, app.lib.platforms, app.playing, now, undefined, goalHistOf({ goalHist: app.cfg.goalHist ?? {} }, k))),
   );
   const rings = $derived(tracks.map((t, i) => {
     const r = S / 2 - SW / 2 - 1 - i * SW * 1.15;
@@ -119,13 +119,13 @@
       {#each tracks as t (t.key)}
         {@const c = COL[t.key]}
         <div class="maprow" data-g={t.key} style="--c:{c.c};--edge:{c.edge}">
-          <span class="mlab" style="color:{c.ink}">{c.long}<small>{t.done ? '¡Meta cumplida!' : `Faltan ${fmtMin(left(t))}`} · meta {fmtMin(t.goal)}</small></span>
+          <span class="mlab" style="color:{c.ink}">{c.long}<small>{t.owe > 0 ? `Debes ${fmtMin(t.owe)}` : t.done ? '¡Meta cumplida!' : `Faltan ${fmtMin(left(t))}`} · meta {fmtMin(t.goal)}</small></span>
           <div class="rmap">
             {#each t.weeks as w, wi}
               <div>
                 {#each w as d, di}
-                  <span class="cell" class:st={d.streak && !(d.today && pending(t))} class:td={d.today} class:fu={d.future}
-                    style="--k:{wi + di};background:{d.future ? 'transparent' : cellBg(t, d.v, d.today)}"></span>
+                  <span class="cell" class:st={d.streak && !(d.today && pending(t))} class:td={d.today} class:fu={d.future} class:fr={d.free && !d.owe} class:ow={d.owe}
+                    style="--k:{wi + di};background:{d.future ? 'transparent' : d.owe ? 'color-mix(in srgb, var(--warn, #E9A100) 45%, transparent)' : d.free ? 'var(--warn, #E9A100)' : cellBg(t, d.v, d.today)}"></span>
                 {/each}
               </div>
             {/each}
@@ -162,6 +162,8 @@
   .cell{width:clamp(7px,calc((100vw - 214px) / 13),13px);aspect-ratio:1;border-radius:3px;animation:rpop .3s calc(.5s + var(--k) * 35ms) both}
   .cell.st{box-shadow:0 0 0 1.5px var(--edge)}
   .cell.td:not(.st){box-shadow:0 0 0 1px var(--c)}
+  .cell.fr{box-shadow:0 0 0 1px var(--warn, #E9A100)}
+  .cell.ow{box-shadow:inset 0 0 0 1px var(--warn, #E9A100)}
   @keyframes rdrop{0%{opacity:0;transform:translateY(-30px)}70%{opacity:1;transform:translateY(5px)}100%{opacity:1;transform:translateY(0)}}
   @keyframes rpop{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:scale(1)}}
 </style>

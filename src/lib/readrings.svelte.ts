@@ -4,7 +4,7 @@
 // el color de las casillas del mapa y el esqueleto de la animación «la racha se enciende».
 import { onDestroy, onMount, tick } from 'svelte';
 import { app } from './store.svelte';
-import { GOAL_COL, dayDate, goalLit, goalMin, goalTrack, localDay, markGoalLit, type GoalKey, type GoalTrack, type Rescue } from './readgoals';
+import { GOAL_COL, goalHistOf, goalLit, goalMin, goalTrack, localDay, markGoalLit, type GoalKey, type GoalTrack } from './readgoals';
 import { blip } from './sound';
 
 export * from './readfmt';
@@ -47,7 +47,7 @@ export function createReadRings(o: ReadRingsOpts) {
   const tracks = $derived(
     (o.keys?.() ?? app.goalKeys)
       .filter((k) => app.goalKeys.includes(k))
-      .map((k) => goalTrack(k, goalOf(k), app.lib.platforms, app.playing, now, o.weeks)),
+      .map((k) => goalTrack(k, goalOf(k), app.lib.platforms, app.playing, now, o.weeks, goalHistOf(app.config, k))),
   );
   const sg = $derived(o.strokeFor?.(tracks.length) ?? { stroke: o.stroke, gap: o.gap });
   const rings = $derived(tracks.map((t, i) => {

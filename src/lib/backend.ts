@@ -151,7 +151,7 @@ async function tauriBackend(): Promise<Backend> {
     hotkeySuspend: (suspend: boolean) => invoke('hotkey_suspend', { suspend }),
     learnKey: (on: boolean) => invoke('learn_key', { on }),
     launch: (id) => invoke('launch_game', { id }),
-    goalNotice: (id, at, text, days, key) => invoke('goal_notice', { id, at, text, days, key }),
+    goalNotice: (id, at, text, days, key, sub = '') => invoke('goal_notice', { id, at, text, days, key, sub }),
     openFolder: (path) => invoke('open_folder', { path }),
     addGame: (game: NewGame) => invoke<AddReport>('add_game', { game }),
     scanGamesDir: (dir: string) => invoke<DirScan>('scan_games_dir', { dir }),

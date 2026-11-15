@@ -75,10 +75,10 @@ if (!server) {
     setTimeout(async () => {
       let goal = '';
       if (s.platform === 'vn' || s.platform === 'jvn') {
-        const { goalTrack } = await import('@desk/lib/readgoals');
+        const { goalHistOf, goalTrack } = await import('@desk/lib/readgoals');
         const g = s.platform === 'vn' ? a.config.goalVn : a.config.goalJvn;
-        const t = goalTrack(s.platform, g, a.lib.platforms, null, Date.now());
-        goal = ` · Meta de hoy ${Math.round(t.today)}/${g} min`;
+        const t = goalTrack(s.platform, g, a.lib.platforms, null, Date.now(), undefined, goalHistOf(a.config, s.platform));
+        goal = ` · Meta de hoy ${Math.round(t.today)}/${t.goal} min`;
       }
       const mins = Math.max(1, Math.round(s.seconds / 60));
       toast(`Has jugado ${s.name} ${mins} min · ${s.shots} ${s.shots === 1 ? 'captura' : 'capturas'}${goal}`, 5000);

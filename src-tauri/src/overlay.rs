@@ -46,10 +46,11 @@ pub fn flash(text: &str) {
     flash_as("audio", text, 2200);
 }
 
-/// Aviso «meta de lectura cumplida» sobre el juego: `key` es el anillo (`vn` azul, `jvn` rosa), `days` la racha y
-/// `title` el titular. La pagina recibe todo junto en el texto (`clave|dias|titular`).
-pub fn goal(key: &str, days: u32, title: &str) {
-    flash_as("goal", &format!("{key}|{days}|{title}"), 4500);
+/// Aviso «meta de lectura cumplida» sobre el juego: `key` es el anillo (`vn` azul, `jvn` rosa), `days` la racha,
+/// `title` el titular y `sub` un subtítulo opcional. La pagina recibe todo junto en el texto (`clave|dias|titular|sub`).
+pub fn goal(key: &str, days: u32, title: &str, sub: &str) {
+    let text = if sub.is_empty() { format!("{key}|{days}|{title}") } else { format!("{key}|{days}|{title}|{sub}") };
+    flash_as("goal", &text, 4500);
 }
 
 fn flash_as(state: &'static str, text: &str, ms: u64) {

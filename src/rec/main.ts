@@ -1,5 +1,5 @@
 // Indicador de grabacion sobre el juego (ver src-tauri/src/overlay.rs). La app lo actualiza con `window.__rec(estado, segundos, texto)`.
-// En el estado `goal` (meta diaria cumplida) el texto llega como `clave|dias|titular` y sale una tarjeta con la llama.
+// En el estado `goal` (meta diaria cumplida) el texto llega como `clave|dias|titular|subtitulo` (el cuarto campo es opcional) y sale una tarjeta con la llama.
 import { GOAL_COL, GOAL_TXT, groupOf, type GoalKey } from '../lib/readgoals';
 
 export {};
@@ -17,7 +17,7 @@ const SHEEN = 'cubic-bezier(.4,0,.2,1)';
 
 /** Segunda linea de la tarjeta segun el titular. */
 function subtitle(title: string, days: number, key: GoalKey): string {
-  if (title.includes('recuperada')) return 'Recuperaste el día que faltaba';
+  if (title.includes('recuperado') || title.includes('recuperada')) return 'Recuperaste el día libre pendiente';
   return days > 1 ? 'Hoy ya cuenta para tu racha' : GOAL_TXT[groupOf(key)].sub1;
 }
 
@@ -31,14 +31,16 @@ function track(el: Element, frames: [number, Keyframe][]): Animation {
 let running: Animation[] = [];
 
 function playGoal(raw: string) {
-  const [key, d, ...rest] = raw.split('|');
-  const days = Math.max(1, Number(d) || 1);
-  const title = rest.join('|');
+  const parts = raw.split('|');
+  const key = parts[0] ?? '';
+  const days = Math.max(1, Number(parts[1]) || 1);
+  const title = parts[2] ?? '';
+  const customSub = parts.slice(3).join('|').trim();
   const c = GOAL_COL[key as keyof typeof GOAL_COL] ?? GOAL_COL.vn;
   g.style.setProperty('--a', c.edge);
   g.style.setProperty('--b', c.c);
   document.getElementById('gt')!.textContent = title;
-  document.getElementById('gs')!.textContent = subtitle(title, days, (key in GOAL_COL ? key : 'vn') as GoalKey);
+  document.getElementById('gs')!.textContent = customSub || subtitle(title, days, (key in GOAL_COL ? key : 'vn') as GoalKey);
   document.getElementById('gc')!.innerHTML = `<span>${days - 1}</span><span>${days}</span>`;
   document.getElementById('gd')!.textContent = days === 1 ? 'día' : 'días';
 

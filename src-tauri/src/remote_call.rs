@@ -95,7 +95,7 @@ pub fn dispatch(app: &AppHandle, caller: &visor_core::remote::Caller, cmd: &str,
                 crate::launch_game(app.clone(), st, id)
             })?)
         }
-        "goal_notice" => val(crate::goal_notice(app.clone(), arg(a, "id")?, arg(a, "at")?, arg(a, "text")?, arg(a, "days")?, arg(a, "key")?)),
+        "goal_notice" => val(crate::goal_notice(app.clone(), arg(a, "id")?, arg(a, "at")?, arg(a, "text")?, arg(a, "days")?, arg(a, "key")?, arg(a, "sub").ok())),
         "set_hidden" => out(crate::set_hidden(st(), arg(a, "id")?, arg(a, "name")?, arg(a, "platform")?, arg(a, "hidden")?)),
         "set_accent_override" => out(crate::set_accent_override(st(), arg(a, "id")?, arg(a, "color")?)),
         "set_sort_pref" => out(crate::set_sort_pref(st(), arg(a, "id")?, arg(a, "mode")?)),

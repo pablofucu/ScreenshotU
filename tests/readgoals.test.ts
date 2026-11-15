@@ -1,8 +1,20 @@
-// Pruebas del rescate de racha en goalTrack. Se ejecutan con: node --test tests/readgoals.test.ts
+// Pruebas de las rachas con días libres en goalTrack. Se ejecutan con: node --test tests/readgoals.test.ts
 // (Node 22.18+ ejecuta TypeScript sin dependencias; no entra en el tsconfig de la app.)
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { goalTrack, localDay, type GoalKey, type GoalTrack } from '../src/lib/readgoals.ts';
+import {
+  EXTRA_MIN_PLAY,
+  FREE_MAX,
+  FREE_WINDOW,
+  goalAt,
+  goalHistOf,
+  goalTrack,
+  localDay,
+  type GoalHist,
+  type GoalKey,
+  type GoalTrack,
+} from '../src/lib/readgoals.ts';
+import { freeClose, freeDayName, freeLeft } from '../src/lib/readfmt.ts';
 
 // «Hoy» es el martes 20 de octubre de 2026, 22:40; las partidas se colocan de día (entre las 10:00 y las 22:00).
 const NOW = new Date(2026, 9, 20, 22, 40).getTime();
@@ -27,10 +39,12 @@ function cell(t: GoalTrack, ago: number) {
   const first = T - ((T + 3) % 7) - (t.weeks.length - 1) * 7;
   return t.weeks[Math.floor((d - first) / 7)][(d - first) % 7];
 }
+/** Vela de la última semana para `ago` días (0..6). */
+const wday = (t: GoalTrack, ago: number) => t.week[6 - ago];
 
-const vn = (plays: Plays, weeks = 10) => goalTrack('vn', 60, lib('vn', plays), null, NOW, weeks);
+const vn = (plays: Plays, weeks = 10, hist: GoalHist = []) => goalTrack('vn', 60, lib('vn', plays), null, NOW, weeks, hist);
 
-/** Racha previa de 3 días cumplidos (hace 5, 4 y 3 días) y el domingo (hace 2) fallado con 38 min: faltan 22. */
+/** Racha previa de 3 días cumplidos (hace 5, 4 y 3 días) y el domingo (hace 2) a medias con 38 min: faltan 22. */
 function base(): Plays {
   const p: Plays = [];
   fill(p, 5, 3, 60);
@@ -38,190 +52,325 @@ function base(): Plays {
   return p;
 }
 
-test('pago simple: un día de la ventana cubre el déficit', () => {
+test('constantes exportadas de días libres', () => {
+  assert.equal(EXTRA_MIN_PLAY, 10);
+  assert.equal(FREE_MAX, 2);
+  assert.equal(FREE_WINDOW, 7);
+});
+
+test('pago simple en un día siguiente: salda la deuda y mantiene la racha', () => {
   const p = base();
-  day(p, 1, 85); // lunes: 25 de extra >= 22
+  day(p, 1, 85); // lunes: +25 >= 22
   day(p, 0, 60);
   const t = vn(p);
-  assert.equal(t.rescue, null);
-  assert.equal(cell(t, 2).rescued, true);
-  assert.equal(t.streak, 6); // 3 + domingo reparado + lunes + martes
+  assert.equal(t.open.length, 0);
+  assert.equal(t.free.length, 1);
+  assert.equal(t.free[0].done, true);
+  assert.equal(t.free[0].owe, 0);
+  assert.equal(t.owe, 0);
+  assert.equal(t.tokens, 1);
+  assert.equal(t.tokenBack, T + 5);
+  assert.equal(cell(t, 2).free, true);
+  assert.equal(cell(t, 2).owe, false);
+  assert.equal(wday(t, 1).extra, 25);
+  assert.equal(wday(t, 1).gave, 22);
+  assert.equal(t.streak, 6);
   assert.equal(t.paidDay, null); // se pagó ayer, no hoy
 });
 
-test('pago hoy: se avisa una vez con paidDay', () => {
+test('paidDay hoy: avisa el día libre saldado hoy', () => {
   const p = base();
   day(p, 1, 60);
-  day(p, 0, 90); // +30
+  day(p, 0, 90); // +30 hoy
   const t = vn(p);
-  assert.equal(t.rescue, null);
+  assert.equal(t.open.length, 0);
   assert.equal(t.paidDay, T - 2);
-  assert.equal(cell(t, 2).rescued, true);
+  assert.equal(t.free[0].payDay, T);
+  assert.equal(cell(t, 2).free, true);
+  assert.equal(cell(t, 2).owe, false);
 });
 
-test('pago parcial con 2 días: 12 + 6 = 18 de 22 y la racha sigue pendiente', () => {
-  const p = base();
-  day(p, 1, 72); // +12
-  day(p, 0, 66, 7); // +6; la de 7 min no cuenta
+test('día a medias debe solo lo que faltó (y día con 0 min debe toda la meta)', () => {
+  const p = base(); // 38 de 60 hace 2 días -> debe 22
+  day(p, 1, 60);
+  const tPartial = vn(p);
+  assert.equal(tPartial.open.length, 1);
+  assert.equal(tPartial.open[0].played, 38);
+  assert.equal(tPartial.open[0].need, 22);
+  assert.equal(tPartial.owe, 22);
+
+  const pZero: Plays = [];
+  fill(pZero, 5, 3, 60); // hace 2 días: 0 min
+  day(pZero, 1, 60);
+  const tZero = vn(pZero);
+  assert.equal(tZero.open.length, 1);
+  assert.equal(tZero.open[0].played, 0);
+  assert.equal(tZero.open[0].need, 60);
+  assert.equal(tZero.owe, 60);
+  assert.equal(tZero.streak, 5);
+});
+
+test('un día libre recuperado poco a poco en varios días', () => {
+  const p: Plays = [];
+  fill(p, 6, 5, 60);
+  day(p, 4, 30); // debe 30
+  day(p, 3, 70); // +10 -> quedan 20
+  day(p, 2, 72); // +12 -> quedan 8
+  day(p, 1, 60); // +0
+  const tMid = vn(p);
+  assert.equal(tMid.open.length, 1);
+  assert.equal(tMid.open[0].paid, 22);
+  assert.equal(tMid.open[0].owe, 8);
+  assert.equal(tMid.owe, 8);
+  assert.equal(wday(tMid, 3).gave, 10);
+  assert.equal(wday(tMid, 2).gave, 12);
+  assert.equal(cell(tMid, 4).free, true);
+  assert.equal(cell(tMid, 4).owe, true);
+
+  day(p, 0, 70); // +10 -> salda los 8 restantes hoy (sobran 2)
+  const tDone = vn(p);
+  assert.equal(tDone.open.length, 0);
+  assert.equal(tDone.owe, 0);
+  assert.equal(tDone.paidDay, T - 4);
+  assert.equal(wday(tDone, 0).extra, 10);
+  assert.equal(wday(tDone, 0).gave, 8);
+  assert.equal(cell(tDone, 4).owe, false);
+  assert.equal(tDone.streak, 7);
+});
+
+test('fin de semana libre (2 seguidos) válido y reparto al más antiguo', () => {
+  const p: Plays = [];
+  fill(p, 6, 4, 60); // jueves, viernes, sábado cumplidos? No: hace 6..4 días cumplidos
+  // Hace 3 días (sábado) y hace 2 días (domingo): 0 min cada uno (deben 60 + 60)
+  day(p, 1, 130); // lunes: +70 -> paga 60 al sábado y 10 al domingo
+  day(p, 0, 80);  // martes: +20 -> paga 20 más al domingo (quedan 30)
   const t = vn(p);
-  assert.ok(t.rescue);
-  assert.equal(t.rescue!.need, 22);
-  assert.equal(t.rescue!.deficit, 22);
-  assert.equal(t.rescue!.got, 18);
-  assert.equal(t.rescue!.gotBefore, 12);
-  assert.equal(t.rescue!.gotToday, 6);
-  assert.equal(t.rescue!.next, 64);
-  assert.equal(t.rescue!.plays.length, 3);
-  assert.deepEqual(t.rescue!.plays.map((x) => x.counts), [true, true, false]);
-  assert.equal(t.streak, 6); // pendiente: no se rompe en pantalla
-  assert.equal(cell(t, 2).rescued, false);
-  assert.equal(t.rescue!.closeAt, new Date(2026, 9, 26, 7, 0).getTime());
+  assert.equal(t.tokens, 0);
+  assert.equal(t.free.length, 2);
+  assert.equal(t.free[0].day, T - 3);
+  assert.equal(t.free[0].done, true);
+  assert.equal(t.free[0].paid, 60);
+  assert.equal(t.free[0].payDay, T - 1);
+  assert.equal(t.free[1].day, T - 2);
+  assert.equal(t.free[1].done, false);
+  assert.equal(t.free[1].paid, 30);
+  assert.equal(t.free[1].owe, 30);
+  assert.equal(t.owe, 30);
+  assert.equal(t.open.length, 1);
+  assert.equal(t.streak, 7);
 });
 
-test('la ventana cierra sin pagar: se rompe y la racha vuelve a empezar tras el día fallado', () => {
-  const p = base();
-  fill(p, 1, -5, 61); // 7 días cumplidos (D+1..D+7) con +7 de 22
-  // En el día 7 (domingo 25 a las 22:40) sigue abierto como último día.
+test('tercer día libre en 7 días rompe la racha', () => {
+  const p: Plays = [];
+  fill(p, 8, 6, 60);
+  // Hace 5 días: 0 min (libre 1)
+  day(p, 4, 60);
+  // Hace 3 días: 0 min (libre 2)
+  day(p, 2, 60);
+  // Ayer (hace 1 día): 0 min -> 3er fallo en [hoy-7 .. hoy-2] -> rompe
+  day(p, 0, 60);
+  const t = vn(p);
+  assert.equal(wday(t, 5).free !== null, true);
+  assert.equal(wday(t, 3).free !== null, true);
+  assert.equal(wday(t, 1).free, null);
+  assert.equal(wday(t, 1).broken, true);
+  assert.equal(t.streak, 1); // solo hoy tras la ruptura de ayer
+  assert.equal(t.tokens, 0); // libre 1 y libre 2 siguen en los últimos 6 días
+});
+
+test('exceso antes del día libre NO cuenta (no se guarda por adelantado)', () => {
+  const p: Plays = [];
+  fill(p, 5, 4, 60);
+  day(p, 3, 180); // +120 antes del día libre: se pierde
+  day(p, 2, 40);  // debe 20
+  day(p, 1, 60);
+  day(p, 0, 60);
+  const t = vn(p);
+  assert.equal(wday(t, 3).extra, 120);
+  assert.equal(wday(t, 3).gave, 0);
+  assert.equal(t.open.length, 1);
+  assert.equal(t.open[0].paid, 0);
+  assert.equal(t.open[0].owe, 20);
+});
+
+test('plazo vencido rompe y la racha nueva cuenta desde el día siguiente', () => {
+  const p = base(); // D = T - 2 (debe 22)
+  fill(p, 1, -5, 61); // D+1..D+7: +1 cada día -> +7 en total (insuficiente)
+  // En D+7 (domingo 25 a las 22:40) sigue abierto con left = 1
   const day7 = new Date(2026, 9, 25, 22, 40).getTime();
   const tOpen = goalTrack('vn', 60, lib('vn', p), null, day7, 10);
-  assert.ok(tOpen.rescue);
-  assert.equal(tOpen.rescue!.last, true);
+  assert.equal(tOpen.open.length, 1);
+  assert.equal(tOpen.open[0].left, 1);
+  assert.equal(tOpen.state, 'urgent');
   assert.equal(tOpen.streak, 11);
-  // Ocho días después (lunes 26 a las 7:00 ya pasó): la ventana cerró sin pagar y la racha queda en los 7 días posteriores al fallo.
-  const later = new Date(2026, 9, 26, 12, 0).getTime();
-  const t = goalTrack('vn', 60, lib('vn', p), null, later, 10);
-  assert.equal(t.rescue, null);
+
+  // En D+8 (lunes 26 a las 12:00): venció el plazo, D pasa a roto y la racha es solo D+1..D+7 (7 días)
+  const day8 = new Date(2026, 9, 26, 12, 0).getTime();
+  const t = goalTrack('vn', 60, lib('vn', p), null, day8, 10);
+  assert.equal(t.open.length, 0);
+  assert.equal(t.free.length, 0);
   assert.equal(t.streak, 7);
-  assert.equal(t.weeks.flat().filter((c) => c.rescued).length, 0);
+  assert.equal(t.weeks.flat().filter((c) => c.free).length, 0);
 });
 
-test('un fallo de D-1 impide el rescate de D', () => {
+test('punto fijo: al vencer un día libre antiguo, su exceso pasa al siguiente', () => {
   const p: Plays = [];
-  fill(p, 6, 4, 60);
-  day(p, 3, 40); // D-1 fallado
-  day(p, 2, 38); // D
-  day(p, 1, 120);
-  day(p, 0, 120);
+  fill(p, 12, 10, 60);
+  day(p, 9, 0);   // D1 = T-9 (debe 60, vence en T-2)
+  day(p, 8, 60);
+  day(p, 7, 30);  // D2 = T-7 (debe 30, vence en T)
+  fill(p, 6, 2, 66); // D1+3..D1+7: +30 en total; primero iban a D1
+  fill(p, 1, 0, 60);
+  // Al vencer D1 (T-2 < T), D1 pasa a roto y los +30 de T-6..T-2 pagan D2 por completo
   const t = vn(p);
-  assert.equal(t.rescue, null);
-  assert.equal(cell(t, 2).rescued, false);
+  assert.equal(cell(t, 9).free, false);
+  assert.equal(cell(t, 7).free, true);
+  assert.equal(cell(t, 7).owe, false);
+  assert.equal(t.open.length, 0);
+  assert.equal(t.streak, 9); // T-8 .. T
 });
 
-test('racha previa de 2 días: no es rescatable', () => {
+test('ficha que vuelve a los 7 días', () => {
   const p: Plays = [];
-  day(p, 5, 20); // un día flojo antes
-  fill(p, 4, 3, 60); // solo 2 días cumplidos antes de D
-  day(p, 2, 38);
-  day(p, 1, 120);
-  day(p, 0, 120);
-  const t = vn(p);
-  assert.equal(t.rescue, null);
-  assert.equal(cell(t, 2).rescued, false);
+  fill(p, 10, 8, 60);
+  day(p, 7, 40); // D = T - 7 (falta pagar 20)
+  fill(p, 6, 0, 60);
+  // En D + 6 (= T - 1): la ficha de D aún está gastada
+  const atDay6 = new Date(2026, 9, 19, 22, 40).getTime();
+  const t6 = goalTrack('vn', 60, lib('vn', p), null, atDay6);
+  assert.equal(t6.tokens, 1);
+  assert.equal(t6.tokenBack, T); // vuelve hoy (T = D + 7)
+
+  // En D + 7 (= T): la ficha ya volvió (tokens = 2), aunque D siga abierto como último día (left = 1)
+  const t7 = vn(p);
+  assert.equal(t7.tokens, 2);
+  assert.equal(Number.isNaN(t7.tokenBack), true);
+  assert.equal(t7.open.length, 1);
+  assert.equal(t7.open[0].left, 1);
+  assert.equal(t7.state, 'urgent');
 });
 
-test('una partida de 9 min no suma al extra; una de 10 min sí', () => {
+test('partidas de menos de 10 min no pagan; 10 min sí', () => {
   const a = base();
-  day(a, 1, 60, 9); // lunes 69 min, pero solo 9 min en partida corta
+  day(a, 1, 60, 9); // 69 min, pero el exceso es una partida de 9 min
   const ta = vn(a);
-  assert.ok(ta.rescue);
-  assert.equal(ta.rescue!.got, 0);
+  assert.equal(ta.open[0].paid, 0);
+  assert.equal(wday(ta, 1).extra, 0);
+
   const b = base();
   day(b, 1, 60, 10);
   const tb = vn(b);
-  assert.equal(tb.rescue!.got, 10);
+  assert.equal(tb.open[0].paid, 10);
+  assert.equal(wday(tb, 1).extra, 10);
+  assert.equal(wday(tb, 1).gave, 10);
 });
 
-test('rescates ilimitados: el tercero en 30 días también se paga', () => {
+test('state: ok, lit, debt, tope y urgent (con prioridad urgent > tope > debt > lit/ok)', () => {
+  // ok: sin deuda, hoy sin cumplir
+  const pOk: Plays = [];
+  fill(pOk, 3, 1, 60);
+  assert.equal(vn(pOk).state, 'ok');
+
+  // lit: sin deuda, hoy cumplido
+  day(pOk, 0, 60);
+  assert.equal(vn(pOk).state, 'lit');
+
+  // debt: 1 día libre reciente (left > 2), quedan fichas
+  const pDebt: Plays = [];
+  fill(pDebt, 4, 2, 60);
+  day(pDebt, 1, 30); // debe 30, left = 7
+  day(pDebt, 0, 60);
+  const tDebt = vn(pDebt);
+  assert.equal(tDebt.tokens, 1);
+  assert.equal(tDebt.state, 'debt');
+
+  // tope: 2 días libres en 7 días (tokens = 0), ninguno con left <= 2
+  const pTope: Plays = [];
+  fill(pTope, 5, 3, 60);
+  day(pTope, 2, 40); // left = 6
+  day(pTope, 1, 40); // left = 7
+  day(pTope, 0, 60);
+  const tTope = vn(pTope);
+  assert.equal(tTope.tokens, 0);
+  assert.equal(tTope.state, 'tope');
+
+  // urgent: supera a tope aunque tokens === 0
+  const pUrgent: Plays = [];
+  fill(pUrgent, 9, 7, 60);
+  day(pUrgent, 6, 40); // deadline = T + 1 -> left = 2 (urgente)
+  fill(pUrgent, 5, 2, 60);
+  day(pUrgent, 1, 40); // segunda ficha gastada -> tokens = 0
+  day(pUrgent, 0, 60);
+  const tUrgent = vn(pUrgent);
+  assert.equal(tUrgent.tokens, 0);
+  assert.ok(tUrgent.urgent);
+  assert.equal(tUrgent.urgent!.left, 2);
+  assert.equal(tUrgent.state, 'urgent');
+});
+
+test('goalAt con historial y meta diferida (hoy la vieja, mañana la nueva)', () => {
+  const hist: GoalHist = [[0, 60], [T + 1, 45]];
+  assert.equal(goalAt(undefined, T, 60), 60);
+  assert.equal(goalAt([], T, 60), 60);
+  assert.equal(goalAt(hist, T - 5, 45), 60);
+  assert.equal(goalAt(hist, T, 45), 60);
+  assert.equal(goalAt(hist, T + 1, 45), 45);
+  assert.deepEqual(goalHistOf({ goalHist: { vn: hist } }, 'vn'), hist);
+  assert.deepEqual(goalHistOf({ goalHist: {} }, 'pc'), []);
+
+  // Hoy (T): la meta sigue siendo 60 aunque la config ya guarde 45; con 50 min NO cumple hoy
   const p: Plays = [];
-  fill(p, 45, 38, 60);
-  day(p, 37, 38); // D1
-  day(p, 36, 90); // pagado
-  fill(p, 35, 34, 60);
-  day(p, 33, 38); // D2
-  day(p, 32, 90); // pagado
-  fill(p, 31, 21, 60);
-  day(p, 20, 38); // D3: sin tope, se rescata igual
-  day(p, 19, 90); // pagado
-  fill(p, 18, 0, 120);
-  const t = vn(p, 12);
-  assert.equal(cell(t, 37).rescued, true);
-  assert.equal(cell(t, 33).rescued, true);
-  assert.equal(cell(t, 20).rescued, true);
+  fill(p, 3, 1, 60);
+  day(p, 0, 50);
+  const tToday = goalTrack('vn', 45, lib('vn', p), null, NOW, 10, hist);
+  assert.equal(tToday.goal, 60);
+  assert.equal(tToday.nextGoal, 45);
+  assert.equal(tToday.done, false);
+
+  // Mañana (T + 1): hoy la meta es 45 (cumple con 45), pero ayer (T) se evalúa con 60 (día libre con need = 10)
+  const tomorrow = new Date(2026, 9, 21, 22, 40).getTime();
+  day(p, -1, 45); // T + 1: 45 min
+  const tTomorrow = goalTrack('vn', 45, lib('vn', p), null, tomorrow, 10, hist);
+  assert.equal(tTomorrow.goal, 45);
+  assert.equal(tTomorrow.nextGoal, 45);
+  assert.equal(tTomorrow.done, true);
+  assert.equal(tTomorrow.open.length, 1);
+  assert.equal(tTomorrow.open[0].day, T);
+  assert.equal(tTomorrow.open[0].goal, 60);
+  assert.equal(tTomorrow.open[0].need, 10);
 });
 
-test('segundo rescate: necesita solo el déficit (sin multiplicador)', () => {
-  const p: Plays = [];
-  fill(p, 14, 10, 60);
-  day(p, 9, 38); // D1
-  day(p, 8, 90); // pagado
-  fill(p, 7, 3, 60);
-  day(p, 2, 38); // D2: déficit 22
-  day(p, 1, 85); // +25 >= 22: pagado
-  const t = vn(p);
-  assert.equal(t.rescue, null);
-  assert.equal(cell(t, 9).rescued, true);
-  assert.equal(cell(t, 2).rescued, true);
-});
-
-test('dos categorías pendientes a la vez, cada una por su cuenta', () => {
+test('dos categorías abiertas a la vez sin mezclarse', () => {
   const pv = base();
-  day(pv, 1, 72);
-  day(pv, 0, 66, 7);
+  day(pv, 1, 72); // +12
+  day(pv, 0, 66, 7); // +6 (la de 7 min no cuenta)
   const pj: Plays = [];
   fill(pj, 5, 3, 30);
-  day(pj, 2, 19);
+  day(pj, 2, 19); // debe 11
   day(pj, 1, 36); // +6
-  day(pj, 0, 33, 6); // +3; la de 6 min no cuenta
+  day(pj, 0, 33, 6); // +3 (la de 6 min no cuenta)
   const platforms = [
     { id: 'vn', titles: [{ name: 'A', gameId: 'a', plays: pv }] },
     { id: 'jvn', titles: [{ name: 'B', gameId: 'b', plays: pj }] },
   ] as any;
   const a = goalTrack('vn', 60, platforms, null, NOW);
   const b = goalTrack('jvn', 30, platforms, null, NOW);
-  assert.equal(a.rescue!.got, 18);
-  assert.equal(a.rescue!.need, 22);
-  assert.equal(b.rescue!.got, 9);
-  assert.equal(b.rescue!.need, 11);
-  assert.equal(b.rescue!.next, 32);
-  assert.equal(a.rescue!.key, 'vn');
-  assert.equal(b.rescue!.key, 'jvn');
+  assert.equal(a.open[0].paid, 18);
+  assert.equal(a.open[0].owe, 4);
+  assert.equal(b.open[0].paid, 9);
+  assert.equal(b.open[0].owe, 2);
 });
 
-test('mínimo de rescate: 10 min bastan, 9 no', () => {
-  for (const [played, ok] of [[10, true], [9, false]] as const) {
-    const p: Plays = [];
-    fill(p, 5, 3, 60);
-    day(p, 2, played);
-    day(p, 1, 60 + (60 - played)); // el extra cubre el déficit
-    day(p, 0, 60);
-    const t = vn(p);
-    assert.equal(cell(t, 2).rescued, ok, `${played} min`);
-  }
-});
-
-test('pago en el día 7 de la ventana: se rescata y avisa paidDay', () => {
-  const p: Plays = [];
-  fill(p, 10, 8, 60); // 3 días previos
-  day(p, 7, 38); // D: faltan 22
-  fill(p, 6, 1, 62); // D+1..D+6: +12
-  day(p, 0, 70); // D+7 (hoy): +10 -> 22
+test('readfmt: freeDayName, freeLeft y freeClose', () => {
+  const p = base();
+  day(p, 1, 60);
   const t = vn(p);
-  assert.equal(t.rescue, null);
-  assert.equal(t.paidDay, T - 7);
-  assert.equal(cell(t, 7).rescued, true);
-  assert.equal(t.streak, 11);
-});
-
-test('aplicación retroactiva: un fallo antiguo pagado entre D+4 y D+7 repara el historial', () => {
-  const p: Plays = [];
-  fill(p, 24, 22, 60); // 3 días previos
-  day(p, 21, 38); // D: faltan 22
-  fill(p, 20, 17, 60); // D+1..D+4 sin extra
-  day(p, 16, 85); // D+5: +25 >= 22 (fuera de 3 días, dentro de 7)
-  fill(p, 15, 0, 60);
-  const t = vn(p);
-  assert.equal(t.rescue, null);
-  assert.equal(cell(t, 21).rescued, true);
-  assert.equal(t.streak, 25);
-  assert.equal(t.best, 25);
+  const f = t.open[0]; // T - 2 = domingo 18 oct 2026, deadline = T + 5 = domingo 25 oct, left = 6
+  assert.equal(freeDayName(f.day), 'dom 18');
+  assert.equal(freeDayName(f.day, true), 'domingo 18');
+  assert.equal(freeLeft(f), 'quedan 6 días');
+  assert.equal(freeLeft({ ...f, left: 2 }), 'hoy y mañana');
+  assert.equal(freeLeft({ ...f, left: 1 }), 'hoy');
+  assert.equal(freeClose(f), 'lun 7:00');
+  assert.equal(freeClose(f, true), 'lunes 26 a las 7:00');
 });

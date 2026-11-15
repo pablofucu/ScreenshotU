@@ -13,10 +13,10 @@
   const keys = $derived(app.goalKeys);
   const rr = createReadRings({ keys: () => app.goalKeys, size: 22, stroke: 3.5, gap: 1.3, empty: '' });
 
-  /** 3: racha por encender; 2: rescate; 1: racha en peligro hoy; 0: nada. */
+  /** 4: racha por encender; 3: plazo urgente; 2: deuda de día libre; 1: racha en peligro hoy; 0: nada. */
   function level(k: GoalKey) {
     const t = rr.tracks.find((x) => x.key === k);
-    return t ? (rr.pending(t) ? 3 : t.rescue ? 2 : !t.done && t.streak > 0 ? 1 : 0) : 0;
+    return t ? (rr.pending(t) ? 4 : t.urgent ? 3 : t.owe > 0 ? 2 : !t.done && t.streak > 0 ? 1 : 0) : 0;
   }
 
   // Categoría inicial al montar Inicio: la de más nivel, o la de la partida más reciente.
@@ -36,10 +36,11 @@
   });
 
   const k = $derived(app.homeGoal);
+  const activeGoal = $derived(k ? (rr.tracks.find((x) => x.key === k)?.goal ?? goalMin(app.config, k)) : 0);
 </script>
 
 {#if k}
-  <div class="hsect" style="left:{left}px">{GOAL_TXT[groupOf(k)].card + ' · ' + GOAL_COL[k].tab}</div>
+  <div class="hsect" style="left:{left}px">{GOAL_TXT[groupOf(k)].crumb + ' · ' + GOAL_COL[k].tab}</div>
   {#if keys.length > 1}
     <div class="rind" style="right:{1280 - left - w}px">
       <span class="rdots">
@@ -54,7 +55,7 @@
       <div class="rface on"><ReadRings keys={[k]} active /></div>
     </div>
   </div>
-  <div class="rmeta" style="left:{left + 4}px;width:{w - 4}px">Meta diaria<span>&nbsp;· {fmtGoal(goalMin(app.config, k))} {GOAL_COL[k].name}</span></div>
+  <div class="rmeta" style="left:{left + 4}px;width:{w - 4}px">Meta diaria<span>&nbsp;· {fmtGoal(activeGoal)} de {GOAL_COL[k].name} · 2 días libres cada 7</span></div>
 {/if}
 
 <style>

@@ -2,9 +2,9 @@
   // Baldosa y hoja de tiempo de juego y racha de la meta diaria (novelas, PC o Switch) o récord de sesión.
   import { onDestroy } from 'svelte';
   import type { QuickMenuState } from './data';
-  import { goalTrack, readDetail, GOAL_COL, localDay, rescueCls, type GoalKey } from '../lib/readgoals';
+  import { goalHistOf, goalTrack, readDetail, GOAL_COL, localDay, type GoalHist, type GoalKey } from '../lib/readgoals';
   import type { Platform, Title } from '../lib/types';
-  import { rescueDay, rescueLeft, rescueClose, rescueFailed, fmtMin } from '../lib/readfmt';
+  import { freeDayName, freeLeft, freeClose, fmtGoal, fmtMin } from '../lib/readfmt';
   import { titleStats } from '../lib/stats';
   import { fmtDur, z } from '../lib/format';
 
@@ -12,12 +12,14 @@
     context = null,
     game = null,
     goals = { vn: 60, jvn: 45, pc: 60, switch: 30 },
+    goalHist = {},
     view = 'tile',
     onOpenSheet,
   }: {
     context: QuickMenuState['context'];
     game: QuickMenuState['game'];
     goals: QuickMenuState['goals'];
+    goalHist?: QuickMenuState['goalHist'];
     view?: 'tile' | 'sheet';
     onOpenSheet?: () => void;
   } = $props();
@@ -44,18 +46,21 @@
   const hasGoal = $derived(!!context?.key && context.key in GOAL_COL);
   const goalKey = $derived((context?.key ?? 'vn') as GoalKey);
   const goalMinutes = $derived(goals[goalKey] ?? 60);
+  const hist = $derived<GoalHist>(goalHistOf({ goalHist: goalHist ?? {} }, goalKey));
 
   const track = $derived.by(() => {
     if (!hasGoal || !context) return null;
     const live = { id: gameId, since };
-    return goalTrack(goalKey, goalMinutes, [{ id: goalKey, titles: context.titles as unknown as Title[] }] as Platform[], live, now);
+    return goalTrack(goalKey, goalMinutes, [{ id: goalKey, titles: context.titles as unknown as Title[] }] as Platform[], live, now, undefined, hist);
   });
 
   const detail = $derived.by(() => {
     if (!hasGoal || !context) return null;
     const live = { id: gameId, since };
-    return readDetail(goalKey, goalMinutes, [{ id: goalKey, titles: context.titles as unknown as Title[] }] as Platform[], live, now);
+    return readDetail(goalKey, track?.goal ?? goalMinutes, [{ id: goalKey, titles: context.titles as unknown as Title[] }] as Platform[], live, now);
   });
+
+  const firstOpen = $derived(track?.open[0] ?? null);
 
   const todayStr = $derived.by(() => {
     if (track) return fmtMin(track.today, true);
@@ -65,15 +70,25 @@
   const timeNote = $derived.by(() => {
     if (!track) return '';
     if (track.paidDay === localDay(now)) {
-      return `¡Hucha llena! El ${track.rescue ? rescueFailed(track.rescue) : 'día fallado'} cuenta · ${track.streak} días`;
+      return `¡Día libre recuperado! El ${freeDayName(track.paidDay, true)} cuenta · ${track.streak} ${track.streak === 1 ? 'día' : 'días'}`;
+    }
+    if (track.urgent && track.urgent.left <= 1) {
+      return `Último plazo: hoy · faltan ${fmtMin(track.urgent.owe, true)}`;
+    }
+    if (track.open.length) {
+      const f = track.open[track.open.length - 1];
+      return `Día libre: faltan ${fmtMin(track.owe, true)} para recuperarlo · plazo ${freeDayName(f.deadline, false)}`;
     }
     if (track.done) {
       const atStr = detail?.doneAt
         ? new Date(detail.doneAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
         : '';
-      return `✓ Cumplida${atStr ? ` a las ${atStr}` : ''}${track.rescue ? ` · +${track.rescue.gotToday || 0} min a la hucha` : ''}`;
+      return `✓ Cumplida${atStr ? ` a las ${atStr}` : ''}`;
     }
-    const leftM = Math.ceil(track.goal - track.today);
+    if (track.state === 'tope' && !Number.isNaN(track.tokenBack)) {
+      return `Sin días libres hasta el ${freeDayName(track.tokenBack, false)}`;
+    }
+    const leftM = Math.max(1, Math.ceil(track.goal - track.today));
     return track.streak > 0 ? `Faltan ${leftM} min para seguir la racha` : `Faltan ${leftM} min`;
   });
 
@@ -87,16 +102,21 @@
   const beatsRecord = $derived(sessionSec * 1000 > longestMs);
   const leftToBeat = $derived(beatsRecord ? '' : fmtDur(Math.round((longestMs - sessionSec * 1000) / 1000)));
 
-  // Hucha mini casillas
+  const freeColorStyle = $derived.by(() => {
+    if (!track) return '';
+    const base = track.urgent ? 'var(--bad)' : 'var(--warn)';
+    return `--rc:${base};--rmid:color-mix(in srgb,${base} 60%,white)`;
+  });
+
   const miniCells = $derived.by(() => {
-    if (!track?.rescue) return [];
-    const r = track.rescue;
-    const need = Math.max(1, r.need);
+    if (!firstOpen) return [];
+    const need = Math.max(1, firstOpen.need);
+    const paid = Math.min(need, firstOpen.paid);
     const unit = need <= 12 ? 1 : need <= 60 ? 5 : 10 * Math.ceil(need / 120);
     return Array.from({ length: Math.ceil(need / unit) }, (_, i) => {
       const lo = i * unit, w = Math.min(need, lo + unit) - lo;
       const pct = (v: number) => Math.round(Math.max(0, Math.min(1, (v - lo) / w)) * 100);
-      return { a: pct(r.gotBefore), b: pct(r.got) };
+      return { a: pct(paid), b: pct(paid) };
     });
   });
 
@@ -126,8 +146,8 @@
 
 {#if view === 'tile'}
   <div
-    class="glass tile t-time {hasGoal ? rescueCls(goalKey) : ''}"
-    style="--i:1;{hasGoal ? `--c:${GOAL_COL[goalKey].c}` : ''}"
+    class="glass tile t-time"
+    style="--i:1;{hasGoal ? `--c:${GOAL_COL[goalKey].c};${freeColorStyle}` : ''}"
     data-f
     data-id="time"
     onclick={onOpenSheet}
@@ -156,7 +176,7 @@
       </div>
 
       {#if hasGoal && track}
-        {@const rd = ringDash(track.today / track.goal, 104, 11)}
+        {@const rd = ringDash(track.today / (track.goal || 1), 104, 11)}
         <div class="gring" style="width:104px;height:104px">
           <svg width="104" height="104" viewBox="0 0 104 104">
             <circle cx={rd.m} cy={rd.m} r={rd.r} fill="none" stroke={GOAL_COL[goalKey].c} stroke-opacity=".25" stroke-width="11"/>
@@ -174,7 +194,7 @@
           </svg>
           <div class="gin">
             <b>{Math.round(track.today)}m</b>
-            <small>de {goalMinutes / 60} h</small>
+            <small>de {fmtGoal(track.goal)}</small>
           </div>
         </div>
 
@@ -194,17 +214,25 @@
             <span class="n">{track.streak}</span>
             <span class="l">
               {GOAL_COL[goalKey].name}
-              <small class={track.rescue ? 'rp' : ''}>
-                {track.rescue ? 'pendiente' : track.streak >= track.best && track.streak > 0 ? 'récord' : `mejor ${track.best}`}
+              <small class={firstOpen || track.state === 'tope' ? 'rp' : ''}>
+                {#if track.urgent && track.urgent.left <= 1}
+                  Último plazo: hoy
+                {:else if firstOpen}
+                  debes {fmtMin(track.owe, true)}
+                {:else if track.state === 'tope' && !Number.isNaN(track.tokenBack)}
+                  sin libres hasta {freeDayName(track.tokenBack, false)}
+                {:else}
+                  {track.streak >= track.best && track.streak > 0 ? 'récord' : `mejor ${track.best}`}
+                {/if}
               </small>
             </span>
           </div>
 
-          {#if track.rescue}
+          {#if firstOpen}
             <div class="hm">
               <div class="mh">
-                <span class="mk">Rescate</span>
-                <span class="mn"><b>{track.rescue.got}</b>/{track.rescue.need}<small> min</small></span>
+                <span class="mk">Día libre</span>
+                <span class="mn"><b>{firstOpen.paid}</b>/{firstOpen.need}<small> min</small></span>
               </div>
               <div class="mbar">
                 {#each miniCells as c}
@@ -212,8 +240,8 @@
                 {/each}
               </div>
               <div class="mf">
-                <span>quedan <b>{rescueLeft(track.rescue, now)}</b></span>
-                <span>{rescueClose(track.rescue, false)}</span>
+                <span><b>{firstOpen.left <= 1 ? 'Último plazo: hoy' : freeLeft(firstOpen)}</b></span>
+                <span>{freeClose(firstOpen)}</span>
               </div>
             </div>
           {:else}
@@ -226,7 +254,9 @@
                         class="cell"
                         class:st={cell.streak}
                         class:td={cell.today}
-                        style="background:{cell.future ? 'rgba(255,255,255,.05)' : cell.v <= 0 ? 'rgba(255,255,255,.1)' : `color-mix(in srgb, ${GOAL_COL[goalKey].c} ${(cell.r < 1 ? 15 + 45 * cell.r : Math.min(100, 60 + 40 * (cell.r - 1))).toFixed(0)}%, transparent)`}"
+                        class:fr={cell.free && !cell.owe}
+                        class:ow={cell.owe}
+                        style="background:{cell.future ? 'rgba(255,255,255,.05)' : cell.owe ? 'color-mix(in srgb, var(--warn) 45%, transparent)' : cell.free ? 'var(--warn)' : cell.v <= 0 ? 'rgba(255,255,255,.1)' : `color-mix(in srgb, ${GOAL_COL[goalKey].c} ${(cell.r < 1 ? 15 + 45 * cell.r : Math.min(100, 60 + 40 * (cell.r - 1))).toFixed(0)}%, transparent)`}"
                       ></span>
                     {/each}
                   </div>
@@ -234,7 +264,15 @@
               </div>
               <span class="rnote ok">
                 {track.streak} {track.streak === 1 ? 'día seguido' : 'días seguidos'}<br>
-                <span style="opacity:.8;color:#fff">sin rescates pendientes</span>
+                <span style="opacity:.8;color:var(--on)">
+                  {#if track.paidDay === localDay(now)}
+                    ¡Día libre recuperado!
+                  {:else if track.state === 'tope' && !Number.isNaN(track.tokenBack)}
+                    Sin días libres hasta el {freeDayName(track.tokenBack, false)}
+                  {:else}
+                    {track.tokens} de 2 días libres
+                  {/if}
+                </span>
               </span>
             </div>
           {/if}
@@ -281,12 +319,11 @@
     </div>
 
     {#if hasGoal && track}
-      {#if track.rescue}
-        {@const r = track.rescue}
-        <div class="resc {rescueCls(goalKey)}" style="--c:{GOAL_COL[goalKey].c}">
+      {#if firstOpen}
+        <div class="resc" style="--c:{GOAL_COL[goalKey].c};{freeColorStyle}">
           <div class="rtitle">
             <span class="rdot"></span>
-            Rescate del {rescueFailed(r)}
+            Día libre del {freeDayName(firstOpen.day, true)}
             <span style="margin-left:auto;display:flex;gap:10px;align-items:center">
               <div class="rmed" style="height:38px">
                 <svg viewBox="0 0 24 24"><path fill={GOAL_COL[goalKey].c} fill-opacity=".25" stroke={GOAL_COL[goalKey].c} stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"/></svg>
@@ -297,46 +334,56 @@
           </div>
 
           <div class="jar">
-            {#each Array(r.need) as _, i}
-              <i class:d1={i < r.gotBefore} class:d2={i >= r.gotBefore && i < r.got}></i>
+            {#each Array(Math.max(1, firstOpen.need)) as _, i}
+              <i class:d1={i < firstOpen.paid}></i>
             {/each}
           </div>
 
           <div class="jarl">
-            <span>{rescueDay(r.day, true)}: {r.played} de {r.goal} min · 1 casilla = 1 min que faltó</span>
-            <b>Recuperado {r.got} de {r.need} min</b>
+            <span>{freeDayName(firstOpen.day, true)}: {firstOpen.played} de {firstOpen.goal} min · 1 casilla = 1 min que faltó</span>
+            <b>Recuperado {firstOpen.paid} de {firstOpen.need} min</b>
           </div>
 
           <div class="hrow">
             <div class="plist">
-              <div class="kk">Partidas de la ventana</div>
-              {#each r.plays as p}
-                <div class="pr" class:no={!p.counts}>
-                  <span>{rescueDay(p.day)}</span>
+              <div class="kk">Últimos 7 días</div>
+              {#each track.week as w}
+                <div class="pr" class:no={w.broken}>
+                  <span>{w.today ? 'Hoy' : freeDayName(w.day)}</span>
                   <span>
-                    {#if !p.counts}<s>{p.name}</s><em>no cuenta · menos de 10 min</em>{:else}{p.name}{/if}
+                    {#if w.free}
+                      {w.free.done ? 'Día libre saldado' : `Día libre · debe ${fmtMin(w.free.owe, true)}`}
+                    {:else if w.gave > 0}
+                      Paga {fmtMin(w.gave, true)} al día libre
+                    {:else if w.met}
+                      Meta cumplida
+                    {:else if w.today}
+                      En curso
+                    {:else}
+                      Sin cumplir
+                    {/if}
                   </span>
-                  <span class="pm">{Math.round(p.min)} min</span>
+                  <span class="pm">{Math.round(w.min)} min</span>
                 </div>
               {/each}
             </div>
 
             <div>
               <div class="cd">
-                <span class="kk">Cierra en</span>
-                <b>{rescueLeft(r, now)}</b>
-                <small>{rescueClose(r, true)}</small>
-                <small>Hoy: {r.next} min más en partidas de 10 min o más</small>
+                <span class="kk">Plazo</span>
+                <b>{firstOpen.left <= 1 ? 'Último plazo: hoy' : freeLeft(firstOpen)}</b>
+                <small>{freeClose(firstOpen)}</small>
+                <small>Día libre: faltan {fmtMin(track.owe, true)} para recuperarlo · plazo {freeDayName(firstOpen.deadline, false)}</small>
               </div>
               <div class="rcnt">
-                <span style="opacity:.7;text-transform:uppercase;letter-spacing:.05em">Rescates · 30 días</span>
-                <b>{r.used}</b>
+                <span style="opacity:.7;text-transform:uppercase;letter-spacing:.05em">Días libres · 7 días</span>
+                <b>{track.tokens} / 2</b>
               </div>
             </div>
           </div>
         </div>
       {:else}
-        {@const rd = ringDash(track.today / track.goal, 140, 14)}
+        {@const rd = ringDash(track.today / (track.goal || 1), 140, 14)}
         <div style="display:flex;gap:24px;align-items:center;--c:{GOAL_COL[goalKey].c};margin-top:10px">
           <div class="gring" style="width:140px;height:140px">
             <svg width="140" height="140" viewBox="0 0 140 140">
@@ -355,7 +402,7 @@
             </svg>
             <div class="gin">
               <b style="font-size:30px">{Math.round(track.today)}m</b>
-              <small>de {goalMinutes / 60} h</small>
+              <small>de {fmtGoal(track.goal)}</small>
             </div>
           </div>
 
@@ -379,7 +426,9 @@
                     class="cell"
                     class:st={cell.streak}
                     class:td={cell.today}
-                    style="background:{cell.future ? 'rgba(255,255,255,.05)' : cell.v <= 0 ? 'rgba(255,255,255,.1)' : `color-mix(in srgb, ${GOAL_COL[goalKey].c} ${(cell.r < 1 ? 15 + 45 * cell.r : Math.min(100, 60 + 40 * (cell.r - 1))).toFixed(0)}%, transparent)`}"
+                    class:fr={cell.free && !cell.owe}
+                    class:ow={cell.owe}
+                    style="background:{cell.future ? 'rgba(255,255,255,.05)' : cell.owe ? 'color-mix(in srgb, var(--warn) 45%, transparent)' : cell.free ? 'var(--warn)' : cell.v <= 0 ? 'rgba(255,255,255,.1)' : `color-mix(in srgb, ${GOAL_COL[goalKey].c} ${(cell.r < 1 ? 15 + 45 * cell.r : Math.min(100, 60 + 40 * (cell.r - 1))).toFixed(0)}%, transparent)`}"
                   ></span>
                 {/each}
               </div>
@@ -387,7 +436,7 @@
           </div>
         </div>
         <div class="sub" style="margin-top:14px">
-          Lo mismo que «Lectura de hoy» de Inicio: anillo de hoy, racha y mapa de las últimas semanas. Solo de esta categoría.
+          Racha de la categoría, días libres (2 cada 7 días) y mapa de las últimas semanas.
         </div>
       {/if}
     {:else}
@@ -405,3 +454,8 @@
     {/if}
   </div>
 {/if}
+
+<style>
+  .cell.fr{box-shadow:0 0 0 1px var(--warn)}
+  .cell.ow{box-shadow:inset 0 0 0 1px var(--warn)}
+</style>

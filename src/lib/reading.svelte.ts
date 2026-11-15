@@ -7,7 +7,7 @@ import { patchConfig, toast } from './controller.svelte';
 import { startLearn } from './learn.svelte';
 import { openPhrases } from './phrases.svelte';
 import type { AnkiMap } from './types';
-import { goalCfgKey, groupOf, type GoalKey } from './readgoals';
+import { goalAt, goalCfgKey, goalHistOf, groupOf, localDay, type GoalHist, type GoalKey } from './readgoals';
 
 export type MapSlot = keyof AnkiMap;
 export type ReadingId =
@@ -38,6 +38,12 @@ const nextGoal = (cur: number, dir: number, allowOff = false) => {
 };
 /** Fila de Ajustes -> meta. */
 const GOAL_ROWS: Partial<Record<ReadingId, GoalKey>> = { goalvn: 'vn', goaljvn: 'jvn', goalpc: 'pc', goalswitch: 'switch' };
+const goalValue = (gk: GoalKey) => {
+  const cfg = app.config[goalCfgKey(gk)];
+  const todayGoal = goalAt(goalHistOf(app.config, gk), localDay(Date.now()), cfg);
+  const base = goalLabel(cfg);
+  return cfg > 0 && todayGoal !== cfg ? `${base} · desde mañana` : base;
+};
 
 const REC_PRESETS = ['F9', 'F8', 'F7', 'Ctrl+F9', 'Alt+F9', ''];
 
@@ -74,13 +80,13 @@ const secret = (k: string | undefined) => {
 export function readingRow(id: ReadingId): { l: string; v: string; d: string } {
   switch (id) {
     case 'goalvn':
-      return { l: 'Meta diaria · novelas visuales', v: goalLabel(app.config.goalVn), d: 'Minutos al día de novelas visuales para cerrar el anillo azul de Inicio. Cada día que lo cierras suma a la racha. ‹ › la cambia.' };
+      return { l: 'Meta diaria · novelas visuales', v: goalValue('vn'), d: 'Minutos al día de novelas visuales para el anillo azul de Inicio. Cada día que la cumples suma a la racha. Puedes tener 2 días libres cada 7 si recuperas lo que faltó. Los cambios valen desde mañana. ‹ › la cambia.' };
     case 'goaljvn':
-      return { l: 'Meta diaria · novelas japonesas', v: goalLabel(app.config.goalJvn), d: 'Minutos al día de novelas en japonés para cerrar el anillo rosa de Inicio. Cada día que lo cierras suma a la racha. ‹ › la cambia.' };
+      return { l: 'Meta diaria · novelas japonesas', v: goalValue('jvn'), d: 'Minutos al día de novelas en japonés para el anillo rosa de Inicio. Cada día que la cumples suma a la racha. Puedes tener 2 días libres cada 7 si recuperas lo que faltó. Los cambios valen desde mañana. ‹ › la cambia.' };
     case 'goalpc':
-      return { l: 'Meta diaria · juegos de PC', v: goalLabel(app.config.goalPc), d: 'Minutos al día de juegos de PC para cerrar el anillo verde de «Juego de hoy» en Inicio. Cada día que lo cierras suma a la racha. Desactivada: sin anillo. ‹ › la cambia.' };
+      return { l: 'Meta diaria · juegos de PC', v: goalValue('pc'), d: 'Minutos al día de juegos de PC para el anillo verde de «Juego de hoy» en Inicio. Cada día que la cumples suma a la racha. Puedes tener 2 días libres cada 7 si recuperas lo que faltó. Los cambios valen desde mañana. Desactivada: sin anillo. ‹ › la cambia.' };
     case 'goalswitch':
-      return { l: 'Meta diaria · Switch', v: goalLabel(app.config.goalSwitch), d: 'Minutos al día de Switch para cerrar el anillo naranja de «Juego de hoy» en Inicio. Cada día que lo cierras suma a la racha. Desactivada: sin anillo. ‹ › la cambia.' };
+      return { l: 'Meta diaria · Switch', v: goalValue('switch'), d: 'Minutos al día de Switch para el anillo naranja de «Juego de hoy» en Inicio. Cada día que la cumples suma a la racha. Puedes tener 2 días libres cada 7 si recuperas lo que faltó. Los cambios valen desde mañana. Desactivada: sin anillo. ‹ › la cambia.' };
     case 'dskey':
       return { l: 'Clave de DeepSeek', v: secret(app.config.deepseekKey), d: 'Clave de API de platform.deepseek.com. Sirve para traducir y explicar frases en la página de lectura, SOLO cuando tú lo pides (traducción tapada, «Estoy perdido»). La clave se queda en la aplicación: la página de lectura nunca la recibe. Pulsa A para escribirla o pegarla con Ctrl+V.' };
     case 'dsmodel':
@@ -175,7 +181,14 @@ export function readingAct(id: ReadingId, dir: number) {
   const gk = GOAL_ROWS[id];
   if (gk) {
     const k = goalCfgKey(gk);
-    void patchConfig({ [k]: nextGoal(app.config[k], dir, groupOf(gk) === 'play') });
+    const g0 = app.config[k];
+    const g1 = nextGoal(g0, dir, groupOf(gk) === 'play');
+    const today = localDay(Date.now());
+    const prev = goalHistOf(app.config, gk);
+    const from = g0 === 0 || g1 === 0 ? today : today + 1;
+    const base = prev.length ? prev.filter(([d]) => d < from) : [[0, g0] as [number, number]];
+    const nextHist: GoalHist = [...base, [from, g1]];
+    void patchConfig({ [k]: g1, goalHist: { ...(app.config.goalHist ?? {}), [gk]: nextHist } });
     blip(880);
     return;
   }

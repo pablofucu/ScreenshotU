@@ -991,6 +991,7 @@ fn state(app: &AppHandle) -> Value {
         "background": lock(&BACKGROUND).clone(),
         "context": lock(&CONTEXT).clone(),
         "goals": { "vn": c.goal_vn, "jvn": c.goal_jvn, "pc": c.goal_pc, "switch": c.goal_switch },
+        "goalHist": c.goal_hist,
         "holdMs": c.overlay_hold_ms,
         "shots": lock(&SHOTS).clone(),
         "audio": crate::mixer::state(active_pids(app).unwrap_or_default().as_slice()).ok(),

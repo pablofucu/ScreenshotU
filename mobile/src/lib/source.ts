@@ -8,6 +8,7 @@ export interface RemoteConfig {
   goalJvn: number;
   goalPc: number;
   goalSwitch: number;
+  goalHist?: Record<string, [number, number][]>;
   accentMode: 'art' | 'rainbow' | 'fixed';
   accentFixed: number;
 }
@@ -216,7 +217,7 @@ export async function demoSource(): Promise<Source> {
       const sagas: Saga[] = [];
       return {
         api: 1, generatedAt: Date.now(), name: 'Demostración',
-        config: { goalVn: cfg.goalVn, goalJvn: cfg.goalJvn, goalPc: cfg.goalPc, goalSwitch: cfg.goalSwitch, accentMode: cfg.accentMode, accentFixed: cfg.accentFixed },
+        config: { goalVn: cfg.goalVn, goalJvn: cfg.goalJvn, goalPc: cfg.goalPc, goalSwitch: cfg.goalSwitch, goalHist: cfg.goalHist, accentMode: cfg.accentMode, accentFixed: cfg.accentFixed },
         library, favorites, sagas, playing: null,
       };
     },

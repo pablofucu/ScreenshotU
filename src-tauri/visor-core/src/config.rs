@@ -135,6 +135,9 @@ pub struct Config {
     /// Metas diarias de juego (minutos); 0 = desactivada.
     pub goal_pc: u32,
     pub goal_switch: u32,
+    /// Historial de metas por clave (`vn`, `jvn`, `pc`, `switch`): `[diaDesde, minutos]` en orden.
+    #[serde(default)]
+    pub goal_hist: std::collections::BTreeMap<String, Vec<(i64, u32)>>,
     /// Al arrancar, abrir el visor en el monitor donde esta el cursor (el del icono pulsado) en vez de en el ultimo usado.
     pub open_on_cursor: bool,
     /// Al cerrar el visor, seguir en segundo plano con icono en la bandeja (si no, se sale del todo).
@@ -255,6 +258,7 @@ impl Default for Config {
             goal_jvn: 30,
             goal_pc: 60,
             goal_switch: 60,
+            goal_hist: Default::default(),
             open_on_cursor: false,
             keep_in_tray: false,
             remote_enabled: false,
@@ -565,5 +569,19 @@ mod tests {
         let p = d.path().join("sub/f.json");
         save_favorites(&p, &["a.png".into(), "b.png".into()]).unwrap();
         assert_eq!(load_favorites(&p), vec!["a.png", "b.png"]);
+    }
+
+    #[test]
+    fn goal_hist_defaults_empty_and_serializes_camel_case() {
+        let d = tempfile::tempdir().unwrap();
+        let p = d.path().join("c.json");
+        fs::write(&p, r#"{"goalVn":45}"#).unwrap();
+        let mut c = Config::load(&p);
+        assert!(c.goal_hist.is_empty());
+        c.goal_hist.insert("vn".into(), vec![(0, 60), (20747, 45)]);
+        let json = serde_json::to_string(&c).unwrap();
+        assert!(json.contains(r#""goalHist":{"vn":[[0,60],[20747,45]]}"#), "json: {json}");
+        c.save(&p).unwrap();
+        assert_eq!(Config::load(&p).goal_hist.get("vn").unwrap(), &vec![(0, 60), (20747, 45)]);
     }
 }

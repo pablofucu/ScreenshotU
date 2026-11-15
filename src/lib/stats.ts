@@ -482,7 +482,7 @@ export interface WeekBlock {
   shotPick: { ti: number; path: string; date: number; fav: boolean } | null;
   /** Solo Switch con cuenta de Nintendo: ms de la consola incluidos en `ms` y último día con datos (ms). */
   consoleMs?: number; consoleUntil?: number;
-  goal?: { met: number; of: 7; perDay: number[]; streak: number; rescued: number };
+  goal?: { met: number; of: 7; perDay: number[]; streak: number; free: number };
 }
 export interface WeekReview { range: Range; prev: Range; ms: number; prevMs: number; activeDays: number; blocks: WeekBlock[]; highlights: Highlight[] }
 
@@ -570,11 +570,11 @@ export function weekReview(
         let streak = tr.streak;
         if (back > 0) {
           streak = 0;
-          for (let i = GOAL_EXTRA_WEEKS * 7 + 6; i >= 0 && (cells[i].v >= 1 || cells[i].rescued); i--) streak++;
+          for (let i = GOAL_EXTRA_WEEKS * 7 + 6; i >= 0 && (cells[i].v >= 1 || cells[i].free); i--) streak++;
         }
         block.goal = {
           met: col.filter((c) => !c.future && c.v >= 1).length, of: 7, perDay: col.map((c) => c.v),
-          streak, rescued: col.filter((c) => c.rescued).length,
+          streak, free: col.filter((c) => c.free).length,
         };
       }
     }

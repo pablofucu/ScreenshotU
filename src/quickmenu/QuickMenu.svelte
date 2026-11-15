@@ -574,6 +574,7 @@
           context={qmState?.context ?? null}
           game={qmState?.game ?? null}
           goals={qmState?.goals ?? { vn: 60, jvn: 45, pc: 60, switch: 30 }}
+          goalHist={qmState?.goalHist ?? {}}
           view="tile"
           onOpenSheet={() => openSheet('tiempo')}
         />
@@ -715,6 +716,7 @@
               context={qmState?.context ?? null}
               game={qmState?.game ?? null}
               goals={qmState?.goals ?? { vn: 60, jvn: 45, pc: 60, switch: 30 }}
+              goalHist={qmState?.goalHist ?? {}}
               view="sheet"
             />
           {:else if sheet === 'capturas'}

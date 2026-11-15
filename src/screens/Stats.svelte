@@ -4,15 +4,17 @@
   import { app } from '../lib/store.svelte';
   import { RANK_VIEW_H, rankH, rankY } from '../lib/controller.svelte';
   import { CAL_WEEKS, STATS_KINDS, WDAYS, addDays, dayPlays, fmtClock, fmtHM, fmtLongDay } from '../lib/stats';
+  import { GOAL_COL } from '../lib/readgoals';
   import TopBar from '../components/TopBar.svelte';
   import Hints from '../components/Hints.svelte';
   import HeroStrip from '../components/HeroStrip.svelte';
   import MiniCover from '../components/MiniCover.svelte';
+  import Rachas from './stats/Rachas.svelte';
   import Year from './Year.svelte';
 
   const KIND_LABEL: Record<string, string> = { month: 'Mes', year: 'Año', all: 'Siempre' };
-  const VIEW_LABEL = { week: 'Semana', fin: 'Terminados', pano: 'Panorama', rank: 'Clasificación', cal: 'Calendario', year: 'Resumen anual' };
-  const TABS = ['week', 'fin', 'pano', 'rank', 'cal', 'year'] as const;
+  const VIEW_LABEL = { week: 'Semana', fin: 'Terminados', pano: 'Panorama', streak: 'Rachas', rank: 'Clasificación', cal: 'Calendario', year: 'Resumen anual' };
+  const TABS = ['week', 'fin', 'pano', 'streak', 'rank', 'cal', 'year'] as const;
   const PER_LABEL = (p: 'all' | number | 'd30') => (p === 'all' ? 'Siempre' : p === 'd30' ? 'Últimos 30 días' : String(p));
   const PANO_PERS = $derived(['all', 'd30', ...[...app.years].reverse()] as Array<'all' | number | 'd30'>);
   const panoPlat = $derived(app.statsPlats.includes(app.panoPi) ? app.panoPi : (app.statsPlats[0] ?? -1));
@@ -128,6 +130,18 @@
       <span class="lbl">{PER_LABEL(app.panoPer)}</span>
       <span class="chev" class:dis={pi < 0 || pi >= PANO_PERS.length - 1} data-hact="rb">{@render chev(false)}</span>
     </span>
+  {:else if app.statsTab === 'streak'}
+    {@const keys = app.goalKeys}
+    {@const sk = keys.includes(app.streakKey) ? app.streakKey : keys[0]}
+    {@const si = sk ? keys.indexOf(sk) : -1}
+    <span class="cat">{keys.length ? 'Metas diarias' : 'Sin metas'}</span>
+    {#if keys.length > 1 && sk}
+      <span class="gl">
+        <span class="chev" class:dis={si <= 0} data-hact="lb">{@render chev(true)}</span>
+        <span class="lbl">{GOAL_COL[sk].full}</span>
+        <span class="chev" class:dis={si >= keys.length - 1} data-hact="rb">{@render chev(false)}</span>
+      </span>
+    {/if}
   {:else}
     <span class="cat">Todas las categorías</span>
     <span class="gl">
@@ -151,6 +165,9 @@
   {@const pre = app.statsTab === 'week' ? 'wk' : app.statsTab === 'fin' ? 'fn' : 'pn'}
   <div class="stnone fx" class:f={app.focus === pre + '0'} data-k="{pre}0">En preparación: {VIEW_LABEL[app.statsTab]} llegará en la próxima actualización.</div>
   <Hints list={[['LB/RB', app.statsTab === 'pano' ? 'Periodo' : app.statsTab === 'fin' ? 'Año' : 'Semana', 'rb'], ...(app.statsTab === 'pano' ? [['LT/RT', 'Categoría', 'rt'] as [string, string, string]] : []), ['Y', VIEW_LABEL[TABS[(TABS.indexOf(app.statsTab) + 1) % TABS.length]], 'y'], ['B', 'Volver', 'b']]} />
+{:else if app.statsTab === 'streak'}
+  <Rachas />
+  <Hints list={[...(app.goalKeys.length > 1 ? [['LB/RB', 'Categoría', 'rb'] as [string, string, string]] : []), ['Y', 'Clasificación', 'y'], ['B', 'Volver', 'b']]} />
 {:else if app.statsTab === 'year'}
   <Year />
   <Hints list={[['A', 'Siguiente', 'a'], ['LB/RB', 'Año', 'rb'], ['Y', 'Semana', 'y'], ['B', 'Volver', 'b']]} />

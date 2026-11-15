@@ -78,13 +78,22 @@ pub struct RemoteConfig {
     pub goal_jvn: u32,
     pub goal_pc: u32,
     pub goal_switch: u32,
+    pub goal_hist: std::collections::BTreeMap<String, Vec<(i64, u32)>>,
     pub accent_mode: String,
     pub accent_fixed: u8,
 }
 
 impl RemoteConfig {
     pub fn from_config(c: &Config) -> RemoteConfig {
-        RemoteConfig { goal_vn: c.goal_vn, goal_jvn: c.goal_jvn, goal_pc: c.goal_pc, goal_switch: c.goal_switch, accent_mode: c.accent_mode.clone(), accent_fixed: c.accent_fixed }
+        RemoteConfig {
+            goal_vn: c.goal_vn,
+            goal_jvn: c.goal_jvn,
+            goal_pc: c.goal_pc,
+            goal_switch: c.goal_switch,
+            goal_hist: c.goal_hist.clone(),
+            accent_mode: c.accent_mode.clone(),
+            accent_fixed: c.accent_fixed,
+        }
     }
 }
 
@@ -1767,7 +1776,7 @@ mod tests {
         fn snapshot(&self) -> Result<Snapshot> {
             self.scans.fetch_add(1, Ordering::SeqCst);
             Ok(Snapshot {
-                config: RemoteConfig { goal_vn: 60, goal_jvn: 30, goal_pc: 60, goal_switch: 60, accent_mode: "art".into(), accent_fixed: 4 },
+                config: RemoteConfig { goal_vn: 60, goal_jvn: 30, goal_pc: 60, goal_switch: 60, goal_hist: Default::default(), accent_mode: "art".into(), accent_fixed: 4 },
                 library: self.lib.clone(),
                 favorites: vec![],
                 sagas: vec![Saga { id: "s1".into(), name: "Saga".into(), members: vec!["pc/A".into()], platform: None, color: None }],
@@ -1988,7 +1997,7 @@ mod tests {
             "host-1".into()
         }
         fn snapshot(&self) -> Result<Snapshot> {
-            let config = RemoteConfig { goal_vn: 1, goal_jvn: 1, goal_pc: 1, goal_switch: 1, accent_mode: "art".into(), accent_fixed: 0 };
+            let config = RemoteConfig { goal_vn: 1, goal_jvn: 1, goal_pc: 1, goal_switch: 1, goal_hist: Default::default(), accent_mode: "art".into(), accent_fixed: 0 };
             Ok(Snapshot { config, library: lib_with(vec![]), favorites: vec![], sagas: vec![], playing: None })
         }
         fn thumbs_dir(&self) -> PathBuf {

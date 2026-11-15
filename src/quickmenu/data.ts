@@ -23,6 +23,7 @@ export interface QuickMenuState {
     shots: { path: string; at: number }[];
   };
   goals: Record<GoalKey, number>;
+  goalHist?: Record<string, [number, number][]>;
   holdMs: number;
   shots: { path: string; thumb: string; at: number }[];
   audio: AudioState | null;
@@ -185,6 +186,7 @@ export function buildMockState(): QuickMenuState {
         ],
       },
       goals: { vn: 60, jvn: 45, pc: 60, switch: 30 },
+      goalHist: {},
       holdMs: 1500,
       shots: [...mockShots],
       audio: { ...mockAudio },
@@ -228,6 +230,7 @@ export function buildMockState(): QuickMenuState {
         shots: [],
       },
       goals: { vn: 60, jvn: 45, pc: 60, switch: 30 },
+      goalHist: {},
       holdMs: 1500,
       shots: [...mockShots],
       audio: { ...mockAudio },
@@ -276,6 +279,7 @@ export function buildMockState(): QuickMenuState {
         shots: [],
       },
       goals: { vn: 60, jvn: 45, pc: 60, switch: 30 },
+      goalHist: {},
       holdMs: 1500,
       shots: [...mockShots],
       audio: { ...mockAudio },
@@ -284,7 +288,7 @@ export function buildMockState(): QuickMenuState {
     };
   }
 
-  // caso 'a' (defecto): rescate pendiente
+  // caso 'a' (defecto): día libre pendiente
   const dFail = today - 3;
   const titlePlays: Array<[number, number]> = [];
   for (let d = dFail - 3; d < dFail; d++) {
@@ -326,6 +330,7 @@ export function buildMockState(): QuickMenuState {
       shots: [],
     },
     goals: { vn: 60, jvn: 45, pc: 60, switch: 30 },
+    goalHist: {},
     holdMs: 1500,
     shots: [...mockShots],
     audio: { ...mockAudio },
