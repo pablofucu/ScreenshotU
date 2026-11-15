@@ -36,7 +36,7 @@
 {#if up.phase === 'unpaired'}
   <div class="scrim upscrim" role="presentation">
     <div class="glass float upmodal" role="alertdialog" aria-modal="true" aria-label="Ya no emparejado">
-      {@render tile('#F2B807', '#3a414e', 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1M3 3l18 18')}
+      {@render tile('var(--warn)', 'var(--ink)', 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1M3 3l18 18')}
       <h1>Este PC ya no está emparejado con {up.host}</h1>
       <p class="lead">Ese PC te ha quitado de sus dispositivos o has sido desconectado. Para volver a usar su biblioteca hay que emparejar de nuevo.</p>
       <div class="cbtn">
@@ -112,11 +112,11 @@
         {:else}
           <div class="gap2"></div>
           {#if up.phase === 'rejected'}
-            {@render tile('#E8384F', '#fff', 'M6 6l12 12M18 6L6 18')}
+            {@render tile('var(--bad)', 'var(--on)', 'M6 6l12 12M18 6L6 18')}
             <h1>Solicitud rechazada</h1>
             <p class="lead">{up.host} ha rechazado la solicitud. Si querías entrar, pídele a quien está delante que la apruebe y vuelve a intentarlo.</p>
           {:else}
-            {@render tile('#F2B807', '#3a414e', 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2')}
+            {@render tile('var(--warn)', 'var(--ink)', 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2')}
             <h1>Solicitud caducada</h1>
             <p class="lead">Nadie respondió en {up.host} en 2 minutos. Si venías con un billete, puede que también haya caducado: genera uno nuevo en ese PC.</p>
           {/if}
@@ -161,11 +161,11 @@
   .steps span { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px 0 6px; border-radius: var(--r-pill); font-size: var(--t-s); font-weight: 800; color: var(--ink-3); background: var(--glass-chip); box-shadow: inset 0 0 0 1px var(--line); }
   .steps i { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: var(--t-xs); color: var(--ink-2); background: var(--line); }
   .steps .on { color: var(--on); background: var(--gf); box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 0 0 1px color-mix(in srgb, var(--f2) 75%, black); }
-  .steps .on i { background: rgba(255,255,255,.3); color: #fff; }
+  .steps .on i { background: rgba(255,255,255,.3); color: var(--on); }
   .steps .done { color: var(--ok-f, var(--ok)); }
-  .steps .done i { background: var(--ok); color: #fff; }
+  .steps .done i { background: var(--ok); color: var(--on); }
   .steps .done i .ic { width: 12px; height: 12px; stroke-width: 3; }
-  .tileic { width: 72px; height: 72px; margin: 0 auto 14px; border-radius: 22px; display: grid; place-items: center; color: #fff; background: linear-gradient(180deg, color-mix(in srgb, var(--c, var(--acc)) 40%, #fff), var(--c, var(--acc))); box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 0 0 1px color-mix(in srgb, var(--c, var(--acc)) 70%, black), 0 12px 20px -12px color-mix(in srgb, var(--c, var(--acc)) 80%, black); }
+  .tileic { width: 72px; height: 72px; margin: 0 auto 14px; border-radius: var(--r-m); display: grid; place-items: center; color: var(--on); background: linear-gradient(180deg, color-mix(in srgb, var(--c, var(--acc)) 40%, var(--tint-base)), var(--c, var(--acc))); box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 0 0 1px color-mix(in srgb, var(--c, var(--acc)) 70%, black), 0 12px 20px -12px color-mix(in srgb, var(--c, var(--acc)) 80%, black); }
   .tileic .ic { width: 38px; height: 38px; }
   .spin { width: 18px; height: 18px; border-radius: 50%; border: 3px solid var(--line-2, var(--line)); border-top-color: var(--acc); animation: upspin 1s linear infinite; flex: none; }
   @keyframes upspin { to { transform: rotate(360deg); } }
@@ -179,9 +179,9 @@
   .pcrow .nm small { font-size: var(--t-s); font-weight: 500; color: var(--ink-2); }
   .pcrow .st { font-size: var(--t-s); font-weight: 700; }
   .pcrow.f { background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 60%), var(--gf); box-shadow: inset 0 1.5px 0 rgba(255,255,255,.8), 0 0 0 1px color-mix(in srgb, var(--f2) 75%, black), 0 0 18px -2px color-mix(in srgb, var(--f1) 45%, transparent), 0 6px 12px -8px color-mix(in srgb, var(--f2) 70%, black); }
-  .pcrow.f .nm b, .pcrow.f .nm small, .pcrow.f .st, .pcrow.f { color: #fff; }
+  .pcrow.f .nm b, .pcrow.f .nm small, .pcrow.f .st, .pcrow.f { color: var(--on); }
   .pcrow.f .nm b { text-shadow: 0 1px 2px rgba(0,0,0,.28); }
-  .pcrow.f .tile { background: rgba(255,255,255,.28); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.5); }
+  .pcrow.f .tile { background: rgba(255,255,255,.28); color: var(--on); box-shadow: inset 0 0 0 1px rgba(255,255,255,.5); }
   .alt2 { margin-top: auto; margin-bottom: 34px; display: flex; align-items: center; gap: 16px; width: 100%; max-width: 760px; padding: 14px 20px; border-radius: var(--r-m); }
   .alt2 p { margin: 0; flex: 1; font-size: var(--t-s); font-weight: 500; line-height: 1.35; color: var(--ink-2); }
   .alt2 p b { display: block; font-size: var(--t-m); font-weight: 800; color: var(--ink); }
@@ -196,16 +196,16 @@
   .cbtn :global(.b-main), .cbtn :global(.b-soft) { display: inline-flex; align-items: center; gap: var(--s-2); height: 52px; padding: 0 28px 0 12px; font-size: var(--t-xl); font-weight: 700; border: 0; cursor: pointer; }
   .cbtn.left :global(.b-main) { padding-left: 28px; cursor: default; }
   .cbtn :global(.b-soft) { color: var(--ink); }
-  .cbtn :global(.b-main .btn) { background: #fff; color: var(--ok-f, var(--ok)); text-shadow: none; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
-  .cbtn :global(.btn.big) { min-width: 36px; height: 36px; font-size: var(--t-l); border-radius: 14px; }
+  .cbtn :global(.b-main .btn) { background: var(--tint-base); color: var(--ok-f, var(--ok)); text-shadow: none; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .cbtn :global(.btn.big) { min-width: 36px; height: 36px; font-size: var(--t-l); border-radius: var(--r-s); }
   .chk { display: flex; flex-direction: column; gap: 8px; width: 480px; margin-top: 20px; text-align: left; }
   .chk div { display: flex; align-items: center; gap: 14px; height: 52px; padding: 0 18px; border-radius: var(--r-m); font-size: var(--t-l); font-weight: 700; color: var(--ink-2); }
   .chk div span { flex: 1; }
   .chk div small { font-size: var(--t-s); font-weight: 500; color: var(--ink-3); }
   .chk .ok { color: var(--ok-f, var(--ok)); }
-  .chk .bad { color: var(--danger, #E8384F); }
+  .chk .bad { color: var(--bad); }
   .err { margin: 0; font-size: var(--t-s); color: var(--ink-2); line-height: 1.4; }
-  .bigok { width: 96px; height: 96px; margin: 10px auto 18px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: linear-gradient(180deg, color-mix(in srgb, var(--ok) 40%, #fff), var(--ok)); box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 0 0 1px color-mix(in srgb, var(--ok) 70%, black), 0 16px 26px -14px var(--ok); }
+  .bigok { width: 96px; height: 96px; margin: 10px auto 18px; border-radius: 50%; display: grid; place-items: center; color: var(--on); background: linear-gradient(180deg, color-mix(in srgb, var(--ok) 40%, var(--tint-base)), var(--ok)); box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 0 0 1px color-mix(in srgb, var(--ok) 70%, black), 0 16px 26px -14px var(--ok); }
   .bigok .ic { width: 52px; height: 52px; stroke-width: 2.6; }
   .mform { margin-top: 28px; width: 560px; }
   .fld { margin-bottom: 14px; }

@@ -434,7 +434,7 @@
   }
   .tsearch .ts-x:hover {
     background: var(--bad);
-    color: #fff;
+    color: var(--on);
     transform: scale(1.1);
   }
 

@@ -201,9 +201,9 @@
   /* Colecciones: botón de cristal con anillo del par de tonos; al pulsarlo se llena con el degradado (como el rótulo). */
   .tinted .bsh :global(.hint){padding:0 14px 0 4px;color:var(--ink);background:var(--soft-top);
     box-shadow:inset 0 1px 0 var(--hl),0 0 0 1.5px color-mix(in srgb,var(--g1) 55%,transparent);transition:transform .12s,background .12s,color .12s,box-shadow .12s}
-  .tinted .bsh :global(.hint .btn){background:linear-gradient(135deg,var(--g1),var(--g2));color:#fff;text-shadow:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
-  .tinted .bsh :global(.hint:active){transform:scale(.95);color:#fff;background:linear-gradient(115deg,var(--g1),var(--g2));box-shadow:inset 0 2px 6px rgba(0,0,0,.25)}
-  .tinted .bsh :global(.hint:active .btn){background:#fff;color:var(--g2)}
+  .tinted .bsh :global(.hint .btn){background:linear-gradient(135deg,var(--g1),var(--g2));color:var(--on);text-shadow:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
+  .tinted .bsh :global(.hint:active){transform:scale(.95);color:var(--on);background:linear-gradient(115deg,var(--g1),var(--g2));box-shadow:inset 0 2px 6px rgba(0,0,0,.25)}
+  .tinted .bsh :global(.hint:active .btn){background:var(--tint-base);color:var(--g2)}
   .tag{font-size:var(--t-s);font-weight:800;padding:3px 11px;border-radius:var(--r-pill);color:var(--ink);background:var(--acc);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 0 1px color-mix(in srgb,var(--acc) 70%,black)}
   .aur{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:inherit}
   .aur b{position:absolute;top:-30%;width:34%;height:160%;border-radius:50%;filter:blur(16px)}

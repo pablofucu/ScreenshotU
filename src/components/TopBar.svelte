@@ -120,7 +120,7 @@
   .crumb .go:hover { color: var(--acc); text-decoration: underline; text-underline-offset: 4px; }
   .avatar.mini { width: 44px; height: 44px; top: 20px; left: 30px; opacity: 0.6; box-shadow: none; }
   .avatar.mini :global(.face) { box-shadow: none; }
-  .avatar .streak { flex-direction: column; gap: 0; color: #fff; }
+  .avatar .streak { flex-direction: column; gap: 0; color: var(--on); }
   .avatar .streak svg { width: 22px; height: 22px; }
   .avatar .streak b { font-size: var(--t-m); font-weight: 800; line-height: 1; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
   .aud { position: relative; display: flex; }
@@ -131,6 +131,6 @@
   }
   .audbtn.f { box-shadow: inset 0 0 0 2px var(--acc); }
   .audbtn :global(svg) { width: 22px; height: 22px; }
-  .audbtn.armed { opacity: 1; color: #fff; background: #d64545; }
+  .audbtn.armed { opacity: 1; color: var(--on); background: var(--bad); }
   .audbtn:hover, .audbtn.open, .audbtn.f { opacity: 1; color: var(--acc); background: var(--glass-in); }
 </style>
