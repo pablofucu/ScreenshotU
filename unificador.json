@@ -539,7 +539,7 @@
       "color": 4,
       "created": "2026-11-12T02:19:11+01:00",
       "by": "ia",
-      "next_id": 3,
+      "next_id": 7,
       "phases": [
         {
           "name": "Acento Vivo",
@@ -584,9 +584,53 @@
               "id": "AVY-2",
               "title": "Cierre y verificación de tokens en todos los componentes",
               "desc": "",
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-15T15:56:53+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                }
+              ],
+              "cat": "pruebas",
+              "updated": "2026-11-15T15:56:53+01:00"
+            },
+            {
+              "id": "AVY-3",
+              "title": "Hook a tokens comunes",
+              "desc": "",
               "state": "pending",
               "notes": [],
-              "cat": "pruebas"
+              "cat": "codigo",
+              "by": "claude"
+            },
+            {
+              "id": "AVY-4",
+              "title": "Lector a tokens y paleta de lectura",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo",
+              "by": "claude"
+            },
+            {
+              "id": "AVY-5",
+              "title": "Restos con colores a mano",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo",
+              "by": "claude"
+            },
+            {
+              "id": "AVY-6",
+              "title": "Texto blanco sobre el arcoíris",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "decidir",
+              "by": "claude"
             }
           ]
         }
@@ -1814,10 +1858,71 @@
         }
       ],
       "recommend": 2,
-      "answer": null,
+      "answer": {
+        "option": null,
+        "text": "No le gusta ninguna; pide sistemas nuevos: poder saltarse 1-2 días en casos especiales y recuperarlo, sin que se pueda abusar",
+        "by": "persona",
+        "at": "2026-11-15T15:53:05+01:00",
+        "seen": true
+      },
       "by": "claude",
       "created": "2026-11-15T03:46:46+01:00"
+    },
+    {
+      "id": "P-6",
+      "kind": "proposal",
+      "title": "Rachas: tres sistemas nuevos para saltarse días",
+      "text": "Base: en casos especiales se puede fallar 1 o 2 días y recuperarlo despues, sin poder abusar.",
+      "step": "RCM-1",
+      "branch": "RCM",
+      "options": [
+        {
+          "label": "A · La semana",
+          "desc": "La meta es semanal (7 metas); 2 días libres por semana que no se acumulan; lo que falte se recupera dentro de la misma semana",
+          "file": ".unificador/propuestas/P-6/1.html"
+        },
+        {
+          "label": "B · Pausa avisada",
+          "desc": "Se avisa antes (billetes: 1 cada 10 días cumplidos, máx. 2) y un imprevisto al mes que se paga con un día doble",
+          "file": ".unificador/propuestas/P-6/2.html"
+        },
+        {
+          "label": "C · El puente",
+          "desc": "Un fallo abre un hueco que se cubre con minutos extra en 3 días; cada puente del mes cuesta más y solo hay 3",
+          "file": ".unificador/propuestas/P-6/3.html"
+        }
+      ],
+      "recommend": 2,
+      "answer": null,
+      "by": "claude",
+      "created": "2026-11-15T15:53:05+01:00"
+    },
+    {
+      "id": "P-7",
+      "kind": "question",
+      "title": "Texto blanco sobre el arcoíris: ¿qué hacemos?",
+      "text": "Chips de categoría en Rachas, bandas de estado en Mi lista e insignias llevan **texto blanco** sobre los colores fijos del arcoíris. Con naranja (2,9:1), azul cielo (3,0:1) y verde (2,7:1) no llega al 4,5:1 de la guía; rojo, añil y violeta sí.",
+      "step": "AVY-6",
+      "branch": "AVY",
+      "options": [
+        {
+          "desc": "variantes --arc-*-f solo donde hay texto, como ya pasa con --ok-f; el color se reconoce igual",
+          "label": "Relleno oscurecido"
+        },
+        {
+          "desc": "texto --ink sobre los colores claros y blanco sobre los oscuros",
+          "label": "Letra oscura"
+        },
+        {
+          "desc": "son colores de identidad y van con su nombre; se acepta la excepción",
+          "label": "Dejarlo"
+        }
+      ],
+      "recommend": 1,
+      "answer": null,
+      "by": "claude",
+      "created": "2026-11-15T15:57:56+01:00"
     }
   ],
-  "next_ask": 6
+  "next_ask": 8
 }
