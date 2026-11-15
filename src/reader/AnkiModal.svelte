@@ -84,20 +84,20 @@
             <div class="big jp" lang="ja">{word.base}</div>
             <div class="sent" lang="ja">{@html sentenceWithWord(line, word.tok)}</div>
           {:else}
-            <div class="sent" lang="ja" style="font-size:24px">{@html sentenceWithWord(line, null)}</div>
+            <div class="sent" lang="ja" style="font-size:var(--t-2xl)">{@html sentenceWithWord(line, null)}</div>
           {/if}
         </div>
         <div class="side">
           <div class="lbl">Reverso</div>
           <div class="back">
             {#if word}
-              <div class="jp" lang="ja" style="font-size:20px;font-weight:700">{word.base}{#if showReading(word.base, r)}【{r}】{/if}</div>
+              <div class="jp" lang="ja" style="font-size:var(--t-xl);font-weight:700">{word.base}{#if showReading(word.base, r)}【{r}】{/if}</div>
               {#if word.defs[0]}
                 <ol style="margin:4px 0 0;padding-left:20px">{#each word.defs[0].senses.slice(0, 4) as s}<li>{s.glosses.join('; ')}</li>{/each}</ol>
               {:else}<span class="mut">Sin entrada en el diccionario.</span>{/if}
             {:else}
               <div style="font-weight:700">{translation ?? 'Sin traducción (pídela antes con «Traducción» si la quieres en la tarjeta).'}</div>
-              <div class="mut" style="font-size:13px;margin-top:4px">
+              <div class="mut" style="font-size:var(--t-s);margin-top:4px">
                 {#each newWords as w}<span class="jp" lang="ja">{w.base}【{w.defs[0]?.reading ?? ''}】</span> {w.defs[0]?.senses[0]?.glosses[0] ?? ''} · {/each}
               </div>
             {/if}

@@ -19,7 +19,7 @@
 <div class="veil" onclick={(e) => e.target === e.currentTarget && onclose()}>
   <div class="modal smodal" role="dialog" aria-label="Estadísticas de lectura">
     <div class="mh">
-      <span class="logo" style="background:linear-gradient(180deg,#5fcf6c,var(--ok))">{@html ICON.chart}</span>
+      <span class="logo" style="background:linear-gradient(180deg,color-mix(in srgb,var(--ok) 60%,white),var(--ok))">{@html ICON.chart}</span>
       <span>Estadísticas de lectura</span>
       <span class="sp"></span>
       <button class="ib" onclick={onclose} aria-label="Cerrar">✕</button>

@@ -1,6 +1,7 @@
 // Entrada de la pagina «Lectura» (se abre en Edge/Chrome en modo app; ver docs/referencia/novelas-japonesas.md).
 import { mount } from 'svelte';
 import '../assets/fonts.css';
+import '../tokens.css';
 import './reader.css';
 import Reader from './Reader.svelte';
 

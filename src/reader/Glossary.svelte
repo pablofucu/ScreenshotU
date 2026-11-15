@@ -102,9 +102,9 @@
 <div class="veil" onclick={(e) => e.target === e.currentTarget && onclose()}>
   <div class="modal gmodal" role="dialog" aria-label="Glosario de frases">
     <div class="mh">
-      <span class="logo" style="background:linear-gradient(180deg,#a07ae2,var(--gram))">{@html ICON.book}</span>
+      <span class="logo" style="background:linear-gradient(180deg,var(--rd-gram-hi),var(--rd-gram))">{@html ICON.book}</span>
       <span>Glosario de frases</span>
-      <span class="mut" style="font-size:14px;font-weight:700">{phrases.length} {phrases.length === 1 ? 'frase' : 'frases'}</span>
+      <span class="mut" style="font-size:var(--t-m);font-weight:700">{phrases.length} {phrases.length === 1 ? 'frase' : 'frases'}</span>
       <span class="sp"></span>
       {#if review}
         <button class="btn" onclick={() => (review = null)}>Salir del repaso</button>

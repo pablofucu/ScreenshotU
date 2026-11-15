@@ -16,7 +16,7 @@
   import HookPanel from './HookPanel.svelte';
   import type { HookApi } from '../hook/api';
 
-  const GRAY = '#8a919c';
+  const GRAY = 'var(--rd-gray)';
   const MAX_LINES = 500;
   const FS_MIN = 16;
   const FS_MAX = 72;
@@ -492,7 +492,7 @@
   <button class="ankist pill" class:ok={anki?.ok} class:bad={anki && !anki.ok} onclick={testAnki} title={anki?.ok ? 'AnkiConnect conectado (clic para comprobar)' : (anki?.error ?? 'Sin comprobar') + ' · clic para reintentar'}>
     <i></i>Anki{#if anki?.ok}<b>· {anki.deck}</b>{:else if anki}<b>· sin conexión</b>{/if}
   </button>
-  <button class="ankist pill" onclick={() => (gOpen = true)} title="Frases guardadas del juego, repaso con SRS">{@html ICON.book}Glosario{#if glossary.dueCount}<b style="color:var(--gram)">· {glossary.dueCount}</b>{/if}</button>
+  <button class="ankist pill" onclick={() => (gOpen = true)} title="Frases guardadas del juego, repaso con SRS">{@html ICON.book}Glosario{#if glossary.dueCount}<b style="color:var(--rd-gram)">· {glossary.dueCount}</b>{/if}</button>
   <button class="ankist pill" onclick={() => (sOpen = true)} title="Estadísticas de lectura: velocidad, días, palabras nuevas">{@html ICON.chart}Estadísticas</button>
   <button class="ankist pill" onclick={() => (hOpen = true)} title="Configuración del texthook: hilo de texto, filtros, personajes, códigos H">{@html ICON.gear}Texthook</button>
   <div class="tools pill" role="toolbar" aria-label="Opciones de lectura">
@@ -524,7 +524,7 @@
           </article>
         {/each}
         {#if lines.length === 0}
-          <div class="empty">
+          <div class="rd-empty">
             {#if closed}
               <b>Juego cerrado</b>
               <span>La lectura se reanudará al abrir otra novela.</span>
@@ -585,12 +585,12 @@
     <section class="words">
       <div class="wbar">
         <span class="wtitle">{selId !== null ? 'Palabras de la frase elegida' : 'Palabras de la frase'}</span>
-        {#if selId !== null}<button class="chip acc" onclick={goBottom}>Volver a la última</button>{/if}
+        {#if selId !== null}<button class="rd-chip acc" onclick={goBottom}>Volver a la última</button>{/if}
         <span class="sp"></span>
         {#if dicts?.loading}<span class="dinfo">Cargando diccionarios…</span>{/if}
         {#if !demo}
-          <button class="chip" onclick={() => dictCmd('openDicts')} title="Carpeta donde van los .zip de Yomitan">Diccionarios</button>
-          <button class="chip" onclick={() => dictCmd('reloadDicts')} disabled={dicts?.loading} title="Volver a leer la carpeta">Recargar</button>
+          <button class="rd-chip" onclick={() => dictCmd('openDicts')} title="Carpeta donde van los .zip de Yomitan">Diccionarios</button>
+          <button class="rd-chip" onclick={() => dictCmd('reloadDicts')} disabled={dicts?.loading} title="Volver a leer la carpeta">Recargar</button>
         {/if}
         <div class="seg" role="group" aria-label="Filtro de palabras">
           <button class:on={filter === 'all'} onclick={() => (filter = 'all')}>Todas</button>
