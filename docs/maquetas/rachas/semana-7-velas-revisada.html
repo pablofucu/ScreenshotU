@@ -242,9 +242,15 @@ body{background:#e9ecf1;color:#3a414e}
 .v7 .tbar .tf{background:linear-gradient(90deg,var(--c),color-mix(in srgb,var(--c) 62%,white))}
 .v7 .lg-m{background:linear-gradient(0deg,var(--c),color-mix(in srgb,var(--c) 62%,white))}
 /* capas como cápsulas: separadas, redondeadas y con margen al cristal (también las ámbar) */
-.stage.v7 .tube>i{left:6px;right:6px;border:2px solid transparent;background-clip:padding-box;border-radius:15px;box-sizing:border-box}
-.stage.v7 .tube>i.o,.stage.v7 .tube>i.x,.stage.v7 .tube>i.xu{background-clip:padding-box}
-.stage.v7 .mtb>i{left:2px;right:2px;border:1px solid transparent;background-clip:padding-box;border-radius:5px;box-sizing:border-box}
+/* una sola columna dentro del cristal: separada 6px del borde y del fondo, capas pegadas con una raya fina,
+   abajo y arriba redondeadas como el tubo (lo y hi los pone el JS según las capas visibles) */
+.stage.v7 .tube>i{left:6px;right:6px;translate:0 -6px;border:0 solid transparent;border-top-width:2px;background-clip:padding-box;border-radius:3px;box-sizing:border-box}
+.stage.v7 .tube>i.lo{border-top-width:0;border-bottom-left-radius:16px;border-bottom-right-radius:16px}
+.stage.v7 .tube>i.lo.o{border-top-width:0}
+.stage.v7 .tube>i.hi{border-top-left-radius:16px;border-top-right-radius:16px}
+.stage.v7 .mtb>i{left:2px;right:2px;translate:0 -2px;border:0 solid transparent;border-top-width:1px;background-clip:padding-box;border-radius:1px;box-sizing:border-box}
+.stage.v7 .mtb>i.lo{border-top-width:0;border-bottom-left-radius:5px;border-bottom-right-radius:5px}
+.stage.v7 .mtb>i.hi{border-top-left-radius:5px;border-top-right-radius:5px}
 .stage.v7 .tube{border-radius:22px;background:color-mix(in srgb,var(--ink-3) 9%,transparent);box-shadow:inset 0 0 0 1px var(--line),inset 0 10px 16px -10px rgba(0,0,0,.10)}
 .stage.v7 .tube.met{box-shadow:inset 0 0 0 1px var(--line),inset 0 -40px 40px -30px color-mix(in srgb,var(--c) 30%,transparent)}
 .stage.v7 .tube.td{box-shadow:inset 0 0 0 2.5px var(--c);animation:pulse 2.2s ease-in-out infinite}
@@ -282,7 +288,16 @@ body{background:#e9ecf1;color:#3a414e}
 .v7 .coin{background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--am2) 30%,var(--tint-base)),var(--am-soft));color:var(--amk);
  box-shadow:inset 0 0 0 2px var(--am),0 6px 14px -8px color-mix(in srgb,var(--am) 80%,transparent)}
 .v7 .coin.used{background:transparent;color:var(--ink-3);box-shadow:none;border:2px dashed color-mix(in srgb,var(--ink-3) 55%,transparent);box-sizing:border-box}
-.v7 .coins{gap:22px;margin-top:14px}
+.v7 .coins{flex-direction:column;gap:8px;margin-top:10px}
+.v7 .coins .cw{gap:12px;white-space:nowrap}
+.v7 .coins .cw small{display:inline;margin-left:6px;font-size:var(--t-xs)}
+.v7 .coins .coin{width:38px;height:38px;display:grid;place-items:center}
+.v7 .coins .coin svg{width:20px;height:20px}
+/* por recuperar: más aire con el borde */
+.v7 .box{padding:14px 22px 18px}
+.v7 .owe{margin-top:2px;line-height:1}
+.v7 .owe .big{font-size:32px}
+.v7 .obar{margin:10px 0 8px}
 /* chips y número */
 .v7 .chip.lit{background:var(--c)}
 .v7 .chip.warn{background:var(--am-soft);color:var(--amk);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--am) 60%,transparent)}
@@ -511,16 +526,18 @@ const cap=t=>t.charAt(0).toUpperCase()+t.slice(1);
 const SVGI=(n,w,st,fi)=>`<svg width="${w}" height="${w*1.15}" viewBox="0 0 24 24" fill="none" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="stroke:${st};fill:${fi}"><path d="${n}"/></svg>`;
 const FLAME_D=ICS.flame.match(/d="([^"]+)"/)[1],MOON_D=ICS.moon.match(/d="([^"]+)"/)[1];
 /* encima de cada tubo: llama si se cumplió, luna si fue día libre, llama apagada si hoy aún falta */
-function candles(F,M){const T=tubes(F);const fl=[];T.forEach(t=>{const K=(t.det?t.H:78)/1.6/M.G,w=t.det?28:12,lift=t.det?3:1;
+function candles(F,M){const T=tubes(F);const fl=[];T.forEach(t=>{const K=(t.det?t.H:78)/1.6/M.G,w=t.det?28:12,lift=(t.det?3:1)-(t.det?6:2);
+  const vis=[...t.el.querySelectorAll(':scope>i')].filter(e=>parseFloat(e.style.height)>.5).sort((a,b)=>parseFloat(a.style.bottom)-parseFloat(b.style.bottom));
+  if(vis.length){vis[0].classList.add('lo');vis[vis.length-1].classList.add('hi')}
   const free=M.L.find(x=>x.i===t.i);
   if(metDay(M,t.i)&&t.top>=2){t.el.classList.add('met');const ig=t.lit?(LIGHT+150)/1000:(t.det?1.1:1)+t.i*.12;
    const c=mk('span','cnd top-ic on',`bottom:${t.top-lift}px;--ig:${ig}s`);c.innerHTML=SVGI(FLAME_D,w,'var(--c)','color-mix(in srgb,var(--c) 28%,var(--tint-base))');
    c.firstChild.style.setProperty('--fd',rnd(1.1,1.7)+'s');c.firstChild.style.setProperty('--fdl',rnd(0,1)+'s');t.el.appendChild(c);fl.push({t,c});
    if(t.det){for(let k=0;k<3;k++)t.el.appendChild(mk('span','emb',`left:${t.W/2-2+rnd(-6,6)}px;bottom:${t.top+20}px;--ex:${rnd(-14,14)}px;--ed:${rnd(1.6,2.4)}s;--edl:${ig+.4+rnd(0,2)}s`))}
    if(t.lit)later(()=>{const r=rel(t.el,F);burst(F,r.x+t.W/2,r.y+t.H-t.top-(t.det?18:6),t.det?18:10,['var(--c)','color-mix(in srgb,var(--c) 50%,white)','#fff'])},LIGHT+150)}
-  else if(free){const c=mk('span','top-ic moon on',`bottom:${Math.max(t.top,M.m[t.i]*K)+(t.det?6:2)}px;--ig:${(t.det?1.2:1)+t.i*.12}s`);
+  else if(free){const c=mk('span','top-ic moon on',`bottom:${Math.max(t.top,M.m[t.i]*K)+(t.det?12:4)}px;--ig:${(t.det?1.2:1)+t.i*.12}s`);
    c.innerHTML=SVGI(MOON_D,t.det?24:11,'var(--am)','color-mix(in srgb,var(--am) 28%,var(--tint-base))');c.firstChild.style.setProperty('--fdl',rnd(0,1.5)+'s');t.el.appendChild(c)}
-  else if(t.i===6){const c=mk('span','top-ic wait on',`bottom:${M.G*K+(t.det?4:1)}px;--ig:1.3s`);c.innerHTML=SVGI(FLAME_D,w,'var(--c)','none');t.el.appendChild(c)}});
+  else if(t.i===6){const c=mk('span','top-ic wait on',`bottom:${M.G*K+(t.det?10:3)}px;--ig:1.3s`);c.innerHTML=SVGI(FLAME_D,w,'var(--c)','none');t.el.appendChild(c)}});
  const lit=fl.find(f=>f.t.lit);if(lit){fl.filter(f=>!f.t.lit).reverse().forEach((f,n)=>{later(()=>f.c.firstChild.animate([{transform:'scale(1)'},{transform:'scale(1.4,1.55)'},{transform:'scale(1)'}],{duration:480,easing:'ease-out'}),LIGHT+450+n*110)})}
  if(F.id==='detFace'){const h=F.querySelector('.hero .flm');if(h){const r=rel(h,F);for(let k=0;k<6;k++)F.appendChild(mk('span','emb',`left:${r.x+r.w/2+rnd(-10,10)}px;top:${r.y+r.h*.3}px;--ex:${rnd(-20,20)}px;--ed:${rnd(1.8,2.8)}s;--edl:${rnd(0,2.5)}s`))}}}
 
