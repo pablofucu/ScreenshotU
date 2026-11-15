@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Propuesta B · Doble aro (Mínimo / Meta) + Ficha lateral de Reserva</title>
+<style>
+:root{
+  --round:'M PLUS Rounded 1c','Nunito','Segoe UI','Yu Gothic UI',system-ui,sans-serif;
+  color-scheme:light dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#11141b;font-family:var(--round);color:#e6e9f0}
+button{font-family:inherit;border:0;background:none;color:inherit;padding:0;cursor:pointer}
+
+.topbar-demo{
+  position:sticky;top:0;z-index:80;
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 16px;background:rgba(17,20,27,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(200,210,235,.14);
+}
+.demo-title{display:flex;flex-direction:column;gap:2px}
+.demo-title b{font-size:14px;font-weight:800;color:#fff}
+.demo-title span{font-size:12px;color:#9aa3b5}
+.demo-ctrls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.grp{display:flex;flex-wrap:wrap;gap:4px;padding:3px;border-radius:999px;background:#1c212c;border:1px solid rgba(200,210,235,.14)}
+.grp button{height:28px;padding:0 12px;border-radius:999px;font-size:12px;font-weight:700;color:#b4bccb;transition:all .16s}
+.grp button.on{background:#00A0D8;color:#fff}
+.grp button:hover:not(.on){color:#fff;background:rgba(255,255,255,.07)}
+
+.canvas-outer{padding:16px 12px 32px;display:flex;flex-direction:column;align-items:center;gap:20px}
+.stage-wrap{width:100%;max-width:1280px;position:relative;overflow:hidden;border-radius:16px;box-shadow:0 24px 60px -18px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.1)}
+.stage-wrap.hidden{display:none}
+
+.theme-scope{
+  --ink:#3a414e;--ink-2:#5f6776;--ink-3:#757d8c;--line:rgba(95,110,135,.24);--line-2:rgba(150,160,180,.35);
+  --face:#dfe3e9;--face-hi:rgba(247,249,252,.94);--panel:rgba(255,255,255,.78);
+  --glass-top:rgba(255,255,255,.76);--glass-mid:rgba(255,255,255,.32);--glass-bot:rgba(225,234,246,.24);
+  --glass-in:rgba(255,255,255,.55);--glass-chip:rgba(255,255,255,.82);
+  --pill-top:rgba(255,255,255,.82);--pill-bot:rgba(255,255,255,.55);--pill-glow:rgba(255,255,255,.9);
+  --hl:rgba(255,255,255,1);--hl-ring:rgba(255,255,255,.55);--tint-base:#fff;
+  --ok:#3BB54A;--ok-f:#27833a;--bad:#E8384F;--warn:#F2B807;
+  --r-xs:6px;--r-s:12px;--r-m:18px;--r-l:28px;--r-pill:999px;
+  --t-xs:11px;--t-s:13px;--t-m:15px;--t-l:17px;--t-xl:20px;--t-2xl:28px;--t-3xl:44px;
+  --acc:#00A0D8;--f1:#0089be;--f2:#3253c5;--gf:linear-gradient(115deg,#0089be,#3253c5);--on:#fff;
+  color:var(--ink);
+}
+.theme-scope[data-theme=dark]{
+  color-scheme:dark;color:#e6e9f0;
+  --ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#8f98a9;--line:rgba(200,210,235,.16);--line-2:rgba(200,210,235,.24);
+  --face:#262a33;--face-hi:rgba(30,33,41,.94);--panel:rgba(30,34,43,.80);
+  --glass-top:rgba(60,66,80,.62);--glass-mid:rgba(36,40,50,.42);--glass-bot:rgba(20,22,28,.38);
+  --glass-in:rgba(255,255,255,.08);--glass-chip:rgba(40,44,56,.82);
+  --pill-top:rgba(52,57,70,.88);--pill-bot:rgba(36,40,50,.82);--pill-glow:rgba(255,255,255,.06);
+  --hl:rgba(255,255,255,.10);--hl-ring:rgba(255,255,255,.08);--tint-base:#262a33;
+}
+
+.cat-vn{--c:#00A0D8;--c-edge:#0073a0;--c-soft:color-mix(in srgb,#00A0D8 20%,var(--tint-base));--c-ink:#00739c;--rc:#E9A100;--rsoft:color-mix(in srgb,#E9A100 18%,var(--tint-base));--rink:#8a5d00}
+.cat-jvn{--c:#E5487A;--c-edge:#b02c5c;--c-soft:color-mix(in srgb,#E5487A 20%,var(--tint-base));--c-ink:#a82b58;--rc:#6E56CF;--rsoft:color-mix(in srgb,#6E56CF 18%,var(--tint-base));--rink:#4a3aa0}
+[data-theme=dark] .cat-vn{--c-ink:#5cd4ff;--rink:#ffd46b}
+[data-theme=dark] .cat-jvn{--c-ink:#ff85ad;--rink:#c5b8ff}
+
+#stage{position:relative;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;background:#eceef2;user-select:none}
+#stage[data-theme=dark]{background:#14161c}
+.bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+#stage[data-theme=dark] .bg{background:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
+.blob{position:absolute;border-radius:50%;opacity:.55;background:radial-gradient(circle,var(--b),color-mix(in srgb,var(--b) 45%,transparent) 35%,transparent 70%)}
+#stage[data-theme=dark] .blob{opacity:.34}
+
+.top{position:absolute;left:0;right:0;top:0;height:76px;z-index:5}
+.avatar{position:absolute;left:30px;top:20px;width:44px;height:44px;border-radius:14px;padding:4px;
+  background:linear-gradient(180deg,var(--glass-top),var(--glass-bot));box-shadow:0 0 0 1px var(--line)}
+.avatar .face{width:100%;height:100%;border-radius:10px;display:grid;place-items:center;color:#fff;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,var(--tint-base)),var(--acc))}
+.pill{backdrop-filter:blur(16px) saturate(1.7);background:linear-gradient(180deg,var(--pill-top),var(--pill-bot));
+  box-shadow:inset 0 1px 0 var(--glass-top),inset 0 -6px 10px -6px var(--pill-glow),0 0 0 1px var(--line),0 10px 20px -12px rgba(40,50,70,.35)}
+.crumb{position:absolute;left:90px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:var(--r-pill);font-size:var(--t-xl);font-weight:700;color:var(--ink-2)}
+.crumb .sep{color:var(--ink-3);font-weight:500}.crumb .cur{color:var(--c)}
+.clock{position:absolute;right:24px;top:24px;display:flex;gap:14px;align-items:center;font-size:var(--t-xl);font-weight:700;color:var(--ink-2)}
+.clock small{font-size:var(--t-m);font-weight:500;color:var(--ink-3)}
+.hints{position:absolute;right:22px;bottom:14px;display:flex;gap:10px;z-index:5}
+.hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:var(--r-pill);font-size:var(--t-m);font-weight:700;color:var(--ink-2)}
+.btn{min-width:28px;height:28px;border-radius:var(--r-s);display:grid;place-items:center;font-size:var(--t-s);font-weight:800;color:#fff;--b:var(--ink-2);padding:0 6px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,var(--tint-base)) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--b) 70%,black)}
+.btn.b{--b:var(--bad)}.btn.sh{border-radius:var(--r-xs);--b:var(--ink-3)}
+
+.stpanel{position:absolute;border-radius:var(--r-l);background:linear-gradient(180deg,var(--face-hi),var(--panel));
+  box-shadow:inset 0 1.5px 0 var(--glass-top),0 0 0 1px var(--line),0 18px 30px -18px rgba(40,50,70,.45)}
+.sth{font-size:var(--t-l);font-weight:800;color:var(--ink-2);display:flex;justify-content:space-between;align-items:center;white-space:nowrap}
+.sth small{font-size:var(--t-s);font-weight:700;color:var(--ink-3);margin-left:8px}
+
+/* Hoy · Propuesta B: Doble aro + barra en dos escalones conectados */
+.shoy{left:48px;top:88px;width:400px;height:320px;padding:16px 20px}
+.shbody{display:flex;align-items:center;gap:14px;height:252px}
+.sring{position:relative;flex:none;width:152px;height:152px}
+.sring svg{display:block;overflow:visible}
+.sleg{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
+.sln{display:flex;align-items:center;gap:7px;font-size:var(--t-m);font-weight:800;color:var(--ink-2);white-space:nowrap}
+.sln i{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
+.slv{font-size:var(--t-s);font-weight:700;color:var(--ink-3);margin:2px 0 6px}
+.slv b{font-size:var(--t-xl);font-weight:800;color:var(--ink)}
+
+.stepped{display:grid;grid-template-columns:68px 1fr;gap:4px;align-items:center}
+.step-min{
+  height:18px;border-radius:9px;padding:0 6px;display:flex;align-items:center;justify-content:center;gap:3px;
+  font-size:10px;font-weight:800;background:var(--face);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--line);
+}
+.step-min.ok{background:var(--ok-f);color:#fff;box-shadow:none}
+.step-meta{height:10px;border-radius:5px;background:var(--c-soft);overflow:hidden}
+.step-meta b{display:block;height:100%;border-radius:5px;background:var(--c)}
+.sln2{margin-top:5px;font-size:12.5px;font-weight:700;color:var(--ink-2);line-height:1.2}
+
+/* Medallas limpias (sin widgets extra dentro) */
+.smeds{position:absolute;left:464px;top:88px;width:768px;height:120px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.smed{position:relative;display:flex;align-items:center;gap:14px;padding:0 20px;border-radius:var(--r-l);min-width:0;cursor:pointer;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--c-soft) 45%,var(--tint-base)),color-mix(in srgb,var(--c-soft) 25%,var(--tint-base)));
+  box-shadow:inset 0 1.5px 0 var(--glass-top),0 0 0 1.5px color-mix(in srgb,var(--c) 40%,var(--tint-base)),0 16px 26px -18px color-mix(in srgb,var(--c) 65%,black)}
+.smed.on{box-shadow:inset 0 1.5px 0 var(--glass-top),0 0 0 2.5px var(--c),0 16px 26px -18px color-mix(in srgb,var(--c) 70%,black)}
+.sflw{width:56px;height:56px;flex:none}
+.smt{flex:1;min-width:0}
+.snw{display:flex;align-items:baseline;gap:6px;height:48px}
+.snum{font-size:46px;font-weight:800;line-height:48px;color:var(--ink)}
+.snw small{font-size:var(--t-l);font-weight:800;color:var(--ink)}
+.srec{align-self:center;margin-left:4px;font-size:var(--t-xs);font-weight:800;color:#fff;background:var(--c);border-radius:var(--r-pill);padding:2px 9px;text-transform:uppercase}
+.srec.safe{background:var(--ok-f)}
+.ssub{font-size:var(--t-s);font-weight:700;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ssub.b{color:var(--ink-3);font-size:12.5px}
+
+/* Mapa + Ficha lateral de Reserva y Candados */
+.smap{left:464px;top:224px;width:768px;height:184px;padding:12px 18px 10px}
+.stabs{display:flex;align-items:center;gap:3px;height:28px;margin:-4px 0;padding:0 3px;border-radius:var(--r-pill)}
+.stabs .t{height:22px;padding:0 11px;border-radius:var(--r-pill);display:grid;place-items:center;font-size:var(--t-s);font-weight:800;color:var(--ink-2);cursor:pointer}
+.stabs .t.on{background:var(--c);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+.smrow{display:flex;gap:14px;margin-top:6px;align-items:stretch}
+.sheat{flex:none}
+.scols{display:flex;gap:2.5px}
+.scols>div{display:flex;flex-direction:column;gap:2.5px}
+.scell{position:relative;display:block;width:13px;height:13px;border-radius:3.5px;background:var(--face)}
+.scell.st{box-shadow:0 0 0 1.3px var(--c-edge)}
+.scell.td{box-shadow:0 0 0 2px var(--face-hi),0 0 0 3.2px var(--c)}
+.scell.min{background:color-mix(in srgb,var(--ok) 25%,var(--tint-base));box-shadow:0 0 0 1.3px var(--ok)}
+.scell.min::after{content:'';position:absolute;left:3.5px;top:3.5px;width:6px;height:6px;border-radius:50%;background:var(--ok)}
+.scell.shd{background:var(--rc);outline:1.3px dashed rgba(255,255,255,.9);outline-offset:-3.5px;box-shadow:0 0 0 1.3px var(--c-edge)}
+.smon{position:relative;height:13px;margin-top:3px;line-height:13px}
+.smon span{position:absolute;top:0;font-size:11px;font-weight:700;color:var(--ink-3)}
+
+.res-card{
+  flex:1;min-width:0;display:grid;grid-template-rows:1fr 1fr;gap:8px;
+}
+.res-box{
+  border-radius:var(--r-m);padding:8px 12px;background:var(--face);box-shadow:inset 0 0 0 1px var(--line);
+  display:flex;flex-direction:column;justify-content:center;gap:4px;
+}
+.res-box.sh{background:var(--rsoft);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--rc) 45%,var(--tint-base))}
+.res-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.res-k{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2)}
+.res-box.sh .res-k{color:var(--rink)}
+.sh-row{display:flex;align-items:center;gap:6px}
+.sh-ic{width:20px;height:20px;flex:none}
+.sh-ic.full{color:var(--rc)}
+.sh-ic.empty{color:var(--ink-3);opacity:.4}
+.dots4{display:flex;gap:3px;margin-left:auto}
+.dots4 i{width:14px;height:5px;border-radius:3px;background:color-mix(in srgb,var(--rc) 22%,var(--tint-base))}
+.dots4 i.on{background:var(--rc)}
+.res-sub{font-size:11.5px;font-weight:700;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.res-box.sh .res-sub{color:var(--rink)}
+.lock-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;font-weight:800;color:var(--ink)}
+.lim-bar{display:flex;gap:4px}
+.lim-bar i{width:16px;height:6px;border-radius:3px;background:var(--line-2)}
+.lim-bar i.used{background:var(--ok)}
+.lock-note{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--ink-2)}
+
+/* Paneles inferiores */
+.sgames,.shours,.syear{top:424px;height:226px;padding:14px 20px 10px}
+.sgames{left:48px;width:470px}
+.shours{left:534px;width:380px}
+.syear{left:930px;width:302px}
+.sgr{display:grid;grid-template-columns:28px minmax(0,1fr) 120px 64px;align-items:center;gap:10px;height:37px}
+.mcov{width:28px;height:40px;border-radius:var(--r-xs);background:linear-gradient(160deg,color-mix(in srgb,var(--c) 40%,#fff),var(--c));display:grid;place-items:center;color:#fff;font-size:10px;font-weight:800}
+.sgr .nm{font-size:var(--t-m);font-weight:800;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgr .gb{height:9px;border-radius:var(--r-xs);background:var(--face);overflow:hidden}
+.sgr .gb b{display:block;height:100%;border-radius:var(--r-xs);background:var(--c)}
+.sgr .tm{font-size:var(--t-s);font-weight:800;color:var(--ink-2);text-align:right;white-space:nowrap}
+.shb{display:flex;align-items:flex-end;gap:3px;height:120px;margin-top:12px;border-bottom:2px solid var(--line)}
+.shb i{flex:1;border-radius:3px 3px 1px 1px;background:color-mix(in srgb,var(--c) 45%,var(--tint-base))}
+.shb i.pk{background:var(--c)}
+.shl{display:flex;justify-content:space-between;margin-top:4px;font-size:var(--t-xs);font-weight:700;color:var(--ink-3)}
+.speak{margin-top:6px;font-size:var(--t-s);font-weight:800;color:var(--ink-2)}
+.syg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.syg div{border-radius:var(--r-s);background:var(--face);padding:8px 12px;box-shadow:inset 0 0 0 1px var(--line)}
+.syg span{display:block;font-size:var(--t-s);font-weight:700;color:var(--ink-3);white-space:nowrap}
+.syg b{font-size:var(--t-2xl);font-weight:800;color:var(--ink)}
+
+/* Tarjeta de Inicio */
+.home-preview{
+  width:100%;max-width:1280px;border-radius:20px;padding:20px 24px;
+  background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%);
+  box-shadow:0 18px 42px -18px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.1);
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:24px;
+}
+.home-preview[data-theme=dark]{background:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
+.home-preview.hidden{display:none}
+.hp-meta{flex:1;min-width:260px}
+.hp-meta h2{margin:0 0 6px;font-size:18px;font-weight:800;color:var(--ink)}
+.hp-meta p{margin:0 0 10px;font-size:14px;line-height:1.45;color:var(--ink-2)}
+.hp-chips{display:flex;flex-wrap:wrap;gap:8px}
+.hp-chip{padding:5px 11px;border-radius:999px;font-size:12px;font-weight:700;color:var(--ink-2);background:var(--glass-chip);box-shadow:inset 0 0 0 1px var(--line)}
+
+.rcard-shell{flex:none;display:flex;flex-direction:column;gap:6px;max-width:100%}
+.hsect-row{display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:800;color:var(--ink-2)}
+.rdots{display:flex;gap:5px;align-items:center}
+.rdots i{width:7px;height:7px;border-radius:999px;background:color-mix(in srgb,var(--ink-3) 45%,transparent);cursor:pointer}
+.rdots i.on{width:18px;background:var(--c)}
+.rcard{
+  width:350px;max-width:100%;height:150px;border-radius:24px;padding:8px;
+  background:linear-gradient(180deg,var(--glass-top),var(--glass-mid) 46%,var(--glass-bot));
+  box-shadow:inset 0 1.5px 0 var(--hl),0 0 0 1px var(--line),0 18px 30px -16px rgba(40,50,70,.42);
+}
+.rcard-face{
+  width:100%;height:100%;border-radius:16px;padding:0 12px;
+  background:linear-gradient(180deg,var(--face-hi),var(--face));
+  display:flex;align-items:center;gap:12px;overflow:hidden;
+}
+.rr-ring{position:relative;flex:none;width:112px;height:112px}
+.rr-mins{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;font-weight:800;line-height:1.2}
+.rr-side{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.rr-cols{display:flex;gap:8px}
+.rr-col{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.rmed{
+  display:grid;grid-template-columns:15px max-content minmax(0,1fr);align-items:center;column-gap:4px;
+  height:42px;padding:0 6px;border-radius:10px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--c-soft) 50%,var(--tint-base)),var(--c-soft));
+  box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px color-mix(in srgb,var(--c) 40%,var(--tint-base));
+}
+.rnum{font-size:21px;font-weight:800;color:var(--ink);line-height:1}
+.rlab{font-size:11px;font-weight:800;color:var(--ink-2);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rlab small{display:block;font-size:9.5px;color:var(--c-ink)}
+.rmap{display:flex;gap:2px}
+.rmap>div{display:flex;flex-direction:column;gap:1.5px}
+.mcell{width:7px;height:7px;border-radius:2px;background:var(--face);position:relative}
+.mcell.st{box-shadow:0 0 0 1px var(--c-edge)}
+.mcell.min{background:var(--ok)}
+.mcell.shd{background:var(--rc)}
+.rr-foot{display:flex;align-items:center;justify-content:space-between;font-size:10.5px;font-weight:800;color:var(--ink-2);padding:2px 6px;border-radius:8px;background:var(--glass-in)}
+.rmeta{font-size:13px;font-weight:700;color:var(--ink-2)}
+.rmeta span{font-weight:500;color:var(--ink-3)}
+</style>
+</head>
+<body>
+
+<div class="topbar-demo">
+  <div class="demo-title">
+    <b>Propuesta B · Doble aro (Mínimo interior / Meta exterior) + Ficha de Reserva</b>
+    <span>Separa visualmente el aro verde de mínimo (15 min) del aro de meta (1 h) y agrupa escudos y candados junto al mapa</span>
+  </div>
+  <div class="demo-ctrls">
+    <div class="grp" id="scen-grp">
+      <button type="button" class="on" data-scen="tight">Día complicado (22 min)</button>
+      <button type="button" data-scen="weekend">2 días a 0 min (2 escudos)</button>
+      <button type="button" data-scen="full">Día completo (1 h 10 min)</button>
+    </div>
+    <div class="grp" id="theme-grp">
+      <button type="button" class="on" data-theme="light">Claro</button>
+      <button type="button" data-theme="dark">Noche ahumada</button>
+    </div>
+    <div class="grp" id="view-grp">
+      <button type="button" class="on" data-view="both">Racha + Inicio</button>
+      <button type="button" data-view="streak">Solo Racha</button>
+      <button type="button" data-view="home">Solo Inicio</button>
+    </div>
+  </div>
+</div>
+
+<div class="canvas-outer">
+  <div class="stage-wrap" id="stage-wrap">
+    <div id="stage" class="theme-scope cat-vn" data-theme="light">
+      <div class="bg"></div>
+      <div class="blob" style="--b:#00A0D8;width:540px;height:540px;left:-140px;top:-170px"></div>
+      <div class="blob" style="--b:#E5487A;width:480px;height:480px;right:-150px;top:140px"></div>
+
+      <div class="top">
+        <div class="avatar"><div class="face">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>
+        </div></div>
+        <div class="crumb pill"><span>Inicio</span><span class="sep">›</span><span class="cur">Racha de lectura</span></div>
+        <div class="clock"><span>15/11 <small>(dom)</small></span><span>22:14</span></div>
+      </div>
+
+      <div class="stpanel shoy">
+        <div class="sth">Hoy <small id="today-lbl">domingo 15 de noviembre</small></div>
+        <div class="shbody">
+          <div class="sring" id="streak-ring"></div>
+          <div class="sleg" id="streak-leg"></div>
+        </div>
+      </div>
+
+      <div class="smeds" id="medals"></div>
+
+      <div class="stpanel smap">
+        <div class="sth">
+          <span>Últimos 6 meses <small id="map-goal-lbl"></small></span>
+          <span class="stabs pill" id="cat-tabs">
+            <span class="t on" data-cat="vn">Novelas visuales</span>
+            <span class="t" data-cat="jvn">Novelas japonesas</span>
+          </span>
+        </div>
+        <div class="smrow">
+          <div class="sheat">
+            <div class="scols" id="heatmap"></div>
+            <div class="smon"><span>jun</span><span style="left:62px">jul</span><span style="left:124px">ago</span><span style="left:202px">sep</span><span style="left:264px">oct</span><span style="left:340px">nov</span></div>
+          </div>
+          <div class="res-card" id="reserve-card"></div>
+        </div>
+      </div>
+
+      <div class="stpanel sgames" id="games-panel"></div>
+      <div class="stpanel shours">
+        <div class="sth">A qué hora lees <small>30 días</small></div>
+        <div class="shb" id="hour-bars"></div>
+        <div class="shl"><span>7:00</span><span>13:00</span><span>19:00</span><span>1:00</span></div>
+        <div class="speak">Sobre todo de 22:00 a 23:00</div>
+      </div>
+      <div class="stpanel syear" id="year-panel"></div>
+
+      <div class="hints">
+        <div class="hint pill"><span class="btn sh">LB/RB</span>Categoría</div>
+        <div class="hint pill"><span class="btn b">B</span>Volver</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-preview theme-scope cat-vn" id="home-preview" data-theme="light">
+    <div class="rcard-shell">
+      <div class="hsect-row">
+        <span id="home-sect">Lectura de hoy · Novelas</span>
+        <span class="rdots"><i class="on" data-cat="vn"></i><i data-cat="jvn"></i></span>
+      </div>
+      <div class="rcard">
+        <div class="rcard-face">
+          <div class="rr-ring" id="home-ring"></div>
+          <div class="rr-side" id="home-side"></div>
+        </div>
+      </div>
+      <div class="rmeta" id="home-meta"></div>
+    </div>
+    <div class="hp-meta">
+      <h2>Propuesta B · Doble aro y Ficha lateral de Reserva</h2>
+      <p>Cada categoría tiene su <b>aro interior de mínimo</b> (se cierra en verde al pasar de 15 min) y su <b>aro exterior de meta</b>. Las medallas quedan limpias y la explicación de escudos y candados anti-abuso vive en la ficha derecha del mapa.</p>
+      <div class="hp-chips">
+        <span class="hp-chip">Aro interior = hábito salvo (15 min)</span>
+        <span class="hp-chip">Ficha con carga de escudos (4 días = +1)</span>
+        <span class="hp-chip">Meta de hoy bloqueada hasta mañana</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATS = {
+  vn: {
+    cls:'cat-vn', name:'novelas', full:'Novelas visuales', tab:'Novelas',
+    c:'#00A0D8', rc:'#E9A100', goal:60, min:15,
+    games:[['The House in Fata Morgana',860,'FATA'],['Steins;Gate',585,'S;G'],['White Album 2',370,'WA2'],['Fate/stay night',210,'FSN']],
+    year:{hrs:168, full:126, min:16, titles:7, sessions:214},
+    hours:[2,0,0,5,12,8,4,15,24,18,12,20,35,48,72,96,84,42,18,8,0,0,0,0]
+  },
+  jvn: {
+    cls:'cat-jvn', name:'japonés', full:'Novelas japonesas', tab:'Japonés',
+    c:'#E5487A', rc:'#6E56CF', goal:30, min:10,
+    games:[['サマーポケッツ',420,'SP'],['月姫 -blue glass moon-',310,'月姫'],['マルコと銀河竜',195,'マルコ'],['ひぐらしのなく頃に',110,'ひぐらし']],
+    year:{hrs:82, full:94, min:14, titles:5, sessions:148},
+    hours:[0,0,0,4,10,14,8,10,12,20,25,30,45,62,78,52,30,14,4,0,0,0,0,0]
+  }
+};
+
+const SCENARIOS = {
+  tight: {
+    label:'domingo 15 de noviembre',
+    vn:  {today:22, streak:14, best:21, bestRange:'10–30 sep', shields:2, charge:2, lightUsed:1, lightMax:2, monthMet:13, monthMin:2, monthElapsed:15, avg30:51, weekTail:['f','f','m','f','f','f','m']},
+    jvn: {today:34, streak:9,  best:9,  bestRange:'7–15 nov',  shields:1, charge:3, lightUsed:0, lightMax:2, monthMet:12, monthMin:1, monthElapsed:15, avg30:29, weekTail:['f','f','f','f','f','f','f']}
+  },
+  weekend: {
+    label:'lunes 16 de noviembre',
+    vn:  {today:18, streak:18, best:21, bestRange:'10–30 sep', shields:0, charge:0, lightUsed:1, lightMax:2, monthMet:13, monthMin:1, monthElapsed:16, avg30:48, weekTail:['f','f','f','f','s','s','m']},
+    jvn: {today:32, streak:12, best:14, bestRange:'1–14 oct',  shields:0, charge:1, lightUsed:1, lightMax:2, monthMet:12, monthMin:2, monthElapsed:16, avg30:27, weekTail:['f','f','f','f','s','m','f']}
+  },
+  full: {
+    label:'domingo 15 de noviembre',
+    vn:  {today:70, streak:19, best:19, bestRange:'28 oct – 15 nov', shields:2, charge:4, shieldsGainedToday:true, lightUsed:0, lightMax:2, monthMet:15, monthMin:0, monthElapsed:15, avg30:64, weekTail:['f','f','f','f','f','f','f']},
+    jvn: {today:45, streak:10, best:10, bestRange:'6–15 nov',  shields:2, charge:0, lightUsed:0, lightMax:2, monthMet:13, monthMin:1, monthElapsed:15, avg30:33, weekTail:['f','f','f','f','f','f','f']}
+  }
+};
+
+let state = { scen:'tight', theme:'light', view:'both', cat:'vn' };
+const shieldSvg = (cls) => `<svg class="sh-ic ${cls}" viewBox="0 0 24 24" fill="${cls==='full'?'currentColor':'none'}" fill-opacity=".24" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6l7-3z"/></svg>`;
+const flameSvg = (c) => `<svg viewBox="0 0 24 24" style="width:100%;height:100%"><path fill="${c}" fill-opacity=".22" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"/></svg>`;
+function fmtDur(m){ const h = Math.floor(m/60), mm = m%60; return h > 0 ? (mm ? `${h} h ${mm} min` : `${h} h`) : `${mm} min`; }
+
+function renderDoubleRings(targetId, size, sc) {
+  const big = size > 130;
+  const specs = big
+    ? [{k:'vn', rOut:66, swOut:10, rIn:56.5, swIn:4.5}, {k:'jvn', rOut:44, swOut:10, rIn:34.5, swIn:4.5}]
+    : [{k:'vn', rOut:49, swOut:8,  rIn:42,   swIn:3.2}, {k:'jvn', rOut:33, swOut:8,  rIn:26,   swIn:3.2}];
+  let arcs = '';
+  specs.forEach(sp => {
+    const cfg = CATS[sp.k], d = sc[sp.k];
+    const cOut = 2 * Math.PI * sp.rOut, fOut = Math.min(1, d.today / cfg.goal);
+    const cIn = 2 * Math.PI * sp.rIn, fIn = Math.min(1, d.today / cfg.min);
+    const minColor = d.today >= cfg.min ? '#3BB54A' : 'var(--ink-3)';
+    arcs += `
+      <circle cx="${size/2}" cy="${size/2}" r="${sp.rOut}" fill="none" stroke="color-mix(in srgb,${cfg.c} 20%,var(--tint-base))" stroke-width="${sp.swOut}"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${sp.rOut}" fill="none" stroke="${cfg.c}" stroke-width="${sp.swOut}" stroke-linecap="round"
+        stroke-dasharray="${cOut}" stroke-dashoffset="${cOut*(1-fOut)}" transform="rotate(-90 ${size/2} ${size/2})"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${sp.rIn}" fill="none" stroke="color-mix(in srgb,var(--ok) 18%,var(--tint-base))" stroke-width="${sp.swIn}"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${sp.rIn}" fill="none" stroke="${minColor}" stroke-width="${sp.swIn}" stroke-linecap="round"
+        stroke-dasharray="${cIn}" stroke-dashoffset="${cIn*(1-fIn)}" transform="rotate(-90 ${size/2} ${size/2})"/>
+    `;
+  });
+  document.getElementById(targetId).innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${arcs}</svg>` +
+    (targetId === 'home-ring' ? `<div class="rr-mins"><span style="color:var(--c-ink)">${sc.vn.today}m</span><span style="color:#a82b58">${sc.jvn.today}m</span></div>` : '');
+}
+
+function buildHeatmap(catKey, scData, cols) {
+  const pattern = ['f','f','f','m','f','f','f','f','f','s','f','f','f','f','f','f','f','m','f','f','0','f','f','f','f','m','f','f'];
+  let html = '';
+  for (let w = 0; w < cols; w++) {
+    html += '<div>';
+    for (let i = 0; i < 7; i++) {
+      const typ = w === cols - 1 ? scData.weekTail[i] : pattern[(w * 7 + i + (catKey === 'jvn' ? 3 : 0)) % pattern.length];
+      const isToday = (w === cols - 1 && i === 6);
+      const cls = [cols > 12 ? 'scell' : 'mcell'];
+      if (typ === 'f') cls.push('st');
+      else if (typ === 'm') cls.push('st','min');
+      else if (typ === 's') cls.push('shd');
+      if (isToday && cols > 12) cls.push('td');
+      html += `<span class="${cls.join(' ')}" ${typ==='f'?'style="background:var(--c)"':''}></span>`;
+    }
+    html += '</div>';
+  }
+  return html;
+}
+
+function render() {
+  const sc = SCENARIOS[state.scen], cfg = CATS[state.cat];
+  const stage = document.getElementById('stage'), hp = document.getElementById('home-preview');
+  [stage, hp].forEach(el => {
+    el.setAttribute('data-theme', state.theme);
+    el.classList.remove('cat-vn','cat-jvn'); el.classList.add(cfg.cls);
+  });
+  document.getElementById('stage-wrap').classList.toggle('hidden', state.view === 'home');
+  hp.classList.toggle('hidden', state.view === 'streak');
+
+  document.getElementById('today-lbl').textContent = sc.label;
+  renderDoubleRings('streak-ring', 152, sc);
+
+  document.getElementById('streak-leg').innerHTML = ['vn','jvn'].map(k => {
+    const c = CATS[k], d = sc[k];
+    const pct = Math.min(100, (d.today / c.goal) * 100);
+    const isFull = d.today >= c.goal, isMin = d.today >= c.min;
+    const msg = isFull ? `✓ Meta completa (aro + carga escudo)` : isMin ? `Aro verde listo · +${c.goal - d.today} min para meta` : `Faltan ${c.min - d.today} min para aro mínimo`;
+    return `
+      <div class="${c.cls}">
+        <div class="sln"><i></i>${c.full}</div>
+        <div class="slv"><b>${fmtDur(d.today)}</b> / ${fmtDur(c.goal)}</div>
+        <div class="stepped">
+          <div class="step-min ${isMin?'ok':''}">${isMin?'✓':''} ${c.min}m</div>
+          <div class="step-meta"><b style="width:${pct}%"></b></div>
+        </div>
+        <div class="sln2">${msg}</div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('medals').innerHTML = ['vn','jvn'].map(k => {
+    const c = CATS[k], d = sc[k];
+    const isFull = d.today >= c.goal;
+    const badge = isFull && d.streak >= d.best ? '<span class="srec">Récord</span>'
+      : (!isFull && d.today >= c.min ? '<span class="srec safe">A salvo</span>' : '');
+    return `
+      <div class="smed ${c.cls} ${state.cat===k?'on':''}" data-cat="${k}">
+        <span class="sflw">${flameSvg(c.c)}</span>
+        <div class="smt">
+          <div class="snw"><span class="snum">${d.streak}</span><small>días</small>${badge}</div>
+          <div class="ssub">Racha de ${c.name}</div>
+          <div class="ssub b">Mejor: ${d.best} días · ${d.bestRange}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  document.querySelectorAll('#cat-tabs .t').forEach(t => t.classList.toggle('on', t.dataset.cat === state.cat));
+  document.getElementById('map-goal-lbl').textContent = `meta ${fmtDur(cfg.goal)} (mín. ${cfg.min} min)`;
+  document.getElementById('heatmap').innerHTML = buildHeatmap(state.cat, sc[state.cat], 26);
+
+  const sd = sc[state.cat];
+  const shIcons = Array.from({length:2}, (_, i) => shieldSvg(i < sd.shields ? 'full' : 'empty')).join('');
+  const dots4 = Array.from({length:4}, (_, i) => `<i class="${i < (sd.shields===2?4:sd.charge) ? 'on' : ''}"></i>`).join('');
+  const shMsg = sd.shields === 2 ? 'Reserva llena (2/2) · cubre hasta 2 días seguidos'
+    : state.scen === 'weekend' ? '2 escudos usados sáb+dom · recarga cada 4 días al 100 %'
+    : `Faltan ${4 - sd.charge} días al 100 % para el próximo escudo`;
+  const limBars = Array.from({length:sd.lightMax}, (_, i) => `<i class="${i < sd.lightUsed ? 'used' : ''}"></i>`).join('');
+
+  document.getElementById('reserve-card').innerHTML = `
+    <div class="res-box sh">
+      <div class="res-top"><span class="res-k">Reserva de escudos (${sd.shields}/2)</span></div>
+      <div class="sh-row">${shIcons}<div class="dots4" title="Progreso al próximo escudo">${dots4}</div></div>
+      <div class="res-sub">${shMsg}</div>
+    </div>
+    <div class="res-box">
+      <div class="lock-row"><span>Días ligeros: ${sd.lightUsed}/${sd.lightMax} esta semana</span><span class="lim-bar">${limBars}</span></div>
+      <div class="lock-note">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        <span>Meta fija hoy (${fmtDur(cfg.goal)}) · Mes: ${sd.monthMet}+${sd.monthMin} de ${sd.monthElapsed} d</span>
+      </div>
+    </div>`;
+
+  document.getElementById('games-panel').innerHTML = `<div class="sth">Qué has leído este mes</div>` +
+    cfg.games.map(([nm, min, tag]) => `
+      <div class="sgr"><span class="mcov">${tag}</span><span class="nm">${nm}</span><span class="gb"><b style="width:${(min/cfg.games[0][1])*100}%"></b></span><span class="tm">${fmtDur(min)}</span></div>`).join('');
+  const hmax = Math.max(...cfg.hours);
+  document.getElementById('hour-bars').innerHTML = cfg.hours.map(h => `<i class="${h===hmax?'pk':''}" style="height:${h>0?Math.max(5,(h/hmax)*100):0}%"></i>`).join('');
+  document.getElementById('year-panel').innerHTML = `
+    <div class="sth">Este año</div>
+    <div class="syg">
+      <div><span>Horas</span><b>${cfg.year.hrs}</b></div>
+      <div><span>Metas + Mín.</span><b>${cfg.year.full}<small style="font-size:13px;color:var(--ink-3)">+${cfg.year.min}</small></b></div>
+      <div><span>Novelas</span><b>${cfg.year.titles}</b></div>
+      <div><span>Partidas</span><b>${cfg.year.sessions}</b></div>
+    </div>`;
+
+  document.getElementById('home-sect').textContent = `Lectura de hoy · ${cfg.tab}`;
+  document.querySelectorAll('#home-preview .rdots i').forEach(dot => dot.classList.toggle('on', dot.dataset.cat === state.cat));
+  renderDoubleRings('home-ring', 112, sc);
+  const colsHtml = ['vn','jvn'].map(k => {
+    const c = CATS[k], d = sc[k];
+    return `
+      <div class="rr-col ${c.cls}">
+        <div class="rmed">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${c.c}" stroke-width="2.2"><path d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"/></svg>
+          <span class="rnum">${d.streak}</span>
+          <span class="rlab">${c.name}<small>${d.today>=c.min?'mín. listo':'pendiente'}</small></span>
+        </div>
+        <div class="rmap">${buildHeatmap(k, d, 10)}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('home-side').innerHTML = `<div class="rr-cols">${colsHtml}</div>
+    <div class="rr-foot"><span>Escudos: ${sd.shields}/2</span><span>Ligeros: ${sd.lightUsed}/${sd.lightMax}</span></div>`;
+
+  document.getElementById('home-meta').innerHTML = sd.today >= cfg.goal
+    ? `Meta completa hoy <span>· ${fmtDur(cfg.goal)} ${cfg.name}</span>`
+    : sd.today >= cfg.min
+      ? `Aro interior cumplido (${cfg.min} min) <span>· faltan ${cfg.goal - sd.today} min</span>`
+      : `Meta diaria <span>· ${fmtDur(cfg.goal)} (mín. ${cfg.min} min)</span>`;
+
+  document.querySelectorAll('.smed[data-cat], #cat-tabs .t[data-cat], #home-preview .rdots i').forEach(el => {
+    el.onclick = () => { state.cat = el.dataset.cat; render(); };
+  });
+}
+
+function fit() {
+  const wrap = document.getElementById('stage-wrap'), st = document.getElementById('stage');
+  if (!wrap || wrap.classList.contains('hidden')) return;
+  const s = Math.min(1, wrap.clientWidth / 1280);
+  st.style.transform = `scale(${s})`; wrap.style.height = `${Math.round(720 * s)}px`;
+}
+
+document.querySelectorAll('#scen-grp button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#scen-grp button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); state.scen = b.dataset.scen; render();
+});
+document.querySelectorAll('#theme-grp button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#theme-grp button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); state.theme = b.dataset.theme; render();
+});
+document.querySelectorAll('#view-grp button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#view-grp button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); state.view = b.dataset.view; render(); fit();
+});
+
+window.addEventListener('resize', fit);
+render(); fit();
+</script>
+</body>
+</html>

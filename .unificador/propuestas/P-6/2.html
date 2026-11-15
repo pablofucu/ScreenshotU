@@ -1,0 +1,228 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Propuesta B · Pausa avisada</title><style>
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;
+--t-3xl:44px;--t-2xl:28px;--t-xl:20px;--t-l:17px;--t-m:15px;--t-s:13px;--t-xs:11px;
+--r-xs:6px;--r-s:12px;--r-m:18px;--r-l:28px;--s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:24px;--s-6:32px}
+body{margin:0;font-family:var(--round);background:#0f1218;color:#e6e9f0}
+.wrap{max-width:1280px;margin:0 auto;padding:16px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;font-size:13px}
+.bar h1{font-size:17px;margin:0 12px 0 0;font-weight:800;width:100%}
+.bar p{margin:0 0 6px;width:100%;color:#b4bccb}
+.bar button{font:700 13px var(--round);border:0;border-radius:999px;padding:6px 12px;background:#262a33;color:#e6e9f0;cursor:pointer}
+.bar button.on{background:#00A0D8;color:#fff}
+.bar .sep{width:1px;height:20px;background:#3a414e;margin:0 4px}
+.fit{position:relative;width:100%;overflow:hidden;border-radius:12px}
+.fit>.stage{transform-origin:0 0;position:absolute;left:0;top:0}
+.lbl{font-size:13px;color:#b4bccb;margin:20px 0 8px}
+/* ---- mundo de la app ---- */
+.stage{width:1280px;height:720px;overflow:hidden;color:var(--ink);font-family:var(--round);
+--ink:#3a414e;--ink-2:#5f6776;--ink-3:#757d8c;--line:rgba(95,110,135,.24);--face:#dfe3e9;--panel:rgba(255,255,255,.75);
+--glass-top:rgba(255,255,255,.72);--glass-mid:rgba(255,255,255,.30);--glass-bot:rgba(225,234,246,.22);--glass-in:rgba(255,255,255,.55);
+--pill-top:rgba(255,255,255,.80);--pill-bot:rgba(255,255,255,.52);--tile-bg:rgba(255,255,255,.62);
+--hl:#fff;--hl-ring:rgba(255,255,255,.55);--hl-bot:rgba(255,255,255,.95);--tint-base:#fff;
+--ok:#3BB54A;--warn:#F2B807;--ok-f:#27833a;
+--sh-1:0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42);
+--bgk:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%);
+--c:#00A0D8;--c2:#3F63E0;--ci:#00739c;--sc:#E9A100;--sci:#8a5d00}
+.stage[data-theme=dark]{--ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#8f98a9;--line:rgba(200,210,235,.16);--face:#262a33;--panel:rgba(30,34,43,.78);
+--glass-top:rgba(60,66,80,.62);--glass-mid:rgba(36,40,50,.42);--glass-bot:rgba(20,22,28,.38);--glass-in:rgba(255,255,255,.08);
+--pill-top:rgba(52,57,70,.88);--pill-bot:rgba(36,40,50,.82);--tile-bg:rgba(40,44,56,.62);
+--hl:rgba(255,255,255,.10);--hl-ring:rgba(255,255,255,.06);--hl-bot:rgba(255,255,255,.04);--tint-base:#262a33;
+--sh-1:0 0 0 1px rgba(200,210,235,.14),0 2px 3px rgba(0,0,0,.30),0 18px 30px -16px rgba(0,0,0,.70);
+--bgk:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
+.stage[data-cat=jvn]{--c:#E5487A;--c2:#9B4DDB;--ci:#a82b58;--sc:#8E5BE0;--sci:#5b2fae}
+.stage[data-theme=dark]{--ci:color-mix(in srgb,var(--c) 70%,white);--sci:color-mix(in srgb,var(--sc) 65%,white)}
+.bgk{position:absolute;inset:0;background:var(--bgk)}
+.blob{position:absolute;border-radius:50%;opacity:.5;background:radial-gradient(circle,var(--c),color-mix(in srgb,var(--c) 45%,transparent) 35%,transparent 70%)}
+.stage[data-theme=dark] .blob{opacity:.3}
+.glass{position:absolute;--r:28px;--bw:10px;border-radius:var(--r);padding:var(--bw);box-sizing:border-box;isolation:isolate;
+background:linear-gradient(180deg,var(--glass-top) 0%,var(--glass-mid) 46%,var(--glass-bot) 100%);backdrop-filter:blur(14px) saturate(1.7);
+box-shadow:inset 0 1.5px 0 var(--hl),inset 0 0 0 1px var(--hl-ring),inset 0 -10px 14px -8px var(--hl-bot),inset 0 -1.5px 0 rgba(110,125,150,.30),var(--sh-1)}
+.glass::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+background:linear-gradient(180deg,var(--tile-bg) 0%,rgba(255,255,255,.14) 55%,rgba(255,255,255,0) 100%);
+-webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.7}
+.glass>.face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:var(--face);box-sizing:border-box}
+.gin{background:var(--glass-in);border-radius:var(--r-m);box-shadow:inset 0 0 0 1px var(--line)}
+.pill{background:linear-gradient(180deg,var(--pill-top),var(--pill-bot));border-radius:999px;box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px var(--line),0 10px 20px -12px rgba(40,50,70,.4)}
+.crumbs{position:absolute;left:24px;top:22px;display:flex;align-items:center;gap:8px;height:40px;padding:0 18px 0 8px;font-size:var(--t-l);font-weight:700}
+.crumbs .ic{width:28px;height:28px;border-radius:50%;background:var(--c);display:grid;place-items:center}
+.crumbs b{font-weight:800;font-size:var(--t-xl)}
+.crumbs .dim{color:var(--ink-2)}
+.clock{position:absolute;right:24px;top:22px;height:40px;padding:0 18px;display:flex;align-items:center;gap:8px;font-size:var(--t-l);font-weight:800}
+.clock span{color:var(--ink-2);font-weight:500;font-size:var(--t-s)}
+.hints{position:absolute;right:24px;bottom:20px;display:flex;gap:8px}
+.hint{display:flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 6px;font-size:var(--t-s);font-weight:700}
+.btn{min-width:24px;height:24px;padding:0 5px;border-radius:999px;display:grid;place-items:center;font-size:var(--t-xs);font-weight:800;color:#fff;background:#5f6776;box-sizing:border-box}
+.btn.b{background:#d92c44}.btn.y{background:#F2B807;color:#3a414e}.btn.a{background:#27833a}
+.cats{position:absolute;left:50%;top:22px;transform:translateX(-50%);display:flex;gap:4px;padding:4px;height:40px;box-sizing:border-box;align-items:center}
+.cats .t{height:32px;padding:0 16px;border-radius:999px;display:flex;align-items:center;gap:8px;font-size:var(--t-s);font-weight:800;color:var(--ink-2)}
+.cats .t i{width:10px;height:10px;border-radius:50%}
+.cats .t.on{background:linear-gradient(115deg,var(--ci),color-mix(in srgb,var(--ci) 70%,var(--c2)));color:#fff}
+.cats .t.on i{background:#fff!important}
+.k{font-size:var(--t-xs);font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.sec{font-size:var(--t-s);color:var(--ink-2);font-weight:500}
+.num{font-weight:800;font-variant-numeric:tabular-nums}
+svg{display:block}
+
+body{background:#e9ecf1;color:#3a414e}
+.bar p{color:#5f6776}.bar button{background:#fff;color:#3a414e;box-shadow:0 0 0 1px rgba(95,110,135,.24)}
+.bar .sep{background:rgba(95,110,135,.3)}
+.ex{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:16px}
+.ex section{background:#fff;border-radius:18px;padding:16px 20px;box-shadow:0 0 0 1px rgba(95,110,135,.18)}
+.ex h2{font-size:15px;margin:0 0 8px;font-weight:800}
+.ex ul{margin:0;padding-left:18px;font-size:14px;line-height:1.55}
+.ex li{margin-bottom:4px}
+.main{left:24px;top:84px;width:1232px;height:572px}
+.hero{position:absolute;left:28px;top:26px;width:330px}
+.hero .n{display:flex;align-items:baseline;gap:10px;font-size:104px;line-height:1;font-weight:800;letter-spacing:-.03em;margin-top:6px;
+ background:linear-gradient(120deg,var(--ci),var(--c2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero .n small{font-size:26px;letter-spacing:0;color:var(--ink-2);-webkit-text-fill-color:var(--ink-2)}
+.hero .best{font-size:var(--t-s);color:var(--ink-2);margin-top:6px;font-weight:600}
+.state{display:inline-flex;align-items:center;gap:6px;margin-top:12px;height:30px;padding:0 12px;border-radius:999px;font-size:var(--t-s);font-weight:800;color:#fff;background:var(--c)}
+.state.warn{background:#E9A100;color:#3a2a00}.state.bad{background:#d92c44}.state.cold{background:#5b8fd6}
+.msg{position:absolute;left:28px;width:330px;padding:16px 18px;box-sizing:border-box;font-size:var(--t-m);line-height:1.45;font-weight:600}
+.msg b{color:var(--ci)}
+.R{position:absolute;left:392px;width:792px}
+.rowh{display:flex;align-items:center;justify-content:space-between}
+.chips{display:flex;gap:6px;align-items:center;font-size:var(--t-xs);color:var(--ink-2);font-weight:700}
+.wk{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 22%,var(--tint-base));color:var(--ci)}
+.wk.on{background:var(--c);color:#fff}
+
+.tl{position:absolute;top:40px;left:0;right:0;display:grid;grid-template-columns:repeat(14,1fr);gap:6px}
+.dy{height:96px;border-radius:14px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:8px 0;box-sizing:border-box;font-size:var(--t-xs);font-weight:800;color:var(--ink-2)}
+.dy .g{width:30px;height:30px;border-radius:50%;display:grid;place-items:center}
+.dy.F .g{background:linear-gradient(140deg,var(--c),var(--c2));color:#fff}
+.dy.U .g{background:color-mix(in srgb,#d92c44 18%,var(--tint-base));color:#d92c44}
+.dy.P{background:repeating-linear-gradient(135deg,color-mix(in srgb,#5b8fd6 22%,var(--tint-base)) 0 7px,color-mix(in srgb,#5b8fd6 8%,var(--tint-base)) 7px 14px)}
+.dy.P .g{background:#5b8fd6;color:#fff}
+.dy.Pf{box-shadow:inset 0 0 0 2px #5b8fd6;background:color-mix(in srgb,#5b8fd6 8%,transparent)}.dy.Pf .g{color:#5b8fd6}
+.dy.V .g{background:#E9A100;color:#3a2a00}
+.dy.T{box-shadow:0 0 0 3px var(--c);background:var(--glass-in);color:var(--ink)}
+.dy.E{box-shadow:inset 0 0 0 2px var(--line)}
+.dy .nm{font-size:var(--t-m);color:var(--ink)}
+.cards{position:absolute;top:168px;left:0;right:0;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{padding:18px 20px;height:206px;box-sizing:border-box;position:relative}
+.card h3{margin:0 0 4px;font-size:var(--t-l);font-weight:800}
+.card .s{font-size:var(--t-s);color:var(--ink-2);font-weight:600;line-height:1.4}
+.tks{display:flex;gap:12px;margin:14px 0 12px}
+.tkt{width:96px;height:58px;position:relative}
+.tkt svg{position:absolute;inset:0}
+.tkt span{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;font-size:var(--t-s);color:#fff}
+.prog{height:10px;border-radius:999px;background:color-mix(in srgb,var(--c) 12%,var(--tint-base));overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--c),var(--c2));border-radius:999px}
+.big2{font-size:var(--t-2xl);font-weight:800;margin:12px 0 6px}
+.how{position:absolute;top:392px;left:0;right:0;padding:16px 20px;box-sizing:border-box;font-size:var(--t-m);font-weight:600;line-height:1.45;display:flex;gap:14px;align-items:center}
+.how .bt{flex:none;height:44px;padding:0 18px 0 8px;display:flex;align-items:center;gap:10px;font-weight:800;font-size:var(--t-m)}
+.sheet{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:560px;height:330px;z-index:5}
+.sheet .face{padding:24px 28px}
+.opt{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;margin-top:10px;font-weight:700;font-size:var(--t-m)}
+.opt.on{box-shadow:0 0 0 3px var(--c);background:var(--glass-in)}
+.opt .c{margin-left:auto;display:flex;gap:4px}
+.dim2{position:absolute;inset:0;background:rgba(20,24,32,.35);z-index:4;border-radius:20px}
+
+</style></head><body><div class="wrap">
+<div class="bar"><h1>Propuesta B · Pausa avisada</h1><p>Lo que se sabe se avisa antes y se paga con billetes ganados; lo imprevisto se salva una vez al mes con un día doble.</p>
+<button data-th="light">Claro</button><button data-th="dark">Oscuro</button><span class="sep"></span><button data-sc="0">Normal</button><button data-sc="1">Avisando</button><button data-sc="2">En pausa</button><button data-sc="3">Imprevisto</button></div>
+<div class="fit" id="fit"><div class="stage" id="stage" data-theme="light" data-cat="vn">
+<div class="bgk"></div><div class="blob" style="width:620px;height:620px;left:-180px;top:-260px"></div>
+<div class="blob" style="width:520px;height:520px;right:-160px;bottom:-240px;background:radial-gradient(circle,var(--c2),transparent 70%)"></div>
+<div class="crumbs pill"><span class="ic"></span><b>Racha</b><span class="dim" id="crumbName">Novelas visuales</span></div>
+<div class="cats pill"><span class="t" data-c="vn"><i style="background:#00A0D8"></i>Novelas</span><span class="t" data-c="jvn"><i style="background:#E5487A"></i>Japonés</span><span class="t"><i style="background:#1DB37A"></i>PC</span><span class="t"><i style="background:#E60012"></i>Switch</span></div>
+<div class="clock pill">21:40 <span>jue 12 nov</span></div>
+<div class="glass main"><div class="face">
+<div class="hero"><div class="k">Racha de <span id="cs">novelas</span></div><div class="n num" id="nB"></div>
+<div class="best" id="bestB"></div><div id="stB"></div></div>
+<div class="msg gin" id="msgB" style="top:236px"></div>
+<div class="R" style="top:24px;height:530px"><div class="rowh"><div class="k">Últimos 7 días · hoy · próximos 6</div>
+<div class="chips" id="legB"></div></div>
+<div class="tl" id="tl"></div>
+<div class="cards"><div class="card gin" id="cardT"></div><div class="card gin" id="cardI"></div></div>
+<div class="how gin" id="howB"></div></div>
+<div id="sheetB"></div>
+</div></div>
+<div class="hints"><div class="hint pill"><span class="btn y">Y</span>Avisar pausa</div><div class="hint pill"><span class="btn b">B</span>Volver</div></div>
+</div></div>
+<div class="ex"><section><h2>Cómo funciona</h2><ul>
+<li><b>Pausa avisada</b>: si sabes que no vas a poder (viaje, exámenes), lo avisas antes. Esos días la racha se congela: ni sube ni se rompe. No hay que recuperar nada después.</li>
+<li>Cada día de pausa gasta un <b>billete</b>. Se gana 1 billete cada 10 días con meta; caben 2.</li>
+<li><b>Imprevisto</b>: si fallas sin haber avisado, lo salvas con un <b>día de vuelta</b>: el doble de la meta en uno de los 2 días siguientes.</li></ul></section>
+<section><h2>Por qué no se puede abusar</h2><ul>
+<li>La pausa solo se pone a días que <b>aún no han empezado</b>: no sirve para tapar un día ya perdido.</li>
+<li>Los billetes se ganan leyendo y caben como mucho 2: nunca más de 2 días de pausa seguidos, y hay que volver a ganarlos.</li>
+<li>El imprevisto es <b>uno cada 30 días</b> y cuesta caro (día doble). Un segundo fallo sin avisar en el mes rompe la racha.</li>
+<li>Los días de pausa no suman a la racha.</li></ul></section>
+<section><h2>Prueba los casos</h2><ul><li><b>Normal</b>: un billete guardado.</li><li><b>Avisando</b>: la hoja para elegir los días.</li>
+<li><b>En pausa</b>: el segundo día de la pausa.</li><li><b>Imprevisto</b>: ayer falló sin avisar.</li></ul></section></div>
+</div>
+<script>
+
+const ICS={flame:'<path d="M12 22c-4.3 0-7-3-7-6.9 0-3.5 2.3-5.5 3.5-8.1.5 1.7 1.3 2.9 2.5 3.4C11 6.8 12.4 4 14.6 2c.3 3.4 1.9 5.2 3.2 7.2 1 1.4 1.2 2.9 1.2 4.3C19 18.1 16 22 12 22z"/>',
+check:'<path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>',
+moon:'<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>',
+pause:'<rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/>',
+ticket:'<path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2.5a2.5 2.5 0 0 0 0 5V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2.5a2.5 2.5 0 0 0 0-5z"/>',
+warn:'<path d="M12 2.8 22.5 20.5h-21z"/><path d="M12 9v5M12 17v.4" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>',
+x:'<path d="M7 7l10 10M17 7 7 17" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>',
+clock:'<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+lock:'<rect x="5" y="10" width="14" height="10" rx="2.5"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10" fill="none" stroke="currentColor" stroke-width="2.4"/>'};
+const ic=(n,s=20,f='currentColor')=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="${f}" style="color:${f==='none'?'currentColor':f}">${ICS[n]}</svg>`;
+const CATS={vn:{name:'Novelas visuales',short:'novelas',goal:60},jvn:{name:'Novelas japonesas',short:'japonés',goal:30}};
+function fmt(m){m=Math.round(m);if(m<60)return m+' min';const h=Math.floor(m/60),r=m%60;return h+' h'+(r?' '+String(r).padStart(2,'0'):'')}
+let st={th:'light',cat:'vn',sc:0};
+function fit(){const f=document.getElementById('fit'),s=document.getElementById('stage');const k=Math.min(1,f.clientWidth/1280);s.style.transform=`scale(${k})`;f.style.height=720*k+'px'}
+function apply(){stage.dataset.theme=st.th;stage.dataset.cat=st.cat;
+ document.querySelectorAll('.cats .t').forEach(t=>t.classList.toggle('on',t.dataset.c===st.cat));
+ document.querySelectorAll('[data-th]').forEach(b=>b.classList.toggle('on',b.dataset.th===st.th));
+ document.querySelectorAll('[data-sc]').forEach(b=>b.classList.toggle('on',+b.dataset.sc===st.sc));
+ crumbName.textContent=CATS[st.cat].name;render(CATS[st.cat],SC[st.sc])}
+function wire(){document.querySelectorAll('[data-th]').forEach(b=>b.onclick=()=>{st.th=b.dataset.th;apply()});
+ document.querySelectorAll('[data-sc]').forEach(b=>b.onclick=()=>{st.sc=+b.dataset.sc;apply()});
+ document.querySelectorAll('.cats .t').forEach(b=>b.onclick=()=>{if(CATS[b.dataset.c]){st.cat=b.dataset.c;apply()}});
+ document.querySelector('.crumbs .ic').innerHTML=ic('flame',16,'#fff');
+ addEventListener('resize',fit);new ResizeObserver(fit).observe(document.getElementById('fit'));fit();apply()}
+
+// Días: 7 pasados, hoy, 6 futuros. F meta · U sin meta · P pausa usada · Pf pausa avisada (futura) · V día de vuelta · T hoy · E futuro
+const SC=[
+ {d:'FFFFFFF T EEEEEE',n:26,tk:1,tp:6,imp:'free',state:'',txt:'Racha viva'},
+ {d:'FFFFFFF T EEEEEE',n:26,tk:2,tp:0,imp:'free',state:'',txt:'Racha viva',sheet:true},
+ {d:'FFFFFFP T EEEEEE',n:26,tk:0,tp:1,imp:'free',state:'cold',txt:'En pausa · día 2 de 2',paused:true},
+ {d:'FFFFFFU T EEEEEE',n:26,tk:1,tp:6,imp:'use',state:'warn',txt:'Imprevisto: día de vuelta'}];
+const LAB=['jue 5','vie 6','sáb 7','dom 8','lun 9','mar 10','mié 11','Hoy','vie 13','sáb 14','dom 15','lun 16','mar 17','mié 18'];
+const GL={F:ic('check',16,'none'),U:ic('x',14,'none'),P:ic('pause',14,'#fff'),Pf:ic('pause',14,'currentColor'),V:ic('clock',16,'none'),T:ic('flame',16,'currentColor'),E:''};
+function ticket(on){return `<div class="tkt"><svg viewBox="0 0 24 14" width="96" height="58" preserveAspectRatio="none"><defs><linearGradient id="tg${on}" x1="0" x2="1"><stop offset="0" stop-color="var(--c)"/><stop offset="1" stop-color="var(--c2)"/></linearGradient></defs>
+<path d="M1 2a1.5 1.5 0 0 1 1.5-1.5h19A1.5 1.5 0 0 1 23 2v3a2 2 0 0 0 0 4v3a1.5 1.5 0 0 1-1.5 1.5h-19A1.5 1.5 0 0 1 1 12V9a2 2 0 0 0 0-4z" fill="${on?`url(#tg${on})`:'none'}" stroke="${on?'none':'var(--line)'}" stroke-width=".6" stroke-dasharray="${on?'':'1 .8'}"/>
+<path d="M16 1.5v11" stroke="${on?'rgba(255,255,255,.6)':'var(--line)'}" stroke-width=".5" stroke-dasharray=".8 .8"/></svg><span style="${on?'':'color:var(--ink-3)'}">${on?'1 día':'—'}</span></div>`}
+function render(c,s){const G=c.goal;cs.textContent=c.short;
+ const days=s.d.replace(' T ',' T ').split(' ').join('').replace('T','T');let arr=[];const raw=s.d.split(' ');arr=[...raw[0].split(''),'T',...raw[2].split('')];
+ if(s.paused){arr[7]='P';arr[8]='E'}
+ if(st.sc===1){/* hoja abierta: se marcan mañana y pasado */arr[8]='Pf';arr[9]='Pf'}
+ if(s.imp==='use'){arr[7]='V';arr[8]='V'}
+ nB.innerHTML=s.n+'<small>días</small>';bestB.textContent='Mejor racha: 41 días · hoy '+(s.paused?'en pausa':fmt(s.imp==='use'?G*1.2:G*.55));
+ stB.innerHTML=`<span class="state ${s.state}">${ic(s.paused?'pause':s.imp==='use'?'clock':'flame',16,'currentColor')}${s.txt}</span>`;
+ msgB.innerHTML=s.paused?`Avisaste el martes de que <b>ayer y hoy</b> no podías. La racha está congelada: ni sube ni se rompe. Mañana a las 7:00 sigue donde la dejaste.`:
+  s.imp==='use'?`Ayer no llegaste y no habías avisado. Puedes salvarlo una vez al mes: hoy o mañana tienes que hacer un <b>día doble</b> (<b>${fmt(2*G)}</b>). Llevas ${fmt(G*1.2)}.`:
+  st.sc===1?`Mañana te vas de viaje: avisa ahora y gasta <b>billetes de pausa</b>. Solo se puede avisar antes de que empiece el día.`:
+  `Hoy llevas <b>${fmt(G*.55)}</b>. Con <b>${fmt(G*.45)}</b> más sumas el día 27. Tienes un billete de pausa por si lo necesitas.`;
+ tl.innerHTML=arr.map((k,i)=>`<div class="dy ${k} ${i===7?'T':''}"><span>${LAB[i].split(' ')[0]}</span><span class="g">${GL[k]||''}</span><span class="nm num">${i===7?'12':LAB[i].split(' ')[1]}</span></div>`).join('');
+ legB.innerHTML=`<span class="dy F" style="height:auto;padding:0;flex-direction:row;gap:4px"><span class="g" style="width:18px;height:18px">${ic('check',10,'none')}</span>Meta</span>
+  <span class="dy P" style="height:auto;padding:0 6px 0 0;flex-direction:row;gap:4px;border-radius:999px"><span class="g" style="width:18px;height:18px">${ic('pause',10,'#fff')}</span>Pausa</span>
+  <span class="dy V" style="height:auto;padding:0;flex-direction:row;gap:4px"><span class="g" style="width:18px;height:18px">${ic('clock',10,'none')}</span>Día de vuelta</span>`;
+ const tk=s.tk;
+ cardT.innerHTML=`<h3>Billetes de pausa</h3><div class="s">Para lo que sabes que viene: viajes, exámenes, visitas.</div>
+  <div class="tks">${ticket(tk>0?1:0)}${ticket(tk>1?2:0)}</div>
+  <div class="s" style="display:flex;justify-content:space-between;margin-bottom:6px"><span><b style="color:var(--ink)">${tk} de 2</b> guardados</span><span>${tk>=2?'Llenos':'Siguiente: '+s.tp+' de 10 días con meta'}</span></div>
+  <div class="prog"><i style="width:${tk>=2?100:s.tp*10}%"></i></div>`;
+ const used=s.imp==='use';
+ cardI.innerHTML=`<h3>Imprevisto del mes</h3><div class="s">Para lo que no se puede avisar: enfermar, una urgencia.</div>
+  <div class="big2" style="color:${used?'#b07800':'var(--ci)'}">${used?'Usándolo ahora':'Disponible'}</div>
+  <div class="s">${used?`Día de vuelta: hoy o mañana, <b style="color:var(--ink)">${fmt(2*G)}</b> en un solo día.<div class="prog" style="margin-top:10px"><i style="width:60%;background:#E9A100"></i></div>`:
+   'Si fallas sin avisar, lo salvas haciendo el doble de meta en uno de los 2 días siguientes. Uno cada 30 días.'}</div>`;
+ howB.innerHTML=`<div class="bt pill"><span class="btn y">Y</span>Avisar una pausa</div><span>${s.paused?'Mientras dure la pausa no hace falta abrir la app. Si lees igualmente, el tiempo cuenta en estadísticas.':'Pausa: se avisa antes y no se paga después. Imprevisto: no se avisa y se paga con un día doble.'}</span>`;
+ sheetB.innerHTML=s.sheet?`<div class="dim2"></div><div class="glass sheet"><div class="face"><div class="k">Avisar una pausa</div>
+  <div style="font-size:var(--t-xl);font-weight:800;margin:6px 0 4px">¿Qué días no vas a poder?</div><div class="s" style="font-size:var(--t-s);color:var(--ink-2)">Solo días que aún no han empezado. Cada día gasta un billete.</div>
+  <div class="opt gin">Solo mañana · viernes 13<span class="c" style="color:var(--ink-2);font-weight:800">1 billete</span></div>
+  <div class="opt gin on">Mañana y pasado · vie 13 y sáb 14<span class="c" style="color:var(--ci);font-weight:800">2 billetes</span></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px"><div class="hint pill"><span class="btn b">B</span>Cancelar</div><div class="hint pill"><span class="btn a">A</span>Avisar</div></div></div></div>`:'';}
+
+wire();
+</script></body></html>

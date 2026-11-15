@@ -600,36 +600,73 @@
               "id": "AVY-3",
               "title": "Hook a tokens comunes",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-15T15:59:04+01:00",
                   "by": "claude",
                   "kind": "start",
                   "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-15T16:03:19+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "hook.css a tokens: de 75 hex a 11 (pareja azul por defecto, fondo #eceef2 como app.css, #000 de máscaras); letra y radios en px a 0 salvo un radio de 4. Panel del hook en el lector con tokens en su Shadow DOM. Comprobado con svelte-check (0 errores) y capturas de hook.html y del panel dentro de reader.html. Commit 3d9beb3."
                 }
               ],
               "cat": "codigo",
               "by": "claude",
-              "updated": "2026-11-15T15:59:04+01:00"
+              "updated": "2026-11-15T16:03:19+01:00",
+              "result": "hook.css a tokens: de 75 hex a 11 (pareja azul por defecto, fondo #eceef2 como app.css, #000 de máscaras); letra y radios en px a 0 salvo un radio de 4. Panel del hook en el lector con tokens en su Shadow DOM. Comprobado con svelte-check (0 errores) y capturas de hook.html y del panel dentro de reader.html. Commit 3d9beb3."
             },
             {
               "id": "AVY-4",
               "title": "Lector a tokens y paleta de lectura",
               "desc": "",
-              "state": "pending",
-              "notes": [],
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-15T16:03:19+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-15T16:08:04+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "reader.css: hex 157→25 (pareja azul, paleta --rd-*, fondo), font-size px 83→2 (≥30), radios 43→1 (≤4). .empty/.chip → .rd-empty/.rd-chip. Comprobado: svelte-check 0 errores, reader.html y panel del hook a 1280×720, variables resueltas en #app."
+                }
+              ],
               "cat": "codigo",
-              "by": "claude"
+              "by": "claude",
+              "updated": "2026-11-15T16:08:04+01:00",
+              "result": "reader.css: hex 157→25 (pareja azul, paleta --rd-*, fondo), font-size px 83→2 (≥30), radios 43→1 (≤4). .empty/.chip → .rd-empty/.rd-chip. Comprobado: svelte-check 0 errores, reader.html y panel del hook a 1280×720, variables resueltas en #app."
             },
             {
               "id": "AVY-5",
               "title": "Restos con colores a mano",
               "desc": "",
-              "state": "pending",
-              "notes": [],
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-15T16:05:41+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-15T16:08:04+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "UseOtherPc, Shelf, TopBar, ResumePill, Titles a --ok/--bad/--warn/--on/--tint-base/--r-*. Quedan a propósito: px de app.css (≥30 o ≤4), dorado de medalla de Shelf, tarjeta nocturna de logros, etiquetas --arc-* de Titles (AVY-6)."
+                }
+              ],
               "cat": "codigo",
-              "by": "claude"
+              "by": "claude",
+              "updated": "2026-11-15T16:08:04+01:00",
+              "result": "UseOtherPc, Shelf, TopBar, ResumePill, Titles a --ok/--bad/--warn/--on/--tint-base/--r-*. Quedan a propósito: px de app.css (≥30 o ≤4), dorado de medalla de Shelf, tarjeta nocturna de logros, etiquetas --arc-* de Titles (AVY-6)."
             },
             {
               "id": "AVY-6",
@@ -1936,7 +1973,36 @@
       "answer": null,
       "by": "claude",
       "created": "2026-11-15T15:57:56+01:00"
+    },
+    {
+      "id": "P-8",
+      "kind": "proposal",
+      "title": "Rachas · semana móvil",
+      "text": "",
+      "step": "RCM-1",
+      "branch": "RCM",
+      "options": [
+        {
+          "label": "Tubos",
+          "desc": "siete tubos que se llenan hasta la meta; lo que sobra fluye al día libre",
+          "file": ".unificador/propuestas/P-8/1.html"
+        },
+        {
+          "label": "Fichas",
+          "desc": "dos fichas grandes con su plazo de 7 días y anillos por día",
+          "file": ".unificador/propuestas/P-8/2.html"
+        },
+        {
+          "label": "Anillo",
+          "desc": "un anillo de 7 segmentos con arco extra y paneles laterales",
+          "file": ".unificador/propuestas/P-8/3.html"
+        }
+      ],
+      "recommend": 2,
+      "answer": null,
+      "by": "claude",
+      "created": "2026-11-15T16:53:13+01:00"
     }
   ],
-  "next_ask": 8
+  "next_ask": 9
 }

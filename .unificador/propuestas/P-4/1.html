@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Propuesta A · Anillo con muesca + Escudos en la medalla</title>
+<style>
+:root{
+  --round:'M PLUS Rounded 1c','Nunito','Segoe UI','Yu Gothic UI',system-ui,sans-serif;
+  color-scheme:light dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#11141b;font-family:var(--round);color:#e6e9f0}
+button{font-family:inherit;border:0;background:none;color:inherit;padding:0;cursor:pointer}
+
+/* Barra de prueba externa (idéntica en las 3 propuestas) */
+.topbar-demo{
+  position:sticky;top:0;z-index:80;
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;
+  padding:10px 16px;background:rgba(17,20,27,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(200,210,235,.14);
+}
+.demo-title{display:flex;flex-direction:column;gap:2px}
+.demo-title b{font-size:14px;font-weight:800;color:#fff}
+.demo-title span{font-size:12px;color:#9aa3b5}
+.demo-ctrls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.grp{display:flex;flex-wrap:wrap;gap:4px;padding:3px;border-radius:999px;background:#1c212c;border:1px solid rgba(200,210,235,.14)}
+.grp button{height:28px;padding:0 12px;border-radius:999px;font-size:12px;font-weight:700;color:#b4bccb;transition:all .16s}
+.grp button.on{background:#00A0D8;color:#fff}
+.grp button:hover:not(.on){color:#fff;background:rgba(255,255,255,.07)}
+
+.canvas-outer{padding:16px 12px 32px;display:flex;flex-direction:column;align-items:center;gap:20px}
+.stage-wrap{width:100%;max-width:1280px;position:relative;overflow:hidden;border-radius:16px;box-shadow:0 24px 60px -18px rgba(0,0,0,.75),0 0 0 1px rgba(255,255,255,.1)}
+.stage-wrap.hidden{display:none}
+
+/* Tokens del visor (claro y «Noche ahumada») */
+.theme-scope{
+  --ink:#3a414e;--ink-2:#5f6776;--ink-3:#757d8c;--line:rgba(95,110,135,.24);--line-2:rgba(150,160,180,.35);
+  --face:#dfe3e9;--face-hi:rgba(247,249,252,.94);--panel:rgba(255,255,255,.78);
+  --glass-top:rgba(255,255,255,.76);--glass-mid:rgba(255,255,255,.32);--glass-bot:rgba(225,234,246,.24);
+  --glass-in:rgba(255,255,255,.55);--glass-chip:rgba(255,255,255,.82);
+  --pill-top:rgba(255,255,255,.82);--pill-bot:rgba(255,255,255,.55);--pill-glow:rgba(255,255,255,.9);
+  --hl:rgba(255,255,255,1);--hl-ring:rgba(255,255,255,.55);--tint-base:#fff;
+  --ok:#3BB54A;--ok-f:#27833a;--bad:#E8384F;--warn:#F2B807;
+  --r-xs:6px;--r-s:12px;--r-m:18px;--r-l:28px;--r-pill:999px;
+  --t-xs:11px;--t-s:13px;--t-m:15px;--t-l:17px;--t-xl:20px;--t-2xl:28px;--t-3xl:44px;
+  --acc:#00A0D8;--f1:#0089be;--f2:#3253c5;--gf:linear-gradient(115deg,#0089be,#3253c5);--on:#fff;
+  color:var(--ink);
+}
+.theme-scope[data-theme=dark]{
+  color-scheme:dark;color:#e6e9f0;
+  --ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#8f98a9;--line:rgba(200,210,235,.16);--line-2:rgba(200,210,235,.24);
+  --face:#262a33;--face-hi:rgba(30,33,41,.94);--panel:rgba(30,34,43,.80);
+  --glass-top:rgba(60,66,80,.62);--glass-mid:rgba(36,40,50,.42);--glass-bot:rgba(20,22,28,.38);
+  --glass-in:rgba(255,255,255,.08);--glass-chip:rgba(40,44,56,.82);
+  --pill-top:rgba(52,57,70,.88);--pill-bot:rgba(36,40,50,.82);--pill-glow:rgba(255,255,255,.06);
+  --hl:rgba(255,255,255,.10);--hl-ring:rgba(255,255,255,.08);--tint-base:#262a33;
+}
+
+.cat-vn{--c:#00A0D8;--c-edge:#0073a0;--c-soft:color-mix(in srgb,#00A0D8 20%,var(--tint-base));--c-ink:#00739c;--rc:#E9A100;--rsoft:color-mix(in srgb,#E9A100 18%,var(--tint-base));--rink:#8a5d00}
+.cat-jvn{--c:#E5487A;--c-edge:#b02c5c;--c-soft:color-mix(in srgb,#E5487A 20%,var(--tint-base));--c-ink:#a82b58;--rc:#6E56CF;--rsoft:color-mix(in srgb,#6E56CF 18%,var(--tint-base));--rink:#4a3aa0}
+[data-theme=dark] .cat-vn{--c-ink:#5cd4ff;--rink:#ffd46b}
+[data-theme=dark] .cat-jvn{--c-ink:#ff85ad;--rink:#c5b8ff}
+
+#stage{
+  position:relative;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;
+  background:#eceef2;user-select:none;
+}
+#stage[data-theme=dark]{background:#14161c}
+.bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+#stage[data-theme=dark] .bg{background:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
+.blob{position:absolute;border-radius:50%;opacity:.55;background:radial-gradient(circle,var(--b),color-mix(in srgb,var(--b) 45%,transparent) 35%,transparent 70%)}
+#stage[data-theme=dark] .blob{opacity:.34}
+
+/* Barra superior y pistas */
+.top{position:absolute;left:0;right:0;top:0;height:76px;z-index:5}
+.avatar{position:absolute;left:30px;top:20px;width:44px;height:44px;border-radius:14px;padding:4px;
+  background:linear-gradient(180deg,var(--glass-top),var(--glass-bot));box-shadow:0 0 0 1px var(--line)}
+.avatar .face{width:100%;height:100%;border-radius:10px;display:grid;place-items:center;color:#fff;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--acc) 35%,var(--tint-base)),var(--acc))}
+.pill{backdrop-filter:blur(16px) saturate(1.7);background:linear-gradient(180deg,var(--pill-top),var(--pill-bot));
+  box-shadow:inset 0 1px 0 var(--glass-top),inset 0 -6px 10px -6px var(--pill-glow),0 0 0 1px var(--line),0 10px 20px -12px rgba(40,50,70,.35)}
+.crumb{position:absolute;left:90px;top:22px;height:40px;display:flex;align-items:center;gap:10px;padding:0 18px;border-radius:var(--r-pill);font-size:var(--t-xl);font-weight:700;color:var(--ink-2)}
+.crumb .sep{color:var(--ink-3);font-weight:500}.crumb .cur{color:var(--c)}
+.clock{position:absolute;right:24px;top:24px;display:flex;gap:14px;align-items:center;font-size:var(--t-xl);font-weight:700;color:var(--ink-2)}
+.clock small{font-size:var(--t-m);font-weight:500;color:var(--ink-3)}
+
+.hints{position:absolute;right:22px;bottom:14px;display:flex;gap:10px;z-index:5}
+.hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:var(--r-pill);font-size:var(--t-m);font-weight:700;color:var(--ink-2)}
+.btn{min-width:28px;height:28px;border-radius:var(--r-s);display:grid;place-items:center;font-size:var(--t-s);font-weight:800;color:#fff;--b:var(--ink-2);padding:0 6px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,var(--tint-base)) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--b) 70%,black)}
+.btn.b{--b:var(--bad)}.btn.sh{border-radius:var(--r-xs);--b:var(--ink-3)}
+
+/* Paneles de Streak */
+.stpanel{position:absolute;border-radius:var(--r-l);background:linear-gradient(180deg,var(--face-hi),var(--panel));
+  box-shadow:inset 0 1.5px 0 var(--glass-top),0 0 0 1px var(--line),0 18px 30px -18px rgba(40,50,70,.45)}
+.sth{font-size:var(--t-l);font-weight:800;color:var(--ink-2);display:flex;justify-content:space-between;align-items:center;white-space:nowrap}
+.sth small{font-size:var(--t-s);font-weight:700;color:var(--ink-3);margin-left:8px}
+
+/* Hoy */
+.shoy{left:48px;top:88px;width:400px;height:320px;padding:16px 20px}
+.shbody{display:flex;align-items:center;gap:16px;height:252px}
+.sring{position:relative;flex:none;width:150px;height:150px}
+.sring svg{display:block;overflow:visible}
+.sleg{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
+.sln{display:flex;align-items:center;gap:7px;font-size:var(--t-m);font-weight:800;color:var(--ink-2);white-space:nowrap}
+.sln i{width:11px;height:11px;border-radius:50%;background:var(--c);flex:none}
+.slv{font-size:var(--t-s);font-weight:700;color:var(--ink-3);margin:2px 0 5px}
+.slv b{font-size:var(--t-xl);font-weight:800;color:var(--ink)}
+
+/* Propuesta A: barra con muesca del mínimo (25%) */
+.sgoal-wrap{position:relative;height:10px;border-radius:5px;background:var(--c-soft);overflow:visible}
+.sgoal-fill{height:100%;border-radius:5px;background:var(--c);transition:width .35s ease}
+.sgoal-fill.min-ok{background:linear-gradient(90deg,color-mix(in srgb,var(--c) 70%,var(--ok)),var(--c))}
+.sgoal-notch{position:absolute;top:-3px;bottom:-3px;width:3px;border-radius:2px;background:var(--tint-base);box-shadow:0 0 0 1.5px var(--c);z-index:2}
+.sln2{margin-top:5px;font-size:var(--t-s);font-weight:700;color:var(--ink-2);line-height:1.25}
+.sln2.ok{color:var(--ok-f)}
+[data-theme=dark] .sln2.ok{color:#5fd36c}
+.sln2.safe{color:var(--c-ink)}
+
+/* Propuesta A: Medallas con cápsula de escudos integrada */
+.smeds{position:absolute;left:464px;top:88px;width:768px;height:120px;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.smed{position:relative;display:flex;align-items:center;gap:12px;padding:0 16px;border-radius:var(--r-l);min-width:0;cursor:pointer;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--c-soft) 45%,var(--tint-base)),color-mix(in srgb,var(--c-soft) 25%,var(--tint-base)));
+  box-shadow:inset 0 1.5px 0 var(--glass-top),0 0 0 1.5px color-mix(in srgb,var(--c) 40%,var(--tint-base)),0 16px 26px -18px color-mix(in srgb,var(--c) 65%,black)}
+.smed.on{box-shadow:inset 0 1.5px 0 var(--glass-top),0 0 0 2.5px var(--c),0 16px 26px -18px color-mix(in srgb,var(--c) 70%,black)}
+.sflw{width:50px;height:50px;flex:none}
+.smt{flex:1;min-width:0}
+.snw{display:flex;align-items:baseline;gap:5px;height:46px}
+.snum{font-size:42px;font-weight:800;line-height:46px;color:var(--ink)}
+.snw small{font-size:var(--t-m);font-weight:800;color:var(--ink)}
+.srec{align-self:center;margin-left:4px;font-size:var(--t-xs);font-weight:800;color:#fff;background:var(--c);border-radius:var(--r-pill);padding:2px 8px;text-transform:uppercase}
+.srec.safe{background:var(--c-ink)}
+.ssub{font-size:var(--t-s);font-weight:700;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ssub.b{color:var(--ink-3);font-size:12px}
+
+.shield-box{
+  flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px;
+  padding:8px 10px;border-radius:var(--r-m);background:var(--glass-in);box-shadow:inset 0 0 0 1px var(--line);
+}
+.shields{display:flex;align-items:center;gap:5px}
+.sh-ic{width:20px;height:20px;display:block}
+.sh-ic.full{color:var(--rc);filter:drop-shadow(0 2px 4px color-mix(in srgb,var(--rc) 40%,transparent))}
+.sh-ic.empty{color:var(--ink-3);opacity:.45}
+.sh-charge{display:flex;gap:3px;width:100%}
+.sh-charge i{flex:1;height:4px;border-radius:2px;background:var(--line)}
+.sh-charge i.on{background:var(--rc)}
+.light-pill{font-size:10.5px;font-weight:800;color:var(--ink-2);white-space:nowrap}
+
+/* Mapa de 6 meses (siempre visible) */
+.smap{left:464px;top:224px;width:768px;height:184px;padding:14px 20px 8px}
+.stabs{display:flex;align-items:center;gap:3px;height:28px;margin:-4px 0;padding:0 3px;border-radius:var(--r-pill)}
+.stabs .t{height:22px;padding:0 11px;border-radius:var(--r-pill);display:grid;place-items:center;font-size:var(--t-s);font-weight:800;color:var(--ink-2);cursor:pointer}
+.stabs .t.on{background:var(--c);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.5)}
+.smrow{display:flex;gap:18px;margin-top:6px}
+.sheat{flex:none}
+.scols{display:flex;gap:3px}
+.scols>div{display:flex;flex-direction:column;gap:3px}
+.scell{position:relative;display:block;width:14px;height:14px;border-radius:4px;background:var(--face)}
+.scell.st{box-shadow:0 0 0 1.5px var(--c-edge)}
+.scell.td{box-shadow:0 0 0 2px var(--face-hi),0 0 0 3.5px var(--c)}
+.scell.min{background:var(--c-soft)}
+.scell.min::after{content:'';position:absolute;left:4px;top:4px;width:6px;height:6px;border-radius:2px;background:var(--c)}
+.scell.shd{background:var(--rc);outline:1.5px dashed rgba(255,255,255,.88);outline-offset:-4px;box-shadow:0 0 0 1.5px var(--c-edge)}
+.smon{position:relative;height:14px;margin-top:3px;line-height:14px}
+.smon span{position:absolute;top:0;font-size:var(--t-s);font-weight:700;color:var(--ink-3)}
+.stiles{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+.rbox{height:58px;padding:6px 14px;border-radius:var(--r-m);background:var(--face);box-shadow:inset 0 0 0 1px var(--line)}
+.rbox .k{font-size:var(--t-s);font-weight:700;color:var(--ink-2)}
+.rbox .v{font-size:var(--t-xl);font-weight:800;color:var(--ink)}
+.rbox .v small{font-size:var(--t-s);font-weight:700;color:var(--ink-3)}
+
+/* Leyenda discreta debajo del mapa */
+.map-leg{position:absolute;left:484px;top:391px;display:flex;gap:14px;font-size:11px;font-weight:700;color:var(--ink-2)}
+.map-leg span{display:inline-flex;align-items:center;gap:5px}
+.leg-dot{width:10px;height:10px;border-radius:3px;display:inline-block;position:relative}
+.leg-dot.full{background:var(--c)}
+.leg-dot.min{background:var(--c-soft);box-shadow:0 0 0 1px var(--c-edge)}
+.leg-dot.min::after{content:'';position:absolute;left:3px;top:3px;width:4px;height:4px;border-radius:1px;background:var(--c)}
+.leg-dot.shd{background:var(--rc);outline:1px dashed rgba(255,255,255,.9);outline-offset:-2.5px}
+
+/* Paneles inferiores */
+.sgames,.shours,.syear{top:424px;height:226px;padding:14px 20px 10px}
+.sgames{left:48px;width:470px}
+.shours{left:534px;width:380px}
+.syear{left:930px;width:302px}
+.sgr{display:grid;grid-template-columns:28px minmax(0,1fr) 120px 64px;align-items:center;gap:10px;height:37px}
+.mcov{width:28px;height:40px;border-radius:var(--r-xs);background:linear-gradient(160deg,color-mix(in srgb,var(--c) 40%,#fff),var(--c));display:grid;place-items:center;color:#fff;font-size:10px;font-weight:800}
+.sgr .nm{font-size:var(--t-m);font-weight:800;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sgr .gb{height:9px;border-radius:var(--r-xs);background:var(--face);overflow:hidden}
+.sgr .gb b{display:block;height:100%;border-radius:var(--r-xs);background:var(--c)}
+.sgr .tm{font-size:var(--t-s);font-weight:800;color:var(--ink-2);text-align:right;white-space:nowrap}
+.shb{display:flex;align-items:flex-end;gap:3px;height:120px;margin-top:12px;border-bottom:2px solid var(--line)}
+.shb i{flex:1;border-radius:3px 3px 1px 1px;background:color-mix(in srgb,var(--c) 45%,var(--tint-base))}
+.shb i.pk{background:var(--c)}
+.shl{display:flex;justify-content:space-between;margin-top:4px;font-size:var(--t-xs);font-weight:700;color:var(--ink-3)}
+.speak{margin-top:6px;font-size:var(--t-s);font-weight:800;color:var(--ink-2)}
+.syg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.syg div{border-radius:var(--r-s);background:var(--face);padding:8px 12px;box-shadow:inset 0 0 0 1px var(--line)}
+.syg span{display:block;font-size:var(--t-s);font-weight:700;color:var(--ink-3);white-space:nowrap}
+.syg b{font-size:var(--t-2xl);font-weight:800;color:var(--ink)}
+
+/* Previsualización de Tarjeta de Inicio (ReadCard 350×150) */
+.home-preview{
+  width:100%;max-width:1280px;border-radius:20px;padding:20px 24px;
+  background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%);
+  box-shadow:0 18px 42px -18px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.1);
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:24px;
+}
+.home-preview[data-theme=dark]{background:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
+.home-preview.hidden{display:none}
+.hp-meta{flex:1;min-width:260px}
+.hp-meta h2{margin:0 0 6px;font-size:18px;font-weight:800;color:var(--ink)}
+.hp-meta p{margin:0 0 10px;font-size:14px;line-height:1.45;color:var(--ink-2)}
+.hp-chips{display:flex;flex-wrap:wrap;gap:8px}
+.hp-chip{padding:5px 11px;border-radius:999px;font-size:12px;font-weight:700;color:var(--ink-2);background:var(--glass-chip);box-shadow:inset 0 0 0 1px var(--line)}
+
+.rcard-shell{flex:none;display:flex;flex-direction:column;gap:6px;max-width:100%}
+.hsect-row{display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:800;color:var(--ink-2)}
+.rdots{display:flex;gap:5px;align-items:center}
+.rdots i{width:7px;height:7px;border-radius:999px;background:color-mix(in srgb,var(--ink-3) 45%,transparent)}
+.rdots i.on{width:18px;background:var(--c)}
+.rcard{
+  width:350px;max-width:100%;height:150px;border-radius:24px;padding:8px;
+  background:linear-gradient(180deg,var(--glass-top),var(--glass-mid) 46%,var(--glass-bot));
+  box-shadow:inset 0 1.5px 0 var(--hl),0 0 0 1px var(--line),0 18px 30px -16px rgba(40,50,70,.42);
+}
+.rcard-face{
+  width:100%;height:100%;border-radius:16px;padding:0 12px;
+  background:linear-gradient(180deg,var(--face-hi),var(--face));
+  display:flex;align-items:center;gap:12px;overflow:hidden;
+}
+.rr-ring{position:relative;flex:none;width:112px;height:112px}
+.rr-mins{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;font-weight:800;line-height:1.2}
+.rr-side{flex:1;min-width:0;display:flex;gap:8px}
+.rr-col{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
+.rmed{
+  display:grid;grid-template-columns:16px max-content minmax(0,1fr);align-items:center;column-gap:4px;
+  height:48px;padding:0 7px;border-radius:12px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--c-soft) 50%,var(--tint-base)),var(--c-soft));
+  box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px color-mix(in srgb,var(--c) 40%,var(--tint-base));
+}
+.rnum{font-size:24px;font-weight:800;color:var(--ink);line-height:1}
+.rlab{font-size:11.5px;font-weight:800;color:var(--ink-2);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rlab small{display:flex;align-items:center;gap:3px;font-size:10px;color:var(--rink)}
+.rmap{display:flex;gap:2px}
+.rmap>div{display:flex;flex-direction:column;gap:2px}
+.mcell{width:8px;height:8px;border-radius:2px;background:var(--face);position:relative}
+.mcell.st{box-shadow:0 0 0 1px var(--c-edge)}
+.mcell.min{background:var(--c-soft)}
+.mcell.min::after{content:'';position:absolute;left:2.5px;top:2.5px;width:3px;height:3px;border-radius:1px;background:var(--c)}
+.mcell.shd{background:var(--rc)}
+.rmeta{font-size:13px;font-weight:700;color:var(--ink-2)}
+.rmeta span{font-weight:500;color:var(--ink-3)}
+</style>
+</head>
+<body>
+
+<div class="topbar-demo">
+  <div class="demo-title">
+    <b>Propuesta A · Anillo con muesca + Escudos en la medalla (Recomendada)</b>
+    <span>Muesca de 15 min para mantener el hábito sin deuda · Hasta 2 escudos ganados por constancia</span>
+  </div>
+  <div class="demo-ctrls">
+    <div class="grp" id="scen-grp">
+      <button type="button" class="on" data-scen="tight">Día complicado (22 min)</button>
+      <button type="button" data-scen="weekend">2 días a 0 min (2 escudos)</button>
+      <button type="button" data-scen="full">Día completo (1 h 10 min)</button>
+    </div>
+    <div class="grp" id="theme-grp">
+      <button type="button" class="on" data-theme="light">Claro</button>
+      <button type="button" data-theme="dark">Noche ahumada</button>
+    </div>
+    <div class="grp" id="view-grp">
+      <button type="button" class="on" data-view="both">Racha + Inicio</button>
+      <button type="button" data-view="streak">Solo Racha</button>
+      <button type="button" data-view="home">Solo Inicio</button>
+    </div>
+  </div>
+</div>
+
+<div class="canvas-outer">
+  <div class="stage-wrap" id="stage-wrap">
+    <div id="stage" class="theme-scope cat-vn" data-theme="light">
+      <div class="bg"></div>
+      <div class="blob" style="--b:#00A0D8;width:540px;height:540px;left:-140px;top:-170px"></div>
+      <div class="blob" style="--b:#E5487A;width:480px;height:480px;right:-150px;top:140px"></div>
+
+      <div class="top">
+        <div class="avatar"><div class="face">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>
+        </div></div>
+        <div class="crumb pill"><span>Inicio</span><span class="sep">›</span><span class="cur">Racha de lectura</span></div>
+        <div class="clock"><span>15/11 <small>(dom)</small></span><span>22:14</span></div>
+      </div>
+
+      <!-- Hoy -->
+      <div class="stpanel shoy">
+        <div class="sth">Hoy <small id="today-lbl">domingo 15 de noviembre</small></div>
+        <div class="shbody">
+          <div class="sring" id="streak-ring"></div>
+          <div class="sleg" id="streak-leg"></div>
+        </div>
+      </div>
+
+      <!-- Medallas con cápsula de escudos -->
+      <div class="smeds" id="medals"></div>
+
+      <!-- Mapa de 6 meses (siempre visible) -->
+      <div class="stpanel smap" id="map-panel">
+        <div class="sth">
+          <span>Últimos 6 meses <small id="map-goal-lbl"></small></span>
+          <span class="stabs pill" id="cat-tabs">
+            <span class="t on" data-cat="vn">Novelas visuales</span>
+            <span class="t" data-cat="jvn">Novelas japonesas</span>
+          </span>
+        </div>
+        <div class="smrow">
+          <div class="sheat">
+            <div class="scols" id="heatmap"></div>
+            <div class="smon"><span>jun</span><span style="left:68px">jul</span><span style="left:136px">ago</span><span style="left:221px">sep</span><span style="left:289px">oct</span><span style="left:374px">nov</span></div>
+          </div>
+          <div class="stiles" id="map-tiles"></div>
+        </div>
+      </div>
+      <div class="map-leg" id="map-leg">
+        <span><i class="leg-dot full"></i>Meta completa (1 h)</span>
+        <span><i class="leg-dot min"></i>Mínimo cumplido (15+ min)</span>
+        <span><i class="leg-dot shd"></i>Día cubierto por escudo (0 min)</span>
+      </div>
+
+      <!-- Abajo -->
+      <div class="stpanel sgames" id="games-panel"></div>
+      <div class="stpanel shours">
+        <div class="sth">A qué hora lees <small>30 días</small></div>
+        <div class="shb" id="hour-bars"></div>
+        <div class="shl"><span>7:00</span><span>13:00</span><span>19:00</span><span>1:00</span></div>
+        <div class="speak">Sobre todo de 22:00 a 23:00</div>
+      </div>
+      <div class="stpanel syear" id="year-panel"></div>
+
+      <div class="hints">
+        <div class="hint pill"><span class="btn sh">LB/RB</span>Categoría</div>
+        <div class="hint pill"><span class="btn b">B</span>Volver</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tarjeta de Inicio (ReadCard 350×150 a escala real) -->
+  <div class="home-preview theme-scope cat-vn" id="home-preview" data-theme="light">
+    <div class="rcard-shell">
+      <div class="hsect-row">
+        <span id="home-sect">Lectura de hoy · Novelas</span>
+        <span class="rdots"><i class="on" data-cat="vn"></i><i data-cat="jvn"></i></span>
+      </div>
+      <div class="rcard">
+        <div class="rcard-face">
+          <div class="rr-ring" id="home-ring"></div>
+          <div class="rr-side" id="home-side"></div>
+        </div>
+      </div>
+      <div class="rmeta" id="home-meta"></div>
+    </div>
+    <div class="hp-meta">
+      <h2>Así se ve la tarjeta de Inicio (350 × 150 px reales)</h2>
+      <p>La muesca marca el umbral del <b>mínimo diario</b> sobre el mismo anillo que ya existe. En la medalla viven los <b>2 escudos de descanso</b> (y los 4 segmentos de recarga) sin ocultar nunca el mapa de 6 meses.</p>
+      <div class="hp-chips">
+        <span class="hp-chip">Sin deuda posterior</span>
+        <span class="hp-chip">Anti-abuso: máx. 2 escudos + máx. 2 ligeros/sem</span>
+        <span class="hp-chip">Cambios de meta aplican mañana</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATS = {
+  vn: {
+    cls:'cat-vn', name:'novelas', full:'Novelas visuales', tab:'Novelas',
+    c:'#00A0D8', edge:'#0073a0', rc:'#E9A100',
+    goal:60, min:15,
+    games:[['The House in Fata Morgana',860,'FATA'],['Steins;Gate',585,'S;G'],['White Album 2',370,'WA2'],['Fate/stay night',210,'FSN']],
+    year:{hrs:168, full:126, min:16, titles:7, sessions:214},
+    hours:[2,0,0,5,12,8,4,15,24,18,12,20,35,48,72,96,84,42,18,8,0,0,0,0]
+  },
+  jvn: {
+    cls:'cat-jvn', name:'japonés', full:'Novelas japonesas', tab:'Japonés',
+    c:'#E5487A', edge:'#b02c5c', rc:'#6E56CF',
+    goal:30, min:10,
+    games:[['サマーポケッツ',420,'SP'],['月姫 -blue glass moon-',310,'月姫'],['マルコと銀河竜',195,'マルコ'],['ひぐらしのなく頃に',110,'ひぐらし']],
+    year:{hrs:82, full:94, min:14, titles:5, sessions:148},
+    hours:[0,0,0,4,10,14,8,10,12,20,25,30,45,62,78,52,30,14,4,0,0,0,0,0]
+  }
+};
+
+const SCENARIOS = {
+  tight: {
+    label:'domingo 15 de noviembre',
+    vn:  {today:22, streak:14, best:21, bestRange:'10–30 sep', shields:2, charge:2, lightUsed:1, lightMax:2, monthMet:13, monthMin:2, monthElapsed:15, avg30:51, weekTail:['f','f','m','f','f','f','m']},
+    jvn: {today:34, streak:9,  best:9,  bestRange:'7–15 nov',  shields:1, charge:3, lightUsed:0, lightMax:2, monthMet:12, monthMin:1, monthElapsed:15, avg30:29, weekTail:['f','f','f','f','f','f','f']}
+  },
+  weekend: {
+    label:'lunes 16 de noviembre',
+    vn:  {today:18, streak:18, best:21, bestRange:'10–30 sep', shields:0, charge:0, lightUsed:1, lightMax:2, monthMet:13, monthMin:1, monthElapsed:16, avg30:48, weekTail:['f','f','f','f','s','s','m']},
+    jvn: {today:32, streak:12, best:14, bestRange:'1–14 oct',  shields:0, charge:1, lightUsed:1, lightMax:2, monthMet:12, monthMin:2, monthElapsed:16, avg30:27, weekTail:['f','f','f','f','s','m','f']}
+  },
+  full: {
+    label:'domingo 15 de noviembre',
+    vn:  {today:70, streak:19, best:19, bestRange:'28 oct – 15 nov', shields:2, charge:4, shieldsGainedToday:true, lightUsed:0, lightMax:2, monthMet:15, monthMin:0, monthElapsed:15, avg30:64, weekTail:['f','f','f','f','f','f','f']},
+    jvn: {today:45, streak:10, best:10, bestRange:'6–15 nov',  shields:2, charge:0, lightUsed:0, lightMax:2, monthMet:13, monthMin:1, monthElapsed:15, avg30:33, weekTail:['f','f','f','f','f','f','f']}
+  }
+};
+
+let state = { scen:'tight', theme:'light', view:'both', cat:'vn' };
+
+const shieldSvg = (cls) => `<svg class="sh-ic ${cls}" viewBox="0 0 24 24" fill="${cls==='full'?'currentColor':'none'}" fill-opacity=".22" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6l7-3z"/></svg>`;
+const flameSvg = (c) => `<svg viewBox="0 0 24 24" style="width:100%;height:100%"><path fill="${c}" fill-opacity=".22" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"/></svg>`;
+
+function fmtDur(m){
+  const h = Math.floor(m/60), mm = m%60;
+  return h > 0 ? (mm ? `${h} h ${mm} min` : `${h} h`) : `${mm} min`;
+}
+
+function renderRings(targetId, size, stroke, gap, sc) {
+  const keys = ['vn','jvn'];
+  let arcs = '';
+  keys.forEach((k, i) => {
+    const cfg = CATS[k], d = sc[k];
+    const r = size/2 - stroke/2 - 2 - i * stroke * gap;
+    const C = 2 * Math.PI * r;
+    const frac = Math.min(1, d.today / cfg.goal);
+    const minFrac = cfg.min / cfg.goal;
+    const notchAngle = -90 + minFrac * 360;
+    const rad = notchAngle * Math.PI / 180;
+    const nx1 = size/2 + (r - stroke*0.55) * Math.cos(rad);
+    const ny1 = size/2 + (r - stroke*0.55) * Math.sin(rad);
+    const nx2 = size/2 + (r + stroke*0.55) * Math.cos(rad);
+    const ny2 = size/2 + (r + stroke*0.55) * Math.sin(rad);
+    const mx = size/2 + r * Math.cos(rad);
+    const my = size/2 + r * Math.sin(rad);
+    const metMin = d.today >= cfg.min;
+    arcs += `
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="color-mix(in srgb,${cfg.c} 22%,var(--tint-base))" stroke-width="${stroke}"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${cfg.c}" stroke-width="${stroke}" stroke-linecap="round"
+        stroke-dasharray="${C}" stroke-dashoffset="${C*(1-frac)}" transform="rotate(-90 ${size/2} ${size/2})"/>
+      <line x1="${nx1}" y1="${ny1}" x2="${nx2}" y2="${ny2}" stroke="var(--tint-base)" stroke-width="${size>130?3:2}" stroke-linecap="round"/>
+      ${metMin ? `<circle cx="${mx}" cy="${my}" r="${size>130?4:2.8}" fill="var(--tint-base)" stroke="${cfg.c}" stroke-width="1.8"/>` : ''}
+    `;
+  });
+  document.getElementById(targetId).innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${arcs}</svg>` +
+    (targetId === 'home-ring' ? `<div class="rr-mins"><span style="color:var(--c-ink)">${sc.vn.today} min</span><span style="color:#a82b58">${sc.jvn.today} min</span></div>` : '');
+}
+
+function buildHeatmap(catKey, scData, cols) {
+  // Historial determinista de N semanas; la última columna acaba en weekTail
+  const pattern = ['f','f','f','m','f','f','f','f','f','s','f','f','f','f','f','f','f','m','f','f','0','f','f','f','f','m','f','f'];
+  let html = '';
+  for (let w = 0; w < cols; w++) {
+    html += '<div>';
+    for (let i = 0; i < 7; i++) {
+      let typ;
+      if (w === cols - 1) {
+        typ = scData.weekTail[i];
+      } else {
+        typ = pattern[(w * 7 + i + (catKey === 'jvn' ? 3 : 0)) % pattern.length];
+      }
+      const isToday = (w === cols - 1 && i === 6);
+      const cls = [cols > 12 ? 'scell' : 'mcell'];
+      if (typ === 'f') { cls.push('st'); }
+      else if (typ === 'm') { cls.push('st','min'); }
+      else if (typ === 's') { cls.push('shd'); }
+      if (isToday && cols > 12) cls.push('td');
+      const bg = typ === 'f' ? `style="background:var(--c)"` : '';
+      html += `<span class="${cls.join(' ')}" ${bg}></span>`;
+    }
+    html += '</div>';
+  }
+  return html;
+}
+
+function render() {
+  const sc = SCENARIOS[state.scen];
+  const cfg = CATS[state.cat];
+  const stage = document.getElementById('stage');
+  const hp = document.getElementById('home-preview');
+
+  [stage, hp].forEach(el => {
+    el.setAttribute('data-theme', state.theme);
+    el.classList.remove('cat-vn','cat-jvn');
+    el.classList.add(cfg.cls);
+  });
+
+  document.getElementById('stage-wrap').classList.toggle('hidden', state.view === 'home');
+  hp.classList.toggle('hidden', state.view === 'streak');
+
+  document.getElementById('today-lbl').textContent = sc.label;
+  renderRings('streak-ring', 150, 15, 1.18, sc);
+
+  // Leyenda Hoy con muesca
+  document.getElementById('streak-leg').innerHTML = ['vn','jvn'].map(k => {
+    const c = CATS[k], d = sc[k];
+    const pct = Math.min(100, (d.today / c.goal) * 100);
+    const minPct = (c.min / c.goal) * 100;
+    const isFull = d.today >= c.goal;
+    const isSafe = d.today >= c.min;
+    const status = isFull
+      ? `✓ Cumplida a las 22:08${d.shieldsGainedToday?' · +1 escudo':''}`
+      : isSafe
+        ? `✓ Mínimo (${c.min} min) · Faltan ${c.goal - d.today} min para meta`
+        : `Faltan ${c.min - d.today} min para salvar racha`;
+    return `
+      <div class="${c.cls}">
+        <div class="sln"><i></i>${c.full}</div>
+        <div class="slv"><b>${fmtDur(d.today)}</b> / ${fmtDur(c.goal)} <span style="font-size:11px;font-weight:700">(mín. ${c.min} min)</span></div>
+        <div class="sgoal-wrap">
+          <div class="sgoal-fill ${isSafe && !isFull ? 'min-ok' : ''}" style="width:${pct}%"></div>
+          <div class="sgoal-notch" style="left:calc(${minPct}% - 1.5px)" title="Mínimo: ${c.min} min"></div>
+        </div>
+        <div class="sln2 ${isFull ? 'ok' : isSafe ? 'safe' : ''}">${status}</div>
+      </div>`;
+  }).join('');
+
+  // Medallas
+  document.getElementById('medals').innerHTML = ['vn','jvn'].map(k => {
+    const c = CATS[k], d = sc[k];
+    const isFull = d.today >= c.goal;
+    const badge = isFull && d.streak >= d.best ? '<span class="srec">Récord</span>'
+      : (!isFull && d.today >= c.min ? '<span class="srec safe">Protegida</span>' : '');
+    const shIcons = Array.from({length:2}, (_, i) => shieldSvg(i < d.shields ? 'full' : 'empty')).join('');
+    const chargeBars = Array.from({length:4}, (_, i) => `<i class="${i < (d.shields === 2 ? 4 : d.charge) ? 'on' : ''}"></i>`).join('');
+    const shNote = d.shields === 2 ? 'Reserva llena (2/2)' : `Carga escudo ${d.charge}/4`;
+    return `
+      <div class="smed ${c.cls} ${state.cat===k?'on':''}" data-cat="${k}">
+        <span class="sflw">${flameSvg(c.c)}</span>
+        <div class="smt">
+          <div class="snw"><span class="snum">${d.streak}</span><small>días</small>${badge}</div>
+          <div class="ssub">Racha de ${c.name}</div>
+          <div class="ssub b">Mejor: ${d.best} días · ${d.bestRange}</div>
+        </div>
+        <div class="shield-box" title="${shNote}">
+          <div class="shields">${shIcons}</div>
+          <div class="sh-charge">${chargeBars}</div>
+          <div class="light-pill">Ligeros ${d.lightUsed}/${d.lightMax}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Pestañas del mapa y celdas
+  document.querySelectorAll('#cat-tabs .t').forEach(t => t.classList.toggle('on', t.dataset.cat === state.cat));
+  document.getElementById('map-goal-lbl').textContent = `meta ${fmtDur(cfg.goal)} (mín. ${cfg.min} min)`;
+  document.getElementById('heatmap').innerHTML = buildHeatmap(state.cat, sc[state.cat], 26);
+
+  const sd = sc[state.cat];
+  document.getElementById('map-tiles').innerHTML = `
+    <div class="rbox"><div class="k">Este mes</div><div class="v">${sd.monthMet} <small>metas + ${sd.monthMin} mín. de ${sd.monthElapsed} d</small></div></div>
+    <div class="rbox"><div class="k">Escudos · Media 30 d</div><div class="v">${sd.shields}/2 <small>listos · ${sd.avg30} min/d</small></div></div>
+  `;
+
+  // Paneles inferiores
+  document.getElementById('games-panel').innerHTML = `<div class="sth">Qué has leído este mes</div>` +
+    cfg.games.map(([nm, min, tag]) => `
+      <div class="sgr">
+        <span class="mcov">${tag}</span>
+        <span class="nm">${nm}</span>
+        <span class="gb"><b style="width:${(min/cfg.games[0][1])*100}%"></b></span>
+        <span class="tm">${fmtDur(min)}</span>
+      </div>`).join('');
+
+  const hmax = Math.max(...cfg.hours);
+  document.getElementById('hour-bars').innerHTML = cfg.hours.map(h =>
+    `<i class="${h===hmax?'pk':''}" style="height:${h>0?Math.max(5,(h/hmax)*100):0}%"></i>`).join('');
+
+  document.getElementById('year-panel').innerHTML = `
+    <div class="sth">Este año</div>
+    <div class="syg">
+      <div><span>Horas</span><b>${cfg.year.hrs}</b></div>
+      <div><span>Metas + Mín.</span><b>${cfg.year.full}<small style="font-size:13px;color:var(--ink-3)">+${cfg.year.min}</small></b></div>
+      <div><span>Novelas</span><b>${cfg.year.titles}</b></div>
+      <div><span>Partidas</span><b>${cfg.year.sessions}</b></div>
+    </div>`;
+
+  // Tarjeta de Inicio (ReadCard)
+  document.getElementById('home-sect').textContent = `Lectura de hoy · ${cfg.tab}`;
+  document.querySelectorAll('#home-preview .rdots i').forEach(dot => dot.classList.toggle('on', dot.dataset.cat === state.cat));
+  renderRings('home-ring', 112, 11, 1.15, sc);
+  document.getElementById('home-side').innerHTML = ['vn','jvn'].map(k => {
+    const c = CATS[k], d = sc[k];
+    const shMini = Array.from({length:2}, (_, i) =>
+      `<svg width="11" height="11" viewBox="0 0 24 24" fill="${i<d.shields?c.rc:'none'}" stroke="${i<d.shields?c.rc:'var(--ink-3)'}" stroke-width="2.4"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6l7-3z"/></svg>`).join('');
+    return `
+      <div class="rr-col ${c.cls}">
+        <div class="rmed">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${c.c}" stroke-width="2.2"><path d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"/></svg>
+          <span class="rnum">${d.streak}</span>
+          <span class="rlab">${c.name}<small>${shMini} ${d.shields}/2</small></span>
+        </div>
+        <div class="rmap">${buildHeatmap(k, d, 10)}</div>
+      </div>`;
+  }).join('');
+
+  const curSc = sc[state.cat];
+  const metaText = curSc.today >= cfg.goal
+    ? `Meta completa hoy <span>· ${fmtDur(cfg.goal)} ${cfg.name}</span>`
+    : curSc.today >= cfg.min
+      ? `Racha a salvo (mín. ${cfg.min} min) <span>· faltan ${cfg.goal - curSc.today} min</span>`
+      : `Meta diaria <span>· ${fmtDur(cfg.goal)} (mín. ${cfg.min} min)</span>`;
+  document.getElementById('home-meta').innerHTML = metaText;
+
+  // Bind clicks on medals/tabs
+  document.querySelectorAll('.smed[data-cat], #cat-tabs .t[data-cat], #home-preview .rdots i').forEach(el => {
+    el.onclick = () => { state.cat = el.dataset.cat; render(); };
+  });
+}
+
+function fit() {
+  const wrap = document.getElementById('stage-wrap');
+  const st = document.getElementById('stage');
+  if (!wrap || wrap.classList.contains('hidden')) return;
+  const s = Math.min(1, wrap.clientWidth / 1280);
+  st.style.transform = `scale(${s})`;
+  wrap.style.height = `${Math.round(720 * s)}px`;
+}
+
+document.querySelectorAll('#scen-grp button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#scen-grp button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); state.scen = b.dataset.scen; render();
+});
+document.querySelectorAll('#theme-grp button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#theme-grp button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); state.theme = b.dataset.theme; render();
+});
+document.querySelectorAll('#view-grp button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#view-grp button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); state.view = b.dataset.view; render(); fit();
+});
+
+window.addEventListener('resize', fit);
+render();
+fit();
+</script>
+</body>
+</html>

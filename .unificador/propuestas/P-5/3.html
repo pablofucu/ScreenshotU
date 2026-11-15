@@ -1,0 +1,223 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Propuesta C · El mes y el vaso</title><style>
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;
+--t-3xl:44px;--t-2xl:28px;--t-xl:20px;--t-l:17px;--t-m:15px;--t-s:13px;--t-xs:11px;
+--r-xs:6px;--r-s:12px;--r-m:18px;--r-l:28px;--s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:24px;--s-6:32px}
+body{margin:0;font-family:var(--round);background:#0f1218;color:#e6e9f0}
+.wrap{max-width:1280px;margin:0 auto;padding:16px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;font-size:13px}
+.bar h1{font-size:17px;margin:0 12px 0 0;font-weight:800;width:100%}
+.bar p{margin:0 0 6px;width:100%;color:#b4bccb}
+.bar button{font:700 13px var(--round);border:0;border-radius:999px;padding:6px 12px;background:#262a33;color:#e6e9f0;cursor:pointer}
+.bar button.on{background:#00A0D8;color:#fff}
+.bar .sep{width:1px;height:20px;background:#3a414e;margin:0 4px}
+.fit{position:relative;width:100%;overflow:hidden;border-radius:12px}
+.fit>.stage{transform-origin:0 0;position:absolute;left:0;top:0}
+.lbl{font-size:13px;color:#b4bccb;margin:20px 0 8px}
+/* ---- mundo de la app ---- */
+.stage{width:1280px;height:720px;overflow:hidden;color:var(--ink);font-family:var(--round);
+--ink:#3a414e;--ink-2:#5f6776;--ink-3:#757d8c;--line:rgba(95,110,135,.24);--face:#dfe3e9;--panel:rgba(255,255,255,.75);
+--glass-top:rgba(255,255,255,.72);--glass-mid:rgba(255,255,255,.30);--glass-bot:rgba(225,234,246,.22);--glass-in:rgba(255,255,255,.55);
+--pill-top:rgba(255,255,255,.80);--pill-bot:rgba(255,255,255,.52);--tile-bg:rgba(255,255,255,.62);
+--hl:#fff;--hl-ring:rgba(255,255,255,.55);--hl-bot:rgba(255,255,255,.95);--tint-base:#fff;
+--ok:#3BB54A;--warn:#F2B807;--ok-f:#27833a;
+--sh-1:0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42);
+--bgk:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%);
+--c:#00A0D8;--c2:#3F63E0;--ci:#00739c;--sc:#E9A100;--sci:#8a5d00}
+.stage[data-theme=dark]{--ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#8f98a9;--line:rgba(200,210,235,.16);--face:#262a33;--panel:rgba(30,34,43,.78);
+--glass-top:rgba(60,66,80,.62);--glass-mid:rgba(36,40,50,.42);--glass-bot:rgba(20,22,28,.38);--glass-in:rgba(255,255,255,.08);
+--pill-top:rgba(52,57,70,.88);--pill-bot:rgba(36,40,50,.82);--tile-bg:rgba(40,44,56,.62);
+--hl:rgba(255,255,255,.10);--hl-ring:rgba(255,255,255,.06);--hl-bot:rgba(255,255,255,.04);--tint-base:#262a33;
+--sh-1:0 0 0 1px rgba(200,210,235,.14),0 2px 3px rgba(0,0,0,.30),0 18px 30px -16px rgba(0,0,0,.70);
+--bgk:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
+.stage[data-cat=jvn]{--c:#E5487A;--c2:#9B4DDB;--ci:#a82b58;--sc:#8E5BE0;--sci:#5b2fae}
+.stage[data-theme=dark]{--ci:color-mix(in srgb,var(--c) 70%,white);--sci:color-mix(in srgb,var(--sc) 65%,white)}
+.bgk{position:absolute;inset:0;background:var(--bgk)}
+.blob{position:absolute;border-radius:50%;opacity:.5;background:radial-gradient(circle,var(--c),color-mix(in srgb,var(--c) 45%,transparent) 35%,transparent 70%)}
+.stage[data-theme=dark] .blob{opacity:.3}
+.glass{position:absolute;--r:28px;--bw:10px;border-radius:var(--r);padding:var(--bw);box-sizing:border-box;isolation:isolate;
+background:linear-gradient(180deg,var(--glass-top) 0%,var(--glass-mid) 46%,var(--glass-bot) 100%);backdrop-filter:blur(14px) saturate(1.7);
+box-shadow:inset 0 1.5px 0 var(--hl),inset 0 0 0 1px var(--hl-ring),inset 0 -10px 14px -8px var(--hl-bot),inset 0 -1.5px 0 rgba(110,125,150,.30),var(--sh-1)}
+.glass::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+background:linear-gradient(180deg,var(--tile-bg) 0%,rgba(255,255,255,.14) 55%,rgba(255,255,255,0) 100%);
+-webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.7}
+.glass>.face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:var(--face);box-sizing:border-box}
+.gin{background:var(--glass-in);border-radius:var(--r-m);box-shadow:inset 0 0 0 1px var(--line)}
+.pill{background:linear-gradient(180deg,var(--pill-top),var(--pill-bot));border-radius:999px;box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px var(--line),0 10px 20px -12px rgba(40,50,70,.4)}
+.crumbs{position:absolute;left:24px;top:22px;display:flex;align-items:center;gap:8px;height:40px;padding:0 18px 0 8px;font-size:var(--t-l);font-weight:700}
+.crumbs .ic{width:28px;height:28px;border-radius:50%;background:var(--c);display:grid;place-items:center}
+.crumbs b{font-weight:800;font-size:var(--t-xl)}
+.crumbs .dim{color:var(--ink-2)}
+.clock{position:absolute;right:24px;top:22px;height:40px;padding:0 18px;display:flex;align-items:center;gap:8px;font-size:var(--t-l);font-weight:800}
+.clock span{color:var(--ink-2);font-weight:500;font-size:var(--t-s)}
+.hints{position:absolute;right:24px;bottom:20px;display:flex;gap:8px}
+.hint{display:flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 6px;font-size:var(--t-s);font-weight:700}
+.btn{min-width:24px;height:24px;padding:0 5px;border-radius:999px;display:grid;place-items:center;font-size:var(--t-xs);font-weight:800;color:#fff;background:#5f6776;box-sizing:border-box}
+.btn.b{background:#d92c44}.btn.y{background:#F2B807;color:#3a414e}.btn.a{background:#27833a}
+.cats{position:absolute;left:50%;top:22px;transform:translateX(-50%);display:flex;gap:4px;padding:4px;height:40px;box-sizing:border-box;align-items:center}
+.cats .t{height:32px;padding:0 16px;border-radius:999px;display:flex;align-items:center;gap:8px;font-size:var(--t-s);font-weight:800;color:var(--ink-2)}
+.cats .t i{width:10px;height:10px;border-radius:50%}
+.cats .t.on{background:linear-gradient(115deg,var(--ci),color-mix(in srgb,var(--ci) 70%,var(--c2)));color:#fff}
+.cats .t.on i{background:#fff!important}
+.k{font-size:var(--t-xs);font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.sec{font-size:var(--t-s);color:var(--ink-2);font-weight:500}
+.num{font-weight:800;font-variant-numeric:tabular-nums}
+svg{display:block}
+/* leyenda de estados (común) */
+.leg{display:flex;gap:16px;font-size:var(--t-s);color:var(--ink-2);align-items:center}
+.leg span{display:flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:4px;display:inline-block;box-sizing:border-box}
+.sw.F{background:var(--c)}
+.sw.M{background:linear-gradient(0deg,var(--c) 50%,color-mix(in srgb,var(--c) 22%,var(--tint-base)) 50%)}
+.sw.S{background:color-mix(in srgb,var(--sc) 25%,var(--tint-base));box-shadow:inset 0 0 0 2px var(--sc)}
+/* tarjeta de Inicio */
+.home{position:relative;width:350px;height:150px}
+.homebox{display:flex;gap:16px;flex-wrap:wrap}
+.homebg{position:relative;width:390px;height:190px;border-radius:12px;overflow:hidden}
+.homebg .home{position:absolute;left:20px;top:20px}
+
+.tank{left:24px;top:84px;width:300px;height:572px}
+.tank .face{padding:20px 24px;display:flex;flex-direction:column;gap:var(--s-3)}
+.tank .n{font-size:var(--t-3xl);font-weight:800;line-height:1;color:var(--ci)}
+.tank .n small{font-size:var(--t-l);color:var(--ink);margin-left:6px}
+.vessel{position:relative;height:250px;display:flex;gap:16px;align-items:stretch;margin-top:4px}
+.vbox{position:relative;width:96px;border-radius:24px;background:color-mix(in srgb,var(--c) 12%,var(--tint-base));box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--c) 40%,transparent);overflow:hidden}
+.vbox .liq{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(0deg,var(--c),var(--c2))}
+.vbox .liq::before{content:'';position:absolute;left:0;right:0;top:-6px;height:12px;border-radius:50%;background:color-mix(in srgb,var(--c2) 70%,white)}
+.vbox .ln{position:absolute;left:0;right:0;height:0;border-top:3px dashed var(--ink);opacity:.6}
+.vlab{position:relative;flex:1}
+.vlab div{position:absolute;left:0;transform:translateY(-50%);font-size:var(--t-s);color:var(--ink-2);font-weight:700;line-height:1.2}
+.vlab div b{display:block;color:var(--ink);font-size:var(--t-m)}
+.vlab .cur{color:var(--ci)}
+.tank .msg{font-size:var(--t-s);font-weight:700;line-height:1.35;color:var(--ink)}
+.shrow{display:flex;align-items:center;gap:10px;padding:12px;margin-top:auto}
+.shrow .t{font-size:var(--t-s);color:var(--ink-2);line-height:1.3}
+.shrow .t b{color:var(--ink);display:block}
+.pips{display:flex;gap:4px;margin-top:4px}.pips i{width:16px;height:6px;border-radius:3px;background:color-mix(in srgb,var(--sc) 20%,var(--tint-base))}.pips i.on{background:var(--sc)}
+.month{left:338px;top:84px;width:918px;height:572px}
+.month .face{padding:20px 28px;display:flex;flex-direction:column}
+.mh{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.mh h2{margin:0;font-size:var(--t-2xl);font-weight:800}
+.mh .nav{display:flex;gap:6px;align-items:center;font-size:var(--t-s);color:var(--ink-2);font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);row-gap:8px;align-content:start}
+.wd{font-size:var(--t-xs);font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);text-align:center;padding-bottom:4px}
+.dc{position:relative;height:54px;display:grid;place-items:center}
+.dc .rib{position:absolute;top:7px;bottom:7px;left:0;right:0;background:color-mix(in srgb,var(--c) 16%,var(--tint-base))}
+.dc .rib.s{left:50%}.dc .rib.e{right:50%}
+.dc .disc{position:relative;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:var(--t-m);font-weight:800;color:var(--ink-2);box-sizing:border-box}
+.dc .disc.F{background:var(--c);color:#fff}
+.dc .disc.M{background:linear-gradient(0deg,var(--c) 50%,color-mix(in srgb,var(--c) 28%,var(--tint-base)) 50%);color:var(--ink)}
+.dc .disc.S{background:var(--tint-base);box-shadow:inset 0 0 0 3px var(--sc);color:var(--sci)}
+.dc .disc.S svg{position:absolute;right:-6px;top:-6px}
+.dc .disc.X{color:var(--ink-3)}
+.dc .disc.T{box-shadow:0 0 0 3px var(--tint-base),0 0 0 6px var(--ci);color:var(--ink)}.dc .disc.T.F{color:#fff}
+.dc .disc.Fu{color:var(--ink-3);opacity:.6}
+.mf{display:flex;align-items:center;gap:24px;padding-top:12px;margin-top:auto!important;border-top:1px solid var(--line);margin-top:6px}
+.mf .st2{font-size:var(--t-s);color:var(--ink-2)}.mf .st2 b{color:var(--ink);font-size:var(--t-l);margin-right:4px}
+/* home */
+.hC{position:absolute;inset:0;padding:12px 16px;display:flex;gap:14px;align-items:center}
+.hC .v{width:36px;height:118px;border-radius:12px;position:relative;overflow:hidden;background:color-mix(in srgb,var(--cc) 14%,var(--tint-base));box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--cc) 40%,transparent)}
+.hC .v i{position:absolute;left:0;right:0;bottom:0;background:var(--cc)}
+.hC .v b{position:absolute;left:0;right:0;border-top:2px dashed var(--ink);opacity:.6}
+.hC .col{display:flex;flex-direction:column;gap:4px}
+.hC .n{font-size:var(--t-xl);font-weight:800;line-height:1}
+.hC .n small{font-size:var(--t-s);color:var(--ink-2);margin-left:4px;font-weight:700}
+.hC .wk{display:flex;gap:3px;margin-top:2px}
+.hC .wk i{width:14px;height:14px;border-radius:50%}
+
+</style></head><body><div class="wrap">
+<div class="bar"><h1>Propuesta C · El mes y el vaso</h1><p>A la izquierda, un vaso que se llena con lo de hoy, con dos rayas: mínimo y meta. A la derecha, el mes entero en grande, y la racha se ve como una cinta que une los días seguidos. Los escudos van bajo el vaso.</p>
+<button data-th="light" class="on">Claro</button><button data-th="dark">Noche ahumada</button><span class="sep"></span>
+<button data-st="0">Hoy sin empezar (0 min)</button><button data-st="22" class="on">Día corto (22 min)</button><button data-st="70">Meta (1 h 10 min)</button><span class="sep"></span>
+<button data-ct="vn" class="on">Novelas visuales</button><button data-ct="jvn">Novelas japonesas</button></div>
+<div class="fit" id="fit"><div class="stage" id="stage" data-theme="light" data-cat="vn">
+<div class="bgk"></div><div class="blob" style="width:620px;height:620px;left:-160px;top:-220px"></div><div class="blob" style="width:520px;height:520px;right:-140px;bottom:-240px;opacity:.35"></div>
+<div class="crumbs pill"><span class="ic"></span><span class="dim">Inicio</span><span class="dim">›</span><b>Racha</b></div>
+<div class="cats pill"><div class="t" data-c="vn"><i style="background:#00A0D8"></i>Novelas visuales</div><div class="t" data-c="jvn"><i style="background:#E5487A"></i>Novelas japonesas</div></div>
+<div class="clock pill">22:14 <span>dom 15 nov</span></div>
+
+<div class="glass tank"><div class="face">
+ <div><div class="k">Racha</div><div class="n num" id="nC">14<small>días</small></div><div class="sec" id="bestC"></div></div>
+ <div class="vessel"><div class="vbox" id="vbox"></div><div class="vlab" id="vlab"></div></div>
+ <div class="msg" id="msgC"></div>
+ <div class="shrow gin" id="shC"></div>
+</div></div>
+<div class="glass month"><div class="face">
+ <div class="mh"><h2>Noviembre</h2><div class="nav"><span class="btn">LT</span>Octubre<span style="width:8px"></span>Diciembre<span class="btn">RT</span></div>
+  <div class="leg" style="margin-left:auto"><span><i class="sw F" style="border-radius:50%"></i>Meta</span><span><i class="sw M" style="border-radius:50%"></i>Mínimo</span><span><i class="sw S" style="border-radius:50%"></i>Escudo</span></div></div>
+ <div class="grid" id="grid"></div>
+ <div class="mf" id="mf"></div>
+</div></div>
+
+<div class="hints"><div class="hint pill"><span class="btn">LB</span><span class="btn">RB</span>Categoría</div><div class="hint pill"><span class="btn y">Y</span>Ajustes de la meta</div><div class="hint pill"><span class="btn b">B</span>Volver</div></div>
+</div></div>
+<div class="lbl">Tarjeta de Inicio (350 × 150 px del lienzo), con las dos categorías con meta</div>
+<div class="homebox"><div class="homebg stage" id="home" data-theme="light" data-cat="vn" style="height:190px;width:390px"><div class="bgk"></div><div class="glass home" style="position:absolute;left:20px;top:20px"><div class="face"><div class="hC" id="hC"></div></div></div></div></div>
+</div>
+<script>
+const ICS={shield:'<path d="M12 2.5 19.5 5.3v5.9c0 5-3.2 8.9-7.5 10.3-4.3-1.4-7.5-5.3-7.5-10.3V5.3z"/>',
+flame:'<path d="M12 22c-4.3 0-7-3-7-6.9 0-3.5 2.3-5.5 3.5-8.1.5 1.7 1.3 2.9 2.5 3.4C11 6.8 12.4 4 14.6 2c.3 3.4 1.9 5.2 3.2 7.2 1 1.4 1.2 2.9 1.2 4.3C19 18.1 16 22 12 22z"/>',
+check:'<path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'};
+const ic=(n,s=20,f='currentColor')=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="${f}">${ICS[n]}</svg>`;
+// Datos de ejemplo. Últimos 34 días antes de hoy (más antiguo primero). F=meta, M=mínimo, S=escudo, X=nada.
+const DATA={
+ vn:{name:'Novelas visuales',goal:60,min:15,best:21,shields:1,charge:3,lightUsed:1,
+   hist:'FFXFFMFFFXXFMFFFFXFFFFMFFSFFFMFFFF'},
+ jvn:{name:'Novelas japonesas',goal:30,min:10,best:12,shields:2,charge:4,lightUsed:0,
+   hist:'FXXFFMFXFFFXFFFFXXFXFFFFFSFFFMFFFF'}};
+const HOMEMIN={vn:{0:0,22:22,70:70},jvn:{0:0,22:34,70:41}};
+let st={th:'light',min:22,cat:'vn'};
+function streak(h){let n=0;for(let i=h.length-1;i>=0&&h[i]!=='X';i--)n++;return n}
+function todayCode(d,m){return m>=d.goal?'F':m>=d.min?'M':''}
+function fmt(m){if(m<60)return m+' min';const h=Math.floor(m/60),r=m%60;return h+' h'+(r?' '+String(r).padStart(2,'0')+' min':'')}
+function state(cat,m){const d=DATA[cat];const s=streak(d.hist);const tc=todayCode(d,m);
+ return {d,m,tc,s,shown:s+(tc?1:0),left:Math.max(0,d.goal-m),toMin:Math.max(0,d.min-m),
+   msg: tc==='F'?'Meta completa. Hoy suma a la racha y carga el escudo.':tc==='M'?`Mínimo cumplido: la racha sigue. Faltan ${fmt(d.goal-m)} para la meta.`:
+     (d.shields?`Faltan ${fmt(d.min-m)} para el mínimo. Si no llegas, se usa un escudo.`:`Faltan ${fmt(d.min-m)} para el mínimo y no te quedan escudos.`)}}
+function fit(){const f=document.getElementById('fit'),s=document.getElementById('stage');const k=Math.min(1,f.clientWidth/1280);s.style.transform=`scale(${k})`;f.style.height=720*k+'px'}
+function apply(){for(const el of [stage,home]){el.dataset.theme=st.th;}stage.dataset.cat=st.cat;
+ document.querySelectorAll('.cats .t').forEach(t=>t.classList.toggle('on',t.dataset.c===st.cat));
+ document.querySelectorAll('[data-th]').forEach(b=>b.classList.toggle('on',b.dataset.th===st.th));
+ document.querySelectorAll('[data-st]').forEach(b=>b.classList.toggle('on',+b.dataset.st===st.min));
+ document.querySelectorAll('[data-ct]').forEach(b=>b.classList.toggle('on',b.dataset.ct===st.cat));
+ const m=st.cat==='vn'?st.min:HOMEMIN.jvn[st.min];
+ render(state(st.cat,m));renderHome(state('vn',HOMEMIN.vn[st.min]),state('jvn',HOMEMIN.jvn[st.min]));}
+document.querySelectorAll('[data-th]').forEach(b=>b.onclick=()=>{st.th=b.dataset.th;apply()});
+document.querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>{st.min=+b.dataset.st;apply()});
+document.querySelectorAll('[data-ct]').forEach(b=>b.onclick=()=>{st.cat=b.dataset.ct;apply()});
+document.querySelectorAll('.cats .t').forEach(b=>b.onclick=()=>{st.cat=b.dataset.c;apply()});
+document.querySelector('.crumbs .ic').innerHTML=ic('flame',16,'#fff');
+addEventListener('resize',fit);new ResizeObserver(fit).observe(document.getElementById('fit'));
+
+function render(s){const d=s.d;
+ nC.innerHTML=s.shown+'<small>días</small>';nC.style.opacity=s.tc?1:.55;bestC.textContent='Mejor: '+d.best+' días';msgC.textContent=s.msg;
+ const cap=Math.max(d.goal*1.25,s.m*1.05),pct=v=>Math.min(100,v/cap*100);
+ vbox.innerHTML=`<div class="liq" style="height:${pct(s.m)}%"></div><div class="ln" style="bottom:${pct(d.min)}%"></div><div class="ln" style="bottom:${pct(d.goal)}%"></div>`;
+ vlab.innerHTML=`<div style="top:${100-pct(d.goal)}%"><b>Meta</b>${fmt(d.goal)}</div><div style="top:${100-pct(d.min)}%"><b>Mínimo</b>${d.min} min</div>`+
+  (s.m>0&&Math.abs(pct(s.m)-pct(d.min))*2.5>40&&Math.abs(pct(s.m)-pct(d.goal))*2.5>40?`<div class="cur" style="top:${100-pct(s.m)}%"><b style="color:var(--ci)">Hoy</b>${fmt(s.m)}</div>`:'');
+ const full=d.shields>=2,lu=d.lightUsed+(s.tc==='M'?1:0);
+ shC.innerHTML=`<div style="display:flex">${[0,1].map(i=>ic('shield',36,i<d.shields?'var(--sc)':'var(--line)')).join('')}</div><div class="t"><b>${d.shields} de 2 escudos</b>${full?'Llenos':'Siguiente: '+d.charge+' de 4 días con meta'}<div class="pips">${[0,1,2,3].map(i=>`<i class="${full||i<d.charge?'on':''}"></i>`).join('')}</div></div>`;
+ // noviembre 2026: día 1 es domingo; semana empieza en lunes. Hoy = 15.
+ const h=d.hist.slice(-14).split(''); // días 1..14
+ const code=n=>n<15?h[n-1]:n===15?(s.tc||'T'):'Fu';
+ const live=n=>{const c=code(n);return c==='F'||c==='M'||c==='S'||(n===15&&s.tc)};
+ let g=['lun','mar','mié','jue','vie','sáb','dom'].map(w=>`<div class="wd">${w}</div>`).join('');
+ const lead=6;for(let i=0;i<lead;i++)g+='<div class="dc"></div>';
+ for(let n=1;n<=30;n++){const c=code(n);const col=(lead+n-1)%7;
+  const a=live(n),pv=n>1&&live(n-1)&&col!==0,nx=n<30&&live(n+1)&&col!==6;
+  let rib='';if(a&&(pv||nx))rib=`<div class="rib${pv?'':' s'}${nx?'':' e'}"></div>`;
+  let cls=c==='X'?'X':c,inner=n;
+  if(n===15){cls='T'+(s.tc?' '+s.tc:'');}
+  g+=`<div class="dc">${rib}<div class="disc ${cls}">${inner}${c==='S'?ic('shield',20,'var(--sc)'):''}</div></div>`}
+ grid.innerHTML=g;
+ const cnt=t=>h.filter(x=>x===t).length+(s.tc===t?1:0);
+ mf.innerHTML=`<div class="st2"><b>${cnt('F')}</b>días con meta</div><div class="st2"><b>${cnt('M')}</b>días cortos <span>(${lu} de 2 esta semana)</span></div><div class="st2"><b>${cnt('S')}</b>escudo usado</div><div class="st2" style="margin-left:auto">Un cambio de meta cuenta desde mañana.</div>`;}
+function renderHome(a,b){hC.innerHTML=[a,b].map((s,i)=>{const d=s.d,cc=i?'#E5487A':'#00A0D8',scc=i?'#8E5BE0':'#E9A100';
+ const cap=d.goal*1.25,p=v=>Math.min(100,v/cap*100);
+ const wk=(d.hist.slice(-4)+(s.tc||'T')).split('').map(c=>`<i style="${c==='F'?'background:'+cc:c==='M'?`background:linear-gradient(0deg,${cc} 50%,color-mix(in srgb,${cc} 25%,var(--tint-base)) 50%)`:c==='S'?'box-shadow:inset 0 0 0 2px '+scc:c==='T'?'box-shadow:inset 0 0 0 2px '+cc:'background:var(--line)'}"></i>`).join('');
+ return `<div style="display:flex;gap:10px;align-items:center;--cc:${cc}"><div class="v"><i style="height:${p(s.m)}%"></i><b style="bottom:${p(d.min)}%"></b><b style="bottom:${p(d.goal)}%"></b></div>
+ <div class="col"><div class="sec" style="font-weight:700">${i?'Japonés':'Novelas'}</div><div class="n num">${s.shown}<small>días</small></div><div class="sec">${fmt(s.m)}</div><div class="wk">${wk}</div>
+ <div style="display:flex">${[0,1].map(k=>ic('shield',16,k<d.shields?scc:'var(--line)')).join('')}</div></div></div>`}).join('')}
+
+fit();apply();
+</script></body></html>
