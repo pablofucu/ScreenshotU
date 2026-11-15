@@ -87,6 +87,8 @@ export interface Config {
   goalJvn: number;
   goalPc: number;
   goalSwitch: number;
+  /** Historial de metas por clave (`vn`, `jvn`, `pc`, `switch`): `[díaDesde, minutos]` en orden. Un cambio de meta vale desde el día siguiente. */
+  goalHist: Record<string, [number, number][]>;
   /** Servidor para la app del móvil (misma red): activado y puerto. `remoteToken` es un resto del código fijo antiguo: ya no se usa. */
   remoteEnabled: boolean;
   remotePort: number;

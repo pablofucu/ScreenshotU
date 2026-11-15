@@ -64,6 +64,7 @@ export const DEFAULT_CONFIG: Config = {
   goalJvn: 30,
   goalPc: 60,
   goalSwitch: 60,
+  goalHist: {},
   remoteEnabled: false,
   remotePort: 47811,
   remoteToken: '',
@@ -424,7 +425,7 @@ class Store {
   platform = $derived(this.lib.platforms[this.p]);
 
   /* Estadísticas: clasificación por periodo o calendario; evolución de un juego. */
-  statsTab = $state<'week' | 'fin' | 'pano' | 'rank' | 'cal' | 'year'>('week');
+  statsTab = $state<'week' | 'fin' | 'pano' | 'streak' | 'rank' | 'cal' | 'year'>('week');
   /** Semana: 0 = la actual, -1 = la anterior… */
   weekOff = $state(0);
   /** Terminados: año elegido. */

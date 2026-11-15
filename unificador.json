@@ -1676,7 +1676,7 @@
       "color": 0,
       "created": "2026-11-15T03:15:05+01:00",
       "by": "ia",
-      "next_id": 5,
+      "next_id": 7,
       "phases": [
         {
           "name": "Diseño",
@@ -1686,7 +1686,7 @@
               "id": "RCM-1",
               "title": "Elegir interfaz de mínimo diario y escudos",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-15T03:15:10+01:00",
@@ -1699,12 +1699,38 @@
                   "by": "claude",
                   "kind": "note",
                   "text": "Maqueta revisada: docs/maquetas/rachas/semana-7-velas-revisada.html (barras claras, capas redondeadas, iconos de trazo, luna encima del tubo, textos repasados). Descartadas líquido y bloques."
+                },
+                {
+                  "at": "2026-11-15T20:51:55+01:00",
+                  "by": "persona",
+                  "kind": "change",
+                  "text": "La antigua pantalla de rachas que vaya a estadisticas rachas."
+                },
+                {
+                  "at": "2026-11-15T20:59:29+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-15T20:59:29+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Elegida velas revisada (semana-7). La pantalla antigua pasa a Estadísticas › Rachas. Reglas y reparto en docs/planes/rachas.md"
                 }
               ],
               "cat": "decidir",
-              "updated": "2026-11-15T20:39:53+01:00"
+              "updated": "2026-11-15T20:59:29+01:00",
+              "result": "Elegida velas revisada (semana-7). La pantalla antigua pasa a Estadísticas › Rachas. Reglas y reparto en docs/planes/rachas.md"
             }
-          ]
+          ],
+          "review": {
+            "state": "approved",
+            "text": "",
+            "by": "persona",
+            "at": "2026-11-15T20:59:37+01:00",
+            "seen": true
+          }
         },
         {
           "name": "Lógica y pruebas",
@@ -1714,18 +1740,34 @@
               "id": "RCM-2",
               "title": "Mínimo diario, escudos y cambio de meta diferido en readgoals",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-15T20:59:37+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-15T20:59:37+01:00"
             },
             {
               "id": "RCM-3",
               "title": "Pruebas de mínimo, doble escudo y límites anti-abuso",
               "desc": "",
-              "state": "pending",
-              "notes": [],
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-15T20:59:37+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                }
+              ],
               "cat": "pruebas",
-              "together": true
+              "together": true,
+              "updated": "2026-11-15T20:59:37+01:00"
             }
           ]
         },
@@ -1737,9 +1779,51 @@
               "id": "RCM-4",
               "title": "Actualizar pantalla Racha, tarjeta de Inicio y Ajustes",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-15T20:59:38+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-15T20:59:38+01:00"
+            },
+            {
+              "id": "RCM-5",
+              "title": "Estadísticas › Rachas con la pantalla antigua",
+              "desc": "",
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-15T20:59:38+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                }
+              ],
+              "cat": "interfaz",
+              "by": "claude",
+              "updated": "2026-11-15T20:59:38+01:00"
+            },
+            {
+              "id": "RCM-6",
+              "title": "Racha en el menú sobre el juego, avisos y móvil",
+              "desc": "",
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-15T20:59:38+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                }
+              ],
+              "cat": "codigo",
+              "by": "claude",
+              "updated": "2026-11-15T20:59:38+01:00"
             }
           ]
         }
