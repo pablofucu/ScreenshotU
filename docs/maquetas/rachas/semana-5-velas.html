@@ -1,5 +1,5 @@
 <!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Borrador 3 · El anillo</title><style>
+<title>Borrador 5 · Velas</title><style>
 :root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;
 --t-3xl:44px;--t-2xl:28px;--t-xl:20px;--t-l:17px;--t-m:15px;--t-s:13px;--t-xs:11px;
 --r-xs:6px;--r-s:12px;--r-m:18px;--r-l:28px;--s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:24px;--s-6:32px}
@@ -23,14 +23,14 @@ body{margin:0;font-family:var(--round);background:#0f1218;color:#e6e9f0}
 --ok:#3BB54A;--warn:#F2B807;--ok-f:#27833a;
 --sh-1:0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42);
 --bgk:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%);
---c:#00A0D8;--c2:#3F63E0;--ci:#00739c;--sc:#E9A100;--sci:#8a5d00}
+--c:#00A0D8;--c2:#0087BD;--ci:#00739c;--sc:#E9A100;--sci:#8a5d00}
 .stage[data-theme=dark]{--ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#8f98a9;--line:rgba(200,210,235,.16);--face:#262a33;--panel:rgba(30,34,43,.78);
 --glass-top:rgba(60,66,80,.62);--glass-mid:rgba(36,40,50,.42);--glass-bot:rgba(20,22,28,.38);--glass-in:rgba(255,255,255,.08);
 --pill-top:rgba(52,57,70,.88);--pill-bot:rgba(36,40,50,.82);--tile-bg:rgba(40,44,56,.62);
 --hl:rgba(255,255,255,.10);--hl-ring:rgba(255,255,255,.06);--hl-bot:rgba(255,255,255,.04);--tint-base:#262a33;
 --sh-1:0 0 0 1px rgba(200,210,235,.14),0 2px 3px rgba(0,0,0,.30),0 18px 30px -16px rgba(0,0,0,.70);
 --bgk:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
-.stage[data-cat=jvn]{--c:#E5487A;--c2:#9B4DDB;--ci:#a82b58;--sc:#8E5BE0;--sci:#5b2fae}
+.stage[data-cat=jvn]{--c:#E5487A;--c2:#C93466;--ci:#a82b58;--sc:#8E5BE0;--sci:#5b2fae}
 .stage[data-theme=dark]{--ci:color-mix(in srgb,var(--c) 70%,white);--sci:color-mix(in srgb,var(--sc) 65%,white)}
 .bgk{position:absolute;inset:0;background:var(--bgk)}
 .blob{position:absolute;border-radius:50%;opacity:.5;background:radial-gradient(circle,var(--c),color-mix(in srgb,var(--c) 45%,transparent) 35%,transparent 70%)}
@@ -158,53 +158,84 @@ body{background:#e9ecf1;color:#3a414e}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.45}}
 @media (prefers-reduced-motion:reduce){.stage *{animation-duration:.01s!important;animation-delay:0s!important}}
 
-.cv3{position:absolute;inset:0;display:flex;align-items:center;padding:0 16px 0 10px;gap:14px}
-.cv3 .rw{position:relative;width:122px;height:122px;flex:none}
-.cv3 .rw>svg{position:absolute;inset:0;overflow:visible}
-.cv3 .rw .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.cv3 .rw .flm{width:16px;height:20px;animation:flick 2.6s ease-in-out infinite}
-.cv3 .nw{height:36px}.cv3 .nn{font-size:36px;line-height:36px}
-.cv3 .rw small{font-size:var(--t-xs);font-weight:800;color:var(--ink-2);margin-top:-2px}
-.cs3{flex:1;display:flex;flex-direction:column;gap:7px;min-width:0}
-.cs3 .row{display:flex;justify-content:space-between;align-items:baseline}
-.cs3 .big{font-size:var(--t-xl);font-weight:800;white-space:nowrap}.cs3 .big small{font-size:var(--t-s);color:var(--ink-2);font-weight:700}
-.cs3 .tbar{margin:0;height:12px}
-.pips{display:flex;align-items:center;gap:6px;font-size:var(--t-xs);font-weight:800;color:var(--ink-2)}
-.pips .coin{width:20px;height:20px}
-.seg{transition:none}
-.ringlab{position:absolute;transform:translate(-50%,-50%);text-align:center;font-size:var(--t-s);font-weight:800;color:var(--ink-2);line-height:1.15;animation:fade .4s ease var(--d) both}
-.ringlab small{display:block;font-size:var(--t-xs);font-weight:700;color:var(--ink-3)}
-.ringlab.td{color:var(--ci)}.ringlab.lb{color:var(--amk)}
-.rcen{position:absolute;transform:translate(-50%,-50%);text-align:center;animation:fade .5s ease .5s both}
-.rcen .big{font-size:52px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-.rcen .big small{font-size:var(--t-l);color:var(--ink-2)}
-.rcen .sub{font-size:var(--t-s);color:var(--ink-2);font-weight:700;margin-top:6px}
-.rtag{position:absolute;transform:translate(-50%,-50%);animation:pop .45s cubic-bezier(.3,1.6,.5,1) var(--d) both;z-index:5}
-.side{position:absolute;left:862px;width:328px;padding:14px 16px;box-sizing:border-box;animation:rise .5s cubic-bezier(.2,.9,.3,1.1) var(--d) both}
-.side .t{font-size:var(--t-l);font-weight:800;display:flex;align-items:center;justify-content:space-between}
-.pend{margin-top:10px;display:flex;flex-direction:column;gap:10px}
-.pend .pi{display:grid;grid-template-columns:40px 1fr;gap:4px 10px;align-items:center}
-.pend .pi .coin{width:40px;height:40px;grid-row:span 2}
-.pend .pi .a{display:flex;justify-content:space-between;font-size:var(--t-m);font-weight:800}
-.pend .pi .a span{color:var(--amk)}.pend .pi.r .a span{color:var(--badk)}
-.pend .pi .obar{grid-column:2;height:10px;margin:0}
-.pend .pi .w{grid-column:2;font-size:var(--t-xs);font-weight:700;color:var(--ink-2)}
-.obar{position:relative;border-radius:999px;background:var(--hatch);box-shadow:inset 0 0 0 1.5px var(--am);overflow:hidden}
-.obar i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#d78f00,var(--am2));transform-origin:0 50%;animation:barin 1.1s cubic-bezier(.3,.8,.3,1) 2s both}
-.pend .pi.ok .obar{background:var(--am)}
-.fichas{display:flex;gap:14px;margin-top:10px}
-.fichas .cw{display:flex;align-items:center;gap:8px;font-size:var(--t-s);font-weight:800;line-height:1.2}
-.fichas .cw small{display:block;font-weight:600;color:var(--ink-2);font-size:var(--t-xs)}
-.fichas .coin{width:44px;height:44px}
-.fichas .coin:not(.used){animation:bob 2.8s ease-in-out 1.4s infinite}
-.side .note{font-size:var(--t-s);color:var(--ink-2);font-weight:600;line-height:1.4;margin-top:8px}.side .note b{color:var(--ink)}
-.wk{display:flex;align-items:baseline;gap:8px;margin-top:8px}.wk b{font-size:34px;font-weight:800;color:var(--ci)}.wk span{font-size:var(--t-s);color:var(--ink-2);font-weight:700}
+.cv1{position:absolute;inset:0;display:flex;align-items:center;padding:0 16px 0 18px;gap:14px}
+.cv1 .cl{width:150px;flex:none}
+.cv1 .cn{display:flex;align-items:flex-end;gap:4px;margin:2px 0 8px}
+.cv1 .cn .flm{width:26px;height:32px;margin:0 2px 8px 0;animation:flick 2.6s ease-in-out infinite}
+.cv1 .nw{height:52px}.cv1 .nn{font-size:52px;line-height:52px}
+.cv1 .cn small{font-size:var(--t-m);font-weight:800;color:var(--ink-2);padding-bottom:8px}
+.mt{position:relative;display:flex;gap:7px;align-items:flex-end;height:104px;padding-top:4px}
+.mt .col{display:flex;flex-direction:column;align-items:center;gap:4px}
+.mt .col span{font-size:10px;font-weight:800;color:var(--ink-3)}
+.mt .col.td span{color:var(--ci)}
+.mtb{position:relative;width:20px;height:78px;border-radius:7px;background:color-mix(in srgb,var(--ink-3) 14%,transparent);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.col.td .mtb{box-shadow:inset 0 0 0 2px var(--c);animation:pulse 1.8s ease-in-out infinite}
+.mtb i,.tube i{position:absolute;left:0;right:0;display:block}
+.mtb .b,.tube .b{background:linear-gradient(0deg,var(--c2),var(--c))}
+.mtb .x,.tube .x{background:color-mix(in srgb,var(--c) 32%,var(--tint-base));box-shadow:inset 0 0 0 1.5px var(--c)}
+.mtb .xu,.tube .xu{background:color-mix(in srgb,var(--am) 45%,var(--tint-base));box-shadow:inset 0 0 0 1.5px var(--am)}
+.mtb .p,.tube .p{background:linear-gradient(0deg,#d78f00,var(--am2))}
+.mtb .o,.tube .o{background:var(--hatch);box-shadow:inset 0 0 0 1.5px var(--am)}
+.mtb i:not([data-h0]),.tube i:not([data-h0]){animation:grow .7s cubic-bezier(.3,.8,.3,1) var(--d) both}
+.mt .meta{position:absolute;left:-4px;right:-4px;height:0;border-top:2px dashed color-mix(in srgb,var(--ink-2) 70%,transparent);z-index:2}
+.fch{display:flex;flex-direction:column;gap:8px;align-items:center;margin-left:auto}
+.fch .k{font-size:9px}
+.fch .coin{width:30px;height:30px}
+.fch .coin.used{font-size:9px;font-weight:800}
+/* detalle */
+.dh{position:absolute;left:392px;top:22px;width:798px;display:flex;justify-content:space-between;align-items:center}
+.dh .t{font-size:var(--t-l);font-weight:800}.dh .t small{display:block;font-size:var(--t-s);font-weight:600;color:var(--ink-2)}
+.tube{position:absolute;width:78px;border-radius:20px;background:color-mix(in srgb,var(--ink-3) 12%,transparent);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line),inset 0 8px 14px -8px rgba(0,0,0,.12)}
+.tube::after{content:'';position:absolute;left:8px;top:8px;bottom:8px;width:9px;border-radius:9px;background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,0));pointer-events:none;z-index:3}
+.tube.td{box-shadow:inset 0 0 0 3px var(--c);animation:pulse 1.8s ease-in-out infinite}
+.tube.lb{box-shadow:inset 0 0 0 2px var(--am)}
+.tube .moon{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);color:var(--am);z-index:4;animation:fade .4s ease .9s both}
+.dlab{position:absolute;width:110px;text-align:center;font-size:var(--t-m);font-weight:800;animation:fade .4s ease var(--d) both}
+.dlab small{display:block;font-size:var(--t-s);font-weight:600;color:var(--ink-2)}
+.dlab.td{color:var(--ci)}
+.dtag{position:absolute;transform:translateX(-50%);animation:pop .45s cubic-bezier(.3,1.6,.5,1) var(--d) both;z-index:5}
+.dmeta{position:absolute;height:0;border-top:2px dashed color-mix(in srgb,var(--ink-2) 75%,transparent);z-index:4;animation:fade .5s ease .8s both}
+.dmeta b{position:absolute;right:100%;top:-10px;margin-right:8px;font-size:var(--t-xs);font-weight:800;color:var(--ink-2);white-space:nowrap}
+.box{position:absolute;top:392px;height:136px;padding:14px 18px;box-sizing:border-box;animation:rise .5s cubic-bezier(.2,.9,.3,1.1) var(--d) both}
+.box .t{font-size:var(--t-l);font-weight:800}.box .t small{font-size:var(--t-s);color:var(--ink-2);font-weight:600;margin-left:6px}
+.coins{display:flex;gap:18px;margin-top:12px}
+.coins .cw{display:flex;align-items:center;gap:10px;font-size:var(--t-s);font-weight:800;line-height:1.25}
+.coins .cw small{display:block;font-weight:600;color:var(--ink-2)}
+.coins .coin{width:56px;height:56px;animation:pop .5s cubic-bezier(.3,1.6,.5,1) var(--d) both}
+.coins .coin:not(.used){animation:pop .5s cubic-bezier(.3,1.6,.5,1) var(--d) both,bob 2.8s ease-in-out 1.4s infinite}
+.coins .coin.used b{font-size:var(--t-xs);font-weight:800;line-height:1.1;text-align:center}
+.owe{display:flex;align-items:baseline;gap:10px;margin-top:6px}
+.owe .big{font-size:36px;font-weight:800;color:var(--amk);font-variant-numeric:tabular-nums}
+.owe .big.r{color:var(--badk)}
+.oline{font-size:var(--t-s);color:var(--ink-2);font-weight:600}.oline b{color:var(--ink)}
+.obar{position:relative;height:12px;border-radius:999px;background:var(--hatch);box-shadow:inset 0 0 0 1.5px var(--am);margin:8px 0 6px;overflow:hidden}
+.obar i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#d78f00,var(--am2));transform-origin:0 50%;animation:barin 1.1s cubic-bezier(.3,.8,.3,1) 1.9s both}
+.okbig{display:flex;align-items:center;gap:12px;margin-top:10px;font-size:var(--t-xl);font-weight:800}
+.okbig .ok{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--c),var(--c2));color:#fff}
+
+
+/* variante · velas */
+.cnd{position:absolute;left:50%;z-index:5;pointer-events:none;transform:translateX(-50%);transform-origin:50% 100%}
+.cnd svg{display:block;overflow:visible;transform-origin:50% 95%;animation:flick2 var(--fd,1.4s) ease-in-out var(--fdl,0s) infinite;filter:drop-shadow(0 0 4px color-mix(in srgb,var(--c) 70%,transparent))}
+.cnd.on{animation:ign .6s cubic-bezier(.3,1.7,.5,1) var(--ig,0s) both}
+@keyframes ign{0%{opacity:0;transform:translateX(-50%) scale(0)}100%{opacity:1;transform:translateX(-50%) scale(1)}}
+@keyframes flick2{0%,100%{transform:scale(1,1) rotate(0)}25%{transform:scale(.94,1.08) rotate(-4deg)}50%{transform:scale(1.05,.95) rotate(2deg)}75%{transform:scale(.97,1.05) rotate(4deg)}}
+.emb{position:absolute;z-index:5;width:4px;height:4px;border-radius:50%;background:var(--c);box-shadow:0 0 6px var(--c);pointer-events:none;opacity:0;animation:embr var(--ed) ease-out var(--edl) infinite}
+@keyframes embr{0%{opacity:0;transform:translate(0,0) scale(1)}20%{opacity:1}100%{opacity:0;transform:translate(var(--ex),-60px) scale(.3)}}
+.tube.met{box-shadow:inset 0 0 0 1px var(--line),inset 0 -30px 40px -20px color-mix(in srgb,var(--c) 45%,transparent)}
+.tube.met.td{box-shadow:inset 0 0 0 3px var(--c),inset 0 -30px 40px -20px color-mix(in srgb,var(--c) 45%,transparent)}
+.v5 .tube{overflow:visible}.v5 .tube>i{border-radius:0}.v5 .tube>i:first-of-type{border-radius:0 0 20px 20px}
+.v5 .tube{clip-path:inset(-60px -30px 0 -30px round 20px)}
+.v5 .mtb{overflow:visible}.v5 .mtb>i:first-of-type{border-radius:0 0 7px 7px}
+.v5 .hero .flm{animation:flick2 1.6s ease-in-out infinite;filter:drop-shadow(0 0 8px color-mix(in srgb,var(--c) 60%,transparent))}
+.chain{animation:chain .5s ease-out var(--cd) both}
+@keyframes chain{0%,100%{filter:brightness(1)}40%{filter:brightness(1.7) drop-shadow(0 0 10px var(--c))}}
 
 </style></head><body><div class="wrap">
-<div class="bar"><h1>Borrador 3 · El anillo</h1><p>Semana móvil: cada día libre se recupera en los 7 días siguientes, con 2 libres como mucho en cualquier tramo de 7 días.</p>
+<div class="bar"><h1>Borrador 5 · Velas</h1><p>Cada tubo cumplido lleva encendida la llama de racha. Semana móvil: cada día libre se recupera en los 7 días siguientes, con 2 libres como mucho en cualquier tramo de 7 días.</p>
 <button data-th="light">Claro</button><button data-th="dark">Oscuro</button><span class="sep"></span>
 <button data-go="home">Inicio</button><button data-go="det">Pantalla de racha</button><span class="sep"></span><button data-sc="0">Al día (se enciende)</button><button data-sc="1">Un día libre</button><button data-sc="2">Fin de semana libre</button><button data-sc="3">Se acaba el plazo</button><span class="sep"></span><button id="rep">Repetir animación</button></div>
-<div class="fit" id="fit"><div class="stage" id="stage" data-theme="light" data-cat="vn">
+<div class="fit" id="fit"><div class="stage v5" id="stage" data-theme="light" data-cat="vn">
 <div class="bgk"></div><div class="blob" style="width:620px;height:620px;left:-180px;top:-260px"></div>
 <div class="blob" style="width:520px;height:520px;right:-160px;bottom:-240px;background:radial-gradient(circle,var(--c2),transparent 70%)"></div>
 <div class="scr home" id="home"></div><div class="scr det" id="det"></div>
@@ -218,11 +249,11 @@ body{background:#e9ecf1;color:#3a414e}
 <li>Como mucho <b>2 días libres en cualquier tramo de 7 días</b>. El tercero rompe la racha.</li>
 <li>Leer de más <b>no se guarda por adelantado</b>: solo sirve para pagar días libres que ya has usado.</li>
 <li>Si acaba el plazo de 7 días sin recuperarlo, la racha se rompe. Ese mismo día vuelve la ficha si lo recuperaste.</li>
-<li>Un día a medias también gasta un día libre, pero solo debes lo que faltó.</li></ul></section><section><h2>Borrador 3 · El anillo</h2><ul>
-<li>Los últimos 7 días forman un anillo que se cierra en hoy, como los anillos que ya tiene la tarjeta de Inicio.</li>
-<li>Un día libre es un hueco rayado en el anillo; lo que lees de más corre por fuera del anillo hasta taparlo.</li>
-<li>En Inicio, la tarjeta pone la racha dentro del anillo y al lado la barra de hoy y las dos fichas.</li>
-<li>Pulsa la tarjeta (o «Pantalla de racha») para ver cómo crece hasta la pantalla completa.</li></ul></section></div>
+<li>Un día a medias también gasta un día libre, pero solo debes lo que faltó.</li></ul></section><section><h2>Borrador 5 · Velas</h2><ul>
+<li>Cada día cumplido es una <b>vela</b>: la llama de racha de la app se enciende encima de lo que leíste y no deja de titilar.</li>
+<li>Al entrar, las llamas prenden de una en una; al encender hoy, la llama <b>recorre la racha hacia atrás</b>.</li>
+<li>Los días libres no tienen llama: llevan la luna. Así se ve de un vistazo qué días sostienen la racha.</li>
+<li>La pantalla de racha suelta brasas alrededor de la llama grande.</li></ul></section></div>
 </div>
 <script>
 
@@ -234,9 +265,9 @@ warn:'<path d="M12 2.8 22.5 20.5h-21z"/><path d="M12 9v5M12 17v.4" stroke="#fff"
 lock:'<rect x="5" y="10" width="14" height="10" rx="2.5"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10" fill="none" stroke="currentColor" stroke-width="2.6"/>',
 home:'<path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',
 arrow:'<path d="M5 12h12M12 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'};
-const ic=(n,s=20,f='currentColor')=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="${f}">${ICS[n]}</svg>`;
+const ic=(n,s=20,f='currentColor')=>n==='flame'?`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${f==='none'?'currentColor':f}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"/></svg>`:`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="${f}">${ICS[n]}</svg>`;
 let FID=0;
-function flame(w,h){const id='fg'+(FID++);return `<svg class="flm" width="${w}" height="${h}" viewBox="2 1 20 22"><defs><linearGradient id="${id}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" style="stop-color:var(--c2)"/><stop offset="1" style="stop-color:var(--c)"/></linearGradient></defs><path fill="url(#${id})" d="M12 22c-4.3 0-7-3-7-6.9 0-3.5 2.3-5.5 3.5-8.1.5 1.7 1.3 2.9 2.5 3.4C11 6.8 12.4 4 14.6 2c.3 3.4 1.9 5.2 3.2 7.2 1 1.4 1.2 2.9 1.2 4.3C19 18.1 16 22 12 22z"/><path fill="#fff" opacity=".55" d="M12 20.5c-2 0-3.3-1.4-3.3-3.2 0-1.8 1.3-2.8 2-4 .5 1 1.2 1.6 1.9 1.8.2-1.4.8-2.6 1.6-3.4.3 1.6 1.1 2.4 1.6 3.4.3.6.5 1.2.5 1.9 0 2-1.6 3.5-4.3 3.5z"/></svg>`}
+function flame(w,h){return `<svg class="flm" width="${w}" height="${h}" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="stroke:var(--c);fill:color-mix(in srgb,var(--c) 16%,transparent)"><path d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"/></svg>`}
 const CATS={vn:{name:'Novelas visuales',short:'novelas',goal:60},jvn:{name:'Novelas japonesas',short:'japonés',goal:30}};
 const DL=['vie 6','sáb 7','dom 8','lun 9','mar 10','mié 11','hoy','vie 13','sáb 14','dom 15','lun 16','mar 17','mié 18','jue 19'];
 const DLL=['viernes 6','sábado 7','domingo 8','lunes 9','martes 10','miércoles 11','hoy','viernes 13','sábado 14','domingo 15','lunes 16','martes 17','miércoles 18','jueves 19'];
@@ -360,45 +391,62 @@ function boot(){document.getElementById('home').innerHTML=homeHTML();document.ge
  addEventListener('keydown',e=>{if(e.key==='Enter'||e.key==='a')go('det');if(e.key==='Escape'||e.key==='Backspace'||e.key==='b')go('home')});
  wireStage();addEventListener('resize',fit);new ResizeObserver(fit).observe(document.getElementById('fit'));fit();render()}
 
-const SEG=360/7,GAP=4;
-function pol(cx,cy,r,a){const t=(a-90)*Math.PI/180;return [cx+r*Math.cos(t),cy+r*Math.sin(t)]}
-function arcEl(cx,cy,r,a0,len,sw,col,dl,extra){const C=2*Math.PI*r,L=len/360*C;if(L<=0.1)return '';
- return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="butt" transform="rotate(${a0-90} ${cx} ${cy})" data-c="${C.toFixed(1)}" data-len="${L.toFixed(1)}" data-dl="${dl}" ${extra||''}/>`}
-function trackEl(cx,cy,r,a0,len,sw,col){const C=2*Math.PI*r,L=len/360*C;return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-dasharray="${L.toFixed(1)} ${C.toFixed(1)}" transform="rotate(${a0-90} ${cx} ${cy})"/>`}
-function ringSVG(M,M0,S,R,SW,XR,XW,big){const cx=S/2,cy=S/2,lit=M0&&M0!==M,SL=SEG-GAP;let s='',hp='';
- M.m.forEach((v,i)=>{const a0=i*SEG+GAP/2,l=M.L.find(q=>q.i===i),fr=Math.min(1,v/M.G),dl=(big?450:600)+i*90;
-  s+=trackEl(cx,cy,R,a0,SL,SW,l?`url(#${big?'hb':'hs'})`:'color-mix(in srgb,var(--c) 16%,transparent)');
-  if(l){s+=trackEl(cx,cy,R,a0,SL,SW,'none');s+=arcEl(cx,cy,R,a0,SL*fr,SW,'var(--c)',dl);s+=arcEl(cx,cy,R,a0+SL*fr,SL*(l.paid/M.G),SW,'var(--am)',big?1900:1200)}
-  else s+=arcEl(cx,cy,R,a0,SL*fr,SW,`url(#${big?'gb':'gs'})`,dl,i===6&&lit?`data-len0="${(SL*Math.min(1,M0.today/M.G)/360*2*Math.PI*R).toFixed(1)}"`:'');
-  const e=Math.max(0,v-M.G)/M.G;if(e>0){const u=M.used[i]/M.G,el=Math.min(.9,e)*SL,ul=Math.min(el,u*SL);
-   s+=arcEl(cx,cy,XR,a0,el-ul,XW,'var(--c2)',i===6&&lit?LIGHT:dl+300);if(ul>0)s+=arcEl(cx,cy,XR,a0+el-ul,ul,XW,'var(--am)',dl+350)}});
- const ov=`stroke="color-mix(in srgb,var(--am) 80%,transparent)" stroke-width="${big?2:1.5}"`;
- return `<svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}"><defs>
- <linearGradient id="${big?'gb':'gs'}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--c)"/><stop offset="1" style="stop-color:var(--c2)"/></linearGradient>
- <pattern id="${big?'hb':'hs'}" width="${big?8:5}" height="${big?8:5}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="${big?8:5}" height="${big?8:5}" fill="color-mix(in srgb,var(--am) 14%,transparent)"/><rect width="${big?3.5:2.2}" height="${big?8:5}" fill="color-mix(in srgb,var(--am) 60%,transparent)"/></pattern></defs>${s}</svg>`}
 const V={
-card(M,M0){const lit=M0&&M0!==M,G=M.G,need=M.urgent?M.urgent.owe:0,tot=Math.max(G+need,M.today)*1.08,w=v=>(v/tot*100).toFixed(1)+'%';
- return `<div class="cv3"><div class="rw" data-lit>${ringSVG(M,M0,122,50,12,61,4,false)}<div class="mid">${flame(16,20)}<span class="nw"><span class="nn" data-n>${M.streak}</span></span><small>días</small></div></div>
- <div class="cs3"><div class="row"><span class="k">Hoy · ${M.c.short}</span><span class="big">${fmt(lit?M0.today:M.today)} <small>/ ${fmt(G)}</small></span></div>
- <div class="tbar">${need?`<i class="tz" style="left:${w(G)};width:${w(need)}"></i>`:''}<i class="tf" style="width:${w(M.today)}"></i><i class="tm" style="left:${w(G)}"></i></div>
- <div class="row"><span data-cst>${cardStatus(M)}</span><span class="pips">${[0,1].map(k=>M.L[k]?`<span class="coin used">${ic('moon',10)}</span>`:`<span class="coin">${ic('moon',11,'#fff')}</span>`).join('')}</span></div></div></div>`},
-det(M,M0){const S=480,cx=612,cy=290,R=150,lit=M0&&M0!==M;let h=`<div style="position:absolute;left:${cx-S/2}px;top:${cy-S/2}px;width:${S}px;height:${S}px" data-lit>${ringSVG(M,M0,S,R,38,R+31,10,true)}</div>`;
- M.m.forEach((v,i)=>{const mid=i*SEG+SEG/2,[x,y]=pol(cx,cy,R+64,mid),l=M.L.find(q=>q.i===i),td=i===6;
-  h+=`<div class="ringlab${td?' td':''}${l?' lb':''}" style="left:${x}px;top:${y}px;--d:${.5+i*.06}s">${td?'Hoy':DL[i]}<small>${fmt(v)}</small></div>`;
-  const [tx,ty]=pol(cx,cy,R,mid);
-  if(l)h+=`<span class="rtag tag ${l.done?'c':l.left<=2?'r':''}" style="left:${tx}px;top:${ty}px;--d:1.2s">${l.done?ic('check',11,'none'):ic('moon',11)} ${l.done?'hecho':fmt(l.owe)}</span>`;
-  else if(M.used[i]){const [ux,uy]=pol(cx,cy,R+31,mid);h+=`<span class="rtag tag" data-from="${i}" style="left:${ux}px;top:${uy}px;--d:1s">+${fmt(M.used[i])}</span>`}});
- h+=`<div class="rcen" style="left:${cx}px;top:${cy}px"><div class="k">Hoy · jueves 12</div><div class="big" data-tmin>${fmt(lit?M0.today:M.today)}</div><div class="sub">de ${fmt(M.G)} · ${M.met?'meta cumplida':'faltan '+fmt(M.G-M.today)}</div></div>`;
- h+=`<div class="dh" style="position:absolute;left:392px;top:22px"><div class="k">Últimos 7 días</div><div style="font-size:var(--t-s);color:var(--ink-2);font-weight:600;margin-top:2px">El anillo se cierra en hoy</div></div>`;
- if(M.L.length){h+=`<div class="side gin" style="top:22px;--d:.6s"><div class="t">Por recuperar <span class="tag ${M.urgent?'r':M.owe?'':'c'}">${M.owe?fmt(M.owe):'nada'}</span></div><div class="pend">${M.L.map(l=>`<div class="pi${l.done?' ok':''}${!l.done&&l.left<=2?' r':''}"><div class="coin">${ic('moon',18,'#fff')}</div><div class="a">${DLL[l.i]}<span>${l.done?'hecho':fmt(l.owe)}</span></div><div class="obar"><i style="width:${(l.paid/l.need*100).toFixed(0)}%"></i></div><div class="w">${l.done?'Recuperado · la ficha vuelve el '+DL[l.dl]:'Hasta el '+DL[l.dl]+' · '+leftTxt(l)}</div></div>`).join('')}</div></div>`}
- else{const tot=M.m.reduce((a,v)=>a+v,0);h+=`<div class="side gin" style="top:22px;--d:.6s"><div class="t">Estos 7 días</div><div class="wk"><b>${fmt(tot)}</b><span>de ${fmt(M.G*7)}</span></div><div class="note">Sin días libres que recuperar. Leer de más <b>no se guarda</b> para más adelante.</div></div>`}
- h+=`<div class="side gin" style="top:${M.L.length>1?300:M.L.length?232:212}px;--d:.75s"><div class="t">Días libres <span style="font-size:var(--t-s);color:var(--ink-2);font-weight:600">2 cada 7 días</span></div><div class="fichas">${[0,1].map(k=>{const l=M.L[k];return l?`<div class="cw"><span class="coin used">${ic('moon',18)}</span><div>${DL[l.i]}<small>vuelve el ${DL[l.dl]}</small></div></div>`:`<div class="cw"><span class="coin">${ic('moon',20,'#fff')}</span><div>Libre<small>si hace falta</small></div></div>`}).join('')}</div>
- ${M.free<=0?`<div class="note">${ic('lock',13)} Un tercer fallo antes del <b>${M.back}</b> rompe la racha.</div>`:''}</div>`;
+card(M,M0){const K=78/1.6/M.G;let t='';
+ M.m.forEach((v,i)=>{const l=M.L.find(x=>x.i===i),td=i===6,b=Math.min(v,M.G)*K,x=Math.max(0,v-M.G)*K,u=M.used[i]*K,d=`--d:${.6+i*.06}s`;
+  let inner=`<i class="b" style="bottom:0;height:${b.toFixed(1)}px;${d}"${td&&M0&&M0!==M?` data-h0="${(Math.min(M0.today,M.G)*K).toFixed(1)}" data-dl="600"`:''}></i>`;
+  if(x>0)inner+=`<i class="x" style="bottom:${b.toFixed(1)}px;height:${(x-u).toFixed(1)}px;--d:${.9+i*.06}s"${td&&M0&&M0!==M?` data-h0="0" data-dl="600"`:''}></i>`+(u>0?`<i class="xu" style="bottom:${(b+x-u).toFixed(1)}px;height:${u.toFixed(1)}px;--d:${1+i*.06}s"></i>`:'');
+  if(l){inner+=`<i class="p" style="bottom:${b.toFixed(1)}px;height:${(l.paid*K).toFixed(1)}px;--d:1.4s"></i><i class="o" style="bottom:${((v+l.paid)*K).toFixed(1)}px;height:${(l.owe*K).toFixed(1)}px;--d:1.2s"></i>`}
+  t+=`<div class="col${td?' td':''}"><div class="mtb"${td?' data-lit':''}>${inner}</div><span>${DI[i]}</span></div>`});
+ const coins=[0,1].map(k=>{const l=M.L[k];return l?`<div class="coin used" title="Vuelve el ${DL[l.dl]}">${ic('moon',13)}</div>`:`<div class="coin">${ic('moon',15,'#fff')}</div>`}).join('');
+ return `<div class="cv1"><div class="cl"><div class="k">${M.c.name}</div><div class="cn">${flame(26,32)}<span class="nw"><span class="nn" data-n>${M.streak}</span></span><small>días</small></div><span data-cst>${cardStatus(M)}</span></div>
+ <div class="mt">${t}<i class="meta" style="bottom:${(4+18+78/1.6).toFixed(1)}px"></i></div>
+ <div class="fch"><span class="k">libres</span>${coins}</div></div>`},
+det(M,M0){const TT=92,TH=244,TW=78,TG=32,X0=392+(798-(7*TW+6*TG))/2,K=TH/1.6/M.G,lit=M0&&M0!==M;
+ let h=`<div class="dh"><div class="t">Tus últimos 7 días<small>La semana avanza contigo: siempre ves los siete últimos</small></div>
+ <div class="legend"><span><i class="lg-m"></i>Meta</span><span><i class="lg-x"></i>De más</span><span><i class="lg-l"></i>Día libre</span><span><i class="lg-p"></i>Recuperado</span></div></div>`;
+ h+=`<div class="dmeta" style="left:${X0-6}px;width:${7*TW+6*TG+12}px;top:${TT+TH-M.G*K}px"><b>meta</b></div>`;
+ M.m.forEach((v,i)=>{const x=X0+i*(TW+TG),l=M.L.find(q=>q.i===i),td=i===6,b=Math.min(v,M.G)*K,e=Math.max(0,v-M.G)*K,u=M.used[i]*K;
+  let inner=`<i class="b" style="bottom:0;height:${b.toFixed(1)}px;--d:${.45+i*.07}s"${td&&lit?` data-h0="${(Math.min(M0.today,M.G)*K).toFixed(1)}" data-dl="450"`:''}></i>`;
+  if(e>0)inner+=`<i class="x" style="bottom:${b.toFixed(1)}px;height:${(e-u).toFixed(1)}px;--d:${.75+i*.07}s"${td&&lit?` data-h0="0" data-dl="450"`:''}></i>`+(u>0?`<i class="xu" style="bottom:${(b+e-u).toFixed(1)}px;height:${u.toFixed(1)}px;--d:${.85+i*.07}s"></i>`:'');
+  if(l)inner+=`<i class="p" style="bottom:${b.toFixed(1)}px;height:${(l.paid*K).toFixed(1)}px;--d:1.9s"></i><i class="o" style="bottom:${((v+l.paid)*K).toFixed(1)}px;height:${(l.owe*K).toFixed(1)}px;--d:1s"></i><span class="moon">${ic('moon',26)}</span>`;
+  h+=`<div class="tube${td?' td':''}${l?' lb':''}" data-t="${i}" ${td?'data-lit':''} style="left:${x}px;top:${TT}px;height:${TH}px">${inner}</div>`;
+  h+=`<div class="dlab${td?' td':''}" style="left:${x+TW/2-55}px;top:${TT+TH+10}px;--d:${.4+i*.05}s">${td?'Hoy':DL[i]}<small>${fmt(v)}</small></div>`;
+  if(l){const cls=l.done?'c':l.left<=2?'r':'';h+=`<span class="dtag tag ${cls}" style="left:${x+TW/2}px;top:${TT-30}px;--d:1.1s">${l.done?ic('check',12,'none')+' Recuperado':ic('clock',12)+' '+leftTxt(l)}</span>`}
+  else if(M.used[i]>0)h+=`<span class="dtag tag" style="left:${x+TW/2}px;top:${TT-30}px;--d:1s">+${fmt(M.used[i])} ${ic('arrow',11)}</span>`;
+  else if(td)h+=`<span class="dtag tag c" style="left:${x+TW/2}px;top:${TT-30}px;--d:.9s">Hoy</span>`});
+ h+=`<div class="box gin" style="left:392px;width:300px;--d:.6s"><div class="t">Días libres<small>2 cada 7 días</small></div><div class="coins">${[0,1].map(k=>{const l=M.L[k];
+  return l?`<div class="cw"><div class="coin used" style="--d:${.8+k*.12}s"><b>${DL[l.i]}</b></div><div>Usado<small>vuelve el ${DL[l.dl]}</small></div></div>`:`<div class="cw"><div class="coin" style="--d:${.8+k*.12}s">${ic('moon',26,'#fff')}</div><div>Libre<small>si hace falta</small></div></div>`}).join('')}</div></div>`;
+ if(M.open.length){const l=M.open[0],r=l.left<=2;h+=`<div class="box gin" style="left:708px;width:482px;--d:.7s"><div class="t">Por recuperar<small>${M.open.length>1?M.open.length+' días libres':'del '+DLL[l.i]}</small></div>
+  <div class="owe"><span class="big${r?' r':''}">${fmt(M.owe)}</span><span class="oline">de ${fmt(M.L.reduce((a,q)=>a+q.need,0))} · llevas <b>${fmt(M.L.reduce((a,q)=>a+q.paid,0))}</b></span></div>
+  <div class="obar"><i style="width:${(M.L.reduce((a,q)=>a+q.paid,0)/M.L.reduce((a,q)=>a+q.need,0)*100).toFixed(1)}%"></i></div>
+  <div class="oline">${M.open.map(q=>`Hasta el <b>${DL[q.dl]}</b> (${leftTxt(q)})`).join(' · ')}. Cuenta solo lo que pase de la meta.</div></div>`}
+ else h+=`<div class="box gin" style="left:708px;width:482px;--d:.7s"><div class="t">Por recuperar</div><div class="okbig"><span class="ok">${ic('check',24,'none')}</span>Nada pendiente</div><div class="oline" style="margin-top:8px">Leer de más no se guarda por adelantado: solo paga un día libre que ya hayas usado.</div></div>`;
  return h},
-detFx(F,M){const cx=612,cy=290,R=150+31;M.flows.forEach((f,n)=>{const a0=f.from*SEG+SEG/2,a1=f.to*SEG+SEG/2,pts=[];
-  for(let k=0;k<=30;k++){const a=a0+(a1-a0)*k/30,r=R+Math.sin(Math.PI*k/30)*26;pts.push(pol(cx,cy,r,a))}
-  const [bx,by]=pol(cx,cy,150,a1);pts.push([bx,by]);for(let k=0;k<3;k++)travel(F,pts,1000+n*300+k*120,1000)})}
+detFx(F,M){const TT=92,TH=244,TW=78,TG=32,X0=392+(798-(7*TW+6*TG))/2,K=TH/1.6/M.G;
+ M.flows.forEach((f,n)=>{const xa=X0+f.from*(TW+TG)+TW/2,ya=TT+TH-(M.m[f.from]-M.used[f.from]/2)*K,xb=X0+f.to*(TW+TG)+TW/2,yb=TT+TH-(M.m[f.to]+f.before+f.amt/2)*K;
+  for(let k=0;k<3;k++)travel(F,quad([xa,ya],[xb,yb],70),1100+n*260+k*120,800)})}
 };
 
+/* ---- utilidades de la variante ---- */
+function tubes(F){const det=!!F.querySelector('.tube');const els=[...F.querySelectorAll(det?'.tube':'.mtb')];
+ return els.map((el,i)=>{let top=0,topEl=null,h0top=null;el.querySelectorAll(':scope>i').forEach(c=>{const b=parseFloat(c.style.bottom)||0,h=parseFloat(c.style.height)||0;if(b+h>=top){top=b+h;topEl=c}});
+  const lit=el.hasAttribute('data-lit');if(lit){h0top=0;el.querySelectorAll(':scope>i[data-h0]').forEach(c=>h0top+=+c.dataset.h0)}
+  return {el,i,det,top,topEl,lit,h0top,H:el.offsetHeight||parseFloat(el.style.height)||78,W:el.offsetWidth||(det?78:20)}})}
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function mk(tag,cls,css){const e=document.createElement(tag);e.className=cls;if(css)e.style.cssText=css;return e}
+const metDay=(M,i)=>M.m[i]>=M.G;
+
+const FL=(w)=>`<svg width="${w}" height="${w*1.2}" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="stroke:var(--c);fill:color-mix(in srgb,var(--c) 30%,var(--tint-base))"><path d="${'M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235'}"/></svg>`;
+function candles(F,M){const T=tubes(F);const fl=[];T.forEach(t=>{if(!metDay(M,t.i)||t.top<2)return;t.el.classList.add('met');
+  const w=t.det?30:12;const ig=t.lit?(LIGHT+150)/1000:(t.det?1.1:1)+t.i*.12;
+  const c=mk('span','cnd on',`bottom:${t.top-(t.det?3:1)}px;--ig:${ig}s`);c.innerHTML=FL(w);c.firstChild.style.setProperty('--fd',rnd(1.1,1.7)+'s');c.firstChild.style.setProperty('--fdl',rnd(0,1)+'s');t.el.appendChild(c);fl.push({t,c});
+  if(t.det){for(let k=0;k<3;k++)t.el.appendChild(mk('span','emb',`left:${t.W/2-2+rnd(-6,6)}px;bottom:${t.top+20}px;--ex:${rnd(-14,14)}px;--ed:${rnd(1.6,2.4)}s;--edl:${ig+.4+rnd(0,2)}s`))}
+  if(t.lit)later(()=>{const r=rel(t.el,F);burst(F,r.x+t.W/2,r.y+t.H-t.top-(t.det?18:6),t.det?18:10,['var(--c)','var(--c2)','#fff'])},LIGHT+150)});
+ // al encenderse hoy, la llama recorre la racha hacia atrás
+ const lit=fl.find(f=>f.t.lit);if(lit){fl.filter(f=>!f.t.lit).reverse().forEach((f,n)=>{later(()=>f.c.firstChild.animate([{transform:'scale(1)'},{transform:'scale(1.45,1.6)'},{transform:'scale(1)'}],{duration:480,easing:'ease-out'}),LIGHT+450+n*110)})}
+ if(F.id==='detFace'){const h=F.querySelector('.hero .flm');if(h){const r=rel(h,F);for(let k=0;k<6;k++)F.appendChild(mk('span','emb',`left:${r.x+r.w/2+rnd(-10,10)}px;top:${r.y+r.h*.3}px;--ex:${rnd(-20,20)}px;--ed:${rnd(1.8,2.8)}s;--edl:${rnd(0,2.5)}s`))}}}
+
+{const od=V.detFx;V.cardFx=(F,M)=>{candles(F,M)};V.detFx=(F,M)=>{od(F,M);candles(F,M)}}
 boot();
 </script></body></html>

@@ -1999,10 +1999,45 @@
         }
       ],
       "recommend": 2,
-      "answer": null,
+      "answer": {
+        "option": 1,
+        "text": "Le gustan los tubos, pero con el azul y el rosa originales y la llama de racha de siempre; pide tres variantes de tubos con muchas animaciones, en la ficha y dentro",
+        "by": "persona",
+        "at": "2026-11-15T20:25:20+01:00",
+        "seen": true
+      },
       "by": "claude",
       "created": "2026-11-15T16:53:13+01:00"
+    },
+    {
+      "id": "P-9",
+      "kind": "proposal",
+      "title": "Rachas · tubos animados",
+      "text": "",
+      "step": "RCM-1",
+      "branch": "RCM",
+      "options": [
+        {
+          "label": "Líquido",
+          "desc": "el líquido ondea y burbujea, el tubo se mece y salpica al encender",
+          "file": ".unificador/propuestas/P-9/1.html"
+        },
+        {
+          "label": "Velas",
+          "desc": "cada día cumplido lleva la llama de racha encendida; al encender hoy recorre la racha",
+          "file": ".unificador/propuestas/P-9/2.html"
+        },
+        {
+          "label": "Bloques",
+          "desc": "se llena con bloques de un cuarto de meta que caen y rebotan",
+          "file": ".unificador/propuestas/P-9/3.html"
+        }
+      ],
+      "recommend": 2,
+      "answer": null,
+      "by": "claude",
+      "created": "2026-11-15T20:25:21+01:00"
     }
   ],
-  "next_ask": 9
+  "next_ask": 10
 }

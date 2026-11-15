@@ -1,5 +1,5 @@
 <!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Borrador 2 · Las fichas</title><style>
+<title>Borrador 6 · Bloques</title><style>
 :root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI',system-ui,sans-serif;
 --t-3xl:44px;--t-2xl:28px;--t-xl:20px;--t-l:17px;--t-m:15px;--t-s:13px;--t-xs:11px;
 --r-xs:6px;--r-s:12px;--r-m:18px;--r-l:28px;--s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:24px;--s-6:32px}
@@ -23,14 +23,14 @@ body{margin:0;font-family:var(--round);background:#0f1218;color:#e6e9f0}
 --ok:#3BB54A;--warn:#F2B807;--ok-f:#27833a;
 --sh-1:0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42);
 --bgk:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%);
---c:#00A0D8;--c2:#3F63E0;--ci:#00739c;--sc:#E9A100;--sci:#8a5d00}
+--c:#00A0D8;--c2:#0087BD;--ci:#00739c;--sc:#E9A100;--sci:#8a5d00}
 .stage[data-theme=dark]{--ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#8f98a9;--line:rgba(200,210,235,.16);--face:#262a33;--panel:rgba(30,34,43,.78);
 --glass-top:rgba(60,66,80,.62);--glass-mid:rgba(36,40,50,.42);--glass-bot:rgba(20,22,28,.38);--glass-in:rgba(255,255,255,.08);
 --pill-top:rgba(52,57,70,.88);--pill-bot:rgba(36,40,50,.82);--tile-bg:rgba(40,44,56,.62);
 --hl:rgba(255,255,255,.10);--hl-ring:rgba(255,255,255,.06);--hl-bot:rgba(255,255,255,.04);--tint-base:#262a33;
 --sh-1:0 0 0 1px rgba(200,210,235,.14),0 2px 3px rgba(0,0,0,.30),0 18px 30px -16px rgba(0,0,0,.70);
 --bgk:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
-.stage[data-cat=jvn]{--c:#E5487A;--c2:#9B4DDB;--ci:#a82b58;--sc:#8E5BE0;--sci:#5b2fae}
+.stage[data-cat=jvn]{--c:#E5487A;--c2:#C93466;--ci:#a82b58;--sc:#8E5BE0;--sci:#5b2fae}
 .stage[data-theme=dark]{--ci:color-mix(in srgb,var(--c) 70%,white);--sci:color-mix(in srgb,var(--sc) 65%,white)}
 .bgk{position:absolute;inset:0;background:var(--bgk)}
 .blob{position:absolute;border-radius:50%;opacity:.5;background:radial-gradient(circle,var(--c),color-mix(in srgb,var(--c) 45%,transparent) 35%,transparent 70%)}
@@ -158,73 +158,81 @@ body{background:#e9ecf1;color:#3a414e}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.45}}
 @media (prefers-reduced-motion:reduce){.stage *{animation-duration:.01s!important;animation-delay:0s!important}}
 
-.cv2{position:absolute;inset:0;display:flex;align-items:center;padding:0 16px 0 18px;gap:12px}
-.cv2 .cl{width:152px;flex:none}
-.cv2 .cn{display:flex;align-items:flex-end;gap:4px;margin:2px 0 8px}
-.cv2 .cn .flm{width:26px;height:32px;margin:0 2px 8px 0;animation:flick 2.6s ease-in-out infinite}
-.cv2 .nw{height:52px}.cv2 .nn{font-size:52px;line-height:52px}
-.cv2 .cn small{font-size:var(--t-m);font-weight:800;color:var(--ink-2);padding-bottom:8px}
-.cr{flex:1;display:flex;flex-direction:column;gap:10px;min-width:0}
-.cfs{display:flex;gap:10px}
-.cf{flex:1;display:flex;align-items:center;gap:8px;height:62px;padding:0 8px;border-radius:14px;background:color-mix(in srgb,var(--am) 10%,var(--tint-base));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--am) 35%,transparent);animation:pop .5s cubic-bezier(.3,1.5,.5,1) var(--d) both}
-.cf.free{background:color-mix(in srgb,var(--ink-3) 8%,var(--tint-base));box-shadow:inset 0 0 0 1px var(--line)}
-.cf .rg{position:relative;width:46px;height:46px;flex:none}
-.cf .rg>svg{position:absolute;inset:0}
-.cf .rg .mi{position:absolute;inset:0;display:grid;place-items:center;color:var(--am)}
-.cf .coin{width:42px;height:42px;flex:none}
-.cf .tx{font-size:var(--t-s);font-weight:800;line-height:1.2;white-space:nowrap}
-.cf .tx small{display:block;font-size:var(--t-xs);font-weight:700;color:var(--ink-2)}
-.cf.r .tx small{color:var(--badk)}
-.dots{display:flex;gap:6px;align-items:center}
-.dots i{width:14px;height:14px;border-radius:50%;display:grid;place-items:center;background:var(--c);animation:pop .35s cubic-bezier(.3,1.6,.5,1) var(--d) both}
-.dots i.l{background:var(--hatch);box-shadow:inset 0 0 0 1.5px var(--am)}
-.dots i.lp{background:var(--am)}
-.dots i.td{background:transparent;box-shadow:inset 0 0 0 2px var(--c)}
-.dots i.td.ok{background:var(--c)}
-.dots span{font-size:10px;font-weight:800;color:var(--ink-3);margin-left:4px}
+.cv1{position:absolute;inset:0;display:flex;align-items:center;padding:0 16px 0 18px;gap:14px}
+.cv1 .cl{width:150px;flex:none}
+.cv1 .cn{display:flex;align-items:flex-end;gap:4px;margin:2px 0 8px}
+.cv1 .cn .flm{width:26px;height:32px;margin:0 2px 8px 0;animation:flick 2.6s ease-in-out infinite}
+.cv1 .nw{height:52px}.cv1 .nn{font-size:52px;line-height:52px}
+.cv1 .cn small{font-size:var(--t-m);font-weight:800;color:var(--ink-2);padding-bottom:8px}
+.mt{position:relative;display:flex;gap:7px;align-items:flex-end;height:104px;padding-top:4px}
+.mt .col{display:flex;flex-direction:column;align-items:center;gap:4px}
+.mt .col span{font-size:10px;font-weight:800;color:var(--ink-3)}
+.mt .col.td span{color:var(--ci)}
+.mtb{position:relative;width:20px;height:78px;border-radius:7px;background:color-mix(in srgb,var(--ink-3) 14%,transparent);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.col.td .mtb{box-shadow:inset 0 0 0 2px var(--c);animation:pulse 1.8s ease-in-out infinite}
+.mtb i,.tube i{position:absolute;left:0;right:0;display:block}
+.mtb .b,.tube .b{background:linear-gradient(0deg,var(--c2),var(--c))}
+.mtb .x,.tube .x{background:color-mix(in srgb,var(--c) 32%,var(--tint-base));box-shadow:inset 0 0 0 1.5px var(--c)}
+.mtb .xu,.tube .xu{background:color-mix(in srgb,var(--am) 45%,var(--tint-base));box-shadow:inset 0 0 0 1.5px var(--am)}
+.mtb .p,.tube .p{background:linear-gradient(0deg,#d78f00,var(--am2))}
+.mtb .o,.tube .o{background:var(--hatch);box-shadow:inset 0 0 0 1.5px var(--am)}
+.mtb i:not([data-h0]),.tube i:not([data-h0]){animation:grow .7s cubic-bezier(.3,.8,.3,1) var(--d) both}
+.mt .meta{position:absolute;left:-4px;right:-4px;height:0;border-top:2px dashed color-mix(in srgb,var(--ink-2) 70%,transparent);z-index:2}
+.fch{display:flex;flex-direction:column;gap:8px;align-items:center;margin-left:auto}
+.fch .k{font-size:9px}
+.fch .coin{width:30px;height:30px}
+.fch .coin.used{font-size:9px;font-weight:800}
 /* detalle */
-.fc{position:absolute;top:22px;width:391px;height:262px;padding:16px 18px;box-sizing:border-box;animation:rise .55s cubic-bezier(.2,.9,.3,1.1) var(--d) both}
-.fc .hd{display:flex;align-items:center;gap:10px}
-.fc .hd .coin{width:40px;height:40px}
-.fc .hd .t{font-size:var(--t-xl);font-weight:800;line-height:1.1}.fc .hd .t small{display:block;font-size:var(--t-xs);font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
-.fc .hd .tag{margin-left:auto;height:24px;font-size:var(--t-s)}
-.fc .big{position:absolute;left:18px;top:74px;width:160px;height:160px}
-.fc .big>svg{position:absolute;inset:0}
-.fc .big .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:30px;font-weight:800;color:var(--amk);line-height:1}
-.fc .big .mid small{font-size:var(--t-xs);font-weight:800;color:var(--ink-2);margin-top:6px;letter-spacing:.06em;text-transform:uppercase}
-.fc .big .mid.ok{color:var(--ci)}.fc .big .mid.r{color:var(--badk)}
-.fc .pl{position:absolute;left:196px;top:82px;right:18px}
-.cells{display:flex;gap:4px;margin:8px 0 10px}
-.cells .cc{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
-.cells .cb{position:relative;width:100%;height:46px;border-radius:7px;background:color-mix(in srgb,var(--ink-3) 12%,transparent);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
-.cells .cb i{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(0deg,#d78f00,var(--am2));animation:grow .6s cubic-bezier(.3,.8,.3,1) var(--d) both}
-.cells .cc.td .cb{box-shadow:inset 0 0 0 2px var(--c)}
-.cells .cc.fu .cb{background:transparent;box-shadow:inset 0 0 0 1.5px var(--line);border:0;outline:1.5px dashed color-mix(in srgb,var(--ink-3) 40%,transparent);outline-offset:-1.5px}
-.cells .cc.dl .cb{box-shadow:inset 0 0 0 2px var(--am)}
-.cells .cc.dl.r .cb{box-shadow:inset 0 0 0 2px var(--bad);animation:blink 1.2s ease-in-out infinite}
-.cells span{font-size:10px;font-weight:800;color:var(--ink-3);white-space:nowrap}
-.cells .cc.td span{color:var(--ci)}
-.fc .note{font-size:var(--t-s);line-height:1.4;color:var(--ink-2);font-weight:600}.fc .note b{color:var(--ink)}
-.fc.free{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px}
-.fc.free .coin{width:104px;height:104px;animation:pop .6s cubic-bezier(.3,1.6,.5,1) calc(var(--d) + .2s) both,bob 3s ease-in-out 1.6s infinite}
-.fc.free .t{font-size:var(--t-xl);font-weight:800;margin-top:6px}
-.fc.free .note{max-width:300px}
-.bub{position:absolute;top:304px;width:104px;height:224px;padding:12px 0;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:6px;animation:rise .5s cubic-bezier(.2,.9,.3,1.1) var(--d) both}
-.bub .dn{font-size:var(--t-m);font-weight:800}.bub.td .dn{color:var(--ci)}
-.bub .rg{position:relative;width:80px;height:80px}
-.bub .rg>svg{position:absolute;inset:0}
-.bub .rg .mi{position:absolute;inset:0;display:grid;place-items:center;color:var(--c)}
-.bub.lb .rg .mi{color:var(--am)}
-.bub .mn{font-size:var(--t-m);font-weight:800}.bub .mn small{display:block;text-align:center;font-size:var(--t-xs);color:var(--ink-2);font-weight:700}
-.bub .tag{margin-top:auto}
-.bub.td{box-shadow:inset 0 0 0 2px var(--c)}
-.bub.lb{background:color-mix(in srgb,var(--am) 10%,var(--glass-in));box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--am) 55%,transparent)}
+.dh{position:absolute;left:392px;top:22px;width:798px;display:flex;justify-content:space-between;align-items:center}
+.dh .t{font-size:var(--t-l);font-weight:800}.dh .t small{display:block;font-size:var(--t-s);font-weight:600;color:var(--ink-2)}
+.tube{position:absolute;width:78px;border-radius:20px;background:color-mix(in srgb,var(--ink-3) 12%,transparent);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line),inset 0 8px 14px -8px rgba(0,0,0,.12)}
+.tube::after{content:'';position:absolute;left:8px;top:8px;bottom:8px;width:9px;border-radius:9px;background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,0));pointer-events:none;z-index:3}
+.tube.td{box-shadow:inset 0 0 0 3px var(--c);animation:pulse 1.8s ease-in-out infinite}
+.tube.lb{box-shadow:inset 0 0 0 2px var(--am)}
+.tube .moon{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);color:var(--am);z-index:4;animation:fade .4s ease .9s both}
+.dlab{position:absolute;width:110px;text-align:center;font-size:var(--t-m);font-weight:800;animation:fade .4s ease var(--d) both}
+.dlab small{display:block;font-size:var(--t-s);font-weight:600;color:var(--ink-2)}
+.dlab.td{color:var(--ci)}
+.dtag{position:absolute;transform:translateX(-50%);animation:pop .45s cubic-bezier(.3,1.6,.5,1) var(--d) both;z-index:5}
+.dmeta{position:absolute;height:0;border-top:2px dashed color-mix(in srgb,var(--ink-2) 75%,transparent);z-index:4;animation:fade .5s ease .8s both}
+.dmeta b{position:absolute;right:100%;top:-10px;margin-right:8px;font-size:var(--t-xs);font-weight:800;color:var(--ink-2);white-space:nowrap}
+.box{position:absolute;top:392px;height:136px;padding:14px 18px;box-sizing:border-box;animation:rise .5s cubic-bezier(.2,.9,.3,1.1) var(--d) both}
+.box .t{font-size:var(--t-l);font-weight:800}.box .t small{font-size:var(--t-s);color:var(--ink-2);font-weight:600;margin-left:6px}
+.coins{display:flex;gap:18px;margin-top:12px}
+.coins .cw{display:flex;align-items:center;gap:10px;font-size:var(--t-s);font-weight:800;line-height:1.25}
+.coins .cw small{display:block;font-weight:600;color:var(--ink-2)}
+.coins .coin{width:56px;height:56px;animation:pop .5s cubic-bezier(.3,1.6,.5,1) var(--d) both}
+.coins .coin:not(.used){animation:pop .5s cubic-bezier(.3,1.6,.5,1) var(--d) both,bob 2.8s ease-in-out 1.4s infinite}
+.coins .coin.used b{font-size:var(--t-xs);font-weight:800;line-height:1.1;text-align:center}
+.owe{display:flex;align-items:baseline;gap:10px;margin-top:6px}
+.owe .big{font-size:36px;font-weight:800;color:var(--amk);font-variant-numeric:tabular-nums}
+.owe .big.r{color:var(--badk)}
+.oline{font-size:var(--t-s);color:var(--ink-2);font-weight:600}.oline b{color:var(--ink)}
+.obar{position:relative;height:12px;border-radius:999px;background:var(--hatch);box-shadow:inset 0 0 0 1.5px var(--am);margin:8px 0 6px;overflow:hidden}
+.obar i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#d78f00,var(--am2));transform-origin:0 50%;animation:barin 1.1s cubic-bezier(.3,.8,.3,1) 1.9s both}
+.okbig{display:flex;align-items:center;gap:12px;margin-top:10px;font-size:var(--t-xl);font-weight:800}
+.okbig .ok{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,var(--c),var(--c2));color:#fff}
+
+
+/* variante · bloques */
+.v6 .tube>i,.v6 .mtb>i{opacity:0!important}
+.bk{position:absolute;left:var(--bl);right:var(--bl);z-index:2;border-radius:var(--br);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.45),inset 0 -2px 0 rgba(0,0,0,.12)}
+.tube .bk.b,.mtb .bk.b{background:linear-gradient(0deg,var(--c2),var(--c))}
+.bk.drop{animation:bdrop .55s cubic-bezier(.3,1.35,.55,1) var(--dd) both}
+@keyframes bdrop{0%{transform:translateY(var(--fall));opacity:0}25%{opacity:1}100%{transform:translateY(0);opacity:1}}
+.bk.fl{animation:bflash .5s ease-out var(--fd2) both}
+@keyframes bflash{0%,100%{filter:brightness(1)}40%{filter:brightness(1.6);transform:scaleX(1.08)}}
+.v6 .tube::after{z-index:3}
+.v6 .tube.td .bk:last-child,.v6 .mtb .bk.top{animation:bdrop .55s cubic-bezier(.3,1.35,.55,1) var(--dd) both,bbob 2.4s ease-in-out calc(var(--dd) + .8s) infinite}
+@keyframes bbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.ghost{position:absolute;left:var(--bl);right:var(--bl);z-index:2;border-radius:var(--br);box-shadow:inset 0 0 0 2px var(--c);opacity:.0;animation:ghost 1.6s ease-in-out 1.6s infinite}
+@keyframes ghost{0%,100%{opacity:0}50%{opacity:.55}}
 
 </style></head><body><div class="wrap">
-<div class="bar"><h1>Borrador 2 · Las fichas</h1><p>Semana móvil: cada día libre se recupera en los 7 días siguientes, con 2 libres como mucho en cualquier tramo de 7 días.</p>
+<div class="bar"><h1>Borrador 6 · Bloques</h1><p>Tubos que se llenan con bloques de un cuarto de meta. Semana móvil: cada día libre se recupera en los 7 días siguientes, con 2 libres como mucho en cualquier tramo de 7 días.</p>
 <button data-th="light">Claro</button><button data-th="dark">Oscuro</button><span class="sep"></span>
 <button data-go="home">Inicio</button><button data-go="det">Pantalla de racha</button><span class="sep"></span><button data-sc="0">Al día (se enciende)</button><button data-sc="1">Un día libre</button><button data-sc="2">Fin de semana libre</button><button data-sc="3">Se acaba el plazo</button><span class="sep"></span><button id="rep">Repetir animación</button></div>
-<div class="fit" id="fit"><div class="stage" id="stage" data-theme="light" data-cat="vn">
+<div class="fit" id="fit"><div class="stage v6" id="stage" data-theme="light" data-cat="vn">
 <div class="bgk"></div><div class="blob" style="width:620px;height:620px;left:-180px;top:-260px"></div>
 <div class="blob" style="width:520px;height:520px;right:-160px;bottom:-240px;background:radial-gradient(circle,var(--c2),transparent 70%)"></div>
 <div class="scr home" id="home"></div><div class="scr det" id="det"></div>
@@ -238,11 +246,11 @@ body{background:#e9ecf1;color:#3a414e}
 <li>Como mucho <b>2 días libres en cualquier tramo de 7 días</b>. El tercero rompe la racha.</li>
 <li>Leer de más <b>no se guarda por adelantado</b>: solo sirve para pagar días libres que ya has usado.</li>
 <li>Si acaba el plazo de 7 días sin recuperarlo, la racha se rompe. Ese mismo día vuelve la ficha si lo recuperaste.</li>
-<li>Un día a medias también gasta un día libre, pero solo debes lo que faltó.</li></ul></section><section><h2>Borrador 2 · Las fichas</h2><ul>
-<li>Los dos días libres son las protagonistas: cada ficha usada enseña qué día fue, cuánto falta y su plazo de 7 días.</li>
-<li>Debajo, los últimos 7 días como anillos (como los de Inicio). Lo que lees de más vuela hasta la ficha que paga.</li>
-<li>En Inicio, la tarjeta enseña la racha, las dos fichas con su anillo y los siete días en puntos.</li>
-<li>Pulsa la tarjeta (o «Pantalla de racha») para ver cómo crece hasta la pantalla completa.</li></ul></section></div>
+<li>Un día a medias también gasta un día libre, pero solo debes lo que faltó.</li></ul></section><section><h2>Borrador 6 · Bloques</h2><ul>
+<li>El tubo se llena con <b>bloques</b>: cada uno es un cuarto de la meta, así que cuatro bloques son un día cumplido.</li>
+<li>Al entrar, los bloques <b>caen y rebotan</b> uno a uno; al encender hoy, caen los que faltaban y la columna se ilumina de abajo arriba.</li>
+<li>Lo que falta hoy se ve como un <b>hueco que parpadea</b> hasta la raya de la meta.</li>
+<li>Los bloques de más, los que pagan un día libre y lo que se debe mantienen sus colores de siempre.</li></ul></section></div>
 </div>
 <script>
 
@@ -254,9 +262,9 @@ warn:'<path d="M12 2.8 22.5 20.5h-21z"/><path d="M12 9v5M12 17v.4" stroke="#fff"
 lock:'<rect x="5" y="10" width="14" height="10" rx="2.5"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10" fill="none" stroke="currentColor" stroke-width="2.6"/>',
 home:'<path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',
 arrow:'<path d="M5 12h12M12 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'};
-const ic=(n,s=20,f='currentColor')=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="${f}">${ICS[n]}</svg>`;
+const ic=(n,s=20,f='currentColor')=>n==='flame'?`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${f==='none'?'currentColor':f}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"/></svg>`:`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="${f}">${ICS[n]}</svg>`;
 let FID=0;
-function flame(w,h){const id='fg'+(FID++);return `<svg class="flm" width="${w}" height="${h}" viewBox="2 1 20 22"><defs><linearGradient id="${id}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" style="stop-color:var(--c2)"/><stop offset="1" style="stop-color:var(--c)"/></linearGradient></defs><path fill="url(#${id})" d="M12 22c-4.3 0-7-3-7-6.9 0-3.5 2.3-5.5 3.5-8.1.5 1.7 1.3 2.9 2.5 3.4C11 6.8 12.4 4 14.6 2c.3 3.4 1.9 5.2 3.2 7.2 1 1.4 1.2 2.9 1.2 4.3C19 18.1 16 22 12 22z"/><path fill="#fff" opacity=".55" d="M12 20.5c-2 0-3.3-1.4-3.3-3.2 0-1.8 1.3-2.8 2-4 .5 1 1.2 1.6 1.9 1.8.2-1.4.8-2.6 1.6-3.4.3 1.6 1.1 2.4 1.6 3.4.3.6.5 1.2.5 1.9 0 2-1.6 3.5-4.3 3.5z"/></svg>`}
+function flame(w,h){return `<svg class="flm" width="${w}" height="${h}" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="stroke:var(--c);fill:color-mix(in srgb,var(--c) 16%,transparent)"><path d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"/></svg>`}
 const CATS={vn:{name:'Novelas visuales',short:'novelas',goal:60},jvn:{name:'Novelas japonesas',short:'japonés',goal:30}};
 const DL=['vie 6','sáb 7','dom 8','lun 9','mar 10','mié 11','hoy','vie 13','sáb 14','dom 15','lun 16','mar 17','mié 18','jue 19'];
 const DLL=['viernes 6','sábado 7','domingo 8','lunes 9','martes 10','miércoles 11','hoy','viernes 13','sábado 14','domingo 15','lunes 16','martes 17','miércoles 18','jueves 19'];
@@ -380,34 +388,69 @@ function boot(){document.getElementById('home').innerHTML=homeHTML();document.ge
  addEventListener('keydown',e=>{if(e.key==='Enter'||e.key==='a')go('det');if(e.key==='Escape'||e.key==='Backspace'||e.key==='b')go('home')});
  wireStage();addEventListener('resize',fit);new ResizeObserver(fit).observe(document.getElementById('fit'));fit();render()}
 
-function ring(sz,sw,frac,col,trk,dl,extra){const r=(sz-sw)/2,C=2*Math.PI*r,L=Math.max(0,Math.min(1,frac))*C;
- return `<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}"><circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="${trk}" stroke-width="${sw}"/>${frac>0?`<circle cx="${sz/2}" cy="${sz/2}" r="${r}" fill="none" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" transform="rotate(-90 ${sz/2} ${sz/2})" data-c="${C.toFixed(1)}" data-len="${L.toFixed(1)}" data-dl="${dl}" ${extra||''}/>`:''}</svg>`}
 const V={
-card(M,M0){const lit=M0&&M0!==M;
- const fs=[0,1].map(k=>{const l=M.L[k],d=`--d:${.7+k*.1}s`;if(!l)return `<div class="cf free" style="${d}"><div class="coin">${ic('moon',20,'#fff')}</div><div class="tx">Libre<small>si hace falta</small></div></div>`;
-  return `<div class="cf${!l.done&&l.left<=2?' r':''}" style="${d}"><div class="rg">${ring(46,6,l.paid/l.need,'var(--am)','color-mix(in srgb,var(--am) 22%,transparent)',900)}<span class="mi">${l.done?ic('check',18,'none'):ic('moon',16)}</span></div><div class="tx">${DL[l.i]}<small>${l.done?'recuperado':fmt(l.owe)+' · '+(l.left<=2?'¡mañana!':DL[l.dl])}</small></div></div>`}).join('');
- const dots=M.m.map((v,i)=>{const l=M.L.find(q=>q.i===i),td=i===6;return `<i class="${l?(l.done?'lp':'l'):''}${td?' td'+(M.met?' ok':''):''}" style="--d:${.9+i*.05}s"${td?' data-lit':''}></i>`}).join('');
- return `<div class="cv2"><div class="cl"><div class="k">${M.c.name}</div><div class="cn">${flame(26,32)}<span class="nw"><span class="nn" data-n>${M.streak}</span></span><small>días</small></div><span data-cst>${cardStatus(M)}</span></div>
- <div class="cr"><div class="cfs">${fs}</div><div class="dots">${dots}<span>últimos 7 días</span></div></div></div>`},
-det(M,M0){let h='';const lit=M0&&M0!==M;
- [0,1].forEach(k=>{const l=M.L[k],x=392+k*407,d=`--d:${.45+k*.12}s`;
-  if(!l){h+=`<div class="fc gin free" style="left:${x}px;${d}"><div class="coin">${ic('moon',46,'#fff')}</div><div class="t">Día libre disponible</div><div class="note">Si un día no llegas a la meta se usa solo, y tienes <b>7 días</b> para recuperarlo leyendo de más.</div></div>`;return}
-  const r=!l.done&&l.left<=2,tg=l.done?`<span class="tag c">${ic('check',12,'none')} Recuperado</span>`:`<span class="tag ${r?'r':''}">${ic('clock',12)} ${leftTxt(l)}</span>`;
-  let cells='';for(let j=l.i+1;j<=l.i+7;j++){const f=M.flows.filter(q=>q.to===l.i&&q.from===j).reduce((a,q)=>a+q.amt,0),cls=j===6?'td':j>6?'fu':'';
-   cells+=`<div class="cc ${cls}${j===l.dl?' dl'+(r?' r':''):''}"><div class="cb">${f?`<i style="height:${Math.min(100,f/l.need*100*1.6).toFixed(0)}%;--d:${1.3+(j-l.i)*.12}s"></i>`:''}</div><span>${j===6?'hoy':DL[j].split(' ')[0]}</span></div>`}
-  h+=`<div class="fc gin" data-f="${l.i}" style="left:${x}px;${d}"><div class="hd"><div class="coin">${ic('moon',20,'#fff')}</div><div class="t"><small>Día libre</small>${DLL[l.i]}</div>${tg}</div>
-  <div class="big">${ring(160,16,l.paid/l.need,'var(--am)','color-mix(in srgb,var(--am) 18%,transparent)',1500)}<div class="mid${l.done?' ok':r?' r':''}">${l.done?ic('check',40,'none'):fmt(l.owe)}<small>${l.done?'hecho':'por recuperar'}</small></div></div>
-  <div class="pl"><div class="k">Plazo · hasta el ${DL[l.dl]}</div><div class="cells">${cells}</div>
-  <div class="note">${l.done?`Ya está. La ficha vuelve el <b>${DL[l.dl]}</b>.`:`Lo que leas de más estos días cae aquí. Llevas <b>${fmt(l.paid)}</b> de ${fmt(l.need)}.`}</div></div></div>`});
- M.m.forEach((v,i)=>{const x=394+i*115,l=M.L.find(q=>q.i===i),td=i===6,fr=v/M.G;
-  const rg=l?ring(80,9,fr,'var(--c)','color-mix(in srgb,var(--am) 30%,transparent)',500+i*70):ring(80,9,Math.min(1,fr),'url(#gr)','color-mix(in srgb,var(--c) 16%,transparent)',500+i*70,td&&lit?`data-len0="${(Math.min(1,M0.today/M.G)*2*Math.PI*35.5).toFixed(1)}"`:'');
-  const ex=!l&&fr>1?`<svg width="80" height="80" viewBox="0 0 80 80" style="position:absolute;inset:0;overflow:visible"><circle cx="40" cy="40" r="44" fill="none" stroke="${M.used[i]?'var(--am)':'var(--c2)'}" stroke-width="4" stroke-linecap="round" transform="rotate(-90 40 40)" data-c="${(2*Math.PI*44).toFixed(1)}" data-len="${(Math.min(.95,fr-1)*2*Math.PI*44).toFixed(1)}" data-dl="${td&&lit?LIGHT:900+i*70}"/></svg>`:'';
-  const tag=l?`<span class="tag">${ic('moon',11)} libre</span>`:M.used[i]?`<span class="tag" data-from="${i}">+${fmt(M.used[i])} ${ic('arrow',11)}</span>`:td?`<span class="tag c">Hoy</span>`:`<span class="tag g">${ic('check',11,'none')} meta</span>`;
-  h+=`<div class="bub gin${td?' td':''}${l?' lb':''}" style="left:${x}px;--d:${.6+i*.06}s"${td?' data-lit':''}><span class="dn">${td?'Hoy':DL[i]}</span><div class="rg">${rg}${ex}<span class="mi">${l?ic('moon',22):fr>=1?ic('check',22,'none'):''}</span></div><span class="mn">${fmt(v)}<small>de ${fmt(M.G)}</small></span>${tag}</div>`});
- return `<svg width="0" height="0" style="position:absolute"><defs><linearGradient id="gr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--c)"/><stop offset="1" style="stop-color:var(--c2)"/></linearGradient></defs></svg>`+h},
-detFx(F,M){M.flows.forEach((f,n)=>{const a=F.querySelector(`[data-from="${f.from}"]`),b=F.querySelector(`[data-f="${f.to}"] .big`);if(!a||!b)return;const ra=rel(a,F),rb=rel(b,F);
-  for(let k=0;k<3;k++)travel(F,quad([ra.x+ra.w/2,ra.y],[rb.x+rb.w/2,rb.y+rb.h/2],60),1000+n*280+k*110,900)})}
+card(M,M0){const K=78/1.6/M.G;let t='';
+ M.m.forEach((v,i)=>{const l=M.L.find(x=>x.i===i),td=i===6,b=Math.min(v,M.G)*K,x=Math.max(0,v-M.G)*K,u=M.used[i]*K,d=`--d:${.6+i*.06}s`;
+  let inner=`<i class="b" style="bottom:0;height:${b.toFixed(1)}px;${d}"${td&&M0&&M0!==M?` data-h0="${(Math.min(M0.today,M.G)*K).toFixed(1)}" data-dl="600"`:''}></i>`;
+  if(x>0)inner+=`<i class="x" style="bottom:${b.toFixed(1)}px;height:${(x-u).toFixed(1)}px;--d:${.9+i*.06}s"${td&&M0&&M0!==M?` data-h0="0" data-dl="600"`:''}></i>`+(u>0?`<i class="xu" style="bottom:${(b+x-u).toFixed(1)}px;height:${u.toFixed(1)}px;--d:${1+i*.06}s"></i>`:'');
+  if(l){inner+=`<i class="p" style="bottom:${b.toFixed(1)}px;height:${(l.paid*K).toFixed(1)}px;--d:1.4s"></i><i class="o" style="bottom:${((v+l.paid)*K).toFixed(1)}px;height:${(l.owe*K).toFixed(1)}px;--d:1.2s"></i>`}
+  t+=`<div class="col${td?' td':''}"><div class="mtb"${td?' data-lit':''}>${inner}</div><span>${DI[i]}</span></div>`});
+ const coins=[0,1].map(k=>{const l=M.L[k];return l?`<div class="coin used" title="Vuelve el ${DL[l.dl]}">${ic('moon',13)}</div>`:`<div class="coin">${ic('moon',15,'#fff')}</div>`}).join('');
+ return `<div class="cv1"><div class="cl"><div class="k">${M.c.name}</div><div class="cn">${flame(26,32)}<span class="nw"><span class="nn" data-n>${M.streak}</span></span><small>días</small></div><span data-cst>${cardStatus(M)}</span></div>
+ <div class="mt">${t}<i class="meta" style="bottom:${(4+18+78/1.6).toFixed(1)}px"></i></div>
+ <div class="fch"><span class="k">libres</span>${coins}</div></div>`},
+det(M,M0){const TT=92,TH=244,TW=78,TG=32,X0=392+(798-(7*TW+6*TG))/2,K=TH/1.6/M.G,lit=M0&&M0!==M;
+ let h=`<div class="dh"><div class="t">Tus últimos 7 días<small>La semana avanza contigo: siempre ves los siete últimos</small></div>
+ <div class="legend"><span><i class="lg-m"></i>Meta</span><span><i class="lg-x"></i>De más</span><span><i class="lg-l"></i>Día libre</span><span><i class="lg-p"></i>Recuperado</span></div></div>`;
+ h+=`<div class="dmeta" style="left:${X0-6}px;width:${7*TW+6*TG+12}px;top:${TT+TH-M.G*K}px"><b>meta</b></div>`;
+ M.m.forEach((v,i)=>{const x=X0+i*(TW+TG),l=M.L.find(q=>q.i===i),td=i===6,b=Math.min(v,M.G)*K,e=Math.max(0,v-M.G)*K,u=M.used[i]*K;
+  let inner=`<i class="b" style="bottom:0;height:${b.toFixed(1)}px;--d:${.45+i*.07}s"${td&&lit?` data-h0="${(Math.min(M0.today,M.G)*K).toFixed(1)}" data-dl="450"`:''}></i>`;
+  if(e>0)inner+=`<i class="x" style="bottom:${b.toFixed(1)}px;height:${(e-u).toFixed(1)}px;--d:${.75+i*.07}s"${td&&lit?` data-h0="0" data-dl="450"`:''}></i>`+(u>0?`<i class="xu" style="bottom:${(b+e-u).toFixed(1)}px;height:${u.toFixed(1)}px;--d:${.85+i*.07}s"></i>`:'');
+  if(l)inner+=`<i class="p" style="bottom:${b.toFixed(1)}px;height:${(l.paid*K).toFixed(1)}px;--d:1.9s"></i><i class="o" style="bottom:${((v+l.paid)*K).toFixed(1)}px;height:${(l.owe*K).toFixed(1)}px;--d:1s"></i><span class="moon">${ic('moon',26)}</span>`;
+  h+=`<div class="tube${td?' td':''}${l?' lb':''}" data-t="${i}" ${td?'data-lit':''} style="left:${x}px;top:${TT}px;height:${TH}px">${inner}</div>`;
+  h+=`<div class="dlab${td?' td':''}" style="left:${x+TW/2-55}px;top:${TT+TH+10}px;--d:${.4+i*.05}s">${td?'Hoy':DL[i]}<small>${fmt(v)}</small></div>`;
+  if(l){const cls=l.done?'c':l.left<=2?'r':'';h+=`<span class="dtag tag ${cls}" style="left:${x+TW/2}px;top:${TT-30}px;--d:1.1s">${l.done?ic('check',12,'none')+' Recuperado':ic('clock',12)+' '+leftTxt(l)}</span>`}
+  else if(M.used[i]>0)h+=`<span class="dtag tag" style="left:${x+TW/2}px;top:${TT-30}px;--d:1s">+${fmt(M.used[i])} ${ic('arrow',11)}</span>`;
+  else if(td)h+=`<span class="dtag tag c" style="left:${x+TW/2}px;top:${TT-30}px;--d:.9s">Hoy</span>`});
+ h+=`<div class="box gin" style="left:392px;width:300px;--d:.6s"><div class="t">Días libres<small>2 cada 7 días</small></div><div class="coins">${[0,1].map(k=>{const l=M.L[k];
+  return l?`<div class="cw"><div class="coin used" style="--d:${.8+k*.12}s"><b>${DL[l.i]}</b></div><div>Usado<small>vuelve el ${DL[l.dl]}</small></div></div>`:`<div class="cw"><div class="coin" style="--d:${.8+k*.12}s">${ic('moon',26,'#fff')}</div><div>Libre<small>si hace falta</small></div></div>`}).join('')}</div></div>`;
+ if(M.open.length){const l=M.open[0],r=l.left<=2;h+=`<div class="box gin" style="left:708px;width:482px;--d:.7s"><div class="t">Por recuperar<small>${M.open.length>1?M.open.length+' días libres':'del '+DLL[l.i]}</small></div>
+  <div class="owe"><span class="big${r?' r':''}">${fmt(M.owe)}</span><span class="oline">de ${fmt(M.L.reduce((a,q)=>a+q.need,0))} · llevas <b>${fmt(M.L.reduce((a,q)=>a+q.paid,0))}</b></span></div>
+  <div class="obar"><i style="width:${(M.L.reduce((a,q)=>a+q.paid,0)/M.L.reduce((a,q)=>a+q.need,0)*100).toFixed(1)}%"></i></div>
+  <div class="oline">${M.open.map(q=>`Hasta el <b>${DL[q.dl]}</b> (${leftTxt(q)})`).join(' · ')}. Cuenta solo lo que pase de la meta.</div></div>`}
+ else h+=`<div class="box gin" style="left:708px;width:482px;--d:.7s"><div class="t">Por recuperar</div><div class="okbig"><span class="ok">${ic('check',24,'none')}</span>Nada pendiente</div><div class="oline" style="margin-top:8px">Leer de más no se guarda por adelantado: solo paga un día libre que ya hayas usado.</div></div>`;
+ return h},
+detFx(F,M){const TT=92,TH=244,TW=78,TG=32,X0=392+(798-(7*TW+6*TG))/2,K=TH/1.6/M.G;
+ M.flows.forEach((f,n)=>{const xa=X0+f.from*(TW+TG)+TW/2,ya=TT+TH-(M.m[f.from]-M.used[f.from]/2)*K,xb=X0+f.to*(TW+TG)+TW/2,yb=TT+TH-(M.m[f.to]+f.before+f.amt/2)*K;
+  for(let k=0;k<3;k++)travel(F,quad([xa,ya],[xb,yb],70),1100+n*260+k*120,800)})}
 };
 
+/* ---- utilidades de la variante ---- */
+function tubes(F){const det=!!F.querySelector('.tube');const els=[...F.querySelectorAll(det?'.tube':'.mtb')];
+ return els.map((el,i)=>{let top=0,topEl=null,h0top=null;el.querySelectorAll(':scope>i').forEach(c=>{const b=parseFloat(c.style.bottom)||0,h=parseFloat(c.style.height)||0;if(b+h>=top){top=b+h;topEl=c}});
+  const lit=el.hasAttribute('data-lit');if(lit){h0top=0;el.querySelectorAll(':scope>i[data-h0]').forEach(c=>h0top+=+c.dataset.h0)}
+  return {el,i,det,top,topEl,lit,h0top,H:el.offsetHeight||parseFloat(el.style.height)||78,W:el.offsetWidth||(det?78:20)}})}
+const rnd=(a,b)=>a+Math.random()*(b-a);
+function mk(tag,cls,css){const e=document.createElement(tag);e.className=cls;if(css)e.style.cssText=css;return e}
+const metDay=(M,i)=>M.m[i]>=M.G;
+
+function layerAt(el,y){let best=null;el.querySelectorAll(':scope>i').forEach(c=>{const b=parseFloat(c.style.bottom)||0,h=parseFloat(c.style.height)||0;if(y>=b&&y<b+h)best=c});return best}
+function blocks(F,M){const T=tubes(F);T.forEach(t=>{const seg=(t.det?t.H:78)/1.6/4,gap=t.det?4:2;t.el.style.setProperty('--bl',(t.det?5:2)+'px');t.el.style.setProperty('--br',(t.det?8:2)+'px');
+  const cut=[];// límites: cada cuarto de meta y cada cambio de capa
+  for(let y=0;y<t.top-0.5;y+=seg)cut.push(y);
+  t.el.querySelectorAll(':scope>i').forEach(c=>{const b=parseFloat(c.style.bottom)||0;if(b>0.5&&b<t.top-0.5)cut.push(b)});
+  const ys=[...new Set(cut.map(v=>Math.round(v*10)/10))].sort((a,b)=>a-b);ys.push(t.top);
+  const split=t.lit?t.h0top:null;let n=0;
+  for(let k=0;k<ys.length-1;k++){const y0=ys[k],y1=ys[k+1];if(y1-y0<1.5)continue;const L=layerAt(t.el,(y0+y1)/2);if(!L)continue;
+   const cls=[...L.classList].find(c=>['b','x','xu','p','o'].includes(c));
+   const late=split!=null&&y0>=split-0.5;const dd=late?(LIGHT+120+n*90)/1000:(t.det?.45:.6)+t.i*.09+k*(t.det?.11:.07);if(late)n++;
+   const e=mk('span','bk drop '+cls,`bottom:${y0+gap/2}px;height:${Math.max(1,y1-y0-gap)}px;--dd:${dd}s;--fall:${-(t.H-y0+20)}px`);
+   if(!t.det&&k===ys.length-2&&t.i===6)e.classList.add('top');
+   t.el.appendChild(e)}
+  // hueco de lo que falta hoy hasta la meta
+  if(t.i===6&&!metDay(M,6)){const gy=t.top;const gh=M.G*(t.det?t.H/1.6/M.G:78/1.6/M.G)-gy;if(gh>2)t.el.appendChild(mk('span','ghost',`bottom:${gy+gap/2}px;height:${gh-gap}px`))}
+  if(t.lit)later(()=>{t.el.querySelectorAll('.bk').forEach((b,j)=>{b.style.setProperty('--fd2',(j*.06)+'s');b.classList.remove('drop');b.style.animation='none';void b.offsetWidth;b.style.animation='';b.classList.add('fl')});const r=rel(t.el,F);burst(F,r.x+t.W/2,r.y+t.H-t.top,t.det?20:10)},LIGHT+250+n*90)})}
+
+{const od=V.detFx;V.cardFx=(F,M)=>{blocks(F,M)};V.detFx=(F,M)=>{od(F,M);blocks(F,M)}}
 boot();
 </script></body></html>
