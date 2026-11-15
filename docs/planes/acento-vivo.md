@@ -47,6 +47,12 @@ En la duda, se queda en `--f1`. El cambio a `--v1` solo se hace cuando no hay te
 3. El resto de componentes. Un commit.
 4. Repaso visual con los siete tonos (rojo, naranja, amarillo, verde, azul, añil, violeta), en claro y oscuro: ningún texto sobre `--v1`, el amarillo se ve amarillo.
 
+## Repaso visual (2026-11-15) — hecho
+
+Con la app en `?mock`, se fijaron los 7 tonos (`variablesCSS` sobre `#stage`) en claro y oscuro y se recorrieron Inicio, catálogo (lista y todos), ficha, capturas, las seis pestañas de Estadísticas, evolución, rachas y estadísticas del juego. Un escáner buscó elementos con texto o icono sobre cualquier color vivo: **ninguno usa `--v1/--v2`**. Los únicos aciertos son la paleta fija `--arc-*` (iconos del dock, chips de categoría en Rachas, bandas de estado de Mi lista, insignia de terminado), que coincide en color con el arcoíris pero no es acento vivo. El amarillo se ve amarillo en mapa de calor, barras y puntos; el texto y las pastillas activas siguen en `--f1/--gf` (oliva legible). Sin cambios de código.
+
+Queda para la guía (AVY-2): texto blanco sobre `--arc-*` claros (naranja, azul cielo) da menos de 4.5:1.
+
 ## Panorama
 
 Se rehace con los 18 chips del catálogo (`docs/maquetas/estadisticas/chips/index.html`, guía §11.1), incluido el resumen semanal y los juegos terminados. Va después de la migración, para estrenar ya el acento vivo.

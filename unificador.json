@@ -549,9 +549,30 @@
               "id": "AVY-1",
               "title": "Repaso visual con los 7 tonos de acento en claro y oscuro",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-15T15:40:00+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-15T15:45:09+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Repaso con los 7 tonos en claro y oscuro sobre la app ?mock (15 pantallas): escáner automático sin texto ni icono sobre --v1/--v2; el amarillo se ve amarillo. Sin cambios de código. Pendiente para AVY-2: texto blanco sobre --arc-* claros."
+                },
+                {
+                  "at": "2026-11-15T15:45:16+01:00",
+                  "by": "claude",
+                  "kind": "note",
+                  "text": "Comprobado: escáner de DOM en el navegador (7 tonos x claro/oscuro x 15 pantallas) y capturas del calendario en amarillo y violeta."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-15T15:45:16+01:00",
+              "result": "Repaso con los 7 tonos en claro y oscuro sobre la app ?mock (15 pantallas): escáner automático sin texto ni icono sobre --v1/--v2; el amarillo se ve amarillo. Sin cambios de código. Pendiente para AVY-2: texto blanco sobre --arc-* claros."
             }
           ]
         },
@@ -569,7 +590,8 @@
             }
           ]
         }
-      ]
+      ],
+      "nonstop": true
     },
     {
       "key": "CJY",
@@ -777,7 +799,7 @@
               "id": "CJY-8",
               "title": "Probar en la tablet real y con otro PC: cerrar juego y comprobar que no queda conexión",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-14T01:36:52+01:00",
@@ -790,12 +812,26 @@
                   "by": "antigravity",
                   "kind": "note",
                   "text": "Implementación y pruebas automáticas listas en cliente PC y Android; falta validación manual con tablet real (Artemis) y segundo PC (Moonlight)."
+                },
+                {
+                  "at": "2026-11-14T03:26:04+01:00",
+                  "by": "persona",
+                  "kind": "done",
+                  "text": "Hecho."
                 }
               ],
               "cat": "pruebas",
-              "updated": "2026-11-14T01:36:52+01:00"
+              "updated": "2026-11-14T03:26:04+01:00",
+              "result": ""
             }
-          ]
+          ],
+          "review": {
+            "state": "approved",
+            "text": "",
+            "by": "persona",
+            "at": "2026-11-14T03:26:06+01:00",
+            "seen": true
+          }
         }
       ]
     },
@@ -1005,17 +1041,24 @@
               "id": "ODD-8",
               "title": "Probar en la tablet real y en el PC cliente: abrir overlay, ver capturas y logros, cerrar",
               "desc": "",
-              "state": "doing",
+              "state": "pending",
               "notes": [
                 {
                   "at": "2026-11-14T00:53:20+01:00",
                   "by": "ia",
                   "kind": "start",
                   "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-14T03:27:20+01:00",
+                  "by": "persona",
+                  "kind": "change",
+                  "text": "No he probado en tablet, pero en pc está bien pero no funciona el cursor o no se ve y ademas se pone un borde de arriba de ventana con titulo y botón de cerrar y debería de ser a pantalla completa"
                 }
               ],
               "cat": "pruebas",
-              "updated": "2026-11-14T00:53:20+01:00"
+              "updated": "2026-11-14T03:27:20+01:00",
+              "change": "No he probado en tablet, pero en pc está bien pero no funciona el cursor o no se ve y ademas se pone un borde de arriba de ventana con titulo y botón de cerrar y debería de ser a pantalla completa"
             }
           ]
         }
@@ -1535,6 +1578,77 @@
           }
         }
       ]
+    },
+    {
+      "key": "RCM",
+      "name": "Rachas con mínimo y escudos",
+      "goal": "Permitir días cortos con un mínimo y hasta 2 días de descanso con escudos ganados sin deuda ni abusos",
+      "icon": "🔥",
+      "color": 0,
+      "created": "2026-11-15T03:15:05+01:00",
+      "by": "ia",
+      "next_id": 5,
+      "phases": [
+        {
+          "name": "Diseño",
+          "icon": "",
+          "steps": [
+            {
+              "id": "RCM-1",
+              "title": "Elegir interfaz de mínimo diario y escudos",
+              "desc": "",
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-15T03:15:10+01:00",
+                  "by": "ia",
+                  "kind": "start",
+                  "text": "Empezado."
+                }
+              ],
+              "cat": "decidir",
+              "updated": "2026-11-15T03:15:10+01:00"
+            }
+          ]
+        },
+        {
+          "name": "Lógica y pruebas",
+          "icon": "",
+          "steps": [
+            {
+              "id": "RCM-2",
+              "title": "Mínimo diario, escudos y cambio de meta diferido en readgoals",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "RCM-3",
+              "title": "Pruebas de mínimo, doble escudo y límites anti-abuso",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "pruebas",
+              "together": true
+            }
+          ]
+        },
+        {
+          "name": "Interfaz",
+          "icon": "",
+          "steps": [
+            {
+              "id": "RCM-4",
+              "title": "Actualizar pantalla Racha, tarjeta de Inicio y Ajustes",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            }
+          ]
+        }
+      ]
     }
   ],
   "asks": [
@@ -1639,7 +1753,71 @@
       },
       "by": "ia",
       "created": "2026-11-14T00:41:11+01:00"
+    },
+    {
+      "id": "P-4",
+      "kind": "proposal",
+      "title": "Interfaz de rachas (Opción 1: mínimo diario + escudos)",
+      "text": "Tres formas de mostrar el mínimo diario (p. ej. 15 min para no romper la racha en días complicados) y los 2 escudos de descanso ganados por constancia (para días de 0 min, incluso 2 seguidos) sin ocultar el mapa con deudas.",
+      "step": "RCM-1",
+      "branch": "RCM",
+      "options": [
+        {
+          "label": "A · Anillo con muesca + Escudos en medalla",
+          "desc": "Muesca de 15 min en el anillo/barra, los 2 escudos integrados en la medalla y el mapa de 6 meses siempre visible",
+          "file": ".unificador/propuestas/P-4/1.html"
+        },
+        {
+          "label": "B · Doble aro + Ficha de reserva",
+          "desc": "Aro interior de mínimo (15 min) y exterior de meta (1 h), con tarjeta de escudos y límites a la derecha del mapa",
+          "file": ".unificador/propuestas/P-4/2.html"
+        },
+        {
+          "label": "C · Tira semanal + Barra por zonas",
+          "desc": "Destaca las 7 casillas de la semana actual (Meta, Mínimo, Escudo) tanto en Racha como en la tarjeta de Inicio",
+          "file": ".unificador/propuestas/P-4/3.html"
+        }
+      ],
+      "recommend": 1,
+      "answer": {
+        "option": null,
+        "text": "No le gusta ninguna; se hacen propuestas nuevas",
+        "by": "persona",
+        "at": "2026-11-15T03:46:45+01:00",
+        "seen": true
+      },
+      "by": "ia",
+      "created": "2026-11-15T03:18:32+01:00"
+    },
+    {
+      "id": "P-5",
+      "kind": "proposal",
+      "title": "Interfaz de rachas: propuestas nuevas",
+      "text": "",
+      "step": "RCM-1",
+      "branch": "RCM",
+      "options": [
+        {
+          "label": "A · La llama",
+          "desc": "Una protagonista: la llama se llena con lo de hoy y lleva dentro la raya del mínimo; escudos como fichas grandes; solo 5 semanas abajo",
+          "file": ".unificador/propuestas/P-5/1.html"
+        },
+        {
+          "label": "B · El camino",
+          "desc": "Cada día es una piedra (llena, media o con escudo) en un camino; hoy es la piedra grande del centro y se ve cuándo llega el próximo escudo",
+          "file": ".unificador/propuestas/P-5/2.html"
+        },
+        {
+          "label": "C · El mes y el vaso",
+          "desc": "Vaso de hoy con rayas de mínimo y meta a la izquierda; el mes entero en grande con la racha como cinta que une días seguidos",
+          "file": ".unificador/propuestas/P-5/3.html"
+        }
+      ],
+      "recommend": 2,
+      "answer": null,
+      "by": "claude",
+      "created": "2026-11-15T03:46:46+01:00"
     }
   ],
-  "next_ask": 4
+  "next_ask": 6
 }
