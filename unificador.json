@@ -600,10 +600,18 @@
               "id": "AVY-3",
               "title": "Hook a tokens comunes",
               "desc": "",
-              "state": "pending",
-              "notes": [],
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-15T15:59:04+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                }
+              ],
               "cat": "codigo",
-              "by": "claude"
+              "by": "claude",
+              "updated": "2026-11-15T15:59:04+01:00"
             },
             {
               "id": "AVY-4",
@@ -1893,7 +1901,13 @@
         }
       ],
       "recommend": 2,
-      "answer": null,
+      "answer": {
+        "option": 1,
+        "text": "Le gusta A (La semana). Duda: si fallas en domingo o el sábado, ¿hay que recuperarlo todo en un día? Se propone una ventana móvil de 7 días en vez de semana de calendario",
+        "by": "persona",
+        "at": "2026-11-15T16:02:34+01:00",
+        "seen": true
+      },
       "by": "claude",
       "created": "2026-11-15T15:53:05+01:00"
     },

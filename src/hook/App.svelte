@@ -229,7 +229,7 @@
             </span>
           </div>
         {:else}
-          <div class="empty">{threads.length ? 'Ningún hilo coincide con el filtro.' : 'Aún no hay hilos. Se irán añadiendo cuando el juego muestre texto.'}</div>
+          <div class="note">{threads.length ? 'Ningún hilo coincide con el filtro.' : 'Aún no hay hilos. Se irán añadiendo cuando el juego muestre texto.'}</div>
         {/each}
       </div>
     </section>
@@ -248,7 +248,7 @@
                   {#if l.who}<span class="who" style="color:{charColor(l.who, l.color)}">{l.who}</span>{/if}{l.who ? '「' : ''}{l.text}{l.who ? '」' : ''}
                 </p>
               {:else}
-                <p style="color:#9aa2ae">Esperando líneas de este hilo…</p>
+                <p class="note">Esperando líneas de este hilo…</p>
               {/each}
             </div>
           </div>
@@ -284,10 +284,10 @@
                     <input class="inp mono" placeholder="(vacío)" bind:value={r.replace} oninput={queueSave} />
                     <button class="ub sm danger" onclick={() => delRule(i)} aria-label="Quitar regla">✕</button>
                   </div>
-                {:else}<div class="empty">Sin reglas. Ejemplo: <span class="mono">\[[^\]]*\]</span> → (vacío) quita lo que va entre corchetes.</div>{/each}
+                {:else}<div class="note">Sin reglas. Ejemplo: <span class="mono">\[[^\]]*\]</span> → (vacío) quita lo que va entre corchetes.</div>{/each}
               </div>
             </div>
-          {:else}<div class="empty">Cargando preferencias…</div>{/if}
+          {:else}<div class="note">Cargando preferencias…</div>{/if}
 
         {:else if tab === 'chars'}
           <div class="scroll">
@@ -302,7 +302,7 @@
                   </div>
                 </div>
               {/each}
-            {:else}<div class="empty">Todavía no se ha detectado ningún personaje. Aparecerán al avanzar diálogos con nombre en el hilo elegido.</div>{/if}
+            {:else}<div class="note">Todavía no se ha detectado ningún personaje. Aparecerán al avanzar diálogos con nombre en el hilo elegido.</div>{/if}
           </div>
 
         {:else if tab === 'codes'}
@@ -315,7 +315,7 @@
               <div class="item"><span class="mono">{c}</span>
                 <button class="ub xs" onclick={() => copyCode(c)}>Copiar</button>
                 <button class="ub xs danger" onclick={() => removeCode(c)}>Quitar</button></div>
-            {:else}<div class="empty">No hay códigos guardados para este juego. Los que añadas aquí o desde la búsqueda se insertarán automáticamente al abrirlo.</div>{/each}
+            {:else}<div class="note">No hay códigos guardados para este juego. Los que añadas aquí o desde la búsqueda se insertarán automáticamente al abrirlo.</div>{/each}
           </div>
 
         {:else if tab === 'search'}
@@ -326,12 +326,12 @@
             <div style="padding-top:20px">{#if searching}<button class="ub danger" onclick={cancelSearch}>Cancelar</button>{:else}<button class="ub acc" disabled={!searchText.trim()} onclick={startSearch}>Buscar</button>{/if}</div>
           </div>
           <div class="scroll">
-            {#if searching && !hits.length}<div class="empty">Buscando… mantén el texto visible en el juego.</div>{/if}
+            {#if searching && !hits.length}<div class="note">Buscando… mantén el texto visible en el juego.</div>{/if}
             {#each hits as h (h.code)}
               <div class="hit"><span class="mono">{h.code}</span><span class="pv jp">{h.text}</span>
                 <button class="ub sm act" onclick={() => addCode(h.code)} disabled={prefs?.hookCodes.includes(h.code)}>{prefs?.hookCodes.includes(h.code) ? 'Añadido' : 'Añadir'}</button></div>
             {/each}
-            {#if searchDone !== null && !searching}<div class="empty">{searchDone ? `Búsqueda terminada: ${searchDone} resultado${searchDone === 1 ? '' : 's'}.` : 'Sin resultados. Prueba con otra codificación o la búsqueda profunda.'}</div>{/if}
+            {#if searchDone !== null && !searching}<div class="note">{searchDone ? `Búsqueda terminada: ${searchDone} resultado${searchDone === 1 ? '' : 's'}.` : 'Sin resultados. Prueba con otra codificación o la búsqueda profunda.'}</div>{/if}
           </div>
 
         {:else}

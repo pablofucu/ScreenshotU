@@ -4,12 +4,14 @@
   import { mount, unmount } from 'svelte';
   import HookApp from '../hook/App.svelte';
   import hookCss from '../hook/hook.css?inline';
+  import tokensCss from '../tokens.css?inline';
   import type { HookApi } from '../hook/api';
 
   let { api, onclose }: { api: HookApi | null; onclose: () => void } = $props();
 
-  // `:root`/`html,body` de la ventana propia pasan al anfitrion del Shadow DOM.
-  const css = hookCss.replace(/:root\s*\{/g, ':host{').replace(/html,body\s*\{[^}]*\}/g, '');
+  // `:root`/`html,body` de la ventana propia pasan al anfitrion del Shadow DOM. Los tokens van delante:
+  // el `div#app` de dentro los recibe igual que en la ventana propia.
+  const css = tokensCss + hookCss.replace(/:root\s*\{/g, ':host{').replace(/html,body\s*\{[^}]*\}/g, '');
 
   function shadow(host: HTMLElement) {
     const root = host.attachShadow({ mode: 'open' });
