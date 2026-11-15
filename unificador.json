@@ -1740,36 +1740,57 @@
               "id": "RCM-2",
               "title": "Mínimo diario, escudos y cambio de meta diferido en readgoals",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-15T20:59:37+01:00",
                   "by": "claude",
                   "kind": "start",
                   "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-15T21:12:05+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Hecho en 4cd5086: días libres en readgoals con pruebas, pantalla nueva, Estadísticas › Rachas, Inicio, menú sobre el juego, avisos y tablet. svelte-check 0 errores, tests de node en verde, cargo test visor-core 339 OK."
                 }
               ],
               "cat": "codigo",
-              "updated": "2026-11-15T20:59:37+01:00"
+              "updated": "2026-11-15T21:12:05+01:00",
+              "result": "Hecho en 4cd5086: días libres en readgoals con pruebas, pantalla nueva, Estadísticas › Rachas, Inicio, menú sobre el juego, avisos y tablet. svelte-check 0 errores, tests de node en verde, cargo test visor-core 339 OK."
             },
             {
               "id": "RCM-3",
               "title": "Pruebas de mínimo, doble escudo y límites anti-abuso",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-15T20:59:37+01:00",
                   "by": "claude",
                   "kind": "start",
                   "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-15T21:12:05+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Hecho en 4cd5086: días libres en readgoals con pruebas, pantalla nueva, Estadísticas › Rachas, Inicio, menú sobre el juego, avisos y tablet. svelte-check 0 errores, tests de node en verde, cargo test visor-core 339 OK."
                 }
               ],
               "cat": "pruebas",
               "together": true,
-              "updated": "2026-11-15T20:59:37+01:00"
+              "updated": "2026-11-15T21:12:05+01:00",
+              "result": "Hecho en 4cd5086: días libres en readgoals con pruebas, pantalla nueva, Estadísticas › Rachas, Inicio, menú sobre el juego, avisos y tablet. svelte-check 0 errores, tests de node en verde, cargo test visor-core 339 OK."
             }
-          ]
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "claude",
+            "at": "2026-11-15T21:12:05+01:00",
+            "seen": true
+          }
         },
         {
           "name": "Interfaz",
@@ -1779,53 +1800,81 @@
               "id": "RCM-4",
               "title": "Actualizar pantalla Racha, tarjeta de Inicio y Ajustes",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-15T20:59:38+01:00",
                   "by": "claude",
                   "kind": "start",
                   "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-15T21:12:05+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Hecho en 4cd5086: días libres en readgoals con pruebas, pantalla nueva, Estadísticas › Rachas, Inicio, menú sobre el juego, avisos y tablet. svelte-check 0 errores, tests de node en verde, cargo test visor-core 339 OK."
                 }
               ],
               "cat": "interfaz",
-              "updated": "2026-11-15T20:59:38+01:00"
+              "updated": "2026-11-15T21:12:05+01:00",
+              "result": "Hecho en 4cd5086: días libres en readgoals con pruebas, pantalla nueva, Estadísticas › Rachas, Inicio, menú sobre el juego, avisos y tablet. svelte-check 0 errores, tests de node en verde, cargo test visor-core 339 OK."
             },
             {
               "id": "RCM-5",
               "title": "Estadísticas › Rachas con la pantalla antigua",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-15T20:59:38+01:00",
                   "by": "claude",
                   "kind": "start",
                   "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-15T21:12:05+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Hecho en 4cd5086: días libres en readgoals con pruebas, pantalla nueva, Estadísticas › Rachas, Inicio, menú sobre el juego, avisos y tablet. svelte-check 0 errores, tests de node en verde, cargo test visor-core 339 OK."
                 }
               ],
               "cat": "interfaz",
               "by": "claude",
-              "updated": "2026-11-15T20:59:38+01:00"
+              "updated": "2026-11-15T21:12:05+01:00",
+              "result": "Hecho en 4cd5086: días libres en readgoals con pruebas, pantalla nueva, Estadísticas › Rachas, Inicio, menú sobre el juego, avisos y tablet. svelte-check 0 errores, tests de node en verde, cargo test visor-core 339 OK."
             },
             {
               "id": "RCM-6",
               "title": "Racha en el menú sobre el juego, avisos y móvil",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-15T20:59:38+01:00",
                   "by": "claude",
                   "kind": "start",
                   "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-15T21:12:06+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Hecho en 4cd5086: días libres en readgoals con pruebas, pantalla nueva, Estadísticas › Rachas, Inicio, menú sobre el juego, avisos y tablet. svelte-check 0 errores, tests de node en verde, cargo test visor-core 339 OK."
                 }
               ],
               "cat": "codigo",
               "by": "claude",
-              "updated": "2026-11-15T20:59:38+01:00"
+              "updated": "2026-11-15T21:12:06+01:00",
+              "result": "Hecho en 4cd5086: días libres en readgoals con pruebas, pantalla nueva, Estadísticas › Rachas, Inicio, menú sobre el juego, avisos y tablet. svelte-check 0 errores, tests de node en verde, cargo test visor-core 339 OK."
             }
-          ]
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "claude",
+            "at": "2026-11-15T21:12:06+01:00",
+            "seen": true
+          }
         }
       ]
     }
