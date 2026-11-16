@@ -124,7 +124,7 @@
               "id": "IYE-5",
               "title": "E6: Navegación y pulido con mando en Estadísticas",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-12T17:15:42+01:00",
@@ -143,11 +143,23 @@
                   "by": "claude",
                   "kind": "start",
                   "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-16T02:16:58+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Panorama con mando: navegación espacial por las 9 tarjetas, LT/RT categoría, LB/RB periodo, A en la sesión larga abre el juego. Arreglado: al volver con B el foco se perdía (validKey miraba el DOM antes de pintar); ahora vuelve a la misma tarjeta en Panorama y Terminados. Suma del reloj = tiempo de A en las 3 categorías; hourHistogram+dayHeat < 1 ms. svelte-check limpio."
+                },
+                {
+                  "at": "2026-11-16T02:17:03+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Comprobado en el navegador a 1280x720: navegación espacial por las 9 tarjetas de Panorama, LT/RT cambia de categoría, LB/RB de periodo, A en la sesión larga abre el juego y B vuelve a la misma tarjeta (arreglado en validKey). La suma del reloj coincide con el tiempo de A en las 3 categorías; hourHistogram+dayHeat < 1 ms. svelte-check limpio."
                 }
               ],
               "cat": "interfaz",
-              "result": "",
-              "updated": "2026-11-16T02:13:29+01:00"
+              "result": "Comprobado en el navegador a 1280x720: navegación espacial por las 9 tarjetas de Panorama, LT/RT cambia de categoría, LB/RB de periodo, A en la sesión larga abre el juego y B vuelve a la misma tarjeta (arreglado en validKey). La suma del reloj coincide con el tiempo de A en las 3 categorías; hourHistogram+dayHeat < 1 ms. svelte-check limpio.",
+              "updated": "2026-11-16T02:17:03+01:00"
             }
           ]
         },
@@ -159,9 +171,17 @@
               "id": "IYE-6",
               "title": "R3: Aviso de resumen semanal en Inicio",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-16T02:17:08+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-16T02:17:08+01:00"
             },
             {
               "id": "IYE-7",
