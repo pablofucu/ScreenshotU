@@ -51,7 +51,7 @@ export interface ReadTotals { lines: number; chars: number; activeMs: number; ph
 export interface ReadGame extends ReadTotals { gameId: string; gameName: string; lastDay: number }
 export interface ReadStats {
   today: number; total: ReadTotals; games: ReadGame[];
-  days: { day: number; chars: number; activeMs: number; newKnown: number }[];
+  days: { day: number; chars: number; activeMs: number; newKnown: number; phrases: number }[];
   weeks: { start: number; newKnown: number }[];
   streak: number; bestStreak: number; charsPerDay: number; knownTotal: number; knownDated: number;
 }

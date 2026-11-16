@@ -1509,6 +1509,7 @@ pub fn run() {
             novel::readstats::readstats_live,
             achievements::get_game_achievements,
             achievements::get_achievements_summary,
+            achievements::week_achievements,
             achievements::set_achievements_card_variant,
             achievements::get_achievements_card_variant,
             achievements::detect_game_steamworks

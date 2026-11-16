@@ -221,6 +221,8 @@ pub struct DayPoint {
     pub chars: u32,
     pub active_ms: i64,
     pub new_known: u32,
+    /// Frases añadidas al glosario ese día.
+    pub phrases: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -282,7 +284,7 @@ pub fn streaks(days: &BTreeSet<i64>, today: i64) -> (u32, u32) {
 pub fn compute(rows: &[DayRow], names: &BTreeMap<String, String>, known_ms: &[i64], known_total: u32, today: i64, offset_min: i32) -> Stats {
     let mut st = Stats { today, known_total, known_dated: known_ms.len() as u32, ..Default::default() };
     let mut per_game: BTreeMap<&str, GameTotals> = BTreeMap::new();
-    let mut per_day: BTreeMap<i64, (u32, i64)> = BTreeMap::new();
+    let mut per_day: BTreeMap<i64, (u32, i64, u32)> = BTreeMap::new();
     let mut read_days: BTreeSet<i64> = BTreeSet::new();
     for r in rows {
         add(&mut st.total, r);
@@ -300,6 +302,9 @@ pub fn compute(rows: &[DayRow], names: &BTreeMap<String, String>, known_ms: &[i6
             let e = per_day.entry(r.day).or_default();
             e.0 += r.chars;
             e.1 += r.active_ms;
+        }
+        if r.phrases > 0 {
+            per_day.entry(r.day).or_default().2 += r.phrases;
         }
     }
     st.total.days = read_days.len() as u32;
@@ -320,8 +325,8 @@ pub fn compute(rows: &[DayRow], names: &BTreeMap<String, String>, known_ms: &[i6
     }
     st.days = (today - 29..=today)
         .map(|d| {
-            let (chars, active_ms) = per_day.get(&d).copied().unwrap_or((0, 0));
-            DayPoint { day: d, chars, active_ms, new_known: known_by_day.get(&d).copied().unwrap_or(0) }
+            let (chars, active_ms, phrases) = per_day.get(&d).copied().unwrap_or((0, 0, 0));
+            DayPoint { day: d, chars, active_ms, new_known: known_by_day.get(&d).copied().unwrap_or(0), phrases }
         })
         .collect();
     let this_week = week_start(today);
@@ -512,6 +517,7 @@ mod tests {
     fn agregados() {
         let today = 20_000;
         let rows = vec![
+            DayRow { phrases: 2, ..row("b", today, 0, 0) },
             row("a", today - 2, 3000, 3_600_000),
             row("a", today - 1, 1000, 1_800_000),
             row("b", today - 1, 500, 0),
@@ -532,6 +538,8 @@ mod tests {
         assert_eq!(s.days.len(), 30);
         assert_eq!(s.days[29].chars, 2000);
         assert_eq!(s.days[29].new_known, 2);
+        assert_eq!(s.days[29].phrases, 2);
+        assert_eq!(s.days[28].phrases, 0);
         assert_eq!(s.days[28].chars, 1500);
         assert_eq!(s.streak, 3);
         assert_eq!(s.chars_per_day, (3000 + 1500 + 2000) / 3);

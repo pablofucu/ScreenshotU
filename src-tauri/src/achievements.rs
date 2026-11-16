@@ -150,6 +150,63 @@ pub async fn get_game_achievements(
     .map_err(|e| e.to_string())?
 }
 
+/// Logro de la semana para el resumen: el del nucleo mas el juego de la biblioteca al que pertenece.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WeekAch {
+    pub game_id: String,
+    pub display_name: String,
+    pub icon: Option<String>,
+    /// Segundos epoch.
+    pub unlocked_at: i64,
+    pub pct: Option<f32>,
+}
+
+/// AppID -> id de juego, calculado una vez por sesion (resolverlo puede leer el disco de cada juego).
+/// Se rehace si cambia el numero de juegos.
+static APP_TO_GAME: std::sync::Mutex<Option<(usize, HashMap<String, String>)>> = std::sync::Mutex::new(None);
+
+fn game_for_app(state: &AppState, app_id: &str) -> Option<String> {
+    let ids: Vec<String> = state.games.lock().unwrap().iter().map(|g| g.id.clone()).collect();
+    // Lo barato primero: el id del juego ya es el AppID o `steam:<AppID>`.
+    let steam = format!("steam:{app_id}");
+    if let Some(id) = ids.iter().find(|id| **id == steam || *id == app_id) {
+        return Some(id.clone());
+    }
+    let mut cache = APP_TO_GAME.lock().unwrap();
+    if cache.as_ref().map(|(n, _)| *n) != Some(ids.len()) {
+        let mut map = HashMap::new();
+        for id in &ids {
+            if let (Some(app), _) = resolve_game_info(state, id, None) {
+                map.entry(app).or_insert_with(|| id.clone());
+            }
+        }
+        *cache = Some((ids.len(), map));
+    }
+    cache.as_ref().and_then(|(_, m)| m.get(app_id).cloned())
+}
+
+/// Logros desbloqueados entre `from_ms` y `to_ms` (resumen semanal). Solo lee la BD: no sincroniza con el disco.
+/// Los logros de juegos que no estan en la biblioteca se descartan.
+#[tauri::command]
+pub async fn week_achievements(app: AppHandle, from_ms: i64, to_ms: i64) -> Result<Vec<WeekAch>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        let list = state
+            .db
+            .with(|c| core::unlocks_between(c, from_ms.div_euclid(1000), to_ms.div_euclid(1000)))
+            .map_err(|e| e.to_string())?;
+        let mut out = Vec::with_capacity(list.len());
+        for u in list {
+            let Some(game_id) = game_for_app(&state, &u.app_id) else { continue };
+            out.push(WeekAch { game_id, display_name: u.display_name, icon: inline_icon(u.icon), unlocked_at: u.unlocked_at, pct: u.pct });
+        }
+        Ok(out)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 /// AppIDs cuya rareza se esta descargando ahora mismo (evita hilos duplicados si se abre la ficha varias veces).
 static RARITY_BUSY: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
 /// Ultimo fallo de red por AppID (segundos epoch): se reintenta como pronto a la hora, no en cada apertura.

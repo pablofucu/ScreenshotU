@@ -246,7 +246,7 @@ export function createDemoLink(onMsg: (m: ReaderMsg) => void, onState: (o: boole
     const days = Array.from({ length: 30 }, (_, i) => {
       const k = 29 - i;
       const chars = k === 0 ? live.chars : k % 6 === 3 ? 0 : 900 + ((k * 7919) % 2600);
-      return { day: today - k, chars, activeMs: chars * 1200, newKnown: k % 4 === 0 ? 3 + (k % 5) : 0 };
+      return { day: today - k, chars, activeMs: chars * 1200, newKnown: k % 4 === 0 ? 3 + (k % 5) : 0, phrases: k % 5 === 1 ? 2 : 0 };
     });
     const sum = days.reduce((a, d) => a + d.chars, 0);
     const ms = days.reduce((a, d) => a + d.activeMs, 0);

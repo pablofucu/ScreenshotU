@@ -315,6 +315,9 @@ export interface Achievement {
   source?: string | null;
   evidence?: string | null;
 }
+/** Logro desbloqueado en un rango (resumen semanal). `unlockedAt` en segundos; `pct`, rareza global si se conoce. */
+export interface WeekAch { gameId: string; displayName: string; icon: string | null; unlockedAt: number; pct: number | null }
+
 export interface AchievementSummary {
   appId: string;
   total: number;
@@ -488,6 +491,8 @@ export interface Backend {
   /** Eventos del núcleo: capturas guardadas, juegos que terminan... */
   getGameAchievements(gameId: string, appId?: string): Promise<Achievement[]>;
   getAchievementsSummary(gameId: string, appId?: string): Promise<AchievementSummary | null>;
+  /** Logros desbloqueados entre dos instantes (ms), del más reciente al más antiguo. */
+  weekAchievements(fromMs: number, toMs: number): Promise<WeekAch[]>;
   setAchievementsCardVariant(gameId: string, variant: number): Promise<void>;
   getAchievementsCardVariant(gameId: string): Promise<number>;
   detectGameSteamworks(gameDir: string, exePath?: string): Promise<GameDetection>;

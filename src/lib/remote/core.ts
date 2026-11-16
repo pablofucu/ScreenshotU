@@ -18,7 +18,7 @@ export function setClientPc(name: string | null) { clientPc = name; }
 /** Comandos de solo lectura: su último resultado se guarda y se sirve sin conexión. */
 const READS = new Set([
   'get_config', 'cached_library', 'scan_library', 'get_favorites', 'get_collections', 'game_stats', 'get_thumb',
-  'get_game_achievements', 'get_achievements_summary', 'get_achievements_card_variant',
+  'get_game_achievements', 'get_achievements_summary', 'week_achievements', 'get_achievements_card_variant',
   'saves_info', 'saves_status', 'readstats_get', 'phrases_list', 'phrases_due_count', 'phrases_media_dir',
   'sgdb_local', 'sgdb_info', 'magpie_status', 'audio_outputs', 'startup_notices', 'library_info',
 ]);

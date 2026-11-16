@@ -429,6 +429,18 @@ export async function mockBackend(): Promise<Backend> {
       return MOCK_ACHIEVEMENTS.map((a, i) => ({ ...a, rarityPct: pcts[i % pcts.length] }));
     },
     async getAchievementsSummary(gameId: string) { return getMockSummary(gameId); },
+    async weekAchievements(fromMs: number, toMs: number) {
+      // Unos logros repartidos por el rango, de los primeros juegos con partidas.
+      const games = lib.platforms.flatMap((p) => p.titles).filter((t) => t.gameId).slice(0, 3);
+      const pcts = [3.4, 41, 0.9, 18, 62];
+      return pcts.map((pct, i) => ({
+        gameId: games[i % Math.max(1, games.length)]?.gameId ?? 'mock',
+        displayName: MOCK_ACHIEVEMENTS[i].displayName,
+        icon: MOCK_ACHIEVEMENTS[i].icon ?? null,
+        unlockedAt: Math.floor((toMs - ((i + 1) * (toMs - fromMs)) / 6) / 1000),
+        pct,
+      }));
+    },
     async setAchievementsCardVariant(gameId: string, variant: number) { mockCardVariants.set(gameId, variant); },
     async getAchievementsCardVariant(gameId: string) { return mockCardVariants.get(gameId) ?? 1; },
     async detectGameSteamworks() { return { group: 2, dllState: 'emulator', callsSteam: true, steamstub: false, hasSettings: true, appId: 'mock_app_123' }; },

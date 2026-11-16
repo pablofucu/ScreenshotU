@@ -460,7 +460,8 @@ export function shotInRange(s: { date: number }, from: number, to: number): bool
   return s.date >= enc(from) && s.date < enc(to);
 }
 
-export type HighlightKind = 'milestone' | 'streak' | 'finished' | 'record';
+/** `rare` no sale de `weekReview`: lo añade la pestaña Semana con los logros del backend. */
+export type HighlightKind = 'milestone' | 'streak' | 'finished' | 'record' | 'rare';
 export interface Highlight { kind: HighlightKind; pi: number; ti: number | null; /** Horas del hito, días de racha o ms de la partida. */ value: number; text: string }
 
 export interface WeekBlock {

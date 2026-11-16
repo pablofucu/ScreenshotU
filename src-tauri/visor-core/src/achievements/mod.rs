@@ -738,6 +738,46 @@ pub fn rarity_store(c: &Connection, app_id: i64, entries: &[(String, f32)], now:
     res
 }
 
+/// Logro desbloqueado en un rango de fechas (resumen semanal). `unlocked_at` en segundos.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RangeUnlock {
+    pub app_id: String,
+    pub display_name: String,
+    pub icon: Option<String>,
+    pub unlocked_at: i64,
+    pub pct: Option<f32>,
+}
+
+/// Desbloqueos con `from_s <= unlocked_at < to_s` (segundos), del mas reciente al mas antiguo, con su rareza
+/// si esta en la cache. Sin la tabla `ach_rarity` sale igual, sin porcentaje.
+pub fn unlocks_between(c: &Connection, from_s: i64, to_s: i64) -> Result<Vec<RangeUnlock>> {
+    const BASE: &str = "SELECT u.app_id, COALESCE(a.display_name, u.api_name), a.icon, u.unlocked_at, {PCT}
+         FROM achievement_unlocks u
+         LEFT JOIN achievements a ON a.app_id = u.app_id AND a.api_name = u.api_name
+         {JOIN}
+         WHERE u.unlocked_at >= ?1 AND u.unlocked_at < ?2
+         ORDER BY u.unlocked_at DESC";
+    let with = BASE.replace("{PCT}", "r.pct").replace(
+        "{JOIN}",
+        "LEFT JOIN ach_rarity r ON r.app_id = CAST(u.app_id AS INTEGER) AND lower(r.api_name) = lower(u.api_name)",
+    );
+    let mut st = match c.prepare(&with) {
+        Ok(st) => st,
+        Err(_) => c.prepare(&BASE.replace("{PCT}", "NULL").replace("{JOIN}", ""))?,
+    };
+    let rows = st.query_map(params![from_s, to_s], |r| {
+        Ok(RangeUnlock {
+            app_id: r.get(0)?,
+            display_name: r.get(1)?,
+            icon: r.get(2)?,
+            unlocked_at: r.get(3)?,
+            pct: r.get::<_, Option<f64>>(4)?.map(|p| p as f32),
+        })
+    })?;
+    Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
+}
+
 pub fn unlock_record(
     c: &Connection,
     app_id: &str,
@@ -903,6 +943,34 @@ mod tests {
         assert_eq!((list[0].rarity_tier, list[0].rarity_pct), (4, Some(3.5)));
         assert_eq!((list[1].rarity_tier, list[1].rarity_pct), (0, Some(60.25)));
         assert_eq!((list[2].rarity_tier, list[2].rarity_pct), (0, None));
+    }
+
+    #[test]
+    fn unlocks_in_range() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(SCHEMA).unwrap();
+        let mk = |n: &str| Achievement {
+            app_id: "10".into(), api_name: n.into(), display_name: format!("Logro {n}"), description: String::new(),
+            hidden: false, icon: Some(format!("{n}.png")), icon_gray: None, earned: false, unlocked_at: None,
+            source: "gse".into(), stat_current: None, stat_max: None, rarity_tier: 0, rarity_pct: None,
+        };
+        achievements_save(&conn, "10", &[mk("A"), mk("B"), mk("C")]).unwrap();
+        unlock_record(&conn, "10", "A", 100, "gse", None).unwrap();
+        unlock_record(&conn, "10", "B", 150, "gse", None).unwrap();
+        unlock_record(&conn, "10", "C", 200, "gse", None).unwrap(); // fuera: el final no entra
+        unlock_record(&conn, "99", "X", 120, "gse", None).unwrap(); // sin esquema: sale con su api_name
+        // Sin tabla de rareza.
+        let l = unlocks_between(&conn, 100, 200).unwrap();
+        assert_eq!(l.iter().map(|u| u.display_name.as_str()).collect::<Vec<_>>(), ["Logro B", "X", "Logro A"]);
+        assert_eq!(l[0].icon.as_deref(), Some("B.png"));
+        assert!(l.iter().all(|u| u.pct.is_none()));
+        // Con rareza (nombre sin distinguir mayusculas, como `apply_rarity`).
+        conn.execute_batch(RARITY_SCHEMA).unwrap();
+        rarity_store(&conn, 10, &[("a".into(), 2.5)], 1).unwrap();
+        let l = unlocks_between(&conn, 0, 1000).unwrap();
+        assert_eq!(l.len(), 4);
+        assert_eq!(l.iter().find(|u| u.display_name == "Logro A").unwrap().pct, Some(2.5));
+        assert_eq!(l.iter().find(|u| u.display_name == "Logro B").unwrap().pct, None);
     }
 
     #[test]
