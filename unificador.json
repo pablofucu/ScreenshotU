@@ -49,9 +49,24 @@
               "id": "IYE-2",
               "title": "E3: Contenido de la pestaña Terminados (estantería cronológica)",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-16T01:54:03+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-16T02:04:15+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Pestaña Terminados: chips (estantería del año, último terminado, frente al año anterior) y rejilla mes a mes con un carril por categoría; mando recorre carriles. finishedYear() con 3 pruebas; svelte-check limpio; navegación comprobada en navegador."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-16T02:04:15+01:00",
+              "result": "Pestaña Terminados: chips (estantería del año, último terminado, frente al año anterior) y rejilla mes a mes con un carril por categoría; mando recorre carriles. finishedYear() con 3 pruebas; svelte-check limpio; navegación comprobada en navegador."
             }
           ]
         },
@@ -63,23 +78,53 @@
               "id": "IYE-3",
               "title": "E4: Chips de estadísticas (días activos, récord, mapa de calor, reparto)",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-16T02:04:19+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-16T02:06:10+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "stats.ts: catPeriod, catWeeks, catMilestone, catShots, hourHistogram, dayHeat, todas de una sola categoría. tests/pano.test.ts (6 pruebas, incluida suma de las 24 h = tiempo del periodo). Rendimiento con 12.000 partidas sintéticas: Siempre 16 ms en caliente (31 en frío), Año 6 ms."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-16T02:06:10+01:00",
+              "result": "stats.ts: catPeriod, catWeeks, catMilestone, catShots, hourHistogram, dayHeat, todas de una sola categoría. tests/pano.test.ts (6 pruebas, incluida suma de las 24 h = tiempo del periodo). Rendimiento con 12.000 partidas sintéticas: Siempre 16 ms en caliente (31 en frío), Año 6 ms."
             },
             {
               "id": "IYE-4",
               "title": "E5: Pestaña Panorama con rejilla de chips",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-16T02:06:11+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-16T02:13:28+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "StatsPano.svelte: rejilla de 9 chips (A odómetro, B meta, C días, D 8 semanas, L sesión larga, H hito, K capturas, J reloj, I mapa de calor) de la categoría elegida y el periodo. Comprobado en navegador a 1280x720: cambio de categoría y periodo recalculan; svelte-check limpio, 7 pruebas en verde. Commit 2e377fd."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-16T02:13:28+01:00",
+              "result": "StatsPano.svelte: rejilla de 9 chips (A odómetro, B meta, C días, D 8 semanas, L sesión larga, H hito, K capturas, J reloj, I mapa de calor) de la categoría elegida y el periodo. Comprobado en navegador a 1280x720: cambio de categoría y periodo recalculan; svelte-check limpio, 7 pruebas en verde. Commit 2e377fd."
             },
             {
               "id": "IYE-5",
               "title": "E6: Navegación y pulido con mando en Estadísticas",
               "desc": "",
-              "state": "pending",
+              "state": "doing",
               "notes": [
                 {
                   "at": "2026-11-12T17:15:42+01:00",
@@ -92,11 +137,17 @@
                   "by": "persona",
                   "kind": "reopen",
                   "text": "Vuelve a pendiente."
+                },
+                {
+                  "at": "2026-11-16T02:13:29+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
                 }
               ],
               "cat": "interfaz",
               "result": "",
-              "updated": "2026-11-12T17:15:43+01:00"
+              "updated": "2026-11-16T02:13:29+01:00"
             }
           ]
         },
