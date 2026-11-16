@@ -20,17 +20,30 @@
               "id": "IYE-1",
               "title": "E2: Contenido de la pestaña Semana (columnas por categoría y kind)",
               "desc": "",
-              "state": "pending",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-12T02:34:30+01:00",
                   "by": "persona",
                   "kind": "reopen",
                   "text": "Vuelve a pendiente."
+                },
+                {
+                  "at": "2026-11-16T01:40:16+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-16T01:51:03+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Semana: chips G/R/F/K/Q, lectura japonesa y columnas por categoría con color fijo; infraestructura de chips (chips.css, StatChip, ChipPane, countUp, desplazamiento por foco). svelte-check limpio, weekreview 10/10, comprobado en navegador."
                 }
               ],
-              "updated": "2026-11-12T02:34:30+01:00",
-              "cat": "interfaz"
+              "updated": "2026-11-16T01:51:03+01:00",
+              "cat": "interfaz",
+              "result": "Semana: chips G/R/F/K/Q, lectura japonesa y columnas por categoría con color fijo; infraestructura de chips (chips.css, StatChip, ChipPane, countUp, desplazamiento por foco). svelte-check limpio, weekreview 10/10, comprobado en navegador."
             },
             {
               "id": "IYE-2",
@@ -139,7 +152,8 @@
             }
           ]
         }
-      ]
+      ],
+      "nonstop": true
     },
     {
       "key": "EN",
@@ -1785,10 +1799,10 @@
             }
           ],
           "review": {
-            "state": "waiting",
+            "state": "approved",
             "text": "",
-            "by": "claude",
-            "at": "2026-11-15T21:12:05+01:00",
+            "by": "persona",
+            "at": "2026-11-16T00:43:03+01:00",
             "seen": true
           }
         },
@@ -1869,10 +1883,10 @@
             }
           ],
           "review": {
-            "state": "waiting",
+            "state": "approved",
             "text": "",
-            "by": "claude",
-            "at": "2026-11-15T21:12:06+01:00",
+            "by": "persona",
+            "at": "2026-11-16T00:43:01+01:00",
             "seen": true
           }
         }
