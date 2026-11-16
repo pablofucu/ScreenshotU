@@ -130,7 +130,12 @@ function validKey(view: View, key: string | undefined): string | undefined {
   } else if (view === 'shots') {
     if (/^shot\d+$/.test(key)) return n < app.cur.shots.length ? key : undefined;
   } else if (view === 'stats') {
-    if (/^(wk|fn|pn)\d+$/.test(key)) return screenEl()?.querySelector(`[data-k="${key}"]`) ? key : undefined;
+    if (/^(wk|fn|pn)\d+$/.test(key)) {
+      // Al volver de la ficha la pantalla aún no está pintada: si no hay ninguna tarjeta de esa pestaña, se da por buena la clave guardada.
+      const el = screenEl(), pre = key.slice(0, 2);
+      if (!el?.querySelector(`[data-k^="${pre}"]`)) return key;
+      return el.querySelector(`[data-k="${key}"]`) ? key : undefined;
+    }
     if (app.statsTab === 'rank' && /^sr\d+$/.test(key)) return n < app.rank.rows.length ? key : undefined;
     if (app.statsTab === 'cal' && /^cd\d+$/.test(key)) return app.cal.days[n] && !app.cal.days[n].future ? key : undefined;
   } else if (view === 'evo') {
