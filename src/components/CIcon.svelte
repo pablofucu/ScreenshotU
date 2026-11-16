@@ -15,6 +15,11 @@
     down: '<path d="M12 5v14M6 13l6 6 6-6"/>',
     trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4v1a3 3 0 0 0 4 3M16 6h4v1a3 3 0 0 1-4 3M12 13v4M8 20h8"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    trend: '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+    watch: '<circle cx="12" cy="13" r="8"/><path d="M10 2h4M12 9v4l2 2"/>',
+    flag: '<path d="M5 22V3"/><path d="M5 3h12l-2.5 4.5L17 12H5"/>',
+    moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
   };
   let { name, class: cls = 'ic' }: { name: string; class?: string } = $props();
 </script>

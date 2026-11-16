@@ -13,6 +13,7 @@
   import Year from './Year.svelte';
   import StatsWeek from './StatsWeek.svelte';
   import StatsFin from './StatsFin.svelte';
+  import StatsPano from './StatsPano.svelte';
 
   const KIND_LABEL: Record<string, string> = { month: 'Mes', year: 'Año', all: 'Siempre' };
   const VIEW_LABEL = { week: 'Semana', fin: 'Terminados', pano: 'Panorama', streak: 'Rachas', rank: 'Clasificación', cal: 'Calendario', year: 'Resumen anual' };
@@ -169,8 +170,7 @@
 {:else if app.statsTab === 'fin'}
   <StatsFin />
 {:else if app.statsTab === 'pano'}
-  {@const pre = 'pn'}
-  <div class="stnone fx" class:f={app.focus === pre + '0'} data-k="{pre}0">En preparación: {VIEW_LABEL[app.statsTab]} llegará en la próxima actualización.</div>
+  <StatsPano pi={panoPlat} />
   <Hints list={[['LB/RB', app.statsTab === 'pano' ? 'Periodo' : 'Año', 'rb'], ...(app.statsTab === 'pano' ? [['LT/RT', 'Categoría', 'rt'] as [string, string, string]] : []), ['Y', VIEW_LABEL[TABS[(TABS.indexOf(app.statsTab) + 1) % TABS.length]], 'y'], ['B', 'Volver', 'b']]} />
 {:else if app.statsTab === 'streak'}
   <Rachas />

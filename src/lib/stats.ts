@@ -639,19 +639,25 @@ export interface CatPeriod {
   /** Partida más larga empezada en el periodo. */
   longest: (GameRef & { start: number; ms: number }) | null;
 }
-/** Cifras del periodo de la categoría `pi`; el tiempo coincide con `rankPeriod(…, pi)`. */
-export function catPeriod(lib: Library, pi: number, kind: PeriodKind, off: number, now = Date.now()): CatPeriod {
-  const R = rankPeriod(lib, kind, off, now, pi);
+/** Cifras de la categoría `pi` en `range`; con «Siempre» (rango infinito) cuenta también el tiempo del formato antiguo, como `rankPeriod`. */
+export function catPeriod(lib: Library, pi: number, range: Range): CatPeriod {
+  const all = range.from === -Infinity;
+  let ms = 0, n = 0, gms = 0;
   let longest: CatPeriod['longest'] = null;
   for (const g of games(lib)) {
     if (g.pi !== pi) continue;
+    let mine = 0, mn = 0;
     for (const p of (g.t.plays ?? []) as Play[]) {
-      if (p[0] < R.range.from || p[0] >= R.range.to) continue;
-      const ms = p[1] - p[0];
-      if (!longest || ms > longest.ms) longest = { ...g, start: p[0], ms };
+      mine += overlap(p, range.from, range.to);
+      if (p[0] < range.from || p[0] >= range.to) continue;
+      mn++;
+      if (!longest || p[1] - p[0] > longest.ms) longest = { ...g, start: p[0], ms: p[1] - p[0] };
     }
+    if (all) { mine = Math.max(mine, g.t.playSeconds * 1000); mn = Math.max(mn, g.t.sessions); }
+    ms += mine; n += mn;
+    if (mine > 0) gms++;
   }
-  return { range: R.range, ms: R.ms, n: R.n, games: R.rows.filter((r) => r.ms > 0).length, longest };
+  return { range, ms, n, games: gms, longest };
 }
 
 export interface CatWeeks {

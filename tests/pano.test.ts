@@ -23,13 +23,13 @@ const lib = {
 } as any;
 
 test('catPeriod: tiempo igual a la Clasificación y partida más larga de su categoría', () => {
-  const C = catPeriod(lib, 0, 'month', 0, now);
+  const C = catPeriod(lib, 0, periodRange('month', 0, now));
   assert.equal(C.ms, rankPeriod(lib, 'month', 0, now, 0).ms);
   assert.equal(C.ms, 3.5 * H);
   assert.equal(C.games, 1);
   assert.equal(C.longest?.t.name, 'A');
   assert.equal(C.longest?.ms, 2.5 * H);
-  assert.equal(catPeriod(lib, 0, 'year', 0, now).longest?.t.name, 'B');
+  assert.equal(catPeriod(lib, 0, periodRange('year', 0, now)).longest?.t.name, 'B');
 });
 
 test('catWeeks: ocho semanas, días y juegos de esta semana sin mezclar categorías', () => {
@@ -59,7 +59,7 @@ test('hourHistogram: 24 cubos que suman el tiempo del periodo', () => {
     const r = periodRange(kind, 0, now);
     const h = hourHistogram(lib, 0, r);
     assert.equal(h.length, 24);
-    assert.equal(h.reduce((a, b) => a + b, 0), catPeriod(lib, 0, kind, 0, now).ms);
+    assert.equal(h.reduce((a, b) => a + b, 0), catPeriod(lib, 0, r).ms);
   }
   const w = hourHistogram(lib, 0, periodRange('week', 0, now));
   assert.equal(w[22], 0.5 * H);
@@ -75,4 +75,10 @@ test('dayHeat: un valor por día del año, partido en la medianoche', () => {
   assert.equal(d[nov10], 1.5 * H);
   assert.equal(d[nov10 + 1], 1 * H);
   assert.equal(dayHeat(lib, 1, 2026).reduce((a, b) => a + b, 0), 10 * H);
+});
+
+test('catPeriod con Siempre: igual que la Clasificación (incluye el tiempo antiguo)', () => {
+  const C = catPeriod(lib, 0, periodRange('all', 0, now));
+  assert.equal(C.ms, rankPeriod(lib, 'all', 0, now, 0).ms);
+  assert.equal(C.ms, (98 + 3.5) * H);
 });
