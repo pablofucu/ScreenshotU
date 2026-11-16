@@ -209,7 +209,7 @@
         <div class="st-rows" style="height:{VIS * RH}px" onwheel={wheel} onpointerdown={rowsDown} onclickcapture={rowsClick}>
         <div class="st-track" style="transform:translateY({-off * RH}px)">
         {#each rows as r, i (r.id)}
-          <button type="button" class="st-row rise-s" style="--k:{i}" class:f={app.setRow === i && setNav.zone === 'body'} class:cur={app.setRow === i} class:danger={r.id === 'quit' || (r.id === 'restore' && !!app.restoreReady)} data-set={r.id} onmousemove={(e) => hover(e, i)} onclick={() => { app.setRow = i; setNav.zone = 'body'; settingsAct(r.id, 0); }}>
+          <button type="button" class="st-row" class:f={app.setRow === i && setNav.zone === 'body'} class:cur={app.setRow === i} class:danger={r.id === 'quit' || (r.id === 'restore' && !!app.restoreReady)} data-set={r.id} onmousemove={(e) => hover(e, i)} onclick={() => { app.setRow = i; setNav.zone = 'body'; settingsAct(r.id, 0); }}>
             <span class="sl">{r.l}</span>
             {#if r.id === 'theme'}
               <span class="seg"><span class:on={!dark}>Claro</span><span class:on={dark}>Noche ahumada</span></span>

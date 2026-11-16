@@ -226,12 +226,11 @@
             <small><em>{g.ok}/{g.count}</em> · {g.range}</small>
           </div>
           <div class="meds">
-            {#each g.items as { a, i }, n (a.apiName)}
+            {#each g.items as { a, i } (a.apiName)}
               {@const secret = isSecretHidden(a)}
               <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
               <div
-                class="med rise"
-                style="--k:{n}"
+                class="med"
                 class:f={i === achState.selectedIdx}
                 class:earned={a.earned}
                 class:secret
