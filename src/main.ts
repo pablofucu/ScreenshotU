@@ -1,5 +1,6 @@
 import { mount } from 'svelte';
 import './app.css';
+import './chips.css';
 import App from './App.svelte';
 import { setupGrabber } from './lib/grabber';
 

@@ -182,6 +182,7 @@ export function setFocus(k: string, mouse = false) {
     }
   } else if (app.view === 'stats') {
     // La lista se desplaza para que la fila enfocada se vea entera.
+    if (/^(wk|fn|pn)\d+$/.test(k)) { if (!mouse) chipReveal(k); return; }
     if (!k.startsWith('sr')) return;
     const i = +k.slice(2), y = rankY(i), h = rankH(i);
     if (y < app.goff) app.goff = y;
@@ -207,6 +208,22 @@ function pos(e: HTMLElement, root: HTMLElement) {
   const eb = e.getBoundingClientRect();
   const rb = root.getBoundingClientRect();
   return { x: (eb.left + eb.right) / 2 - rb.left, y: (eb.top + eb.bottom) / 2 - rb.top };
+}
+
+/** Estadísticas con chips (Semana, Terminados, Panorama): desplaza la zona para que el chip enfocado se vea; si entra en una sección, se ve también su título. */
+function chipReveal(k: string) {
+  const el = screenEl()?.querySelector<HTMLElement>(`[data-k="${k}"]`);
+  const pane = el?.closest<HTMLElement>('.cpane');
+  if (!el || !pane) return;
+  const topIn = (e: HTMLElement) => { let t = 0; for (let p: HTMLElement | null = e; p && p !== pane; p = p.offsetParent as HTMLElement | null) t += p.offsetTop; return t; };
+  const H = pane.parentElement!.clientHeight, full = pane.scrollHeight, max = Math.max(0, full - H);
+  const top = topIn(el), h = el.offsetHeight;
+  const sec = el.closest('.cgrid, .cols')?.previousElementSibling as HTMLElement | null | undefined;
+  const head = sec?.classList.contains('sh') && top - topIn(sec) < 260 ? topIn(sec) - 10 : top - 16;
+  let y = app.goff;
+  if (head < y) y = head;
+  if (top + h + 60 > y + H) y = top + h + 60 - H;
+  app.goff = Math.max(0, Math.min(max, y));
 }
 
 /** Pulso háptico suave en el mando para feedback físico en la interfaz (topes, favorita, reset). */
@@ -281,7 +298,7 @@ export function move(dx: number, dy: number) {
 }
 
 /* ---------- animaciones ---------- */
-const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+export const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** «Pulsacion» de la tarjeta al confirmar con A o clic. */
 function press(e: Element | null | undefined) {

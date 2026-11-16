@@ -6,7 +6,7 @@
 
 | Proyecto | Plan | Hecho | Siguiente paso |
 |---|---|---|---|
-| Interfaz y estadísticas | [planes/interfaz-pendiente.md](planes/interfaz-pendiente.md) (anexo: [planes/resumen-semanal.md](planes/resumen-semanal.md)) | R1 (`weekReview` con tests) y E1 (pestañas Semana, Terminados, Panorama) | E2: contenido de la pestaña Semana. Después E3–E6, R3–R6, L1–L3 (Mi lista), H1 (Inicio), C1 (Colecciones), A1–A5 (animaciones) |
+| Interfaz y estadísticas | [planes/interfaz-pendiente.md](planes/interfaz-pendiente.md) (anexo: [planes/resumen-semanal.md](planes/resumen-semanal.md)) | R1 (`weekReview` con tests), E1 (pestañas Semana, Terminados, Panorama), E2 y E3 (Semana con chips y columnas por categoría; pendiente probar en la app real la lectura japonesa) | E4: pestaña Terminados. Después E5–E6, R3–R6, L1–L3 (Mi lista), H1 (Inicio), C1 (Colecciones), A1–A5 (animaciones) |
 | Rachas con días libres | [planes/rachas.md](planes/rachas.md) | Reglas de días libres (2 cada 7, deuda pagada con lo leído de más en 7 días, meta diferida) con pruebas; pantalla de racha nueva (velas); Estadísticas › Rachas con la pantalla antigua; Inicio, menú sobre el juego, avisos y tablet; hucha retirada | Probarlo en la app real (pantalla de racha, aviso «¡Día libre recuperado!», tablet) y, si va bien, archivar el plan |
 
 ## Siguiente (empezados, con trabajo pendiente)
