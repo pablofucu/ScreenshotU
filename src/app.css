@@ -448,7 +448,8 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 /* ---------- Inicio: plataformas compactas, «Seguir jugando» y dock con texto ---------- */
 .plabel.hl{font-size:var(--t-xl)}
 .plabel.hl small{font-size:var(--t-s)}
-.hsect{position:absolute;top:378px;font-size:var(--t-l);font-weight:800;color:var(--ink-2);letter-spacing:.02em}
+.hsect{position:absolute;top:378px;font-size:var(--t-l);font-weight:800;color:var(--ink);letter-spacing:.01em;display:flex;align-items:center;white-space:nowrap}
+.hsect::before{content:'';flex:none;width:5px;height:18px;margin-right:9px;border-radius:3px;background:var(--gf)}
 .rcard{top:410px;width:350px;height:150px;--r:24px;--bw:8px}
 .rcard .face{background:var(--ink)}
 .rcard.rread .face{background:var(--panel)}
