@@ -630,3 +630,106 @@ export function finishedYear(lib: Library, year: number): FinYear {
   });
   return { year, lanes, count: lanes.reduce((a, l) => a + l.count, 0), prevCount, last, years: [...ys].sort((a, b) => a - b) };
 }
+
+/* ---------- Panorama: cifras de UNA categoría ---------- */
+export interface CatPeriod {
+  range: Range;
+  /** Tiempo, partidas y juegos con tiempo en el periodo (como la Clasificación de esa categoría). */
+  ms: number; n: number; games: number;
+  /** Partida más larga empezada en el periodo. */
+  longest: (GameRef & { start: number; ms: number }) | null;
+}
+/** Cifras del periodo de la categoría `pi`; el tiempo coincide con `rankPeriod(…, pi)`. */
+export function catPeriod(lib: Library, pi: number, kind: PeriodKind, off: number, now = Date.now()): CatPeriod {
+  const R = rankPeriod(lib, kind, off, now, pi);
+  let longest: CatPeriod['longest'] = null;
+  for (const g of games(lib)) {
+    if (g.pi !== pi) continue;
+    for (const p of (g.t.plays ?? []) as Play[]) {
+      if (p[0] < R.range.from || p[0] >= R.range.to) continue;
+      const ms = p[1] - p[0];
+      if (!longest || ms > longest.ms) longest = { ...g, start: p[0], ms };
+    }
+  }
+  return { range: R.range, ms: R.ms, n: R.n, games: R.rows.filter((r) => r.ms > 0).length, longest };
+}
+
+export interface CatWeeks {
+  /** Ms de las últimas `n` semanas (lunes a domingo), de la más antigua a esta. */
+  weeks: number[];
+  /** Juegos con tiempo y días con actividad en esta semana. */
+  games: number; days: number;
+}
+/** Serie semanal de la categoría `pi` para los chips A, C y D. */
+export function catWeeks(lib: Library, pi: number, n = 8, now = Date.now()): CatWeeks {
+  const ranges = Array.from({ length: n }, (_, i) => periodRange('week', i - n + 1, now));
+  const cur = ranges[n - 1];
+  const weeks = ranges.map(() => 0);
+  const days = new Set<number>();
+  let gms = 0;
+  for (const g of games(lib)) {
+    if (g.pi !== pi) continue;
+    let mine = 0;
+    for (const p of (g.t.plays ?? []) as Play[]) {
+      if (p[1] <= ranges[0].from) continue;
+      ranges.forEach((r, i) => { weeks[i] += overlap(p, r.from, r.to); });
+      mine += overlap(p, cur.from, cur.to);
+      eachDay(p, cur.from, cur.to, (d) => days.add(d));
+    }
+    if (mine > 0) gms++;
+  }
+  return { weeks, games: gms, days: days.size };
+}
+
+export interface CatMilestone extends GameRef { h: number; left: number; cur: number }
+/** El juego de la categoría `pi` más cerca de su próximo hito de horas (chip H). */
+export function catMilestone(lib: Library, pi: number): CatMilestone | null {
+  let best: CatMilestone | null = null;
+  for (const g of games(lib)) {
+    if (g.pi !== pi) continue;
+    const m = nextMilestone(g.t);
+    if (m && (!best || m.left < best.left)) best = { ...g, h: m.h, left: m.left, cur: m.h - m.left };
+  }
+  return best;
+}
+
+export interface CatShot { ti: number; t: Title; path: string; date: number; fav: boolean }
+/** Capturas de la categoría `pi` en el periodo: cuántas y tres para el abanico (favoritas recientes primero). */
+export function catShots(lib: Library, pi: number, range: Range, favs: { has(p: string): boolean }): { count: number; pick: CatShot[] } {
+  const all: CatShot[] = [];
+  lib.platforms[pi]?.titles.forEach((t, ti) => {
+    if (t.hidden) return;
+    for (const s of t.shots ?? []) if (shotInRange(s, range.from, range.to)) all.push({ ti, t, path: s.path, date: s.date, fav: favs.has(s.path) });
+  });
+  all.sort((a, b) => Number(b.fav) - Number(a.fav) || b.date - a.date);
+  return { count: all.length, pick: all.slice(0, 3) };
+}
+
+/** Reparto del tiempo de la categoría `pi` en el periodo por hora local (24 cubos, en ms). */
+export function hourHistogram(lib: Library, pi: number, range: Range): number[] {
+  const out = new Array<number>(24).fill(0);
+  for (const g of games(lib)) {
+    if (g.pi !== pi) continue;
+    for (const p of (g.t.plays ?? []) as Play[]) {
+      const a = Math.max(p[0], range.from), b = Math.min(p[1], range.to);
+      if (b <= a) continue;
+      const h0 = new Date(a); h0.setMinutes(0, 0, 0);
+      for (let h = h0.getTime(); h < b; h += 3600000) {
+        const ms = Math.min(b, h + 3600000) - Math.max(a, h);
+        if (ms > 0) out[new Date(h).getHours()] += ms;
+      }
+    }
+  }
+  return out;
+}
+
+/** Ms jugados por día del año `year` en la categoría `pi` (índice 0 = 1 de enero). */
+export function dayHeat(lib: Library, pi: number, year: number): number[] {
+  const from = new Date(year, 0, 1).getTime(), to = new Date(year + 1, 0, 1).getTime();
+  const out = new Array<number>(Math.round((to - from) / 86400000)).fill(0);
+  for (const g of games(lib)) {
+    if (g.pi !== pi) continue;
+    for (const p of (g.t.plays ?? []) as Play[]) eachDay(p, from, to, (d, ms) => { out[Math.round((d - from) / 86400000)] += ms; });
+  }
+  return out;
+}
