@@ -201,7 +201,7 @@
   </div>
 
   {#if T.launchable}
-    <div class="glass play fx" class:f={app.focus === 'play'} class:on={playing} data-k="play" data-act="play">
+    <div class="glass play fx rise" style="--k:1" class:f={app.focus === 'play'} class:on={playing} data-k="play" data-act="play">
       <div class="face">
         <span class="pi">{@html ICON.play}</span>
         <span><b>{playing ? (canResume(T?.gameId) ? 'Volver a la partida' : 'Jugando') : 'Jugar'}</b><small>{playing ? `Sesión ${sess}` : via}</small></span>
@@ -211,7 +211,7 @@
     <div class="nolaunch pill"><b>Sin lanzador</b><small>Usa «Añadir juego» en Inicio</small></div>
   {/if}
 
-  <div class="dpanel dhours pill" class:fx={hasPlays} class:f={app.focus === 'dhrs'} data-k="dhrs" data-act="evo">
+  <div class="dpanel dhours pill rise" style="--k:2" class:fx={hasPlays} class:f={app.focus === 'dhrs'} data-k="dhrs" data-act="evo">
     <div class="hsub">Horas jugadas{nSes > 0 ? ` · ${nSes} ${nSes === 1 ? 'sesión' : 'sesiones'}` : ''}</div>
     {#snippet cell(d: number, i: number)}
       {@const st = strip(d, i)}
@@ -227,7 +227,7 @@
   </div>
 
   {#if T.launchable}
-    <div class="dpanel dweek pill" class:fx={hasPlays} class:f={app.focus === 'dwk'} data-k="dwk" data-act="evo">
+    <div class="dpanel dweek pill rise" style="--k:3" class:fx={hasPlays} class:f={app.focus === 'dwk'} data-k="dwk" data-act="evo">
       <div class="chart">
         {#if gx}{#key gx}<span class="gainchip wk">{gx.label}</span>{/key}{/if}
         <div class="hsub" style="margin:0">Esta semana · <span class:wcount={wshow !== null}>{weekText}</span></div>
@@ -243,14 +243,14 @@
     </div>
   {/if}
 
-  <div class="dsect">Capturas<span>{shots.length}</span></div>
+  <div class="dsect rise-s" style="--k:4">Capturas<span>{shots.length}</span></div>
   {#each row as s, i (s.path)}
-    <div class="glass dshot fx" class:f={app.focus === 'ds' + i} data-k="ds{i}" data-act="dshot:{i}" style="left:{64 + i * 192}px">
+    <div class="glass dshot fx rise" class:f={app.focus === 'ds' + i} data-k="ds{i}" data-act="dshot:{i}" style="left:{64 + i * 192}px;--k:{i + 4}">
       <div class="face"><Thumb path={s.path} /></div>
     </div>
   {/each}
   {#if shots.length}
-    <div class="glass dall fx" class:f={app.focus === 'dall'} data-k="dall" data-act="dall" style="left:{64 + row.length * 192}px;width:{Math.round(176 * 0.8)}px">
+    <div class="glass dall fx rise" class:f={app.focus === 'dall'} data-k="dall" data-act="dall" style="left:{64 + row.length * 192}px;width:{Math.round(176 * 0.8)}px;--k:{row.length + 4}">
       <div class="face"><div>Ver todas<span>{nCapturas(shots.length)}</span></div></div>
     </div>
   {:else}

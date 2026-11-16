@@ -273,8 +273,8 @@
       {#each idx as pos (realAt(pos))}
         {@const i = realAt(pos)}
         {@const j = pos % PS}
-        <div class="glass cover tcov fx" class:addtile={i === titles.length} class:dim={titles[i]?.hidden} class:f={app.focus === 'tit' + i} data-k="tit{i}" data-act="tit:{i}" data-i={i}
-          style="{cellStyle(Math.floor(pos / PS), j)}{i < titles.length ? ';' + app.pipStyle(app.p, i) : ''}">
+        <div class="glass cover tcov fx rise" class:addtile={i === titles.length} class:dim={titles[i]?.hidden} class:f={app.focus === 'tit' + i} data-k="tit{i}" data-act="tit:{i}" data-i={i}
+          style="--k:{j};{cellStyle(Math.floor(pos / PS), j)}{i < titles.length ? ';' + app.pipStyle(app.p, i) : ''}">
           {@render cell(i)}
         </div>
       {/each}
@@ -300,7 +300,7 @@
     <div class="ctrack" style="transform:translateX({640 - 100 - q * 240}px)">
       {#each idx as pos (realAt(pos))}
         {@const i = realAt(pos)}
-        <div class="glass cover ccover fx" class:addtile={i === titles.length} class:dim={titles[i]?.hidden} class:f={app.focus === 'tit' + i} data-k="tit{i}" data-act="tit:{i}" data-i={i}
+        <div class="glass cover ccover fx rise" class:addtile={i === titles.length} class:dim={titles[i]?.hidden} class:f={app.focus === 'tit' + i} data-k="tit{i}" data-act="tit:{i}" data-i={i}
           style="left:{pos * 240}px{i < titles.length ? ';' + app.pipStyle(app.p, i) : ''}">
           {@render cell(i)}
         </div>

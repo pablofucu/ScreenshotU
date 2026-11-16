@@ -77,10 +77,11 @@
         if (rows > 1) e.currentTarget.scrollTop += e.deltaY; else e.currentTarget.scrollLeft += e.deltaY;
         e.preventDefault();
       }}>
-        {#each band.items as it (it.ti)}
+        {#each band.items as it, n (it.ti)}
           {@const t = titles[it.ti]}
           <div
-            class="it fx"
+            class="it fx rise"
+            style="--k:{n}"
             class:f={app.focus === 'tit' + it.ti}
             data-k="tit{it.ti}"
             data-act="tit:{it.ti}"

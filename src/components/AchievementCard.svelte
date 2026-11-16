@@ -126,6 +126,7 @@
               cy="50"
               r="45"
               fill="none"
+              class="rdraw"
               stroke="url(#card-gold)"
               stroke-width="9"
               stroke-linecap="round"

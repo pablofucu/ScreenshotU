@@ -35,12 +35,12 @@
 
     <div class="srch-list">
       {#each groups as g, r (g.pi)}
-        <div class="srow-g" class:f={srch.r === r}>
+        <div class="srow-g rise-s" style="--k:{r}" class:f={srch.r === r}>
           <h4>{g.name}</h4>
           <div class="srch-covs">
             {#each g.items as ti, c (ti)}
               {@const t = app.lib.platforms[g.pi].titles[ti]}
-              <button type="button" class="srch-it" class:f={srch.r === r && srch.c === c} title={t.name}
+              <button type="button" class="srch-it rise" style="--k:{c}" class:f={srch.r === r && srch.c === c} title={t.name}
                 onmousemove={() => { if (srch.r !== r || srch.c !== c) focusRow(r, c); }}
                 onclick={() => { focusRow(r, c); openSearchResult(g.pi, ti); }}
                 oncontextmenu={(e) => { e.preventDefault(); focusRow(r, c); playSearchResult(g.pi, ti); }}>
