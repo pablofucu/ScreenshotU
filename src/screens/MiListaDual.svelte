@@ -13,19 +13,15 @@
   const lanes = $derived(bands);
 
   // Alto del tablero: de debajo de las pestañas (y 182) al final del contenido (644).
-  const H = 462, GAP = 6, ROW = 100;
-  // Alto de cada fila: 100 px, o menos si hay tantas franjas que no caben.
-  const rowH = $derived(lanes.length ? Math.min(ROW, Math.floor((H - GAP * (lanes.length - 1)) / lanes.length)) : ROW);
+  // ROW es el alto base de una fila para repartir; MAXROW, lo más que crece una fila al llenar el alto (portadas grandes).
+  const H = 462, GAP = 8, ROW = 100, MAXROW = 150, PER = 5;
+  const baseH = $derived(lanes.length ? Math.min(ROW, Math.floor((H - GAP * (lanes.length - 1)) / lanes.length)) : ROW);
 
   // Filas por carril: 1 por carril y el resto al que más lo necesita.
   const rowsOf = $derived.by(() => {
-    const need = lanes.map((l: any) => {
-      const per = l.key === 'done' ? 6 : 5;
-      const n = l.items.length + (l.key === 'done' ? l.items.filter((i: any) => i.yearStart).length : 0);
-      return { n, per, want: Math.max(1, Math.ceil(n / per)) };
-    });
+    const need = lanes.map((l) => ({ want: Math.max(1, Math.ceil(l.items.length / PER)) }));
     const rows: number[] = need.map(() => 1);
-    let spare = Math.floor((H - GAP * (lanes.length - 1)) / rowH) - rows.reduce((a, b) => a + b, 0);
+    let spare = Math.floor((H - GAP * (lanes.length - 1)) / baseH) - rows.reduce((a, b) => a + b, 0);
     while (spare > 0) {
       let best = -1, bestGap = 0;
       need.forEach((x, i) => {
@@ -37,6 +33,11 @@
       spare--;
     }
     return rows;
+  });
+  // Portadas grandes: las filas se estiran hasta llenar el tablero (con tope), y la portada ocupa todo el alto.
+  const rowH = $derived.by(() => {
+    const n = rowsOf.reduce((a, b) => a + b, 0);
+    return n ? Math.min(MAXROW, Math.floor((H - GAP * (lanes.length - 1)) / n)) : ROW;
   });
 
   const coverOf = (i: number) => titles[i]?.cover ?? titles[i]?.shots[0]?.path ?? null;
@@ -70,7 +71,7 @@
   {#each lanes as band, li (band.key)}
     {@const rows = rowsOf[li]}
     <section class="band st-{band.key}" data-band={band.key} style="--c:{band.color}; height:{rows * rowH}px">
-      <div class="vt"><span>{band.label}</span></div>
+      <div class="lh"><span>{band.label}</span><em>{band.items.length} {band.items.length === 1 ? 'juego' : 'juegos'}</em></div>
       <div class="its" onwheel={(e) => {
         if (!e.deltaY) return;
         if (rows > 1) e.currentTarget.scrollTop += e.deltaY; else e.currentTarget.scrollLeft += e.deltaY;
@@ -78,13 +79,9 @@
       }}>
         {#each band.items as it (it.ti)}
           {@const t = titles[it.ti]}
-          {#if band.key === 'done' && it.yearStart}
-            <div class="ysep">{it.year || 'Sin fecha'}</div>
-          {/if}
           <div
             class="it fx"
             class:f={app.focus === 'tit' + it.ti}
-            class:compact={band.compact}
             data-k="tit{it.ti}"
             data-act="tit:{it.ti}"
           >
@@ -100,18 +97,12 @@
                 <span class="bd pin" title="Fijado">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l-1 6 3 3v2h-4v6l-1 1-1-1v-6H7v-2l3-3z" fill="currentColor" /></svg>
                 </span>
-              {:else if band.key === 'done'}
-                <span class="bd chk" title="Terminado">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                </span>
               {/if}
             </div>
             <div class="tx">
               <b>{t.name}</b>
               {#if band.key === 'pend'}
                 <small>sin empezar</small>
-              {:else if band.key === 'done'}
-                <small>{hours(t.playSeconds ?? 0)}</small>
               {:else if t.status === 'dropped'}
                 <small>abandonado</small>
               {:else}
@@ -158,70 +149,50 @@
     bottom: calc(720px - var(--content-end));
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
     user-select: none;
   }
+  /* Estilo C «Lomo fino»: cada franja es un panel neutro con un lomo fino de su color y el rótulo en horizontal. */
   .band {
     position: relative;
     flex: none;
     border-radius: var(--r-m);
     overflow: hidden;
-    background: linear-gradient(180deg,
-      color-mix(in srgb, var(--c) 15%, var(--glass-top)) 0%,
-      color-mix(in srgb, var(--c) 15%, var(--glass-mid)) 46%,
-      color-mix(in srgb, var(--c) 15%, var(--glass-bot)) 100%
-    );
-    box-shadow:
-      inset 0 1.5px 0 var(--hl),
-      inset 0 0 0 1px var(--hl-ring),
-      inset 0 -10px 14px -8px var(--hl-bot),
-      inset 0 -1.5px 0 rgba(110,125,150,.30),
-      0 0 0 1px rgba(95,110,135,.24),
-      0 2px 3px rgba(40,50,70,.10),
-      0 18px 30px -16px rgba(40,50,70,.42);
+    background: var(--panel);
+    box-shadow: inset 0 1.5px 0 var(--hl), inset 0 0 0 1px var(--hl-ring), var(--sh-1);
+    --cf: color-mix(in srgb, var(--c) 72%, var(--ink));
   }
-  /* La franja de «Jugando» lleva algo más de tinte y un brillo de su color. */
-  .st-run {
-    background: linear-gradient(180deg,
-      color-mix(in srgb, var(--c) 28%, var(--glass-top)) 0%,
-      color-mix(in srgb, var(--c) 22%, var(--glass-mid)) 46%,
-      color-mix(in srgb, var(--c) 18%, var(--glass-bot)) 100%
-    );
-    box-shadow:
-      inset 0 1.5px 0 var(--hl),
-      inset 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent),
-      inset 0 -10px 14px -8px var(--hl-bot),
-      0 0 0 1px rgba(95,110,135,.24),
-      0 18px 30px -16px rgba(40,50,70,.42),
-      0 6px 18px -10px var(--c);
-  }
-  .st-park .it:not(.f) { filter: saturate(0.35); opacity: 0.86; }
-  .st-done .it:not(.f) { filter: saturate(0.1); opacity: 0.66; }
-  .st-park .it.f, .st-done .it.f { filter: none; opacity: 1; }
-  .vt {
+  .band::before {
+    content: '';
     position: absolute;
-    left: 0;
+    left: 8px;
+    top: 10px;
+    bottom: 10px;
+    width: 6px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, var(--c), color-mix(in srgb, var(--c) 55%, var(--face-hi)));
+    box-shadow: 0 0 10px color-mix(in srgb, var(--c) 55%, transparent);
+  }
+  /* «En marcha» lleva un tinte muy suave de su color. */
+  .st-run { background: linear-gradient(90deg, color-mix(in srgb, var(--c) 10%, var(--panel)), var(--panel) 40%); }
+  .st-park .it:not(.f) { filter: saturate(0.35); opacity: 0.86; }
+  .st-park .it.f { filter: none; opacity: 1; }
+  .lh {
+    position: absolute;
+    left: 26px;
     top: 0;
     bottom: 0;
-    width: 40px;
+    width: 116px;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     justify-content: center;
-    background: var(--c);
-    color: white;
+    gap: 4px;
   }
-  .vt span {
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    font-size: var(--t-s);
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
+  .lh span { font-size: var(--t-l); font-weight: 800; line-height: 1.1; color: var(--cf); }
+  .lh em { font-size: var(--t-s); font-weight: 700; font-style: normal; color: var(--ink-2); }
   .its {
     position: absolute;
-    left: 52px;
+    left: 150px;
     right: 10px;
     top: 0;
     bottom: 0;
@@ -239,19 +210,13 @@
     flex: none;
     gap: 9px;
     height: calc(var(--rh, 100px) - 8px);
-    padding: 0 10px 0 0;
+    padding: 4px 12px 4px 4px;
+    box-sizing: border-box;
     border-radius: var(--r-s);
     align-items: center;
     cursor: pointer;
-    background: linear-gradient(180deg, var(--glass-top) 0%, var(--glass-mid) 46%, var(--glass-bot) 100%);
-    box-shadow:
-      inset 0 1.5px 0 var(--hl),
-      inset 0 0 0 1px var(--hl-ring),
-      inset 0 -10px 14px -8px var(--hl-bot),
-      inset 0 -1.5px 0 rgba(110,125,150,.30),
-      0 0 0 1px rgba(95,110,135,.24),
-      0 2px 3px rgba(40,50,70,.10),
-      0 18px 30px -16px rgba(40,50,70,.42);
+    background: var(--glass-in);
+    box-shadow: inset 0 1px 0 var(--hl-ring), inset 0 0 0 1px var(--line);
     transition: background 0.15s, box-shadow 0.15s, filter 0.15s, opacity 0.15s;
   }
   .it.f {
@@ -262,9 +227,8 @@
   .cv {
     position: relative;
     flex: none;
-    width: 62px;
-    height: calc(var(--rh, 100px) - 8px);
-    padding: 4px;
+    height: 100%;
+    aspect-ratio: 2 / 3;
     box-sizing: border-box;
     border-radius: var(--r-s);
     transition: transform 0.15s;
@@ -308,7 +272,6 @@
   }
   .bd svg { width: 12px; height: 12px; }
   .bd.pin { background: var(--g2); }
-  .bd.chk { background: var(--c); }
   .tx {
     width: 104px;
     display: flex;
@@ -317,7 +280,6 @@
     gap: 3px;
     min-width: 0;
   }
-  .it.compact .tx { width: 84px; }
   .tx b {
     font-size: var(--t-s);
     font-weight: 800;
@@ -343,18 +305,6 @@
   .wtxt { color: var(--warn); filter: brightness(0.8); }
   .wtxt svg { width: 12px; height: 12px; flex: none; }
   .ptxt { color: var(--g2); }
-  .ysep {
-    flex: none;
-    align-self: stretch;
-    display: flex;
-    align-items: center;
-    padding: 0 6px 0 10px;
-    margin-left: 4px;
-    border-left: 2px solid color-mix(in srgb, var(--c) 30%, transparent);
-    font-size: var(--t-s);
-    font-weight: 800;
-    color: var(--ink-2);
-  }
   .vacio {
     border: none;
     font: inherit;

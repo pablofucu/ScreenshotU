@@ -120,7 +120,7 @@ export const listTab = () => app.view === 'titles' && (app.titlesTab === 'list' 
 /* Tablero de franjas (pestaña «Mi lista»)                              */
 /* ------------------------------------------------------------------ */
 
-export type BandKind = 'run' | 'mid' | 'pend' | 'park' | 'done';
+export type BandKind = 'run' | 'mid' | 'pend' | 'park';
 export interface BoardItem {
   /** Índice del título en `app.platform.titles` (solo de esta categoría). */
   ti: number;
@@ -129,11 +129,8 @@ export interface BoardItem {
   pin: boolean;
   /** Días que faltan para pasar a «Aparcado» si son ≤10 y no está fijado; 0 = sin aviso. */
   warn: number;
-  year: number;
-  /** Primer juego de un año nuevo en la franja «Terminado» (lleva el separador). */
-  yearStart: boolean;
 }
-export interface Band { key: BandKind; label: string; color: string; compact: boolean; items: BoardItem[] }
+export interface Band { key: BandKind; label: string; color: string; items: BoardItem[] }
 
 /** Umbrales del modelo automático, en días. */
 export const RUN_DAYS = 14;
@@ -145,25 +142,24 @@ export const BAND_DEF: Array<{ key: BandKind; label: string; color: string }> = 
   { key: 'mid', label: 'A medias', color: RAINBOW[1].c },
   { key: 'pend', label: 'Pendiente', color: RAINBOW[3].c },
   { key: 'park', label: 'Aparcado', color: RAINBOW[4].c },
-  { key: 'done', label: 'Terminado', color: RAINBOW[6].c },
 ];
 
-/** Reparte los juegos de la categoría en franjas. Nunca mezcla categorías: solo mira `app.platform`. */
+/** Reparte los juegos de la categoría en franjas. Nunca mezcla categorías: solo mira `app.platform`.
+ *  Los terminados no van al tablero: tienen su sitio en Estadísticas › Terminados y en el Catálogo. */
 export function buildBoard(): Band[] {
   const titles = app.platform?.titles ?? [];
   const now = Date.now();
   const pins = new Set(app.config.pinned ?? []);
-  const by: Record<BandKind, BoardItem[]> = { run: [], mid: [], pend: [], park: [], done: [] };
+  const by: Record<BandKind, BoardItem[]> = { run: [], mid: [], pend: [], park: [] };
   const name = (i: number) => titles[i].name;
   titles.forEach((t, ti) => {
     if (t.hidden || t.members) return;
     const st = t.status;
     const ref = Math.max(lastUse(t), t.statusMs ?? 0);
     const days = ref ? Math.max(0, Math.floor((now - ref) / DAY)) : 9999;
-    const year = t.finishedMs ? new Date(t.finishedMs).getUTCFullYear() : 0;
-    const it: BoardItem = { ti, days, pin: false, warn: 0, year, yearStart: false };
-    if (st === 'finished') by.done.push(it);
-    else if (st === 'pending') by.pend.push({ ...it, days: -1 });
+    const it: BoardItem = { ti, days, pin: false, warn: 0 };
+    if (st === 'finished') return;
+    if (st === 'pending') by.pend.push({ ...it, days: -1 });
     else if (st === 'dropped') by.park.push(it);
     else if (st === 'playing') {
       const pin = !!t.id && pins.has(t.id);
@@ -181,11 +177,7 @@ export function buildBoard(): Band[] {
   by.mid.sort(recent);
   by.park.sort(recent);
   by.pend.sort((a, b) => (titles[a.ti].listPos ?? 1e9) - (titles[b.ti].listPos ?? 1e9) || name(a.ti).localeCompare(name(b.ti)));
-  by.done.sort((a, b) => (a.year || -1) === (b.year || -1)
-    ? (titles[b.ti].finishedMs ?? 0) - (titles[a.ti].finishedMs ?? 0) || name(a.ti).localeCompare(name(b.ti))
-    : (b.year || -1) - (a.year || -1));
-  by.done.forEach((it, k) => { it.yearStart = k === 0 || by.done[k - 1].year !== it.year; });
-  return BAND_DEF.filter((d) => by[d.key].length).map((d) => ({ ...d, compact: d.key === 'done', items: by[d.key] }));
+  return BAND_DEF.filter((d) => by[d.key].length).map((d) => ({ ...d, items: by[d.key] }));
 }
 
 const onBoard = () => app.titlesTab === 'list';
