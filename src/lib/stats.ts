@@ -598,3 +598,35 @@ export function weekReview(
 /** Iniciales para la miniatura de respaldo: «Hollow Knight» → «HK». */
 export const initials = (name: string) =>
   name.split(/[\s:\-–—_]+/).filter((w) => /^[\p{L}\p{N}]/u.test(w)).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || '?';
+
+/* ---------- terminados del año ---------- */
+export interface FinRef extends GameRef { finishedMs: number; /** Tiempo jugado total. */ ms: number }
+export interface FinLane { pi: number; id: string; name: string; count: number; /** Doce meses, cada uno con sus terminados en orden. */ months: FinRef[][] }
+export interface FinYear { year: number; lanes: FinLane[]; count: number; prevCount: number; last: FinRef | null; years: number[] }
+
+/** Juegos terminados en un año, con un carril por categoría (en el orden de la biblioteca; nunca se mezclan).
+ *  Mismo criterio que el resumen anual: estado «terminado», con fecha y sin ocultar. */
+export function finishedYear(lib: Library, year: number): FinYear {
+  const lanes: FinLane[] = [];
+  const ys = new Set<number>();
+  let prevCount = 0, last: FinRef | null = null;
+  lib.platforms.forEach((p, pi) => {
+    const months: FinRef[][] = Array.from({ length: 12 }, () => []);
+    let count = 0;
+    p.titles.forEach((t, ti) => {
+      if (t.hidden || t.status !== 'finished' || !t.finishedMs) return;
+      const d = new Date(t.finishedMs), y = d.getFullYear();
+      ys.add(y);
+      if (y === year - 1) prevCount++;
+      if (y !== year) return;
+      const r: FinRef = { pi, ti, t, finishedMs: t.finishedMs, ms: (t.playSeconds ?? 0) * 1000 };
+      months[d.getMonth()].push(r);
+      count++;
+      if (!last || r.finishedMs > last.finishedMs) last = r;
+    });
+    if (!count) return;
+    for (const m of months) m.sort((a, b) => a.finishedMs - b.finishedMs);
+    lanes.push({ pi, id: p.id, name: p.name, count, months });
+  });
+  return { year, lanes, count: lanes.reduce((a, l) => a + l.count, 0), prevCount, last, years: [...ys].sort((a, b) => a - b) };
+}

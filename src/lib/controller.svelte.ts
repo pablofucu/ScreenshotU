@@ -218,7 +218,7 @@ function chipReveal(k: string) {
   const topIn = (e: HTMLElement) => { let t = 0; for (let p: HTMLElement | null = e; p && p !== pane; p = p.offsetParent as HTMLElement | null) t += p.offsetTop; return t; };
   const H = pane.parentElement!.clientHeight, full = pane.scrollHeight, max = Math.max(0, full - H);
   const top = topIn(el), h = el.offsetHeight;
-  const sec = el.closest('.cgrid, .cols')?.previousElementSibling as HTMLElement | null | undefined;
+  const sec = el.closest('.cgrid, .cols, .lanes')?.previousElementSibling as HTMLElement | null | undefined;
   const head = sec?.classList.contains('sh') && top - topIn(sec) < 260 ? topIn(sec) - 10 : top - 16;
   let y = app.goff;
   if (head < y) y = head;
@@ -273,7 +273,17 @@ export function move(dx: number, dy: number) {
   const root = screenEl();
   if (!root) return;
   const cur = root.querySelector<HTMLElement>('.fx.f');
-  const all = [...root.querySelectorAll<HTMLElement>('.fx')];
+  let all = [...root.querySelectorAll<HTMLElement>('.fx')];
+  // Terminados › Mes a mes: izquierda/derecha recorren el carril de su categoría sin saltar a otro;
+  // arriba/abajo van al carril vecino que tenga portadas (la más cercana en horizontal) antes de salir de la cuadrícula.
+  if (cur?.classList.contains('cvf')) {
+    const lane = cur.parentElement!.offsetTop, covers = all.filter((e) => e.classList.contains('cvf'));
+    if (dx) all = covers.filter((e) => e.parentElement!.offsetTop === lane);
+    else {
+      const tops = [...new Set(covers.map((e) => e.parentElement!.offsetTop))].filter((t) => (t - lane) * dy > 0).sort((a, b) => (a - b) * dy);
+      if (tops.length) all = covers.filter((e) => e.parentElement!.offsetTop === tops[0]);
+    }
+  }
   if (!cur) {
     if (all[0]) setFocus(all[0].dataset.k!);
     return;
