@@ -9,6 +9,7 @@ import type { BackendEvent, Config, Library, MagpieMode, Shot, Title, TitlesTab 
 import { fmtDur } from './format';
 import { oskCmd, oskKeydown } from './osk.svelte';
 import { pairCmd } from './pair.svelte';
+import { closeWeek, wn } from './weeknew.svelte';
 import { useCmd } from './usepc.svelte';
 import {
   accentCmd, addCmd, addShotsTo, curTitle, exitSel, formCmd, gdirCmd, hiddenCmd, moveCmd, onFilesDropped,
@@ -2002,12 +2003,29 @@ export async function boot() {
 }
 
 /* ---------- entrada ---------- */
+/** Aviso de semana nueva: A abre Estadísticas › Semana en la semana pasada; B lo descarta. */
+export function openWeekNew() {
+  closeWeek();
+  app.statsTab = 'week';
+  app.weekOff = -1;
+  openStats();
+}
+
+/** Gancho del mando: con el aviso abierto en Inicio, A/B lo atienden y el resto no llega a la pantalla de debajo. */
+function weekNewCmd(c: string): boolean {
+  if (!wn.open || app.view !== 'home') return false;
+  if (c === 'a') openWeekNew();
+  else if (c === 'b') { closeWeek(); blip(520); }
+  return true;
+}
+
 export function cmd(c: string) {
   // Mientras Ajustes espera un botón de captura, el mando y el teclado no navegan.
   if (app.learn) return;
   wake();
   app.inputAt = Date.now();
   if (pairCmd(c)) return;
+  if (weekNewCmd(c)) return;
   if (app.audioMenu) { audioCmd(c); return; }
   if (app.osk.open) { oskCmd(c); return; }
   if (useCmd(c)) return;

@@ -7,6 +7,7 @@
   import Hints from '../components/Hints.svelte';
   import RecentCard from '../components/RecentCard.svelte';
   import ReadCard from '../components/ReadCard.svelte';
+  import WeekNew from '../components/WeekNew.svelte';
 
   const DOCK = [
     { n: 'Buscar', ic: ICON.search, c: 0 },
@@ -118,6 +119,8 @@
     {/if}
   {/each}
 </div>
+
+{#if app.config.root}<WeekNew />{/if}
 
 <Hints list={[['A', app.focus === 'read' ? 'Ver racha' : 'Abrir', 'a'], ...(app.focus === 'read' && app.goalKeys.length > 1 ? [['LB/RB', 'Categoría', 'lb'] as [string, string, string]] : []), ...(focusRec?.t.launchable ? [['X', 'Jugar', 'x'] as [string, string, string]] : []), ['Start', 'Menú', 'menu']]} />
 
