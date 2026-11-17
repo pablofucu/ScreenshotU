@@ -47,8 +47,8 @@ const onAllTab = () => app.titlesTab === 'all';
 export const DETAIL_SHOTS = 5;
 /** Lista de la clasificación: alto visible y posición/alto de cada fila (las 3 primeras, con hero, son más altas). */
 export const RANK_VIEW_H = 384;
-export const rankH = (i: number) => (i < 3 ? 76 : 64);
-export const rankY = (i: number) => (i < 3 ? i * 84 : 252 + (i - 3) * 72);
+export const rankH = (i: number) => (i < 3 ? 56 : 44);
+export const rankY = (i: number) => (i < 3 ? i * 62 : 186 + (i - 3) * 50);
 /** Entradas del dock de Inicio (Buscar, Favoritas, Estadísticas, Añadir). */
 export const DOCK_N = 4;
 
