@@ -134,6 +134,7 @@
 </script>
 
 <ChipPane>
+ <div class="wk">
   <h3 class="sh"><CIcon name="cal" />La semana<span>{label}</span></h3>
   <div class="cgrid">
     <StatChip k="wk0" icon="swap" label="Tiempo total" tone={4}>
@@ -176,8 +177,10 @@
         {#if fan.some((s) => s.fav)}<svg class="x-star" viewBox="0 0 24 24" fill="currentColor" stroke="var(--tint-base)" stroke-width="1.5" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" /></svg>{/if}
       </div>
     </StatChip>
+  </div>
 
-    <StatChip k="wk4" icon="trophy" label="Lo mejor de la semana" wide tone={2}>
+  <div class="r2" class:two={!!jp}>
+    <StatChip k="wk4" icon="trophy" label="Lo mejor de la semana" tone={2}>
       {#if best.length}
         <div class="x-best">
           {#each best as h, i}
@@ -194,7 +197,7 @@
     </StatChip>
 
     {#if jp}
-      <StatChip k="wk5" icon="book" label="Novelas japonesas · lectura" wide tone={5}>
+      <StatChip k="wk5" icon="book" label="Novelas japonesas · lectura" tone={5}>
         <div class="jpr">
           <div><div class="x-v"><span use:countUp={{ to: jp.chars, key: `week:J:${wid}` }}>{jp.chars}</span></div><div class="x-s">caracteres leídos</div></div>
           <div><div class="x-v">{nf(jp.cph)}<small>/h</small></div><div class="x-s">velocidad</div></div>
@@ -205,19 +208,18 @@
     {/if}
   </div>
 
-  <h3 class="sh"><CIcon name="grid" />Por categoría<span>cada una en su bloque, con su color; nunca se mezclan</span></h3>
   {#if cols.length}
-    <div class="cols">
+    <div class="cols" style="grid-template-columns:repeat({Math.max(3, cols.length)},minmax(0,1fr))">
       {#each cols as c, i}
         <StatChip k="wk{6 + i}" cls="col" tone={catTone(c.id)} act={c.b.top[0] ? `sr:${c.b.pi}:${c.b.top[0].ti}` : undefined}>
-          <div class="ch"><CIcon name={catIcon(c.id)} class="" />{c.b.name}</div>
-          <div class="tt"><b>{fmtHM(c.b.ms)}</b>{#if c.d !== 0}<span class="delta" class:dn={c.d < 0}><CIcon name="up" class="" />{fmtHM(Math.abs(c.d))}</span>{/if}</div>
+          <div class="ch"><CIcon name={catIcon(c.id)} class="" /><span>{c.b.name}</span>
+            <div class="tt"><b>{fmtHM(c.b.ms)}</b>{#if c.d !== 0}<span class="delta" class:dn={c.d < 0}><CIcon name={c.d < 0 ? 'down' : 'up'} class="" />{fmtHM(Math.abs(c.d))}</span>{/if}</div>
+          </div>
           {#if c.b.kind === 'play'}
             <div class="x-bars">{#each c.bars as b, j}<div class={b.top ? 'x-top' : ''}><i style="--h:{Math.max(4, b.h)}%;--i:{j}"></i><span>{DIAS[j]}</span></div>{/each}</div>
           {:else}
             <div class="x-wk">{#each c.rings as p, j}<div><i class={p >= 1 ? 'x-ok' : ''} style="--p:{p};--i:{j}"></i><span>{DIAS[j]}</span></div>{/each}</div>
           {/if}
-          <div class="sub">{c.b.kind === 'play' ? 'Más jugados' : 'Lo más leído'}</div>
           <div class="tops">
             {#each c.b.top as r (r.ti)}
               {@const t = plat(c.b.pi).titles[r.ti]}
@@ -231,9 +233,40 @@
   {:else}
     <div class="cnone">Sin actividad esta semana. Las categorías aparecerán aquí cuando haya partidas, capturas o terminados.</div>
   {/if}
+ </div>
 </ChipPane>
 
 <style>
+  /* Todo en una pantalla (1280×720): cifras arriba, «lo mejor» y lectura en una franja, y una columna por categoría. */
+  .wk :global(.sh){margin:0 0 8px}
+  .wk :global(.cgrid .st.st){height:112px}
+  .wk :global(.st .face){padding:10px 14px;gap:6px}
+  .r2{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s-4);margin:12px 0}
+  .r2.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .r2 :global(.st.st){height:88px}
+  .r2 :global(.bico){width:38px;height:38px}
+  .r2 :global(.bico svg){width:20px;height:20px}
+  .r2 :global(.x-best h4){font-size:var(--t-m)}
+  .r2 :global(.x-best p){margin:0}
+  .r2 :global(.x-dots){position:absolute;right:16px;top:14px}
+  .wk :global(.cgrid .x-v){font-size:var(--t-2xl)}
+  .wk :global(.cgrid .cmp){gap:4px}
+  .wk :global(.cgrid .cmp div){grid-template-columns:58px 1fr 54px}
+  .wk :global(.cgrid .cmp u){height:8px}
+  .wk :global([data-k="wk0"] .x-v){font-size:var(--t-xl)}
+  .wk :global([data-k="wk0"] .cmp){gap:2px}
+  .wk :global([data-k="wk0"] .cmp div){font-size:var(--t-xs);line-height:12px}
+  .wk :global(.fan){position:absolute;right:20px;top:14px;width:100px;height:64px;margin:0}
+  .wk :global(.st .fan img){width:80px;height:48px}
+  .wk :global(.st:has(.fan) .x-v small){display:none}
+  .wk :global(.cpane .st.col),.wk :global(.st.col.col){height:226px}
+  .wk :global(.col .ch){font-size:var(--t-m)}
+  .wk :global(.col .ch > span){flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .wk :global(.col .tt b){font-size:var(--t-l)}
+  .wk :global(.col .x-bars){height:52px}
+  .wk :global(.col .x-wk i){width:22px;height:22px}
+  .wk :global(.col .tops){gap:4px}
+  .wk :global(.col .tops i){height:22px}
   .jpr{display:flex;gap:var(--s-6);align-items:flex-end;margin-top:auto}
   .cnone{padding:var(--s-6);font:600 var(--t-m)/1.4 var(--round);color:var(--ink-2)}
 </style>
