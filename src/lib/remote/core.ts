@@ -103,10 +103,12 @@ async function callServer(ep: Endpoint, cmd: string, args: unknown, ms: number):
     body: JSON.stringify({ cmd, args: args ?? {} }),
   }, ms);
   markOnline();
-  if (r.status === 401 || r.status === 429) {
+  // 429: el PC bloquea un minuto esta dirección tras 10 intentos con un token que no vale (aunque el de ahora sea bueno).
+  if (r.status === 429) throw 'El PC ha bloqueado esta conexión un minuto por demasiados intentos fallidos. Espera y vuelve a probar';
+  if (r.status === 401) {
     throw clientPc
       ? `Este equipo ya no está emparejado con ${clientPc}: vuelve a conectarlo en Ajustes → Este equipo`
-      : 'El código no es correcto (míralo en Ajustes del visor del PC)';
+      : 'Esta tablet ya no está emparejada con el PC: vuelve a emparejarla';
   }
   if (r.status === 403) throw clientPc ? 'No disponible desde otro PC' : 'No disponible desde la tablet';
   if (r.status === 426) throw 'Actualiza el visor del PC principal';
