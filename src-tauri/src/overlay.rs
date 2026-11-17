@@ -250,8 +250,13 @@ pub(crate) fn raise_menu(w: &tauri::WebviewWindow, x: i32, y: i32, width: u32, h
     let Ok(h) = w.hwnd() else { return (false, None) };
     let hwnd = HWND(h.0);
     no_activate_clickable(w);
+    let framed = strip_frame(hwnd);
     unsafe {
-        let _ = SetWindowPos(hwnd, Some(HWND_TOPMOST), x, y, width as i32, height as i32, SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
+        let mut flags = SWP_NOOWNERZORDER | SWP_SHOWWINDOW;
+        if framed {
+            flags |= windows::Win32::UI::WindowsAndMessaging::SWP_FRAMECHANGED;
+        }
+        let _ = SetWindowPos(hwnd, Some(HWND_TOPMOST), x, y, width as i32, height as i32, flags);
         // Cuando el atajo viene de XInput (mando), Windows no considera al proceso con entrada reciente y
         // `SetForegroundWindow` falla sin soltar el bloqueo de primer plano con un evento inocuo (`vk = 0`).
         keybd_event(0, 0, KEYEVENTF_KEYUP, 0);
@@ -266,6 +271,26 @@ pub(crate) fn raise_menu(w: &tauri::WebviewWindow, x: i32, y: i32, width: u32, h
     }
 }
 
+/// Quita la barra de título y el borde si la ventana los ha recuperado (en streaming se ha visto el menú con barra
+/// y botón de cerrar). Devuelve `true` si había que quitarlos, para que `SetWindowPos` repinte el marco.
+#[cfg(windows)]
+fn strip_frame(hwnd: windows::Win32::Foundation::HWND) -> bool {
+    use windows::Win32::UI::WindowsAndMessaging::{
+        GetWindowLongPtrW, SetWindowLongPtrW, GWL_STYLE, WS_CAPTION, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_POPUP, WS_SYSMENU,
+        WS_THICKFRAME,
+    };
+    let frame = (WS_CAPTION.0 | WS_THICKFRAME.0 | WS_SYSMENU.0 | WS_MINIMIZEBOX.0 | WS_MAXIMIZEBOX.0) as isize;
+    unsafe {
+        let st = GetWindowLongPtrW(hwnd, GWL_STYLE);
+        if st & frame == 0 {
+            return false;
+        }
+        crate::quickmenu::log(&format!("la ventana tenia marco (estilo {st:#x}): lo quito"));
+        SetWindowLongPtrW(hwnd, GWL_STYLE, (st & !frame) | WS_POPUP.0 as isize);
+    }
+    true
+}
+
 #[cfg(not(windows))]
 pub(crate) fn raise_menu(w: &tauri::WebviewWindow, _x: i32, _y: i32, _width: u32, _height: u32) -> (bool, Option<u32>) {
     let _ = w.show();
@@ -276,10 +301,18 @@ pub(crate) fn raise_menu(w: &tauri::WebviewWindow, _x: i32, _y: i32, _width: u32
 /// lo suelta y lo lleva al centro del menu, para que Apollo lo dibuje y el raton del cliente lo mueva.
 #[cfg(windows)]
 pub(crate) fn free_cursor(x: i32, y: i32, width: u32, height: u32) {
-    use windows::Win32::UI::WindowsAndMessaging::{ClipCursor, SetCursorPos};
+    use windows::Win32::UI::WindowsAndMessaging::{ClipCursor, GetCursorInfo, SetCursorPos, CURSORINFO, CURSOR_SHOWING};
     unsafe {
         let _ = ClipCursor(None);
         let _ = SetCursorPos(x + width as i32 / 2, y + height as i32 / 2);
+        let mut ci = CURSORINFO { cbSize: std::mem::size_of::<CURSORINFO>() as u32, ..Default::default() };
+        let seen = GetCursorInfo(&mut ci).is_ok();
+        crate::quickmenu::log(&format!(
+            "streaming: cursor soltado; visible={} en ({}, {})",
+            seen && ci.flags.0 & CURSOR_SHOWING.0 != 0,
+            ci.ptScreenPos.x,
+            ci.ptScreenPos.y
+        ));
     }
 }
 
