@@ -15,7 +15,8 @@ Decisión del 15-nov (RCM-1): la pantalla de racha antigua (anillos de hoy, meda
 4. **Reparto automático.** El exceso de cada día paga primero el día libre más antiguo aún abierto y dentro de plazo. **No se guarda por adelantado:** el exceso de un día solo paga días libres anteriores a él; lo que sobre se pierde.
 5. **Plazo.** Si al terminar el día `d+7` sigue debiendo algo, el día `d` pasa a **roto**: la racha se corta ahí (los días cumplidos después forman una racha nueva). Como esto cambia la historia hacia atrás, se calcula por punto fijo: se recalcula con `d` forzado a roto hasta que no aparezca ningún plazo vencido nuevo.
 6. **Fichas.** Fichas libres hoy = `2 − (días libres en [hoy-6, hoy-1])`. La ficha gastada el día `d` vuelve el día `d+7`.
-7. **Meta diferida.** Cambiar la meta en Ajustes vale **desde mañana**: hoy sigue la anterior (no se puede bajar la meta para cumplir hoy). Excepciones: activar (desde 0) o desactivar (a 0) valen al momento.
+7. **Día libre extra por racha (oculto).** Al llegar a 15 días seguidos de racha (cumplidos o libres, 15, 30, 45…) se gana un día libre extra. No se ve en la interfaz, no se acumula (como mucho uno guardado) y el siguiente día libre lo gasta en vez de una ficha: ese día no cuenta para el tope de 2 en 7 días ni gasta ficha, pero su deuda se paga igual. Si la racha se rompe, se pierde. Código: `BONUS_STREAK`, `FreeDay.bonus`.
+8. **Meta diferida.** Cambiar la meta en Ajustes vale **desde mañana**: hoy sigue la anterior (no se puede bajar la meta para cumplir hoy). Excepciones: activar (desde 0) o desactivar (a 0) valen al momento.
 
 ### Historial de metas
 

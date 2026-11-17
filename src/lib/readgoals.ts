@@ -45,6 +45,8 @@ export const EXTRA_MIN_PLAY = 10;
 export const FREE_MAX = 2;
 /** Plazo (días) para recuperar lo que faltó en un día libre y ventana de las fichas. */
 export const FREE_WINDOW = 7;
+/** Cada tantos días seguidos de racha se gana un día libre extra (oculto, no se acumula: como mucho uno guardado). */
+export const BONUS_STREAK = 15;
 
 /** Historial ordenado de metas: `[díaDesde, minutos][]`. */
 export type GoalHist = [number, number][];
@@ -81,6 +83,8 @@ export interface FreeDay {
   left: number;       // días que quedan contando hoy: deadline − hoy + 1 (2 = «hoy y mañana»)
   closeAt: number;    // ms: dayStart(deadline + 1)
   payDay: number;     // día en que quedó saldado (NaN si no)
+  /** Día libre extra ganado con la racha: no gasta ficha ni cuenta para el tope de `FREE_MAX`. */
+  bonus: boolean;
 }
 
 /** Una vela de los últimos 7 días (de hoy-6 a hoy). */
@@ -249,6 +253,7 @@ export function goalTrack(key: GoalKey, goal: number, platforms: Platform[], liv
   let brokenSet = new Set<number>();
   let extraMap = new Map<number, number>();
   let gaveMap = new Map<number, number>();
+  let bonusHeld = false;
 
   while (true) {
     freeAll = [];
@@ -257,23 +262,31 @@ export function goalTrack(key: GoalKey, goal: number, platforms: Platform[], liv
     brokenSet = new Set<number>();
     extraMap = new Map<number, number>();
     gaveMap = new Map<number, number>();
+    // Día libre extra oculto: se gana al llegar a `BONUS_STREAK` días seguidos de racha (cumplidos o libres),
+    // no se acumula (como mucho uno guardado) y el siguiente día libre lo gasta en vez de una ficha. Se pierde con la racha.
+    bonusHeld = false;
+    let runLen = 0;
 
     for (let d = startDay; d < today; d++) {
       const g = goalOf(d);
       const m = mins.get(d) ?? 0;
       if (g <= 0) {
         if (kept.has(d - 1)) brokenSet.add(d);
+        runLen = 0;
+        bonusHeld = false;
         continue;
       }
       if (metGoal(m, g)) {
         kept.add(d);
+        if (++runLen % BONUS_STREAK === 0) bonusHeld = true;
         continue;
       }
       let winFree = 0;
       for (let k = d - FREE_WINDOW + 1; k <= d - 1; k++) {
-        if (freeMap.has(k)) winFree++;
+        if (freeMap.has(k) && !freeMap.get(k)!.bonus) winFree++;
       }
-      if (!forcedBroken.has(d) && kept.has(d - 1) && winFree < FREE_MAX) {
+      const useBonus = bonusHeld && kept.has(d - 1) && !forcedBroken.has(d);
+      if (!forcedBroken.has(d) && kept.has(d - 1) && (useBonus || winFree < FREE_MAX)) {
         const played = Math.round(m);
         const need = g - played;
         const deadline = d + FREE_WINDOW;
@@ -289,12 +302,17 @@ export function goalTrack(key: GoalKey, goal: number, platforms: Platform[], liv
           left: deadline - today + 1,
           closeAt: dayStart(deadline + 1),
           payDay: NaN,
+          bonus: useBonus,
         };
         freeAll.push(f);
         freeMap.set(d, f);
         kept.add(d);
-      } else if (kept.has(d - 1) || forcedBroken.has(d)) {
-        brokenSet.add(d);
+        if (useBonus) bonusHeld = false;
+        if (++runLen % BONUS_STREAK === 0) bonusHeld = true;
+      } else {
+        if (kept.has(d - 1) || forcedBroken.has(d)) brokenSet.add(d);
+        runLen = 0;
+        bonusHeld = false;
       }
     }
 
@@ -381,10 +399,10 @@ export function goalTrack(key: GoalKey, goal: number, platforms: Platform[], liv
   const open = free.filter((f) => !f.done);
   const owe = open.reduce((a, f) => a + f.owe, 0);
   const urgent = open.find((f) => f.left <= 2) ?? null;
-  const spent = freeAll.filter((f) => f.day >= today - 6 && f.day <= today - 1);
+  const spent = freeAll.filter((f) => !f.bonus && f.day >= today - 6 && f.day <= today - 1);
   const tokens = Math.max(0, FREE_MAX - spent.length);
   const tokenBack = spent.length ? spent[0].deadline : NaN;
-  const state: StreakState = urgent ? 'urgent' : tokens === 0 ? 'tope' : open.length ? 'debt' : done ? 'lit' : 'ok';
+  const state: StreakState = urgent ? 'urgent' : tokens === 0 && !bonusHeld ? 'tope' : open.length ? 'debt' : done ? 'lit' : 'ok';
   let paidDay: number | null = null;
   for (const f of free) if (f.payDay === today) paidDay = f.day;
 

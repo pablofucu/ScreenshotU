@@ -6,6 +6,7 @@ import {
   EXTRA_MIN_PLAY,
   FREE_MAX,
   FREE_WINDOW,
+  BONUS_STREAK,
   goalAt,
   goalHistOf,
   goalTrack,
@@ -373,4 +374,55 @@ test('readfmt: freeDayName, freeLeft y freeClose', () => {
   assert.equal(freeLeft({ ...f, left: 1 }), 'hoy');
   assert.equal(freeClose(f), 'lun 7:00');
   assert.equal(freeClose(f, true), 'lunes 26 a las 7:00');
+});
+
+test('15 días de racha dan un día libre extra oculto que no gasta ficha', () => {
+  assert.equal(BONUS_STREAK, 15);
+  const p: Plays = [];
+  fill(p, 20, 6, 60); // 15 días seguidos
+  fill(p, 2, 1, 60); // hace 5, 4 y 3 días: nada (tres días libres en 3 días)
+  const t = vn(p);
+  assert.equal(wday(t, 5).free?.bonus, true);
+  assert.equal(wday(t, 4).free?.bonus, false);
+  assert.equal(wday(t, 3).free?.bonus, false);
+  assert.equal(wday(t, 3).broken, false);
+  assert.equal(t.streak, 20);
+  assert.equal(t.tokens, 0);
+});
+
+test('sin llegar a 15 días de racha (los libres cuentan) no hay extra: el tercer libre rompe', () => {
+  const p: Plays = [];
+  fill(p, 17, 6, 60); // 12 días; con los 2 libres seguirían en 14
+  fill(p, 2, 1, 60);
+  const t = vn(p);
+  assert.equal(wday(t, 5).free?.bonus, false);
+  assert.equal(wday(t, 3).broken, true);
+  assert.equal(t.streak, 2);
+});
+
+test('el día libre extra no se acumula: con 30 días solo hay uno', () => {
+  const p: Plays = [];
+  fill(p, 35, 6, 60); // 30 días: se ganaría al 15 y al 30, pero solo se guarda uno
+  day(p, 1, 60);
+  const t = vn(p);
+  assert.equal(wday(t, 5).free?.bonus, true);
+  assert.equal(wday(t, 4).free?.bonus, false);
+  assert.equal(wday(t, 3).free?.bonus, false);
+  assert.equal(wday(t, 2).broken, true);
+  assert.equal(t.streak, 1);
+});
+
+test('el día libre extra ganado en el día 15 salva hoy cuando ya hay dos libres en 7 días', () => {
+  const p: Plays = [];
+  fill(p, 20, 8, 60); // 13 días
+  day(p, 7, 5); // hace 7 días: libre (ficha)
+  fill(p, 6, 5, 60);
+  // hace 4 días: libre (ficha); hace 3 y 2: cumplidos; hace 1: cumplido
+  fill(p, 3, 1, 60);
+  const sin = vn(p);
+  assert.equal(sin.streak >= 1, true);
+  // Mañana a las 8:00 sin haber leído hoy (ayer, día T, queda a 0): el día de ayer pasa a ser libre gracias al extra.
+  const mañana = new Date(2026, 9, 21, 8).getTime();
+  const t = goalTrack('vn', 60, lib('vn', p), null, mañana, 10, []);
+  assert.equal(t.streak > 0, true);
 });
