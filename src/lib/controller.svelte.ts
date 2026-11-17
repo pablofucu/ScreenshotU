@@ -2313,8 +2313,23 @@ function startTouch() {
   window.addEventListener('click', (e) => {
     if (performance.now() - lpAt < 800) { e.stopPropagation(); e.preventDefault(); lpAt = 0; }
   }, true);
+  // Visor: dos dedos amplian hacia su punto medio; con la imagen ampliada, un dedo la mueve.
+  let pinchD = 0;
+  const frame = () => {
+    const fr = screenEl()?.querySelector<HTMLElement>('.vframe');
+    if (!fr) return null;
+    const r = fr.getBoundingClientRect();
+    return { r, s: r.width / fr.offsetWidth || 1 };
+  };
+  const inViewer = () => app.view === 'viewer' && !app.overlay;
   window.addEventListener('touchstart', (e) => {
     lpCancel();
+    if (e.touches.length === 2 && inViewer()) {
+      const [a, c] = [e.touches[0], e.touches[1]];
+      pinchD = Math.hypot(a.clientX - c.clientX, a.clientY - c.clientY);
+      active = false;
+      return;
+    }
     if (e.touches.length !== 1) { active = false; return; }
     const t = e.touches[0];
     x0 = lx = t.clientX; y0 = ly = t.clientY;
@@ -2328,6 +2343,18 @@ function startTouch() {
     }, LONG_MS);
   }, { passive: true });
   window.addEventListener('touchmove', (e) => {
+    if (pinchD && e.touches.length === 2) {
+      e.preventDefault();
+      const [a, c] = [e.touches[0], e.touches[1]];
+      const d = Math.hypot(a.clientX - c.clientX, a.clientY - c.clientY), g = frame();
+      if (g && d > 0) {
+        const cx = (a.clientX + c.clientX) / 2, cy = (a.clientY + c.clientY) / 2;
+        zoomView(d / pinchD, (cx - g.r.left - g.r.width / 2) / g.s, (cy - g.r.top - g.r.height / 2) / g.s);
+        wake();
+      }
+      pinchD = d;
+      return;
+    }
     if (!active || e.touches.length !== 1) { lpCancel(); return; }
     const t = e.touches[0];
     if (!dragging && Math.hypot(t.clientX - x0, t.clientY - y0) < TOUCH_SLOP) return;
@@ -2335,7 +2362,16 @@ function startTouch() {
     if (native) return;
     dragging = true;
     e.preventDefault();
-    if (app.view === 'viewer' && !app.overlay) return; // en el visor se decide al soltar
+    if (inViewer()) {
+      // Ampliada: la imagen sigue al dedo. Sin ampliar: el cambio de captura se decide al soltar.
+      if (app.vz.k > 1) {
+        const g = frame(), s = g?.s ?? 1;
+        app.vz.x += (t.clientX - lx) / s; app.vz.y += (t.clientY - ly) / s;
+        clampPan(); wake();
+      }
+      lx = t.clientX; ly = t.clientY;
+      return;
+    }
     const dx = lx - t.clientX, dy = ly - t.clientY;
     lx = t.clientX; ly = t.clientY;
     e.target?.dispatchEvent(new WheelEvent('wheel', {
@@ -2344,9 +2380,10 @@ function startTouch() {
   }, { passive: false });
   window.addEventListener('touchend', (e) => {
     lpCancel();
+    if (e.touches.length < 2) pinchD = 0;
     if (!active) return;
     active = false;
-    if (native || !dragging || app.view !== 'viewer' || app.overlay) return;
+    if (native || !dragging || !inViewer() || app.vz.k > 1) return;
     const t = e.changedTouches[0];
     const dx = t.clientX - x0, dy = t.clientY - y0;
     if (Math.abs(dx) > SWIPE_MIN && Math.abs(dx) > Math.abs(dy) * 1.5) cmd(dx < 0 ? 'right' : 'left');

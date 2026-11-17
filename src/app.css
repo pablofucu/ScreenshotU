@@ -920,6 +920,16 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 /* Selectores pequeños (Novelas · PC · Switch): mismo aspecto, zona de toque de 44 px. */
 .tablet .stabs .t[data-hact]{position:relative}
 .tablet .stabs .t[data-hact]::before{content:"";position:absolute;inset:-11px -2px}
+/* Visor en la tablet: marco más grande con los 80 px de más; la barra de acciones va sobre la tira, junto a los datos. */
+.tablet .vframe{left:89px;width:1102px;height:620px}
+.tablet .varrow{top:286px}
+.tablet .vw .hints{bottom:96px}
+.tablet .vw .vinfo{bottom:99px}
+.tablet .vw.bare .hints{bottom:16px}
+.tablet .vw.bare .vinfo{bottom:19px}
+.tablet .ttabs .tflt{height:44px}
+.tablet .ttabs .tflt:active{transform:scale(.97)}
+.tablet .ttabs .tsearch{height:44px}
 .tablet .sx .chev:not(.dis):active,.tablet .sx .o:active{transform:scale(.97)}
 .tablet .glass,.tablet .pill,.tablet .scrim,.tablet #toast{-webkit-backdrop-filter:none;backdrop-filter:none}
 .tablet .glass{transition:transform .24s cubic-bezier(.34,1.32,.64,1),background .24s ease}

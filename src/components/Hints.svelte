@@ -21,6 +21,8 @@
   const inScrim = $derived(!!el?.closest('.scrim, .ovl, .dlg'));
   // Lo que la pantalla ya ofrece en su sitio (flechas del periodo, pestañas, categoría) no se repite abajo.
   let inPlace = $state<Set<string>>(new Set());
+  // Sin barra de arriba (visor) no hay flecha de volver: entonces «Volver» se queda abajo.
+  let hasBack = $state(true);
   $effect(() => {
     void list;
     const s = new Set<string>();
@@ -31,7 +33,11 @@
       s.add(n.dataset.hact!);
       s.add('@' + (n.textContent ?? '').trim());
     }
+    // La tarjeta «Jugar» de la ficha ya lanza el juego.
+    if (document.querySelector('#screen [data-act="play"]')) s.add('@Jugar');
+    if (document.querySelector('#screen .tsearch')) s.add('@Buscar');
     inPlace = s;
+    hasBack = !!document.querySelector('.top .cback');
   });
   const shown = (b: string, l: string, act: string) =>
     !inPlace.has('@' + l) && (b.includes('/') ? b.toLowerCase().split('/') : [act]).some((a) => !inPlace.has(a));
@@ -39,7 +45,7 @@
     list.filter(([b, l, act]) => {
       if (!act || !shown(b, l, act)) return false;
       if (b === 'A' && TAP.test(l)) return false;
-      if (b === 'B' && !inScrim && /^(Volver|Atrás)$/.test(l)) return false;
+      if (b === 'B' && !inScrim && hasBack && /^(Volver|Atrás)$/.test(l)) return false;
       return true;
     }),
   );
