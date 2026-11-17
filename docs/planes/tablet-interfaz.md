@@ -39,6 +39,15 @@ En `docs/maquetas/tablet/`, a 1280×800, una por grupo de pantallas, con dos o t
 
 **Elegida (17-nov, P-15): B «En su sitio»** ([maquetas/tablet/b-en-su-sitio.html](../maquetas/tablet/b-en-su-sitio.html)). Cada acción va junto a lo que toca (Jugar en la ficha, barra sobre la imagen en el visor, Ordenar junto a los filtros) y el menú de una portada o captura sale manteniendo pulsado. La maqueta solo vale para **dónde** va cada cosa: el aspecto es el del PC tal cual (mismo fondo, mismos iconos de `src/lib/icons`, franjas y degradados arcoíris, la racha con sus velas y animaciones). Por eso no se hacen más maquetas: se trabaja sobre los componentes reales con `.tablet`, cambiando solo sitio, orden y tamaño de toque.
 
+## Hecho (17-nov, TCL-4 a TCL-9 y TCL-11)
+
+- Lienzo de 1280×800 en la tablet. La banda de abajo (64 px) se queda: ahí van las acciones como botones táctiles («‹ etiqueta ›» para los pares LB/RB y LT/RT), y lo que ya está en su sitio no se repite (pestañas, flechas del periodo, Jugar en la ficha, Buscar en el catálogo, la flecha de volver).
+- Pulsación larga = menú de acciones. Objetivos de 44 px en pestañas, flechas, selectores de Rachas, Ordenar y Buscar.
+- Visor: marco más grande, pellizco para ampliar, arrastrar con un dedo al estar ampliado, deslizar para pasar captura. Como no tiene barra arriba, «Volver» se queda abajo.
+- Menú sobre el juego (`quickmenu.html?tablet` en desarrollo): lienzo de 1280×800, sin glifos del mando, botones de 44 px.
+
+Falta: probarlo en la POCO Pad (TCL-10).
+
 ## Comprobación
 
 `npm run check`; la app de prueba en el navegador a 1280×800 con toque emulado; la APK en la POCO Pad la prueba el usuario (TCL-10 y lo que queda de ODD-8).
