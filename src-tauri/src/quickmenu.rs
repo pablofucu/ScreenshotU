@@ -411,6 +411,9 @@ fn show_window(app: &AppHandle, pid: Option<u32>, gen: u64) -> bool {
         }
         *lock(&LAST_RECT) = Some((m.x, m.y, m.w, m.h));
         let (fg_ok, fg_pid) = crate::overlay::raise_menu(&win, m.x, m.y, m.w, m.h);
+        if crate::stream::is_streaming() {
+            crate::overlay::free_cursor(m.x, m.y, m.w, m.h);
+        }
         let fg_exe = fg_pid.and_then(crate::snap::exe_of).unwrap_or_default();
         log(&format!("hp: encima hecho (SetForegroundWindow={fg_ok}, primer plano={fg_pid:?} {fg_exe})"));
         log(&format!("ventana mostrada en ({}, {}) {}x{}", m.x, m.y, m.w, m.h));

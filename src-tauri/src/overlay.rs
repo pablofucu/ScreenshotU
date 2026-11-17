@@ -272,6 +272,20 @@ pub(crate) fn raise_menu(w: &tauri::WebviewWindow, _x: i32, _y: i32, _width: u32
     (true, None)
 }
 
+/// En streaming el juego suele dejar el cursor encerrado (`ClipCursor`) y oculto bajo su ventana: al abrir el menu
+/// lo suelta y lo lleva al centro del menu, para que Apollo lo dibuje y el raton del cliente lo mueva.
+#[cfg(windows)]
+pub(crate) fn free_cursor(x: i32, y: i32, width: u32, height: u32) {
+    use windows::Win32::UI::WindowsAndMessaging::{ClipCursor, SetCursorPos};
+    unsafe {
+        let _ = ClipCursor(None);
+        let _ = SetCursorPos(x + width as i32 / 2, y + height as i32 / 2);
+    }
+}
+
+#[cfg(not(windows))]
+pub(crate) fn free_cursor(_x: i32, _y: i32, _width: u32, _height: u32) {}
+
 /// Devuelve el primer plano a la ventana que lo tenia antes de abrir el menu (si sigue existiendo). Sin acople:
 /// al cerrar, el primer plano ya es nuestro y Windows lo permite sin pedir ayuda al hilo ajeno.
 #[cfg(windows)]

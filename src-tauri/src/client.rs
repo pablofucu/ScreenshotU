@@ -429,7 +429,8 @@ pub fn client_open_stream(handle: AppHandle, state: State<'_, AppState>, app: St
     let host = rc::addr_host(cfg.addr());
     // Sin app «Juego actual» en Apollo, el escritorio (como la tablet).
     let app = if app.trim().is_empty() { "Desktop".to_string() } else { app };
-    let child = std::process::Command::new(exe).args(["stream", &host, &app]).spawn().map_err(|e| format!("No se pudo abrir Moonlight: {e}"))?;
+    // A pantalla completa siempre: en ventana sale la barra de título y Moonlight no captura el ratón hasta un clic.
+    let child = std::process::Command::new(exe).args(["stream", &host, &app, "--display-mode", "fullscreen"]).spawn().map_err(|e| format!("No se pudo abrir Moonlight: {e}"))?;
     start_stream_watch(handle, cfg, child);
     Ok(())
 }
