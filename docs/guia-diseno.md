@@ -89,6 +89,8 @@ Estos tres no se usan como decoración ni como color de serie.
 
 Con texto blanco encima se usan los rellenos `--ok-f` (`#27833a`) y `--bad-f` (`#d92c44`), que cumplen 4,5:1. Sobre `--warn` el texto va en `--ink`.
 
+Excepción aceptada (2026-11-17): el texto blanco sobre los colores fijos del arcoíris (`--arc-*`: dock de Inicio, estados de Mi lista, botón X del menú del juego) se queda como está aunque en rojo, naranja, amarillo, verde y azul baje de 4,5:1. Son colores de identidad y siempre van con su nombre o icono.
+
 ### 3.4 Posiciones fijas en el arcoíris
 
 Son colores de identidad: siempre llevan su nombre al lado, nunca informan solos.

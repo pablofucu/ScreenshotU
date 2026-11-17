@@ -19,5 +19,5 @@ Objetivo (guía §14 y §15, fase 7): `reader.css` y `hook.css` no redefinen tok
 1. `hook.css` (+ `hook/App.svelte`): import, acento, grises, cristales, letra y radios. Comprobar con `hook.html`.
 2. `reader.css`: lo mismo más la paleta `--rd-`. Comprobar con `reader.html` y el panel del hook dentro del lector.
 3. Restos fuera de lector y hook: `UseOtherPc.svelte` (16 hex), `Shelf`, `Titles`, `TopBar`, `AchievementCard`, `ResumePill`, y los px de `app.css` que quedan.
-4. Contraste del arcoíris con texto: decidir el relleno para texto blanco sobre `--arc-*` claros (chips de Rachas, bandas de Mi lista) y aplicarlo.
+4. Contraste del arcoíris con texto: decidir el relleno para texto blanco sobre `--arc-*` claros (chips de Rachas, bandas de Mi lista) y aplicarlo. **Decidido (2026-11-17): se deja como está**; anotado como excepción en la guía §3.3.
 5. Comprobaciones de §15 con cifras nuevas en la guía; fase 7 marcada como hecha.
