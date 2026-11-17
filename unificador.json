@@ -2336,9 +2336,17 @@
               "id": "TCL-3",
               "title": "Maquetas de la tablet",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-17T22:14:29+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-17T22:14:29+01:00"
             }
           ]
         },
@@ -2927,9 +2935,38 @@
       },
       "by": "claude",
       "created": "2026-11-17T15:32:30+01:00"
+    },
+    {
+      "id": "P-15",
+      "kind": "proposal",
+      "title": "Tablet: dónde van las acciones",
+      "text": "",
+      "step": "TCL-3",
+      "branch": "TCL",
+      "options": [
+        {
+          "label": "Barra arriba",
+          "desc": "acciones arriba a la derecha con icono y nombre, siempre en el mismo sitio; lo que no cabe en Más",
+          "file": ".unificador/propuestas/P-15/1.html"
+        },
+        {
+          "label": "En su sitio",
+          "desc": "cada acción junto a lo que toca (Jugar en la ficha, barra sobre la imagen en el visor); menú de una portada o captura manteniendo pulsado",
+          "file": ".unificador/propuestas/P-15/2.html"
+        },
+        {
+          "label": "Botón de acciones",
+          "desc": "botón grande abajo a la derecha bajo el pulgar con la acción principal y Más; arriba solo volver y título",
+          "file": ".unificador/propuestas/P-15/3.html"
+        }
+      ],
+      "recommend": 2,
+      "answer": null,
+      "by": "claude",
+      "created": "2026-11-17T22:18:34+01:00"
     }
   ],
-  "next_ask": 15,
+  "next_ask": 16,
   "next_tweak": 3,
   "tweaks": [
     {
