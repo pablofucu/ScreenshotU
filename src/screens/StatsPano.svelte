@@ -99,6 +99,7 @@
   {#if !plat}
     <div class="stnone fx" class:f={app.focus === 'pn0'} data-k="pn0">Aún no hay partidas en ninguna categoría.</div>
   {:else}
+   <div class="pn">
     <h3 class="sh"><CIcon name="clock" />Lo esencial<span>solo títulos de {plat.name}, {perTxt}</span></h3>
     <div class="cgrid">
       <StatChip k={key('A')} icon="clock" label="Tiempo jugado" {tone}>
@@ -212,20 +213,37 @@
           <div class="x-s">Sin partidas {perTxt}.</div>
         {/if}
       </StatChip>
-    </div>
 
-    <h3 class="sh"><CIcon name="grid" />El año, día a día<span>cada cuadro es un día; más color, más horas</span></h3>
-    <div class="cgrid">
-      <StatChip k={key('I')} icon="grid" label="{heatYear} en días · {heatCells.days} con partidas" cls="full" {tone}>
+      <StatChip k={key('I')} icon="grid" label="{heatYear}, día a día · {heatCells.days} con partidas · más color, más horas" cls="full" {tone}>
         <div class="x-heat" style="grid-template-columns:repeat({heatCells.cols},1fr)">
           {#each heatCells.cells as c}<i class:e={c.e} style="--l:{c.l};--i:{c.i}"></i>{/each}
         </div>
       </StatChip>
     </div>
+   </div>
   {/if}
 </ChipPane>
 
 <style>
+  /* Todo en una pantalla (1280×720): cabeceras justas, chips de 140 px y el calendario de calor en una franja. */
+  .pn :global(.sh){margin:12px 0 8px}
+  .pn :global(.sh:first-child){margin-top:0}
+  .pn :global(.st.st){height:140px}
+  .pn :global(.st .face){padding:10px 14px;gap:6px}
+  .pn :global(.st.st.full){height:110px}
+  .pn :global(.x-heat){height:auto;flex:1;min-height:0}
+  .pn :global(.x-ring){width:92px;height:92px}
+  .pn :global(.x-clock){width:92px;height:92px}
+  .pn :global(.gauge){height:80px}
+  .pn :global(.spark){height:56px}
+  .pn :global(.watch){width:48px;height:48px}
+  .pn :global(.fan){position:absolute;right:28px;top:12px;width:110px;height:64px;margin:0}
+  .pn :global(.st .fan img){width:84px;height:50px}
+  .pn :global(.st:has(.fan) .x-v small){display:none}
+  .pn :global(.mile){height:22px;flex:none}
+  .pn :global(.mile .tr),.pn :global(.mile .fl){top:6px}
+  .pn :global(.mile .x-tk){display:none}
+  .pn :global(.mile .flag){top:-16px}
   :global(.cpane .st.full) { grid-column: 1 / -1; }
   :global(.st .who .pcv) { width: 44px; height: 28px; flex: none; border-radius: var(--r-xs); background: var(--glass-in) center / cover no-repeat; box-shadow: 0 0 0 1px var(--line-2); }
   :global(.x-heat i.e) { visibility: hidden; }
