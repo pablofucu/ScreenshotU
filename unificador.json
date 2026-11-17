@@ -171,33 +171,76 @@
               "id": "IYE-6",
               "title": "R3: Aviso de resumen semanal en Inicio",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-16T02:17:08+01:00",
                   "by": "claude",
                   "kind": "start",
                   "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-16T02:20:34+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Aviso «Tu semana» en Inicio (WeekNew.svelte + weeknew.svelte.ts): sale si la semana pasada tuvo partidas y no se ha visto en este equipo. Comprobado en el navegador: con partidas inyectadas la tarjeta muestra fechas, total, días y filas por categoría; A abre Estadísticas › Semana con la semana pasada y la marca vista; B la cierra y no vuelve a salir. svelte-check sin errores. Commit 9c7b148."
                 }
               ],
               "cat": "interfaz",
-              "updated": "2026-11-16T02:17:08+01:00"
+              "updated": "2026-11-16T02:20:34+01:00",
+              "result": "Aviso «Tu semana» en Inicio (WeekNew.svelte + weeknew.svelte.ts): sale si la semana pasada tuvo partidas y no se ha visto en este equipo. Comprobado en el navegador: con partidas inyectadas la tarjeta muestra fechas, total, días y filas por categoría; A abre Estadísticas › Semana con la semana pasada y la marca vista; B la cierra y no vuelve a salir. svelte-check sin errores. Commit 9c7b148."
             },
             {
               "id": "IYE-7",
               "title": "R4: Sistema de racha y días activos",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-16T02:20:34+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-16T02:26:32+01:00",
+                  "by": "claude",
+                  "kind": "note",
+                  "text": "El título habla de «racha y días activos», pero el plan (interfaz-pendiente.md, R4) lo define como logros y frases de la semana en Rust; la racha y los días activos ya estaban en Semana. He hecho R4 tal como dice el plan."
+                },
+                {
+                  "at": "2026-11-16T02:26:33+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "R4 hecho: phrases en DayPoint, unlocks_between en visor-core y comando week_achievements (registrado en lib.rs, remote_call y READS de la tablet). Semana muestra «n logros · el más raro» por categoría, el logro raro en Lo mejor y las frases en lectura. Comprobado: cargo test -p visor-core (340 en verde, pruebas nuevas en readstats y achievements), cargo check, svelte-check sin errores y en el navegador con el mock (etiqueta «5 logros · el más raro, 0,9 %» y destacado «Logro raro»)."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-16T02:26:33+01:00",
+              "result": "R4 hecho: phrases en DayPoint, unlocks_between en visor-core y comando week_achievements (registrado en lib.rs, remote_call y READS de la tablet). Semana muestra «n logros · el más raro» por categoría, el logro raro en Lo mejor y las frases en lectura. Comprobado: cargo test -p visor-core (340 en verde, pruebas nuevas en readstats y achievements), cargo check, svelte-check sin errores y en el navegador con el mock (etiqueta «5 logros · el más raro, 0,9 %» y destacado «Logro raro»)."
             },
             {
               "id": "IYE-8",
               "title": "H1: Retoques del menú principal e Inicio",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-16T02:26:37+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-16T02:28:04+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Variante A sin el fondo más tranquilo: .hsect en tinta plena con barrita --gf delante, igual en Seguir jugando y Racha. Lo demás de A ya estaba (Últimos 7 días en la cabecera, Start = Menú). Comprobado en el navegador (captura) y svelte-check limpio."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-16T02:28:04+01:00",
+              "result": "Variante A sin el fondo más tranquilo: .hsect en tinta plena con barrita --gf delante, igual en Seguir jugando y Racha. Lo demás de A ya estaba (Últimos 7 días en la cabecera, Start = Menú). Comprobado en el navegador (captura) y svelte-check limpio."
             }
           ]
         },
@@ -209,17 +252,40 @@
               "id": "IYE-9",
               "title": "L1: Selector de portadas y estilos en Mi lista",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-16T02:28:08+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-16T02:30:19+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "L1+L2+L3 con lo decidido (§6bis.4): Mi lista sin Terminado (4 franjas), estilo C «Lomo fino» y portadas grandes fijas sin ajuste nuevo. Comprobado con el mock en el navegador (A medias 2 filas, Pendiente y Aparcado; lomo, rótulo y recuento) y svelte-check limpio."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-16T02:30:19+01:00",
+              "result": "L1+L2+L3 con lo decidido (§6bis.4): Mi lista sin Terminado (4 franjas), estilo C «Lomo fino» y portadas grandes fijas sin ajuste nuevo. Comprobado con el mock en el navegador (A medias 2 filas, Pendiente y Aparcado; lomo, rótulo y recuento) y svelte-check limpio."
             },
             {
               "id": "IYE-10",
               "title": "C1: Vista de colecciones según maqueta elegida",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-16T02:30:28+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-16T02:30:28+01:00"
             }
           ]
         }
@@ -757,10 +823,25 @@
               "id": "AVY-6",
               "title": "Texto blanco sobre el arcoíris",
               "desc": "",
-              "state": "pending",
-              "notes": [],
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-17T17:28:56+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T17:28:56+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Decidido dejarlo como está (P-7/P-11). Anotada la excepción en la guía §3.3 y en guia-fase7; sin cambios de código. Maquetas descartadas borradas."
+                }
+              ],
               "cat": "decidir",
-              "by": "claude"
+              "by": "claude",
+              "updated": "2026-11-17T17:28:56+01:00",
+              "result": "Decidido dejarlo como está (P-7/P-11). Anotada la excepción en la guía §3.3 y en guia-fase7; sin cambios de código. Maquetas descartadas borradas."
             }
           ]
         }
@@ -1215,7 +1296,7 @@
               "id": "ODD-8",
               "title": "Probar en la tablet real y en el PC cliente: abrir overlay, ver capturas y logros, cerrar",
               "desc": "",
-              "state": "pending",
+              "state": "doing",
               "notes": [
                 {
                   "at": "2026-11-14T00:53:20+01:00",
@@ -1228,11 +1309,32 @@
                   "by": "persona",
                   "kind": "change",
                   "text": "No he probado en tablet, pero en pc está bien pero no funciona el cursor o no se ve y ademas se pone un borde de arriba de ventana con titulo y botón de cerrar y debería de ser a pantalla completa"
+                },
+                {
+                  "at": "2026-11-17T15:35:16+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T15:37:28+01:00",
+                  "by": "claude",
+                  "kind": "note",
+                  "text": "Arreglo subido (8c682a1): Moonlight se abre con --display-mode fullscreen y el menú suelta y centra el cursor en streaming. Falta probarlo en el PC cliente y en la tablet."
+                },
+                {
+                  "at": "2026-11-17T17:30:46+01:00",
+                  "by": "claude",
+                  "kind": "note",
+                  "text": "Quitado a la fuerza el marco (barra de título y borde) de la ventana del menú al abrirla, y apuntados en quickmenu.log el marco y si el cursor se ve tras soltarlo en streaming. Falta probarlo con Moonlight."
                 }
               ],
               "cat": "pruebas",
-              "updated": "2026-11-14T03:27:20+01:00",
-              "change": "No he probado en tablet, pero en pc está bien pero no funciona el cursor o no se ve y ademas se pone un borde de arriba de ventana con titulo y botón de cerrar y debería de ser a pantalla completa"
+              "updated": "2026-11-17T17:30:46+01:00",
+              "change": "No he probado en tablet, pero en pc está bien pero no funciona el cursor o no se ve y ademas se pone un borde de arriba de ventana con titulo y botón de cerrar y debería de ser a pantalla completa",
+              "commits": [
+                "8c682a1c185ac5156dec7bd8124588bcffc6262a"
+              ]
             }
           ]
         }
@@ -1962,6 +2064,368 @@
           }
         }
       ]
+    },
+    {
+      "key": "EEU",
+      "name": "Estadísticas en una pantalla",
+      "goal": "Que cada pestaña de Estadísticas quepa entera sin bajar y Terminados se vea en grande por épocas del año",
+      "icon": "📊",
+      "color": 1,
+      "created": "2026-11-17T15:29:06+01:00",
+      "by": "claude",
+      "next_id": 7,
+      "phases": [
+        {
+          "name": "Diseño",
+          "icon": "",
+          "steps": [
+            {
+              "id": "EEU-1",
+              "title": "Elegir cómo cabe cada pestaña en una pantalla",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-17T15:29:20+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T15:35:03+01:00",
+                  "by": "persona",
+                  "kind": "change",
+                  "text": "Pero teniendo en ceunta que hay que separar novelas juegos pc novelas japones y juegos witch"
+                },
+                {
+                  "at": "2026-11-17T15:35:16+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Elegida A «Tablero». Terminados y Semana separan siempre Juegos PC, Switch, Novelas visuales y Novelas japonesas (una fila/columna por categoría, nunca mezcladas)."
+                }
+              ],
+              "cat": "decidir",
+              "updated": "2026-11-17T15:35:16+01:00",
+              "result": "Elegida A «Tablero». Terminados y Semana separan siempre Juegos PC, Switch, Novelas visuales y Novelas japonesas (una fila/columna por categoría, nunca mezcladas)."
+            }
+          ],
+          "review": {
+            "state": "approved",
+            "text": "",
+            "by": "persona",
+            "at": "2026-11-17T15:35:22+01:00",
+            "seen": true
+          }
+        },
+        {
+          "name": "Pestañas",
+          "icon": "",
+          "steps": [
+            {
+              "id": "EEU-2",
+              "title": "Terminados a pantalla completa por épocas del año",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-17T15:37:28+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T15:41:00+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Terminados con franja de 4 cifras + año con bandas de estación y un carril por categoría (sin mezclar). Comprobado en mock a 1280×720: cabe sin desplazar, el mando recorre cifras y portadas. svelte-check limpio. Commit 2a226e6."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-17T15:41:00+01:00",
+              "result": "Terminados con franja de 4 cifras + año con bandas de estación y un carril por categoría (sin mezclar). Comprobado en mock a 1280×720: cabe sin desplazar, el mando recorre cifras y portadas. svelte-check limpio. Commit 2a226e6.",
+              "commits": [
+                "2a226e61a9205e0b39c981ff4ad3ac2792c7b513"
+              ]
+            },
+            {
+              "id": "EEU-3",
+              "title": "Panorama en una pantalla",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-17T15:41:08+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T15:42:50+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Panorama: chips de 140 px, gráficos reducidos, calor como franja de 110 px. Mock 1280×720: 524 de 526 px, sin «Más abajo». svelte-check limpio."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-17T15:42:50+01:00",
+              "result": "Panorama: chips de 140 px, gráficos reducidos, calor como franja de 110 px. Mock 1280×720: 524 de 526 px, sin «Más abajo». svelte-check limpio.",
+              "commits": [
+                "e83976ed2bbc5f997fe2a12cf0a8c2ad5d1991f8"
+              ]
+            },
+            {
+              "id": "EEU-4",
+              "title": "Semana en una pantalla",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-17T15:46:01+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T15:46:02+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Semana cabe en 1280x720 (cpane 496/526, sin «Más abajo»): cifras a 112 px, franja de «Lo mejor»/lectura, columnas por categoría con el total en la cabecera. Comprobado en mock con una semana con datos; svelte-check limpio."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-17T15:46:02+01:00",
+              "result": "Semana cabe en 1280x720 (cpane 496/526, sin «Más abajo»): cifras a 112 px, franja de «Lo mejor»/lectura, columnas por categoría con el total en la cabecera. Comprobado en mock con una semana con datos; svelte-check limpio.",
+              "commits": [
+                "31a16ad97aac61e953054286ed98ebe078d975b1"
+              ]
+            },
+            {
+              "id": "EEU-5",
+              "title": "Resto de pestañas sin desplazamiento",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-17T15:46:06+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T15:48:34+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Clasificación: filas compactas, caben 7 puestos (antes 5); más de 7 sigue pasando con el foco. Resumen anual: filas de comparación a 68 px, ya no se cortan. Rachas y Calendario ya cabían. Comprobado en mock a 1280x720; svelte-check limpio. Commit 1c4828d."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-17T15:48:34+01:00",
+              "result": "Clasificación: filas compactas, caben 7 puestos (antes 5); más de 7 sigue pasando con el foco. Resumen anual: filas de comparación a 68 px, ya no se cortan. Rachas y Calendario ya cabían. Comprobado en mock a 1280x720; svelte-check limpio. Commit 1c4828d.",
+              "commits": [
+                "1c4828d8da4a27936da2e124e28f6b8f1de72bfc"
+              ]
+            }
+          ],
+          "review": {
+            "state": "approved",
+            "text": "",
+            "by": "persona",
+            "at": "2026-11-17T19:30:53+01:00",
+            "seen": true
+          }
+        },
+        {
+          "name": "Pulido",
+          "icon": "",
+          "steps": [
+            {
+              "id": "EEU-6",
+              "title": "Revisar todas las pestañas a 1280x720 y con mando",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-17T19:30:54+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T19:36:01+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Revisadas las 7 pestañas en mock a 1280x720 moviendo el foco con flechas y Y: Semana (385/526), Terminados (520), Panorama (524) caben sin «más»; Clasificación y Calendario mantienen el foco dentro de pantalla; Rachas cambia con LT/RT y Resumen anual pasa las 6 diapositivas sin salirse. Sin cambios de código."
+                }
+              ],
+              "cat": "pruebas",
+              "updated": "2026-11-17T19:36:01+01:00",
+              "result": "Revisadas las 7 pestañas en mock a 1280x720 moviendo el foco con flechas y Y: Semana (385/526), Terminados (520), Panorama (524) caben sin «más»; Clasificación y Calendario mantienen el foco dentro de pantalla; Rachas cambia con LT/RT y Resumen anual pasa las 6 diapositivas sin salirse. Sin cambios de código."
+            }
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "claude",
+            "at": "2026-11-17T19:36:01+01:00",
+            "seen": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "TCL",
+      "name": "Tablet con la interfaz nueva",
+      "goal": "Que la tablet tenga toda la interfaz nueva y se use cómoda con el dedo",
+      "icon": "📲",
+      "color": 2,
+      "created": "2026-11-17T21:58:22+01:00",
+      "by": "claude",
+      "next_id": 12,
+      "phases": [
+        {
+          "name": "Decisiones",
+          "icon": "",
+          "steps": [
+            {
+              "id": "TCL-1",
+              "title": "Repaso de la interfaz nueva en la tablet",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-17T21:58:28+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T21:58:44+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Repaso del código: la tablet monta src/App.svelte tal cual (IS_TABLET), lienzo 1280x720 con bandas en la POCO Pad 16:10, toque = clic sobre data-k, arrastre = rueda, pistas de mando visibles y pulsables. Estadísticas (Terminados), Rachas y otras pantallas nuevas tienen pocos o ningún data-k: partes sin respuesta al toque."
+                }
+              ],
+              "cat": "investigar",
+              "updated": "2026-11-17T21:58:44+01:00",
+              "result": "Repaso del código: la tablet monta src/App.svelte tal cual (IS_TABLET), lienzo 1280x720 con bandas en la POCO Pad 16:10, toque = clic sobre data-k, arrastre = rueda, pistas de mando visibles y pulsables. Estadísticas (Terminados), Rachas y otras pantallas nuevas tienen pocos o ningún data-k: partes sin respuesta al toque."
+            },
+            {
+              "id": "TCL-2",
+              "title": "Lienzo, navegación y mando",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-17T21:58:44+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T22:09:35+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Decidido con el usuario: lienzo 1280x800 en tablet, navegación del PC con flecha de volver y gesto de Android, solo dedo (sin pistas), adaptar y diseño propio en Visor, Biblioteca/ficha, Estadísticas/Rachas e Inicio/Mi lista/Colecciones, solo horizontal, el menú sobre el juego entra. Plan en docs/planes/tablet-interfaz.md"
+                }
+              ],
+              "cat": "decidir",
+              "updated": "2026-11-17T22:09:35+01:00",
+              "result": "Decidido con el usuario: lienzo 1280x800 en tablet, navegación del PC con flecha de volver y gesto de Android, solo dedo (sin pistas), adaptar y diseño propio en Visor, Biblioteca/ficha, Estadísticas/Rachas e Inicio/Mi lista/Colecciones, solo horizontal, el menú sobre el juego entra. Plan en docs/planes/tablet-interfaz.md"
+            },
+            {
+              "id": "TCL-3",
+              "title": "Maquetas de la tablet",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            }
+          ]
+        },
+        {
+          "name": "Base táctil",
+          "icon": "",
+          "steps": [
+            {
+              "id": "TCL-4",
+              "title": "Lienzo a pantalla completa de la tablet",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "TCL-5",
+              "title": "Toques en todas las pantallas nuevas",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "TCL-6",
+              "title": "Sin pistas de mando y botón de volver",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            }
+          ]
+        },
+        {
+          "name": "Pantallas",
+          "icon": "",
+          "steps": [
+            {
+              "id": "TCL-7",
+              "title": "Inicio, Mi lista y Colecciones táctiles",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            },
+            {
+              "id": "TCL-8",
+              "title": "Estadísticas y Rachas táctiles",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            },
+            {
+              "id": "TCL-9",
+              "title": "Visor y ficha del juego táctiles",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            },
+            {
+              "id": "TCL-11",
+              "title": "Menú sobre el juego táctil",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz",
+              "by": "claude"
+            }
+          ]
+        },
+        {
+          "name": "Pruebas",
+          "icon": "",
+          "steps": [
+            {
+              "id": "TCL-10",
+              "title": "Probar en la POCO Pad",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "pruebas"
+            }
+          ]
+        }
+      ]
     }
   ],
   "asks": [
@@ -2194,7 +2658,13 @@
         }
       ],
       "recommend": 1,
-      "answer": null,
+      "answer": {
+        "option": 3,
+        "text": "",
+        "by": "persona",
+        "at": "2026-11-17T03:16:29+01:00",
+        "seen": true
+      },
       "by": "claude",
       "created": "2026-11-15T15:57:56+01:00"
     },
@@ -2267,7 +2737,228 @@
       },
       "by": "claude",
       "created": "2026-11-15T20:25:21+01:00"
+    },
+    {
+      "id": "P-10",
+      "kind": "question",
+      "title": "Colecciones: ¿qué vista hago?",
+      "text": "Las colecciones estaban aparcadas (decisión 10 del plan) y las maquetas de docs/maquetas/colecciones/ no tienen ganadora. Sin elección no se puede hacer este paso.",
+      "step": "IYE-10",
+      "branch": "IYE",
+      "options": [
+        {
+          "desc": "6 colecciones a la vista con el progreso de cada saga; trabajo pequeño",
+          "label": "A · Mosaico"
+        },
+        {
+          "desc": "lista con información y línea de tiempo con estados; trabajo medio",
+          "label": "C · Ficha"
+        },
+        {
+          "desc": "mosaico como vista general y la ficha de C al abrir una; trabajo medio",
+          "label": "A + C"
+        },
+        {
+          "desc": "se queda como hoy y la rama se cierra sin este paso",
+          "label": "Seguir aparcado"
+        }
+      ],
+      "recommend": 3,
+      "answer": {
+        "option": 2,
+        "text": "Le gusta más C (Ficha) pero no del todo: pide varias variantes basadas en la ficha",
+        "by": "persona",
+        "at": "2026-11-17T02:54:38+01:00",
+        "seen": true
+      },
+      "by": "claude",
+      "created": "2026-11-16T02:30:28+01:00"
+    },
+    {
+      "id": "P-11",
+      "kind": "proposal",
+      "title": "Texto sobre el arcoíris: hoy frente al cambio",
+      "text": "",
+      "step": "AVY-6",
+      "branch": "AVY",
+      "options": [
+        {
+          "label": "Relleno oscurecido",
+          "desc": "el tono se oscurece solo donde lleva texto; todo llega a 4,5:1",
+          "file": ".unificador/propuestas/P-11/1.html"
+        },
+        {
+          "label": "Letra oscura",
+          "desc": "el color no cambia; letra oscura en los claros, pero naranja, verde y azul siguen bajos",
+          "file": ".unificador/propuestas/P-11/2.html"
+        },
+        {
+          "label": "Dejarlo",
+          "desc": "como hoy; solo añil y violeta cumplen",
+          "file": ".unificador/propuestas/P-11/3.html"
+        }
+      ],
+      "recommend": 1,
+      "answer": {
+        "option": 3,
+        "text": "Contestó «Dejarlo» en P-7",
+        "by": "persona",
+        "at": "2026-11-17T03:19:36+01:00",
+        "seen": true
+      },
+      "by": "claude",
+      "created": "2026-11-16T11:17:28+01:00"
+    },
+    {
+      "id": "P-12",
+      "kind": "proposal",
+      "title": "Colecciones: variantes de la ficha",
+      "text": "",
+      "step": "IYE-10",
+      "branch": "IYE",
+      "options": [
+        {
+          "label": "Portadas grandes",
+          "desc": "raíl de colecciones y portadas grandes; abajo, el juego enfocado",
+          "file": ".unificador/propuestas/P-12/1.html"
+        },
+        {
+          "label": "Cronología",
+          "desc": "línea de tiempo vertical con año, estado, horas y capturas",
+          "file": ".unificador/propuestas/P-12/2.html"
+        },
+        {
+          "label": "Cartel",
+          "desc": "colecciones arriba con LB/RB, captura de fondo y Seguir como botón",
+          "file": ".unificador/propuestas/P-12/3.html"
+        },
+        {
+          "label": "Dosier",
+          "desc": "tres columnas: anillos, resumen con gráfico y juegos en cuadrícula",
+          "file": ".unificador/propuestas/P-12/4.html"
+        }
+      ],
+      "recommend": 4,
+      "answer": {
+        "option": 2,
+        "text": "Superada: prefirió la C original con la línea de tiempo de Cronología; se hizo otra ronda (P-13)",
+        "by": "persona",
+        "at": "2026-11-17T03:32:44+01:00",
+        "seen": true
+      },
+      "by": "claude",
+      "created": "2026-11-17T02:59:04+01:00"
+    },
+    {
+      "id": "P-13",
+      "kind": "proposal",
+      "title": "Colecciones: seis ideas nuevas",
+      "text": "",
+      "step": "IYE-10",
+      "branch": "IYE",
+      "options": [
+        {
+          "label": "Galería",
+          "desc": "anillo de colores; mosaico de capturas al azar y línea de portadas con año y horas",
+          "file": ".unificador/propuestas/P-13/1.html"
+        },
+        {
+          "label": "Proyector",
+          "desc": "lista de carteles con captura; una captura grande y portadas abajo",
+          "file": ".unificador/propuestas/P-13/2.html"
+        },
+        {
+          "label": "Río",
+          "desc": "monogramas; línea de tiempo vertical con capturas por juego",
+          "file": ".unificador/propuestas/P-13/3.html"
+        },
+        {
+          "label": "Columnas",
+          "desc": "franja de colores; una columna por juego con sus capturas",
+          "file": ".unificador/propuestas/P-13/4.html"
+        },
+        {
+          "label": "Escala de años",
+          "desc": "puntos; regla de años reales y pedestales con la altura de las horas",
+          "file": ".unificador/propuestas/P-13/5.html"
+        },
+        {
+          "label": "Álbum",
+          "desc": "tema claro; capturas como polaroids y pegatina de terminado",
+          "file": ".unificador/propuestas/P-13/6.html"
+        }
+      ],
+      "recommend": 1,
+      "answer": null,
+      "by": "claude",
+      "created": "2026-11-17T03:32:40+01:00"
+    },
+    {
+      "id": "P-14",
+      "kind": "proposal",
+      "title": "Estadísticas en una pantalla",
+      "text": "",
+      "step": "EEU-1",
+      "branch": "EEU",
+      "options": [
+        {
+          "label": "Tablero",
+          "desc": "rejilla más densa; Terminados a pantalla completa con 12 columnas de meses y bandas de estación",
+          "file": ".unificador/propuestas/P-14/1.html"
+        },
+        {
+          "label": "Páginas",
+          "desc": "cada pestaña en 1-2 páginas enteras que se pasan con LT/RT; Terminados como línea del año con portadas en su día",
+          "file": ".unificador/propuestas/P-14/2.html"
+        },
+        {
+          "label": "Escenario",
+          "desc": "gráfico grande a la izquierda y columna fija de cifras a la derecha; Terminados en cuatro estaciones",
+          "file": ".unificador/propuestas/P-14/3.html"
+        }
+      ],
+      "recommend": 1,
+      "answer": {
+        "option": 1,
+        "text": "",
+        "by": "persona",
+        "at": "2026-11-17T15:34:11+01:00",
+        "seen": true
+      },
+      "by": "claude",
+      "created": "2026-11-17T15:32:30+01:00"
     }
   ],
-  "next_ask": 10
+  "next_ask": 15,
+  "next_tweak": 3,
+  "tweaks": [
+    {
+      "id": "R-1",
+      "title": "La tablet distingue el bloqueo por intentos fallidos de no estar emparejada",
+      "by": "claude",
+      "at": "2026-11-17T17:27:15+01:00",
+      "commits": [
+        "d6a34c5c51bb549a27092e8edee7cad5579b4b7b"
+      ]
+    },
+    {
+      "id": "R-2",
+      "title": "Pistas LB/RB y LT/RT más pequeñas en Estadísticas y contadores sin negativos",
+      "by": "ia",
+      "at": "2026-11-17T19:36:23+01:00",
+      "commits": [
+        "35142e99fabd3b285d0d83f7dc34d596023be93b"
+      ]
+    }
+  ],
+  "news": [
+    {
+      "text": "📊 Estadísticas en una pantalla: Pulido",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-17T19:36:01+01:00",
+      "ref": "EEU/Pulido"
+    }
+  ],
+  "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c"
 }
