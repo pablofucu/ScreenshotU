@@ -898,6 +898,20 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .tablet .top .cback{width:44px;height:44px;margin:-9px -2px -9px -16px}
 .tablet .top .audbtn{width:44px;height:44px}
 .tablet .top .batt.off{display:none}
+/* Inicio en la tablet: los 80 px de más se reparten entre plataformas y «Seguir jugando»; el dock a 44 px. */
+.tablet .plat,.tablet .plabel{translate:0 14px}
+.tablet .hsect,.tablet #stage .rind{top:420px}
+.tablet .rcard{top:454px}
+.tablet .rmeta{top:612px}
+.tablet .rnone{top:456px}
+.tablet .hdock{bottom:calc((var(--band) - 44px) / 2)}
+.tablet .hdock .dpill{height:44px;padding-inline:8px 18px}
+/* Sin mando, sin glifos: los botones del mando sueltos se quitan; los que cambian de pestaña o página son flechas. */
+.tablet .btn:not([data-hact]){display:none}
+.tablet .btn[data-hact]{min-width:44px;height:44px;padding:0;font-size:0;background:none;box-shadow:none;color:var(--ink-2);cursor:pointer}
+.tablet .btn[data-hact]::after{font:800 30px/1 var(--round);content:'\203A'}
+.tablet .btn:is([data-hact=lb],[data-hact=lt])::after{content:'\2039'}
+.tablet .btn[data-hact]:active{transform:scale(.97);color:var(--acc)}
 .tablet .glass,.tablet .pill,.tablet .scrim,.tablet #toast{-webkit-backdrop-filter:none;backdrop-filter:none}
 .tablet .glass{transition:transform .24s cubic-bezier(.34,1.32,.64,1),background .24s ease}
 .tablet .scrim{background-color:rgba(20,26,36,.55)}
