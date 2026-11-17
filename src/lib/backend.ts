@@ -2,7 +2,9 @@ import type { Achievement, AchievementSummary, WeekAch, GameDetection, AddReport
 
 export const IS_TAURI = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 /** La UI de escritorio corre dentro del APK de la tablet (el arranque de `mobile/` lo marca antes de cargarla): habla con el PC por HTTP. */
-export const IS_TABLET = typeof window !== 'undefined' && (window as unknown as { __VISOR_TABLET__?: boolean }).__VISOR_TABLET__ === true;
+// En desarrollo, `?mock&tablet` simula la tablet en el navegador (para probar la interfaz táctil sin el APK).
+export const IS_TABLET = typeof window !== 'undefined' && ((window as unknown as { __VISOR_TABLET__?: boolean }).__VISOR_TABLET__ === true ||
+  (import.meta.env.DEV && new URLSearchParams(window.location.search).has('tablet')));
 export const FORCE_MOCK = typeof window !== 'undefined' && (
   new URLSearchParams(window.location.search).has('mock') ||
   localStorage.getItem('visor_force_mock') === 'true'

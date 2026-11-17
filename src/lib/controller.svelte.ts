@@ -2182,6 +2182,7 @@ export function onScreenDblClick(e: MouseEvent) {
 /** Clic derecho: opciones del elemento (capturas/ficha) o, si no hay, volver/cerrar. */
 function onContextMenu(e: MouseEvent) {
   e.preventDefault();
+  if (IS_TABLET) return; // en la tablet la pulsación larga la decide startTouch
   if (app.osk.open || app.overlay || app.audioMenu) { cmd('b'); return; }
   const f = (e.target as HTMLElement).closest<HTMLElement>('.fx');
   if (f && app.view === 'shots') { setFocus(f.dataset.k!, true); cmd('menu'); return; }
@@ -2292,20 +2293,46 @@ function scrollable(el: HTMLElement | null): boolean {
   }
   return false;
 }
+/** Pulsación larga: el menú de acciones de lo que hay bajo el dedo (portada, captura, juego de la ficha). */
+const LONG_MS = 500;
+function longPress(t: HTMLElement) {
+  if (app.osk.open || app.overlay || app.audioMenu) return false;
+  const f = t.closest<HTMLElement>('.fx');
+  if (app.view === 'viewer') { cmd('menu'); return true; }
+  if (!f) return false;
+  if (app.view === 'shots' || app.view === 'titles') { setFocus(f.dataset.k!, true); cmd('menu'); return true; }
+  if (app.view === 'detail' && f.dataset.k !== 'play') { setFocus(f.dataset.k!); openGameSettings(); return true; }
+  return false;
+}
 function startTouch() {
   document.body.style.touchAction = 'pan-x pan-y';
   let x0 = 0, y0 = 0, lx = 0, ly = 0, active = false, native = false, dragging = false;
+  let lpT: ReturnType<typeof setTimeout> | undefined, lpAt = 0;
+  const lpCancel = () => { clearTimeout(lpT); lpT = undefined; };
+  // El clic que llega al soltar tras una pulsación larga no debe abrir además lo pulsado.
+  window.addEventListener('click', (e) => {
+    if (performance.now() - lpAt < 800) { e.stopPropagation(); e.preventDefault(); lpAt = 0; }
+  }, true);
   window.addEventListener('touchstart', (e) => {
+    lpCancel();
     if (e.touches.length !== 1) { active = false; return; }
     const t = e.touches[0];
     x0 = lx = t.clientX; y0 = ly = t.clientY;
     active = true; dragging = false;
     native = scrollable(e.target as HTMLElement | null);
+    const tg = e.target as HTMLElement;
+    lpT = setTimeout(() => {
+      lpT = undefined;
+      if (!active || dragging) return;
+      if (longPress(tg)) { lpAt = performance.now(); navigator.vibrate?.(12); }
+    }, LONG_MS);
   }, { passive: true });
   window.addEventListener('touchmove', (e) => {
-    if (!active || native || e.touches.length !== 1) return;
+    if (!active || e.touches.length !== 1) { lpCancel(); return; }
     const t = e.touches[0];
     if (!dragging && Math.hypot(t.clientX - x0, t.clientY - y0) < TOUCH_SLOP) return;
+    lpCancel();
+    if (native) return;
     dragging = true;
     e.preventDefault();
     if (app.view === 'viewer' && !app.overlay) return; // en el visor se decide al soltar
@@ -2316,6 +2343,7 @@ function startTouch() {
     }));
   }, { passive: false });
   window.addEventListener('touchend', (e) => {
+    lpCancel();
     if (!active) return;
     active = false;
     if (native || !dragging || app.view !== 'viewer' || app.overlay) return;

@@ -107,7 +107,7 @@
       </div>
     {/if}
     <span>{clock.d} <small>({clock.w})</small></span><span>{clock.t}</span>
-    <span class="batt" title={app.padConnected ? 'Mando conectado' : 'Sin mando'}>
+    <span class="batt" class:off={!app.padConnected} title={app.padConnected ? 'Mando conectado' : 'Sin mando'}>
       <svg width="30" height="20" viewBox="0 0 30 20"><rect x="1" y="3" width="28" height="14" rx="7" fill={app.padConnected ? 'var(--acc)' : 'var(--ink-3)'} /><circle cx="8" cy="10" r="3" fill="var(--on)" /><circle cx="22" cy="10" r="2" fill="var(--on)" /></svg>
     </span>
   </div>

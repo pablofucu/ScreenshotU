@@ -888,6 +888,16 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 /* Lienzo de la tablet: 1280x800 (16:10); la banda de abajo sigue de 64 hasta quitar las pistas. */
 .tablet #stage{--stage-h:800px;--content-end:736px}
 .tablet .blob{animation:none}
+/* Tablet sin mando: las pistas son botones táctiles de 44 px (Hints.svelte), y la flecha de volver crece. */
+.tablet .hints{bottom:calc((var(--band) - 44px) / 2)}
+.tablet .hints.touch .hint{height:44px;padding:0 20px;border:0;font:inherit;font-size:var(--t-m);font-weight:700;color:var(--ink-2);cursor:pointer;transition:transform .12s}
+.tablet .hints.touch .pair{padding:0 4px;gap:0}
+.tablet .hints.touch .tb{width:44px;height:44px;padding:0;border:0;border-radius:50%;display:grid;place-items:center;background:transparent;color:inherit;cursor:pointer}
+.tablet .hints.touch .tb svg{width:22px;height:22px}
+.tablet .hints.touch .tap:active,.tablet .hints.touch .tb:active{transform:scale(.97);color:var(--acc)}
+.tablet .top .cback{width:44px;height:44px;margin:-9px -2px -9px -16px}
+.tablet .top .audbtn{width:44px;height:44px}
+.tablet .top .batt.off{display:none}
 .tablet .glass,.tablet .pill,.tablet .scrim,.tablet #toast{-webkit-backdrop-filter:none;backdrop-filter:none}
 .tablet .glass{transition:transform .24s cubic-bezier(.34,1.32,.64,1),background .24s ease}
 .tablet .scrim{background-color:rgba(20,26,36,.55)}
