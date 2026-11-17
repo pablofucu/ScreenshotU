@@ -15,7 +15,7 @@ export function countUp(node: HTMLElement, p: { to: number; key: string }) {
     seen.add(q.key);
     const t0 = performance.now(), D = 800;
     const step = (t: number) => {
-      const k = Math.min(1, (t - t0) / D);
+      const k = Math.max(0, Math.min(1, (t - t0) / D)); // el sello del fotograma puede ser anterior a t0
       set(q.to * (1 - Math.pow(1 - k, 3)));
       if (k < 1) raf = requestAnimationFrame(step);
     };
@@ -23,5 +23,5 @@ export function countUp(node: HTMLElement, p: { to: number; key: string }) {
     raf = requestAnimationFrame(step);
   };
   go(p);
-  return { update: (q: { to: number; key: string }) => { if (q.to !== p.to) { p = q; set(q.to); } }, destroy: () => cancelAnimationFrame(raf) };
+  return { update: (q: { to: number; key: string }) => { if (q.to !== p.to) { cancelAnimationFrame(raf); p = q; set(q.to); } }, destroy: () => cancelAnimationFrame(raf) };
 }
