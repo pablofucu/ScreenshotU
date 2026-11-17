@@ -912,6 +912,15 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .tablet .btn[data-hact]::after{font:800 30px/1 var(--round);content:'\203A'}
 .tablet .btn:is([data-hact=lb],[data-hact=lt])::after{content:'\2039'}
 .tablet .btn[data-hact]:active{transform:scale(.97);color:var(--acc)}
+/* Estadísticas en la tablet: pestañas y flechas del periodo a 44 px de alto. */
+.tablet .sx .o,.tablet .sx .gem{height:44px}
+.tablet .sx .chev{width:44px;height:44px}
+.tablet .sx .o{padding:0 13px}
+.tablet .sx .lbl{min-width:150px}
+/* Selectores pequeños (Novelas · PC · Switch): mismo aspecto, zona de toque de 44 px. */
+.tablet .stabs .t[data-hact]{position:relative}
+.tablet .stabs .t[data-hact]::before{content:"";position:absolute;inset:-11px -2px}
+.tablet .sx .chev:not(.dis):active,.tablet .sx .o:active{transform:scale(.97)}
 .tablet .glass,.tablet .pill,.tablet .scrim,.tablet #toast{-webkit-backdrop-filter:none;backdrop-filter:none}
 .tablet .glass{transition:transform .24s cubic-bezier(.34,1.32,.64,1),background .24s ease}
 .tablet .scrim{background-color:rgba(20,26,36,.55)}
