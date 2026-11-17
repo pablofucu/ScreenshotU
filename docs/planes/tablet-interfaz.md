@@ -37,6 +37,8 @@ Todo vive tras `.tablet` o `IS_TABLET`: el PC no cambia. Las categorías no se t
 
 En `docs/maquetas/tablet/`, a 1280×800, una por grupo de pantallas, con dos o tres variantes donde haya duda real (sobre todo dónde van las acciones). Se proponen por Unificador.
 
+**Elegida (17-nov, P-15): B «En su sitio»** ([maquetas/tablet/b-en-su-sitio.html](../maquetas/tablet/b-en-su-sitio.html)). Cada acción va junto a lo que toca (Jugar en la ficha, barra sobre la imagen en el visor, Ordenar junto a los filtros) y el menú de una portada o captura sale manteniendo pulsado. La maqueta solo vale para **dónde** va cada cosa: el aspecto es el del PC tal cual (mismo fondo, mismos iconos de `src/lib/icons`, franjas y degradados arcoíris, la racha con sus velas y animaciones). Por eso no se hacen más maquetas: se trabaja sobre los componentes reales con `.tablet`, cambiando solo sitio, orden y tamaño de toque.
+
 ## Comprobación
 
 `npm run check`; la app de prueba en el navegador a 1280×800 con toque emulado; la APK en la POCO Pad la prueba el usuario (TCL-10 y lo que queda de ODD-8).

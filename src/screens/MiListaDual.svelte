@@ -146,7 +146,7 @@
     left: 40px;
     right: 40px;
     top: 182px;
-    bottom: calc(720px - var(--content-end));
+    bottom: calc(var(--stage-h) - var(--content-end));
     display: flex;
     flex-direction: column;
     gap: 8px;

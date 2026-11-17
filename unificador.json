@@ -2336,17 +2336,24 @@
               "id": "TCL-3",
               "title": "Maquetas de la tablet",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-17T22:14:29+01:00",
                   "by": "claude",
                   "kind": "start",
                   "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T22:21:23+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Maquetas A-C; elegida B «En su sitio» (P-15). El aspecto será el del PC: se trabaja sobre los componentes reales."
                 }
               ],
               "cat": "interfaz",
-              "updated": "2026-11-17T22:14:29+01:00"
+              "updated": "2026-11-17T22:21:23+01:00",
+              "result": "Maquetas A-C; elegida B «En su sitio» (P-15). El aspecto será el del PC: se trabaja sobre los componentes reales."
             }
           ]
         },
@@ -2358,9 +2365,24 @@
               "id": "TCL-4",
               "title": "Lienzo a pantalla completa de la tablet",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-17T22:21:26+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T22:26:02+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Escenario de 1280x800 con IS_TABLET (token --stage-h; --content-end 736 en .tablet). PC sin cambios. svelte-check limpio; mock a 1280x800 con .tablet: escenario 800, banda abajo."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-17T22:26:02+01:00",
+              "result": "Escenario de 1280x800 con IS_TABLET (token --stage-h; --content-end 736 en .tablet). PC sin cambios. svelte-check limpio; mock a 1280x800 con .tablet: escenario 800, banda abajo."
             },
             {
               "id": "TCL-5",
@@ -2433,7 +2455,8 @@
             }
           ]
         }
-      ]
+      ],
+      "nonstop": true
     }
   ],
   "asks": [
@@ -2961,7 +2984,13 @@
         }
       ],
       "recommend": 2,
-      "answer": null,
+      "answer": {
+        "option": 2,
+        "text": "En su sitio. Debe parecerse lo más posible al PC: mismo fondo, mismos iconos, arcoíris, racha con sus velas y animaciones; solo cambian sitio y orden de las cosas.",
+        "by": "persona",
+        "at": "2026-11-17T22:21:14+01:00",
+        "seen": true
+      },
       "by": "claude",
       "created": "2026-11-17T22:18:34+01:00"
     }
@@ -2995,6 +3024,13 @@
       "by": "claude",
       "at": "2026-11-17T19:36:01+01:00",
       "ref": "EEU/Pulido"
+    },
+    {
+      "text": "📲 Tablet con la interfaz nueva: Decisiones",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-17T22:21:23+01:00",
+      "ref": "TCL/Decisiones"
     }
   ],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c"

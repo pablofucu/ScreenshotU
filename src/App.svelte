@@ -58,9 +58,11 @@
   // Escala en múltiplos de 1/16 de píxel de dispositivo: 1280·k/16 y 720·k/16 son enteros, así el
   // escenario cae exacto en píxeles físicos (evita bordes redondeados cortados y texto desplazado en 4K).
   const dpr = $derived.by(() => { void w; void h; return window.devicePixelRatio || 1; });
-  const sc = $derived(Math.max(0.1, Math.floor(Math.min(w / 1280, h / 720) * dpr * 16)) / 16 / dpr);
+  // En la tablet (16:10) el escenario mide 1280x800 para llenar la pantalla sin franjas.
+  const SH = IS_TABLET ? 800 : 720;
+  const sc = $derived(Math.max(0.1, Math.floor(Math.min(w / 1280, h / SH) * dpr * 16)) / 16 / dpr);
   const ox = $derived(Math.round(((w - 1280 * sc) / 2) * dpr) / dpr);
-  const oy = $derived(Math.round(((h - 720 * sc) / 2) * dpr) / dpr);
+  const oy = $derived(Math.round(((h - SH * sc) / 2) * dpr) / dpr);
   const bg = buildBackground();
   let error = $state('');
 

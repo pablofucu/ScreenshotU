@@ -9,7 +9,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 #app{position:fixed;inset:0;overflow:hidden}
 
 /* ---------- Stage (fixed light world) ---------- */
-#stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;outline:none;
+#stage{position:absolute;left:0;top:0;width:1280px;height:var(--stage-h);transform-origin:0 0;overflow:hidden;outline:none;
   font-family:var(--round);color:var(--ink);background:#eceef2;--acc:#00A0D8;--accv:#00A0D8;--acc-ink:#fff;--b1:#00A0D8;--b2:#3F63E0;--b3:#00A0D8;--g1:#00A0D8;--g2:#3F63E0;--grad:linear-gradient(115deg,#00A0D8,#3F63E0);--f1:#0089be;--f2:#3253c5;--gf:linear-gradient(115deg,#0089be,#3253c5);--v1:#00A0D8;--v2:#3F63E0;--gv:linear-gradient(115deg,#00A0D8,#3F63E0);--on:#ffffff;user-select:none;-webkit-user-select:none}
 #stage:focus-visible{box-shadow:inset 0 0 0 4px var(--acc)}
 /* Los tokens del sistema (claro y «Noche ahumada») y los componentes comunes nuevos viven en tokens.css. */
@@ -185,7 +185,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .vw.bare .vbg,.vw.bare .vstrip,.vw.bare .varrow{display:none}
 .vw.bare .vinfo,.vw.bare .hints{bottom:16px}
 .vw.bare::after{display:none}
-.vw.bare .vframe{left:0;top:0;width:1280px;height:720px;--r:0px;--bw:0px;background:#000;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.vw.bare .vframe{left:0;top:0;width:1280px;height:var(--stage-h);--r:0px;--bw:0px;background:#000;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
 .vw.bare .vframe::after,.vw.bare .vframe .face::after{display:none}
 .vw.bare .vframe .face{border-radius:0}
 #toast{position:absolute;left:50%;bottom:74px;transform:translate(-50%,10px);padding:10px 20px;border-radius:var(--r-pill);background:rgba(40,46,58,.78);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 10px 24px -10px rgba(0,0,0,.5);color:var(--on);font-size:var(--t-l);font-weight:700;opacity:0;transition:all .2s;z-index:50;pointer-events:none;white-space:normal;max-width:1000px;text-align:center}
@@ -885,6 +885,8 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 
 /* Tablet: la GPU del móvil no puede con decenas de desenfoques vivos. Sin backdrop-filter ni deriva de manchas,
    el cristal pasa a velo opaco y las transiciones solo tocan transform/fondo. */
+/* Lienzo de la tablet: 1280x800 (16:10); la banda de abajo sigue de 64 hasta quitar las pistas. */
+.tablet #stage{--stage-h:800px;--content-end:736px}
 .tablet .blob{animation:none}
 .tablet .glass,.tablet .pill,.tablet .scrim,.tablet #toast{-webkit-backdrop-filter:none;backdrop-filter:none}
 .tablet .glass{transition:transform .24s cubic-bezier(.34,1.32,.64,1),background .24s ease}
