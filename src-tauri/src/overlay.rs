@@ -299,19 +299,39 @@ pub(crate) fn raise_menu(w: &tauri::WebviewWindow, _x: i32, _y: i32, _width: u32
 
 /// En streaming el juego suele dejar el cursor encerrado (`ClipCursor`) y oculto bajo su ventana: al abrir el menu
 /// lo suelta y lo lleva al centro del menu, para que Apollo lo dibuje y el raton del cliente lo mueva.
+/// Ademas lo fuerza visible: corre en el hilo principal (el de la ventana del menu), asi que `ShowCursor` sube el
+/// contador de ese hilo; y un movimiento nulo de raton quita la supresion de Windows cuando lo ultimo fue mando o tactil.
 #[cfg(windows)]
 pub(crate) fn free_cursor(x: i32, y: i32, width: u32, height: u32) {
-    use windows::Win32::UI::WindowsAndMessaging::{ClipCursor, GetCursorInfo, SetCursorPos, CURSORINFO, CURSOR_SHOWING};
+    use windows::Win32::UI::Input::KeyboardAndMouse::{SendInput, INPUT, INPUT_0, INPUT_MOUSE, MOUSEEVENTF_MOVE, MOUSEINPUT};
+    use windows::Win32::UI::WindowsAndMessaging::{
+        ClipCursor, GetCursorInfo, LoadCursorW, SetCursor, SetCursorPos, ShowCursor, CURSORINFO, CURSOR_SHOWING, IDC_ARROW,
+    };
+    let info = || unsafe {
+        let mut ci = CURSORINFO { cbSize: std::mem::size_of::<CURSORINFO>() as u32, ..Default::default() };
+        let ok = GetCursorInfo(&mut ci).is_ok();
+        (ok && ci.flags.0 & CURSOR_SHOWING.0 != 0, ci.flags.0)
+    };
     unsafe {
         let _ = ClipCursor(None);
         let _ = SetCursorPos(x + width as i32 / 2, y + height as i32 / 2);
-        let mut ci = CURSORINFO { cbSize: std::mem::size_of::<CURSORINFO>() as u32, ..Default::default() };
-        let seen = GetCursorInfo(&mut ci).is_ok();
+        let (before, flags) = info();
+        for _ in 0..16 {
+            if ShowCursor(true) >= 0 {
+                break;
+            }
+        }
+        if let Ok(arrow) = LoadCursorW(None, IDC_ARROW) {
+            SetCursor(Some(arrow));
+        }
+        let mv = INPUT {
+            r#type: INPUT_MOUSE,
+            Anonymous: INPUT_0 { mi: MOUSEINPUT { dwFlags: MOUSEEVENTF_MOVE, ..Default::default() } },
+        };
+        SendInput(&[mv], std::mem::size_of::<INPUT>() as i32);
+        let (after, flags2) = info();
         crate::quickmenu::log(&format!(
-            "streaming: cursor soltado; visible={} en ({}, {})",
-            seen && ci.flags.0 & CURSOR_SHOWING.0 != 0,
-            ci.ptScreenPos.x,
-            ci.ptScreenPos.y
+            "streaming: cursor soltado en el centro; visible antes={before} (flags {flags:#x}), despues={after} (flags {flags2:#x})"
         ));
     }
 }
