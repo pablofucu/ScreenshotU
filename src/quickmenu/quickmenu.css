@@ -1878,3 +1878,11 @@ svg.ch {
 .tablet .t-back { grid-area: 3 / 1 / 4 / 3; }
 .tablet .t-pow { grid-area: 3 / 3 / 4 / 5; }
 .tablet .hints.gone { display: none; }
+/* La tablet es 16:10: lienzo de 1280x800 y las baldosas y hojas ocupan la altura que dejan las pistas. */
+.tablet .stage { height: 800px; }
+.tablet .gridA { height: 660px; }
+.tablet .sheetA { height: 640px; }
+.tablet .tile:active { transform: scale(.97); }
+.tablet i.k { display: none; }
+.tablet .sheetA .btn.sm { height: 44px !important; }
+.tablet .sheetA .btn.sm:active { transform: scale(.97); }

@@ -37,7 +37,7 @@
   // CaptureKeyService.java) y habla con el PC por HTTP. Solo tiempo, capturas, salir y volver a la app.
   type Native = { close(): void; back(): void };
   const nat = (): Native | null => (typeof window === 'undefined' ? null : ((window as unknown as { VisorQm?: Native }).VisorQm ?? null));
-  const TABLET = typeof window !== 'undefined' && (window as unknown as { __QM_TABLET__?: boolean }).__QM_TABLET__ === true;
+  const TABLET = typeof window !== 'undefined' && ((window as unknown as { __QM_TABLET__?: boolean }).__QM_TABLET__ === true || (import.meta.env.DEV && /[?&]tablet(&|$)/.test(location.search)));
 
   let qmState = $state<QuickMenuState | null>(null);
   let sheet = $state<null | 'rendimiento' | 'tiempo' | 'capturas' | 'audio' | 'logros' | 'mando'>(null);
@@ -76,7 +76,7 @@
 
   function fitStage() {
     if (typeof window === 'undefined') return;
-    stageScale = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    stageScale = Math.min(window.innerWidth / 1280, window.innerHeight / (TABLET ? 800 : 720));
   }
 
   function setFocus(el: HTMLElement | null) {
@@ -700,7 +700,7 @@
             role="button"
             tabindex="0"
           >
-            Volver (B)
+            {TABLET ? 'Volver' : 'Volver (B)'}
           </div>
         </div>
 
