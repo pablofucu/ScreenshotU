@@ -81,6 +81,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .crumb span{white-space:nowrap;flex:none}
 .crumb .sep{color:var(--ink-3);font-weight:500}
 .crumb.withp{max-width:420px}
+.top:has(~ .ttabs) .crumb{max-width:370px}
 .crumb .cur{color:var(--acc);transition:color .3s;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .clock{position:absolute;right:24px;top:24px;display:flex;gap:14px;align-items:center;font-size:var(--t-xl);font-weight:700;color:var(--ink-2)}
 .clock small{font-size:var(--t-m);font-weight:500;color:var(--ink-3)}
@@ -95,8 +96,10 @@ body.nocursor,body.nocursor *{cursor:none !important}
   background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,var(--tint-base)) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--b) 70%,black),0 1px 2px rgba(0,0,0,.2);text-shadow:0 1px 1px rgba(0,0,0,.25)}
 .btn.a{--b:var(--ok)}.btn.b{--b:var(--bad)}.btn.x{--b:var(--acc)}.btn.y{--b:var(--warn);color:var(--ink);text-shadow:none}
-.btn.sh{border-radius:var(--r-xs);--b:var(--ink-3);margin:0;display:grid;font:800 var(--t-s)/1 var(--round);color:var(--on)}
-.shp{display:flex;gap:2px}.shp .btn.sh{min-width:28px;height:22px;padding:0 5px;font-size:11px;letter-spacing:.02em}.shp .btn.bu{border-radius:9px 9px var(--r-xs) var(--r-xs)}.shp .btn.tr{border-radius:var(--r-xs) var(--r-xs) 9px 9px}
+.btn.sh{border-radius:var(--r-xs);margin:0;display:grid;place-items:center;gap:0;padding:0 var(--s-2);font:800 var(--t-s)/1 var(--round);letter-spacing:0;color:var(--btn-n-fg);text-shadow:none;
+  background:linear-gradient(180deg,var(--btn-n-top) 0%,var(--btn-n) 55%,color-mix(in srgb,var(--btn-n) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 var(--hl-ring),0 0 0 1px var(--btn-n-edge),0 1px 2px rgba(0,0,0,.25)}
+.shp{display:flex;gap:var(--s-1)}.shp .btn.sh{min-width:30px;height:26px;padding:0 var(--s-2)}.shp .btn.bu{border-radius:var(--r-s) var(--r-s) var(--r-xs) var(--r-xs)}.shp .btn.tr{border-radius:var(--r-xs) var(--r-xs) var(--r-s) var(--r-s)}
 
 /* home */
 .plat{--r:38px;--bw:12px}
@@ -483,16 +486,20 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .thead > span b{color:var(--ink);font-weight:800}
 .thead .tfav{display:flex;align-items:center;gap:4px}
 .thead .tfav svg{width:22px;height:22px}
-/* Pestañas de la categoría (View) y orden activo (X) */
-.ttabs{position:absolute;left:96px;top:144px;display:flex;gap:8px;align-items:center;z-index:4}
-.ttabs.car{left:50%;transform:translateX(-50%);top:144px}
-.ttabs .btn{cursor:pointer}
-.ttabs .btn.x{margin-left:14px}
-.ttabs .tord{color:var(--acc)}
+/* Pestañas de la categoría integradas en la barra superior y barra contextual del Catálogo */
+.ttabs{position:absolute;left:50%;top:18px;transform:translateX(-50%);height:44px;padding:4px;border-radius:var(--r-pill);display:flex;gap:4px;align-items:center;z-index:6}
+.ttabs .tflt{height:36px;padding:0 18px;background:transparent;box-shadow:none}
+.ttabs .tflt:hover:not(.on){color:var(--ink);background:var(--glass-in)}
+.catbar{position:absolute;left:96px;right:48px;top:82px;height:44px;display:flex;align-items:center;gap:14px;z-index:4}
+.catbar .thead{position:static;flex:1;min-width:0}
+.cat-tools{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.cat-tools .tflt{height:36px}
+.cat-tools .tord{color:var(--acc);background:var(--glass-chip);box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px var(--line)}
 /* Filtro activo (Start › Filtrar): chip discreto junto al orden; el clic lo quita. */
-.ttabs .tchip{margin-left:6px;cursor:pointer;color:var(--ink-2);background:var(--glass-chip);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--acc) 55%,transparent)}
-.ttabs .tchip b{display:grid;place-items:center;width:18px;height:18px;margin-right:-6px;border-radius:50%;font-size:var(--t-xs);color:var(--on);background:var(--ink-3)}
-.ttabs .tchip:hover b{background:var(--bad)}
+.cat-tools .tchip{cursor:pointer;color:var(--ink-2);background:var(--glass-chip);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--acc) 55%,transparent)}
+.cat-tools .tchip b{display:grid;place-items:center;width:18px;height:18px;margin-right:-6px;border-radius:50%;font-size:var(--t-xs);color:var(--on);background:var(--ink-3)}
+.cat-tools .tchip:hover b{background:var(--bad)}
+.cat-tools .pagep{position:static;transform:none;height:36px;padding:0 14px;font-size:var(--t-s)}
 .tflt{height:32px;padding:0 14px;border-radius:var(--r-pill);display:flex;align-items:center;gap:6px;font-family:var(--round);font-size:var(--t-m);font-weight:800;color:var(--ink-2);white-space:nowrap;
   background:var(--face);box-shadow:inset 0 1px 0 var(--glass-top),0 0 0 1px var(--line);transition:background .25s,color .25s,box-shadow .25s}
 .tflt small{font-size:var(--t-s);font-weight:700;opacity:.65}
@@ -827,7 +834,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 
 /* Zona de las estanterías de «Mi lista» y «Colecciones» (recorta lo que se desplaza fuera, a ancho completo para no cortar las sombras). */
 /* Acaba donde empieza la banda de pistas: de la tercera estantería solo asoma el borde de su pestaña. */
-.lclip{position:absolute;left:0;top:166px;width:1280px;height:calc(var(--content-end) - 154px);overflow:hidden}
+.lclip{position:absolute;left:0;top:128px;width:1280px;height:calc(var(--content-end) - 128px);overflow:hidden}
 /* Rescate de racha: color propio por categoría (nunca el de la categoría). */
 .r-vn{--rc:#E9A100;--rsoft:#fcefc7;--rink:#8a5d00;--rmid:#f1dca0}
 .r-jv{--rc:#6E56CF;--rsoft:#e8e3fb;--rink:#4a3aa0;--rmid:#cdc3f2}
@@ -870,7 +877,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .sbar .sbub b{font-size:var(--t-m);font-weight:800;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .sbar .sbub small{font-size:var(--t-s);font-weight:700;color:var(--ink-2);flex:none}
 .sbar .sbub .sdot{flex:none;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)}
-.pgfam{position:absolute;right:28px;top:145px;height:30px;padding:0 14px;border-radius:var(--r-pill);display:flex;align-items:center;font-size:var(--t-s);font-weight:700;color:var(--ink-2);white-space:nowrap;pointer-events:none}
+.pgfam{position:absolute;right:28px;top:594px;height:30px;padding:0 14px;border-radius:var(--r-pill);display:flex;align-items:center;font-size:var(--t-s);font-weight:700;color:var(--ink-2);white-space:nowrap;pointer-events:none}
 
 /* Catálogo: velo de color sobre el fondo de cuadraditos, con el matiz del juego enfocado (suave, cambia con fundido). */
 @property --p1{syntax:'<color>';inherits:true;initial-value:transparent}
@@ -927,9 +934,10 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .tablet .vw .vinfo{bottom:99px}
 .tablet .vw.bare .hints{bottom:16px}
 .tablet .vw.bare .vinfo{bottom:19px}
+.tablet .ttabs{height:52px;top:14px}
 .tablet .ttabs .tflt{height:44px}
-.tablet .ttabs .tflt:active{transform:scale(.97)}
-.tablet .ttabs .tsearch{height:44px}
+.tablet .ttabs .tflt:active,.tablet .cat-tools .tflt:active{transform:scale(.97)}
+.tablet .cat-tools .tflt,.tablet .cat-tools .tsearch,.tablet .cat-tools .pagep{height:44px}
 .tablet .sx .chev:not(.dis):active,.tablet .sx .o:active{transform:scale(.97)}
 .tablet .glass,.tablet .pill,.tablet .scrim,.tablet #toast{-webkit-backdrop-filter:none;backdrop-filter:none}
 .tablet .glass{transition:transform .24s cubic-bezier(.34,1.32,.64,1),background .24s ease}

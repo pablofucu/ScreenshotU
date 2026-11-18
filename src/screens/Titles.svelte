@@ -1,6 +1,6 @@
 <script lang="ts">
   import { IS_TABLET } from '../lib/backend';
-  import { app, accv, coverHue, LIST_COLOR, TITLE_FILTERS, TITLE_ORDER_LABEL, TITLES_TABS, type ListShelf } from '../lib/store.svelte';
+  import { app, coverHue, TITLE_FILTERS, TITLE_ORDER_LABEL, TITLES_TABS, type ListShelf } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { fmtAgo, fmtDur, fmtShort, nCapturas } from '../lib/format';
   import { setFocus, titlesGrid, viewPos, setTitlesTab, cycleTitleOrder } from '../lib/controller.svelte';
@@ -32,37 +32,6 @@
   // Pestaña de la categoría: Todos, Mi lista o Colecciones.
   const tab = $derived(app.titlesTab);
   const hasListTitles = $derived(buildBoard().length > 0);
-  // «Mi lista»: estanterías por estado. Se pintan la enfocada y sus vecinas; cada una con el color fijo de su estado.
-  const shelves = $derived(app.shelves);
-  const focusShelf = $derived(shelves.findIndex((s) => s.items.includes(app.t)));
-  const listAcc = $derived(focusShelf >= 0 ? LIST_COLOR[shelves[focusShelf].kind] : app.chrome);
-  const shelfRange = $derived([Math.max(0, app.listTop - 1), Math.min(shelves.length, app.listTop + 4)] as const);
-  const shelfIdx = $derived(Array.from({ length: Math.max(0, shelfRange[1] - shelfRange[0]) }, (_, k) => shelfRange[0] + k));
-  const shelfItems = (sh: ListShelf): ShelfItem[] =>
-    sh.items.map((ti, k) => {
-      const { label, stars } = itemLabel(sh, titles[ti], k);
-      return { k: 'tit' + ti, act: 'tit:' + ti, path: coverOf(ti), name: titles[ti].name, label, stars, pip: app.pipStyle(app.p, ti) };
-    });
-  const finShelfItems = (sh: ListShelf): ShelfItem[] =>
-    sh.items.map((ti, k) => ({
-      k: 'tit' + ti, act: 'tit:' + ti, path: coverOf(ti), name: titles[ti].name, n: k + 1, stars: 0, pip: app.pipStyle(app.p, ti),
-    }));
-  // «Terminados»: cuántos juegos se terminaron cada mes del año (barritas del rótulo).
-  const monthCounts = (sh: ListShelf) => {
-    const c = Array<number>(12).fill(0);
-    for (const ti of sh.items) if (titles[ti].finishedMs) c[new Date(titles[ti].finishedMs!).getMonth()]++;
-    return c;
-  };
-  // Icono de color del rótulo de cada estantería (el del estado).
-  const svg = (d: string) => `<svg viewBox="0 0 48 48" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
-  const LIST_ICON: Record<ListShelf['kind'], string> = {
-    playing: ICON.play,
-    pending: svg('<circle cx="24" cy="24" r="16"/><path d="M24 15v10l6 4"/>'),
-    finished: ICON.check,
-    dropped: svg('<path d="M11 24h26"/>'),
-    none: svg('<path d="M10 14h28M10 24h28M10 34h28"/>'),
-  };
-  const curShelf = $derived(focusShelf >= 0 ? shelves[focusShelf] : null);
   const cur = $derived(titles[app.t]);
   const coverOf = (i: number) => titles[i].cover ?? titles[i].shots[0]?.path ?? null;
   const realAt = (pos: number) => (pos < vis.length ? vis[pos] : titles.length);
@@ -70,9 +39,9 @@
   // Filtro activo de «Todos» (Start › Filtrar): solo se enseña como un chip junto al orden.
   const filtered = $derived(app.titleFilter !== 'all');
   const filterName = $derived(TITLE_FILTERS.find(([f]) => f === app.titleFilter)?.[1] ?? '');
-  // Acento de la barra de pestañas: el del estado (Mi lista), el de la colección enfocada (Colecciones) o el del juego enfocado (cuadrícula de «Todos»).
+  // Color fijo de la categoría para la barra de pestañas en la TopBar.
   type H = [string, string, string];
-  const tabsAcc = $derived((tab === 'list' || tab === 'fin') ? listAcc : tab === 'coll' ? collFocusAccent() : null);
+  const catFill = $derived(app.pairFill(app.secPair(app.p)));
 
   // Ventana virtual: solo se pintan la página actual y las vecinas (cuadrícula) o ±9 (carrusel).
   const range = $derived(
@@ -185,38 +154,12 @@
 {/snippet}
 
 <div class="ambwash" style={wash}></div>
-<TopBar crumbs={['Inicio', P?.name ?? '']} dots={grid && tab === 'all' ? pages : 0} dot={pg} />
+<TopBar crumbs={['Inicio', P?.name ?? '']} />
 
-<div class="ttabs" class:car={!grid && tab === 'all'} style={tabsAcc ? `--acc:${tabsAcc.c};--accv:${accv(tabsAcc)};--acc-ink:#fff` : ''}>
-  <span class="btn sh" data-hact="lt">LT</span>
+<div class="ttabs pill" style="--acc:{catFill.c};--f1:{catFill.c};--f2:{catFill.c2};--gf:linear-gradient(115deg,{catFill.c},{catFill.c2})">
   {#each TITLES_TABS as [f, label]}
     <button type="button" class="tflt" class:on={tab === f} onclick={() => setTitlesTab(f)}>{label}</button>
   {/each}
-  <span class="btn sh" data-hact="rt">RT</span>
-  {#if tab === 'all' && titles.length > 1}
-    <button type="button" class="tflt tord" onclick={cycleTitleOrder}>{TITLE_ORDER_LABEL[app.titleOrder]}</button>
-  {/if}
-  {#if tab === 'all' && filtered}<span class="tflt tchip" data-hact="nofilter" title="Quitar el filtro">{filterName}<small>{vis.length}</small><b aria-label="Quitar el filtro">✕</b></span>{/if}
-  {#if tab === 'all'}
-    <div class="tsearch" class:has-val={Boolean(app.catalogSearch)}>
-      <span class="ts-ic">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="7"/>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-      </span>
-      <input
-        type="text"
-        placeholder="Buscar juego..."
-        bind:value={app.catalogSearch}
-        spellcheck="false"
-        autocomplete="off"
-      />
-      {#if app.catalogSearch}
-        <button type="button" class="ts-x" onclick={() => (app.catalogSearch = '')} title="Borrar búsqueda">✕</button>
-      {/if}
-    </div>
-  {/if}
 </div>
 
 {#snippet fhead(t: NonNullable<typeof cur>, a: { c: string; dark?: boolean }, chip: string)}
@@ -251,23 +194,52 @@
   </div>
   {/if}
 {:else}
-  {#if grid}
-    {#if cur}
-      {@const a = app.titleAcc(app.p, app.t)}
-      <div class="thead">
-        <h3>{cur.name}</h3>
-        <span class="tag" style="background:{a.c};color:#fff">{cur.shots.length ? nCapturas(cur.shots.length) : 'Sin capturas'}</span>
-        {#if cur.playSeconds >= 60}<span>Jugado <b>{fmtDur(cur.playSeconds)}</b></span>{/if}
-        {#if cur.lastPlayed}<span>Última partida <b>{fmtAgo(cur.lastPlayed).toLowerCase()}</b></span>
-        {:else if cur.shots.length}<span>Última captura <b>{fmtShort(cur.shots[0].date)}</b></span>{/if}
-        {#if favCount}<span class="tfav">{@html ICON.starY}<b>{favCount}</b></span>{/if}
-      </div>
-    {:else if !vis.length}
-      <div class="thead"><h3>Ningún juego</h3><span>con el filtro «{filterName}» (Start › Filtrar para cambiarlo)</span></div>
-    {:else}
-      <div class="thead"><h3>Añadir juego</h3><span>Un ejecutable, un emulador o una carpeta de capturas</span></div>
+  <div class="catbar">
+    {#if grid}
+      {#if cur}
+        {@const a = app.titleAcc(app.p, app.t)}
+        <div class="thead">
+          <h3>{cur.name}</h3>
+          <span class="tag" style="background:{a.c};color:#fff">{cur.shots.length ? nCapturas(cur.shots.length) : 'Sin capturas'}</span>
+          {#if cur.playSeconds >= 60}<span>Jugado <b>{fmtDur(cur.playSeconds)}</b></span>{/if}
+          {#if cur.lastPlayed}<span>Última partida <b>{fmtAgo(cur.lastPlayed).toLowerCase()}</b></span>
+          {:else if cur.shots.length}<span>Última captura <b>{fmtShort(cur.shots[0].date)}</b></span>{/if}
+          {#if favCount}<span class="tfav">{@html ICON.starY}<b>{favCount}</b></span>{/if}
+        </div>
+      {:else if !vis.length}
+        <div class="thead"><h3>Ningún juego</h3><span>con el filtro «{filterName}» (Start › Filtrar para cambiarlo)</span></div>
+      {:else}
+        <div class="thead"><h3>Añadir juego</h3><span>Un ejecutable, un emulador o una carpeta de capturas</span></div>
+      {/if}
     {/if}
-  {/if}
+    <div class="cat-tools">
+      {#if titles.length > 1}
+        <button type="button" class="tflt tord" onclick={cycleTitleOrder}>{TITLE_ORDER_LABEL[app.titleOrder]}</button>
+      {/if}
+      {#if filtered}<span class="tflt tchip" data-hact="nofilter" title="Quitar el filtro">{filterName}<small>{vis.length}</small><b aria-label="Quitar el filtro">✕</b></span>{/if}
+      <div class="tsearch" class:has-val={Boolean(app.catalogSearch)}>
+        <span class="ts-ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </span>
+        <input
+          type="text"
+          placeholder="Buscar juego..."
+          bind:value={app.catalogSearch}
+          spellcheck="false"
+          autocomplete="off"
+        />
+        {#if app.catalogSearch}
+          <button type="button" class="ts-x" onclick={() => (app.catalogSearch = '')} title="Borrar búsqueda">✕</button>
+        {/if}
+      </div>
+      {#if grid && pages > 1}
+        <div class="pagep pill">Pág. {pg + 1}/{pages}<i><b style="left:{(pg / pages) * 100}%;width:{100 / pages}%"></b></i></div>
+      {/if}
+    </div>
+  </div>
   {#if grid}
     <div class="ttrack" style="width:1280px;height:{pages * PH}px;transform:translateY({-pg * PH}px)">
       {#each idx as pos (realAt(pos))}
@@ -282,7 +254,7 @@
     {#if tab === 'all' && pages > 1}
       <!-- Barra de desplazamiento vertical (las páginas bajan): por color es un minimapa con los colores de los juegos.
            Clic o arrastre = saltar a ese juego; el ratón encima enseña cuál es. -->
-      <div class="sbar rb" bind:this={barEl} style="right:auto;left:1182px;top:214px;height:{BAR_H}px{mapGrad ? ';background:' + mapGrad : ''}">
+      <div class="sbar rb" bind:this={barEl} style="right:auto;left:1182px;top:162px;height:{BAR_H}px{mapGrad ? ';background:' + mapGrad : ''}">
         {#if app.titleOrder === 'az'}<em style="top:-20px">A</em>{/if}
         <i style="height:{THUMB}px;top:{(q / Math.max(1, slots - 1)) * (BAR_H - THUMB)}px"></i>
         {#if app.titleOrder === 'az'}<em style="bottom:-20px">Z</em>{/if}
@@ -361,14 +333,14 @@
 {/if}
   <style>
   button.tflt { border: none; font-family: var(--round); font-size: var(--t-m); font-weight: 800; cursor: pointer; }
-  button.tflt.tord { background: transparent; box-shadow: none; font-family: var(--round); font-size: var(--t-m); font-weight: 800; }
+  button.tflt.tord { font-family: var(--round); font-size: var(--t-s); font-weight: 800; }
   .tsearch {
-    height: 32px;
+    height: 36px;
     display: inline-flex;
     align-items: center;
     gap: 8px;
     padding: 0 12px 0 10px;
-    margin-left: 10px;
+    margin-left: 0;
     border-radius: var(--r-pill);
     background: var(--glass-chip);
     backdrop-filter: blur(10px);

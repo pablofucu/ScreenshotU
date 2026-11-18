@@ -8,7 +8,7 @@ const LEVELS = [
   { cols: 8, cw: 92, ch: 123, gap: 28, rg: 12 },
 ];
 /** Borde inferior útil de la cuadrícula (por encima de las pistas de botones). */
-const BOTTOM = 656;
+const BOTTOM = 644;
 
 export interface TGrid {
   cols: number; rows: number; size: number;
@@ -22,7 +22,7 @@ export interface TGrid {
 /** Medidas de la cuadrícula para un nivel. */
 export function tgrid(level: number): TGrid {
   const L = LEVELS[Math.max(0, Math.min(TZOOM_MAX, Math.round(level) || 0))];
-  const top = 204;
+  const top = 152;
   const rows = Math.max(1, Math.floor((BOTTOM - top + L.rg) / (L.ch + L.rg)));
   return { ...L, rows, size: L.cols * rows, top, gx: (1280 - L.cols * L.cw - (L.cols - 1) * L.gap) / 2, s: L.cw / 160 };
 }

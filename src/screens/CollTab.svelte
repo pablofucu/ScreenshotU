@@ -19,8 +19,8 @@
   const range = $derived([Math.max(0, app.collTop - 1), Math.min(total, app.collTop + 4)] as const);
   const idx = $derived(Array.from({ length: Math.max(0, range[1] - range[0]) }, (_, k) => range[0] + k));
 
-  /** Las estanterías bajan unos píxeles para que el rótulo no choque con las pestañas de arriba. */
-  const COLL_DY = 12;
+  /** Las estanterías bajan unos píxeles para que el rótulo no choque con la cabecera de arriba. */
+  const COLL_DY = 6;
   const coverOf = (ti: number) => titles[ti].cover ?? titles[ti].shots[0]?.path ?? null;
 
   function itemsOf(k: number): ShelfItem[] {

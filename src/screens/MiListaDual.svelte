@@ -12,9 +12,9 @@
   // Solo hay carriles para las franjas con juegos (buildBoard ya descarta las vacías): el espacio se reparte entre ellas.
   const lanes = $derived(bands);
 
-  // Alto del tablero: de debajo de las pestañas (y 182) al final del contenido (644).
+  // Alto del tablero: de debajo de la barra superior (y 86) al final del contenido (644).
   // ROW es el alto base de una fila para repartir; MAXROW, lo más que crece una fila al llenar el alto (portadas grandes).
-  const H = 462, GAP = 8, ROW = 100, MAXROW = 150, PER = 5;
+  const H = 558, GAP = 8, ROW = 100, MAXROW = 150, PER = 5;
   const baseH = $derived(lanes.length ? Math.min(ROW, Math.floor((H - GAP * (lanes.length - 1)) / lanes.length)) : ROW);
 
   // Filas por carril: 1 por carril y el resto al que más lo necesita.
@@ -145,7 +145,7 @@
     position: absolute;
     left: 40px;
     right: 40px;
-    top: 182px;
+    top: 86px;
     bottom: calc(var(--stage-h) - var(--content-end));
     display: flex;
     flex-direction: column;
