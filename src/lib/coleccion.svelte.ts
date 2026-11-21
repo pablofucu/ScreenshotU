@@ -88,6 +88,12 @@ export function tabLook(games: Title[], acc: Accent): { style: string; aurora: s
   return { style: '', aurora: coverColors(games, 0.72, 0.16, 5), ink };
 }
 
+/** Variables de acento completo (`--g1 --g2 --f1 --f2 --gf --v1 --v2 --gv --on`…) de un juego de la categoría abierta. */
+export function gameVars(ti: number): string {
+  const { h1, h2 } = app.titlePair(app.p, ti);
+  return Object.entries(variablesCSS(h1, h2)).map(([k, v]) => `${k}:${v}`).join(';');
+}
+
 /** Variables de color (`--g1 --g2 --f1 --f2 --gf --on`…) de una estantería: foco de las portadas, anillo y rótulo. Salen de
  *  los 2 tonos más repetidos entre las portadas de la colección; si tiene un color elegido a mano, gana ese. */
 export function shelfVars(sh: { coll: Collection; items: number[] }, acc: Accent = shelfAccent(sh)): string {
@@ -97,6 +103,15 @@ export function shelfVars(sh: { coll: Collection; items: number[] }, acc: Accent
     if (top) [h1, h2] = top;
   }
   return Object.entries(variablesCSS(h1, h2)).map(([k, v]) => `${k}:${v}`).join(';');
+}
+
+const shotRng = $state({ seed: Math.floor(Math.random() * 1e9) || 1 });
+/** Semilla actual para muestrear capturas aleatorias de la colección. */
+export const collShotSeed = () => shotRng.seed;
+/** Cambia la semilla para mostrar otro lote de capturas aleatorias de la colección. */
+export function shuffleCollShots() {
+  shotRng.seed = ((shotRng.seed * 1664525 + 1013904223) >>> 0) || 1;
+  blip(880);
 }
 
 /** Línea de tiempo de una estantería: posición de cada portada (por año), si lleva marca de año, su color y el degradado del raíl. */
@@ -146,6 +161,7 @@ export function resetColl() {
   app.collAt = { c: 0, i: 0 };
   app.collTop = 0;
   app.collFrom = {};
+  shotRng.seed = Math.floor(Math.random() * 1e9) || 1;
 }
 
 const flash = () => document.querySelector('#screen .fx.f');
@@ -206,18 +222,32 @@ export function collCmd(c: string): boolean {
     case 'y':
       if (sh) openCollForm(sh.coll.id); else bump(flash(), 0, 0);
       return true;
+    case 'view': {
+      const totalShots = sh?.items.reduce((n, ti) => n + (app.platform?.titles[ti]?.shots.length ?? 0), 0) ?? 0;
+      if (totalShots > 5) shuffleCollShots(); else bump(flash(), 0, 0);
+      return true;
+    }
   }
   return false;
 }
 
-/** Abre la vista de capturas de toda la colección `k` (LB/RB filtran por juego). */
-export function openCollShots(k: number) {
+/** Abre la vista de capturas de toda la colección `k` (o directamente el visor si se pasa `shotPath`). */
+export function openCollShots(k: number, shotPath?: string) {
   const sh = app.collShelves[k];
   if (!sh) return;
   if (!sh.items.some((i) => app.platform!.titles[i].shots.length)) { toast('Esta colección aún no tiene capturas'); return; }
   app.collAt = { c: k, i: Math.min(app.collAt.i, cols(k) - 1) };
   app.collOpen = sh.coll.id;
-  app.s = 0; app.favView = false; app.sagaFilter = -1; app.sortMode = app.config.shotsOrder;
+  app.favView = false; app.sagaFilter = -1; app.sortMode = app.config.shotsOrder;
+  if (shotPath) {
+    const idx = app.cur.shots.findIndex((s) => s.path === shotPath);
+    app.s = idx >= 0 ? idx : 0;
+    app.fk.shots = 'shot' + app.s;
+    app.viewerFrom = 'shots';
+    go('viewer', 'fwd');
+    return;
+  }
+  app.s = 0;
   app.fk.shots = 'shot0';
   go('shots', 'fwd');
 }

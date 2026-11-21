@@ -1,7 +1,8 @@
 // Colecciones: funciones puras para ordenar sus juegos por año, sacar sus colores, sugerir grupos y montar la vista de
 // capturas combinada. No tocan el estado de la app (eso está en coleccion.svelte.ts) ni los archivos de capturas.
 import type { Collection, Platform, Shot, Title } from './types';
-import { hexToRgb, lchToRgb, rgbToHex, rgbToLch } from './oklch';
+import { hexToRgb, lchToRgb, rgbToHex, rgbToLch } from './oklch.ts';
+import { rng } from './rng.ts';
 
 const EMPTY: Omit<Title, 'name' | 'cover' | 'shots' | 'id' | 'members'> = {
   hero: null, logo: null, folder: '', dir: '', hasFolder: false, gameId: null, source: null, launchable: false,
@@ -197,4 +198,67 @@ export function railGradient(xs: number[], cw: number, colors: Array<string | nu
   const fill = colors.map((c) => (last = c ?? last));
   const stops = fill.map((c, k) => `${c} ${xs[k] + cw / 2}px`);
   return `linear-gradient(90deg,${fill[0]} 0px,${stops.join(',')},${fill[fill.length - 1]} ${totalW}px)`;
+}
+
+export interface CollShotPick {
+  path: string;
+  game: string;
+  ti: number;
+  tint: string | null;
+  date: number;
+}
+
+/** Baraja un array nuevo con Fisher-Yates usando el PRNG `rand`. */
+function shuffleWith<T>(arr: readonly T[], rand: () => number): T[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/** Elige hasta `count` capturas aleatorias repartidas entre todos los juegos de la colección (round-robin con semilla). */
+export function pickCollShots(
+  games: Array<{ ti: number; name: string; shots: Shot[]; tint: string | null }>,
+  count: number,
+  seed: number,
+): CollShotPick[] {
+  if (count <= 0) return [];
+  const withShots = games.filter((g) => g.shots.length > 0);
+  if (!withShots.length) return [];
+  const rand = rng(seed >>> 0);
+  const pools = shuffleWith(withShots, rand).map((g) => ({
+    ti: g.ti,
+    name: g.name,
+    tint: g.tint,
+    shots: shuffleWith(g.shots, rand),
+    at: 0,
+  }));
+  const out: CollShotPick[] = [];
+  while (out.length < count) {
+    let picked = false;
+    for (const p of pools) {
+      if (p.at >= p.shots.length) continue;
+      const s = p.shots[p.at++];
+      out.push({ path: s.path, game: p.name, ti: p.ti, tint: p.tint, date: s.date });
+      picked = true;
+      if (out.length >= count) break;
+    }
+    if (!picked) break;
+  }
+  return out;
+}
+
+/** Rango de años legible de una colección (`"2004 – 2020"`, `"2015"` o `""`). */
+export function collYearSpan(years: Array<number | null>): string {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const y of years) {
+    if (y === null) continue;
+    if (y < min) min = y;
+    if (y > max) max = y;
+  }
+  if (!Number.isFinite(min)) return '';
+  return min === max ? String(min) : `${min} – ${max}`;
 }

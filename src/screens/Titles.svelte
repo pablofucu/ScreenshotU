@@ -13,7 +13,6 @@
   import CollTab from './CollTab.svelte';
   import MiListaDual from './MiListaDual.svelte';
   import { buildBoard, computeMonthPositions, finShelfSub, itemLabel, LIST_VIS, SHELF_STEP, shelfSub } from '../lib/milista.svelte';
-  import { collFocusAccent } from '../lib/coleccion.svelte';
   import { inkFor } from '../lib/ops.svelte';
 
   const P = $derived(app.platform);
@@ -56,12 +55,12 @@
   const cellStyle = (page: number, j: number) =>
     `left:${G.gx + (j % G.cols) * (G.cw + G.gap)}px;top:${page * PH + G.top + Math.floor(j / G.cols) * (G.ch + G.rg)}px;width:${G.cw}px;height:${G.ch}px;--r:${(16 * G.s).toFixed(1)}px;--bw:${(3 * G.s).toFixed(1)}px;--fr:${(13 * G.s).toFixed(1)}px;--ts:${(0.55 + 0.45 * G.s).toFixed(3)}`;
 
-  // Juego enfocado en la pestaña «Colecciones» (o el de la lista en las demás).
-  const ambTitle = $derived.by(() => {
-    if (tab !== 'coll') return cur;
-    const ti = app.collShelves[app.collAt.c]?.items[app.collAt.i];
-    return ti === undefined ? undefined : titles[ti];
-  });
+  // Si la colección enfocada tiene más de 5 capturas, View baraja las 5 aleatorias.
+  const collHasMoreShots = $derived(
+    tab === 'coll' &&
+      app.collAt.c < app.collShelves.length &&
+      app.collShelves[app.collAt.c].items.reduce((n, ti) => n + (titles[ti]?.shots.length ?? 0), 0) > 5,
+  );
 
   // Velo de color: tiñe el fondo de cuadraditos con los dos tonos del juego enfocado (al recorrer la lista, el fondo va cambiando de matiz).
   // Si no hay juego enfocado (baldosa «Añadir»), se conserva el último. Por color, el velo sigue la misma vuelta que
@@ -162,24 +161,9 @@
   {/each}
 </div>
 
-{#snippet fhead(t: NonNullable<typeof cur>, a: { c: string; dark?: boolean }, chip: string)}
-  <div class="thead">
-    <h3>{t.name}</h3>
-    <span class="tag" style="background:{a.c};color:#fff">{chip}</span>
-    {#if t.playSeconds >= 60}<span>Jugado <b>{fmtDur(t.playSeconds)}</b></span>{/if}
-    {#if t.lastPlayed}<span>Última partida <b>{fmtAgo(t.lastPlayed).toLowerCase()}</b></span>
-    {:else if t.shots.length}<span>Última captura <b>{fmtShort(t.shots[0].date)}</b></span>{/if}
-    {#if t.shots.length}<span>{nCapturas(t.shots.length)}</span>{/if}
-  </div>
-{/snippet}
-
 {#if tab === 'list'}
   <MiListaDual />
 {:else if tab === 'coll'}
-  {#if ambTitle && app.collShelves[app.collAt.c]}
-    {@const csh = app.collShelves[app.collAt.c]}
-    {@render fhead(ambTitle, collFocusAccent(), `${csh.coll.name} · ${app.collAt.i + 1} de ${csh.items.length}`)}
-  {/if}
   <CollTab />
 {:else if titles.length === 0}
   <div class="glass note-card" style="left:300px;top:170px">
@@ -313,7 +297,11 @@
 {:else if tab === 'coll'}
   <Hints list={[
     ['A', app.collAt.c >= app.collShelves.length ? 'Nueva colección' : 'Abrir', 'a'],
-    ...(app.collAt.c < app.collShelves.length ? [...(app.platform?.titles[app.collShelves[app.collAt.c]?.items[app.collAt.i]]?.launchable ? [['X', 'Jugar', 'x'] as H] : []), ['Y', 'Editar', 'y'] as H] : []),
+    ...(app.collAt.c < app.collShelves.length ? [
+      ...(app.platform?.titles[app.collShelves[app.collAt.c]?.items[app.collAt.i]]?.launchable ? [['X', 'Jugar', 'x'] as H] : []),
+      ['Y', 'Editar', 'y'] as H,
+      ...(collHasMoreShots ? [['View', 'Otras capturas', 'view'] as H] : []),
+    ] : []),
     ['LT/RT', 'Pestaña', 'rt'],
     ['Start', 'Menú', 'menu'],
     ['B', 'Volver', 'b'],
