@@ -6,7 +6,7 @@ import { patchConfig, toast } from './controller.svelte';
 
 /** Botones del mando (ids de `visor_core::capture::PAD_BUTTONS`) y cómo se enseñan. */
 const PAD_LABEL: Record<string, string> = {
-  back: 'View', start: 'Menú', guide: 'Xbox', lb: 'LB', rb: 'RB', lt: 'LT', rt: 'RT', l3: 'L3', r3: 'R3',
+  back: 'View', start: 'Menú', guide: 'Xbox', mute: 'Silencio', lb: 'LB', rb: 'RB', lt: 'LT', rt: 'RT', l3: 'L3', r3: 'R3',
   a: 'A', b: 'B', x: 'X', y: 'Y', up: '↑', down: '↓', left: '←', right: '→',
 };
 /** Combinaciones de mando que se recorren con izquierda/derecha. */

@@ -235,6 +235,8 @@ pub const XI_Y: u32 = 0x8000;
 /// Los gatillos son analogicos en XInput: se representan con bits por encima de los 16 de `wButtons`.
 pub const XI_LT: u32 = 1 << 16;
 pub const XI_RT: u32 = 1 << 17;
+/// Boton de silencio del DualSense: no existe en XInput; se lee del mando por HID (ver `dualsense_mute`).
+pub const XI_MUTE: u32 = 1 << 18;
 /// Valor (0..255) a partir del cual un gatillo cuenta como pulsado.
 pub const TRIGGER_THRESHOLD: u8 = 100;
 
@@ -243,6 +245,7 @@ pub const PAD_BUTTONS: &[(&str, u32)] = &[
     ("back", XI_BACK),
     ("start", XI_START),
     ("guide", XI_GUIDE),
+    ("mute", XI_MUTE),
     ("lb", XI_LB),
     ("rb", XI_RB),
     ("lt", XI_LT),
@@ -295,6 +298,20 @@ pub fn combo_id(mask: u32) -> String {
         "off".into()
     } else {
         parts.join("+")
+    }
+}
+
+/// Mandos DualSense (054C:0CE6) y DualSense Edge (054C:0DF2).
+pub const DUALSENSE_VID: u16 = 0x054C;
+pub const DUALSENSE_PIDS: [u16; 2] = [0x0CE6, 0x0DF2];
+
+/// Estado del boton de silencio en un informe de entrada HID del DualSense: `Some(pulsado)` si el informe lo trae
+/// (USB `0x01` de 64 bytes, Bluetooth `0x31`), `None` si no (el informe corto de Bluetooth `0x01` no lo lleva).
+pub fn dualsense_mute(report: &[u8]) -> Option<bool> {
+    match report.first()? {
+        0x01 if report.len() >= 64 => Some(report[10] & 0x04 != 0),
+        0x31 if report.len() >= 12 => Some(report[11] & 0x04 != 0),
+        _ => None,
     }
 }
 
@@ -408,17 +425,19 @@ pub const HOTKEYS: &[&str] = &["F12", "F10", "F9", "Ctrl+F12", "Alt+F12", "Ctrl+
 
 /* ---------------- sonido ---------------- */
 
-/// WAV PCM 16 bits mono con dos tonos cortos (un «clic de obturador» agradable), generado en memoria.
+/// WAV PCM 16 bits mono con un unico «clic de obturador» (un tono que sube de 1320 a 1760 Hz), generado en
+/// memoria. Antes eran dos tonos con un hueco entre ellos y se oia como si sonara dos veces.
 pub fn shutter_wav() -> Vec<u8> {
     let rate = 22050u32;
-    let mut samples: Vec<i16> = Vec::new();
-    for (freq, ms) in [(1318.5f32, 55u32), (1760.0, 90)] {
-        let n = rate * ms / 1000;
-        for i in 0..n {
-            let t = i as f32 / rate as f32;
-            let env = (1.0 - i as f32 / n as f32).powf(1.6) * (i as f32 / 60.0).min(1.0);
-            samples.push(((t * freq * std::f32::consts::TAU).sin() * env * 0.35 * i16::MAX as f32) as i16);
-        }
+    let n = rate * 120 / 1000;
+    let mut samples: Vec<i16> = Vec::with_capacity(n as usize);
+    let mut phase = 0f32;
+    for i in 0..n {
+        let k = i as f32 / n as f32;
+        let freq = 1318.5 + (1760.0 - 1318.5) * k.min(0.35) / 0.35;
+        phase += freq / rate as f32 * std::f32::consts::TAU;
+        let env = (1.0 - k).powf(1.6) * (i as f32 / 60.0).min(1.0);
+        samples.push((phase.sin() * env * 0.35 * i16::MAX as f32) as i16);
     }
     let data_len = (samples.len() * 2) as u32;
     let mut w = Vec::with_capacity(44 + data_len as usize);
@@ -719,6 +738,22 @@ mod tests {
         assert!(c.update(XI_BACK | XI_RB | 0x1000, 2000), "pasado el enfriamiento");
         let mut off = ComboDetector::new(0, 0);
         assert!(!off.update(0xFFFF, 0));
+    }
+
+    #[test]
+    fn dualsense_mute_bit() {
+        let mut usb = [0u8; 64];
+        usb[0] = 0x01;
+        assert_eq!(dualsense_mute(&usb), Some(false));
+        usb[10] = 0x04;
+        assert_eq!(dualsense_mute(&usb), Some(true));
+        let mut bt = [0u8; 78];
+        bt[0] = 0x31;
+        bt[11] = 0x05;
+        assert_eq!(dualsense_mute(&bt), Some(true));
+        assert_eq!(dualsense_mute(&[0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0]), None);
+        assert_eq!(combo_mask("mute"), XI_MUTE);
+        assert_eq!(combo_id(XI_MUTE | XI_BACK), "back+mute");
     }
 
     #[test]

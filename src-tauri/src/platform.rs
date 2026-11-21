@@ -602,6 +602,15 @@ mod imp {
 
     pub fn play_shutter() {
         static WAV: std::sync::OnceLock<Vec<u8>> = std::sync::OnceLock::new();
+        // Dos avisos casi a la vez (atajo y mando a la vez, o una pulsacion que llega repetida) suenan una sola vez.
+        static LAST: std::sync::Mutex<Option<std::time::Instant>> = std::sync::Mutex::new(None);
+        {
+            let mut last = LAST.lock().unwrap();
+            if last.is_some_and(|t| t.elapsed() < std::time::Duration::from_millis(600)) {
+                return;
+            }
+            *last = Some(std::time::Instant::now());
+        }
         let wav = WAV.get_or_init(shutter_wav);
         unsafe {
             let _ = PlaySoundW(PCWSTR(wav.as_ptr() as *const u16), None, SND_MEMORY | SND_ASYNC | SND_NODEFAULT);

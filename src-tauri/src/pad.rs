@@ -98,6 +98,109 @@ mod xinput {
     }
 }
 
+/// Boton de silencio del DualSense. XInput no lo tiene (tampoco el mando virtual de DS4Windows), asi que se lee
+/// el mando directamente por HID, en modo compartido: el juego y DS4Windows siguen recibiendolo igual. Si
+/// DS4Windows lo oculta con HidHide, el visor tiene que estar en la lista de aplicaciones permitidas.
+#[cfg(windows)]
+mod dualsense {
+    use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+    use std::time::Duration;
+    use visor_core::capture::{dualsense_mute, DUALSENSE_PIDS, DUALSENSE_VID};
+    use windows::core::PCWSTR;
+    use windows::Win32::Devices::DeviceAndDriverInstallation::{
+        CM_Get_Device_Interface_ListW, CM_Get_Device_Interface_List_SizeW, CM_GET_DEVICE_INTERFACE_LIST_PRESENT, CR_SUCCESS,
+    };
+    use windows::Win32::Devices::HumanInterfaceDevice::{HidD_GetAttributes, HidD_GetHidGuid, HIDD_ATTRIBUTES};
+    use windows::Win32::Foundation::{CloseHandle, GENERIC_READ, HANDLE};
+    use windows::Win32::Storage::FileSystem::{CreateFileW, ReadFile, FILE_FLAGS_AND_ATTRIBUTES, FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING};
+
+    /// El bucle del mando lo pide solo si alguna combinacion usa el boton (o se esta aprendiendo una).
+    pub static WANT: AtomicBool = AtomicBool::new(false);
+    /// Un bit por mando abierto con el boton pulsado.
+    static DOWN: AtomicU32 = AtomicU32::new(0);
+    /// Rutas ya abiertas (un hilo cada una).
+    static OPEN: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
+
+    pub fn pressed() -> bool {
+        DOWN.load(Ordering::Relaxed) != 0
+    }
+
+    fn paths() -> Vec<String> {
+        unsafe {
+            let guid = HidD_GetHidGuid();
+            let mut len = 0u32;
+            if CM_Get_Device_Interface_List_SizeW(&mut len, &guid, PCWSTR::null(), CM_GET_DEVICE_INTERFACE_LIST_PRESENT) != CR_SUCCESS || len < 2 {
+                return Vec::new();
+            }
+            let mut buf = vec![0u16; len as usize];
+            if CM_Get_Device_Interface_ListW(&guid, PCWSTR::null(), &mut buf, CM_GET_DEVICE_INTERFACE_LIST_PRESENT) != CR_SUCCESS {
+                return Vec::new();
+            }
+            buf.split(|c| *c == 0).filter(|p| !p.is_empty()).map(String::from_utf16_lossy).collect()
+        }
+    }
+
+    fn open(path: &str) -> Option<HANDLE> {
+        let wide: Vec<u16> = path.encode_utf16().chain(Some(0)).collect();
+        unsafe {
+            let h = CreateFileW(PCWSTR(wide.as_ptr()), GENERIC_READ.0, FILE_SHARE_READ | FILE_SHARE_WRITE, None, OPEN_EXISTING, FILE_FLAGS_AND_ATTRIBUTES(0), None).ok()?;
+            let mut a = HIDD_ATTRIBUTES { Size: std::mem::size_of::<HIDD_ATTRIBUTES>() as u32, ..Default::default() };
+            if HidD_GetAttributes(h, &mut a) && a.VendorID == DUALSENSE_VID && DUALSENSE_PIDS.contains(&a.ProductID) {
+                return Some(h);
+            }
+            let _ = CloseHandle(h);
+            None
+        }
+    }
+
+    /// Lee un mando hasta que se desconecta o deja de hacer falta.
+    fn read_loop(path: String, h: HANDLE, slot: u32) {
+        let bit = 1u32 << (slot % 32);
+        let mut buf = [0u8; 600];
+        loop {
+            let mut got = 0u32;
+            let ok = unsafe { ReadFile(h, Some(&mut buf), Some(&mut got), None) }.is_ok();
+            if !ok || !WANT.load(Ordering::Relaxed) {
+                break;
+            }
+            match dualsense_mute(&buf[..got as usize]) {
+                Some(true) => DOWN.fetch_or(bit, Ordering::Relaxed),
+                Some(false) => DOWN.fetch_and(!bit, Ordering::Relaxed),
+                None => 0,
+            };
+        }
+        DOWN.fetch_and(!bit, Ordering::Relaxed);
+        unsafe {
+            let _ = CloseHandle(h);
+        }
+        OPEN.lock().unwrap().retain(|p| p != &path);
+    }
+
+    /// Busca mandos nuevos cada 3 s mientras haga falta.
+    pub fn spawn() {
+        std::thread::spawn(|| {
+            let mut slot = 0u32;
+            loop {
+                if WANT.load(Ordering::Relaxed) {
+                    for p in paths() {
+                        if OPEN.lock().unwrap().contains(&p) {
+                            continue;
+                        }
+                        if let Some(h) = open(&p) {
+                            OPEN.lock().unwrap().push(p.clone());
+                            let hv = h.0 as usize;
+                            slot += 1;
+                            let s = slot;
+                            std::thread::spawn(move || read_loop(p, HANDLE(hv as *mut _), s));
+                        }
+                    }
+                }
+                std::thread::sleep(Duration::from_secs(3));
+            }
+        });
+    }
+}
+
 /// Lo que paso en los mandos XInput desde la consulta anterior.
 #[derive(Clone, Copy, Default)]
 pub struct PadPoll {
@@ -345,8 +448,9 @@ pub fn spawn(app: AppHandle) {
     use std::time::{Duration, Instant};
     use tauri::{Emitter, Manager};
     use crate::quickmenu::{self, Src};
-    use visor_core::capture::{combo_id, pad_mask, ComboDetector, ComboLearner, EdgeDetector};
+    use visor_core::capture::{combo_id, pad_mask, ComboDetector, ComboLearner, EdgeDetector, XI_MUTE};
 
+    dualsense::spawn();
     std::thread::spawn(move || {
         let reader = xinput::Reader::new();
         let t0 = Instant::now();
@@ -365,6 +469,7 @@ pub fn spawn(app: AppHandle) {
             let mask = st.combo_mask.load(Ordering::Relaxed);
             let audio_mask = st.audio_mask.load(Ordering::Relaxed);
             let menu_mask = st.overlay_mask.load(Ordering::Relaxed);
+            dualsense::WANT.store(learning || (mask | audio_mask | menu_mask) & XI_MUTE != 0, Ordering::Relaxed);
             if learning != was_learning {
                 was_learning = learning;
                 learner.reset();
@@ -403,6 +508,9 @@ pub fn spawn(app: AppHandle) {
                     }
                     None => *c = false,
                 }
+            }
+            if dualsense::pressed() {
+                buttons |= XI_MUTE;
             }
             let any = connected.iter().any(|c| *c);
 
