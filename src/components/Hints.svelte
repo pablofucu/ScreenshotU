@@ -36,6 +36,8 @@
     // La tarjeta «Jugar» de la ficha ya lanza el juego.
     if (document.querySelector('#screen [data-act="play"]')) s.add('@Jugar');
     if (document.querySelector('#screen .tsearch')) s.add('@Buscar');
+    if (document.querySelector('#screen .ttabs')) { s.add('lt'); s.add('rt'); }
+    if (document.querySelector('#screen .stabs')) { s.add('lb'); s.add('rb'); }
     inPlace = s;
     hasBack = !!document.querySelector('.top .cback');
   });

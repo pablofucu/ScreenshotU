@@ -34,9 +34,7 @@
 
   <div class="sttop">
     <div class="stabs pill">
-      <span class="btn sh" data-hact="lb">LB</span>
       {#each GMETRICS as [k, l]}<span class="t" class:on={app.gsMetric === k} data-hact="gm:{k}">{l}</span>{/each}
-      <span class="btn sh" data-hact="rb">RB</span>
     </div>
   </div>
 

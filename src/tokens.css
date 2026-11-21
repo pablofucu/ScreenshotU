@@ -14,6 +14,8 @@
   --pill-top:rgba(255,255,255,.80);--pill-bot:rgba(255,255,255,.52);--pill-glow:rgba(255,255,255,.9);
   --soft-top:rgba(255,255,255,.55);--soft-bot:rgba(214,220,230,.4);--bub-bg:rgba(255,255,255,.72);--bub-line:rgba(255,255,255,.9);--tile-bg:rgba(255,255,255,.62);
   --hl:rgba(255,255,255,1);--hl-ring:rgba(255,255,255,.55);--hl-bot:rgba(255,255,255,.95);--tint-base:#fff;
+  /* Glifo neutro del mando (Start, View, LB/RB, LT/RT): alto contraste en ambos temas */
+  --btn-n:var(--ink);--btn-n-top:color-mix(in srgb,var(--ink) 78%,var(--tint-base));--btn-n-fg:var(--on);--btn-n-edge:color-mix(in srgb,var(--ink) 70%,black);
 
   /* Significados reservados; --ok-f y --bad-f son los rellenos con texto blanco encima (AA) */
   --ok:#3BB54A;--bad:#E8384F;--warn:#F2B807;--ok-f:#27833a;--bad-f:#d92c44;
@@ -62,6 +64,7 @@
   --pill-top:rgba(52,57,70,.88);--pill-bot:rgba(36,40,50,.82);--pill-glow:rgba(255,255,255,.06);
   --soft-top:rgba(52,57,70,.62);--soft-bot:rgba(30,34,43,.5);--bub-bg:rgba(40,44,56,.82);--bub-line:rgba(200,210,235,.16);--tile-bg:rgba(40,44,56,.62);
   --hl:rgba(255,255,255,.10);--hl-ring:rgba(255,255,255,.06);--hl-bot:rgba(255,255,255,.04);--tint-base:#262a33;
+  --btn-n:var(--face);--btn-n-top:color-mix(in srgb,var(--ink) 16%,var(--face));--btn-n-fg:var(--ink);--btn-n-edge:var(--line-2);
   --ring:0 0 0 3px var(--g1),0 0 26px 4px color-mix(in srgb,var(--g2) 60%,transparent);
   --sh-1:0 0 0 1px rgba(200,210,235,.14),0 2px 3px rgba(0,0,0,.30),0 18px 30px -16px rgba(0,0,0,.70);
   --sh-2:0 0 0 1px color-mix(in srgb,var(--g1) 70%,black),0 0 30px 4px color-mix(in srgb,var(--g1) 50%,transparent),0 22px 34px -16px rgba(0,0,0,.8);

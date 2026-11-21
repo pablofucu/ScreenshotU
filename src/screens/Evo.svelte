@@ -67,9 +67,7 @@
   <div class="evbar">
     <span>{TITLE[app.evoKind]}</span>
     <div class="stabs pill">
-      <span class="btn sh" data-hact="lb">LB</span>
       {#each EVO_KINDS as [k, l]}<span class="t" class:on={app.evoKind === k} data-hact="ek:{k}">{l}</span>{/each}
-      <span class="btn sh" data-hact="rb">RB</span>
     </div>
   </div>
 

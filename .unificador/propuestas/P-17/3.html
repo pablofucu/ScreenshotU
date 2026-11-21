@@ -1,0 +1,1131 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Opción 3 · Chasis único de cristal (y = 82 px)</title>
+<style>
+/* Tokens reales del proyecto (src/tokens.css + docs/guia-diseno.md) */
+:root{
+  --round:'M PLUS Rounded 1c','Nunito','Segoe UI',ui-rounded,system-ui,-apple-system,sans-serif;
+  --r-xs:6px;--r-s:12px;--r-m:18px;--r-l:28px;--r-pill:999px;
+  --t-xs:11px;--t-s:13px;--t-m:15px;--t-l:17px;--t-xl:20px;--t-2xl:28px;
+  --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:24px;--s-6:32px;
+  --d-1:120ms;--d-2:200ms;--d-3:300ms;
+  --e-soft:cubic-bezier(.2,.8,.3,1);
+  --e-bounce:cubic-bezier(.34,1.32,.64,1);
+  --arc-rojo:#E8384F;--arc-naranja:#F27A1A;--arc-amarillo:#F2B807;--arc-verde:#3BB54A;
+  --arc-azul:#00A0D8;--arc-anil:#3F63E0;--arc-violeta:#9A4BD8;
+  --ok:#3BB54A;--bad:#E8384F;--warn:#F2B807;--ok-f:#27833a;--bad-f:#d92c44;
+  --band:64px;--gut:24px;--content-end:644px;--stage-h:720px;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;font-family:var(--round);background:#cfd4df;color:#272d38;min-height:100vh}
+body[data-theme="dark"]{background:#0d0f14;color:#e6e9f0}
+
+/* Barra externa de pruebas */
+.labbar{
+  position:sticky;top:0;z-index:50;display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+  padding:10px 16px;background:rgba(244,246,251,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(90,105,130,.18);font-size:13px;font-weight:700;
+}
+body[data-theme="dark"] .labbar{background:rgba(20,23,30,.92);border-bottom-color:rgba(200,210,235,.14)}
+.labbar .brand{display:flex;align-items:center;gap:8px;margin-right:auto;min-width:200px}
+.labbar .brand strong{font-size:14.5px;font-weight:800}
+.labbar .badge{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;background:rgba(0,160,216,.15);color:#007aa6;white-space:nowrap}
+body[data-theme="dark"] .labbar .badge{background:rgba(0,160,216,.24);color:#5cd2ff}
+.labgrp{display:flex;flex-wrap:wrap;gap:3px;align-items:center;background:rgba(120,135,160,.12);padding:3px;border-radius:999px}
+.labbtn{
+  border:0;background:transparent;color:inherit;font:700 12px/1 var(--round);padding:7px 11px;border-radius:999px;
+  cursor:pointer;transition:background .15s,color .15s;white-space:nowrap;opacity:.8;
+}
+.labbtn:hover{opacity:1;background:rgba(120,135,160,.16)}
+.labbtn.on{background:#00A0D8;color:#fff;opacity:1;box-shadow:0 2px 8px rgba(0,160,216,.35)}
+
+.wrap{max-width:1328px;margin:0 auto;padding:14px 20px 36px}
+.intro{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:10px}
+.intro p{margin:0;max-width:1080px;font-size:14px;line-height:1.45;opacity:.9}
+
+/* Contenedor responsivo del lienzo 1280x720 */
+.fit{width:100%;position:relative;overflow:hidden;border-radius:16px;box-shadow:0 24px 60px -22px rgba(10,16,28,.45)}
+#stage{
+  width:1280px;height:720px;position:relative;overflow:hidden;transform-origin:0 0;user-select:none;
+  --ink:#3a414e;--ink-2:#5f6776;--ink-3:#757d8c;--line:rgba(95,110,135,.24);--line-2:rgba(150,160,180,.35);
+  --face:#dfe3e9;--face-hi:rgba(247,249,252,.94);--panel:rgba(255,255,255,.76);--scrim:rgba(20,26,36,.45);
+  --glass-top:rgba(255,255,255,.76);--glass-mid:rgba(255,255,255,.34);--glass-bot:rgba(225,234,246,.26);
+  --glass-in:rgba(255,255,255,.58);--glass-chip:rgba(255,255,255,.86);
+  --pill-top:rgba(255,255,255,.86);--pill-bot:rgba(255,255,255,.56);--pill-glow:rgba(255,255,255,.92);
+  --hl:rgba(255,255,255,1);--hl-ring:rgba(255,255,255,.6);--hl-bot:rgba(255,255,255,.95);--tint-base:#fff;
+  --btn-n:var(--ink);--btn-n-top:color-mix(in srgb,var(--ink) 78%,var(--tint-base));--btn-n-fg:#fff;--btn-n-edge:color-mix(in srgb,var(--ink) 70%,black);
+  --ring:0 0 0 3px var(--f1),0 0 22px 2px color-mix(in srgb,var(--f2) 45%,transparent);
+  --sh-1:0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42);
+  --sh-2:0 0 0 1px color-mix(in srgb,var(--f2) 75%,black),0 0 26px 2px color-mix(in srgb,var(--f1) 45%,transparent),0 22px 34px -16px color-mix(in srgb,var(--f2) 70%,black);
+  --on:#fff;
+  --f1:#00A0D8;--f2:#3F63E0;--g1:#5ec8ff;--g2:#7895ff;--v1:#00A0D8;--v2:#3F63E0;
+  --gf:linear-gradient(180deg,color-mix(in srgb,var(--f1) 76%,white),var(--f1) 52%,var(--f2));
+  --gv:linear-gradient(180deg,var(--v1),var(--v2));
+  --acc:var(--f1);
+  background:radial-gradient(1100px 620px at 14% -5%,color-mix(in srgb,var(--g1) 24%,#eef2f8),transparent 62%),
+             radial-gradient(960px 580px at 92% 105%,color-mix(in srgb,var(--g2) 22%,#eef2f8),transparent 60%),
+             #ebeff5;
+  color:var(--ink);
+}
+#stage[data-theme="dark"]{
+  --ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#8f98a9;--line:rgba(200,210,235,.16);--line-2:rgba(200,210,235,.24);
+  --face:#262a33;--face-hi:rgba(30,33,41,.94);--panel:rgba(30,34,43,.80);--scrim:rgba(0,0,0,.6);
+  --glass-top:rgba(60,66,80,.66);--glass-mid:rgba(36,40,50,.46);--glass-bot:rgba(20,22,28,.40);
+  --glass-in:rgba(255,255,255,.08);--glass-chip:rgba(42,47,60,.88);
+  --pill-top:rgba(52,57,70,.90);--pill-bot:rgba(36,40,50,.84);--pill-glow:rgba(255,255,255,.07);
+  --hl:rgba(255,255,255,.10);--hl-ring:rgba(255,255,255,.07);--hl-bot:rgba(255,255,255,.04);--tint-base:#262a33;
+  --btn-n:var(--face);--btn-n-top:color-mix(in srgb,var(--ink) 16%,var(--face));--btn-n-fg:var(--ink);--btn-n-edge:var(--line-2);
+  --ring:0 0 0 3px var(--g1),0 0 26px 4px color-mix(in srgb,var(--g2) 55%,transparent);
+  --sh-1:0 0 0 1px rgba(200,210,235,.14),0 2px 3px rgba(0,0,0,.30),0 18px 30px -16px rgba(0,0,0,.70);
+  --sh-2:0 0 0 1px color-mix(in srgb,var(--g1) 70%,black),0 0 30px 4px color-mix(in srgb,var(--g1) 48%,transparent),0 22px 34px -16px rgba(0,0,0,.8);
+  background:radial-gradient(1100px 620px at 14% -5%,color-mix(in srgb,var(--f1) 18%,#181b23),transparent 62%),
+             radial-gradient(960px 580px at 92% 105%,color-mix(in srgb,var(--f2) 16%,#151820),transparent 60%),
+             #14161c;
+}
+
+.gridbg{
+  position:absolute;inset:0;pointer-events:none;opacity:.42;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:32px 32px;
+  -webkit-mask-image:radial-gradient(ellipse 85% 85% at 50% 45%,#000 35%,transparent 100%);
+  mask-image:radial-gradient(ellipse 85% 85% at 50% 45%,#000 35%,transparent 100%);
+}
+#stage[data-theme="dark"] .gridbg{opacity:.22}
+.ambwash{
+  position:absolute;inset:0;pointer-events:none;transition:background .35s var(--e-soft);
+  background:radial-gradient(760px 440px at 78% 22%,color-mix(in srgb,var(--w1,var(--f1)) 20%,transparent),transparent 68%),
+             radial-gradient(640px 420px at 18% 82%,color-mix(in srgb,var(--w2,var(--f2)) 16%,transparent),transparent 68%);
+}
+
+.pill{
+  -webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);
+  background:linear-gradient(180deg,var(--pill-top),var(--pill-bot));
+  box-shadow:inset 0 1px 0 var(--hl),inset 0 -6px 10px -6px var(--pill-glow),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px var(--line),0 10px 20px -12px rgba(40,50,70,.35);
+}
+.gl-bar{
+  display:inline-flex;align-items:center;gap:3px;height:44px;padding:4px;border-radius:var(--r-pill);
+  font-size:var(--t-m);font-weight:800;color:var(--ink-2);
+  background:var(--panel);-webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);
+  box-shadow:inset 0 1px 0 var(--hl),0 0 0 1px var(--line),0 8px 18px -10px rgba(20,30,50,.32);
+}
+
+.top{position:absolute;left:0;right:0;top:0;height:76px;z-index:8}
+.avatar{
+  position:absolute;left:24px;top:16px;width:44px;height:44px;border-radius:14px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--f1) 35%,var(--tint-base)),var(--f1));
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.55),0 0 0 2px var(--hl-ring);
+  display:grid;place-items:center;color:#fff;opacity:.92;
+}
+.avatar svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.crumb{
+  position:absolute;left:82px;top:18px;height:42px;display:flex;align-items:center;gap:10px;
+  padding:0 16px;border-radius:var(--r-pill);font-size:var(--t-xl);font-weight:700;color:var(--ink-2);
+}
+.crumb .cback{width:24px;height:24px;margin-left:-4px;border-radius:50%;display:grid;place-items:center;font-size:22px;line-height:1;color:var(--ink-2)}
+.crumb .sep{color:var(--ink-3);font-weight:500}
+.crumb .cur{color:var(--f1);font-weight:800;white-space:nowrap}
+
+.pagep{
+  height:36px;padding:0 13px;border-radius:var(--r-pill);display:inline-flex;align-items:center;gap:9px;
+  font-size:var(--t-s);font-weight:800;color:var(--ink-2);white-space:nowrap;cursor:pointer;
+}
+.pagep i{position:relative;display:block;width:42px;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.pagep i b{position:absolute;top:0;bottom:0;border-radius:3px;background:var(--gv);transition:left .25s var(--e-soft)}
+.pagep.top-center{position:absolute;left:50%;top:21px;transform:translateX(-50%)}
+
+.clock{
+  position:absolute;right:24px;top:21px;height:36px;display:flex;gap:12px;align-items:center;
+  font-size:var(--t-xl);font-weight:700;color:var(--ink-2);
+}
+.clock small{font-size:var(--t-m);font-weight:500;color:var(--ink-3)}
+.clock .icbtn{width:30px;height:30px;display:grid;place-items:center;border-radius:10px;color:var(--ink-3);opacity:.85}
+.clock .icbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.tabbtn{
+  border:0;background:transparent;color:var(--ink-2);font:800 var(--t-m)/1 var(--round);
+  height:34px;padding:0 16px;border-radius:var(--r-pill);cursor:pointer;white-space:nowrap;
+  transition:background var(--d-2) var(--e-soft),color var(--d-2) var(--e-soft),transform var(--d-1) var(--e-bounce),box-shadow var(--d-2) var(--e-soft);
+}
+.tabbtn:hover{color:var(--ink);background:var(--glass-in)}
+.tabbtn.on{
+  color:#fff;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--tab-c1) 76%,white),var(--tab-c1) 52%,var(--tab-c2));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 0 0 1px color-mix(in srgb,var(--tab-c2) 70%,black),0 6px 14px -6px var(--tab-c2);
+}
+
+.tord{
+  border:0;height:36px;padding:0 13px;border-radius:var(--r-pill);cursor:pointer;
+  font:800 var(--t-s)/1 var(--round);color:var(--f1);background:var(--glass-chip);
+  box-shadow:inset 0 1px 0 var(--hl),0 0 0 1px var(--line);display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+  transition:transform var(--d-1) var(--e-bounce),box-shadow var(--d-2);
+}
+.tord:hover{transform:scale(1.03);box-shadow:var(--ring)}
+.tord svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+.tchip{
+  height:36px;padding:0 11px;border-radius:var(--r-pill);display:inline-flex;align-items:center;gap:6px;
+  font:800 var(--t-s)/1 var(--round);color:var(--ink);background:var(--glass-chip);cursor:pointer;white-space:nowrap;
+  box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--f1) 55%,transparent);
+}
+.tchip small{opacity:.7;font-weight:700}
+.tchip b{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:11px;background:var(--ink-3);color:#fff;margin-right:-4px}
+.tchip:hover b{background:var(--bad)}
+
+.tsearch{
+  height:36px;display:inline-flex;align-items:center;gap:8px;padding:0 10px 0 11px;border-radius:var(--r-pill);
+  background:var(--glass-chip);box-shadow:inset 0 1px 0 var(--hl),0 0 0 1px var(--line);color:var(--ink-2);
+  transition:box-shadow var(--d-2),background var(--d-2);
+}
+.tsearch:focus-within{background:var(--face-hi);box-shadow:inset 0 1px 0 var(--hl),0 0 0 2px var(--f1),0 4px 14px color-mix(in srgb,var(--f1) 25%,transparent);color:var(--f1)}
+.tsearch svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.3;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.tsearch input{border:0;background:transparent;outline:none;font:700 var(--t-s)/1 var(--round);color:var(--ink);width:124px;padding:0;transition:width .2s var(--e-soft)}
+.tsearch:focus-within input{width:148px}
+.tsearch input::placeholder{color:var(--ink-3);font-weight:600}
+.tsearch .ts-x{border:0;width:18px;height:18px;border-radius:50%;background:var(--line);color:var(--ink-2);font:800 10px/1 var(--round);cursor:pointer;display:grid;place-items:center;padding:0}
+.tsearch .ts-x:hover{background:var(--bad);color:#fff}
+
+.thead{display:flex;align-items:baseline;gap:10px;min-width:0;white-space:nowrap;overflow:hidden}
+.thead h3{margin:0;font-size:24px;font-weight:800;color:var(--ink);line-height:1.15;overflow:hidden;text-overflow:ellipsis}
+.thead .tag{font-size:var(--t-s);font-weight:800;color:#fff;padding:4px 11px;border-radius:var(--r-pill);align-self:center;flex:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
+.thead .meta{font-size:var(--t-m);font-weight:600;color:var(--ink-2);flex:none}
+.thead .meta b{color:var(--ink);font-weight:800}
+
+.hints{position:absolute;right:var(--gut);bottom:13px;display:flex;gap:10px;z-index:8}
+.hint{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 6px;border-radius:var(--r-pill);font-size:var(--t-m);font-weight:700;color:var(--ink-2);cursor:pointer}
+.btn{
+  min-width:28px;height:28px;border-radius:var(--r-s);display:grid;place-items:center;padding:0 7px;
+  font-size:var(--t-s);font-weight:800;color:#fff;--b:var(--ink-2);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,white),var(--b) 55%,color-mix(in srgb,var(--b) 85%,black));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 2px 4px rgba(0,0,0,.22);
+}
+.btn.a{--b:var(--ok-f)}.btn.b{--b:var(--bad-f)}.btn.x{--b:#00A0D8}.btn.y{--b:var(--warn);color:#272d38}
+.btn.n{--b:var(--btn-n);color:var(--btn-n-fg)}
+
+/* =========================================================
+   LAS 6 DISPOSICIONES
+   ========================================================= */
+
+/* 1: Integrada en TopBar */
+.opt-topbar .top-tabs{position:absolute;left:50%;top:17px;transform:translateX(-50%);height:44px;padding:4px;border-radius:var(--r-pill);display:flex;align-items:center;gap:4px}
+.opt-topbar .top-tabs .tabbtn{height:36px;padding:0 18px}
+.opt-topbar .catbar{position:absolute;left:40px;right:40px;top:84px;height:44px;display:flex;align-items:center;gap:14px;z-index:5}
+.opt-topbar .catbar .thead{flex:1}
+.opt-topbar .catbar .tools{display:flex;align-items:center;gap:8px;margin-left:auto;flex:none}
+.opt-topbar .board{top:84px;bottom:76px}
+.opt-topbar .coll-head{position:absolute;left:40px;right:40px;top:84px;height:40px;display:flex;align-items:center;gap:12px}
+.opt-topbar .lclip{top:134px;height:510px}
+.opt-topbar .grid-wrap{top:148px}
+
+/* 2: Riel en y = 84 px (.sx de Estadísticas) */
+.opt-rail .sx{position:absolute;left:40px;right:40px;top:84px;height:44px;display:flex;align-items:center;gap:12px;z-index:6}
+.opt-rail .sx .gl-bar{flex:none}
+.opt-rail .sx .tabbtn{height:36px;padding:0 18px}
+.opt-rail .sx-right{margin-left:auto;display:flex;align-items:center;gap:8px;min-width:0}
+.opt-rail .stat-pills{display:flex;align-items:center;gap:4px;height:44px;padding:4px;border-radius:var(--r-pill);background:var(--panel);box-shadow:inset 0 1px 0 var(--hl),0 0 0 1px var(--line),0 8px 18px -10px rgba(20,30,50,.28)}
+.opt-rail .spill{border:0;background:transparent;color:var(--ink-2);font:800 var(--t-s)/1 var(--round);height:36px;padding:0 12px;border-radius:var(--r-pill);display:inline-flex;align-items:center;gap:7px;cursor:pointer;transition:background .15s,color .15s}
+.opt-rail .spill i{width:9px;height:9px;border-radius:50%;background:var(--sc);box-shadow:0 0 8px color-mix(in srgb,var(--sc) 60%,transparent)}
+.opt-rail .spill:hover,.opt-rail .spill.on{background:var(--glass-chip);color:var(--ink)}
+.opt-rail .spill.on{box-shadow:inset 0 0 0 1.5px var(--sc)}
+.opt-rail .coll-pill{height:44px;padding:0 16px;border-radius:var(--r-pill);display:inline-flex;align-items:center;gap:10px;font:800 var(--t-m)/1 var(--round);color:var(--ink);background:var(--panel);box-shadow:inset 0 1px 0 var(--hl),0 0 0 1px var(--line)}
+.opt-rail .coll-pill small{font-size:var(--t-s);font-weight:700;color:var(--ink-2)}
+.opt-rail .sx-tools{display:flex;align-items:center;gap:8px;height:44px;padding:4px 6px;border-radius:var(--r-pill);background:var(--panel);box-shadow:inset 0 1px 0 var(--hl),0 0 0 1px var(--line)}
+.opt-rail .sx-tools .tord,.opt-rail .sx-tools .tchip,.opt-rail .sx-tools .tsearch{height:36px}
+.opt-rail .board{top:142px;bottom:76px}
+.opt-rail .lclip{top:142px;height:502px}
+.opt-rail .cat-thead{position:absolute;left:44px;right:44px;top:138px}
+.opt-rail .grid-wrap{top:184px}
+
+/* 3: Chasis único de cristal */
+.opt-chassis .chassis{
+  position:absolute;left:40px;right:40px;top:82px;height:54px;border-radius:var(--r-pill);
+  padding:5px 10px 5px 7px;display:flex;align-items:center;gap:12px;z-index:6;
+  background:linear-gradient(180deg,var(--glass-top),var(--glass-mid) 52%,var(--glass-bot));
+  -webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);
+  box-shadow:inset 0 1.5px 0 var(--hl),inset 0 0 0 1px var(--hl-ring),var(--sh-1);
+}
+.opt-chassis .ch-tabs{display:flex;align-items:center;gap:3px;height:42px;padding:3px;border-radius:var(--r-pill);background:var(--glass-in);box-shadow:inset 0 0 0 1px var(--line);flex:none}
+.opt-chassis .ch-tabs .tabbtn{height:36px;padding:0 15px}
+.opt-chassis .ch-div{width:1px;height:28px;background:var(--line-2);flex:none}
+.opt-chassis .ch-ctx{flex:1;min-width:0;display:flex;align-items:center;gap:10px}
+.opt-chassis .ch-ctx h3{margin:0;font-size:var(--t-xl);font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.opt-chassis .ch-ctx .tag{font-size:var(--t-s);font-weight:800;color:#fff;padding:4px 10px;border-radius:var(--r-pill);flex:none}
+.opt-chassis .ch-ctx .meta{font-size:var(--t-s);font-weight:700;color:var(--ink-2);white-space:nowrap}
+.opt-chassis .ch-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.opt-chassis .ch-dots{display:flex;align-items:center;gap:8px;padding:0 8px;font-size:var(--t-s);font-weight:800;color:var(--ink-2)}
+.opt-chassis .ch-dots span{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.opt-chassis .ch-dots i{width:8px;height:8px;border-radius:50%;background:var(--sc)}
+.opt-chassis .board{top:148px;bottom:76px}
+.opt-chassis .lclip{top:148px;height:496px}
+.opt-chassis .grid-wrap{top:156px}
+
+/* 4: Unida a la miga */
+.opt-crumb .crumb-joint{position:absolute;left:82px;top:17px;height:44px;padding:4px 5px 4px 14px;border-radius:var(--r-pill);display:flex;align-items:center;gap:8px;font-size:var(--t-xl);font-weight:700;color:var(--ink-2)}
+.opt-crumb .crumb-joint .cback{width:24px;height:24px;margin-left:-4px;border-radius:50%;display:grid;place-items:center;font-size:22px;line-height:1}
+.opt-crumb .crumb-joint .sep{color:var(--ink-3);font-weight:500}
+.opt-crumb .crumb-joint .cur{color:var(--f1);font-weight:800;white-space:nowrap}
+.opt-crumb .crumb-joint .jdiv{width:1px;height:22px;background:var(--line-2);margin:0 4px}
+.opt-crumb .crumb-joint .jtabs{display:flex;align-items:center;gap:3px}
+.opt-crumb .crumb-joint .tabbtn{height:36px;padding:0 15px}
+.opt-crumb .catbar{position:absolute;left:40px;right:40px;top:84px;height:44px;display:flex;align-items:center;gap:14px;z-index:5}
+.opt-crumb .catbar .thead{flex:1}
+.opt-crumb .catbar .tools{display:flex;align-items:center;gap:8px;margin-left:auto;flex:none}
+.opt-crumb .board{top:84px;bottom:76px}
+.opt-crumb .coll-head{position:absolute;left:40px;right:40px;top:84px;height:40px;display:flex;align-items:center;gap:12px}
+.opt-crumb .lclip{top:134px;height:510px}
+.opt-crumb .grid-wrap{top:148px}
+
+/* 5: Solapa acoplada al borde del panel (archivador) */
+.opt-folder .folder-tabs{
+  position:absolute;left:40px;top:80px;height:44px;padding:5px 6px 0;border-radius:18px 18px 0 0;
+  display:flex;align-items:center;gap:4px;z-index:6;
+  background:var(--panel);box-shadow:inset 0 1.5px 0 var(--hl),inset 1px 0 0 var(--line),inset -1px 0 0 var(--line);
+}
+.opt-folder .folder-tabs .tabbtn{border-radius:13px 13px 0 0;height:39px;padding:0 18px}
+.opt-folder .folder-tabs .tabbtn.on{
+  background:linear-gradient(180deg,color-mix(in srgb,var(--tab-c1) 82%,white),var(--tab-c1));
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.5),0 -2px 10px -4px var(--tab-c1);
+}
+.opt-folder .folder-ledge{
+  position:absolute;left:415px;right:40px;top:82px;height:36px;display:flex;align-items:center;justify-content:flex-end;gap:8px;z-index:6;
+}
+.opt-folder .folder-body{
+  position:absolute;left:40px;right:40px;top:123px;bottom:76px;border-radius:0 22px 22px 22px;z-index:2;
+  background:color-mix(in srgb,var(--panel) 84%,transparent);
+  border-top:2.5px solid var(--tab-c1);
+  box-shadow:inset 0 0 0 1px var(--line),var(--sh-1);
+}
+.opt-folder .board{left:54px;right:54px;top:136px;bottom:88px}
+.opt-folder .lclip{left:54px;right:54px;top:136px;height:496px}
+.opt-folder .cat-thead{position:absolute;left:58px;right:58px;top:134px;z-index:4}
+.opt-folder .grid-wrap{left:40px;right:40px;top:176px;bottom:86px}
+.opt-folder .tgrid{width:1040px;grid-template-columns:repeat(5,152px);gap:12px 0}
+.opt-folder .gcov{width:152px;height:200px}
+.opt-folder .sbar{right:18px;height:400px}
+.opt-folder .car-wrap{top:164px}
+.opt-folder .fstat{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 11px;border-radius:var(--r-pill);background:var(--panel);box-shadow:inset 0 0 0 1px var(--line);font:800 var(--t-s)/1 var(--round);color:var(--ink-2);cursor:pointer}
+.opt-folder .fstat i{width:8px;height:8px;border-radius:50%;background:var(--sc)}
+
+/* 6: Dock lateral vertical */
+.opt-dock .dock-left{
+  position:absolute;left:24px;top:84px;bottom:76px;width:162px;padding:10px;border-radius:22px;z-index:6;
+  display:flex;flex-direction:column;gap:6px;
+  background:linear-gradient(180deg,var(--glass-top),var(--glass-mid) 52%,var(--glass-bot));
+  -webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);
+  box-shadow:inset 0 1.5px 0 var(--hl),inset 0 0 0 1px var(--hl-ring),var(--sh-1);
+}
+.opt-dock .dtab{
+  border:0;background:transparent;width:100%;padding:10px 11px;border-radius:14px;cursor:pointer;
+  display:flex;align-items:center;gap:9px;text-align:left;color:var(--ink-2);font:800 var(--t-m)/1.1 var(--round);
+  transition:background .15s,color .15s,transform .15s;
+}
+.opt-dock .dtab:hover{background:var(--glass-in);color:var(--ink)}
+.opt-dock .dtab.on{
+  color:#fff;background:linear-gradient(135deg,var(--tab-c1),var(--tab-c2));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 6px 14px -6px var(--tab-c2);
+}
+.opt-dock .dtab svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.opt-dock .dtab small{margin-left:auto;font-size:11px;opacity:.8}
+.opt-dock .ddiv{height:1px;background:var(--line-2);margin:6px 4px}
+.opt-dock .dsec-lbl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);padding:2px 8px}
+.opt-dock .dmini{
+  border:0;background:var(--glass-in);width:100%;padding:8px 10px;border-radius:12px;cursor:pointer;
+  display:flex;align-items:center;gap:7px;color:var(--ink-2);font:700 var(--t-s)/1.1 var(--round);
+  text-align:left;box-shadow:inset 0 0 0 1px var(--line);
+}
+.opt-dock .dmini:hover,.opt-dock .dmini.on{background:var(--glass-chip);color:var(--ink)}
+.opt-dock .dmini i{width:8px;height:8px;border-radius:50%;background:var(--sc);flex:none}
+.opt-dock .dmini em{margin-left:auto;font-style:normal;opacity:.75;font-size:12px}
+.opt-dock .dsearch{
+  display:flex;align-items:center;gap:6px;padding:7px 9px;border-radius:12px;background:var(--glass-chip);
+  box-shadow:inset 0 0 0 1px var(--line);color:var(--ink-2);
+}
+.opt-dock .dsearch svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;flex:none}
+.opt-dock .dsearch input{border:0;background:transparent;outline:none;width:100%;min-width:0;font:700 12.5px/1 var(--round);color:var(--ink)}
+.opt-dock .board{left:202px;right:28px;top:84px;bottom:76px}
+.opt-dock .coll-head{position:absolute;left:202px;right:28px;top:84px;height:40px;display:flex;align-items:center}
+.opt-dock .lclip{left:202px;right:28px;top:132px;height:512px}
+.opt-dock .cat-thead{position:absolute;left:202px;right:28px;top:84px}
+.opt-dock .grid-wrap{left:202px;right:24px;top:138px;bottom:76px}
+.opt-dock .tgrid{width:980px;margin:0;grid-template-columns:repeat(5,152px);justify-content:space-between;gap:14px 0}
+.opt-dock .gcov{width:152px;height:202px}
+.opt-dock .sbar{right:14px;height:412px}
+.opt-dock .car-wrap{left:196px;right:24px;top:156px}
+.opt-dock .ctrack{width:100%;gap:22px}
+.opt-dock .ccov{width:170px;height:226px}
+
+/* =========================================================
+   CONTENIDO COMÚN DE CADA SECCIÓN
+   ========================================================= */
+.board{position:absolute;left:40px;right:40px;display:flex;flex-direction:column;gap:8px;z-index:3}
+.band{position:relative;flex:1 1 0;min-height:0;border-radius:var(--r-m);overflow:hidden;background:var(--panel);box-shadow:inset 0 1.5px 0 var(--hl),inset 0 0 0 1px var(--hl-ring),var(--sh-1);--cf:color-mix(in srgb,var(--c) 72%,var(--ink))}
+.band::before{content:'';position:absolute;left:8px;top:10px;bottom:10px;width:6px;border-radius:3px;background:linear-gradient(180deg,var(--c),color-mix(in srgb,var(--c) 55%,var(--face-hi)));box-shadow:0 0 10px color-mix(in srgb,var(--c) 55%,transparent)}
+.band.run{background:linear-gradient(90deg,color-mix(in srgb,var(--c) 10%,var(--panel)),var(--panel) 40%)}
+.band.park .it:not(.f){filter:saturate(.35);opacity:.86}
+.lh{position:absolute;left:26px;top:0;bottom:0;width:116px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.lh span{font-size:var(--t-l);font-weight:800;line-height:1.1;color:var(--cf)}
+.lh em{font-size:var(--t-s);font-weight:700;font-style:normal;color:var(--ink-2)}
+.its{position:absolute;left:150px;right:12px;top:6px;bottom:6px;display:flex;align-items:center;gap:10px;overflow:hidden}
+.it{flex:none;height:100%;max-height:122px;padding:5px 14px 5px 5px;border-radius:var(--r-s);display:flex;align-items:center;gap:10px;cursor:pointer;background:var(--glass-in);box-shadow:inset 0 1px 0 var(--hl-ring),inset 0 0 0 1px var(--line);transition:transform var(--d-2) var(--e-bounce),background var(--d-2),box-shadow var(--d-2)}
+.it:hover{background:var(--glass-chip)}
+.it.f{background:var(--glass-chip);box-shadow:0 0 0 3px var(--c),0 0 22px 2px color-mix(in srgb,var(--c) 42%,transparent);transform:scale(1.03);z-index:2}
+.it .cv{position:relative;height:100%;aspect-ratio:2/3;border-radius:8px;overflow:hidden;flex:none;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.it .tx{width:118px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.it .tx b{font-size:var(--t-s);font-weight:800;line-height:1.15;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.it .tx small{font-size:var(--t-s);font-weight:700;color:var(--ink-2);white-space:nowrap}
+.it .tx .ptxt{font-size:var(--t-xs);font-weight:800;color:var(--cf);display:inline-flex;align-items:center;gap:4px}
+
+.lclip{position:absolute;left:40px;right:40px;overflow:hidden;display:flex;flex-direction:column;gap:14px;z-index:3;-webkit-mask-image:linear-gradient(180deg,#000 84%,transparent 100%);mask-image:linear-gradient(180deg,#000 84%,transparent 100%)}
+.shelf-card{position:relative;border-radius:var(--r-m);padding:12px 16px 14px;flex:none;background:var(--panel);box-shadow:inset 0 1.5px 0 var(--hl),inset 0 0 0 1px var(--hl-ring),var(--sh-1);transition:opacity .2s,box-shadow .2s}
+.shelf-card.dim{opacity:.82}
+.shelf-card.lit{background:radial-gradient(85% 130% at 0% 0%,color-mix(in srgb,var(--sc1) 20%,transparent),transparent 62%),radial-gradient(85% 130% at 100% 0%,color-mix(in srgb,var(--sc2) 18%,transparent),transparent 62%),var(--panel)}
+.sh-tab{display:flex;align-items:center;gap:10px;height:36px;padding:0 14px;border-radius:var(--r-pill);margin-bottom:10px;background:linear-gradient(90deg,color-mix(in srgb,var(--sc1) 28%,var(--glass-chip)),color-mix(in srgb,var(--sc2) 22%,var(--glass-chip)));box-shadow:inset 0 1px 0 var(--hl),0 0 0 1px color-mix(in srgb,var(--sc1) 35%,var(--line));cursor:pointer}
+.shelf-card.lit .sh-tab{background:linear-gradient(90deg,var(--sc1),var(--sc2));color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 6px 14px -8px var(--sc1)}
+.sh-tab b{font-size:var(--t-l);font-weight:800}
+.sh-tab span{font-size:var(--t-s);font-weight:700;opacity:.85}
+.sh-tab .sh-x{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:var(--t-s);font-weight:800;padding:4px 10px;border-radius:var(--r-pill);background:rgba(255,255,255,.22)}
+.sh-row{display:flex;align-items:flex-end;gap:16px;position:relative;padding:4px 4px 2px}
+.sh-rail{position:absolute;left:42px;right:42px;bottom:26px;height:3px;border-radius:2px;background:linear-gradient(90deg,var(--sc1),var(--sc2));opacity:.45}
+.sh-game{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;position:relative;z-index:1}
+.sh-cov{width:78px;height:112px;border-radius:10px;overflow:hidden;position:relative;box-shadow:0 6px 14px -6px rgba(0,0,0,.45);transition:transform var(--d-2) var(--e-bounce),box-shadow var(--d-2)}
+.sh-game:hover .sh-cov{transform:translateY(-3px) scale(1.04)}
+.sh-game.f .sh-cov{transform:scale(1.09);box-shadow:0 0 0 3px var(--sc1),0 0 22px 2px color-mix(in srgb,var(--sc1) 50%,transparent)}
+.sh-dot{width:9px;height:9px;border-radius:50%;background:var(--sc1);box-shadow:0 0 0 2px var(--face-hi)}
+.sh-yr{font-size:var(--t-xs);font-weight:800;color:var(--ink-2)}
+
+.grid-wrap{position:absolute;left:0;right:0;bottom:76px;z-index:3}
+.tgrid{width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(5,160px);justify-content:space-between;gap:16px 0}
+.gcov{width:160px;height:210px;border-radius:18px;padding:7px;cursor:pointer;position:relative;background:linear-gradient(180deg,var(--glass-top),var(--glass-mid) 46%,var(--glass-bot));box-shadow:inset 0 1.5px 0 var(--hl),inset 0 0 0 1px var(--hl-ring),var(--sh-1);transition:transform var(--d-2) var(--e-bounce),box-shadow var(--d-2)}
+.gcov .inner{width:100%;height:100%;border-radius:12px;overflow:hidden;position:relative}
+.gcov:hover{transform:scale(1.03)}
+.gcov.f{transform:scale(1.07);z-index:2;box-shadow:0 0 0 3px var(--gc1),0 0 28px 3px color-mix(in srgb,var(--gc1) 50%,transparent)}
+
+.sbar{position:absolute;right:34px;top:6px;width:14px;height:420px;border-radius:999px;background:linear-gradient(180deg,#E8384F,#F27A1A,#F2B807,#3BB54A,#00A0D8,#3F63E0,#9A4BD8,#8d96a5);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35),0 4px 12px rgba(0,0,0,.22);cursor:pointer}
+.sbar i{position:absolute;left:-3px;right:-3px;height:74px;border-radius:999px;background:rgba(255,255,255,.88);box-shadow:0 2px 8px rgba(0,0,0,.35);transition:top .25s var(--e-soft)}
+
+.car-wrap{position:absolute;left:0;right:0;top:170px;bottom:76px;display:flex;flex-direction:column;align-items:center;z-index:3}
+.ctrack{display:flex;align-items:center;justify-content:center;gap:34px;height:340px;width:1280px}
+.ccov{width:186px;height:248px;border-radius:22px;padding:8px;cursor:pointer;flex:none;background:linear-gradient(180deg,var(--glass-top),var(--glass-mid) 46%,var(--glass-bot));box-shadow:inset 0 1.5px 0 var(--hl),inset 0 0 0 1px var(--hl-ring),var(--sh-1);opacity:.74;transition:transform .28s var(--e-bounce),opacity .25s,box-shadow .25s}
+.ccov .inner{width:100%;height:100%;border-radius:15px;overflow:hidden;position:relative}
+.ccov.f{opacity:1;transform:scale(1.28);z-index:3;box-shadow:0 0 0 3.5px var(--gc1),0 0 34px 4px color-mix(in srgb,var(--gc1) 52%,transparent)}
+.cinfo{text-align:center;margin-top:26px}
+.cinfo h3{margin:0 0 4px;font-size:var(--t-2xl);font-weight:800;color:var(--ink)}
+.cinfo p{margin:0;font-size:var(--t-m);font-weight:700;color:var(--ink-2)}
+
+.art{width:100%;height:100%;position:relative;display:flex;flex-direction:column;justify-content:flex-end;padding:10px;color:#fff;overflow:hidden;background:radial-gradient(85% 75% at 80% 15%,rgba(255,255,255,.32),transparent 58%),linear-gradient(155deg,var(--gc1),var(--gc2))}
+.art::before{content:'';position:absolute;inset:-20%;background:radial-gradient(circle at 25% 30%,rgba(255,255,255,.22),transparent 42%),linear-gradient(25deg,transparent 48%,rgba(255,255,255,.12) 49%,rgba(255,255,255,.04) 65%,transparent 66%);pointer-events:none}
+.art .yr{position:absolute;top:7px;right:7px;font-size:10px;font-weight:800;padding:2px 6px;border-radius:999px;background:rgba(0,0,0,.32);backdrop-filter:blur(4px)}
+.art .ttl{position:relative;font-weight:800;font-size:14px;line-height:1.12;text-shadow:0 2px 6px rgba(0,0,0,.65);word-break:break-word}
+.art.sm .ttl{font-size:10.5px}
+.art.sm .yr{display:none}
+.art.lg .ttl{font-size:16px}
+
+.notes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}
+.ncard{padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.7);border:1px solid rgba(90,105,130,.18);font-size:13.5px;line-height:1.45}
+body[data-theme="dark"] .ncard{background:rgba(26,30,39,.78);border-color:rgba(200,210,235,.14)}
+.ncard strong{display:block;font-size:14.5px;margin-bottom:4px}
+
+@media (max-width:860px){.notes{grid-template-columns:1fr}.wrap{padding:12px}}
+</style>
+</head>
+<body data-theme="dark">
+
+<div class="labbar">
+  <div class="brand">
+    <strong>Opción 3 · Chasis único de cristal (y = 82 px)</strong>
+    <span class="badge">Todo en uno</span>
+  </div>
+  <div class="labgrp" id="grp-tab">
+    <button type="button" class="labbtn on" data-tab="list">Mi lista</button>
+    <button type="button" class="labbtn" data-tab="coll">Colecciones</button>
+    <button type="button" class="labbtn" data-tab="grid">Catálogo (Cuadrícula)</button>
+    <button type="button" class="labbtn" data-tab="car">Catálogo (Carrusel)</button>
+  </div>
+  <div class="labgrp" id="grp-col">
+    <button type="button" class="labbtn on" data-cmode="dynamic">Color: Dinámico</button>
+    <button type="button" class="labbtn" data-cmode="cat">Color: Fijo categoría</button>
+  </div>
+  <div class="labgrp" id="grp-cat">
+    <button type="button" class="labbtn on" data-cat="juegos">Juegos</button>
+    <button type="button" class="labbtn" data-cat="switch">Switch</button>
+    <button type="button" class="labbtn" data-cat="jp">Novelas japonesas</button>
+  </div>
+  <div class="labgrp">
+    <button type="button" class="labbtn" id="btn-flt">Filtro: Off</button>
+    <button type="button" class="labbtn on" id="btn-thm">Noche ahumada</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="intro">
+    <p>Funde las pestañas, el título del juego enfocado y las herramientas de la sección en un único panel .glass continuo de lado a lado (1200 × 54 px). Elimina los botones sueltos y la doble cabecera. <b>Interactivo:</b> pulsa las pestañas dentro o fuera del lienzo, haz clic en cualquier juego/franja/colección, cambia el orden o busca en el Catálogo.</p>
+  </div>
+  <div class="fit" id="fit">
+    <div id="stage" class="opt-chassis" data-theme="dark"></div>
+  </div>
+  <div class="notes"><div class="ncard"><strong>Mi lista</strong>Las pestañas quedan ancladas a la izquierda; el centro muestra el juego enfocado con su estado y horas, y la derecha un micro-resumen de los 4 estados. Tablero desde y = 148 px.</div><div class="ncard"><strong>Colecciones</strong>Muestra dentro del mismo chasis la saga y el título enfocado (Trails · Trails to Azure) y el acceso a Capturas. Las estanterías arrancan justo debajo en y = 148 px.</div><div class="ncard"><strong>Catálogo</strong>Funde .thead (título + capturas + horas) y .ttabs (pestañas + orden + buscar) en una sola fila: adiós a las dos líneas apiladas y funciona idéntico en Cuadrícula y Carrusel.</div></div>
+</div>
+
+<script>
+const INITIAL_OPT = "chassis";
+function updateOptMeta() {}
+
+const CATS = {
+  juegos: { name: "Juegos", f1: "#00A0D8", f2: "#3F63E0", g1: "#5ec8ff", g2: "#7895ff" },
+  switch: { name: "Switch", f1: "#E8384F", f2: "#F27A1A", g1: "#ff6b7f", g2: "#ffa454" },
+  jp:     { name: "Novelas japonesas", f1: "#9A4BD8", f2: "#E8384F", g1: "#c785ff", g2: "#ff7288" },
+};
+
+const BANDS = [
+  { key: "playing", label: "En marcha", cls: "run",  color: "#E8384F", color2: "#F27A1A" },
+  { key: "mid",     label: "A medias",  cls: "",     color: "#F27A1A", color2: "#F2B807" },
+  { key: "pending", label: "Pendiente", cls: "",     color: "#3BB54A", color2: "#00A0D8" },
+  { key: "dropped", label: "Aparcado",  cls: "park", color: "#00A0D8", color2: "#3F63E0" },
+];
+
+const GAMES = [
+  { id: 0,  name: "Baldur's Gate 3",         yr: 2023, c1: "#d97a2b", c2: "#4d2312", band: "playing", hrs: 84,  ago: "hace 2 días", shots: 24, launch: true,  pin: true,  hue: 28 },
+  { id: 1,  name: "Elden Ring",              yr: 2022, c1: "#c9a227", c2: "#2d3a24", band: "playing", hrs: 96,  ago: "hoy",         shots: 51, launch: true,  pin: false, hue: 48 },
+  { id: 2,  name: "Trails to Azure",         yr: 2011, c1: "#2d6fe0", c2: "#7ad0f0", band: "playing", hrs: 23,  ago: "ayer",        shots: 38, launch: true,  pin: false, hue: 215 },
+  { id: 3,  name: "Hades II",                yr: 2024, c1: "#3BB54A", c2: "#16382f", band: "mid",     hrs: 31,  ago: "hace 5 días", shots: 19, launch: true,  pin: false, hue: 145 },
+  { id: 4,  name: "Metaphor: ReFantazio",    yr: 2024, c1: "#E8384F", c2: "#36192c", band: "mid",     hrs: 44,  ago: "hace 1 sem.", shots: 27, launch: true,  pin: false, hue: 350 },
+  { id: 5,  name: "Kingdom Hearts II",       yr: 2005, c1: "#6E56CF", c2: "#e58a48", band: "pending", hrs: 0,   ago: "sin empezar", shots: 12, launch: true,  pin: false, hue: 258 },
+  { id: 6,  name: "Hollow Knight: Silksong", yr: 2025, c1: "#d92c44", c2: "#26181f", band: "pending", hrs: 0,   ago: "sin empezar", shots: 0,  launch: true,  pin: false, hue: 355 },
+  { id: 7,  name: "Persona 3 Reload",        yr: 2024, c1: "#00A0D8", c2: "#1b2f5c", band: "pending", hrs: 0,   ago: "sin empezar", shots: 6,  launch: true,  pin: false, hue: 200 },
+  { id: 8,  name: "Yakuza Kiwami 2",         yr: 2017, c1: "#c92a2a", c2: "#2a3a6b", band: "pending", hrs: 0,   ago: "sin empezar", shots: 15, launch: true,  pin: false, hue: 5 },
+  { id: 9,  name: "Xenoblade 3",             yr: 2022, c1: "#e04862", c2: "#1c2d42", band: "dropped", hrs: 18,  ago: "hace 3 meses",shots: 42, launch: false, pin: false, hue: 345 },
+  { id: 10, name: "Hollow Knight",           yr: 2017, c1: "#4b6496", c2: "#161e2e", band: "dropped", hrs: 14,  ago: "hace 4 meses",shots: 29, launch: true,  pin: false, hue: 220 },
+  { id: 11, name: "Trails in the Sky",       yr: 2004, c1: "#4aa3e0", c2: "#f2d06b", band: "done",    hrs: 48,  ago: "hace 1 año",  shots: 64, launch: true,  pin: false, hue: 195 },
+  { id: 12, name: "Persona 5 Royal",         yr: 2019, c1: "#E8384F", c2: "#1a1a1a", band: "done",    hrs: 121, ago: "hace 6 meses",shots: 88, launch: true,  pin: false, hue: 358 },
+];
+
+const COLLS = [
+  { id: 0, name: "Trails",         c1: "#00A0D8", c2: "#19b8a6", hrs: 223, shots: 178, items: [11, 2, 7, 1, 0] },
+  { id: 1, name: "Persona",        c1: "#F2B807", c2: "#E8384F", hrs: 203, shots: 139, items: [12, 7, 4] },
+  { id: 2, name: "Kingdom Hearts", c1: "#6E56CF", c2: "#e58a48", hrs: 100, shots: 62,  items: [5, 8, 3] },
+];
+
+const ORDERS = [
+  { id: "color", label: "Por color" },
+  { id: "az",    label: "A–Z" },
+  { id: "last",  label: "Última partida" },
+];
+
+const state = {
+  opt: INITIAL_OPT,
+  tab: "list",
+  view: "grid",
+  cat: "juegos",
+  colorMode: "dynamic",
+  theme: "dark",
+  filter: false,
+  orderIdx: 0,
+  search: "",
+  listFocusId: 0,
+  collIdx: 0,
+  collGamePos: 1,
+  catFocusId: 0,
+  page: 0,
+};
+
+const IC = {
+  person: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1-4.5 3.8-6.5 7.5-6.5s6.5 2 7.5 6.5"/></svg>',
+  moon:   '<svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
+  vol:    '<svg viewBox="0 0 24 24"><path d="M4 9.5h4l5-4v13l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg>',
+  search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+  sort:   '<svg viewBox="0 0 24 24"><path d="M4 7h16M7 12h10M10 17h4"/></svg>',
+  pin:    '<svg viewBox="0 0 24 24" width="12" height="12"><path d="M9 3h6l-1 6 3 3v2h-4v6l-1 1-1-1v-6H7v-2l3-3z" fill="currentColor" stroke="none"/></svg>',
+  list:   '<svg viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M3.5 6h.5M3.5 12h.5M3.5 18h.5"/></svg>',
+  layers: '<svg viewBox="0 0 24 24"><path d="M12 3L3 8l9 5 9-5-9-5z"/><path d="M3 13l9 5 9-5"/><path d="M3 18l9 5 9-5"/></svg>',
+  grid:   '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>',
+};
+
+function filteredGames() {
+  const q = state.search.trim().toLowerCase();
+  let list = GAMES.filter(g => (!state.filter || g.launch) && (!q || g.name.toLowerCase().includes(q)));
+  const ord = ORDERS[state.orderIdx].id;
+  if (ord === "az") list.sort((a, b) => a.name.localeCompare(b.name));
+  else if (ord === "last") list.sort((a, b) => b.hrs - a.hrs);
+  else list.sort((a, b) => a.hue - b.hue);
+  return list;
+}
+
+function activeTabColors() {
+  const cat = CATS[state.cat];
+  if (state.colorMode === "cat") return [cat.f1, cat.f2];
+  if (state.tab === "list") {
+    const g = GAMES.find(x => x.id === state.listFocusId) || GAMES[0];
+    const b = BANDS.find(x => x.key === g.band) || BANDS[0];
+    return [b.color, b.color2];
+  }
+  if (state.tab === "coll") {
+    const c = COLLS[state.collIdx] || COLLS[0];
+    return [c.c1, c.c2];
+  }
+  return [cat.f1, cat.f2];
+}
+
+function washColors() {
+  let g;
+  if (state.tab === "list") g = GAMES.find(x => x.id === state.listFocusId);
+  else if (state.tab === "coll") {
+    const c = COLLS[state.collIdx];
+    g = GAMES.find(x => x.id === c.items[state.collGamePos]);
+  } else {
+    g = GAMES.find(x => x.id === state.catFocusId);
+  }
+  return g ? [g.c1, g.c2] : [CATS[state.cat].f1, CATS[state.cat].f2];
+}
+
+function coverArt(g, sizeCls = "") {
+  return `<div class="art ${sizeCls}" style="--gc1:${g.c1};--gc2:${g.c2}"><span class="yr">${g.yr}</span><span class="ttl">${g.name}</span></div>`;
+}
+
+function tabButtonsHtml() {
+  const defs = [["list", "Mi lista"], ["coll", "Colecciones"], ["all", "Catálogo"]];
+  return defs.map(([id, lbl]) =>
+    `<button type="button" class="tabbtn ${state.tab === id ? "on" : ""}" data-go-tab="${id}">${lbl}</button>`
+  ).join("");
+}
+
+function catalogToolsHtml(includePage = false, totalPages = 1) {
+  const ord = ORDERS[state.orderIdx].label;
+  return `
+    <button type="button" class="tord" id="act-order">${IC.sort}${ord}</button>
+    ${state.filter ? `<span class="tchip" id="act-flt-clear" title="Quitar filtro">Con lanzador <small>${filteredGames().length}</small><b>×</b></span>` : ""}
+    <div class="tsearch">
+      ${IC.search}
+      <input id="cat-search" type="text" placeholder="Buscar juego..." value="${state.search.replace(/"/g, "&quot;")}" autocomplete="off">
+      ${state.search ? `<button type="button" class="ts-x" id="act-search-clr">×</button>` : ""}
+    </div>
+    ${includePage && state.view === "grid" && totalPages > 1 ? `
+      <div class="pagep pill" id="act-page" title="Cambiar página">Pág. ${state.page + 1}/${totalPages}<i><b style="left:${(state.page / totalPages) * 100}%;width:${100 / totalPages}%"></b></i></div>
+    ` : ""}
+  `;
+}
+
+function renderTopBar(totalPages) {
+  const cat = CATS[state.cat];
+  const padIcon = `<svg width="28" height="18" viewBox="0 0 30 20"><rect x="1" y="3" width="28" height="14" rx="7" fill="var(--f1)"/><circle cx="8" cy="10" r="3" fill="#fff"/><circle cx="22" cy="10" r="2" fill="#fff"/></svg>`;
+  const clock = `
+    <div class="clock">
+      <span class="icbtn">${IC.moon}</span>
+      <span class="icbtn">${IC.vol}</span>
+      <span>18/11 <small>(mié)</small></span><span>01:31</span>
+      <span>${padIcon}</span>
+    </div>
+  `;
+
+  if (state.opt === "topbar") {
+    return `
+      <div class="top">
+        <div class="avatar">${IC.person}</div>
+        <div class="crumb pill"><span class="cback">‹</span><span>Inicio</span><span class="sep">›</span><span class="cur">${cat.name}</span></div>
+        <div class="top-tabs pill">${tabButtonsHtml()}</div>
+        ${clock}
+      </div>
+    `;
+  }
+
+  if (state.opt === "crumb") {
+    return `
+      <div class="top">
+        <div class="avatar">${IC.person}</div>
+        <div class="crumb-joint pill">
+          <span class="cback">‹</span><span>Inicio</span><span class="sep">›</span><span class="cur">${cat.name}</span>
+          <span class="jdiv"></span>
+          <div class="jtabs">${tabButtonsHtml()}</div>
+        </div>
+        ${clock}
+      </div>
+    `;
+  }
+
+  return `
+    <div class="top">
+      <div class="avatar">${IC.person}</div>
+      <div class="crumb pill"><span class="cback">‹</span><span>Inicio</span><span class="sep">›</span><span class="cur">${cat.name}</span></div>
+      ${state.tab === "all" && state.view === "grid" && totalPages > 1 ? `
+        <div class="pagep pill top-center" id="act-page" title="Cambiar página">Página ${state.page + 1} de ${totalPages}<i><b style="left:${(state.page / totalPages) * 100}%;width:${100 / totalPages}%"></b></i></div>
+      ` : ""}
+      ${clock}
+    </div>
+  `;
+}
+
+function renderSectionChrome(totalPages) {
+  const cat = CATS[state.cat];
+  const vis = filteredGames();
+  const focusGame = GAMES.find(g => g.id === state.catFocusId) || vis[0] || GAMES[0];
+  const listGame = GAMES.find(g => g.id === state.listFocusId) || GAMES[0];
+  const listBand = BANDS.find(b => b.key === listGame.band) || BANDS[0];
+  const coll = COLLS[state.collIdx] || COLLS[0];
+  const collGame = GAMES.find(g => g.id === coll.items[state.collGamePos]) || GAMES[coll.items[0]];
+
+  if (state.opt === "topbar" || state.opt === "crumb") {
+    if (state.tab === "list") return "";
+    if (state.tab === "coll") {
+      return `
+        <div class="coll-head">
+          <div class="thead" style="flex:1">
+            <h3>${collGame.name}</h3>
+            <span class="tag" style="background:${coll.c1}">${coll.name} · ${state.collGamePos + 1} de ${coll.items.length}</span>
+            <span class="meta">Jugado <b>${collGame.hrs} h</b></span>
+            <span class="meta">${collGame.shots} capturas</span>
+          </div>
+        </div>
+      `;
+    }
+    if (state.view === "car") {
+      return `<div class="catbar"><div class="thead"></div><div class="tools">${catalogToolsHtml(false, totalPages)}</div></div>`;
+    }
+    return `
+      <div class="catbar">
+        <div class="thead">
+          <h3>${focusGame.name}</h3>
+          <span class="tag" style="background:${cat.f1}">${focusGame.shots ? focusGame.shots + " capturas" : "Sin capturas"}</span>
+          <span class="meta">${focusGame.hrs ? `<b>${focusGame.hrs} h</b> · ` : ""}${focusGame.ago}</span>
+        </div>
+        <div class="tools">${catalogToolsHtml(true, totalPages)}</div>
+      </div>
+    `;
+  }
+
+  if (state.opt === "rail") {
+    let rightHtml = "";
+    if (state.tab === "list") {
+      rightHtml = `<div class="stat-pills">${BANDS.map(b => {
+        const cnt = GAMES.filter(g => g.band === b.key).length;
+        const on = listGame.band === b.key;
+        return `<button type="button" class="spill ${on ? "on" : ""}" style="--sc:${b.color}" data-jump-band="${b.key}"><i></i>${cnt} ${b.label}</button>`;
+      }).join("")}</div>`;
+    } else if (state.tab === "coll") {
+      rightHtml = `
+        <div class="coll-pill"><span style="width:10px;height:10px;border-radius:50%;background:${coll.c1}"></span>${coll.name}<small>· ${coll.items.length} juegos · ${coll.hrs} h · ${coll.shots} capturas</small></div>
+        <div class="gl-bar" style="padding:4px 12px;font-size:13px;color:var(--ink)"><span class="btn x" style="margin-right:6px;min-width:24px;height:24px">X</span>Capturas</div>
+      `;
+    } else {
+      rightHtml = `<div class="sx-tools">${catalogToolsHtml(false, totalPages)}</div>`;
+    }
+
+    const extraThead = (state.tab === "all" && state.view === "grid") ? `
+      <div class="cat-thead thead">
+        <h3>${focusGame.name}</h3>
+        <span class="tag" style="background:${cat.f1}">${focusGame.shots ? focusGame.shots + " capturas" : "Sin capturas"}</span>
+        ${focusGame.hrs ? `<span class="meta">Jugado <b>${focusGame.hrs} h</b></span>` : ""}
+        <span class="meta">Última partida <b>${focusGame.ago}</b></span>
+      </div>
+    ` : "";
+
+    return `
+      <div class="sx">
+        <div class="gl-bar">${tabButtonsHtml()}</div>
+        <div class="sx-right">${rightHtml}</div>
+      </div>
+      ${extraThead}
+    `;
+  }
+
+  if (state.opt === "chassis") {
+    let ctxHtml = "";
+    if (state.tab === "list") {
+      ctxHtml = `
+        <div class="ch-ctx">
+          <h3>${listGame.name}</h3>
+          <span class="tag" style="background:${listBand.color}">${listBand.label}</span>
+          <span class="meta">${listGame.hrs ? `${listGame.hrs} h · ${listGame.ago}` : "sin empezar"}</span>
+          <div class="ch-right ch-dots">
+            ${BANDS.map(b => {
+              const cnt = GAMES.filter(g => g.band === b.key).length;
+              return `<span style="--sc:${b.color}" data-jump-band="${b.key}" title="${b.label}"><i></i>${cnt}</span>`;
+            }).join("")}
+          </div>
+        </div>
+      `;
+    } else if (state.tab === "coll") {
+      ctxHtml = `
+        <div class="ch-ctx">
+          <h3>${coll.name} · ${collGame.name}</h3>
+          <span class="tag" style="background:${coll.c1}">${state.collGamePos + 1} de ${coll.items.length}</span>
+          <span class="meta">${coll.hrs} h · ${coll.shots} capturas</span>
+          <div class="ch-right">
+            <span class="tord" style="height:36px"><span class="btn x" style="min-width:22px;height:22px;font-size:11px">X</span>Capturas</span>
+          </div>
+        </div>
+      `;
+    } else {
+      ctxHtml = `
+        <div class="ch-ctx">
+          <h3>${focusGame.name}</h3>
+          <span class="tag" style="background:${cat.f1}">${focusGame.shots ? focusGame.shots + " capturas" : "Sin capturas"}</span>
+          <span class="meta">${focusGame.hrs ? focusGame.hrs + " h" : focusGame.ago}</span>
+          <div class="ch-right">${catalogToolsHtml(false, totalPages)}</div>
+        </div>
+      `;
+    }
+    return `<div class="chassis"><div class="ch-tabs">${tabButtonsHtml()}</div><div class="ch-div"></div>${ctxHtml}</div>`;
+  }
+
+  if (state.opt === "folder") {
+    let ledge = "";
+    let insideHead = "";
+    if (state.tab === "list") {
+      ledge = BANDS.map(b => {
+        const cnt = GAMES.filter(g => g.band === b.key).length;
+        return `<span class="fstat" style="--sc:${b.color}" data-jump-band="${b.key}"><i></i>${cnt} ${b.label}</span>`;
+      }).join("");
+    } else if (state.tab === "coll") {
+      ledge = `<span class="fstat" style="--sc:${coll.c1}"><i></i>${coll.name} · ${coll.hrs} h · ${coll.shots} capturas</span>`;
+    } else {
+      ledge = catalogToolsHtml(false, totalPages);
+      if (state.view === "grid") {
+        insideHead = `
+          <div class="cat-thead thead">
+            <h3>${focusGame.name}</h3>
+            <span class="tag" style="background:${cat.f1}">${focusGame.shots ? focusGame.shots + " capturas" : "Sin capturas"}</span>
+            <span class="meta">${focusGame.hrs ? `<b>${focusGame.hrs} h</b> · ` : ""}${focusGame.ago}</span>
+          </div>
+        `;
+      }
+    }
+    return `
+      <div class="folder-tabs">${tabButtonsHtml()}</div>
+      <div class="folder-ledge">${ledge}</div>
+      <div class="folder-body"></div>
+      ${insideHead}
+    `;
+  }
+
+  if (state.opt === "dock") {
+    const listCnt = GAMES.filter(g => g.band !== "done").length;
+    const catCnt = vis.length;
+    let dockBottom = "";
+    let rightTop = "";
+    if (state.tab === "list") {
+      dockBottom = `
+        <div class="dsec-lbl">Estados</div>
+        ${BANDS.map(b => {
+          const cnt = GAMES.filter(g => g.band === b.key).length;
+          return `<button type="button" class="dmini ${listGame.band === b.key ? "on" : ""}" style="--sc:${b.color}" data-jump-band="${b.key}"><i></i><span>${b.label}</span><em>${cnt}</em></button>`;
+        }).join("")}
+      `;
+    } else if (state.tab === "coll") {
+      dockBottom = `
+        <div class="dsec-lbl">Sagas</div>
+        ${COLLS.map((c, ci) => `
+          <button type="button" class="dmini ${state.collIdx === ci ? "on" : ""}" style="--sc:${c.c1}" data-coll="${ci}"><i></i><span>${c.name}</span><em>${c.items.length}</em></button>
+        `).join("")}
+      `;
+      rightTop = `
+        <div class="coll-head">
+          <div class="thead" style="flex:1">
+            <h3>${collGame.name}</h3>
+            <span class="tag" style="background:${coll.c1}">${coll.name} · ${state.collGamePos + 1} de ${coll.items.length}</span>
+            <span class="meta"><b>${collGame.hrs} h</b> · ${collGame.shots} capturas</span>
+          </div>
+        </div>
+      `;
+    } else {
+      dockBottom = `
+        <div class="dsec-lbl">Catálogo</div>
+        <button type="button" class="dmini" id="act-order">${IC.sort}<span>${ORDERS[state.orderIdx].label}</span></button>
+        <button type="button" class="dmini" id="act-view">${IC.grid}<span>${state.view === "grid" ? "Cuadrícula" : "Carrusel"}</span></button>
+        ${state.filter ? `<button type="button" class="dmini on" id="act-flt-clear"><span>Con lanzador</span><em>×</em></button>` : ""}
+        <div class="dsearch">${IC.search}<input id="cat-search" type="text" placeholder="Buscar..." value="${state.search.replace(/"/g, "&quot;")}"></div>
+      `;
+      if (state.view === "grid") {
+        rightTop = `
+          <div class="cat-thead thead">
+            <h3>${focusGame.name}</h3>
+            <span class="tag" style="background:${cat.f1}">${focusGame.shots ? focusGame.shots + " capturas" : "Sin capturas"}</span>
+            <span class="meta">${focusGame.hrs ? `<b>${focusGame.hrs} h</b> · ` : ""}${focusGame.ago}</span>
+          </div>
+        `;
+      }
+    }
+
+    return `
+      <aside class="dock-left">
+        <button type="button" class="dtab ${state.tab === "list" ? "on" : ""}" data-go-tab="list">${IC.list}<span>Mi lista</span><small>${listCnt}</small></button>
+        <button type="button" class="dtab ${state.tab === "coll" ? "on" : ""}" data-go-tab="coll">${IC.layers}<span>Colecciones</span><small>${COLLS.length}</small></button>
+        <button type="button" class="dtab ${state.tab === "all" ? "on" : ""}" data-go-tab="all">${IC.grid}<span>Catálogo</span><small>${catCnt}</small></button>
+        <div class="ddiv"></div>
+        ${dockBottom}
+      </aside>
+      ${rightTop}
+    `;
+  }
+
+  return "";
+}
+
+function renderBody() {
+  if (state.tab === "list") {
+    return `<div class="board">${BANDS.map(b => {
+      const items = GAMES.filter(g => g.band === b.key);
+      return `
+        <section class="band ${b.cls}" style="--c:${b.color}">
+          <div class="lh"><span>${b.label}</span><em>${items.length} ${items.length === 1 ? "juego" : "juegos"}</em></div>
+          <div class="its">
+            ${items.map(g => `
+              <div class="it ${state.listFocusId === g.id ? "f" : ""}" data-list-game="${g.id}">
+                <div class="cv">${coverArt(g, "sm")}</div>
+                <div class="tx">
+                  <b>${g.name}</b>
+                  <small>${g.hrs ? `${g.hrs} h · ${g.ago}` : "sin empezar"}</small>
+                  ${g.pin ? `<span class="ptxt">${IC.pin}Fijado</span>` : ""}
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </section>
+      `;
+    }).join("")}</div>`;
+  }
+
+  if (state.tab === "coll") {
+    const ordered = COLLS.map((c, ci) => ({ c, ci }));
+    const start = Math.max(0, Math.min(state.collIdx, COLLS.length - 2));
+    return `<div class="lclip">${ordered.slice(start).map(({ c, ci }) => {
+      const here = state.collIdx === ci;
+      return `
+        <div class="shelf-card ${here ? "lit" : "dim"}" style="--sc1:${c.c1};--sc2:${c.c2}" data-coll="${ci}">
+          <div class="sh-tab">
+            <b>${c.name}</b>
+            <span>${c.items.length} juegos · ${c.hrs} h · ${c.shots} capturas</span>
+            ${here ? `<span class="sh-x"><span class="btn x" style="min-width:22px;height:22px;font-size:11px">X</span>Capturas</span>` : ""}
+          </div>
+          <div class="sh-row">
+            <div class="sh-rail"></div>
+            ${c.items.map((gid, pos) => {
+              const g = GAMES.find(x => x.id === gid);
+              const f = here && state.collGamePos === pos;
+              return `
+                <div class="sh-game ${f ? "f" : ""}" data-coll="${ci}" data-cpos="${pos}">
+                  <div class="sh-cov">${coverArt(g, "sm")}</div>
+                  <span class="sh-dot"></span>
+                  <span class="sh-yr">${g.yr}</span>
+                </div>
+              `;
+            }).join("")}
+          </div>
+        </div>
+      `;
+    }).join("")}</div>`;
+  }
+
+  const vis = filteredGames();
+  if (state.view === "grid") {
+    const PS = 10;
+    const totalPages = Math.max(1, Math.ceil(vis.length / PS));
+    if (state.page >= totalPages) state.page = totalPages - 1;
+    const slice = vis.slice(state.page * PS, state.page * PS + PS);
+    return `
+      <div class="grid-wrap">
+        <div class="tgrid">
+          ${slice.length ? slice.map(g => `
+            <div class="gcov ${state.catFocusId === g.id ? "f" : ""}" style="--gc1:${g.c1};--gc2:${g.c2}" data-cat-game="${g.id}">
+              <div class="inner">${coverArt(g)}</div>
+            </div>
+          `).join("") : `<div style="grid-column:1/-1;text-align:center;padding:80px 0;font-size:20px;font-weight:800;color:var(--ink-2)">No hay juegos que coincidan con «${state.search}»</div>`}
+        </div>
+        ${totalPages > 1 ? `<div class="sbar" id="act-sbar" title="Saltar de página"><i style="top:${state.page * 240}px"></i></div>` : ""}
+      </div>
+    `;
+  }
+
+  const idx = Math.max(0, vis.findIndex(g => g.id === state.catFocusId));
+  const focus = vis[idx] || vis[0] || GAMES[0];
+  const windowItems = [];
+  for (let d = -2; d <= 2; d++) {
+    const item = vis[idx + d];
+    if (item) windowItems.push(item);
+  }
+  return `
+    <div class="car-wrap">
+      <div class="ctrack">
+        ${windowItems.map(g => `
+          <div class="ccov ${focus.id === g.id ? "f" : ""}" style="--gc1:${g.c1};--gc2:${g.c2}" data-cat-game="${g.id}">
+            <div class="inner">${coverArt(g, "lg")}</div>
+          </div>
+        `).join("")}
+      </div>
+      <div class="cinfo">
+        <h3>${focus.name}</h3>
+        <p>${focus.shots ? `${focus.shots} capturas` : "Sin capturas"}${focus.hrs ? ` · jugado ${focus.hrs} h` : ""} · ${idx + 1} de ${vis.length}</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderHints() {
+  let list = [];
+  if (state.tab === "list") {
+    list = [["A", "Abrir", "a"], ["X", "Jugar", "x"], ["Y", "Estado", "y"], ["LT/RT", "Pestaña", "n"], ["Start", "Menú", "n"], ["B", "Volver", "b"]];
+  } else if (state.tab === "coll") {
+    list = [["A", "Abrir", "a"], ["X", "Jugar", "x"], ["Y", "Editar", "y"], ["LT/RT", "Pestaña", "n"], ["Start", "Menú", "n"], ["B", "Volver", "b"]];
+  } else {
+    list = [["A", "Abrir", "a"], ["X", "Jugar", "x"], ["Y", "Buscar", "y"], ["View", state.view === "grid" ? "Carrusel" : "Cuadrícula", "n"], ["LB/RB", "Página", "n"], ["LT/RT", "Pestaña", "n"], ["B", "Volver", "b"]];
+  }
+  return `<div class="hints">${list.map(([b, t, cls]) => `<span class="hint pill" data-hint="${b}"><span class="btn ${cls}">${b}</span>${t}</span>`).join("")}</div>`;
+}
+
+function render() {
+  const stage = document.getElementById("stage");
+  const cat = CATS[state.cat];
+  const [tc1, tc2] = activeTabColors();
+  const [w1, w2] = washColors();
+  const vis = filteredGames();
+  const totalPages = Math.max(1, Math.ceil(vis.length / 10));
+
+  const activeEl = document.activeElement;
+  const keepSearchFocus = activeEl && activeEl.id === "cat-search";
+  const caret = keepSearchFocus ? activeEl.selectionStart : 0;
+
+  stage.className = "opt-" + state.opt;
+  stage.setAttribute("data-theme", state.theme);
+  stage.style.setProperty("--f1", cat.f1);
+  stage.style.setProperty("--f2", cat.f2);
+  stage.style.setProperty("--g1", cat.g1);
+  stage.style.setProperty("--g2", cat.g2);
+  stage.style.setProperty("--v1", cat.f1);
+  stage.style.setProperty("--v2", cat.f2);
+  stage.style.setProperty("--tab-c1", tc1);
+  stage.style.setProperty("--tab-c2", tc2);
+  stage.style.setProperty("--w1", w1);
+  stage.style.setProperty("--w2", w2);
+
+  stage.innerHTML = `
+    <div class="gridbg"></div>
+    <div class="ambwash"></div>
+    ${renderTopBar(totalPages)}
+    ${renderSectionChrome(totalPages)}
+    ${renderBody()}
+    ${renderHints()}
+  `;
+
+  if (keepSearchFocus) {
+    const inp = document.getElementById("cat-search");
+    if (inp) { inp.focus(); inp.setSelectionRange(caret, caret); }
+  }
+
+  document.querySelectorAll("#grp-tab .labbtn").forEach(b => {
+    const match = (b.dataset.tab === "list" && state.tab === "list")
+      || (b.dataset.tab === "coll" && state.tab === "coll")
+      || (b.dataset.tab === "grid" && state.tab === "all" && state.view === "grid")
+      || (b.dataset.tab === "car"  && state.tab === "all" && state.view === "car");
+    b.classList.toggle("on", match);
+  });
+  document.querySelectorAll("#grp-opt .labbtn").forEach(b => b.classList.toggle("on", b.dataset.opt === state.opt));
+  document.querySelectorAll("#grp-col .labbtn").forEach(b => b.classList.toggle("on", b.dataset.cmode === state.colorMode));
+  document.querySelectorAll("#grp-cat .labbtn").forEach(b => b.classList.toggle("on", b.dataset.cat === state.cat));
+  const btnFlt = document.getElementById("btn-flt");
+  if (btnFlt) { btnFlt.textContent = "Filtro: " + (state.filter ? "Con lanzador" : "Off"); btnFlt.classList.toggle("on", state.filter); }
+  const btnThm = document.getElementById("btn-thm");
+  if (btnThm) { btnThm.textContent = state.theme === "dark" ? "Noche ahumada" : "Tema claro"; btnThm.classList.toggle("on", state.theme === "dark"); }
+
+  if (typeof updateOptMeta === "function") updateOptMeta();
+}
+
+document.getElementById("stage").addEventListener("click", (e) => {
+  const goTab = e.target.closest("[data-go-tab]");
+  if (goTab) { state.tab = goTab.dataset.goTab; render(); return; }
+
+  const listGame = e.target.closest("[data-list-game]");
+  if (listGame) { state.listFocusId = +listGame.dataset.listGame; render(); return; }
+
+  const jumpBand = e.target.closest("[data-jump-band]");
+  if (jumpBand) {
+    const g = GAMES.find(x => x.band === jumpBand.dataset.jumpBand);
+    if (g) { state.listFocusId = g.id; render(); }
+    return;
+  }
+
+  const collGame = e.target.closest("[data-cpos]");
+  if (collGame) { state.collIdx = +collGame.dataset.coll; state.collGamePos = +collGame.dataset.cpos; render(); return; }
+
+  const collCard = e.target.closest("[data-coll]");
+  if (collCard) { state.collIdx = +collCard.dataset.coll; state.collGamePos = 0; render(); return; }
+
+  const catGame = e.target.closest("[data-cat-game]");
+  if (catGame) { state.catFocusId = +catGame.dataset.catGame; render(); return; }
+
+  if (e.target.closest("#act-order")) { state.orderIdx = (state.orderIdx + 1) % ORDERS.length; render(); return; }
+  if (e.target.closest("#act-view")) { state.view = state.view === "grid" ? "car" : "grid"; render(); return; }
+  if (e.target.closest("#act-flt-clear")) { state.filter = false; render(); return; }
+  if (e.target.closest("#act-search-clr")) { state.search = ""; state.page = 0; render(); return; }
+  if (e.target.closest("#act-page") || e.target.closest("#act-sbar")) {
+    const vis = filteredGames();
+    const pages = Math.max(1, Math.ceil(vis.length / 10));
+    state.page = (state.page + 1) % pages;
+    const firstOnPage = vis[state.page * 10];
+    if (firstOnPage) state.catFocusId = firstOnPage.id;
+    render(); return;
+  }
+
+  const hint = e.target.closest("[data-hint]");
+  if (hint) {
+    const b = hint.dataset.hint;
+    if (b === "View") { state.view = state.view === "grid" ? "car" : "grid"; render(); }
+    else if (b === "LT/RT") {
+      const order = ["list", "coll", "all"];
+      state.tab = order[(order.indexOf(state.tab) + 1) % order.length];
+      render();
+    } else if (b === "LB/RB" && state.tab === "all") {
+      const vis = filteredGames();
+      const pages = Math.max(1, Math.ceil(vis.length / 10));
+      state.page = (state.page + 1) % pages;
+      const firstOnPage = vis[state.page * 10];
+      if (firstOnPage) state.catFocusId = firstOnPage.id;
+      render();
+    } else if (b === "Y" && state.tab === "all") {
+      document.getElementById("cat-search")?.focus();
+    }
+  }
+});
+
+document.getElementById("stage").addEventListener("input", (e) => {
+  if (e.target && e.target.id === "cat-search") {
+    state.search = e.target.value;
+    state.page = 0;
+    const vis = filteredGames();
+    if (vis.length && !vis.some(g => g.id === state.catFocusId)) state.catFocusId = vis[0].id;
+    render();
+  }
+});
+
+document.querySelectorAll("#grp-opt .labbtn").forEach(b => b.addEventListener("click", () => { state.opt = b.dataset.opt; render(); }));
+document.querySelectorAll("#grp-tab .labbtn").forEach(b => b.addEventListener("click", () => {
+  const t = b.dataset.tab;
+  if (t === "grid" || t === "car") { state.tab = "all"; state.view = t; }
+  else state.tab = t;
+  render();
+}));
+document.querySelectorAll("#grp-col .labbtn").forEach(b => b.addEventListener("click", () => { state.colorMode = b.dataset.cmode; render(); }));
+document.querySelectorAll("#grp-cat .labbtn").forEach(b => b.addEventListener("click", () => { state.cat = b.dataset.cat; render(); }));
+document.getElementById("btn-flt")?.addEventListener("click", () => { state.filter = !state.filter; state.page = 0; render(); });
+document.getElementById("btn-thm")?.addEventListener("click", () => {
+  state.theme = state.theme === "dark" ? "light" : "dark";
+  document.body.setAttribute("data-theme", state.theme);
+  render();
+});
+
+function fitStage() {
+  const box = document.getElementById("fit");
+  const st = document.getElementById("stage");
+  const s = Math.min(1, box.clientWidth / 1280);
+  st.style.transform = `scale(${s})`;
+  box.style.height = (720 * s) + "px";
+}
+new ResizeObserver(fitStage).observe(document.getElementById("fit"));
+window.addEventListener("resize", fitStage);
+
+render();
+fitStage();
+
+</script>
+</body>
+</html>

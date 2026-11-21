@@ -530,11 +530,19 @@ def set_state(plan: Dict[str, Any], step_id: str, state: str, by: str = "ia", te
         branch.pop("archived", None)
     step["state"] = state
     step["updated"] = now()
+    if state == DONE and phase_state(phase) == DONE:
+        _phase_news(plan, branch, phase, by)
     if state != DONE:
         _clear_review(phase)
     elif phase_state(phase) == DONE and not branch.get("nonstop") and review_state(phase) not in (WAITING, APPROVED):
         phase["review"] = {"state": WAITING, "text": "", "by": by, "at": now(), "seen": True}
     return step
+
+
+def _phase_news(plan: Dict[str, Any], branch: dict, phase: dict, by: str) -> None:
+    """Una fase recién terminada pasa a ser novedad de la próxima versión (una sola vez)."""
+    name = f"{branch.get('icon', '')} {branch['name']}".strip()
+    add_news(plan, f"{name}: {phase['name']}", "fase", by, ref=f"{branch['key']}/{phase['name']}")
 
 
 def _clear_review(phase: dict) -> None:
@@ -880,6 +888,516 @@ def drop_branch(plan: Dict[str, Any], ref: str, folder: Optional[Path] = None) -
     return branch
 
 
+
+
+# ── Caja de ideas ────────────────────────────────────────────────────────────
+
+IDEA_OPEN, IDEA_PLANNED, IDEA_DROPPED = "open", "planned", "dropped"
+MAX_IDEA = 500
+
+
+def add_idea(plan: Dict[str, Any], text: str, by: str = "ia", seen: bool = True) -> dict:
+    """Una idea suelta, sin plan todavía. ``seen`` en falso si la apunta la persona en la web."""
+    text = " ".join(str(text or "").split())[:MAX_IDEA]
+    if not text:
+        raise PlanError(f'La idea está vacía: {UNI} idea "Poder exportar el plan a PDF"')
+    n = int(plan.get("next_idea", 1))
+    plan["next_idea"] = n + 1
+    idea = {"id": f"I-{n}", "text": text, "by": by, "at": now(), "state": IDEA_OPEN, "seen": bool(seen)}
+    plan.setdefault("ideas", []).append(idea)
+    return idea
+
+
+def find_idea(plan: Dict[str, Any], idea_id: str) -> dict:
+    wanted = str(idea_id).strip().upper()
+    for i in plan.get("ideas", []):
+        if i["id"].upper() == wanted:
+            return i
+    known = ", ".join(i["id"] for i in plan.get("ideas", []) if i.get("state") == IDEA_OPEN) or "ninguna abierta"
+    raise PlanError(f"No existe la idea {idea_id}. Ideas abiertas: {known}.")
+
+
+def plan_ideas(plan: Dict[str, Any], idea_ids: List[str], branch_ref: str) -> List[dict]:
+    """Las ideas pasan a una rama: quedan como planificadas y enlazadas a ella."""
+    branch = find_branch(plan, branch_ref)
+    ideas = [find_idea(plan, i) for i in idea_ids]
+    for i in ideas:
+        i["state"], i["branch"] = IDEA_PLANNED, branch["key"]
+        i.pop("note", None)
+    branch["ideas"] = list(dict.fromkeys((branch.get("ideas") or []) + [i["id"] for i in ideas]))
+    return ideas
+
+
+def drop_idea(plan: Dict[str, Any], idea_id: str, text: str = "") -> dict:
+    idea = find_idea(plan, idea_id)
+    idea["state"] = IDEA_DROPPED
+    idea.pop("branch", None)
+    if text.strip():
+        idea["note"] = text.strip()
+    return idea
+
+
+def reopen_idea(plan: Dict[str, Any], idea_id: str) -> dict:
+    idea = find_idea(plan, idea_id)
+    idea["state"] = IDEA_OPEN
+    for key in ("branch", "note"):
+        idea.pop(key, None)
+    return idea
+
+
+def split_ids(values: List[str]) -> List[str]:
+    """«I-1,I-2» «I-3» → [I-1, I-2, I-3]."""
+    return [x.strip() for v in values for x in str(v).split(",") if x.strip()]
+
+
+def render_ideas(plan: Dict[str, Any], every: bool = False) -> str:
+    ideas = [i for i in plan.get("ideas", []) if every or i.get("state") == IDEA_OPEN]
+    if not ideas:
+        return (f'No hay ideas {"" if every else "abiertas "}apuntadas. Para apuntar una: {UNI} idea "Qué se te ocurre"')
+    names = {IDEA_OPEN: "abierta", IDEA_PLANNED: "planificada", IDEA_DROPPED: "descartada"}
+    lines = [f"Ideas{'' if every else ' abiertas'} ({len(ideas)}):"]
+    for i in ideas:
+        extra = f"  → rama {i['branch']}" if i.get("branch") else ""
+        state = "" if not every else f"  [{names.get(i.get('state'), i.get('state'))}]"
+        lines.append(f"  {i['id']}  {i['text']}  ({i.get('by', '?')}, {i.get('at', '')[:10]}){state}{extra}")
+    if not every:
+        lines.append("Para planificarlas, agrupa las que van juntas y crea una rama por grupo con --ideas:\n"
+                     f'  {UNI} branch "Nombre" --goal "Para qué" --ideas I-1,I-3 --phase "Fase" "codigo: Paso"\n'
+                     f"Si ya hay una rama donde encaja: {UNI} ideas plan I-2 --branch RAMA (y añade sus pasos con add).\n"
+                     f'Las que no se van a hacer: {UNI} ideas drop I-4 -m "por qué"')
+    return "\n".join(lines)
+
+
+# ── Encargos en cola (prompts maestros) ──────────────────────────────────────
+
+JOB_PENDING, JOB_DONE = "pending", "done"
+MAX_JOB = 8000
+
+
+def add_job(plan: Dict[str, Any], text: str, title: str = "", branch: Optional[str] = None,
+            phase: Optional[str] = None, prompt: str = "", by: str = "persona", seen: bool = False) -> dict:
+    """Un encargo para el agente (un prompt maestro u otro texto), sobre una rama o una fase si se dice."""
+    text = str(text or "").strip()[:MAX_JOB]
+    if not text:
+        raise PlanError("El encargo está vacío.")
+    target = find_branch(plan, branch) if branch else None
+    if phase and not target:
+        raise PlanError("Para poner un encargo sobre una fase, di también su rama.")
+    phase_name = find_phase(target, phase)["name"] if (target and phase) else None
+    n = int(plan.get("next_job", 1))
+    plan["next_job"] = n + 1
+    job = {"id": f"C-{n}", "title": _clean(title)[:MAX_NAME * 2] or _clean(text)[:60], "text": text,
+           "by": by, "at": now(), "state": JOB_PENDING, "seen": bool(seen)}
+    if prompt:
+        job["prompt"] = _clean(prompt)
+    if target:
+        job["branch"] = target["key"]
+    if phase_name:
+        job["phase"] = phase_name
+    plan.setdefault("queue", []).append(job)
+    return job
+
+
+def find_job(plan: Dict[str, Any], job_id: str) -> dict:
+    wanted = str(job_id).strip().upper()
+    for j in plan.get("queue", []):
+        if j["id"].upper() == wanted:
+            return j
+    known = ", ".join(j["id"] for j in plan.get("queue", []) if j.get("state") == JOB_PENDING) or "ninguno pendiente"
+    raise PlanError(f"No existe el encargo {job_id}. Encargos pendientes: {known}.")
+
+
+def finish_job(plan: Dict[str, Any], job_id: str, text: str = "", by: str = "ia") -> dict:
+    job = find_job(plan, job_id)
+    job.update({"state": JOB_DONE, "result": (text or "").strip(), "done_by": by, "done_at": now(), "seen": True})
+    return job
+
+
+def drop_job(plan: Dict[str, Any], job_id: str) -> dict:
+    job = find_job(plan, job_id)
+    plan["queue"].remove(job)
+    return job
+
+
+def _job_line(plan: Dict[str, Any], job: dict) -> str:
+    where = ""
+    if job.get("branch"):
+        b = next((x for x in plan.get("branches", []) if x["key"] == job["branch"]), None)
+        where = f" sobre la rama «{b['name'] if b else job['branch']}» [{job['branch']}]"
+        if job.get("phase"):
+            where = f" sobre la fase «{job['phase']}» de [{job['branch']}]"
+    head = f"«{job['title']}»{where}"
+    return f"{head}\n    {job['text']}".replace("\n", "\n    ") if job["text"] != job["title"] else head
+
+
+def render_queue(plan: Dict[str, Any], every: bool = False) -> str:
+    jobs = [j for j in plan.get("queue", []) if every or j.get("state") == JOB_PENDING]
+    if not jobs:
+        return "No hay encargos en cola."
+    lines = [f"Encargos{'' if every else ' pendientes'} ({len(jobs)}):"]
+    for j in jobs:
+        mark = "✔" if j.get("state") == JOB_DONE else "·"
+        lines.append(f"  {mark} {j['id']}  {_job_line(plan, j)}")
+    lines.append(f'Al terminar uno: {UNI} queue done ID -m "qué has hecho y cómo lo has comprobado"')
+    return "\n".join(lines)
+
+
+# ── Prompts maestros ─────────────────────────────────────────────────────────
+# Unos de serie (aquí, para que viajen con uni.py) y los del proyecto en .unificador/prompts/*.md
+# (primera línea «# Título», el resto es el texto). Uno del proyecto con el mismo nombre sustituye al de serie.
+
+PROMPTS_DIR = "prompts"
+BUILTIN_PROMPTS = {
+    "revisar-interfaz": ("Revisar la interfaz", """\
+Revisa la interfaz como lo haría una persona que la usa por primera vez.
+- Recorre cada pantalla a varios anchos (móvil de 375 px, tableta y escritorio) y en tema claro y oscuro.
+- Busca textos cortados, cosas que se salen o se solapan, botones demasiado pequeños para el dedo,
+  contraste pobre, estados vacíos sin explicar y acciones que no dicen qué ha pasado.
+- Comprueba que se puede usar solo con teclado y que los controles tienen nombre accesible.
+- Apunta cada problema con dónde está, cómo se ve y una propuesta; arregla los evidentes y
+  enseña capturas del antes y el después. Lo que sea cuestión de gusto, pregúntalo antes de cambiarlo."""),
+    "revisar-codigo": ("Revisar el código", """\
+Revisa el código cambiado recientemente buscando fallos reales, no estilo.
+- Lee cada cambio con su contexto: casos límite, entradas vacías o raras, errores sin tratar,
+  condiciones de carrera, rutas o datos de la persona que se filtran, y cosas que se rompen en Windows.
+- Busca código repetido que ya existe en otro sitio y simplificaciones claras.
+- Por cada hallazgo: fichero y línea, qué falla, un ejemplo concreto que lo provoca y el arreglo.
+- Arregla lo seguro, añade una prueba que lo demuestre y pasa todas las pruebas antes de dar nada por hecho."""),
+    "a-prueba-de-errores": ("A prueba de errores", """\
+Haz que el proyecto aguante el uso torpe y los imprevistos.
+- Prueba a romperlo: datos que faltan o vienen mal, ficheros bloqueados o a medio escribir,
+  sin red, doble clic, dos ventanas a la vez, órdenes con argumentos raros.
+- Cada error que vea la persona debe decir qué ha pasado y qué hacer, en llano; nada de trazas.
+- Que nada se quede a medias: guardados atómicos, reintentos donde tenga sentido y valores por defecto sensatos.
+- Añade pruebas para cada caso que arregles y cuenta al final qué has probado y qué queda."""),
+}
+
+
+def _prompt_files(folder: Path) -> List[Path]:
+    d = Path(folder) / ".unificador" / PROMPTS_DIR
+    try:
+        return sorted(p for p in d.glob("*.md") if p.is_file())
+    except OSError:
+        return []
+
+
+def list_prompts(folder: Optional[Path] = None) -> List[dict]:
+    """Los prompts maestros: los de serie y los del proyecto (que ganan si se llaman igual)."""
+    out = {k: {"name": k, "title": t, "text": x, "source": "serie"} for k, (t, x) in BUILTIN_PROMPTS.items()}
+    for f in _prompt_files(folder) if folder else []:
+        try:
+            raw = f.read_text(encoding="utf-8").strip()
+        except (OSError, UnicodeDecodeError):
+            continue
+        first, _, rest = raw.partition("\n")
+        title = first.lstrip("#").strip() if first.startswith("#") else f.stem.replace("-", " ").capitalize()
+        text = rest.strip() if first.startswith("#") else raw
+        if text:
+            out[f.stem] = {"name": f.stem, "title": title[:120], "text": text[:MAX_JOB], "source": "proyecto"}
+    return list(out.values())
+
+
+def find_prompt(folder: Optional[Path], name: str) -> dict:
+    wanted = str(name).strip().lower()
+    items = list_prompts(folder)
+    for p in items:
+        if p["name"].lower() == wanted:
+            return p
+    raise PlanError(f"No existe el prompt «{name}». Hay: {', '.join(p['name'] for p in items)}.")
+
+
+# ── Retoques y commits ───────────────────────────────────────────────────────
+
+TWEAK_PREFIX = "R"
+_REF = re.compile(r"\b([A-Z][A-Z0-9]{0,5}-\d+)\b")
+GIT_WINDOW = 20  # sin punto de partida, cuántos commits recientes se miran
+PLAN_PATHS = (PLAN_FILE, ".unificador/")
+
+
+def add_tweak(plan: Dict[str, Any], title: str, commits: Optional[List[str]] = None, by: str = "ia") -> dict:
+    """Un retoque: un cambio rápido que no merece rama, pero que queda apuntado (y enlazado a su commit)."""
+    title = _clean(title)
+    cat = ""
+    m = _PREFIX.match(title)
+    if m and norm_cat(m.group(2)):
+        cat, title = norm_cat(m.group(2)), _clean(m.group(3))
+    if not title:
+        raise PlanError(f'El retoque necesita un título: {UNI} tweak "Arreglar el botón de guardar" --commit HEAD')
+    n = int(plan.get("next_tweak", 1))
+    plan["next_tweak"] = n + 1
+    tweak = {"id": f"{TWEAK_PREFIX}-{n}", "title": title, "by": by, "at": now(),
+             "commits": [c for c in (commits or []) if c]}
+    if cat:
+        tweak["cat"] = cat
+    plan.setdefault("tweaks", []).append(tweak)
+    return tweak
+
+
+def find_tweak(plan: Dict[str, Any], tweak_id: str) -> dict:
+    wanted = tweak_id.strip().upper()
+    for t in plan.get("tweaks", []):
+        if t["id"].upper() == wanted:
+            return t
+    raise PlanError(f"No existe el retoque {tweak_id}.")
+
+
+def link_commit(plan: Dict[str, Any], ref: str, sha: str) -> dict:
+    """Enlaza un commit a un paso o a un retoque."""
+    try:
+        target = find_tweak(plan, ref)
+    except PlanError:
+        target = find_step(plan, ref)[2]
+    commits = target.setdefault("commits", [])
+    if sha and not any(c.startswith(sha[:7]) or sha.startswith(c[:7]) for c in commits):
+        commits.append(sha)
+    return target
+
+
+def git(folder: Path, *args: str) -> Optional[str]:
+    """Salida de git en ``folder`` o None si no hay git o no es un repositorio."""
+    try:
+        r = subprocess.run(["git", "-C", str(folder), *args], capture_output=True, text=True,
+                           encoding="utf-8", errors="replace", timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return r.stdout if r.returncode == 0 else None
+
+
+def resolve_commit(folder: Path, ref: str) -> str:
+    out = git(folder, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}")
+    if not out:
+        raise PlanError(f"No encuentro el commit «{ref}» en el repositorio.")
+    return out.strip()
+
+
+def git_log(folder: Path, since: Optional[str] = None, limit: int = GIT_WINDOW) -> Optional[List[dict]]:
+    """Commits de la rama actual (los más nuevos primero): [{sha, subject, body, date, files}]."""
+    args = ["log", "--no-merges", "--name-only", "--format=%x1e%H%x1f%cI%x1f%s%x1f%b%x1f"]
+    if since:
+        args.append(f"{since}..HEAD")
+    else:
+        args.append(f"-{limit}")
+    out = git(folder, *args)
+    if out is None:
+        return None
+    commits = []
+    for chunk in out.split("\x1e")[1:]:
+        parts = chunk.split("\x1f")
+        if len(parts) < 5:
+            continue
+        commits.append({"sha": parts[0].strip(), "date": parts[1], "subject": parts[2].strip(),
+                        "body": parts[3].strip(), "files": [f for f in parts[4].split("\n") if f.strip()]})
+    return commits
+
+
+def _known_refs(plan: Dict[str, Any]) -> set:
+    refs = {s["id"].upper() for _, _, s in iter_steps(plan, archived=True)}
+    refs |= {t["id"].upper() for t in plan.get("tweaks", [])}
+    return refs
+
+
+def _linked_shas(plan: Dict[str, Any]) -> List[str]:
+    shas = [c for _, _, s in iter_steps(plan, archived=True) for c in s.get("commits") or []]
+    return shas + [c for t in plan.get("tweaks", []) for c in t.get("commits") or []]
+
+
+def commit_refs(plan: Dict[str, Any], commit: dict) -> List[str]:
+    """Pasos o retoques a los que pertenece un commit (por su sha enlazado o por nombrarlos en el mensaje)."""
+    known = _known_refs(plan)
+    sha = commit["sha"]
+    refs = [r for r in _REF.findall(f"{commit['subject']}\n{commit['body']}".upper()) if r in known]
+    for _, _, s in iter_steps(plan, archived=True):
+        if any(sha.startswith(c) or c.startswith(sha[:7]) for c in s.get("commits") or []):
+            refs.append(s["id"])
+    for t in plan.get("tweaks", []):
+        if any(sha.startswith(c) or c.startswith(sha[:7]) for c in t.get("commits") or []):
+            refs.append(t["id"])
+    return list(dict.fromkeys(refs))
+
+
+def _plan_only(commit: dict) -> bool:
+    files = commit.get("files") or []
+    return bool(files) and all(f == PLAN_FILE or f.startswith(".unificador/") for f in files)
+
+
+def unlogged_commits(plan: Dict[str, Any], folder: Path) -> Optional[List[dict]]:
+    """Commits desde ``git_since`` (o los últimos) que no están apuntados en ningún paso ni retoque.
+
+    Los que solo tocan el plan (``unificador.json``, ``.unificador/``) no cuentan. None si no hay git."""
+    since = plan.get("git_since") or None
+    commits = git_log(folder, since)
+    if commits is None and since:  # el punto de partida ya no existe (rebase, otra rama)
+        commits = git_log(folder)
+    if commits is None:
+        return None
+    return [c for c in commits if not _plan_only(c) and not commit_refs(plan, c)]
+
+
+def render_commits(items: List[dict]) -> str:
+    if not items:
+        return "Todos los commits recientes están apuntados en el plan."
+    lines = [f"{len(items)} commit{'s' if len(items) != 1 else ''} sin apuntar en el plan:"]
+    lines += [f"  {c['sha'][:7]}  {c['subject']}" for c in items]
+    lines.append(f'Apunta cada uno: si era un retoque, {UNI} tweak "Qué cambió" --commit SHA; '
+                 f"si era de un paso, {UNI} link ID SHA. Si son antiguos y no importan: {UNI} commits --from-now")
+    return "\n".join(lines)
+
+
+# ── Versiones y novedades ────────────────────────────────────────────────────
+
+NEWS_KINDS = {"nuevo": "✨", "arreglo": "🐛", "cambio": "🔧", "fase": "🏁"}
+_KIND_ALIAS = {"new": "nuevo", "feat": "nuevo", "fix": "arreglo", "change": "cambio", "phase": "fase"}
+_SEMVER = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)$")
+FIRST_VERSION = "0.1.0"
+
+
+def norm_kind(kind: str) -> str:
+    k = str(kind or "").strip().lower()
+    k = _KIND_ALIAS.get(k, k)
+    if k not in NEWS_KINDS:
+        raise PlanError(f"Tipo de novedad desconocido «{kind}». Usa: {', '.join(NEWS_KINDS)}.")
+    return k
+
+
+def add_news(plan: Dict[str, Any], text: str, kind: str = "nuevo", by: str = "ia", ref: str = "") -> Optional[dict]:
+    """Apunta una novedad para la próxima versión. Con ``ref``, no la repite (devuelve None si ya está)."""
+    text = _clean(text)
+    if not text:
+        raise PlanError(f'La novedad necesita un texto: {UNI} news "Ya se puede comprar desde el móvil"')
+    news = plan.setdefault("news", [])
+    if ref and any(n.get("ref") == ref for n in news):
+        return None
+    item = {"text": text, "kind": norm_kind(kind), "by": by, "at": now()}
+    if ref:
+        item["ref"] = ref
+    news.append(item)
+    return item
+
+
+def parse_version(v: str) -> Tuple[int, int, int]:
+    m = _SEMVER.match(str(v or "").strip())
+    if not m:
+        raise PlanError(f"«{v}» no es una versión SemVer (MAYOR.MENOR.PARCHE, por ejemplo 1.4.0).")
+    return int(m.group(1)), int(m.group(2)), int(m.group(3))
+
+
+def last_version(plan: Dict[str, Any]) -> str:
+    versions = plan.get("versions") or []
+    return versions[-1]["version"] if versions else ""
+
+
+def suggest_bump(news: List[dict]) -> str:
+    """minor si hay algo nuevo o una fase cerrada; patch si solo son arreglos o cambios."""
+    return "minor" if any(n.get("kind") in ("nuevo", "fase") for n in news) else "patch"
+
+
+def next_version(plan: Dict[str, Any], bump: str = "") -> str:
+    last = last_version(plan)
+    if not last:
+        return FIRST_VERSION
+    major, minor, patch = parse_version(last)
+    bump = bump or suggest_bump(plan.get("news") or [])
+    if bump == "major":
+        return f"{major + 1}.0.0"
+    if bump == "minor":
+        return f"{major}.{minor + 1}.0"
+    if bump == "patch":
+        return f"{major}.{minor}.{patch + 1}"
+    raise PlanError(f"Salto desconocido «{bump}». Usa major, minor o patch (o una versión concreta).")
+
+
+def cut_version(plan: Dict[str, Any], version: str = "", by: str = "ia", bump: str = "") -> dict:
+    """Cierra la próxima versión: se lleva las novedades pendientes y las deja en el historial."""
+    news = plan.get("news") or []
+    if not news:
+        raise PlanError(f'No hay novedades que publicar. Apunta alguna: {UNI} news "Qué trae"')
+    version = version.strip().lstrip("v") if version else next_version(plan, bump)
+    new = parse_version(version)
+    last = last_version(plan)
+    if last and new <= parse_version(last):
+        raise PlanError(f"La versión {version} no es mayor que la última ({last}).")
+    entry = {"version": version, "at": now(), "by": by, "news": news}
+    plan.setdefault("versions", []).append(entry)
+    plan["news"] = []
+    return entry
+
+
+def unreleased_commits(plan: Dict[str, Any], folder: Path, limit: int = 50) -> Optional[List[dict]]:
+    """Commits posteriores a la última versión (su sha o su tag), sin los que solo tocan el plan. None sin git."""
+    last = (plan.get("versions") or [{}])[-1]
+    since = None
+    for ref in (last.get("sha"), last.get("tag")):
+        if ref and git(folder, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}"):
+            since = ref
+            break
+    commits = git_log(folder, since, limit) if since else git_log(folder, None, limit)
+    if commits is None:
+        return None
+    return [c for c in commits if not _plan_only(c)]
+
+
+def render_unreleased(plan: Dict[str, Any], commits: Optional[List[dict]], show: int = 12) -> str:
+    if commits is None:
+        return ""
+    where = f"desde la {last_version(plan)}" if last_version(plan) else "(aún no hay ninguna versión)"
+    if not commits:
+        return f"Nada comiteado sin publicar {where}."
+    lines = [f"Comiteado sin publicar {where}: {len(commits)} commit{'s' if len(commits) != 1 else ''}"]
+    for c in commits[:show]:
+        refs = commit_refs(plan, c)
+        lines.append(f"  {c['sha'][:7]}  {c['subject']}" + ("" if refs else "  (sin apuntar en el plan)"))
+    if len(commits) > show:
+        lines.append(f"  … y {len(commits) - show} más")
+    lines.append(f"Para publicarla: {UNI} release  (o release 1.0.0, o release --bump major)")
+    return "\n".join(lines)
+
+
+def release(path: Path, version: str = "", bump: str = "", by: str = "ia", tag: bool = True) -> dict:
+    """Saca la próxima versión: pasa las novedades al historial y, si hay git, crea el tag ``vX.Y.Z`` en HEAD."""
+    folder = path.resolve().parent
+    trial = json.loads(json.dumps(load(path)))
+    entry = cut_version(trial, version, by, bump)  # valida antes de tocar git
+    name = f"v{entry['version']}"
+    sha = ""
+    if tag and git(folder, "rev-parse", "--git-dir") is not None:
+        if git(folder, "rev-parse", "--verify", "--quiet", f"refs/tags/{name}"):
+            raise PlanError(f"El tag {name} ya existe. Elige otra versión: {UNI} release X.Y.Z")
+        sha = resolve_commit(folder, "HEAD")
+        body = "\n".join(f"{NEWS_KINDS.get(n.get('kind'), '-')} {n['text']}" for n in entry["news"])
+        if git(folder, "tag", "-a", name, "-m", f"{name}\n\n{body}") is None:
+            raise PlanError(f"git no pudo crear el tag {name}.")
+
+    def apply(plan: Dict[str, Any]) -> dict:
+        e = cut_version(plan, entry["version"], by)
+        if sha:
+            e["sha"], e["tag"] = sha, name
+        return e
+
+    return mutate(path, apply)
+
+
+def render_news(plan: Dict[str, Any]) -> str:
+    news = plan.get("news") or []
+    last = last_version(plan)
+    lines = [f"Próxima versión: {next_version(plan)}" + (f"  (la última es {last})" if last else "  (la primera)")]
+    if not news:
+        lines.append(f'  Sin novedades todavía. Apunta una: {UNI} news "Qué trae" --kind nuevo|arreglo|cambio')
+    for n in news:
+        lines.append(f"  {NEWS_KINDS.get(n.get('kind'), '·')} {n['text']}")
+    return "\n".join(lines)
+
+
+def render_versions(plan: Dict[str, Any], limit: int = 10) -> str:
+    versions = (plan.get("versions") or [])[-max(1, limit):]
+    if not versions:
+        return "Aún no hay versiones publicadas."
+    out = []
+    for v in reversed(versions):
+        out.append(f"🏷️ {v['version']}  {v['at'][:10]}")
+        out.extend(f"   {NEWS_KINDS.get(n.get('kind'), '·')} {n['text']}" for n in v.get("news", []))
+    return "\n".join(out)
+
+
 # ── Texto para la terminal ───────────────────────────────────────────────────
 
 def _wait_flag(plan: Dict[str, Any], branch: dict, phase: dict) -> str:
@@ -956,6 +1474,9 @@ def audit(plan: Dict[str, Any], folder: Optional[Path] = None) -> List[dict]:
         for o in opts:
             if folder and o.get("file") and not (Path(folder) / o["file"]).is_file():
                 add("error", a["id"], f"La propuesta «{a['title']}» apunta a {o['file']}, que falta.")
+    if folder:
+        for c in (unlogged_commits(plan, Path(folder)) or [])[:10]:
+            add("aviso", c["sha"][:7], f"Commit «{c['subject']}» sin apuntar en el plan ({UNI} commits).")
     return out
 
 
@@ -1007,8 +1528,8 @@ def render_status(plan: Dict[str, Any]) -> str:
         lines += [f"  Fase «{p['name']}» [{b['key']}]: {p['review'].get('text', '')}" for b, p in phase_changes]
     waiting = [(b, p) for b in branches for p in b["phases"] if review_state(p) == WAITING]
     if waiting:
-        lines.append("\n⏸ FASES ESPERANDO LA REVISIÓN DE LA PERSONA (pregúntale si sigues):")
-        lines += [f"  «{p['name']}» [{b['key']}]  → cuando conteste: {UNI} approve {b['key']}  "
+        lines.append("\n⏸ FASES SIN REVISAR (opcional: no hace falta preguntar; si la persona las da por buenas, apruébalas):")
+        lines += [f"  «{p['name']}» [{b['key']}]  → {UNI} approve {b['key']}  "
                   f'(o  revise {b["key"]} -m "qué quiere cambiar")' for b, p in waiting]
     for b in branches:
         d, t = branch_progress(b)
@@ -1116,7 +1637,7 @@ BRANCH_HINT = ('Crea la rama con una sola orden, cada cosa entre comillas (cada 
                '  python .unificador/uni.py branch "Nombre de la rama" --goal "Para qué sirve" '
                '--phase "Nombre de fase" "codigo: Primer paso" "+pruebas: Probarlo" --phase "Otra fase" "interfaz: Otro paso"')
 ORDERS = ("status, branch, add, cat, after, start, done, note, show, approve, revise, nonstop, ask, propose, "
-          "answer, wait, inbox, check")
+          "answer, wait, inbox, check, idea, ideas, prompts, queue, tweak, tweaks, link, commits")
 
 
 def branch_from_args(name: str, icon: str, goal: str, phases: List[List[str]]) -> dict:
@@ -1149,9 +1670,12 @@ def _what_next(plan: Dict[str, Any], step_id: str) -> str:
     branch, phase, _ = find_step(plan, step_id)
     if phase_state(phase) == DONE and review_state(phase) == WAITING:
         last = "" if next_step(branch) else " Es la última fase de la rama."
-        return (f"FASE TERMINADA: «{phase['name']}».{last} Para aquí: resume a la persona qué se ha hecho y "
-                f"pregúntale si sigues. Cuando conteste: {UNI} approve {branch['key']}  "
-                f'(o  {UNI} revise {branch["key"]} -m "qué quiere cambiar")')
+        nxt = next_step(branch)
+        go = f" Sigue: {UNI} start {nxt['id']}   ({nxt['title']})" if nxt else ""
+        return (f"FASE TERMINADA: «{phase['name']}».{last} Cuéntale en una línea qué se ha hecho y sigue sin "
+                f"preguntar: la revisión es opcional (la persona la hace en la web si quiere). Para solo si te "
+                f"pidió revisar antes de seguir. Si en el chat la da por buena: {UNI} approve {branch['key']}  "
+                f'(si pide cambios: {UNI} revise {branch["key"]} -m "qué quiere cambiar").' + go)
     return _branch_next(branch)
 
 
@@ -1162,8 +1686,7 @@ def _start_warning(plan: Dict[str, Any], step_id: str) -> str:
         if p is phase:
             break
         if review_state(p) == WAITING:
-            return (f"Aviso: la fase «{p['name']}» sigue esperando la revisión de la persona. Si ya te ha dicho que "
-                    f"sigas: {UNI} approve {branch['key']}")
+            return ""  # la revisión es opcional: seguir sin ella está bien
         if review_state(p) == CHANGES:
             return f"Aviso: la persona pidió cambios en la fase «{p['name']}»: {p['review'].get('text', '')}"
     return ""
@@ -1204,13 +1727,26 @@ def inbox(path: Path) -> str:
     plan = load(path)
     asks, reviews = _news(plan)
     changes = [s for _, _, s in iter_steps(plan) if s.get("change") and s["state"] != DONE]
-    if not (asks or reviews or changes):
+    ideas = [i for i in plan.get("ideas", []) if i.get("seen") is False]
+    jobs = [j for j in plan.get("queue", []) if j.get("seen") is False and j.get("state") == JOB_PENDING]
+    if not (asks or reviews or changes or ideas or jobs):
         return ""
     lines = ["NOVEDADES DE LA PERSONA (atiéndelas antes de seguir):"]
     if asks or reviews:
         lines.append(_render_news(plan, asks, reviews))
-        mutate(path, lambda p: _mark_seen(p, asks, reviews))
     lines += [f"{s['id']}  {s['title']}: pide un cambio: {s['change']}  → {UNI} start {s['id']}" for s in changes]
+    lines += [f"{j['id']}  ENCARGO EN COLA: {_job_line(plan, j)}" for j in jobs]
+    if jobs:
+        lines.append(f"  Hazlo cuando acabes lo que tengas entre manos; al terminar: {UNI} queue done ID -m \"qué has hecho\"")
+    lines += [f"{i['id']}  Idea nueva en la caja: «{i['text']}» (no hay que hacerla ya; {UNI} ideas)" for i in ideas]
+    if asks or reviews or ideas or jobs:
+        def seen(p):
+            _mark_seen(p, asks, reviews)
+            marks = {x["id"] for x in ideas + jobs}
+            for x in p.get("ideas", []) + p.get("queue", []):
+                if x["id"] in marks:
+                    x["seen"] = True
+        mutate(path, seen)
     return "\n".join(lines)
 
 
@@ -1239,6 +1775,8 @@ def build_parser() -> argparse.ArgumentParser:
                    help='nombre de la fase y después sus pasos, cada uno con su categoría '
                         '(codigo, interfaz, pruebas, investigar, decidir) y «+» si va a la vez que el anterior: '
                         '--phase "Cimientos" "codigo: Paso uno" "+pruebas: Probarlo"')
+    s.add_argument("--ideas", action="append", default=[], metavar="IDS",
+                   help="ideas de la caja que se convierten en esta rama: --ideas I-1,I-3")
     s = sub.add_parser("plan", help="crea ramas nuevas desde JSON (--file o entrada estándar)")
     s.add_argument("--file", help="fichero JSON con el plan")
     s = sub.add_parser("add", help="añade un paso a una fase de una rama (crea la fase si no existe)")
@@ -1262,6 +1800,44 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("done", help="da un paso por hecho; -m cuenta qué ha cambiado y cómo se comprueba")
     s.add_argument("id")
     s.add_argument("-m", "--message", required=True)
+    s.add_argument("--commit", default="", help="enlaza el commit (SHA o HEAD) al paso")
+    s = sub.add_parser("tweak", help='apunta un retoque rápido (sin rama): tweak "Qué cambió" --commit HEAD')
+    s.add_argument("title", help='qué cambió, en llano (categoría opcional delante: "interfaz: ...")')
+    s.add_argument("--commit", action="append", default=[], help="commit del retoque (SHA o HEAD); repetible")
+    s = sub.add_parser("idea", help='apunta una idea suelta en la caja de ideas: idea "Qué se te ocurre"')
+    s.add_argument("text")
+    s = sub.add_parser("ideas", help="la caja de ideas; ideas plan IDS --branch RAMA, ideas drop ID, ideas reopen ID")
+    s.add_argument("action", nargs="?", default="list", help="list (por defecto), plan, drop o reopen")
+    s.add_argument("ids", nargs="*", default=[])
+    s.add_argument("--branch", help="rama a la que pasan las ideas (con plan)")
+    s.add_argument("-m", "--message", default="", help="por qué se descarta (con drop)")
+    s.add_argument("--all", action="store_true", help="también las planificadas y descartadas")
+    s = sub.add_parser("prompts", help="los prompts maestros; prompts NOMBRE enseña uno entero")
+    s.add_argument("name", nargs="?")
+    s = sub.add_parser("queue", help="encargos en cola; queue add PROMPT|--text, queue done ID -m, queue drop ID")
+    s.add_argument("action", nargs="?", default="list", help="list (por defecto), add, done o drop")
+    s.add_argument("ref", nargs="?", help="con add: nombre del prompt; con done/drop: el encargo (C-1)")
+    s.add_argument("--text", default="", help="con add: texto del encargo (en vez de un prompt, o además)")
+    s.add_argument("--branch", help="con add: rama sobre la que hacerlo")
+    s.add_argument("--phase", help="con add: fase de esa rama")
+    s.add_argument("-m", "--message", default="", help="con done: qué has hecho y cómo lo has comprobado")
+    s.add_argument("--all", action="store_true", help="también los hechos")
+    s = sub.add_parser("tweaks", help="los últimos retoques apuntados")
+    s.add_argument("-n", type=int, default=15)
+    s = sub.add_parser("news", help='novedades de la próxima versión; news "Qué trae" --kind nuevo|arreglo|cambio')
+    s.add_argument("text", nargs="?", help="la novedad, en llano (sin texto: lista las pendientes)")
+    s.add_argument("--kind", default="nuevo", help="nuevo (por defecto), arreglo o cambio")
+    s = sub.add_parser("release", help="saca la próxima versión con su tag: release [X.Y.Z] [--bump major|minor|patch]")
+    s.add_argument("version", nargs="?", default="", help="versión concreta (por defecto, la que toca por SemVer)")
+    s.add_argument("--bump", default="", choices=["", "major", "minor", "patch"], help="forzar el salto")
+    s.add_argument("--no-tag", action="store_true", help="no crear el tag de git")
+    s = sub.add_parser("versions", help="historial de versiones publicadas con sus novedades")
+    s.add_argument("-n", type=int, default=10)
+    s = sub.add_parser("link", help="enlaza un commit a un paso o retoque: link ID SHA")
+    s.add_argument("id")
+    s.add_argument("commit")
+    s = sub.add_parser("commits", help="commits recientes que no están apuntados en ningún paso ni retoque")
+    s.add_argument("--from-now", action="store_true", help="da por revisados los commits hasta HEAD")
     s = sub.add_parser("note", help="apunta un avance o un hallazgo en un paso")
     s.add_argument("id")
     s.add_argument("text")
@@ -1413,7 +1989,11 @@ def _ensure_daemon(project_root: Path, srv: Dict[str, Any]) -> None:
     if not (srv.get("autostart") or os.environ.get("UNI_AUTOSTART") == "1"):
         return
     fcfg = _read_home_json("funnel.json")
-    port = int(srv.get("port") or fcfg.get("server_port") or DEFAULT_SERVER_PORT)
+    # El puerto oficial: el de Funnel si está activado (así Funnel y el autoarranque coinciden).
+    if fcfg.get("enabled") and fcfg.get("server_port"):
+        port = int(fcfg["server_port"])
+    else:
+        port = DEFAULT_SERVER_PORT
     if _health_ok(port):
         return
     home = _uni_home()
@@ -1544,6 +2124,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     try:
         if cmd == "status":
             print(render_status(load(path)))
+            loose = unlogged_commits(load(path), path.resolve().parent)
+            if loose:
+                print(f"\nCommits sin apuntar: {len(loose)}  ({UNI} commits)")
             if allow_runtime:
                 web = _funnel_status_line(path)
                 if web:
@@ -1569,7 +2152,17 @@ def main(argv: Optional[List[str]] = None) -> int:
                 except ValueError as e:
                     raise PlanError(f"El plan no es JSON válido: {e}\n" + BRANCH_HINT)
             first = ""
-            for b in mutate(path, lambda plan: add_branches(plan, data, by)):
+            ideas = split_ids(getattr(args, "ideas", []) or [])
+
+            def create(plan):
+                for i in ideas:
+                    find_idea(plan, i)  # antes de crear nada
+                made = add_branches(plan, data, by)
+                if ideas and made:
+                    plan_ideas(plan, ideas, made[0]["key"])
+                return made
+
+            for b in mutate(path, create):
                 print(f"+ rama {b.get('icon') or '●'} {b['name']} [{b['key']}]")
                 for ph in b["phases"]:
                     print(f"    {ph['name']}: " + ", ".join(s["id"] for s in ph["steps"]))
@@ -1599,7 +2192,108 @@ def main(argv: Optional[List[str]] = None) -> int:
                     print(warning)
                 print(f'Cuando lo termines: python .unificador/uni.py done {s["id"]} -m "qué ha cambiado y cómo lo has comprobado"')
             elif cmd == "done":
+                if args.commit:
+                    sha = resolve_commit(path.resolve().parent, args.commit)
+                    mutate(path, lambda plan: link_commit(plan, s["id"], sha))
+                    print(f"  commit {sha[:7]} enlazado.")
                 print(_what_next(load(path), s["id"]))
+        elif cmd == "idea":
+            i = mutate(path, lambda plan: add_idea(plan, args.text, by))
+            print(f"💡 {i['id']}  {i['text']}\nGuardada en la caja de ideas. Para verlas: {UNI} ideas")
+        elif cmd == "ideas":
+            action, ids = args.action.lower(), split_ids(args.ids)
+            if action in ("list", "ls"):
+                print(render_ideas(load(path), args.all))
+            elif action not in ("plan", "drop", "reopen"):
+                raise PlanError(f"Acción desconocida «{args.action}». Usa: {UNI} ideas [plan|drop|reopen] IDS")
+            elif not ids:
+                raise PlanError(f"Di qué ideas: {UNI} ideas {action} I-1")
+            elif action == "plan":
+                if not args.branch:
+                    raise PlanError(f"Di a qué rama pasan: {UNI} ideas plan {','.join(ids)} --branch RAMA")
+                done_ = mutate(path, lambda plan: plan_ideas(plan, ids, args.branch))
+                print(f"Planificadas en {done_[0]['branch']}: " + ", ".join(i["id"] for i in done_))
+            else:
+                fn = drop_idea if action == "drop" else reopen_idea
+                for i in ids:
+                    x = mutate(path, lambda plan: fn(plan, i, args.message) if action == "drop" else fn(plan, i))
+                    print(f"{x['id']}: {'descartada' if action == 'drop' else 'abierta otra vez'}.")
+        elif cmd == "prompts":
+            folder = path.resolve().parent
+            if args.name:
+                pr = find_prompt(folder, args.name)
+                print(f"# {pr['title']}  ({pr['name']}, {pr['source']})\n\n{pr['text']}")
+            else:
+                for pr in list_prompts(folder):
+                    print(f"  {pr['name']:<22} {pr['title']}" + ("  (del proyecto)" if pr["source"] == "proyecto" else ""))
+                print(f"Ver uno: {UNI} prompts NOMBRE · Encargarlo: {UNI} queue add NOMBRE --branch RAMA\n"
+                      f"Los tuyos: ficheros .md en .unificador/{PROMPTS_DIR}/ (primera línea «# Título»)")
+        elif cmd == "queue":
+            action = args.action.lower()
+            if action in ("list", "ls"):
+                print(render_queue(load(path), args.all))
+            elif action == "add":
+                pr = find_prompt(path.resolve().parent, args.ref) if args.ref else None
+                text = "\n\n".join(x for x in ((pr or {}).get("text", ""), args.text.strip()) if x)
+                j = mutate(path, lambda plan: add_job(plan, text, (pr or {}).get("title", ""), args.branch,
+                                                       args.phase, (pr or {}).get("name", ""), by, seen=True))
+                print(f"📜 {j['id']}  {j['title']}  en cola.")
+            elif action in ("done", "drop"):
+                if not args.ref:
+                    raise PlanError(f"Di qué encargo: {UNI} queue {action} C-1")
+                if action == "done":
+                    j = mutate(path, lambda plan: finish_job(plan, args.ref, args.message, by))
+                    print(f"✔ {j['id']}  {j['title']}  hecho.")
+                else:
+                    j = mutate(path, lambda plan: drop_job(plan, args.ref))
+                    print(f"{j['id']} quitado de la cola.")
+            else:
+                raise PlanError(f"Acción desconocida «{args.action}». Usa: {UNI} queue [add|done|drop]")
+        elif cmd == "tweak":
+            folder = path.resolve().parent
+            shas = [resolve_commit(folder, c) for c in args.commit]
+            t = mutate(path, lambda plan: add_tweak(plan, args.title, shas, by))
+            print(f"✎ {t['id']}  {t['title']}" + (f"  ({', '.join(c[:7] for c in shas)})" if shas else ""))
+            if not shas:
+                print(f"Cuando lo comitees: {UNI} link {t['id']} HEAD  (o pon «{t['id']}» en el mensaje del commit)")
+        elif cmd == "tweaks":
+            items = load(path).get("tweaks", [])[-max(1, args.n):]
+            if not items:
+                print(f'No hay retoques apuntados. Para apuntar uno: {UNI} tweak "Qué cambió" --commit HEAD')
+            for t in reversed(items):
+                print(f"✎ {t['id']}  {t['at'][:10]}  {t['title']}"
+                      + (f"  ({', '.join(c[:7] for c in t.get('commits') or [])})" if t.get("commits") else ""))
+        elif cmd == "news":
+            if args.text:
+                n = mutate(path, lambda plan: add_news(plan, args.text, args.kind, by))
+                print(f"{NEWS_KINDS[n['kind']]} Apuntada para la próxima versión: {n['text']}")
+            else:
+                plan = load(path)
+                print(render_news(plan))
+                extra = render_unreleased(plan, unreleased_commits(plan, path.resolve().parent))
+                if extra:
+                    print(extra)
+        elif cmd == "release":
+            e = release(path, args.version, args.bump, by, not args.no_tag)
+            print(f"🏷️ Versión {e['version']} publicada con {len(e['news'])} novedad{'es' if len(e['news']) != 1 else ''}"
+                  + (f" y el tag {e['tag']} en {e['sha'][:7]}." if e.get("tag") else "."))
+            if e.get("tag"):
+                print(f"Comitea el plan (unificador.json) y sube el tag si usas remoto: git push origin {e['tag']}")
+        elif cmd == "versions":
+            print(render_versions(load(path), args.n))
+        elif cmd == "link":
+            sha = resolve_commit(path.resolve().parent, args.commit)
+            t = mutate(path, lambda plan: link_commit(plan, args.id, sha))
+            print(f"Commit {sha[:7]} enlazado a {t['id']}.")
+        elif cmd == "commits":
+            folder = path.resolve().parent
+            if args.from_now:
+                sha = resolve_commit(folder, "HEAD")
+                mutate(path, lambda plan: plan.__setitem__("git_since", sha))
+                print(f"Hecho: solo se vigilan los commits posteriores a {sha[:7]}.")
+            else:
+                items = unlogged_commits(load(path), folder)
+                print("Esta carpeta no es un repositorio git." if items is None else render_commits(items))
         elif cmd == "note":
             s = mutate(path, lambda plan: add_note(plan, args.id, args.text, by))
             print(f"Nota guardada en {s['id']}.")

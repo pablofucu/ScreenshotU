@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Propuesta 4 · Monograma y cronología de horas</title>
+<style>
+
+:root{
+  --round:'M PLUS Rounded 1c','Nunito','Segoe UI','Yu Gothic UI','Meiryo UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;font-family:var(--round);background:#101319;color:#e6e9f0}
+body.page-light{background:#dfe3e9;color:#3a414e}
+
+/* Envoltorio de presentación de la maqueta (fuera del escenario 1280×720) */
+.deck{max-width:1312px;margin:0 auto;padding:16px}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:12px;padding:12px 16px;border-radius:18px;
+  background:rgba(30,34,43,.88);box-shadow:inset 0 0 0 1px rgba(200,210,235,.16);color:#e6e9f0}
+body.page-light .bar{background:rgba(255,255,255,.86);box-shadow:inset 0 0 0 1px rgba(95,110,135,.22);color:#3a414e}
+.bar-t{display:flex;flex-direction:column;gap:2px;margin-right:auto;min-width:240px}
+.bar-t b{font-size:17px;font-weight:800;line-height:1.2}
+.bar-t span{font-size:13px;font-weight:500;opacity:.82;line-height:1.35}
+.seg-ctrl{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:rgba(128,140,165,.16);box-shadow:inset 0 0 0 1px rgba(128,140,165,.22)}
+.seg-ctrl button{appearance:none;border:0;background:transparent;color:inherit;font:700 13px/1 var(--round);
+  height:30px;padding:0 12px;border-radius:999px;cursor:pointer;opacity:.75;transition:background 120ms,opacity 120ms,color 120ms}
+.seg-ctrl button:hover{opacity:1}
+.seg-ctrl button.on{background:#0079ab;color:#fff;opacity:1}
+.kb-note{font-size:13px;font-weight:500;opacity:.78;margin-top:12px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.kb-note code{font:700 13px/1 var(--round);padding:3px 8px;border-radius:6px;background:rgba(128,140,165,.20)}
+
+/* Marco escalable: se ve bien a cualquier ancho (móvil incluido) sin deformar el lienzo 1280×720 */
+.stage-fit{width:100%;max-width:1280px;margin:0 auto;position:relative;overflow:hidden;border-radius:18px;
+  box-shadow:0 0 0 1px rgba(128,140,165,.28),0 24px 54px -20px rgba(0,0,0,.55)}
+
+/* ==========================================================================
+   TOKENS EXACTOS DE src/tokens.css (claro y «Noche ahumada»)
+   ========================================================================== */
+#stage{
+  position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;outline:none;
+  font-family:var(--round);user-select:none;-webkit-user-select:none;
+
+  /* Tinta y superficies (Claro) */
+  --ink:#3a414e;--ink-2:#5f6776;--ink-3:#757d8c;--line:rgba(95,110,135,.24);--line-2:rgba(150,160,180,.35);
+  --face:#dfe3e9;--face-hi:rgba(247,249,252,.94);--panel:rgba(255,255,255,.75);--scrim:rgba(20,26,36,.45);
+  --glass-top:rgba(255,255,255,.72);--glass-mid:rgba(255,255,255,.30);--glass-bot:rgba(225,234,246,.22);
+  --glass-in:rgba(255,255,255,.55);--glass-chip:rgba(255,255,255,.80);
+  --pill-top:rgba(255,255,255,.80);--pill-bot:rgba(255,255,255,.52);--pill-glow:rgba(255,255,255,.9);
+  --soft-top:rgba(255,255,255,.55);--soft-bot:rgba(214,220,230,.4);--bub-bg:rgba(255,255,255,.72);--bub-line:rgba(255,255,255,.9);--tile-bg:rgba(255,255,255,.62);
+  --hl:rgba(255,255,255,1);--hl-ring:rgba(255,255,255,.55);--hl-bot:rgba(255,255,255,.95);--tint-base:#fff;
+  --btn-n:var(--ink);--btn-n-top:color-mix(in srgb,var(--ink) 78%,var(--tint-base));--btn-n-fg:var(--on);--btn-n-edge:color-mix(in srgb,var(--ink) 70%,black);
+
+  /* Significados reservados (§3.3) */
+  --ok:#3BB54A;--bad:#E8384F;--warn:#F2B807;--ok-f:#27833a;--bad-f:#d92c44;
+
+  /* Arcoíris de la app (§3.4) */
+  --arc-rojo:#E8384F;--arc-naranja:#F27A1A;--arc-amarillo:#F2B807;--arc-verde:#3BB54A;--arc-azul:#00A0D8;--arc-anil:#3F63E0;--arc-violeta:#9A4BD8;
+  --arc:var(--arc-rojo),var(--arc-naranja),var(--arc-amarillo),var(--arc-verde),var(--arc-azul),var(--arc-anil),var(--arc-violeta);
+  --arco:linear-gradient(90deg,var(--arc));
+
+  /* Radios (§5) */
+  --r-xs:6px;--r-s:12px;--r-m:18px;--r-l:28px;--r-pill:999px;
+  /* Tipografía (§4) */
+  --t-xs:11px;--t-s:13px;--t-m:15px;--t-l:17px;--t-xl:20px;--t-2xl:28px;--t-3xl:44px;
+  /* Espaciado (§5) */
+  --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:24px;--s-6:32px;
+  /* Plantilla (§10) */
+  --band:64px;--gut:24px;--content-end:644px;--stage-h:720px;
+  /* Movimiento (§8) */
+  --d-1:120ms;--d-2:200ms;--d-3:300ms;
+  --e-soft:cubic-bezier(.2,.8,.3,1);
+  --e-bounce:cubic-bezier(.34,1.32,.64,1);
+  /* Desenfoque (§6) */
+  --blur-panel:blur(14px) saturate(1.7);
+  --blur-pill:blur(16px) saturate(1.7);
+  /* Foco y alturas (§6) */
+  --ring:0 0 0 3px var(--f1),0 0 22px 2px color-mix(in srgb,var(--f2) 45%,transparent);
+  --sh-1:0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42);
+  --sh-2:0 0 0 1px color-mix(in srgb,var(--f2) 75%,black),0 0 26px 2px color-mix(in srgb,var(--f1) 45%,transparent),0 22px 34px -16px color-mix(in srgb,var(--f2) 70%,black);
+  --sh-3:0 0 0 1px rgba(95,110,135,.24),0 8px 14px -6px rgba(20,26,36,.22),0 36px 64px -22px rgba(20,26,36,.55);
+  /* Iconos (§9) */
+  --i-s:16px;--i-m:20px;--i-l:28px;
+
+  /* Acento fijo de la categoría «Juegos» para TopBar/pestañas */
+  --cat-f1:#0079ab;--cat-f2:#2f52c4;--cat-gf:linear-gradient(115deg,#0079ab,#2f52c4);--cat-tx:#0079ab;
+  --acc:var(--f1);--accv:var(--v1);--on:#ffffff;
+  --g1:#00A0D8;--g2:#3F63E0;--grad:linear-gradient(115deg,#00A0D8,#3F63E0);
+  --f1:#0079ab;--f2:#2f52c4;--gf:linear-gradient(115deg,#0079ab,#2f52c4);
+  --v1:#00A0D8;--v2:#3F63E0;--gv:linear-gradient(115deg,#00A0D8,#3F63E0);
+  --tx:var(--f1);
+  --b1:#00A0D8;--b2:#3F63E0;--b3:#19b8a6;
+  --p1:#00A0D8;--p2:#3F63E0;
+
+  color:var(--ink);background:#eceef2;
+}
+
+/* «Noche ahumada» (oscuro oficial) */
+#stage[data-theme=dark]{
+  color-scheme:dark;color:#e6e9f0;background:#14161c;
+  --ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#8f98a9;--line:rgba(200,210,235,.16);--line-2:rgba(200,210,235,.24);
+  --face:#262a33;--face-hi:rgba(30,33,41,.94);--panel:rgba(30,34,43,.78);--scrim:rgba(0,0,0,.6);
+  --glass-top:rgba(60,66,80,.62);--glass-mid:rgba(36,40,50,.42);--glass-bot:rgba(20,22,28,.38);
+  --glass-in:rgba(255,255,255,.08);--glass-chip:rgba(40,44,56,.82);
+  --pill-top:rgba(52,57,70,.88);--pill-bot:rgba(36,40,50,.82);--pill-glow:rgba(255,255,255,.06);
+  --soft-top:rgba(52,57,70,.62);--soft-bot:rgba(30,34,43,.5);--bub-bg:rgba(40,44,56,.82);--bub-line:rgba(200,210,235,.16);--tile-bg:rgba(40,44,56,.62);
+  --hl:rgba(255,255,255,.10);--hl-ring:rgba(255,255,255,.06);--hl-bot:rgba(255,255,255,.04);--tint-base:#262a33;
+  --btn-n:var(--face);--btn-n-top:color-mix(in srgb,var(--ink) 16%,var(--face));--btn-n-fg:var(--ink);--btn-n-edge:var(--line-2);
+  --cat-tx:#58c7f2;
+  --tx:color-mix(in srgb,var(--v1) 68%,white);
+  --ring:0 0 0 3px var(--g1),0 0 26px 4px color-mix(in srgb,var(--g2) 60%,transparent);
+  --sh-1:0 0 0 1px rgba(200,210,235,.14),0 2px 3px rgba(0,0,0,.30),0 18px 30px -16px rgba(0,0,0,.70);
+  --sh-2:0 0 0 1px color-mix(in srgb,var(--g1) 70%,black),0 0 30px 4px color-mix(in srgb,var(--g1) 50%,transparent),0 22px 34px -16px rgba(0,0,0,.8);
+  --sh-3:0 0 0 1px rgba(200,210,235,.16),0 8px 14px -6px rgba(0,0,0,.5),0 36px 64px -22px rgba(0,0,0,.85);
+}
+
+/* Fondo atmosférico + manchas + velo de color del juego enfocado */
+.bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+#stage[data-theme=dark] .bg{background:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
+.blob{position:absolute;border-radius:50%;opacity:.55;
+  background:radial-gradient(circle,var(--b,var(--b1)),color-mix(in srgb,var(--b,var(--b1)) 45%,transparent) 35%,transparent 70%);
+  transition:background var(--d-3) var(--e-soft);animation:drift 26s ease-in-out infinite alternate}
+#stage[data-theme=dark] .blob{opacity:.38}
+@keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(56px,-28px) scale(1.14)}}
+.ambwash{position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 75% 65% at 10% 108%,color-mix(in srgb,var(--p1) 34%,transparent),transparent 72%),
+    radial-gradient(ellipse 70% 60% at 94% -8%,color-mix(in srgb,var(--p2) 26%,transparent),transparent 72%);
+  transition:opacity var(--d-3) var(--e-soft)}
+
+/* Cristal Wii U (§6) */
+.glass{position:relative;--r:var(--r-l);--bw:10px;border-radius:var(--r);padding:var(--bw);isolation:isolate;
+  background:linear-gradient(180deg,var(--glass-top) 0%,var(--glass-mid) 46%,var(--glass-bot) 100%);
+  -webkit-backdrop-filter:var(--blur-panel);backdrop-filter:var(--blur-panel);
+  box-shadow:
+    inset 0 1.5px 0 var(--hl),
+    inset 0 0 0 1px var(--hl-ring),
+    inset 0 -10px 14px -8px var(--hl-bot),
+    inset 0 -1.5px 0 rgba(110,125,150,.30),
+    var(--sh-1);
+  transition:transform var(--d-2) var(--e-bounce),box-shadow var(--d-2) var(--e-soft),background var(--d-2) var(--e-soft)}
+.glass::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;
+  border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+  background:linear-gradient(180deg,var(--tile-bg) 0%,rgba(255,255,255,.18) 55%,rgba(255,255,255,0) 100%);
+  -webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);
+  mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.75}
+.glass::after{content:'';position:absolute;z-index:3;left:12%;top:3px;width:34%;height:5px;border-radius:var(--r-xs);pointer-events:none;
+  background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.95) 40%,rgba(255,255,255,0));filter:blur(.6px);opacity:.85}
+#stage[data-theme=dark] .glass::after{opacity:.35}
+.glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:var(--panel)}
+.glass .face::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(20,30,50,.18),inset 0 3px 6px -2px rgba(0,0,0,.22),inset 0 -2px 4px -2px var(--hl-ring)}
+.glass.f{transform:scale(1.06);z-index:4;
+  background:linear-gradient(150deg,color-mix(in srgb,var(--g1) 55%,var(--tint-base)) 0%,var(--f1) 50%,var(--f2) 100%);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,.92),
+    inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),
+    inset 0 -10px 14px -8px color-mix(in srgb,var(--g2) 40%,var(--tint-base)),
+    var(--sh-2)}
+.glass.panel{--r:var(--r-l);--bw:8px}
+.glass.panel::before{height:30%;opacity:.55}
+.glass.cov-g{--r:var(--r-m);--bw:5px;-webkit-backdrop-filter:none;backdrop-filter:none;cursor:pointer}
+.glass.cov-g .face{border-radius:var(--r-s);background:var(--face)}
+.glass.cov-g.f{box-shadow:0 0 24px 2px color-mix(in srgb,var(--v1) 42%,transparent),0 18px 34px -12px rgba(20,30,50,.55)}
+.glass.shot-g{--r:var(--r-m);--bw:5px;-webkit-backdrop-filter:none;backdrop-filter:none;cursor:pointer}
+.glass.shot-g .face{border-radius:var(--r-s);background:var(--face)}
+.glass.shot-g:hover{transform:scale(1.03)}
+
+.glass-in{border-radius:var(--r-m);background:var(--glass-in);box-shadow:inset 0 1px 0 var(--hl-ring),inset 0 0 0 1px var(--line)}
+.pill{-webkit-backdrop-filter:var(--blur-pill);backdrop-filter:var(--blur-pill);
+  background:linear-gradient(180deg,var(--pill-top),var(--pill-bot));
+  box-shadow:inset 0 1px 0 var(--glass-top),inset 0 -6px 10px -6px var(--pill-glow),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px var(--line),0 10px 20px -12px rgba(40,50,70,.35)}
+
+/* Botones (§7) */
+.b-main{display:inline-flex;align-items:center;gap:var(--s-2);height:40px;padding:0 var(--s-5);border:0;border-radius:var(--r-pill);
+  font:800 var(--t-m)/1 var(--round);color:var(--on);background:var(--gf);cursor:pointer;white-space:nowrap;
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.55),inset 0 -8px 12px -8px rgba(0,0,0,.25),0 0 0 1px color-mix(in srgb,var(--f2) 75%,black),0 12px 20px -12px color-mix(in srgb,var(--f2) 70%,black);
+  transition:transform var(--d-2) var(--e-bounce),box-shadow var(--d-2) var(--e-soft)}
+.b-main:hover,.b-main.f{transform:scale(1.06);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.55),var(--ring)}
+.b-main:active{transform:scale(.97);transition-duration:var(--d-1)}
+
+/* Iconos de trazo (§9) */
+.ic{width:var(--i-m);height:var(--i-m);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.s{width:var(--i-s);height:var(--i-s)}
+.ic.l{width:var(--i-l);height:var(--i-l)}
+
+/* ==========================================================================
+   PLANTILLA DE PANTALLA (§10): Barra superior (0..76) + Banda inferior (656..720)
+   ========================================================================== */
+.top{position:absolute;left:0;right:0;top:0;height:76px;z-index:6}
+.avatar{position:absolute;left:22px;top:12px;width:54px;height:54px;--r:var(--r-m);--bw:5px}
+.avatar .face{background:var(--cat-gf);display:grid;place-items:center;color:var(--on)}
+.crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:var(--s-2);
+  padding:0 var(--s-4);border-radius:var(--r-pill);font:700 var(--t-xl)/1 var(--round);color:var(--ink-2)}
+.crumb .sep{color:var(--ink-3);font-weight:500}
+.crumb .cur{color:var(--cat-tx);font-weight:800}
+
+/* Pestañas de categoría centradas (como en Titles.svelte) */
+.ttabs{position:absolute;left:50%;top:18px;transform:translateX(-50%);height:44px;padding:var(--s-1);border-radius:var(--r-pill);
+  display:flex;gap:var(--s-1);align-items:center;z-index:7}
+.ttabs span{height:36px;padding:0 var(--s-4);border-radius:var(--r-pill);display:flex;align-items:center;
+  font:800 var(--t-m)/1 var(--round);color:var(--ink-2)}
+.ttabs span.on{background:var(--cat-gf);color:var(--on);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--cat-f2) 75%,black)}
+
+.clock{position:absolute;right:var(--gut);top:24px;display:flex;gap:var(--s-3);align-items:center;
+  font:700 var(--t-xl)/1 var(--round);color:var(--ink-2)}
+.clock small{font-size:var(--t-m);font-weight:500;color:var(--ink-3)}
+.pad-ic{display:grid;place-items:center}
+
+/* Banda inferior de pistas del mando (§7 & §10) */
+.hints{position:absolute;right:var(--gut);bottom:calc((var(--band) - 38px)/2);display:flex;gap:var(--s-2);z-index:6}
+.hint{display:flex;align-items:center;gap:var(--s-2);height:38px;padding:0 var(--s-3) 0 var(--s-1);border-radius:var(--r-pill);
+  font:700 var(--t-m)/1 var(--round);color:var(--ink-2);cursor:pointer;transition:transform var(--d-1) var(--e-soft)}
+.hint:active{transform:scale(.97)}
+.btn{min-width:28px;height:28px;border-radius:var(--r-s);display:grid;place-items:center;font:800 var(--t-s)/1 var(--round);
+  color:var(--on);--b:var(--ink-2);padding:0 var(--s-1);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,var(--tint-base)) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.65),0 0 0 1px color-mix(in srgb,var(--b) 70%,black),0 1px 2px rgba(0,0,0,.2)}
+.btn.a{--b:var(--ok-f)}.btn.b{--b:var(--bad-f)}.btn.x{--b:var(--f1)}.btn.y{--b:var(--warn);color:#3a414e}
+.btn.sh{border-radius:var(--r-xs);padding:0 var(--s-2);color:var(--btn-n-fg);
+  background:linear-gradient(180deg,var(--btn-n-top) 0%,var(--btn-n) 55%,color-mix(in srgb,var(--btn-n) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 var(--hl-ring),0 0 0 1px var(--btn-n-edge)}
+.shp{display:flex;gap:var(--s-1)}
+
+/* Área de contenido: estrictamente x:24..1256, y:88..644 (1232×556) */
+.content{position:absolute;left:var(--gut);right:var(--gut);top:88px;bottom:76px;display:flex;flex-direction:column;z-index:2}
+
+/* Distintivo de estado según §3.4 (siempre lleva nombre, nunca informa solo por color) */
+.st-badge{display:inline-flex;align-items:center;gap:var(--s-2);height:28px;padding:0 var(--s-3);border-radius:var(--r-pill);
+  background:var(--glass-chip);box-shadow:inset 0 0 0 1px var(--line);font:700 var(--t-s)/1 var(--round);color:var(--ink);white-space:nowrap}
+.st-badge i{width:10px;height:10px;border-radius:50%;background:var(--st-c);flex:none}
+.st-t{--st-c:var(--arc-violeta)}
+.st-j{--st-c:var(--arc-rojo)}
+.st-m{--st-c:var(--arc-naranja)}
+.st-p{--st-c:var(--arc-verde)}
+.st-a{--st-c:var(--arc-azul)}
+
+/* Tag / contador */
+.tag{display:inline-flex;align-items:center;gap:var(--s-1);height:28px;padding:0 var(--s-3);border-radius:var(--r-pill);
+  font:700 var(--t-s)/1 var(--round);color:var(--on);background:var(--gf);white-space:nowrap}
+.tag.soft{color:var(--ink-2);background:var(--glass-chip);box-shadow:inset 0 0 0 1px var(--line)}
+
+/* Arte de portadas y capturas */
+.art{width:100%;height:100%;display:block}
+.cov-cap{position:absolute;left:0;right:0;bottom:0;padding:var(--s-2);
+  background:linear-gradient(180deg,transparent 0%,rgba(14,18,26,.84) 100%);
+  color:#fff;font:800 var(--t-s)/1.15 var(--round);text-shadow:0 1px 2px rgba(0,0,0,.6);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Aurora cromática suave dentro de un panel */
+.aurora{position:absolute;inset:0;pointer-events:none;overflow:hidden;opacity:.34;transition:opacity var(--d-3) var(--e-soft)}
+#stage[data-theme=dark] .aurora{opacity:.28}
+.aurora i{position:absolute;border-radius:50%;width:340px;height:340px;top:-150px;
+  background:radial-gradient(circle,var(--ac),transparent 68%)}
+
+/* Estado vacío (§12) y esqueleto de carga (§12) */
+.empty-wrap{flex:1;display:grid;place-items:center}
+.empty{display:flex;flex-direction:column;align-items:center;gap:var(--s-3);padding:var(--s-6);text-align:center}
+.empty>svg{width:56px;height:56px;fill:none;stroke:var(--ink-3);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.empty h3{margin:0;font:800 var(--t-xl)/1.2 var(--round);color:var(--ink)}
+.empty p{margin:0;max-width:460px;font:500 var(--t-m)/1.35 var(--round);color:var(--ink-2)}
+
+.skel{position:relative;overflow:hidden;border-radius:var(--r-m);background:var(--glass-in);box-shadow:inset 0 0 0 1px var(--line)}
+.skel.line{height:14px;border-radius:var(--r-xs)}
+.skel.round{border-radius:50%}
+.skel::after{content:'';position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(100deg,transparent 20%,var(--hl-ring) 50%,transparent 80%);
+  animation:skel 1.4s var(--e-soft) infinite}
+@keyframes skel{to{transform:translateX(100%)}}
+
+/* Toast breve para feedback en la maqueta */
+.toast{position:absolute;left:50%;bottom:72px;transform:translateX(-50%) translateY(8px);opacity:0;pointer-events:none;z-index:12;
+  height:40px;padding:0 var(--s-5);border-radius:var(--r-pill);display:flex;align-items:center;gap:var(--s-2);
+  font:700 var(--t-m)/1 var(--round);color:var(--ink);transition:opacity var(--d-2) var(--e-soft),transform var(--d-2) var(--e-bounce)}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+
+.p4-wrap{display:flex;flex-direction:column;gap:var(--s-3);height:100%}
+
+/* Tira superior de colecciones con monograma + arco de progreso vivo */
+.mstrip{display:flex;align-items:center;gap:var(--s-2);height:62px;flex:none}
+.mbtn{position:relative;display:flex;align-items:center;gap:var(--s-3);height:58px;padding:0 var(--s-3);
+  border:0;border-radius:var(--r-m);cursor:pointer;flex:1;min-width:0;text-align:left;
+  background:var(--glass-chip);box-shadow:inset 0 1px 0 var(--hl-ring),inset 0 0 0 1px var(--line);
+  color:var(--ink);transition:transform var(--d-2) var(--e-bounce),box-shadow var(--d-2) var(--e-soft),background var(--d-2)}
+.mbtn:hover{transform:scale(1.03)}
+.mbtn.on{background:var(--panel);box-shadow:inset 0 1.5px 0 var(--hl),var(--sh-2)}
+.mbtn.f{transform:scale(1.06);box-shadow:var(--ring)}
+
+.mono-wrap{position:relative;width:42px;height:42px;display:grid;place-items:center;flex:none}
+.mono-wrap svg{position:absolute;inset:0;width:100%;height:100%}
+.mono-badge{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+  background:var(--mgf);color:var(--on);font:800 var(--t-s)/1 var(--round);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45)}
+.mono-wrap.lg{width:52px;height:52px}
+.mono-wrap.lg .mono-badge{width:38px;height:38px;font-size:var(--t-m)}
+
+.mbtn-t{min-width:0;flex:1}
+.mbtn-t b{display:block;font:800 var(--t-m)/1.15 var(--round);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mbtn.on .mbtn-t b{color:var(--mtx)}
+.mbtn-t small{display:block;font:700 var(--t-s)/1.15 var(--round);color:var(--ink-2)}
+.mbtn.add{flex:0 0 auto;justify-content:center;gap:var(--s-2);padding:0 var(--s-4);
+  background:var(--glass-in);box-shadow:inset 0 0 0 1.5px var(--line-2);color:var(--ink-2);font:700 var(--t-m)/1 var(--round)}
+.mbtn.add:hover{color:var(--ink)}
+
+/* Panel principal inferior (482px alto) */
+.p4-main{flex:1;min-height:0}
+.p4-face{display:flex;flex-direction:column;padding:var(--s-4) var(--s-5) var(--s-3);gap:var(--s-3);height:100%}
+
+.mhead{position:relative;z-index:2;display:grid;grid-template-columns:1fr 330px;gap:var(--s-4);align-items:center;height:122px;flex:none}
+.mhead-l{display:flex;flex-direction:column;gap:var(--s-2);min-width:0}
+.mhead-top{display:flex;align-items:center;gap:var(--s-3)}
+.mhead-titles{display:flex;align-items:center;gap:var(--s-3);flex-wrap:wrap;min-width:0}
+.mhead-titles h1{margin:0;font:800 var(--t-2xl)/1.1 var(--round);color:var(--ink)}
+.mhead-game{display:flex;align-items:center;gap:var(--s-3);padding:var(--s-2) var(--s-3);border-radius:var(--r-m)}
+.mhead-game b{font:800 var(--t-l)/1.15 var(--round);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mhead-game span.num{font:700 var(--t-s)/1 var(--round);color:var(--ink-2);white-space:nowrap}
+.mshots{display:grid;grid-template-columns:1.25fr 1fr;gap:var(--s-2);height:120px}
+
+/* Eje proporcional de años reales + columnas cromáticas por horas */
+.axis-card{position:relative;z-index:2;flex:1;min-height:0;padding:var(--s-3) var(--s-4) var(--s-2);display:flex;flex-direction:column}
+.axis-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s-1)}
+.axis-top span{font:800 var(--t-xs)/1 var(--round);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2)}
+.axis-area{position:relative;flex:1;margin:0 44px 34px}
+.yline{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.yline em{position:absolute;bottom:-26px;left:50%;transform:translateX(-50%);font:700 var(--t-s)/1 var(--round);font-style:normal;color:var(--ink-2);white-space:nowrap}
+.base-ribbon{position:absolute;left:-14px;right:-14px;bottom:0;height:8px;border-radius:var(--r-pill);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 4px 14px -2px color-mix(in srgb,var(--v1) 45%,transparent)}
+
+.ped{position:absolute;bottom:4px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer;z-index:2}
+.ped.f{z-index:5}
+.ped-hr{font:800 var(--t-s)/1 var(--round);color:var(--ink-2);margin-bottom:var(--s-1);padding:2px var(--s-2);border-radius:var(--r-pill);white-space:nowrap}
+.ped.f .ped-hr{background:var(--gf);color:var(--on)}
+.ped-cov{width:70px;height:96px}
+.ped.compact .ped-cov{width:64px;height:88px}
+.ped-col{width:22px;border-radius:var(--r-xs) var(--r-xs) 0 0;margin-top:var(--s-1);
+  background:linear-gradient(180deg,var(--v1),color-mix(in srgb,var(--v2) 45%,transparent));
+  box-shadow:0 0 14px color-mix(in srgb,var(--v1) 45%,transparent);transition:height var(--d-3) var(--e-soft),transform var(--d-2) var(--e-bounce)}
+.ped.f .ped-col{transform:scaleX(1.22);box-shadow:0 0 22px color-mix(in srgb,var(--v1) 70%,transparent)}
+.ped-node{width:14px;height:14px;border-radius:50%;background:var(--gv);margin-top:-7px;
+  box-shadow:0 0 0 3px var(--panel);transition:transform var(--d-2) var(--e-bounce)}
+.ped.f .ped-node{transform:scale(1.36)}
+
+</style>
+</head>
+<body class="page-light">
+<div class="deck">
+  <div class="bar">
+    <div class="bar-t">
+      <b>Propuesta 4 · Monograma y cronología de horas</b>
+      <span>Monograma tipográfico automático en cristal + arco vivo de progreso en cada colección y eje proporcional de años reales con pilares por horas jugadas</span>
+    </div>
+    <div class="seg-ctrl" role="group" aria-label="Tema">
+      <button type="button" class="on" data-theme-btn="light" onclick="setTheme('light')">Claro</button>
+      <button type="button" data-theme-btn="dark" onclick="setTheme('dark')">Noche ahumada</button>
+    </div>
+    <div class="seg-ctrl" role="group" aria-label="Estado">
+      <button type="button" class="on" data-mode-btn="data" onclick="setMode('data')">Con datos</button>
+      <button type="button" data-mode-btn="empty" onclick="setMode('empty')">Vacío</button>
+      <button type="button" data-mode-btn="load" onclick="setMode('load')">Carga</button>
+    </div>
+  </div>
+
+  <div class="stage-fit" id="fit">
+    <div id="stage" data-theme="light"></div>
+  </div>
+
+  <div class="kb-note">
+    <span>Mando / Teclado:</span>
+    <code>← →</code> recorrer la cronología <code>↑ ↓</code> o <code>Q / E</code> cambiar colección <code>X</code> capturas <code>Y</code> editar <code>Enter</code> abrir juego <code>T</code> tema
+  </div>
+</div>
+<script>
+
+// Datos de ejemplo (todos de la categoría «Juegos» — nunca mezcla categorías)
+const COLS = [
+  {
+    id: 'trails', name: 'Trails', mono: 'TR',
+    games: [
+      { n: 'Trails in the Sky', s: 'Sky FC', y: 2004, v1: '#35A7E8', v2: '#F2C14E', st: 't', h: 48, sh: 212, sc: 0 },
+      { n: 'Trails in the Sky SC', s: 'Sky SC', y: 2006, v1: '#3F63E0', v2: '#F27A1A', st: 't', h: 61, sh: 305, sc: 1 },
+      { n: 'Trails in the Sky the 3rd', s: '3rd', y: 2007, v1: '#9A4BD8', v2: '#3F63E0', st: 't', h: 39, sh: 140, sc: 2 },
+      { n: 'Trails from Zero', s: 'Zero', y: 2010, v1: '#18B8A6', v2: '#2D6FE0', st: 't', h: 52, sh: 261, sc: 3 },
+      { n: 'Trails to Azure', s: 'Azure', y: 2011, v1: '#00A0D8', v2: '#5ED3F3', st: 'j', h: 27, sh: 118, sc: 4 },
+      { n: 'Trails of Cold Steel', s: 'CS I', y: 2013, v1: '#E8384F', v2: '#8F2437', st: 'p', h: 0, sh: 0, sc: 0 },
+      { n: 'Trails of Cold Steel II', s: 'CS II', y: 2014, v1: '#D9468F', v2: '#4A368A', st: 'p', h: 0, sh: 0, sc: 1 },
+      { n: 'Trails into Reverie', s: 'Reverie', y: 2020, v1: '#7B4AE2', v2: '#E8384F', st: 'p', h: 0, sh: 0, sc: 2 }
+    ]
+  },
+  {
+    id: 'kh', name: 'Kingdom Hearts', mono: 'KH',
+    games: [
+      { n: 'Kingdom Hearts', s: 'KH I', y: 2002, v1: '#2E78E0', v2: '#F2B807', st: 't', h: 34, sh: 96, sc: 3 },
+      { n: 'Chain of Memories', s: 'CoM', y: 2004, v1: '#D63858', v2: '#5B2A5E', st: 't', h: 19, sh: 41, sc: 2 },
+      { n: 'Kingdom Hearts II', s: 'KH II', y: 2005, v1: '#8D54E9', v2: '#F28B30', st: 't', h: 46, sh: 184, sc: 4 },
+      { n: 'Birth by Sleep', s: 'BbS', y: 2010, v1: '#1FA9E0', v2: '#3F63E0', st: 'j', h: 14, sh: 52, sc: 0 },
+      { n: 'Dream Drop Distance', s: 'DDD', y: 2012, v1: '#E85A9B', v2: '#7B4AE2', st: 'p', h: 0, sh: 0, sc: 1 },
+      { n: 'Kingdom Hearts III', s: 'KH III', y: 2019, v1: '#3F63E0', v2: '#E5AE2B', st: 'p', h: 0, sh: 0, sc: 3 }
+    ]
+  },
+  {
+    id: 'yakuza', name: 'Yakuza', mono: 'YK',
+    games: [
+      { n: 'Yakuza 0', s: 'Y0', y: 2015, v1: '#E8384F', v2: '#F2B807', st: 't', h: 74, sh: 420, sc: 1 },
+      { n: 'Yakuza Kiwami', s: 'K1', y: 2016, v1: '#D6453A', v2: '#422E38', st: 't', h: 28, sh: 133, sc: 2 },
+      { n: 'Yakuza Kiwami 2', s: 'K2', y: 2017, v1: '#3BB54A', v2: '#1C5E44', st: 'j', h: 16, sh: 72, sc: 4 },
+      { n: 'Like a Dragon', s: 'LaD', y: 2020, v1: '#F27A1A', v2: '#3F63E0', st: 'p', h: 0, sh: 0, sc: 0 }
+    ]
+  },
+  {
+    id: 'persona', name: 'Persona', mono: 'P',
+    games: [
+      { n: 'Persona 4 Golden', s: 'P4G', y: 2012, v1: '#F2B807', v2: '#F27A1A', st: 't', h: 82, sh: 351, sc: 0 },
+      { n: 'Persona 5 Royal', s: 'P5R', y: 2019, v1: '#E8384F', v2: '#9E1F34', st: 't', h: 121, sh: 640, sc: 2 },
+      { n: 'Persona 3 Reload', s: 'P3R', y: 2024, v1: '#00A0D8', v2: '#3F63E0', st: 'm', h: 18, sh: 89, sc: 4 }
+    ]
+  },
+  {
+    id: 'from', name: 'FromSoftware', mono: 'FS',
+    games: [
+      { n: 'Dark Souls', s: 'DS', y: 2011, v1: '#D98E2B', v2: '#5C4426', st: 't', h: 55, sh: 147, sc: 2 },
+      { n: 'Dark Souls III', s: 'DS III', y: 2016, v1: '#E0642F', v2: '#4C2B26', st: 't', h: 47, sh: 122, sc: 1 },
+      { n: 'Sekiro', s: 'Sekiro', y: 2019, v1: '#D94336', v2: '#E5A93B', st: 'a', h: 9, sh: 24, sc: 3 },
+      { n: 'Elden Ring', s: 'ER', y: 2022, v1: '#D9A726', v2: '#3B7A57', st: 'j', h: 96, sh: 512, sc: 0 }
+    ]
+  }
+];
+
+const ST_LABEL = { t: 'Terminado', j: 'En marcha', m: 'A medias', p: 'Pendiente', a: 'Aparcado' };
+
+// Iconos SVG propios de trazo 2 px en rejilla 24 (§9, cero emojis)
+const IC = {
+  person: '<svg class="ic l" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="4"/><path d="M5 20c1.4-3.8 4-5.5 7-5.5s5.6 1.7 7 5.5"/></svg>',
+  plus: '<svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  clock: '<svg class="ic s" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
+  cam: '<svg class="ic s" viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h2l1.4-2h4.2l1.4 2h2A2.5 2.5 0 0 1 20 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.2"/></svg>',
+  cal: '<svg class="ic s" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>',
+  layers: '<svg class="ic" viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5z"/><path d="M3 13l9 5 9-5"/><path d="M3 17.5l9 5 9-5"/></svg>',
+  play: '<svg class="ic s" viewBox="0 0 24 24"><path d="M7 5.5v13l11-6.5z"/></svg>',
+  empty: '<svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5z"/><path d="M3 13l9 5 9-5"/><path d="M3 17.5l9 5 9-5"/></svg>'
+};
+
+// Dos acentos (§3.2): oscurece el color vivo (--v1) hasta cumplir AA (>= 4.65:1) frente a blanco (--on)
+function hexToRgb(h){
+  const n = parseInt(h.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function rgbToHex(r, g, b){
+  return '#' + [r, g, b].map(x => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, '0')).join('');
+}
+function relLum(r, g, b){
+  const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+}
+function fillAA(hex){
+  let [r, g, b] = hexToRgb(hex);
+  for (let i = 0; i < 28; i++) {
+    const cr = 1.05 / (relLum(r, g, b) + 0.05);
+    if (cr >= 4.65) break;
+    r *= 0.90; g *= 0.90; b *= 0.90;
+  }
+  return rgbToHex(r, g, b);
+}
+function pairVars(v1, v2){
+  const f1 = fillAA(v1), f2 = fillAA(v2);
+  return `--g1:${v1};--g2:${v2};--grad:linear-gradient(115deg,${v1},${v2});` +
+         `--f1:${f1};--f2:${f2};--gf:linear-gradient(115deg,${f1},${f2});` +
+         `--v1:${v1};--v2:${v2};--gv:linear-gradient(115deg,${v1},${v2});--acc:${f1};--accv:${v1};`;
+}
+
+// Estadísticas agregadas de una colección
+function colStats(col){
+  const gs = col.games;
+  const hours = gs.reduce((a, g) => a + g.h, 0);
+  const shots = gs.reduce((a, g) => a + g.sh, 0);
+  const done = gs.filter(g => g.st === 't').length;
+  const y0 = gs[0].y, y1 = gs[gs.length - 1].y;
+  const palette = gs.map(g => g.v1);
+  return { hours, shots, done, total: gs.length, y0, y1, span: y0 === y1 ? `${y0}` : `${y0} – ${y1}`, palette };
+}
+
+// Degradado cromático del raíl (colores puros --v1 de cada portada en orden cronológico)
+function railGrad(games){
+  if (games.length === 1) return games[0].v1;
+  const stops = games.map((g, i) => `${g.v1} ${(i / (games.length - 1) * 100).toFixed(1)}%`);
+  return `linear-gradient(90deg,${stops.join(',')})`;
+}
+
+// Ilustración SVG procedural para portadas de juegos (sin recursos externos)
+function coverSvg(g){
+  const id = 'cg_' + g.s.replace(/\W+/g, '') + g.y;
+  const motif = [
+    `<circle cx="72" cy="48" r="34" fill="#fff" opacity=".16"/><path d="M0 112 Q45 78 100 104 L100 150 L0 150 Z" fill="#000" opacity=".24"/>`,
+    `<polygon points="50,18 90,82 10,82" fill="#fff" opacity=".14"/><path d="M0 120 L38 82 L68 108 L100 74 L100 150 L0 150 Z" fill="#000" opacity=".26"/>`,
+    `<circle cx="50" cy="56" r="28" fill="none" stroke="#fff" stroke-width="3" opacity=".32"/><circle cx="50" cy="56" r="14" fill="#fff" opacity=".18"/>`,
+    `<path d="M0 95 Q50 55 100 95 L100 150 L0 150 Z" fill="#000" opacity=".22"/><rect x="18" y="22" width="64" height="4" rx="2" fill="#fff" opacity=".35"/>`,
+    `<path d="M-10 118 Q35 55 110 88" fill="none" stroke="#fff" stroke-width="6" opacity=".22"/><circle cx="28" cy="36" r="16" fill="#fff" opacity=".22"/>`
+  ][g.sc % 5];
+  return `<svg class="art" viewBox="0 0 100 144" preserveAspectRatio="xMidYMid slice">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${g.v1}"/><stop offset="100%" stop-color="${g.v2}"/></linearGradient></defs>
+    <rect width="100" height="144" fill="url(#${id})"/>
+    ${motif}
+    <text x="50" y="76" text-anchor="middle" fill="#fff" font-family="var(--round)" font-weight="800" font-size="18" opacity=".95" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,.45))">${g.s}</text>
+  </svg>`;
+}
+
+// Ilustración SVG procedural para capturas 16:9
+function shotSvg(g, k = 0){
+  const id = `sg_${g.s.replace(/\W+/g, '')}_${g.y}_${k}`;
+  const shift = (k * 29) % 100;
+  const shapes = [
+    `<circle cx="${175 - shift * .6}" cy="44" r="34" fill="#fff" opacity=".24"/>
+     <path d="M0 112 Q70 72 135 100 T240 84 L240 135 L0 135 Z" fill="#000" opacity=".26"/>
+     <path d="M0 122 Q95 96 168 114 T240 104 L240 135 L0 135 Z" fill="#000" opacity=".32"/>`,
+    `<rect x="${24 + shift * .5}" y="22" width="120" height="8" rx="4" fill="#fff" opacity=".25"/>
+     <polygon points="0,135 64,66 122,102 184,48 240,94 240,135" fill="#000" opacity=".28"/>
+     <circle cx="${52 + shift * .9}" cy="46" r="22" fill="#fff" opacity=".22"/>`,
+    `<path d="M0 86 C60 40 160 120 240 54 L240 135 L0 135 Z" fill="#000" opacity=".24"/>
+     <circle cx="${120 + (shift - 50) * .5}" cy="58" r="28" fill="none" stroke="#fff" stroke-width="3" opacity=".34"/>
+     <circle cx="${120 + (shift - 50) * .5}" cy="58" r="12" fill="#fff" opacity=".25"/>`
+  ][(g.sc + k) % 3];
+  return `<svg class="art" viewBox="0 0 240 135" preserveAspectRatio="xMidYMid slice">
+    <defs><linearGradient id="${id}" x1="${k % 2 ? 1 : 0}" y1="0" x2="${k % 2 ? 0 : 1}" y2="1">
+      <stop offset="0%" stop-color="${g.v1}"/><stop offset="100%" stop-color="${g.v2}"/>
+    </linearGradient></defs>
+    <rect width="240" height="135" fill="url(#${id})"/>
+    ${shapes}
+  </svg>`;
+}
+
+// Esqueleto común de barra superior + banda inferior (§10)
+function renderShell(hintsHtml){
+  return `
+    <div class="bg">
+      <div class="blob" style="left:-110px;top:-140px;width:540px;height:540px;--b:var(--b1)"></div>
+      <div class="blob" style="right:-120px;top:90px;width:520px;height:520px;--b:var(--b2)"></div>
+      <div class="blob" style="left:28%;bottom:-240px;width:580px;height:580px;--b:var(--b3)"></div>
+    </div>
+    <div class="ambwash"></div>
+    <div class="top">
+      <div class="glass avatar"><div class="face">${IC.person}</div></div>
+      <div class="crumb pill"><span>Inicio</span><span class="sep">›</span><span class="cur">Juegos</span></div>
+      <div class="ttabs pill"><span>Todos</span><span>Mi lista</span><span class="on">Colecciones</span></div>
+      <div class="clock">
+        <span>21/11 <small>(sáb)</small></span><span>14:10</span>
+        <span class="pad-ic" aria-hidden="true">
+          <svg width="30" height="20" viewBox="0 0 30 20"><rect x="1" y="3" width="28" height="14" rx="7" fill="var(--cat-f1)"/><circle cx="8" cy="10" r="3" fill="#fff"/><circle cx="22" cy="10" r="2" fill="#fff"/></svg>
+        </span>
+      </div>
+    </div>
+    <div class="content" id="content"></div>
+    <div class="hints">${hintsHtml}</div>
+    <div class="toast pill" id="toast"></div>
+  `;
+}
+
+// Estado vacío estándar (§12)
+function renderEmpty(){
+  return `<div class="empty-wrap"><div class="glass panel" style="width:540px"><div class="face">
+    <div class="empty">
+      ${IC.empty}
+      <h3>Aún no tienes colecciones en Juegos</h3>
+      <p>Agrupa tus sagas favoritas para ordenarlas en su línea del tiempo y reunir sus capturas y colores sin mover ningún archivo.</p>
+      <button class="b-main" type="button" onclick="ping('Abrir formulario Nueva colección')">${IC.plus} Nueva colección</button>
+    </div>
+  </div></div></div>`;
+}
+
+// Aplica la atmósfera viva de la colección + el velo del juego enfocado
+function applyAtmos(col, game){
+  const st = document.getElementById('stage');
+  const g = game || col.games[0];
+  const f1 = fillAA(g.v1), f2 = fillAA(g.v2);
+  const c0 = col.games[0].v1, cMid = col.games[Math.floor(col.games.length / 2)].v1, cEnd = col.games[col.games.length - 1].v1;
+  st.style.setProperty('--g1', g.v1);
+  st.style.setProperty('--g2', g.v2);
+  st.style.setProperty('--grad', `linear-gradient(115deg,${g.v1},${g.v2})`);
+  st.style.setProperty('--f1', f1);
+  st.style.setProperty('--f2', f2);
+  st.style.setProperty('--gf', `linear-gradient(115deg,${f1},${f2})`);
+  st.style.setProperty('--v1', g.v1);
+  st.style.setProperty('--v2', g.v2);
+  st.style.setProperty('--gv', `linear-gradient(115deg,${g.v1},${g.v2})`);
+  st.style.setProperty('--acc', f1);
+  st.style.setProperty('--accv', g.v1);
+  st.style.setProperty('--b1', c0);
+  st.style.setProperty('--b2', cMid);
+  st.style.setProperty('--b3', cEnd);
+  st.style.setProperty('--p1', g.v1);
+  st.style.setProperty('--p2', g.v2);
+}
+
+// Toast de interacción
+let toastT;
+function ping(msg){
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('on'), 1800);
+}
+
+// Escalado automático para cualquier pantalla (escritorio, Unificador iframe, móvil)
+function initFit(){
+  const fit = document.getElementById('fit');
+  const stage = document.getElementById('stage');
+  function resize(){
+    const w = fit.clientWidth;
+    const s = Math.min(1, w / 1280);
+    stage.style.transform = `scale(${s})`;
+    fit.style.height = Math.round(720 * s) + 'px';
+  }
+  new ResizeObserver(resize).observe(fit);
+  resize();
+}
+
+// Controles externos de la maqueta (Tema Claro/Noche ahumada + Estado Con datos/Vacío/Carga)
+let curTheme = 'light';
+let curMode = 'data';
+function setTheme(t){
+  curTheme = t;
+  document.getElementById('stage').dataset.theme = t;
+  document.body.classList.toggle('page-light', t === 'light');
+  document.querySelectorAll('[data-theme-btn]').forEach(b => b.classList.toggle('on', b.dataset.themeBtn === t));
+}
+function setMode(m){
+  curMode = m;
+  document.querySelectorAll('[data-mode-btn]').forEach(b => b.classList.toggle('on', b.dataset.modeBtn === m));
+  render();
+}
+
+
+let ci = 3, gi = 1, zone = 'axis', seed = 0;
+
+function monoSvg(col, lg){
+  const done = col.games.filter(g => g.st === 't').length;
+  const pct = done / col.games.length;
+  const s = lg ? 52 : 42, cx = s / 2, cy = s / 2, r = lg ? 22 : 18, C = 2 * Math.PI * r;
+  const dash = (C * pct).toFixed(1);
+  const v1 = col.games[0].v1;
+  return `<svg viewBox="0 0 ${s} ${s}">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--line-2)" stroke-width="3.5"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${v1}" stroke-width="3.5" stroke-linecap="round"
+      stroke-dasharray="${dash} ${C.toFixed(1)}" transform="rotate(-90 ${cx} ${cy})"/>
+  </svg>`;
+}
+
+// Posiciones en porcentaje respetando la escala real de años con separación mínima legible
+function scalePositions(games){
+  const y0 = games[0].y, y1 = games[games.length - 1].y;
+  const span = Math.max(1, y1 - y0);
+  const raw = games.map(g => (g.y - y0) / span * 100);
+  const minGap = games.length >= 7 ? 12.2 : 14.5;
+  const pos = [...raw];
+  for (let pass = 0; pass < 8; pass++) {
+    for (let i = 1; i < pos.length; i++) {
+      if (pos[i] - pos[i - 1] < minGap) {
+        const mid = (pos[i] + pos[i - 1]) / 2;
+        pos[i - 1] = mid - minGap / 2;
+        pos[i] = mid + minGap / 2;
+      }
+    }
+    if (pos[0] < 0) { const d = -pos[0]; for (let i = 0; i < pos.length; i++) pos[i] += d; }
+    if (pos[pos.length - 1] > 100) {
+      const over = pos[pos.length - 1] - 100;
+      for (let i = 0; i < pos.length; i++) pos[i] = Math.max(0, pos[i] - over * (i / Math.max(1, pos.length - 1)));
+    }
+  }
+  return pos;
+}
+
+function render(){
+  const stage = document.getElementById('stage');
+  const hints = `
+    <div class="hint pill" onclick="cycleCol(1)"><span class="shp"><span class="btn sh">LB</span><span class="btn sh">RB</span></span>Colección</div>
+    <div class="hint pill" onclick="shuffleShots()"><span class="btn x">X</span>Capturas</div>
+    <div class="hint pill" onclick="ping('Editar colección')"><span class="btn y">Y</span>Editar</div>
+    <div class="hint pill" onclick="openGame()"><span class="btn a">A</span>Abrir</div>
+    <div class="hint pill" onclick="ping('Volver a Inicio')"><span class="btn b">B</span>Volver</div>
+  `;
+  if (!stage.dataset.built) { stage.innerHTML = renderShell(hints); stage.dataset.built = '1'; }
+  const content = document.getElementById('content');
+
+  if (curMode === 'empty') { content.innerHTML = renderEmpty(); return; }
+  if (curMode === 'load') {
+    content.innerHTML = `<div class="p4-wrap">
+      <div class="mstrip">${[1,2,3,4,5].map(() => `<div class="skel" style="flex:1;height:58px"></div>`).join('')}</div>
+      <div class="glass panel" style="flex:1"><div class="face" style="padding:var(--s-5);display:flex;flex-direction:column;gap:var(--s-4)">
+        <div style="display:grid;grid-template-columns:1fr 330px;gap:var(--s-4);height:122px">
+          <div style="display:flex;flex-direction:column;gap:var(--s-3)"><div class="skel line" style="width:45%;height:28px"></div><div class="skel" style="flex:1"></div></div>
+          <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:var(--s-2)"><div class="skel"></div><div class="skel"></div></div>
+        </div>
+        <div class="skel" style="flex:1"></div>
+      </div></div>
+    </div>`;
+    return;
+  }
+
+  const col = COLS[ci];
+  if (gi >= col.games.length) gi = 0;
+  const g = col.games[gi];
+  const st = colStats(col);
+  applyAtmos(col, g);
+
+  const stripHtml = COLS.map((c, idx) => {
+    const cs = colStats(c);
+    const cv1 = c.games[0].v1, cv2 = c.games[c.games.length - 1].v1;
+    const f1 = fillAA(cv1), f2 = fillAA(cv2);
+    const isOn = idx === ci;
+    const isF = isOn && zone === 'top';
+    return `<button type="button" class="mbtn ${isOn ? 'on' : ''} ${isF ? 'f' : ''}"
+      style="--g1:${cv1};--g2:${cv2};--f1:${f1};--f2:${f2};--mgf:linear-gradient(135deg,${f1},${f2});--mtx:${curTheme === 'dark' ? 'color-mix(in srgb,' + cv1 + ' 68%,white)' : f1}"
+      onmouseenter="selectCol(${idx}, false)" onclick="selectCol(${idx}, true)">
+      <div class="mono-wrap">${monoSvg(c, false)}<span class="mono-badge">${c.mono}</span></div>
+      <div class="mbtn-t"><b>${c.name}</b><small>${cs.done}/${cs.total} · ${cs.hours} h</small></div>
+    </button>`;
+  }).join('') + `<button type="button" class="mbtn add" onclick="ping('Abrir formulario Nueva colección')">${IC.plus} Nueva</button>`;
+
+  const aurOrbs = st.palette.slice(0, 5).map((hex, k) => `<i style="left:${k * 21 - 4}%;--ac:${hex}"></i>`).join('');
+  const pos = scalePositions(col.games);
+  const maxH = Math.max(1, ...col.games.map(x => x.h));
+  const compact = col.games.length >= 7;
+
+  const y0 = st.y0, y1 = st.y1, span = Math.max(1, y1 - y0);
+  const step = span <= 6 ? 1 : span <= 12 ? 2 : 4;
+  const ticks = [];
+  for (let y = y0; y <= y1; y += step) ticks.push(y);
+  if (ticks[ticks.length - 1] !== y1) {
+    if (ticks.length >= 2 && (y1 - ticks[ticks.length - 1]) < step * 0.6) ticks[ticks.length - 1] = y1;
+    else ticks.push(y1);
+  }
+  const tickHtml = ticks.map(y => `<div class="yline" style="left:${((y - y0) / span * 100).toFixed(1)}%"><em>${y}</em></div>`).join('');
+
+  const pedsHtml = col.games.map((gm, idx) => {
+    const colH = gm.h ? Math.round(12 + (gm.h / maxH) * 62) : 10;
+    const isF = zone === 'axis' && idx === gi;
+    return `<div class="ped ${isF ? 'f' : ''} ${compact ? 'compact' : ''}" style="left:${pos[idx].toFixed(1)}%;${pairVars(gm.v1, gm.v2)}"
+      onmouseenter="focusGame(${idx})" onclick="focusGame(${idx});openGame()">
+      <span class="ped-hr">${gm.h ? gm.h + ' h' : 'Pend.'}</span>
+      <div class="glass cov-g ped-cov ${isF ? 'f' : ''}">
+        <div class="face">${coverSvg(gm)}<span class="cov-cap">${gm.s}</span></div>
+      </div>
+      <div class="ped-col" style="height:${colH}px"></div>
+      <div class="ped-node"></div>
+    </div>`;
+  }).join('');
+
+  const colF1 = fillAA(col.games[0].v1), colF2 = fillAA(col.games[col.games.length - 1].v1);
+
+  content.innerHTML = `<div class="p4-wrap">
+    <div class="mstrip">${stripHtml}</div>
+    <div class="glass panel p4-main">
+      <div class="face p4-face">
+        <div class="aurora">${aurOrbs}</div>
+        <div class="mhead">
+          <div class="mhead-l">
+            <div class="mhead-top">
+              <div class="mono-wrap lg" style="--mgf:linear-gradient(135deg,${colF1},${colF2})">${monoSvg(col, true)}<span class="mono-badge">${col.mono}</span></div>
+              <div class="mhead-titles">
+                <h1>${col.name}</h1>
+                <span class="tag soft">${IC.cal} ${st.span}</span>
+                <span class="tag">${st.done} / ${st.total} terminados</span>
+              </div>
+            </div>
+            <div class="glass-in mhead-game">
+              <b>${g.n}</b>
+              <span class="st-badge st-${g.st}"><i></i>${ST_LABEL[g.st]}</span>
+              <span class="num">${g.y} · ${g.h ? g.h + ' h' : 'Sin horas'} · ${g.sh} capturas</span>
+            </div>
+          </div>
+          <div class="mshots">
+            ${[0, 1].map(k => `<div class="glass shot-g" style="${pairVars(g.v1, g.v2)}" onclick="shuffleShots()">
+              <div class="face">${shotSvg(g, seed + k)}</div>
+            </div>`).join('')}
+          </div>
+        </div>
+
+        <div class="glass-in axis-card">
+          <div class="axis-top">
+            <span>Escala real de años y altura por horas jugadas</span>
+            <span>${st.hours} h · ${st.shots} capturas en la saga</span>
+          </div>
+          <div class="axis-area">
+            ${tickHtml}
+            <div class="base-ribbon" style="background:${railGrad(col.games)}"></div>
+            ${pedsHtml}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function selectCol(idx, stay){ ci = idx; gi = Math.min(gi, COLS[ci].games.length - 1); zone = stay ? 'axis' : 'top'; render(); }
+function cycleCol(d){ ci = (ci + d + COLS.length) % COLS.length; gi = 0; render(); }
+function focusGame(idx){ zone = 'axis'; gi = idx; render(); }
+function shuffleShots(){ seed++; render(); ping('Mostrando otras capturas'); }
+function openGame(){ ping(`Abrir «${COLS[ci].games[gi].n}»`); }
+
+const _origSetTheme = setTheme;
+setTheme = function(t){ _origSetTheme(t); if (curMode === 'data') render(); };
+
+document.addEventListener('keydown', e => {
+  if (curMode !== 'data') return;
+  const k = e.key.toLowerCase();
+  if (k === 't') { setTheme(curTheme === 'light' ? 'dark' : 'light'); return; }
+  if (k === 'q') { cycleCol(-1); return; }
+  if (k === 'e') { cycleCol(1); return; }
+  if (k === 'x') { shuffleShots(); return; }
+  if (k === 'y') { ping(`Editar colección «${COLS[ci].name}»`); return; }
+  if (k === 'enter') { openGame(); return; }
+  if (k === 'arrowup' || k === 'w') { zone = 'top'; render(); return; }
+  if (k === 'arrowdown' || k === 's') { zone = 'axis'; render(); return; }
+  if (k === 'arrowleft' || k === 'a') {
+    if (zone === 'top') { ci = Math.max(0, ci - 1); gi = 0; } else gi = Math.max(0, gi - 1);
+    render();
+  }
+  if (k === 'arrowright' || k === 'd') {
+    if (zone === 'top') { ci = Math.min(COLS.length - 1, ci + 1); gi = 0; } else gi = Math.min(COLS[ci].games.length - 1, gi + 1);
+    render();
+  }
+});
+
+initFit();
+render();
+
+</script>
+</body>
+</html>

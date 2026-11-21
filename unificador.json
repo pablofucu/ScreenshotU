@@ -275,17 +275,24 @@
               "id": "IYE-10",
               "title": "C1: Vista de colecciones según maqueta elegida",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-16T02:30:28+01:00",
                   "by": "claude",
                   "kind": "start",
                   "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-21T14:31:58+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Vista de Colecciones implementada (Propuesta 2 sin orbes redondos: lista lateral con barra de espectro vivo, 5 capturas aleatorias de todos los juegos con barajado View/botón, timeline cromática y ficha inferior del juego enfocado). Comprobado con npm run check (0 errores/avisos) y tests/collections.test.ts (5/5)."
                 }
               ],
               "cat": "interfaz",
-              "updated": "2026-11-16T02:30:28+01:00"
+              "updated": "2026-11-21T14:31:58+01:00",
+              "result": "Vista de Colecciones implementada (Propuesta 2 sin orbes redondos: lista lateral con barra de espectro vivo, 5 capturas aleatorias de todos los juegos con barajado View/botón, timeline cromática y ficha inferior del juego enfocado). Comprobado con npm run check (0 errores/avisos) y tests/collections.test.ts (5/5)."
             }
           ]
         }
@@ -1327,10 +1334,34 @@
                   "by": "claude",
                   "kind": "note",
                   "text": "Quitado a la fuerza el marco (barra de título y borde) de la ventana del menú al abrirla, y apuntados en quickmenu.log el marco y si el cursor se ve tras soltarlo en streaming. Falta probarlo con Moonlight."
+                },
+                {
+                  "at": "2026-11-17T22:56:39+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T22:59:00+01:00",
+                  "by": "claude",
+                  "kind": "note",
+                  "text": "Tu comentario (14-nov) es anterior a los arreglos. Barra de título: era Moonlight en ventana; desde 8c682a1 se abre con --display-mode fullscreen, y el menú quita su marco a la fuerza (ce74d75). Cursor: al abrir el menú en streaming se suelta, se centra y ahora además se fuerza visible (ShowCursor, flecha y un movimiento nulo que quita la supresión de Windows). Falta probarlo con la app nueva en los dos PCs; si sigue sin verse, quickmenu.log del PC principal dice si estaba visible antes y después."
+                },
+                {
+                  "at": "2026-11-21T21:28:54+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-21T21:29:24+01:00",
+                  "by": "claude",
+                  "kind": "note",
+                  "text": "Revisado el 21-nov: los tres arreglos (8c682a1, ce74d75, 2f3303d) van en v2.3.1. quickmenu.log del PC principal no tiene todavía ninguna apertura en streaming, así que falta la prueba real con Moonlight; si sigue fallando, ese log dice si el marco y el cursor se arreglaron."
                 }
               ],
               "cat": "pruebas",
-              "updated": "2026-11-17T17:30:46+01:00",
+              "updated": "2026-11-21T21:29:24+01:00",
               "change": "No he probado en tablet, pero en pc está bien pero no funciona el cursor o no se ve y ademas se pone un borde de arriba de ventana con titulo y botón de cerrar y debería de ser a pantalla completa",
               "commits": [
                 "8c682a1c185ac5156dec7bd8124588bcffc6262a"
@@ -2388,17 +2419,47 @@
               "id": "TCL-5",
               "title": "Toques en todas las pantallas nuevas",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-17T22:39:14+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T22:43:44+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Pistas táctiles sin glifos de mando, pulsación larga (500 ms) abre el menú de portada/captura/ficha; comprobado con ?mock&tablet a 1280x800 y svelte-check 0 errores"
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-17T22:43:44+01:00",
+              "result": "Pistas táctiles sin glifos de mando, pulsación larga (500 ms) abre el menú de portada/captura/ficha; comprobado con ?mock&tablet a 1280x800 y svelte-check 0 errores"
             },
             {
               "id": "TCL-6",
               "title": "Sin pistas de mando y botón de volver",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-17T22:43:45+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T22:43:45+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Flecha de volver de 44 px en TopBar, indicador de mando oculto sin mando, acciones repetidas fuera. Nota: la banda inferior se queda (64 px) para los botones táctiles en vez de quitarla"
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-17T22:43:45+01:00",
+              "result": "Flecha de volver de 44 px en TopBar, indicador de mando oculto sin mando, acciones repetidas fuera. Nota: la banda inferior se queda (64 px) para los botones táctiles en vez de quitarla"
             }
           ]
         },
@@ -2410,34 +2471,94 @@
               "id": "TCL-7",
               "title": "Inicio, Mi lista y Colecciones táctiles",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-17T22:43:50+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T22:45:41+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Inicio reparte los 800 px (plataformas, lectura y dock más abajo, pastillas de 44 px); los glifos del mando sin acción se ocultan y LT/RT/LB/RB con acción son flechas ‹ › de 44 px. Comprobado con ?mock&tablet a 1280x800 en Inicio, Mi lista y Colecciones."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-17T22:45:41+01:00",
+              "result": "Inicio reparte los 800 px (plataformas, lectura y dock más abajo, pastillas de 44 px); los glifos del mando sin acción se ocultan y LT/RT/LB/RB con acción son flechas ‹ › de 44 px. Comprobado con ?mock&tablet a 1280x800 en Inicio, Mi lista y Colecciones."
             },
             {
               "id": "TCL-8",
               "title": "Estadísticas y Rachas táctiles",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-17T22:45:46+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T22:46:41+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Pestañas, flechas del periodo y selector Novelas/PC/Switch con zona de 44 px; la barra se aprieta para que quepa. Comprobado con ?mock&tablet a 1280x800: Semana y Rachas sin desbordes (última pestaña acaba en x=1228)."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-17T22:46:41+01:00",
+              "result": "Pestañas, flechas del periodo y selector Novelas/PC/Switch con zona de 44 px; la barra se aprieta para que quepa. Comprobado con ?mock&tablet a 1280x800: Semana y Rachas sin desbordes (última pestaña acaba en x=1228)."
             },
             {
               "id": "TCL-9",
               "title": "Visor y ficha del juego táctiles",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-17T22:46:41+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T22:51:21+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Visor: marco más grande, pellizco para ampliar y arrastre con un dedo al estar ampliado, botones sobre la tira y Volver abajo (no hay barra arriba). Ficha y catálogo: Jugar y Buscar no se repiten abajo, Ordenar y Buscar a 44 px. Comprobado con ?mock&tablet a 1280x800 y svelte-check sin errores."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-17T22:51:21+01:00",
+              "result": "Visor: marco más grande, pellizco para ampliar y arrastre con un dedo al estar ampliado, botones sobre la tira y Volver abajo (no hay barra arriba). Ficha y catálogo: Jugar y Buscar no se repiten abajo, Ordenar y Buscar a 44 px. Comprobado con ?mock&tablet a 1280x800 y svelte-check sin errores."
             },
             {
               "id": "TCL-11",
               "title": "Menú sobre el juego táctil",
               "desc": "",
-              "state": "pending",
-              "notes": [],
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-17T22:51:25+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-17T22:53:49+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Menú del juego en la tablet: lienzo de 1280x800, baldosas y hojas más altas, sin glifos del mando (Volver, Borrar) y botones de las hojas a 44 px. Comprobado con quickmenu.html?tablet a 1280x800 (abrir capturas tocando) y svelte-check sin errores."
+                }
+              ],
               "cat": "interfaz",
-              "by": "claude"
+              "by": "claude",
+              "updated": "2026-11-17T22:53:49+01:00",
+              "result": "Menú del juego en la tablet: lienzo de 1280x800, baldosas y hojas más altas, sin glifos del mando (Volver, Borrar) y botones de las hojas a 44 px. Comprobado con quickmenu.html?tablet a 1280x800 (abrir capturas tocando) y svelte-check sin errores."
             }
           ]
         },
@@ -2993,10 +3114,169 @@
       },
       "by": "claude",
       "created": "2026-11-17T22:18:34+01:00"
+    },
+    {
+      "id": "P-16",
+      "kind": "proposal",
+      "title": "Barra de Mi lista · Colecciones · Catálogo",
+      "text": "Cuatro opciones para integrar las pestañas de la categoría y evitar que floten en y=144 o dejen hueco vacío en Mi lista. Cada maqueta permite alternar en vivo entre Mi lista, Colecciones y Catálogo, cambiar de juego y probar Claro/Oscuro.",
+      "step": null,
+      "branch": "IYE",
+      "options": [
+        {
+          "label": "En TopBar (y=17)",
+          "desc": "Cápsula en la barra superior; Mi lista y Colecciones suben a y=84 (+96 px) y Catálogo deja su cabecera limpia en y=84",
+          "file": ".unificador/propuestas/P-16/1.html"
+        },
+        {
+          "label": "Riel en y=84 (como Estadísticas)",
+          "desc": "Cápsula fija a la izquierda en y=84 y zona derecha contextual según la sección (resumen en Mi lista, saga en Colecciones, buscador/orden en Catálogo)",
+          "file": ".unificador/propuestas/P-16/2.html"
+        },
+        {
+          "label": "Chasis único de cristal",
+          "desc": "Una sola barra .glass de lado a lado (y=82) que une pestañas a la izquierda y ficha del juego + buscador a la derecha",
+          "file": ".unificador/propuestas/P-16/3.html"
+        },
+        {
+          "label": "Unida a la miga",
+          "desc": "La pastilla Inicio › Categoría integra las tres pestañas en una sola pieza arriba a la izquierda, dejando libre todo el lienzo desde y=84",
+          "file": ".unificador/propuestas/P-16/4.html"
+        }
+      ],
+      "recommend": 1,
+      "answer": {
+        "option": null,
+        "text": "Ampliada a 6 propuestas en P-17",
+        "by": "persona",
+        "at": "2026-11-18T01:49:25+01:00",
+        "seen": true
+      },
+      "by": "antigravity",
+      "created": "2026-11-18T01:41:59+01:00"
+    },
+    {
+      "id": "P-17",
+      "kind": "proposal",
+      "title": "Barra de Mi lista · Colecciones · Catálogo (6 opciones)",
+      "text": "Seis disposiciones visuales distintas para integrar Mi lista, Colecciones y Catálogo y ver cómo interactúa cada sección.",
+      "step": null,
+      "branch": "IYE",
+      "options": [
+        {
+          "label": "En TopBar (y=17)",
+          "desc": "Cápsula en la barra superior; Mi lista y Colecciones suben a y=84 (+96 px) y Catálogo deja su cabecera limpia en y=84",
+          "file": ".unificador/propuestas/P-17/1.html"
+        },
+        {
+          "label": "Riel en y=84 (como Estadísticas)",
+          "desc": "Cápsula fija a la izquierda en y=84 y zona derecha contextual según la sección",
+          "file": ".unificador/propuestas/P-17/2.html"
+        },
+        {
+          "label": "Chasis único de cristal",
+          "desc": "Una sola barra .glass de lado a lado (y=82) que une pestañas, ficha del juego y buscador",
+          "file": ".unificador/propuestas/P-17/3.html"
+        },
+        {
+          "label": "Unida a la miga",
+          "desc": "La pastilla Inicio › Categoría integra las tres pestañas arriba a la izquierda",
+          "file": ".unificador/propuestas/P-17/4.html"
+        },
+        {
+          "label": "Solapa de panel (archivador)",
+          "desc": "Pestañas acopladas al borde superior de un contenedor de cristal continuo con controles en la cornisa",
+          "file": ".unificador/propuestas/P-17/5.html"
+        },
+        {
+          "label": "Dock lateral vertical",
+          "desc": "Columna fija a la izquierda (162 px) con secciones arriba y filtros/buscador abajo; contenido a alto completo",
+          "file": ".unificador/propuestas/P-17/6.html"
+        }
+      ],
+      "recommend": 1,
+      "answer": {
+        "option": 1,
+        "text": "top bar, fijo, implementa",
+        "by": "persona",
+        "at": "2026-11-18T02:00:49+01:00",
+        "seen": true
+      },
+      "by": "antigravity",
+      "created": "2026-11-18T01:49:19+01:00"
+    },
+    {
+      "id": "P-18",
+      "kind": "proposal",
+      "title": "Colecciones: diseño nuevo con colores y línea del tiempo (guía de diseño)",
+      "text": "Tres propuestas siguiendo docs/guia-diseno.md (cristal Wii U, dos acentos, claro y Noche ahumada, estados vacío y carga, lienzo 1280x720 navegable con mando).",
+      "step": "IYE-10",
+      "branch": "IYE",
+      "options": [
+        {
+          "label": "Cinta cromática",
+          "desc": "tira superior con espectro de color y gran línea del tiempo a ancho completo",
+          "file": ".unificador/propuestas/P-18/1.html"
+        },
+        {
+          "label": "Estanterías en el tiempo",
+          "desc": "evolución de estanterías apiladas con aurora, raíl cromático y vecinas plegadas",
+          "file": ".unificador/propuestas/P-18/2.html"
+        },
+        {
+          "label": "Eje de épocas",
+          "desc": "lista lateral con anillo cromático y regla de años reales con altura por horas",
+          "file": ".unificador/propuestas/P-18/3.html"
+        }
+      ],
+      "recommend": 1,
+      "answer": null,
+      "by": "antigravity",
+      "created": "2026-11-18T22:09:11+01:00"
+    },
+    {
+      "id": "P-19",
+      "kind": "proposal",
+      "title": "Colecciones: diseño con guía de acento vivo, timeline y solución para iconos (sin portadas)",
+      "text": "Cuatro propuestas para arreglar Colecciones siguiendo docs/guia-diseno.md y acento vivo (--v1/--gv para gráficos y --f1/--gf para texto/pastillas), manteniendo la línea de tiempo cromática y los colores, y explorando qué hacer con los iconos de colección sin usar portadas (incluido no poner icono).",
+      "step": "IYE-10",
+      "branch": "IYE",
+      "options": [
+        {
+          "label": "Sin icono · Luz viva",
+          "desc": "solo nombre + hilo de espectro vivo arriba y gran timeline cromática a ancho completo",
+          "file": ".unificador/propuestas/P-19/1.html"
+        },
+        {
+          "label": "Orbe cromático vivo",
+          "desc": "lista lateral con orbe de cristal automático por colores + timeline amplia y detalle abajo",
+          "file": ".unificador/propuestas/P-19/2.html"
+        },
+        {
+          "label": "Estanterías vivas · Lomo",
+          "desc": "sin icono cuadrado: lomo vertical cromático, balda activa desplegada y vecinas plegadas con mini-timeline",
+          "file": ".unificador/propuestas/P-19/3.html"
+        },
+        {
+          "label": "Monograma · Cronología de horas",
+          "desc": "iniciales en cristal + arco vivo de progreso y eje de años reales con pilares por horas",
+          "file": ".unificador/propuestas/P-19/4.html"
+        }
+      ],
+      "recommend": 1,
+      "answer": {
+        "option": 2,
+        "text": "Como la 2 (lista lateral + panel derecho con timeline y colores), pero sin los iconos redondos, mostrando más capturas y aleatorias de todos los juegos de la colección",
+        "by": "persona",
+        "at": "2026-11-21T14:27:44+01:00",
+        "seen": true
+      },
+      "by": "antigravity",
+      "created": "2026-11-21T14:17:41+01:00"
     }
   ],
-  "next_ask": 16,
-  "next_tweak": 3,
+  "next_ask": 20,
+  "next_tweak": 7,
   "tweaks": [
     {
       "id": "R-1",
@@ -3015,6 +3295,42 @@
       "commits": [
         "35142e99fabd3b285d0d83f7dc34d596023be93b"
       ]
+    },
+    {
+      "id": "R-3",
+      "title": "Estado y plan de la tablet al día: falta probar en la POCO Pad",
+      "by": "claude",
+      "at": "2026-11-17T22:54:08+01:00",
+      "commits": [
+        "ce563b7e38f52795060d38cc85542c6bff7cae04"
+      ]
+    },
+    {
+      "id": "R-4",
+      "title": "Pestañas Mi lista, Colecciones y Catálogo integradas en la barra superior con color fijo de la categoría y más espacio vertical",
+      "by": "antigravity",
+      "at": "2026-11-18T02:09:17+01:00",
+      "commits": [
+        "f92ef16f314930b0592bb8717e7af298a1768099"
+      ]
+    },
+    {
+      "id": "R-5",
+      "title": "El sonido de captura ya no se oye doble y el botón de silencio del DualSense se puede asignar",
+      "by": "claude",
+      "at": "2026-11-21T21:16:32+01:00",
+      "commits": [
+        "bfe74293198d5d590c29f9fe3f311ec590b763ea"
+      ]
+    },
+    {
+      "id": "R-6",
+      "title": "Rachas: las velas de la ficha de Inicio ya no se salen del tubo y la pantalla de racha entra más rápida y suave",
+      "by": "claude",
+      "at": "2026-11-21T21:40:32+01:00",
+      "commits": [
+        "13800dca525dc90684ee753f3e4f225a8f78d0e1"
+      ]
     }
   ],
   "news": [
@@ -3031,6 +3347,33 @@
       "by": "claude",
       "at": "2026-11-17T22:21:23+01:00",
       "ref": "TCL/Decisiones"
+    },
+    {
+      "text": "📲 Tablet con la interfaz nueva: Base táctil",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-17T22:43:45+01:00",
+      "ref": "TCL/Base táctil"
+    },
+    {
+      "text": "📲 Tablet con la interfaz nueva: Pantallas",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-17T22:53:49+01:00",
+      "ref": "TCL/Pantallas"
+    },
+    {
+      "text": "Pestañas de categoría integradas en la barra superior con más espacio para Mi lista, Colecciones y Catálogo",
+      "kind": "cambio",
+      "by": "antigravity",
+      "at": "2026-11-18T02:09:18+01:00"
+    },
+    {
+      "text": "📊 Interfaz y estadísticas: Mi lista y Colecciones",
+      "kind": "fase",
+      "by": "antigravity",
+      "at": "2026-11-21T14:31:58+01:00",
+      "ref": "IYE/Mi lista y Colecciones"
     }
   ],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c"

@@ -50,12 +50,10 @@
           </p>
         </div>
         <div class="sgtabs">
-          <span class="btn sh">LB</span>
           {#each ART_KINDS as k}
             <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
             <div class="chip" class:on={p.kind === k && p.mode === 'images'} onclick={() => setKind(k)}>{KIND_LABEL[k]}</div>
           {/each}
-          <span class="btn sh">RB</span>
         </div>
       </div>
 
