@@ -148,7 +148,7 @@
     left: 28px;
     top: 24px;
     width: 320px;
-    animation: fade 0.4s ease 0.25s both;
+    animation: fade 0.3s ease 0.05s both;
   }
   .hero .n {
     display: flex;
@@ -172,6 +172,7 @@
     fill: color-mix(in srgb, var(--c) 16%, transparent);
     transform-origin: 50% 90%;
     animation: flick2 1.6s ease-in-out infinite;
+    will-change: transform;
     filter: drop-shadow(0 0 8px color-mix(in srgb, var(--c) 60%, transparent));
   }
   .emb {
@@ -257,7 +258,7 @@
     line-height: 1.45;
     font-weight: 600;
     color: var(--ink);
-    animation: fade 0.4s ease 0.4s both;
+    animation: fade 0.3s ease 0.12s both;
   }
   .msg b {
     color: var(--ci);
@@ -276,7 +277,7 @@
     height: 124px;
     padding: 14px 16px;
     box-sizing: border-box;
-    animation: fade 0.4s ease 0.5s both;
+    animation: fade 0.3s ease 0.18s both;
   }
   .tday .row {
     display: flex;
@@ -312,7 +313,7 @@
     background: linear-gradient(90deg, var(--c), color-mix(in srgb, var(--c) 62%, white));
     transform-origin: 0 50%;
     transition: width 0.6s var(--e-soft);
-    animation: barin 1s cubic-bezier(0.3, 0.8, 0.3, 1) 0.5s both;
+    animation: barin 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.25s both;
   }
   .tbar .tz {
     position: absolute;

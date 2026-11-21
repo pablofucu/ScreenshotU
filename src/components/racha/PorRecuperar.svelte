@@ -54,7 +54,7 @@
     height: 136px;
     padding: 14px 22px 18px;
     box-sizing: border-box;
-    animation: rise 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.1) 0.7s both;
+    animation: rise 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s both;
   }
   .t {
     font-size: var(--t-l);
@@ -108,7 +108,7 @@
     border-radius: var(--r-pill);
     background: linear-gradient(90deg, var(--am), var(--am2));
     transform-origin: 0 50%;
-    animation: barin 1.1s cubic-bezier(0.3, 0.8, 0.3, 1) 1.5s both;
+    animation: barin 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.45s both;
   }
   .okbig {
     display: flex;
@@ -130,7 +130,7 @@
   }
 
   @keyframes rise {
-    from { opacity: 0; transform: translateY(40px); }
+    from { opacity: 0; transform: translateY(14px); }
     to { opacity: 1; transform: none; }
   }
   @keyframes barin {

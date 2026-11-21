@@ -17,14 +17,14 @@
     {#each slots as f, k (k)}
       {#if f}
         <div class="cw" title="Plazo hasta el {freeClose(f, true)}">
-          <div class="coin used" style="--d:{0.8 + k * 0.12}s">
+          <div class="coin used" style="--d:{0.3 + k * 0.08}s">
             <IconoRacha name="moon" size={22} />
           </div>
           <div class="txt">Usado el {freeDayName(f.day, false)}<small>· vuelve el {freeDayName(f.deadline, false)}</small></div>
         </div>
       {:else}
         <div class="cw">
-          <div class="coin" style="--d:{0.8 + k * 0.12}s">
+          <div class="coin" style="--d:{0.3 + k * 0.08}s">
             <IconoRacha name="moon" size={24} stroke="var(--amk)" fill="color-mix(in srgb, var(--am) 30%, transparent)" />
           </div>
           <div class="txt">Disponible<small>por si fallas un día</small></div>
@@ -48,7 +48,7 @@
     height: 136px;
     padding: 14px 20px 16px;
     box-sizing: border-box;
-    animation: rise 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.1) 0.6s both;
+    animation: rise 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both;
   }
   .t {
     font-size: var(--t-l);
@@ -100,7 +100,7 @@
     color: var(--amk);
     background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--am2) 30%, var(--tint-base)), var(--am-soft));
     box-shadow: inset 0 0 0 2px var(--am), 0 6px 14px -8px color-mix(in srgb, var(--am) 80%, transparent);
-    animation: pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) var(--d) both, bob 2.8s ease-in-out 1.4s infinite;
+    animation: pop 0.4s cubic-bezier(0.34, 1.4, 0.64, 1) var(--d) both, bob 2.8s ease-in-out 0.9s infinite;
   }
   .coin.used {
     background: transparent;
@@ -108,15 +108,15 @@
     box-shadow: none;
     border: 2px dashed color-mix(in srgb, var(--ink-3) 55%, transparent);
     box-sizing: border-box;
-    animation: pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) var(--d) both;
+    animation: pop 0.4s cubic-bezier(0.34, 1.4, 0.64, 1) var(--d) both;
   }
 
   @keyframes rise {
-    from { opacity: 0; transform: translateY(40px); }
+    from { opacity: 0; transform: translateY(14px); }
     to { opacity: 1; transform: none; }
   }
   @keyframes pop {
-    from { opacity: 0; transform: scale(0.6); }
+    from { opacity: 0; transform: scale(0.8); }
     to { opacity: 1; transform: scale(1); }
   }
   @keyframes bob {

@@ -68,11 +68,11 @@
       const o = d.free ? d.free.owe * K : 0;
 
       const raw: Array<Omit<Layer, 'lo' | 'hi'>> = [];
-      if (b > 0.5) raw.push({ cls: 'b', bottom: 0, h: b, delay: 0.45 + i * 0.07 });
-      if (x > 0.5) raw.push({ cls: 'x', bottom: b, h: x, delay: 0.75 + i * 0.07 });
-      if (u > 0.5) raw.push({ cls: 'xu', bottom: b + x, h: u, delay: 0.85 + i * 0.07 });
-      if (d.free && p > 0.5) raw.push({ cls: 'p', bottom: b, h: p, delay: 1.5 });
-      if (d.free && o > 0.5) raw.push({ cls: 'o', bottom: b + p, h: o, delay: 1.0 });
+      if (b > 0.5) raw.push({ cls: 'b', bottom: 0, h: b, delay: 0.1 + i * 0.04 });
+      if (x > 0.5) raw.push({ cls: 'x', bottom: b, h: x, delay: 0.3 + i * 0.04 });
+      if (u > 0.5) raw.push({ cls: 'xu', bottom: b + x, h: u, delay: 0.36 + i * 0.04 });
+      if (d.free && p > 0.5) raw.push({ cls: 'p', bottom: b, h: p, delay: 0.5 });
+      if (d.free && o > 0.5) raw.push({ cls: 'o', bottom: b + p, h: o, delay: 0.4 });
 
       const layers: Layer[] = raw.map((l, idx) => ({
         ...l,
@@ -176,7 +176,7 @@
         const xb = X0 + f.to * (TW + TG) + TW / 2;
         const yb = TT + TH - 6 - (week[f.to].min + f.before + f.amt / 2) * kPx;
         for (let k = 0; k < 3; k++) {
-          spawnTravel(quad([xa, ya], [xb, yb], 70), 900 + n * 260 + k * 120, 800);
+          spawnTravel(quad([xa, ya], [xb, yb], 70), 650 + n * 220 + k * 110, 750);
         }
       });
     }, 50);
@@ -265,7 +265,7 @@
       {#if c.isLit}
         <span
           class="cnd top-ic on"
-          style="bottom:{c.topPx + 3}px;--ig:{c.d.today ? 0.12 : 1.0 + c.i * 0.12}s"
+          style="bottom:{c.topPx + 3}px;--ig:{c.d.today ? 0.12 : 0.42 + c.i * 0.05}s"
         >
           <span class="cflame" style="--fd:{1.15 + (c.i % 3) * 0.22}s;--fdl:{(c.i % 4) * 0.25}s">
             <IconoRacha
@@ -287,7 +287,7 @@
       {:else if c.d.free}
         <span
           class="top-ic moon on"
-          style="bottom:{Math.max(c.topPx, c.d.min * K) + 12}px;--ig:{1.1 + c.i * 0.12}s"
+          style="bottom:{Math.max(c.topPx, c.d.min * K) + 12}px;--ig:{0.5 + c.i * 0.05}s"
         >
           <span class="micon" style="--fdl:{(c.i % 3) * 0.4}s">
             <IconoRacha
@@ -299,13 +299,13 @@
           </span>
         </span>
       {:else if c.d.today}
-        <span class="top-ic wait on" style="bottom:{c.g * K + 10}px;--ig:1.1s">
+        <span class="top-ic wait on" style="bottom:{c.g * K + 10}px;--ig:0.5s">
           <IconoRacha name="flame" size={28} stroke="var(--c)" fill="none" />
         </span>
       {/if}
     </div>
 
-    <div class="dlab" class:td={c.d.today} style="left:{c.colX + TW / 2 - 55}px;top:{TT + TH + 10}px;--d:{0.4 + c.i * 0.05}s">
+    <div class="dlab" class:td={c.d.today} style="left:{c.colX + TW / 2 - 55}px;top:{TT + TH + 10}px;--d:{0.05 + c.i * 0.03}s">
       {c.d.today ? 'Hoy' : freeDayName(c.d.day, false)}
       <small>{fmtMin(Math.round(c.d.min), true)}</small>
     </div>
@@ -315,7 +315,7 @@
         class="dtag tag"
         class:c={c.d.free.done}
         class:r={!c.d.free.done && c.d.free.left <= 2}
-        style="left:{c.colX + TW / 2}px;top:{c.tagTop}px;--d:1.05s"
+        style="left:{c.colX + TW / 2}px;top:{c.tagTop}px;--d:0.62s"
       >
         {#if c.d.free.done}
           <IconoRacha name="check" size={12} />Recuperado
@@ -324,11 +324,11 @@
         {/if}
       </span>
     {:else if c.d.gave > 0 && !c.isWaitToday}
-      <span class="dtag tag" style="left:{c.colX + TW / 2}px;top:{c.tagTop}px;--d:0.95s">
+      <span class="dtag tag" style="left:{c.colX + TW / 2}px;top:{c.tagTop}px;--d:0.58s">
         <IconoRacha name="back" size={12} />Paga {fmtMin(Math.round(c.d.gave), true)}
       </span>
     {:else if c.d.broken}
-      <span class="dtag tag r" style="left:{c.colX + TW / 2}px;top:{c.tagTop}px;--d:0.95s">
+      <span class="dtag tag r" style="left:{c.colX + TW / 2}px;top:{c.tagTop}px;--d:0.58s">
         <IconoRacha name="warn" size={12} />Rota
       </span>
     {/if}
@@ -396,7 +396,7 @@
     height: 0;
     border-top: 2px dashed color-mix(in srgb, var(--ink-2) 55%, transparent);
     z-index: 4;
-    animation: fade 0.5s ease 0.8s both;
+    animation: fade 0.3s ease 0.2s both;
   }
   .dmeta b {
     position: absolute;
@@ -466,7 +466,7 @@
     background-clip: padding-box;
     border-radius: 3px;
     box-sizing: border-box;
-    animation: grow 0.7s cubic-bezier(0.3, 0.8, 0.3, 1) var(--d) both;
+    animation: grow 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) var(--d) both;
     transition: height 0.55s var(--e-soft), bottom 0.55s var(--e-soft);
   }
   .tube > i.lo {
@@ -510,15 +510,17 @@
     transition: bottom 0.55s var(--e-soft);
   }
   .top-ic.on {
-    animation: ign 0.6s cubic-bezier(0.3, 1.7, 0.5, 1) var(--ig, 0s) both;
+    animation: ign 0.45s cubic-bezier(0.34, 1.4, 0.64, 1) var(--ig, 0s) both;
   }
   .cflame {
+    will-change: transform;
     display: block;
     transform-origin: 50% 95%;
     animation: flick2 var(--fd, 1.4s) ease-in-out var(--fdl, 0s) infinite;
     filter: drop-shadow(0 0 4px color-mix(in srgb, var(--c) 70%, transparent));
   }
   .micon {
+    will-change: transform;
     display: block;
     animation: bob 3s ease-in-out var(--fdl, 0s) infinite;
     filter: drop-shadow(0 0 4px color-mix(in srgb, var(--am) 55%, transparent));
@@ -549,7 +551,7 @@
     font-size: var(--t-m);
     font-weight: 800;
     color: var(--ink);
-    animation: fade 0.4s ease var(--d) both;
+    animation: fade 0.3s ease var(--d) both;
   }
   .dlab small {
     display: block;
@@ -581,7 +583,7 @@
     background: var(--am-soft);
     color: var(--amk);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--am) 55%, transparent);
-    animation: pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) var(--d) both;
+    animation: pop 0.35s cubic-bezier(0.34, 1.4, 0.64, 1) var(--d) both;
   }
   .dtag.r {
     background: var(--bad-soft);
@@ -617,14 +619,14 @@
   }
 
   @keyframes grow {
-    from { height: 0; }
+    from { clip-path: inset(100% 0 0 0); }
   }
   @keyframes fade {
     from { opacity: 0; }
     to { opacity: 1; }
   }
   @keyframes pop {
-    from { opacity: 0; transform: scale(0.6); }
+    from { opacity: 0; transform: scale(0.8); }
     to { opacity: 1; transform: scale(1); }
   }
   @keyframes ign {

@@ -69,7 +69,7 @@
     const id = `${t.key}:${today}`;
     if (scheduled.has(id)) return;
     scheduled.add(id);
-    const wait = calm() ? 0 : 1200;
+    const wait = calm() ? 0 : 900;
     const h = setTimeout(() => light(t.key), wait);
     rr.timers.push(h);
   });

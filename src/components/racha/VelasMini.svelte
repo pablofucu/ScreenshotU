@@ -6,8 +6,8 @@
   let { week, goal, pending = false }: { week: WeekDay[]; goal: number; pending?: boolean } = $props();
 
   const H = 78;
-  const MAX_H = 74;
-  const GOAL_PX = H / 1.6;
+  // Alto útil del relleno: deja sitio arriba para la llama o la luna sin salirse del tubo.
+  const MAX_H = H - 19;
   const DI = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
   const FLAME_D = 'M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235';
   const MOON_D = 'M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z';
@@ -20,7 +20,14 @@
   }
 
   const refGoal = $derived(goal > 0 ? goal : (week.find((w) => w.goal > 0)?.goal ?? 0));
-  const scale = $derived(refGoal > 0 ? GOAL_PX / refGoal : 0);
+  // Escala como en la pantalla de racha: la meta queda a 1/1.6 del alto salvo que algún día suba más.
+  const scale = $derived.by(() => {
+    if (refGoal <= 0) return 0;
+    let hi = 1.6 * refGoal;
+    for (const w of week) hi = Math.max(hi, w.goal || refGoal, w.min + (w.free ? w.free.paid + w.free.owe : 0));
+    return MAX_H / hi;
+  });
+  const goalPx = $derived(refGoal * scale);
 
   const cols = $derived(week.map((w, i) => {
     const g = w.goal > 0 ? w.goal : refGoal;
@@ -59,8 +66,8 @@
       letter: DI[dayDate(w.day).getUTCDay()],
       layers,
       topPx,
-      moonBot: Math.max(topPx, Math.min(MAX_H, w.min * scale)) + 3,
-      goalBot: Math.min(MAX_H, g * scale) + 3,
+      moonBot: Math.max(topPx, Math.min(MAX_H, w.min * scale)) + 4,
+      goalBot: Math.min(MAX_H, g * scale) + 4,
       lit,
       moon,
       wait,
@@ -83,7 +90,7 @@
           ></i>
         {/each}
         {#if c.lit}
-          <span class="cnd top-ic on flame" style="bottom:{c.topPx.toFixed(1)}px;--ig:{(c.w.today ? 0.1 : 0.55 + c.i * 0.08).toFixed(2)}s">
+          <span class="cnd top-ic on flame" style="bottom:{(c.topPx + 3).toFixed(1)}px;--ig:{(c.w.today ? 0.1 : 0.55 + c.i * 0.08).toFixed(2)}s">
             <svg width="12" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="--fd:{c.fd}s;--fdl:{c.fdl}s">
               <path d={FLAME_D} />
             </svg>
@@ -105,7 +112,7 @@
       <span>{c.letter}</span>
     </div>
   {/each}
-  <i class="meta" style="bottom:{(4 + 14 + GOAL_PX).toFixed(1)}px"></i>
+  <i class="meta" style="bottom:{(19 + goalPx).toFixed(1)}px"></i>
 </div>
 
 <style>
@@ -119,7 +126,7 @@
   .mtb.met{box-shadow:inset 0 0 0 1px var(--line),inset 0 -18px 18px -12px color-mix(in srgb,var(--c) 35%,transparent)}
   .col.td .mtb.met{box-shadow:inset 0 0 0 2px var(--c),inset 0 -18px 18px -12px color-mix(in srgb,var(--c) 35%,transparent)}
   .mtb>i{position:absolute;left:2px;right:2px;display:block;translate:0 -2px;border:0 solid transparent;border-top-width:1px;
-    background-clip:padding-box;border-radius:1px;box-sizing:border-box;animation:vgrow .65s var(--e-soft) var(--d) both}
+    background-clip:padding-box;border-radius:1px;box-sizing:border-box;animation:vgrow .55s cubic-bezier(.2,.8,.2,1) var(--d) both}
   .mtb>i.lo{border-top-width:0;border-bottom-left-radius:5px;border-bottom-right-radius:5px}
   .mtb>i.hi{border-top-left-radius:5px;border-top-right-radius:5px}
   .mtb .b{background:linear-gradient(0deg,var(--c),color-mix(in srgb,var(--c) 62%,white))}
@@ -132,12 +139,12 @@
   .top-ic{position:absolute;left:50%;z-index:5;pointer-events:none;transform:translateX(-50%);transform-origin:50% 100%}
   .top-ic svg{display:block;overflow:visible}
   .cnd svg{stroke:var(--c);fill:color-mix(in srgb,var(--c) 28%,var(--tint-base));transform-origin:50% 95%;
-    animation:vflick var(--fd,1.4s) ease-in-out var(--fdl,0s) infinite;filter:drop-shadow(0 0 4px color-mix(in srgb,var(--c) 70%,transparent))}
+    animation:vflick var(--fd,1.4s) ease-in-out var(--fdl,0s) infinite;will-change:transform;filter:drop-shadow(0 0 4px color-mix(in srgb,var(--c) 70%,transparent))}
   .top-ic.moon svg{stroke:var(--am);fill:color-mix(in srgb,var(--am) 28%,var(--tint-base));
-    animation:vbob 3s ease-in-out var(--fdl,0s) infinite;filter:drop-shadow(0 0 4px color-mix(in srgb,var(--am) 55%,transparent))}
+    animation:vbob 3s ease-in-out var(--fdl,0s) infinite;will-change:transform;filter:drop-shadow(0 0 4px color-mix(in srgb,var(--am) 55%,transparent))}
   .top-ic.wait svg{stroke:var(--c);fill:none;opacity:.55;stroke-dasharray:3 3;animation:vbreath 2.4s ease-in-out infinite}
-  .top-ic.on{animation:vign .55s cubic-bezier(.3,1.7,.5,1) var(--ig,0s) both}
-  @keyframes vgrow{from{height:0}}
+  .top-ic.on{animation:vign .45s cubic-bezier(.34,1.4,.64,1) var(--ig,0s) both}
+  @keyframes vgrow{from{clip-path:inset(100% 0 0 0)}}
   @keyframes vign{0%{opacity:0;transform:translateX(-50%) scale(0)}100%{opacity:1;transform:translateX(-50%) scale(1)}}
   @keyframes vflick{0%,100%{transform:scale(1,1) rotate(0)}25%{transform:scale(.94,1.08) rotate(-4deg)}50%{transform:scale(1.05,.95) rotate(2deg)}75%{transform:scale(.97,1.05) rotate(4deg)}}
   @keyframes vbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
