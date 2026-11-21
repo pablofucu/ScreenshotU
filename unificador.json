@@ -1303,7 +1303,7 @@
               "id": "ODD-8",
               "title": "Probar en la tablet real y en el PC cliente: abrir overlay, ver capturas y logros, cerrar",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-14T00:53:20+01:00",
@@ -1358,16 +1358,29 @@
                   "by": "claude",
                   "kind": "note",
                   "text": "Revisado el 21-nov: los tres arreglos (8c682a1, ce74d75, 2f3303d) van en v2.3.1. quickmenu.log del PC principal no tiene todavía ninguna apertura en streaming, así que falta la prueba real con Moonlight; si sigue fallando, ese log dice si el marco y el cursor se arreglaron."
+                },
+                {
+                  "at": "2026-11-22T00:52:56+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "La persona confirma que ya quedó resuelto (cursor y pantalla completa en el PC)"
                 }
               ],
               "cat": "pruebas",
-              "updated": "2026-11-21T21:29:24+01:00",
-              "change": "No he probado en tablet, pero en pc está bien pero no funciona el cursor o no se ve y ademas se pone un borde de arriba de ventana con titulo y botón de cerrar y debería de ser a pantalla completa",
+              "updated": "2026-11-22T00:52:56+01:00",
               "commits": [
                 "8c682a1c185ac5156dec7bd8124588bcffc6262a"
-              ]
+              ],
+              "result": "La persona confirma que ya quedó resuelto (cursor y pantalla completa en el PC)"
             }
-          ]
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "claude",
+            "at": "2026-11-22T00:52:56+01:00",
+            "seen": true
+          }
         }
       ]
     },
@@ -2578,6 +2591,117 @@
         }
       ],
       "nonstop": true
+    },
+    {
+      "key": "RDE",
+      "name": "Rediseño de Estadísticas",
+      "goal": "Estadísticas ordenadas en tres niveles con un solo estilo y los mismos botones",
+      "icon": "📊",
+      "color": 3,
+      "created": "2026-11-22T00:52:56+01:00",
+      "by": "claude",
+      "next_id": 9,
+      "phases": [
+        {
+          "name": "Maqueta",
+          "icon": "",
+          "steps": [
+            {
+              "id": "RDE-1",
+              "title": "Inventario de pantallas y datos",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T00:53:01+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Inventario hecho en el chat: 5 sitios con estadísticas, 3 estilos, botones distintos por pestaña, datos repetidos"
+                }
+              ],
+              "cat": "investigar",
+              "result": "Inventario hecho en el chat: 5 sitios con estadísticas, 3 estilos, botones distintos por pestaña, datos repetidos",
+              "updated": "2026-11-22T00:53:01+01:00"
+            },
+            {
+              "id": "RDE-2",
+              "title": "Maqueta del rediseño",
+              "desc": "",
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-22T00:53:01+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-22T00:53:01+01:00"
+            },
+            {
+              "id": "RDE-3",
+              "title": "Elegir y ajustar la maqueta",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "decidir"
+            }
+          ]
+        },
+        {
+          "name": "Pantallas",
+          "icon": "",
+          "steps": [
+            {
+              "id": "RDE-4",
+              "title": "Nivel Mi actividad",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "RDE-5",
+              "title": "Nivel Categoría",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "RDE-6",
+              "title": "Nivel Juego",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            }
+          ]
+        },
+        {
+          "name": "Pulido",
+          "icon": "",
+          "steps": [
+            {
+              "id": "RDE-7",
+              "title": "Botones y animaciones comunes",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            },
+            {
+              "id": "RDE-8",
+              "title": "Probar con mando y biblioteca real",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "pruebas"
+            }
+          ]
+        }
+      ]
     }
   ],
   "asks": [
@@ -3276,7 +3400,7 @@
     }
   ],
   "next_ask": 20,
-  "next_tweak": 7,
+  "next_tweak": 8,
   "tweaks": [
     {
       "id": "R-1",
@@ -3331,9 +3455,26 @@
       "commits": [
         "13800dca525dc90684ee753f3e4f225a8f78d0e1"
       ]
+    },
+    {
+      "id": "R-7",
+      "title": "El tiempo de Switch (cuenta de Nintendo) cuenta ya en mes, año, calendario, rachas y Panorama",
+      "by": "claude",
+      "at": "2026-11-22T00:54:15+01:00",
+      "commits": [
+        "c434b77b4347f415788a60d0c7e221d3d6e6f00e"
+      ]
     }
   ],
-  "news": [],
+  "news": [
+    {
+      "text": "🪟 Overlay dentro del streaming: Abrirlo desde el cliente",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-22T00:52:56+01:00",
+      "ref": "ODD/Abrirlo desde el cliente"
+    }
+  ],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",
   "versions": [
     {
