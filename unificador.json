@@ -3333,48 +3333,58 @@
       ]
     }
   ],
-  "news": [
+  "news": [],
+  "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",
+  "versions": [
     {
-      "text": "📊 Estadísticas en una pantalla: Pulido",
-      "kind": "fase",
+      "version": "2.4.0",
+      "at": "2026-11-21T21:49:23+01:00",
       "by": "claude",
-      "at": "2026-11-17T19:36:01+01:00",
-      "ref": "EEU/Pulido"
-    },
-    {
-      "text": "📲 Tablet con la interfaz nueva: Decisiones",
-      "kind": "fase",
-      "by": "claude",
-      "at": "2026-11-17T22:21:23+01:00",
-      "ref": "TCL/Decisiones"
-    },
-    {
-      "text": "📲 Tablet con la interfaz nueva: Base táctil",
-      "kind": "fase",
-      "by": "claude",
-      "at": "2026-11-17T22:43:45+01:00",
-      "ref": "TCL/Base táctil"
-    },
-    {
-      "text": "📲 Tablet con la interfaz nueva: Pantallas",
-      "kind": "fase",
-      "by": "claude",
-      "at": "2026-11-17T22:53:49+01:00",
-      "ref": "TCL/Pantallas"
-    },
-    {
-      "text": "Pestañas de categoría integradas en la barra superior con más espacio para Mi lista, Colecciones y Catálogo",
-      "kind": "cambio",
-      "by": "antigravity",
-      "at": "2026-11-18T02:09:18+01:00"
-    },
-    {
-      "text": "📊 Interfaz y estadísticas: Mi lista y Colecciones",
-      "kind": "fase",
-      "by": "antigravity",
-      "at": "2026-11-21T14:31:58+01:00",
-      "ref": "IYE/Mi lista y Colecciones"
+      "news": [
+        {
+          "text": "📊 Estadísticas en una pantalla: Pulido",
+          "kind": "fase",
+          "by": "claude",
+          "at": "2026-11-17T19:36:01+01:00",
+          "ref": "EEU/Pulido"
+        },
+        {
+          "text": "📲 Tablet con la interfaz nueva: Decisiones",
+          "kind": "fase",
+          "by": "claude",
+          "at": "2026-11-17T22:21:23+01:00",
+          "ref": "TCL/Decisiones"
+        },
+        {
+          "text": "📲 Tablet con la interfaz nueva: Base táctil",
+          "kind": "fase",
+          "by": "claude",
+          "at": "2026-11-17T22:43:45+01:00",
+          "ref": "TCL/Base táctil"
+        },
+        {
+          "text": "📲 Tablet con la interfaz nueva: Pantallas",
+          "kind": "fase",
+          "by": "claude",
+          "at": "2026-11-17T22:53:49+01:00",
+          "ref": "TCL/Pantallas"
+        },
+        {
+          "text": "Pestañas de categoría integradas en la barra superior con más espacio para Mi lista, Colecciones y Catálogo",
+          "kind": "cambio",
+          "by": "antigravity",
+          "at": "2026-11-18T02:09:18+01:00"
+        },
+        {
+          "text": "📊 Interfaz y estadísticas: Mi lista y Colecciones",
+          "kind": "fase",
+          "by": "antigravity",
+          "at": "2026-11-21T14:31:58+01:00",
+          "ref": "IYE/Mi lista y Colecciones"
+        }
+      ],
+      "sha": "5312396771e33d2bf6108ec80b69d803c2ef88b9",
+      "tag": "v2.4.0"
     }
-  ],
-  "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c"
+  ]
 }
