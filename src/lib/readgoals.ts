@@ -193,12 +193,30 @@ export function mergeSpans(spans: Array<[number, number]>, gap = MERGE_GAP_MS): 
   return out;
 }
 
-/** Recorre las partidas `[inicio, fin)` de los juegos de la categoría (la partida en curso, hasta `now`), ya unidas. */
+/**
+ * Días de la consola (Nintendo, sin horas) como tramos `[inicio, fin)` dentro de su día local: empiezan a mediodía
+ * (o antes si no caben). Valen para sumar tiempo y días; no son partidas ni dicen a qué hora se jugó.
+ */
+export function consoleSpans(t: Pick<Title, 'console'>): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
+  for (const [d, min] of t.console?.days ?? []) {
+    if (!(min > 0)) continue;
+    const day = new Date(d); day.setHours(0, 0, 0, 0);
+    const a0 = day.getTime(), end = new Date(a0); end.setDate(end.getDate() + 1);
+    const len = Math.min(min * 60000, end.getTime() - a0);
+    const a = Math.min(a0 + 12 * 3600000, end.getTime() - len);
+    out.push([a, a + len]);
+  }
+  return out;
+}
+
+/** Recorre las partidas `[inicio, fin)` de los juegos de la categoría (la partida en curso, hasta `now`), ya unidas. Los días de la consola cuentan. */
 function eachSpan(key: GoalKey, platforms: Platform[], live: Live, now: number, f: (t: Title, a: number, b: number) => void) {
   for (const p of platforms) {
     if (p.id !== key) continue;
     for (const t of p.titles) {
       const spans: Array<[number, number]> = (t.plays ?? []).map(([a, b]) => [a, b]);
+      spans.push(...consoleSpans(t));
       if (live && t.gameId === live.id) spans.push([live.since, Math.max(now, live.since)]);
       for (const [a, b] of mergeSpans(spans)) f(t, a, b);
     }

@@ -1,8 +1,10 @@
 // Estadísticas de juego a partir de las partidas (`Title.plays`, `[inicio, fin]` en ms reales).
 // Todo se agrupa por días locales; una partida que cruza la medianoche reparte su tiempo entre los dos días
 // y cuenta como partida del periodo en el que empezó.
+// Los días de la consola (Switch con cuenta de Nintendo, `Title.console.days`) suman tiempo y días en todas las cifras
+// por fechas como tramos sin hora (`consoleSpans`); no cuentan como partidas, ni para la partida más larga ni para la hora.
 import type { Library, Title } from './types';
-import { DAY_START_HOUR, goalTrack, localDay, type GoalKey } from './readgoals.ts';
+import { DAY_START_HOUR, consoleSpans, goalTrack, localDay, type GoalKey } from './readgoals.ts';
 
 const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const MONTHS_L = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -33,6 +35,11 @@ export const fmtHM = (ms: number) => {
 };
 
 type Play = [number, number];
+/** Partidas del PC seguidas de los días de la consola; `real` = cuántas de delante son partidas de verdad. */
+function timed(t: Title): { all: Play[]; real: number } {
+  const plays = (t.plays ?? []) as Play[], c = consoleSpans(t);
+  return { all: c.length ? [...plays, ...c] : plays, real: plays.length };
+}
 const overlap = (p: Play, from: number, to: number) => Math.max(0, Math.min(p[1], to) - Math.max(p[0], from));
 /** Días locales (inicio) que toca una partida dentro de [from, to). */
 function eachDay(p: Play, from: number, to: number, f: (day: number, ms: number) => void) {
@@ -111,18 +118,18 @@ export function rankPeriod(lib: Library, kind: PeriodKind, off: number, now = Da
   let first = Infinity, prevAll = 0, prevN = 0;
   for (const g of games(lib)) {
     if (g.pi !== pi) continue;
-    const plays = (g.t.plays ?? []) as Play[];
+    const { all: plays, real } = timed(g.t);
     let ms = 0, n = 0, prevMs = 0;
-    for (const p of plays) {
+    plays.forEach((p, i) => {
       first = Math.min(first, p[0]);
       ms += overlap(p, range.from, range.to);
-      if (p[0] >= range.from && p[0] < range.to) n++;
+      if (i < real && p[0] >= range.from && p[0] < range.to) n++;
       if (prev) {
         prevMs += overlap(p, prev.from, prev.to);
-        if (p[0] >= prev.from && p[0] < prev.to) prevN++;
+        if (i < real && p[0] >= prev.from && p[0] < prev.to) prevN++;
       }
       eachDay(p, Math.max(range.from, p[0]), Math.min(range.to, p[1]), (d) => days.add(d));
-    }
+    });
     // «Siempre» incluye el tiempo del formato antiguo, guardado sin partidas.
     if (kind === 'all') { ms = Math.max(ms, g.t.playSeconds * 1000); n = Math.max(n, g.t.sessions); }
     prevAll += prevMs;
@@ -156,6 +163,7 @@ export function titleStats(t: Title): TitleStats {
     if (!longest || ms > longest.ms) longest = { ms, at: p[0] };
     eachDay(p, -Infinity, Infinity, (d) => days.add(d));
   }
+  for (const p of consoleSpans(t)) eachDay(p, -Infinity, Infinity, (d) => days.add(d));
   const ms = Math.max(sum, t.playSeconds * 1000), sessions = Math.max(plays.length, t.sessions);
   const l = plays.at(-1);
   return {
@@ -204,7 +212,7 @@ export interface Calendar {
 /** Minutos por día local de todas las partidas. */
 function dayTotals(lib: Library): Map<number, number> {
   const m = new Map<number, number>();
-  for (const g of games(lib)) for (const p of (g.t.plays ?? []) as Play[]) eachDay(p, -Infinity, Infinity, (d, ms) => m.set(d, (m.get(d) ?? 0) + ms));
+  for (const g of games(lib)) for (const p of timed(g.t).all) eachDay(p, -Infinity, Infinity, (d, ms) => m.set(d, (m.get(d) ?? 0) + ms));
   return m;
 }
 
@@ -252,7 +260,8 @@ export function calendar(lib: Library, off: number, now = Date.now()): Calendar 
   };
 }
 
-export interface DayPlay extends GameRef { start: number; end: number; ms: number; shots: number }
+/** `console`: tiempo de la consola de ese día (sin hora: `start`/`end` no son reales). */
+export interface DayPlay extends GameRef { start: number; end: number; ms: number; shots: number; console?: boolean }
 /** Partidas que tocan un día, con las capturas hechas durante cada una. */
 export function dayPlays(lib: Library, day: number): DayPlay[] {
   const to = addDays(day, 1);
@@ -265,6 +274,10 @@ export function dayPlays(lib: Library, day: number): DayPlay[] {
       const a = p[0] - new Date(p[0]).getTimezoneOffset() * 60000, b = p[1] - new Date(p[1]).getTimezoneOffset() * 60000;
       const shots = g.t.shots.reduce((n, s) => n + (s.date >= a && s.date <= b ? 1 : 0), 0);
       out.push({ ...g, start: p[0], end: p[1], ms, shots });
+    }
+    for (const p of consoleSpans(g.t)) {
+      const ms = overlap(p, day, to);
+      if (ms > 0) out.push({ ...g, start: p[0], end: p[1], ms, shots: 0, console: true });
     }
   }
   return out.sort((a, b) => a.start - b.start);
@@ -301,7 +314,7 @@ function bucketRanges(kind: EvoKind, t: Title, now: number): Array<Omit<Bucket, 
     }
   } else {
     const y1 = new Date(now).getFullYear();
-    const firstPlay = Math.min(now, ...(t.plays ?? []).map((p) => p[0]));
+    const firstPlay = Math.min(now, ...timed(t).all.map((p) => p[0]));
     const y0 = Math.max(y1 - 9, new Date(firstPlay).getFullYear());
     for (let y = y0; y <= y1; y++) out.push({ from: new Date(y, 0, 1).getTime(), to: new Date(y + 1, 0, 1).getTime(), label: String(y), long: String(y) });
   }
@@ -312,10 +325,11 @@ export function evoBuckets(t: Title, kind: EvoKind, now = Date.now()): Bucket[] 
   return bucketRanges(kind, t, now).map((r) => {
     let ms = 0, n = 0, longest = 0, longestAt = 0;
     const days = new Set<number>();
-    for (const p of (t.plays ?? []) as Play[]) {
+    const { all, real } = timed(t);
+    for (const [i, p] of all.entries()) {
       ms += overlap(p, r.from, r.to);
       eachDay(p, Math.max(r.from, p[0]), Math.min(r.to, p[1]), (d) => days.add(d));
-      if (p[0] >= r.from && p[0] < r.to) {
+      if (i < real && p[0] >= r.from && p[0] < r.to) {
         n++;
         if (p[1] - p[0] > longest) { longest = p[1] - p[0]; longestAt = p[0]; }
       }
@@ -356,7 +370,7 @@ const shotYear = (date: number) => new Date(date).getUTCFullYear();
 export function playYears(lib: Library): number[] {
   const ys = new Set<number>();
   for (const g of games(lib)) {
-    for (const p of (g.t.plays ?? []) as Play[]) {
+    for (const p of timed(g.t).all) {
       const a = new Date(p[0]).getFullYear(), b = new Date(p[1]).getFullYear();
       for (let y = a; y <= b; y++) ys.add(y);
     }
@@ -371,9 +385,10 @@ function yearTotals(lib: Library, year: number): YearTotals {
   lib.platforms.forEach((pl) => {
     for (const t of pl.titles) {
       if (t.hidden) continue;
-      for (const p of (t.plays ?? []) as Play[]) {
+      const { all, real } = timed(t);
+      for (const [i, p] of all.entries()) {
         ms += overlap(p, from, to);
-        if (p[0] >= from && p[0] < to) n++;
+        if (i < real && p[0] >= from && p[0] < to) n++;
         eachDay(p, from, to, (d) => days.add(d));
       }
       for (const s of t.shots) if (shotYear(s.date) === year) shots++;
@@ -391,9 +406,10 @@ export function yearReview(lib: Library, year: number, favs: { has(p: string): b
   let longest: YearReview['longest'] = null;
   for (const g of games(lib)) {
     let ms = 0, n = 0;
-    for (const p of (g.t.plays ?? []) as Play[]) {
+    const { all, real } = timed(g.t);
+    for (const [i, p] of all.entries()) {
       ms += overlap(p, from, to);
-      if (p[0] >= from && p[0] < to) {
+      if (i < real && p[0] >= from && p[0] < to) {
         n++;
         if (!longest || p[1] - p[0] > longest.ms) longest = { ...g, start: p[0], end: p[1], ms: p[1] - p[0] };
       }
@@ -648,9 +664,10 @@ export function catPeriod(lib: Library, pi: number, range: Range): CatPeriod {
   for (const g of games(lib)) {
     if (g.pi !== pi) continue;
     let mine = 0, mn = 0;
-    for (const p of (g.t.plays ?? []) as Play[]) {
+    const { all: plays, real } = timed(g.t);
+    for (const [i, p] of plays.entries()) {
       mine += overlap(p, range.from, range.to);
-      if (p[0] < range.from || p[0] >= range.to) continue;
+      if (i >= real || p[0] < range.from || p[0] >= range.to) continue;
       mn++;
       if (!longest || p[1] - p[0] > longest.ms) longest = { ...g, start: p[0], ms: p[1] - p[0] };
     }
@@ -677,7 +694,7 @@ export function catWeeks(lib: Library, pi: number, n = 8, now = Date.now()): Cat
   for (const g of games(lib)) {
     if (g.pi !== pi) continue;
     let mine = 0;
-    for (const p of (g.t.plays ?? []) as Play[]) {
+    for (const p of timed(g.t).all) {
       if (p[1] <= ranges[0].from) continue;
       ranges.forEach((r, i) => { weeks[i] += overlap(p, r.from, r.to); });
       mine += overlap(p, cur.from, cur.to);
@@ -736,7 +753,7 @@ export function dayHeat(lib: Library, pi: number, year: number): number[] {
   const out = new Array<number>(Math.round((to - from) / 86400000)).fill(0);
   for (const g of games(lib)) {
     if (g.pi !== pi) continue;
-    for (const p of (g.t.plays ?? []) as Play[]) eachDay(p, from, to, (d, ms) => { out[Math.round((d - from) / 86400000)] += ms; });
+    for (const p of timed(g.t).all) eachDay(p, from, to, (d, ms) => { out[Math.round((d - from) / 86400000)] += ms; });
   }
   return out;
 }

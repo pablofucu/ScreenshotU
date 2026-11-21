@@ -277,7 +277,7 @@
         {#each plays.slice(0, SHOW) as p (p.t.id + p.start)}
           {@const a = app.titleAcc(p.pi, p.ti).c}
           <div class="ses">
-            <span class="tm">{fmtClock(p.start)} – {fmtClock(p.end)}</span>
+            <span class="tm">{p.console ? 'Consola' : `${fmtClock(p.start)} – ${fmtClock(p.end)}`}</span>
             <MiniCover t={p.t} acc={a} small />
             <span class="nm">{p.t.name}<small>{pname(p.pi)}{p.shots ? ` · ${p.shots} ${p.shots === 1 ? 'captura' : 'capturas'}` : ''}</small></span>
             <span class="du">{fmtHM(p.ms)}</span>

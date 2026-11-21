@@ -18,8 +18,9 @@ use serde::{Deserialize, Serialize};
 use super::store::{daily_since, players_load, titles_load, SwitchTitle};
 use crate::games::norm_key;
 
-/// Dias recientes que se devuelven para el desglose.
-pub const RECENT_DAYS: i64 = 28;
+/// Dias que se devuelven para el desglose: todos los guardados (diez anos de margen), para que las
+/// estadisticas por fechas (mes, ano, calendario, Panorama) cuenten la consola como las partidas del PC.
+pub const RECENT_DAYS: i64 = 3653;
 
 /// Tiempo de consola de una ficha.
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
@@ -28,7 +29,7 @@ pub struct ConsoleTime {
     pub seconds: u64,
     pub first_played: Option<i64>,
     pub last_played: Option<i64>,
-    /// `[inicio_del_dia_ms, minutos]` de los ultimos 28 dias con tiempo, del mas antiguo al mas reciente.
+    /// `[inicio_del_dia_ms, minutos]` de los dias con tiempo (todos los guardados), del mas antiguo al mas reciente.
     pub days: Vec<(i64, u32)>,
     /// `"history"` o `"parental"`: de donde sale la mayor parte de los dias recientes.
     pub source: String,
@@ -310,15 +311,15 @@ mod tests {
     }
 
     #[test]
-    fn old_days_stay_out_of_the_window_but_count_in_the_total() {
+    fn old_days_are_kept_and_count_in_the_total() {
         let (_d, c) = conn();
-        // Historial leido hace 40 dias: el hueco sigue sumando aunque este fuera de los 28 dias.
+        // Historial leido hace 40 dias: el hueco suma al total y sus dias salen en el desglose.
         title(&c, "A", 10, utc(2026, 9, 28, 10), Some("g1"), None);
         day(&c, "2026-10-01", "A", "history", "", 7);
         day(&c, "2026-11-07", "A", "history", "", 3);
         let t = console_times(&c, utc(2026, 11, 7, 12)).unwrap().by_game["g1"].clone();
         assert_eq!(t.seconds, (10 + 7 + 3) * 60);
-        assert_eq!(t.days.len(), 1);
+        assert_eq!(t.days.len(), 2);
     }
 
     #[test]

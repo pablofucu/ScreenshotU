@@ -187,7 +187,7 @@ export interface ConsoleTime {
   seconds: number;
   firstPlayed: number | null;
   lastPlayed: number | null;
-  /** `[inicio_del_día_ms, minutos]` de los últimos 28 días con tiempo. */
+  /** `[inicio_del_día_ms, minutos]` de todos los días guardados con tiempo. */
   days: Array<[number, number]>;
   /** De dónde salen la mayoría de los días recientes: `history` o `parental`. */
   source: string;
