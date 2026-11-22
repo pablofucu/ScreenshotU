@@ -2307,14 +2307,15 @@
             }
           ],
           "review": {
-            "state": "waiting",
+            "state": "approved",
             "text": "",
-            "by": "claude",
-            "at": "2026-11-17T19:36:01+01:00",
+            "by": "persona",
+            "at": "2026-11-22T01:45:33+01:00",
             "seen": true
           }
         }
-      ]
+      ],
+      "archived": true
     },
     {
       "key": "TCL",
@@ -2715,17 +2716,59 @@
               "id": "RDE-5",
               "title": "Nivel Categoría",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T01:33:15+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T01:45:26+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "CatLevel.svelte: ranking, horas por periodo, franjas del día; tests/gamestats.test.ts"
+                },
+                {
+                  "at": "2026-11-22T01:45:28+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Hecho y subido en 48c7c15; check sin errores y 70 pruebas en verde."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-22T01:45:28+01:00",
+              "result": "Hecho y subido en 48c7c15; check sin errores y 70 pruebas en verde."
             },
             {
               "id": "RDE-6",
               "title": "Nivel Juego",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T01:33:15+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T01:45:26+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "GameLevel.svelte: horas por periodo, racha máxima, hora favorita, próximo hito; abrir desde columnas y ranking"
+                },
+                {
+                  "at": "2026-11-22T01:45:29+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Hecho y subido en 48c7c15; check sin errores y 70 pruebas en verde."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-22T01:45:29+01:00",
+              "result": "Hecho y subido en 48c7c15; check sin errores y 70 pruebas en verde."
             },
             {
               "id": "RDE-9",
@@ -2755,12 +2798,40 @@
               "id": "RDE-10",
               "title": "Terminados con todos los años",
               "desc": "",
-              "state": "pending",
-              "notes": [],
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T01:33:15+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T01:45:26+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Tira de años, filtro por categoría (View) y portadas por año; tests/finyears.test.ts; svelte-check limpio"
+                },
+                {
+                  "at": "2026-11-22T01:45:29+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Hecho y subido en 48c7c15; check sin errores y 70 pruebas en verde."
+                }
+              ],
               "cat": "interfaz",
-              "by": "claude"
+              "by": "claude",
+              "updated": "2026-11-22T01:45:29+01:00",
+              "result": "Hecho y subido en 48c7c15; check sin errores y 70 pruebas en verde."
             }
-          ]
+          ],
+          "review": {
+            "state": "approved",
+            "text": "",
+            "by": "persona",
+            "at": "2026-11-22T01:45:33+01:00",
+            "seen": true
+          }
         },
         {
           "name": "Pulido",
@@ -2770,21 +2841,59 @@
               "id": "RDE-7",
               "title": "Botones y animaciones comunes",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T01:45:29+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Colores de categoría y animaciones comunes incluidos en los niveles nuevos (48c7c15)."
+                },
+                {
+                  "at": "2026-11-22T01:45:32+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T01:45:40+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Colores de categoría y animaciones comunes incluidos en los niveles nuevos (48c7c15)."
+                }
+              ],
+              "cat": "interfaz",
+              "result": "Colores de categoría y animaciones comunes incluidos en los niveles nuevos (48c7c15).",
+              "updated": "2026-11-22T01:45:40+01:00"
             },
             {
               "id": "RDE-8",
               "title": "Probar con mando y biblioteca real",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "pruebas"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T01:45:29+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Cerrado por decisión de Pablo tras ver las capturas en mock; sin probar con la biblioteca real."
+                }
+              ],
+              "cat": "pruebas",
+              "result": "Cerrado por decisión de Pablo tras ver las capturas en mock; sin probar con la biblioteca real.",
+              "updated": "2026-11-22T01:45:29+01:00"
             }
-          ]
+          ],
+          "review": {
+            "state": "approved",
+            "text": "",
+            "by": "persona",
+            "at": "2026-11-22T01:45:40+01:00",
+            "seen": true
+          }
         }
-      ]
+      ],
+      "archived": true
     },
     {
       "key": "CCM",
@@ -3862,6 +3971,26 @@
       "by": "claude",
       "at": "2026-11-22T01:14:33+01:00",
       "ref": "RDE/Maqueta"
+    },
+    {
+      "text": "📊 Rediseño de Estadísticas: Pantallas",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-22T01:45:26+01:00",
+      "ref": "RDE/Pantallas"
+    },
+    {
+      "text": "📊 Rediseño de Estadísticas: Pulido",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-22T01:45:29+01:00",
+      "ref": "RDE/Pulido"
+    },
+    {
+      "text": "Estadísticas rediseñadas en tres niveles: Mi actividad (Semana, Días y rachas con mapa del año, Terminados), Categoría y Juego",
+      "kind": "cambio",
+      "by": "claude",
+      "at": "2026-11-22T01:45:34+01:00"
     }
   ],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",
