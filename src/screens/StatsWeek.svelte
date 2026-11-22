@@ -3,11 +3,9 @@
   // y una columna por categoría con su color fijo; las categorías nunca se mezclan.
   import { onMount } from 'svelte';
   import { app } from '../lib/store.svelte';
-  import { calm } from '../lib/controller.svelte';
   import { GOAL_KEYS, goalMin, type GoalKey } from '../lib/readgoals';
-  import { fmtHM, weekReview, type Highlight } from '../lib/stats';
-  import { catIcon, catColor, catTone } from '../lib/chiptone';
-  import { countUp } from '../lib/countup';
+  import { fmtHM, weekReview } from '../lib/stats';
+  import { catIcon, catRank, catTone } from '../lib/chiptone';
   import { IS_TAURI, backend } from '../lib/backend';
   import type { WeekAch } from '../lib/types';
   import type { ReadStats } from '../lib/novel-types';
@@ -15,7 +13,6 @@
   import StatChip from '../components/StatChip.svelte';
   import CIcon from '../components/CIcon.svelte';
   import MiniCover from '../components/MiniCover.svelte';
-  import ThumbImg from '../components/ThumbImg.svelte';
 
   const DIAS = 'LMXJVSD';
   const goals = $derived(Object.fromEntries(GOAL_KEYS.filter((k) => goalMin(app.config, k) > 0).map((k) => [k, goalMin(app.config, k)])) as Partial<Record<GoalKey, number>>);
@@ -38,14 +35,17 @@
   const hasGoals = $derived(W.blocks.some((b) => b.goal));
   const met = $derived(days.filter((v) => v >= 1).length);
 
-  /* F · racha más larga de las metas */
-  const streak = $derived(Math.max(0, ...W.blocks.map((b) => b.goal?.streak ?? 0)));
-  const freeDays = $derived(Math.max(0, ...W.blocks.map((b) => b.goal?.free ?? 0)));
-
-  /* K · capturas */
-  const shots = $derived(W.blocks.reduce((a, b) => a + b.shots, 0));
-  const fan = $derived(W.blocks.map((b) => b.shotPick).filter((s): s is NonNullable<typeof s> => !!s).slice(0, 3));
-  const FAN = [['-14deg', '4px'], ['14deg', '4px'], ['0deg', '-6px']];
+  /* Lo más leído o jugado: el título con más tiempo de la semana, de cualquier categoría */
+  const topT = $derived.by(() => {
+    let r: { pi: number; ti: number; ms: number; kind: 'play' | 'read' } | null = null;
+    for (const b of W.blocks) for (const x of b.top) if (!r || x.ms > r.ms) r = { pi: b.pi, ti: x.ti, ms: x.ms, kind: b.kind };
+    return r;
+  });
+  /* Día con más tiempo y media de los días con actividad */
+  const DN = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  const perDay = $derived(Array.from({ length: 7 }, (_, i) => W.blocks.reduce((a, b) => a + b.perDay[i], 0)));
+  const bestDay = $derived(perDay.reduce((m, v, i) => (v > perDay[m] ? i : m), 0));
+  const activeN = $derived(perDay.filter((v) => v > 0).length);
 
   /* Logros de la semana, repartidos a su categoría por el juego (los de juegos sin categoría se ignoran) */
   let achs = $state<WeekAch[]>([]);
@@ -71,28 +71,6 @@
   });
   const pctf = (p: number) => `${p < 10 ? p.toLocaleString('es-ES', { maximumFractionDigits: 1 }) : Math.round(p)} %`;
 
-  /* Q · lo mejor, rota cada 3 s; el logro más raro (si lo tiene menos del 10 % de jugadores) entra como uno más */
-  let bi = $state(0), prevBi = $state(-1);
-  const best = $derived.by((): Highlight[] => {
-    let r: { pi: number; a: WeekAch & { ti: number } } | null = null;
-    for (const [pi, e] of achBy) if (e.rare && (e.rare.pct ?? 101) < 10 && (!r || e.rare.pct! < r.a.pct!)) r = { pi, a: e.rare };
-    if (!r) return W.highlights;
-    const h: Highlight = { kind: 'rare', pi: r.pi, ti: r.a.ti, value: r.a.pct!, text: `${r.a.displayName} · ${plat(r.pi).titles[r.a.ti].name} (${pctf(r.a.pct!)})` };
-    return [...W.highlights.slice(0, 2), h, ...W.highlights.slice(2)];
-  });
-  $effect(() => {
-    void wid;
-    bi = 0; prevBi = -1;
-    if (best.length < 2 || calm()) return;
-    const id = setInterval(() => { prevBi = bi; bi = (bi + 1) % best.length; setTimeout(() => (prevBi = -1), 320); }, 3000);
-    return () => clearInterval(id);
-  });
-  const HI: Record<Highlight['kind'], { icon: string; label: string }> = {
-    milestone: { icon: 'trophy', label: 'Hito' }, streak: { icon: 'flame', label: 'Racha' },
-    finished: { icon: 'check', label: 'Terminado' }, record: { icon: 'clock', label: 'Récord de partida' },
-    rare: { icon: 'star', label: 'Logro raro' },
-  };
-
   /* Novelas japonesas: caracteres, velocidad y palabras nuevas de la semana */
   let rs = $state<ReadStats | null>(null);
   const hasJvn = $derived(app.lib.platforms.some((p) => p.id === 'jvn'));
@@ -113,7 +91,7 @@
   const MON = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
   const sunday = $derived(W.range.to - 864e5);
   const dm = (ms: number) => { const d = new Date(ms); return `${d.getDate()} ${MON[d.getMonth()]}`; };
-  const cols = $derived(W.blocks.map((b) => {
+  const cols = $derived([...W.blocks].sort((a, b) => catRank(plat(a.pi).id) - catRank(plat(b.pi).id)).map((b) => {
     const pl = plat(b.pi), max = Math.max(1, ...b.perDay);
     const tags: Array<{ t: string; done?: boolean }> = [];
     if (b.finished.length) tags.push({ t: b.finished.length === 1 ? `${pl.titles[b.finished[0]].name} terminado` : `${b.finished.length} terminados`, done: true });
@@ -139,7 +117,7 @@
   <div class="cgrid">
     <StatChip k="wk0" icon="swap" label="Tiempo total" tone={4}>
       <div class="vrow">
-        <div class="x-v"><span use:countUp={{ to: tot.v, key: `week:G:${wid}` }}>{tot.v}</span><small>{tot.u}</small></div>
+        <div class="x-v">{tot.v}<small>{tot.u}</small></div>
         {#if W.ms > 0 || W.prevMs > 0}
           <span class="delta" class:dn={diff < 0}><CIcon name="up" class="" />{fmtHM(Math.abs(diff))}</span>
         {/if}
@@ -157,56 +135,37 @@
       </div>
     </StatChip>
 
-    <StatChip k="wk2" icon="flame" label="Racha" tone={0}>
-      <div style="display:flex;align-items:center;gap:var(--s-3)">
-        <svg class="flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-4 2-7 2 1 3 3 3 5 1-1 1-4 1-9z" class="tint" /><path d="M12 3c1 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-4 2-7 2 1 3 3 3 5 1-1 1-4 1-9z" /></svg>
-        <div>
-          <div class="x-v"><span use:countUp={{ to: streak, key: `week:F:${wid}` }}>{streak}</span><small>{streak === 1 ? 'día' : 'días'}</small></div>
-          <div class="x-s">{!W.blocks.some((b) => b.goal) ? 'Sin meta diaria' : freeDays ? `${freeDays} ${freeDays === 1 ? 'día libre' : 'días libres'}` : 'Seguidos con la meta'}</div>
-        </div>
-      </div>
-      <div class="chain">
-        {#each Array(14) as _, i}<i class:on={i >= 14 - Math.min(14, streak)} class:x-today={i === 13 && streak > 0 && app.weekOff === 0} style="--i:{i}"></i>{/each}
-      </div>
-    </StatChip>
-
-    <StatChip k="wk3" icon="cam" label="Capturas" tone={1}>
-      <div class="x-v"><span use:countUp={{ to: shots, key: `week:K:${wid}` }}>{shots}</span><small>{shots === 1 ? 'captura' : 'capturas'}</small></div>
-      <div class="fan">
-        {#each fan as s, i (s.path)}<ThumbImg path={s.path} style="--a:{FAN[i][0]};--y:{FAN[i][1]};--i:{i}" />{/each}
-        {#if fan.some((s) => s.fav)}<svg class="x-star" viewBox="0 0 24 24" fill="currentColor" stroke="var(--tint-base)" stroke-width="1.5" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" /></svg>{/if}
-      </div>
-    </StatChip>
-  </div>
-
-  <div class="r2" class:two={!!jp}>
-    <StatChip k="wk4" icon="trophy" label="Lo mejor de la semana" tone={2}>
-      {#if best.length}
-        <div class="x-best">
-          {#each best as h, i}
-            <div class:on={i === bi} class:out={i === prevBi} style="--v1:{catColor(plat(h.pi).id)}">
-              <span class="bico"><CIcon name={HI[h.kind].icon} class="" /></span>
-              <div><h4>{h.text}</h4><p>{HI[h.kind].label}</p></div>
-            </div>
-          {/each}
-        </div>
-        <div class="x-dots">{#each best as _, i}<i class:on={i === bi}></i>{/each}</div>
+    <StatChip k="wk2" icon={topT?.kind === 'play' ? 'swap' : 'book'} label={topT?.kind === 'play' ? 'Lo más jugado' : 'Lo más leído'} tone={topT ? catTone(plat(topT.pi).id) : 0} act={topT ? `sr:${topT.pi}:${topT.ti}` : undefined}>
+      {#if topT}
+        {@const t = plat(topT.pi).titles[topT.ti]}
+        <div class="topt"><MiniCover {t} acc="var(--v1)" /><div><b>{t.name}</b><span>{fmtHM(topT.ms)} · {plat(topT.pi).name}</span></div></div>
       {:else}
-        <div class="x-s">Aún no hay nada que destacar esta semana.</div>
+        <div class="x-s">Nada esta semana.</div>
       {/if}
     </StatChip>
 
-    {#if jp}
-      <StatChip k="wk5" icon="book" label="Novelas japonesas · lectura" tone={5}>
+    <StatChip k="wk3" icon="clock" label="Mejor día" tone={1}>
+      {#if perDay[bestDay] > 0}
+        <div class="x-v" style="font-size:var(--t-xl)">{DN[bestDay]}</div>
+        <div class="x-s"><b>{fmtHM(perDay[bestDay])}</b> · media de {fmtHM(W.ms / Math.max(1, activeN))} al día</div>
+      {:else}
+        <div class="x-s">Sin actividad esta semana.</div>
+      {/if}
+    </StatChip>
+  </div>
+
+  {#if jp}
+    <div class="r2">
+      <StatChip k="wk5" icon="book" label="Novelas japonesas · lectura" tone="jvn">
         <div class="jpr">
-          <div><div class="x-v"><span use:countUp={{ to: jp.chars, key: `week:J:${wid}` }}>{jp.chars}</span></div><div class="x-s">caracteres leídos</div></div>
+          <div><div class="x-v">{nf(jp.chars)}</div><div class="x-s">caracteres leídos</div></div>
           <div><div class="x-v">{nf(jp.cph)}<small>/h</small></div><div class="x-s">velocidad</div></div>
-          <div><div class="x-v"><span use:countUp={{ to: jp.fresh, key: `week:N:${wid}` }}>{jp.fresh}</span></div><div class="x-s">palabras nuevas</div></div>
-          {#if jp.phrases}<div><div class="x-v"><span use:countUp={{ to: jp.phrases, key: `week:P:${wid}` }}>{jp.phrases}</span></div><div class="x-s">frases al glosario</div></div>{/if}
+          <div><div class="x-v">{nf(jp.fresh)}</div><div class="x-s">palabras nuevas</div></div>
+          {#if jp.phrases}<div><div class="x-v">{nf(jp.phrases)}</div><div class="x-s">frases al glosario</div></div>{/if}
         </div>
       </StatChip>
-    {/if}
-  </div>
+    </div>
+  {/if}
 
   {#if cols.length}
     <div class="cols" style="grid-template-columns:repeat({Math.max(3, cols.length)},minmax(0,1fr))">
@@ -241,14 +200,13 @@
   .wk :global(.sh){margin:0 0 8px}
   .wk :global(.cgrid .st.st){height:112px}
   .wk :global(.st .face){padding:10px 14px;gap:6px}
-  .r2{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s-4);margin:12px 0}
-  .r2.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .r2{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--s-4);margin:12px 0 0}
+  .cols{margin-top:12px}
+  .topt{display:flex;align-items:center;gap:10px;min-width:0}
+  .topt > div{display:flex;flex-direction:column;gap:3px;min-width:0}
+  .topt b{font:800 var(--t-m)/1.15 var(--round);color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topt span{font:600 var(--t-s)/1.2 var(--round);color:var(--ink-2)}
   .r2 :global(.st.st){height:88px}
-  .r2 :global(.bico){width:38px;height:38px}
-  .r2 :global(.bico svg){width:20px;height:20px}
-  .r2 :global(.x-best h4){font-size:var(--t-m)}
-  .r2 :global(.x-best p){margin:0}
-  .r2 :global(.x-dots){position:absolute;right:16px;top:14px}
   .wk :global(.cgrid .x-v){font-size:var(--t-2xl)}
   .wk :global(.cgrid .cmp){gap:4px}
   .wk :global(.cgrid .cmp div){grid-template-columns:58px 1fr 54px}
@@ -256,9 +214,6 @@
   .wk :global([data-k="wk0"] .x-v){font-size:var(--t-xl)}
   .wk :global([data-k="wk0"] .cmp){gap:2px}
   .wk :global([data-k="wk0"] .cmp div){font-size:var(--t-xs);line-height:12px}
-  .wk :global(.fan){position:absolute;right:20px;top:14px;width:100px;height:64px;margin:0}
-  .wk :global(.st .fan img){width:80px;height:48px}
-  .wk :global(.st:has(.fan) .x-v small){display:none}
   .wk :global(.cpane .st.col),.wk :global(.st.col.col){height:226px}
   .wk :global(.col .ch){font-size:var(--t-m)}
   .wk :global(.col .ch > span){flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

@@ -3280,9 +3280,24 @@
               "id": "AE-4",
               "title": "Semana con recuadros de lectura útiles",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T04:59:53+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T05:02:38+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Semana: fuera Racha, Capturas en abanico, el carrusel de «Lo mejor» y los contadores animados. Nuevos recuadros: Lo más leído/jugado (portada, horas, categoría) y Mejor día (día, tiempo y media diaria). Columnas en orden de las rachas. svelte-check 0 errores; visto en la vista previa."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-22T05:02:38+01:00",
+              "result": "Semana: fuera Racha, Capturas en abanico, el carrusel de «Lo mejor» y los contadores animados. Nuevos recuadros: Lo más leído/jugado (portada, horas, categoría) y Mejor día (día, tiempo y media diaria). Columnas en orden de las rachas. svelte-check 0 errores; visto en la vista previa."
             },
             {
               "id": "AE-5",
