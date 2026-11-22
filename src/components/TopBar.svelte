@@ -9,7 +9,7 @@
   import { createReadRings } from '../lib/readrings.svelte';
 
   // `pad`: el botón de audio entra en la navegación del mando (arriba desde el contenido de la pantalla).
-  let { crumbs, dots = 0, dot = 0, pad = false }: { crumbs: string[]; dots?: number; dot?: number; pad?: boolean } = $props();
+  let { crumbs, dots = 0, dot = 0, pad = false, avatar = true }: { crumbs: string[]; dots?: number; dot?: number; pad?: boolean; avatar?: boolean } = $props();
 
   const curOut = $derived(app.audioOutputs.find((o) => o.default));
 
@@ -73,10 +73,10 @@
         <b>{best}</b>
       </div>
     </div>
-  {:else}
+  {:else if avatar}
     <div class="avatar mini" aria-hidden="true"><div class="face">{@html ICON.person}</div></div>
   {/if}
-  <div class="crumb pill" class:withp={dots > 1}>
+  <div class="crumb pill" class:withp={dots > 1} class:solo={!avatar && !streakAvatar}>
     {#if crumbs.length > 1}
       <button type="button" class="cback" data-hact="b" title="Volver (B / clic derecho)" aria-label="Volver">‹</button>
     {/if}
@@ -120,6 +120,7 @@
   .crumb .go:hover { color: var(--acc); text-decoration: underline; text-underline-offset: 4px; }
   .avatar.mini { width: 44px; height: 44px; top: 20px; left: 30px; opacity: 0.6; box-shadow: none; }
   .avatar.mini :global(.face) { box-shadow: none; }
+  .crumb.solo { left: 30px; }
   .avatar .streak { flex-direction: column; gap: 0; color: var(--on); }
   .avatar .streak svg { width: 22px; height: 22px; }
   .avatar .streak b { font-size: var(--t-m); font-weight: 800; line-height: 1; text-shadow: 0 1px 2px rgba(0,0,0,.25); }

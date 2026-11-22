@@ -42,7 +42,6 @@
     return Array.from({ length: FREE_MAX }, (_, i) => i < FREE_MAX - Math.min(FREE_MAX, used));
   });
   const goalTxt = (m: number) => (m % 60 === 0 ? `${m / 60} h` : m > 60 ? `${Math.floor(m / 60)} h ${m % 60}` : `${m} min`);
-  const RR = 32, RC = 2 * Math.PI * RR;
 
   /* Mapa del año */
   const arr = $derived(cat >= 0 ? (H.by.get(cat) ?? new Array<number>(H.total.length).fill(0)) : H.total);
@@ -97,15 +96,12 @@
           <div class="big">
             <div class="lab"><CIcon name="target" />Racha de meta</div>
             <div class="what">Días seguidos llegando a <b>{goalTxt(G.goal)}</b> en {GC.full}. Una luna salva un día flojo.</div>
+            <div class="today">
+              <span class="bar"><i style="width:{Math.round(G.frac * 100)}%"></i></span>
+              <span class="tt">{G.done ? 'Hoy, hecho' : `Hoy ${Math.round(G.today) < 60 ? `${Math.round(G.today)} min` : goalTxt(Math.round(G.today))} de ${goalTxt(G.goal)}`}</span>
+            </div>
           </div>
-          <div class="mid">
-            <svg class="ring" viewBox="0 0 76 76">
-              <circle class="bgc" cx="38" cy="38" r={RR} />
-              <circle class="fg" cx="38" cy="38" r={RR} stroke-dasharray={RC} stroke-dashoffset={RC * (1 - G.frac)} />
-              <text x="38" y="38">{G.done ? 'hecho' : `${Math.round(G.today)} min`}</text>
-            </svg>
-            <div class="num"><span use:countUp={{ to: G.streak, key: `dg:${gkey}` }}>{G.streak}</span><small>{days(G.streak)}</small></div>
-          </div>
+          <div class="num"><span use:countUp={{ to: G.streak, key: `dg:${gkey}` }}>{G.streak}</span><small>{days(G.streak)}</small></div>
           <div class="sside">
             Mejor racha<b>{G.best} {days(G.best)}</b>
             <div class="moons" title="Días libres: {FREE_MAX} cada 7 días">
@@ -187,16 +183,14 @@
   .sk .lab :global(svg){width:22px;height:22px;color:var(--v1)}
   .sk .what{font:500 var(--t-s)/1.3 var(--round);color:var(--ink-2)}
   .sk .what b{color:var(--ink)}
-  .sk .mid{display:flex;align-items:center;gap:var(--s-3)}
   .sk .num{font:800 var(--t-3xl)/1 var(--round);color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
   .sk .num small{font-size:var(--t-l);color:var(--ink-2);font-weight:700;margin-left:4px}
   .sk .sside{display:flex;flex-direction:column;gap:var(--s-1);align-items:flex-end;font:500 var(--t-s)/1.2 var(--round);color:var(--ink-2);white-space:nowrap}
   .sk .sside b{font:800 var(--t-l)/1 var(--round);color:var(--ink)}
-  .ring{width:72px;height:72px;flex-shrink:0}
-  .ring circle{fill:none;stroke-width:8}
-  .ring .bgc{stroke:color-mix(in srgb,var(--v1) 18%,transparent)}
-  .ring .fg{stroke:var(--v1);stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dashoffset var(--d-3) var(--e-soft);filter:drop-shadow(0 2px 6px color-mix(in srgb,var(--v1) 55%,transparent))}
-  .ring text{font:800 13px var(--round);fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+  .today{display:flex;align-items:center;gap:var(--s-2);margin-top:2px}
+  .today .bar{flex:1;max-width:160px;height:8px;border-radius:4px;background:color-mix(in srgb,var(--v1) 18%,transparent);overflow:hidden}
+  .today .bar i{display:block;height:100%;border-radius:inherit;background:var(--v1);transition:width var(--d-3) var(--e-soft)}
+  .today .tt{font:700 var(--t-s)/1 var(--round);color:var(--ink);white-space:nowrap}
   .moons{display:flex;gap:6px;margin-top:2px}
   .moon{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:color-mix(in srgb,var(--am) 16%,transparent);animation:pop .35s var(--e-bounce) var(--d) both}
   .moon.off{background:transparent;box-shadow:inset 0 0 0 1.5px var(--line)}

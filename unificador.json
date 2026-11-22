@@ -3303,19 +3303,56 @@
               "id": "AE-5",
               "title": "Quitar el borde naranja de los recuadros",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T05:07:23+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T05:07:24+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "El cristal enfocado mezclaba --g1 de la sección (que puede salir naranja) con el tono del recuadro; toneStyle ahora fija --g1/--g2 al color del recuadro. Mejor día deja el naranja (es de Switch). No reproducido en el mock: queda por confirmar con la persona."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-22T05:07:24+01:00",
+              "result": "El cristal enfocado mezclaba --g1 de la sección (que puede salir naranja) con el tono del recuadro; toneStyle ahora fija --g1/--g2 al color del recuadro. Mejor día deja el naranja (es de Switch). No reproducido en el mock: queda por confirmar con la persona."
             },
             {
               "id": "AE-6",
               "title": "Arreglar recuadro de meta e icono de Días y rachas",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T05:07:24+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T05:07:24+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Meta: anillo cambiado por barra 'Hoy X de Y' bajo el texto; número y mejor racha como en Racha de jugar. TopBar sin el muñeco gris en Estadísticas (prop avatar). Visto en el mock; svelte-check limpio."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-22T05:07:24+01:00",
+              "result": "Meta: anillo cambiado por barra 'Hoy X de Y' bajo el texto; número y mejor racha como en Racha de jugar. TopBar sin el muñeco gris en Estadísticas (prop avatar). Visto en el mock; svelte-check limpio."
             }
-          ]
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "claude",
+            "at": "2026-11-22T05:07:24+01:00",
+            "seen": true
+          }
         },
         {
           "name": "Pulido",
@@ -4111,6 +4148,13 @@
       "by": "claude",
       "at": "2026-11-22T04:59:46+01:00",
       "ref": "AE/Colores y Terminados"
+    },
+    {
+      "text": "📊 Arreglar Estadísticas: Semana y Días",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-22T05:07:24+01:00",
+      "ref": "AE/Semana y Días"
     }
   ],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",

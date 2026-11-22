@@ -144,7 +144,7 @@
       {/if}
     </StatChip>
 
-    <StatChip k="wk3" icon="clock" label="Mejor día" tone={1}>
+    <StatChip k="wk3" icon="clock" label="Mejor día" tone={5}>
       {#if perDay[bestDay] > 0}
         <div class="x-v" style="font-size:var(--t-xl)">{DN[bestDay]}</div>
         <div class="x-s"><b>{fmtHM(perDay[bestDay])}</b> · media de {fmtHM(W.ms / Math.max(1, activeN))} al día</div>

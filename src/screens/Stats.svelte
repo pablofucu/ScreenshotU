@@ -93,7 +93,7 @@
   });
 </script>
 
-<TopBar crumbs={app.statsTab === 'year' ? ['Inicio', 'Estadísticas', VIEW_LABEL.year] : ['Inicio', 'Estadísticas', 'Mi actividad']} />
+<TopBar avatar={false} crumbs={app.statsTab === 'year' ? ['Inicio', 'Estadísticas', VIEW_LABEL.year] : ['Inicio', 'Estadísticas', 'Mi actividad']} />
 
 <div class="sx">
   {#if app.statsTab === 'rank'}
