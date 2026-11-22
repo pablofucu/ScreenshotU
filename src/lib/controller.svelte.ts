@@ -138,7 +138,7 @@ function validKey(view: View, key: string | undefined): string | undefined {
       return el.querySelector(`[data-k="${key}"]`) ? key : undefined;
     }
     if (app.statsTab === 'rank' && /^sr\d+$/.test(key)) return n < app.rank.rows.length ? key : undefined;
-    if (app.statsTab === 'cal' && /^cd\d+$/.test(key)) return app.cal.days[n] && !app.cal.days[n].future ? key : undefined;
+    if (app.statsTab === 'days' && /^cd\d+$/.test(key)) return app.cal.days[n] && !app.cal.days[n].future ? key : undefined;
   } else if (view === 'evo') {
     if (/^eb\d+$/.test(key)) return n < app.evo.length ? key : undefined;
   } else if (view === 'gstats') {
@@ -849,7 +849,7 @@ export function openStats(from: 'home' | 'streak' = 'home') {
 
 /** Desde la pantalla de racha (Y): abre Estadísticas en la pestaña Rachas con la misma meta. */
 function openStreakStats() {
-  app.statsTab = 'streak';
+  app.statsTab = 'days';
   openStats('streak');
   blip(700);
 }
@@ -872,11 +872,22 @@ function yearShift(d: number) {
   blip(700);
 }
 
-const STATS_TABS: Array<typeof app.statsTab> = ['week', 'fin', 'pano', 'streak', 'rank', 'cal', 'year'];
+/** Pestañas de Mi actividad (LT/RT). «Tu año jugando» va aparte, con Y. */
+export const STATS_TABS = ['week', 'days', 'fin'] as const;
 
-/** Y recorre Semana > Terminados > Panorama > Rachas > Clasificación > Calendario > Resumen anual. */
+/** LT/RT: pestaña anterior/siguiente de Mi actividad (sin dar la vuelta). */
+function cycleStatsTab(d: number) {
+  const tabs: readonly string[] = STATS_TABS;
+  const i = tabs.indexOf(app.statsTab === 'year' ? app.statsPrev : app.statsTab) + d;
+  if (i < 0 || i >= tabs.length) { bump(screenEl()?.querySelector('.sx .vsw .gem'), d, 0); return; }
+  setStatsTab(STATS_TABS[i]);
+}
+
+/** Y: abre o cierra «Tu año jugando» y vuelve a la pestaña de antes. */
 function toggleStatsTab() {
-  setStatsTab(STATS_TABS[(STATS_TABS.indexOf(app.statsTab) + 1) % STATS_TABS.length]);
+  if (app.statsTab === 'year') { setStatsTab(app.statsPrev); return; }
+  if (app.statsTab === 'week' || app.statsTab === 'days' || app.statsTab === 'fin') app.statsPrev = app.statsTab;
+  setStatsTab('year');
 }
 
 /** Pestaña de estadísticas con destino fijo (órdenes «stab:…»). */
@@ -1094,6 +1105,7 @@ export function back() {
     if (app.gsFrom === 'evo') go('evo', 'back');
     else go('titles', 'back');
   } else if (app.view === 'stats') {
+    if (app.statsTab === 'year') { setStatsTab(app.statsPrev); blip(520); return; }
     if (app.statsFrom === 'streak') {
       go('streak', 'back');
     } else {
@@ -1158,7 +1170,8 @@ export function page(d: number) {
 export function trigger(d: number) {
   if (app.view === 'stats' && app.statsTab === 'rank') { cycleStatsPlat(d); return; }
   if (app.view === 'stats' && app.statsTab === 'pano') { cyclePanoPlat(d); return; }
-  if (app.view === 'stats' || app.view === 'evo') { statsShift(d); return; }
+  if (app.view === 'stats') { cycleStatsTab(d); return; }
+  if (app.view === 'evo') { statsShift(d); return; }
   if (app.view === 'titles') { cycleTitlesTab(d); return; }
   if (app.view === 'shots' && daysOn()) {
     const heads = curLayout().heads;
@@ -2249,7 +2262,7 @@ function onWheel(e: WheelEvent) {
   switch (app.view) {
     case 'home': case 'detail': case 'evo': move(d, 0); break;
     case 'gstats': move(0, d); break;
-    case 'stats': if (app.statsTab === 'rank' || app.statsTab === 'week' || app.statsTab === 'fin' || app.statsTab === 'pano') move(0, d); else move(d, 0); break;
+    case 'stats': if (app.statsTab === 'days') move(d, 0); else move(0, d); break;
     case 'titles': {
       // Mi lista y Colecciones son carriles: el gesto horizontal recorre el carril y el vertical cambia de fila.
       const lc = wheelH ? (d > 0 ? 'right' : 'left') : (d > 0 ? 'down' : 'up');

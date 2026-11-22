@@ -2,7 +2,7 @@
   // Estadísticas: clasificación de juegos por periodo (podio con hero y logo + lista con mini portadas)
   // y calendario de los últimos 6 meses con el detalle del día enfocado.
   import { app } from '../lib/store.svelte';
-  import { RANK_VIEW_H, rankH, rankY } from '../lib/controller.svelte';
+  import { RANK_VIEW_H, STATS_TABS, rankH, rankY } from '../lib/controller.svelte';
   import { CAL_WEEKS, STATS_KINDS, WDAYS, addDays, dayPlays, fmtClock, fmtHM, fmtLongDay } from '../lib/stats';
   import { GOAL_COL } from '../lib/readgoals';
   import TopBar from '../components/TopBar.svelte';
@@ -16,8 +16,10 @@
   import StatsPano from './StatsPano.svelte';
 
   const KIND_LABEL: Record<string, string> = { month: 'Mes', year: 'Año', all: 'Siempre' };
-  const VIEW_LABEL = { week: 'Semana', fin: 'Terminados', pano: 'Panorama', streak: 'Rachas', rank: 'Clasificación', cal: 'Calendario', year: 'Resumen anual' };
-  const TABS = ['week', 'fin', 'pano', 'streak', 'rank', 'cal', 'year'] as const;
+  const VIEW_LABEL = { week: 'Semana', days: 'Días y rachas', fin: 'Terminados', pano: 'Panorama', streak: 'Rachas', rank: 'Clasificación', year: 'Tu año jugando' };
+  const TABS = STATS_TABS;
+  // Pistas comunes de Mi actividad: LT/RT pestaña, Y «Tu año», B volver.
+  const COMMON: Array<[string, string, string]> = [['LT/RT', 'Pestaña', 'rt'], ['Y', 'Tu año', 'y'], ['B', 'Volver', 'b']];
   const PER_LABEL = (p: 'all' | number | 'd30') => (p === 'all' ? 'Siempre' : p === 'd30' ? 'Últimos 30 días' : String(p));
   const PANO_PERS = $derived(['all', 'd30', ...[...app.years].reverse()] as Array<'all' | number | 'd30'>);
   const panoPlat = $derived(app.statsPlats.includes(app.panoPi) ? app.panoPi : (app.statsPlats[0] ?? -1));
@@ -90,7 +92,7 @@
   });
 </script>
 
-<TopBar crumbs={['Inicio', 'Estadísticas', VIEW_LABEL[app.statsTab]]} />
+<TopBar crumbs={app.statsTab === 'year' ? ['Inicio', 'Estadísticas', VIEW_LABEL.year] : ['Inicio', 'Estadísticas', 'Mi actividad']} />
 
 <div class="sx">
   {#if app.statsTab === 'rank'}
@@ -155,7 +157,7 @@
   {/if}
   <span class="gl vsw">
     {#each TABS as v}
-      <span class="o" class:gem={app.statsTab === v} data-hact="stab:{v}">{VIEW_LABEL[v]}</span>
+      <span class="o" class:gem={app.statsTab === v || (app.statsTab === 'year' && app.statsPrev === v)} data-hact="stab:{v}">{VIEW_LABEL[v]}</span>
     {/each}
   </span>
 </div>
@@ -166,18 +168,19 @@
 
 {#if app.statsTab === 'week'}
   <StatsWeek />
-  <Hints list={[['LB/RB', 'Semana', 'rb'], ['Y', VIEW_LABEL[TABS[(TABS.indexOf(app.statsTab) + 1) % TABS.length]], 'y'], ['B', 'Volver', 'b']]} />
+  <Hints list={[['LB/RB', 'Semana', 'rb'], ...COMMON]} />
 {:else if app.statsTab === 'fin'}
   <StatsFin />
+  <Hints list={[['LB/RB', 'Año', 'rb'], ...COMMON]} />
 {:else if app.statsTab === 'pano'}
   <StatsPano pi={panoPlat} />
-  <Hints list={[['LB/RB', app.statsTab === 'pano' ? 'Periodo' : 'Año', 'rb'], ...(app.statsTab === 'pano' ? [['LT/RT', 'Categoría', 'rt'] as [string, string, string]] : []), ['Y', VIEW_LABEL[TABS[(TABS.indexOf(app.statsTab) + 1) % TABS.length]], 'y'], ['B', 'Volver', 'b']]} />
+  <Hints list={[['LB/RB', app.statsTab === 'pano' ? 'Periodo' : 'Año', 'rb'], ...(app.statsTab === 'pano' ? [['LT/RT', 'Categoría', 'rt'] as [string, string, string]] : []), ['B', 'Volver', 'b']]} />
 {:else if app.statsTab === 'streak'}
   <Rachas />
   <Hints list={[...(app.goalKeys.length > 1 ? [['LB/RB', 'Categoría', 'rb'] as [string, string, string]] : []), ['Y', 'Clasificación', 'y'], ['B', 'Volver', 'b']]} />
 {:else if app.statsTab === 'year'}
   <Year />
-  <Hints list={[['A', 'Siguiente', 'a'], ['LB/RB', 'Año', 'rb'], ['Y', 'Semana', 'y'], ['B', 'Volver', 'b']]} />
+  <Hints list={[['A', 'Siguiente', 'a'], ['LB/RB', 'Año', 'rb'], ['Y', 'Cerrar', 'y'], ['B', 'Volver', 'b']]} />
 {:else if app.statsTab === 'rank'}
   <div class="stsum">
     <div class="rbox">
@@ -236,7 +239,7 @@
   {/if}
 
   <Hints list={[...(rows.length ? [['A', 'Ver juego', 'a'] as [string, string, string]] : []),['LB/RB', 'Fecha', 'rb'], ['View', 'Periodo', 'view'], ['LT/RT', 'Categoría', 'rt'], ['Y', 'Calendario', 'y'], ['B', 'Volver', 'b']]} />
-{:else if app.statsTab === 'cal'}
+{:else if app.statsTab === 'days'}
   <div class="stsum">
     <div class="rbox"><div class="k">Días con partida</div><div class="v acc">{C.played} <small>de {C.elapsed}</small></div></div>
     <div class="rbox"><div class="k">Racha actual</div><div class="v">{C.curStreak} <small>{C.curStreak === 1 ? 'día' : 'días'}</small></div></div>
@@ -291,7 +294,7 @@
     {/if}
   </div>
 
-  <Hints list={[['LB/RB', 'Fecha', 'rb'], ['Y', 'Resumen anual', 'y'], ['B', 'Volver', 'b']]} />
+  <Hints list={[['LB/RB', 'Fecha', 'rb'], ...COMMON]} />
 {/if}
 
 <style>

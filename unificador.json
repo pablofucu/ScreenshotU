@@ -2692,17 +2692,24 @@
               "id": "RDE-4",
               "title": "Nivel Mi actividad",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-22T01:14:39+01:00",
                   "by": "claude",
                   "kind": "start",
                   "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T01:20:50+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Mi actividad con tres pestañas (Semana, Días y rachas, Terminados). LT/RT cambia de pestaña, LB/RB el periodo, Y abre y cierra Tu año jugando (B también vuelve). Días y rachas enseña de momento el calendario, hasta RDE-9. Panorama y Clasificación salen de la barra; vuelven en el nivel Categoría (RDE-5). svelte-check limpio; probado en el navegador con los botones de pistas."
                 }
               ],
               "cat": "codigo",
-              "updated": "2026-11-22T01:14:39+01:00"
+              "updated": "2026-11-22T01:20:50+01:00",
+              "result": "Mi actividad con tres pestañas (Semana, Días y rachas, Terminados). LT/RT cambia de pestaña, LB/RB el periodo, Y abre y cierra Tu año jugando (B también vuelve). Días y rachas enseña de momento el calendario, hasta RDE-9. Panorama y Clasificación salen de la barra; vuelven en el nivel Categoría (RDE-5). svelte-check limpio; probado en el navegador con los botones de pistas."
             },
             {
               "id": "RDE-5",
