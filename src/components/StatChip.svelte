@@ -4,11 +4,11 @@
   import type { Snippet } from 'svelte';
   import { onMount, tick } from 'svelte';
   import { app } from '../lib/store.svelte';
-  import { toneStyle } from '../lib/chiptone';
+  import { toneStyle, type Tone } from '../lib/chiptone';
   import CIcon from './CIcon.svelte';
 
   let { k, icon, label, wide = false, tone = 4, act, cls = '', children }: {
-    k: string; icon?: string; label?: string; wide?: boolean; tone?: number; act?: string; cls?: string; children: Snippet;
+    k: string; icon?: string; label?: string; wide?: boolean; tone?: Tone; act?: string; cls?: string; children: Snippet;
   } = $props();
 
   let run = $state(false);

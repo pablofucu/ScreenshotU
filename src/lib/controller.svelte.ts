@@ -162,7 +162,7 @@ function defaultKey(view: View): string {
   if (view === 'stats') {
     if (app.statsTab === 'year' || app.statsTab === 'streak') return '';
     if (app.statsTab === 'week') return 'wk0';
-    if (app.statsTab === 'fin') return 'fn0';
+    if (app.statsTab === 'fin') { const l = finishedYear(app.lib, app.finYear, app.finCat).last; return l ? `fn${l.pi}_${l.ti}` : ''; }
     if (app.statsTab === 'pano') return 'pn0';
     if (app.statsTab === 'rank') return app.rank.rows.length ? 'sr0' : '';
     return 'dy' + daysDefault();

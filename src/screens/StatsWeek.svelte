@@ -6,7 +6,7 @@
   import { calm } from '../lib/controller.svelte';
   import { GOAL_KEYS, goalMin, type GoalKey } from '../lib/readgoals';
   import { fmtHM, weekReview, type Highlight } from '../lib/stats';
-  import { catIcon, catTone } from '../lib/chiptone';
+  import { catIcon, catColor, catTone } from '../lib/chiptone';
   import { countUp } from '../lib/countup';
   import { IS_TAURI, backend } from '../lib/backend';
   import type { WeekAch } from '../lib/types';
@@ -184,7 +184,7 @@
       {#if best.length}
         <div class="x-best">
           {#each best as h, i}
-            <div class:on={i === bi} class:out={i === prevBi} style="--v1:var(--arc-{['rojo', 'naranja', 'amarillo', 'verde', 'azul', 'anil', 'violeta'][catTone(plat(h.pi).id) % 7]})">
+            <div class:on={i === bi} class:out={i === prevBi} style="--v1:{catColor(plat(h.pi).id)}">
               <span class="bico"><CIcon name={HI[h.kind].icon} class="" /></span>
               <div><h4>{h.text}</h4><p>{HI[h.kind].label}</p></div>
             </div>

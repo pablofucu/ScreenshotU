@@ -3179,6 +3179,152 @@
           ]
         }
       ]
+    },
+    {
+      "key": "AE",
+      "name": "Arreglar Estadísticas",
+      "goal": "Que Estadísticas se vea limpia: Terminados en grande, colores de las rachas y sin recuadros sobrantes",
+      "icon": "📊",
+      "color": 6,
+      "created": "2026-11-22T04:52:05+01:00",
+      "by": "claude",
+      "next_id": 9,
+      "phases": [
+        {
+          "name": "Colores y Terminados",
+          "icon": "",
+          "steps": [
+            {
+              "id": "AE-1",
+              "title": "Colores de categoría como en las rachas",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T04:52:08+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T04:59:45+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Colores de categoría salen de GOAL_COL (los de las rachas): NV azul, NJ rosa, PC verde, Switch naranja; orden por catRank. svelte-check 0 errores."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-22T04:59:45+01:00",
+              "result": "Colores de categoría salen de GOAL_COL (los de las rachas): NV azul, NJ rosa, PC verde, Switch naranja; orden por catRank. svelte-check 0 errores."
+            },
+            {
+              "id": "AE-2",
+              "title": "Terminados en grande por categoría, año y mes",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T04:59:45+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T04:59:45+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Terminados reescrito: tira de años y tablero grande con un carril por categoría y 12 meses con carátulas; sin recuadros extra. Arreglado choque con la clase global .yr. Visto en la vista previa."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-22T04:59:45+01:00",
+              "result": "Terminados reescrito: tira de años y tablero grande con un carril por categoría y 12 meses con carátulas; sin recuadros extra. Arreglado choque con la clase global .yr. Visto en la vista previa."
+            },
+            {
+              "id": "AE-3",
+              "title": "Arreglar el filtro de categoría de Terminados",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T04:59:46+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T04:59:46+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "El filtro (View) sí cambia; en la biblioteca real solo hay terminados de NV (2019-2026) y NJ (3). PC y Switch no tienen ninguno marcado. Ahora se ven todas las categorías a la vez, cada una en su carril."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-22T04:59:46+01:00",
+              "result": "El filtro (View) sí cambia; en la biblioteca real solo hay terminados de NV (2019-2026) y NJ (3). PC y Switch no tienen ninguno marcado. Ahora se ven todas las categorías a la vez, cada una en su carril."
+            }
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "claude",
+            "at": "2026-11-22T04:59:46+01:00",
+            "seen": true
+          }
+        },
+        {
+          "name": "Semana y Días",
+          "icon": "",
+          "steps": [
+            {
+              "id": "AE-4",
+              "title": "Semana con recuadros de lectura útiles",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            },
+            {
+              "id": "AE-5",
+              "title": "Quitar el borde naranja de los recuadros",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            },
+            {
+              "id": "AE-6",
+              "title": "Arreglar recuadro de meta e icono de Días y rachas",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            }
+          ]
+        },
+        {
+          "name": "Pulido",
+          "icon": "",
+          "steps": [
+            {
+              "id": "AE-7",
+              "title": "B vuelve a la pestaña desde Tu año",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            },
+            {
+              "id": "AE-8",
+              "title": "Comprobar con npm run check y pruebas",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "pruebas"
+            }
+          ]
+        }
+      ]
     }
   ],
   "asks": [
@@ -3943,7 +4089,15 @@
       ]
     }
   ],
-  "news": [],
+  "news": [
+    {
+      "text": "📊 Arreglar Estadísticas: Colores y Terminados",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-22T04:59:46+01:00",
+      "ref": "AE/Colores y Terminados"
+    }
+  ],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",
   "versions": [
     {
