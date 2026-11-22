@@ -2634,10 +2634,16 @@
                   "by": "claude",
                   "kind": "start",
                   "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T01:03:21+01:00",
+                  "by": "claude",
+                  "kind": "note",
+                  "text": "Maqueta en docs/maquetas/estadisticas-rediseno/index.html (commit 7e2bd62). Pendiente de que la persona la valore."
                 }
               ],
               "cat": "interfaz",
-              "updated": "2026-11-22T00:53:01+01:00"
+              "updated": "2026-11-22T01:03:21+01:00"
             },
             {
               "id": "RDE-3",
@@ -2698,6 +2704,219 @@
               "state": "pending",
               "notes": [],
               "cat": "pruebas"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "CCM",
+      "name": "Colecciones con menos datos",
+      "goal": "Que la pantalla de colecciones quepa siempre y enseñe solo lo útil",
+      "icon": "🗂️",
+      "color": 4,
+      "created": "2026-11-22T01:00:26+01:00",
+      "by": "claude",
+      "next_id": 5,
+      "phases": [
+        {
+          "name": "Pantalla",
+          "icon": "",
+          "steps": [
+            {
+              "id": "CCM-1",
+              "title": "Portadas en filas que siempre caben",
+              "desc": "",
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-22T01:00:29+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-22T01:00:29+01:00"
+            },
+            {
+              "id": "CCM-2",
+              "title": "Ficha abajo con capturas al azar del juego",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            }
+          ]
+        },
+        {
+          "name": "Mando",
+          "icon": "",
+          "steps": [
+            {
+              "id": "CCM-3",
+              "title": "Arriba y abajo entre filas, LB y RB entre colecciones",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "CCM-4",
+              "title": "Comprobar y subir",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "pruebas"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "ÁDN",
+      "name": "Álbum de Nintendo",
+      "goal": "Que las capturas que la Switch 2 sube a la cuenta de Nintendo lleguen solas a la biblioteca, en su juego y con su fecha",
+      "icon": "🖼️",
+      "color": 5,
+      "created": "2026-11-22T01:05:51+01:00",
+      "by": "claude",
+      "next_id": 13,
+      "phases": [
+        {
+          "name": "Estudio y plan",
+          "icon": "",
+          "steps": [
+            {
+              "id": "ÁDN-1",
+              "title": "Repasar el flujo de NSO-Album-Sync y nxapi (login de la app Switch Online, código f, cifrado, lista del álbum)",
+              "desc": "",
+              "state": "pending",
+              "notes": [
+                {
+                  "at": "2026-11-22T01:05:58+01:00",
+                  "by": "claude",
+                  "kind": "note",
+                  "text": "Decidido con la persona: solo Switch 2 (subida automática, 30 días, 100 ficheros). Segundo login con la identidad de la app Switch Online (client_id 71b963c1b7b6d119), aparte del del tiempo de juego. Referencias: github.com/Dycool/NSO-Album-Sync (src/coral.cpp, nxapi.cpp, sync.cpp) y nxapi (src/api/coral.ts). Las categorías no se tocan: las capturas van a la carpeta de Switch que ya existe."
+                }
+              ],
+              "cat": "investigar",
+              "updated": "2026-11-22T01:05:58+01:00"
+            },
+            {
+              "id": "ÁDN-2",
+              "title": "Plan en docs/planes/album-nintendo.md",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "decidir"
+            }
+          ]
+        },
+        {
+          "name": "Inicio de sesión",
+          "icon": "",
+          "steps": [
+            {
+              "id": "ÁDN-3",
+              "title": "Segundo inicio de sesión de Nintendo, solo para el álbum",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "ÁDN-4",
+              "title": "Cliente de nxapi-znca-api (código f, cifrar y descifrar) con nuestro acceso",
+              "desc": "",
+              "state": "pending",
+              "notes": [
+                {
+                  "at": "2026-11-22T01:05:58+01:00",
+                  "by": "claude",
+                  "kind": "note",
+                  "text": "Acceso a nxapi-znca-api ya concedido por su autor (lo pidió la persona). No hay que pedirlo. Falta saber dónde guardar el client_id de nxapi que nos dio."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-22T01:05:58+01:00"
+            },
+            {
+              "id": "ÁDN-5",
+              "title": "Entrar en la app Switch Online y guardar las credenciales",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "ÁDN-6",
+              "title": "Aviso del servicio externo y botón de conectar el álbum",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
+            }
+          ]
+        },
+        {
+          "name": "Sincronización",
+          "icon": "",
+          "steps": [
+            {
+              "id": "ÁDN-7",
+              "title": "Pedir la lista del álbum y bajar lo nuevo con su fecha de captura",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "ÁDN-8",
+              "title": "Llevar cada captura a su juego de Switch por el id de título",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "ÁDN-9",
+              "title": "Sincronizar al abrir y cada hora, respetando los límites",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "codigo"
+            },
+            {
+              "id": "ÁDN-10",
+              "title": "Pruebas de lectura de la lista y de no duplicar",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "pruebas",
+              "together": true
+            }
+          ]
+        },
+        {
+          "name": "Pruebas reales",
+          "icon": "",
+          "steps": [
+            {
+              "id": "ÁDN-11",
+              "title": "Probar con la Switch 2 real",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "pruebas"
+            },
+            {
+              "id": "ÁDN-12",
+              "title": "Estado del álbum en Ajustes (última vez, errores)",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz"
             }
           ]
         }

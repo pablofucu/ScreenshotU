@@ -30,7 +30,7 @@
 - **Colecciones (C1):** aparcado el 12-nov. Quedan las maquetas A–E en [maquetas/colecciones/](maquetas/colecciones/) sin elegir.
 - **Nube personal (Multi-PC, fase 6):** aparcada el 12-nov.
 
-- **Switch, importar capturas al conectar la consola:** solo estudio (MTP, microSD, hash → id de título). El tiempo de juego de Switch está terminado y publicado, y desde el 22-nov cuenta en todas las estadísticas por fechas (días sin hora: suman tiempo y días, no partidas ni horas). Capturas por la cuenta de Nintendo: estudio del 22-nov, sin API pública; solo Switch 2 sube sola (30 días, 100 ficheros) al servidor `nega` (media-dl.wc.lp1.nega.srv.nintendo.net), sin rutas ni permisos documentados. Haría falta mirar el tráfico de la app Nintendo Switch.
+- **Switch, importar capturas al conectar la consola:** solo estudio (MTP, microSD, hash → id de título). El tiempo de juego de Switch está terminado y publicado, y desde el 22-nov cuenta en todas las estadísticas por fechas (días sin hora: suman tiempo y días, no partidas ni horas). Capturas por la cuenta de Nintendo: se hace en la rama ÁDN de Unificador (solo Switch 2, segundo inicio de sesión solo para el álbum, Coral `/v4/Media/List` con nxapi-znca-api; el autor ya nos dio acceso). Siguiente paso: ÁDN-1 y el plan en `docs/planes/album-nintendo.md`.
 - **Ideas con maqueta y sin plan:** comparador de capturas A/B y salvapantallas de ambiente ([maquetas/ideas/](maquetas/ideas/)); exportar .apkg y ritmo de lectura ([archivo/propuestas-antigravity.md](archivo/propuestas-antigravity.md)).
 - **Propuestas nuevas sin decidir:** [propuestas-mejoras.md](propuestas-mejoras.md).
 
