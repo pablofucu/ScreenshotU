@@ -10,12 +10,14 @@ export function toneStyle(k: number): string {
 }
 
 /** Tono fijo de cada categoría: no cambia entre semanas ni entre pestañas. Las demás plataformas reparten por su id. */
-const CAT_TONE: Record<string, number> = { pc: 4, switch: 0, vn: 6, jvn: 5 };
+// Los cinco colores de los estados de Mi lista, bien separados: Switch rojo, PC azul, Novelas japonesas verde,
+// Novelas visuales violeta; las demás reparten naranja, amarillo y añil por su id.
+const CAT_TONE: Record<string, number> = { pc: 4, switch: 0, vn: 6, jvn: 3 };
 export function catTone(id: string): number {
   if (id in CAT_TONE) return CAT_TONE[id];
   let h = 0;
   for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  return [1, 2, 3][h % 3];
+  return [1, 2, 5][h % 3];
 }
 
 /** Icono de cada categoría (nombre de `CIcon`). */

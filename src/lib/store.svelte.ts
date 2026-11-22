@@ -432,6 +432,8 @@ class Store {
   weekOff = $state(0);
   /** Terminados: año elegido. */
   finYear = $state(new Date().getFullYear());
+  /** Terminados: categoría filtrada (-1 = todas). */
+  finCat = $state(-1);
   /** Panorama: categoría (-1 = la primera con datos) y periodo. */
   panoPi = $state(-1);
   panoPer = $state<'all' | number | 'd30'>('all');
@@ -476,7 +478,16 @@ class Store {
   /** Estadísticas de juego: de un título (desde Evolución) o de la categoría abierta (desde Start en la lista), métrica elegida y pantalla de origen. */
   gsScope = $state<'title' | 'cat'>('title');
   gsMetric = $state<GMetric>('time');
-  gsFrom = $state<'evo' | 'titles'>('evo');
+  /** Desde dónde se abrió el nivel actual: Evolución, la lista de títulos, Mi actividad, o (nivel Juego) la categoría. */
+  gsFrom = $state<'evo' | 'titles' | 'stats' | 'cat'>('evo');
+  /** Dónde se abrió el nivel Categoría (B vuelve allí, también tras pasar por un juego). */
+  gsCatFrom = $state<'titles' | 'stats'>('titles');
+  /** Escala de «Cómo lo has jugado» en el nivel Juego. */
+  gsScale = $state<'month' | 'week' | 'year'>('month');
+  /** Periodo del nivel Categoría: 'all', 'd30' o un año. */
+  gsPer = $state<'all' | number | 'd30'>('all');
+  /** Desde dónde se abrió «Tu año jugando» (Y): Mi actividad o el nivel Categoría/Juego. */
+  yearFrom = $state<'stats' | 'gstats'>('stats');
   /** Cifras de la base del juego abierto en las estadísticas de juego (null mientras llegan). */
   gsDb = $state<GameStatsDb | null>(null);
   /** Página de las estadísticas de un título: resumen o periféricos (clics, rueda, teclas, mando). */

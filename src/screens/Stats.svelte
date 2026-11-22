@@ -122,7 +122,7 @@
     </span>
   {:else if app.statsTab === 'fin'}
     {@const fi = app.finYears.indexOf(app.finYear)}
-    <span class="cat">Todas las categorías</span>
+    <span class="cat sel" data-hact="view" title="Cambiar de categoría">{app.finCat >= 0 && pname(app.finCat) ? pname(app.finCat) : 'Todas las categorías'}</span>
     <span class="gl">
       <span class="chev" class:dis={fi <= 0} data-hact="lb">{@render chev(true)}</span>
       <span class="lbl">{app.finYear}</span>
@@ -174,7 +174,7 @@
   <Hints list={[['LB/RB', 'Semana', 'rb'], ...COMMON]} />
 {:else if app.statsTab === 'fin'}
   <StatsFin />
-  <Hints list={[['LB/RB', 'Año', 'rb'], ...COMMON]} />
+  <Hints list={[['View', 'Categoría', 'view'], ['LB/RB', 'Año', 'rb'], ...COMMON]} />
 {:else if app.statsTab === 'pano'}
   <StatsPano pi={panoPlat} />
   <Hints list={[['LB/RB', app.statsTab === 'pano' ? 'Periodo' : 'Año', 'rb'], ...(app.statsTab === 'pano' ? [['LT/RT', 'Categoría', 'rt'] as [string, string, string]] : []), ['B', 'Volver', 'b']]} />

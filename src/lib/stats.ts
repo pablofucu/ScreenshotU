@@ -623,11 +623,12 @@ export interface FinYear { year: number; lanes: FinLane[]; count: number; prevCo
 
 /** Juegos terminados en un año, con un carril por categoría (en el orden de la biblioteca; nunca se mezclan).
  *  Mismo criterio que el resumen anual: estado «terminado», con fecha y sin ocultar. */
-export function finishedYear(lib: Library, year: number): FinYear {
+export function finishedYear(lib: Library, year: number, cat = -1): FinYear {
   const lanes: FinLane[] = [];
   const ys = new Set<number>();
   let prevCount = 0, last: FinRef | null = null;
   lib.platforms.forEach((p, pi) => {
+    if (cat >= 0 && pi !== cat) return;
     const months: FinRef[][] = Array.from({ length: 12 }, () => []);
     let count = 0;
     p.titles.forEach((t, ti) => {
@@ -646,6 +647,24 @@ export function finishedYear(lib: Library, year: number): FinYear {
     lanes.push({ pi, id: p.id, name: p.name, count, months });
   });
   return { year, lanes, count: lanes.reduce((a, l) => a + l.count, 0), prevCount, last, years: [...ys].sort((a, b) => a - b) };
+}
+
+/** Terminados por año (de menor a mayor año): total y reparto por índice de plataforma. `cat` ≥ 0 limita a esa categoría. */
+export interface FinByYear { year: number; count: number; by: Map<number, number> }
+export function finishedByYear(lib: Library, cat = -1): FinByYear[] {
+  const m = new Map<number, FinByYear>();
+  lib.platforms.forEach((p, pi) => {
+    if (cat >= 0 && pi !== cat) return;
+    for (const t of p.titles) {
+      if (t.hidden || t.status !== 'finished' || !t.finishedMs) continue;
+      const y = new Date(t.finishedMs).getFullYear();
+      let e = m.get(y);
+      if (!e) m.set(y, e = { year: y, count: 0, by: new Map() });
+      e.count++;
+      e.by.set(pi, (e.by.get(pi) ?? 0) + 1);
+    }
+  });
+  return [...m.values()].sort((a, b) => a.year - b.year);
 }
 
 /* ---------- Panorama: cifras de UNA categoría ---------- */
@@ -792,4 +811,184 @@ export function playStreak(lib: Library, now = Date.now(), pi?: number): PlayStr
     prev = d;
   }
   return { cur, best, playedToday: tot.has(today) };
+}
+
+/* ---------- niveles Categoría y Juego de Estadísticas ---------- */
+const DAY_MS = 86400000;
+
+/** Siguiente cifra redonda de horas por encima de `h`: 50, 100, 250, 500, 1000, 2000… y luego de 5000 en 5000. */
+export function nextRoundHours(h: number): number {
+  const ladder = [50, 100, 250, 500, 1000, 2000, 3000, 4000, 5000];
+  return ladder.find((x) => x > h) ?? (Math.floor(h / 5000) + 1) * 5000;
+}
+/** Hito siguiente de un tiempo acumulado: la cifra redonda y lo que falta, en ms. */
+export function nextRoundMilestone(ms: number): { h: number; leftMs: number } {
+  const h = nextRoundHours(ms / 3.6e6);
+  return { h, leftMs: Math.max(0, h * 3.6e6 - ms) };
+}
+
+/** Hora con más juego de un reparto de 24 cubos (`hourHistogram`); -1 si no hay nada. */
+export function peakHour(hours: number[]): number {
+  let best = -1, v = 0;
+  hours.forEach((x, h) => { if (x > v) { v = x; best = h; } });
+  return best;
+}
+
+/** Hora «HH:MM» con ceros, como en la maqueta (de 17:40 a 23:52). */
+export const fmtHHMM = (ms: number) => { const d = new Date(ms); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+
+export interface CatSummary {
+  /** Tiempo de la categoría en el periodo y su parte (0-100) del tiempo de todas las categorías en ese mismo periodo. */
+  ms: number; share: number;
+  /** Días con actividad y días que tiene el periodo (hasta hoy). */
+  days: number; ofDays: number;
+  /** Terminados en el periodo (por la fecha de terminado). */
+  finished: number;
+  longest: CatPeriod['longest'];
+  /** Capturas del periodo y totales. */
+  shots: number; shotsAll: number;
+  /** Tiempo de siempre, para el próximo hito. */
+  allMs: number;
+}
+/** Cifras de UNA categoría en un periodo para los chips del nivel Categoría. Solo cuenta títulos de `pi`
+ *  (el reparto del tiempo total se usa únicamente para el porcentaje). */
+export function catSummary(lib: Library, pi: number, range: Range, now = Date.now()): CatSummary {
+  const P = catPeriod(lib, pi, range);
+  const all = periodRange('all', 0, now);
+  let total = 0;
+  lib.platforms.forEach((_, i) => { total += i === pi ? P.ms : catPeriod(lib, i, range).ms; });
+  const days = new Set<number>();
+  let first = Infinity;
+  for (const g of games(lib)) {
+    if (g.pi !== pi) continue;
+    for (const p of timed(g.t).all) { first = Math.min(first, p[0]); eachDay(p, range.from, range.to, (d) => days.add(d)); }
+  }
+  let finished = 0, shots = 0, shotsAll = 0;
+  for (const t of lib.platforms[pi]?.titles ?? []) {
+    if (t.hidden) continue;
+    if (t.status === 'finished' && t.finishedMs && t.finishedMs >= range.from && t.finishedMs < range.to) finished++;
+    for (const s of t.shots ?? []) { shotsAll++; if (shotInRange(s, range.from, range.to)) shots++; }
+  }
+  const from = Number.isFinite(range.from) ? range.from : (Number.isFinite(first) ? dayStart(first) : dayStart(now));
+  const to = Math.min(range.to, addDays(dayStart(now), 1));
+  return {
+    ms: P.ms, share: total > 0 ? Math.round((P.ms / total) * 100) : 0,
+    days: days.size, ofDays: Math.max(1, Math.round((to - from) / DAY_MS)),
+    finished, longest: P.longest, shots, shotsAll,
+    allMs: range.from === all.from && range.to === all.to ? P.ms : catPeriod(lib, pi, all).ms,
+  };
+}
+
+/** Puesto del título `ti` por tiempo jugado dentro de SU categoría (1 = el más jugado) y cuántos hay. */
+export function titleRank(lib: Library, pi: number, ti: number): { pos: number; of: number } {
+  const rows = categoryStats(lib, pi, 'time').rows;
+  const i = rows.findIndex((r) => r.ti === ti);
+  return { pos: i < 0 ? 0 : i + 1, of: rows.length };
+}
+
+export type SeriesKind = 'month' | 'week' | 'year';
+export const SERIES_KINDS: Array<[SeriesKind, string]> = [['month', 'Por mes'], ['week', 'Por semana'], ['year', 'Por año']];
+export interface SeriesBar { label: string; ms: number; from: number; to: number; cur: boolean }
+export interface Series { kind: SeriesKind; bars: SeriesBar[]; caption: string }
+/** Horas de un título por mes (12 meses del año en curso o, si no jugó este año, del último con partidas),
+ *  por semana (las últimas 12) o por año (todos los que tienen partidas). */
+export function titleSeries(t: Title, kind: SeriesKind, now = Date.now()): Series {
+  const all = timed(t).all;
+  const ms = (from: number, to: number) => all.reduce((a, p) => a + overlap(p, from, to), 0);
+  if (kind === 'week') {
+    const w0 = addDays(weekStart(now), -77);
+    const bars = Array.from({ length: 12 }, (_, i) => {
+      const from = addDays(w0, 7 * i), to = addDays(from, 7), d = new Date(from);
+      return { label: `${d.getDate()} ${MONTHS[d.getMonth()]}`, ms: ms(from, to), from, to, cur: now >= from && now < to };
+    });
+    return { kind, bars, caption: 'horas por semana, las últimas 12' };
+  }
+  if (kind === 'year') {
+    const ys = [...new Set(all.flatMap((p) => { const a = new Date(p[0]).getFullYear(), b = new Date(Math.max(p[0], p[1] - 1)).getFullYear(); return a === b ? [a] : [a, b]; }))].sort((a, b) => a - b);
+    const bars = (ys.length ? ys : [new Date(now).getFullYear()]).map((y) => {
+      const from = new Date(y, 0, 1).getTime(), to = new Date(y + 1, 0, 1).getTime();
+      return { label: String(y), ms: ms(from, to), from, to, cur: now >= from && now < to };
+    });
+    return { kind, bars, caption: 'horas por año' };
+  }
+  const cy = new Date(now).getFullYear();
+  const yearMs = (y: number) => ms(new Date(y, 0, 1).getTime(), new Date(y + 1, 0, 1).getTime());
+  let year = cy;
+  if (yearMs(cy) <= 0) {
+    const last = all.reduce((m, p) => Math.max(m, p[1]), 0);
+    if (last > 0) year = new Date(last - 1).getFullYear();
+  }
+  const bars = Array.from({ length: 12 }, (_, m) => {
+    const from = new Date(year, m, 1).getTime(), to = new Date(year, m + 1, 1).getTime();
+    return { label: MONTHS[m], ms: ms(from, to), from, to, cur: now >= from && now < to };
+  });
+  return { kind, bars, caption: `horas por mes de ${year}` };
+}
+
+/** Racha más larga de días seguidos jugando a un título (con los días de la consola); null si no hay ninguno. */
+export function titleStreak(t: Title): { n: number; from: number; to: number } | null {
+  const days = new Set<number>();
+  for (const p of timed(t).all) eachDay(p, -Infinity, Infinity, (d) => days.add(d));
+  const sorted = [...days].sort((a, b) => a - b);
+  let best: { n: number; from: number; to: number } | null = null, run = 0, prev = NaN;
+  for (const d of sorted) {
+    run = d === addDays(prev, 1) ? run + 1 : 1;
+    if (!best || run > best.n) best = { n: run, to: d, from: addDays(d, -(run - 1)) };
+    prev = d;
+  }
+  return best;
+}
+/** «del 3 al 18 de octubre» · «el 3 de octubre» · «del 28 sep al 3 oct» (con año si no es el de `now`). */
+export function fmtDaySpan(from: number, to: number, now = Date.now()): string {
+  const a = new Date(from), b = new Date(to);
+  const y = sameYear(to, now) ? '' : ` de ${b.getFullYear()}`;
+  if (from === to) return `el ${a.getDate()} de ${MONTHS_L[a.getMonth()]}${y}`;
+  if (a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear()) return `del ${a.getDate()} al ${b.getDate()} de ${MONTHS_L[b.getMonth()]}${y}`;
+  return `del ${a.getDate()} ${MONTHS[a.getMonth()]} al ${b.getDate()} ${MONTHS[b.getMonth()]}${y}`;
+}
+
+export type DayPart = 'mañana' | 'tarde' | 'noche';
+export interface FavHour { hour: number; part: DayPart; /** Parte (0-1) de las partidas que empiezan en ese tramo del día. */ share: number }
+export const dayPart = (h: number): DayPart => (h >= 6 && h < 14 ? 'mañana' : h >= 14 && h < 21 ? 'tarde' : 'noche');
+/** Hora de inicio más frecuente de las partidas de un título y el tramo del día dominante (mañana 6-14, tarde 14-21, noche el resto). */
+export function titleFavHour(t: Title): FavHour | null {
+  const plays = (t.plays ?? []) as Play[];
+  if (!plays.length) return null;
+  const byHour = new Array<number>(24).fill(0), byPart: Record<DayPart, number> = { mañana: 0, tarde: 0, noche: 0 };
+  for (const p of plays) { const h = new Date(p[0]).getHours(); byHour[h]++; byPart[dayPart(h)]++; }
+  const hour = byHour.indexOf(Math.max(...byHour));
+  const part = (Object.keys(byPart) as DayPart[]).reduce((a, b) => (byPart[b] > byPart[a] ? b : a), 'noche' as DayPart);
+  return { hour, part, share: byPart[part] / plays.length };
+}
+
+/** «11 meses», «3 semanas», «5 días»: lo que hay entre dos fechas (para «terminado tras…»). */
+export function fmtSpan(from: number, to: number): string {
+  const d = Math.max(0, Math.round((dayStart(to) - dayStart(from)) / DAY_MS));
+  if (d < 14) return `${d} ${d === 1 ? 'día' : 'días'}`;
+  if (d < 60) return `${Math.round(d / 7)} semanas`;
+  const m = Math.round(d / 30.44);
+  if (m < 24) return `${m} meses`;
+  const y = Math.floor(m / 12), r = m % 12;
+  return r ? `${y} años y ${r} ${r === 1 ? 'mes' : 'meses'}` : `${y} años`;
+}
+
+/** Periodo del nivel Categoría: siempre, los últimos 30 días o un año natural. */
+export type CatPer = 'all' | 'd30' | number;
+/** Años con partidas de la categoría `pi`, de menor a mayor. */
+export function catYears(lib: Library, pi: number): number[] {
+  const ys = new Set<number>();
+  for (const g of games(lib)) {
+    if (g.pi !== pi) continue;
+    for (const p of timed(g.t).all) { ys.add(new Date(p[0]).getFullYear()); ys.add(new Date(Math.max(p[0], p[1] - 1)).getFullYear()); }
+  }
+  return [...ys].sort((a, b) => a - b);
+}
+/** Periodos entre los que se elige con LB/RB: Siempre, Últimos 30 días y cada año con partidas (el más reciente primero). */
+export function catPerList(lib: Library, pi: number): CatPer[] {
+  return ['all', 'd30', ...catYears(lib, pi).reverse()];
+}
+export function catPerRange(per: CatPer, now = Date.now()): Range {
+  if (per === 'all') return periodRange('all', 0, now);
+  if (per === 'd30') { const to = addDays(dayStart(now), 1); return { from: addDays(to, -30), to, label: 'Últimos 30 días' }; }
+  return periodRange('year', per - new Date(now).getFullYear(), now);
 }

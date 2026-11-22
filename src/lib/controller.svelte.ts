@@ -17,7 +17,7 @@ import {
 } from './ops.svelte';
 import { shotLayout, type ShotLayout } from './shotlayout';
 import { tgrid, TZOOM_MAX } from './tgrid';
-import { EVO_KINDS, GMETRICS, STATS_KINDS, addDays } from './stats';
+import { EVO_KINDS, GMETRICS, SERIES_KINDS, STATS_KINDS, addDays, catPerList, finishedYear } from './stats';
 import { nintendoCycleMin, nintendoImportCmd, nintendoToggleAccount, openNintendoImport } from './nintendo.svelte';
 import { editSgdbKey, openSgdbPicker, openSgdbTitles, sgdbAuto, sgdbCmd, sgdbTitlesCmd, toggleSgdbAuto } from './sgdb.svelte';
 import { AUDIO_COMBO_PRESETS, AUDIO_HOTKEY_PRESETS, COMBO_PRESETS, HOTKEY_PRESETS, MOUSE_PRESETS, OVERLAY_COMBO_PRESETS, OVERLAY_HOTKEY_PRESETS, learnKeydown, learnMouse, onLearnKey, onLearnPad, startLearn } from './learn.svelte';
@@ -142,7 +142,9 @@ function validKey(view: View, key: string | undefined): string | undefined {
   } else if (view === 'evo') {
     if (/^eb\d+$/.test(key)) return n < app.evo.length ? key : undefined;
   } else if (view === 'gstats') {
-    if (app.gsScope === 'cat' && /^gs\d+$/.test(key)) return n < Math.min(GS_ROWS, app.gsCat.rows.length) ? key : undefined;
+    if (app.gsScope === 'cat' && /^gs\d+$/.test(key)) return n < app.gsCat.rows.length ? key : undefined;
+    if (app.gsScope === 'cat' && /^gc\d+$/.test(key)) return n < GS_CHIPS ? key : undefined;
+    if (app.gsScope === 'title' && /^gt\d+$/.test(key)) return n < 8 ? key : undefined;
   }
   return undefined;
 }
@@ -166,7 +168,7 @@ function defaultKey(view: View): string {
     return 'dy' + daysDefault();
   }
   if (view === 'evo') return app.evo.length ? 'eb' + (app.evo.length - 1) : '';
-  if (view === 'gstats') return app.gsScope === 'cat' && app.gsCat.rows.length ? 'gs0' : '';
+  if (view === 'gstats') return app.gsScope === 'cat' ? (app.gsCat.rows.length ? 'gs0' : 'gc0') : 'gt0';
   return '';
 }
 
@@ -191,6 +193,12 @@ export function setFocus(k: string, mouse = false) {
     const i = +k.slice(2), y = rankY(i), h = rankH(i);
     if (y < app.goff) app.goff = y;
     else if (y + h > app.goff + RANK_VIEW_H) app.goff = y + h - RANK_VIEW_H;
+  } else if (app.view === 'gstats') {
+    // La clasificación de la categoría se desplaza para que la fila enfocada se vea entera.
+    if (mouse || !/^gs\d+$/.test(k)) return;
+    const y = +k.slice(2) * GS_ROW_H;
+    if (y < app.goff) app.goff = y;
+    else if (y + GS_ROW_H > app.goff + GS_VIEW_H) app.goff = y + GS_ROW_H - GS_VIEW_H;
   } else if (app.view === 'shots') {
     const i = +k.slice(4);
     app.s = i;
@@ -688,13 +696,15 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
   } else if (a === 'avatar') {
     openStreak();
   } else if (a === 'sr') {
-    // Juego de la clasificación: su ficha (B vuelve a las estadísticas).
-    app.p = +b;
-    openTitle(+c, 'stats');
+    // Juego de Mi actividad: su nivel Juego (B vuelve a Mi actividad).
+    openGameLevel(+b, +c, 'stats');
   } else if (a === 'gs') {
-    // Juego de la clasificación de la categoría: su ficha (B vuelve a las estadísticas de juego).
+    // Juego de la clasificación del nivel Categoría: su nivel Juego (B vuelve a la clasificación).
+    openGameLevel(+b, +c, 'cat');
+  } else if (a === 'gc') {
+    // Categoría de Mi actividad: su nivel Categoría (B vuelve a Mi actividad).
     app.p = +b;
-    openTitle(+c, 'gstats');
+    openGameStats('cat', 'stats');
   } else if (a === 'list-catalog') {
     setTitlesTab('all');
   } else if (a === 'status') {
@@ -820,26 +830,58 @@ function scheduleGoalNotice(gameId: string) {
   backend.goalNotice(gameId, at, text, n, k, sub).catch((e) => console.error(e));
 }
 
-/** Cuántas filas de la clasificación de categoría caben sin desplazar. */
-const GS_ROWS = 5;
+/** Clasificación del nivel Categoría: alto de una fila y de la zona visible (la lista se desplaza con el foco). */
+export const GS_ROW_H = 56;
+export const GS_VIEW_H = 392;
+/** Chips enfocables del nivel Categoría (seis cifras y las horas del día). */
+const GS_CHIPS = 7;
+/** Categoría de la que se partió al abrir el nivel Categoría desde la lista (B la restaura). */
+let gsP0 = 0;
 
-/** Estadísticas de juego: de un título (Y en Evolución) o de la categoría abierta (Start en la lista). */
-function openGameStats(scope: 'title' | 'cat') {
-  app.gsScope = scope;
-  app.gsFrom = scope === 'title' ? 'evo' : 'titles';
+function loadGsDb() {
   app.gsDb = null;
-  app.gsPage = 'sum';
   const id = app.platform?.titles[app.t]?.gameId;
-  if (scope === 'title' && id) {
-    // Lanzamientos, primer inicio y tiempo interactivo viven en la base: se piden al abrir.
-    backend.gameStats(id).then((d) => { if (app.view === 'gstats') app.gsDb = d; }).catch((e) => console.error(e));
-  }
+  // Lanzamientos, primer inicio y tiempo interactivo viven en la base: se piden al abrir.
+  if (id) backend.gameStats(id).then((d) => { if (app.view === 'gstats' && app.gsScope === 'title') app.gsDb = d; }).catch((e) => console.error(e));
+}
+
+/** Estadísticas de juego: nivel Juego de un título (Y en Evolución) o nivel Categoría de la categoría abierta
+ *  (Start en la lista, o A sobre una categoría de Mi actividad: `from = 'stats'`). */
+function openGameStats(scope: 'title' | 'cat', from?: 'stats') {
+  app.gsScope = scope;
+  app.gsFrom = scope === 'title' ? 'evo' : (from ?? 'titles');
+  app.gsPage = 'sum';
+  app.gsScale = 'month';
+  if (scope === 'cat') { app.gsCatFrom = from ?? 'titles'; app.gsPer = 'all'; gsP0 = app.p; }
+  else loadGsDb();
   delete app.fk.gstats;
   go('gstats', 'fwd');
 }
 
+/** Nivel Juego de un título de la categoría `pi`: desde Mi actividad o desde la clasificación del nivel Categoría. */
+function openGameLevel(pi: number, ti: number, from: 'stats' | 'cat') {
+  app.p = pi; app.t = ti;
+  app.gsScope = 'title';
+  app.gsFrom = from;
+  app.gsPage = 'sum';
+  app.gsScale = 'month';
+  loadGsDb();
+  delete app.fk.gstats;
+  go('gstats', 'fwd');
+}
+
+/** B en el nivel Juego abierto desde la clasificación: vuelve a su fila del nivel Categoría. */
+function backToCat() {
+  app.gsScope = 'cat';
+  app.gsFrom = app.gsCatFrom;
+  const i = app.gsCat.rows.findIndex((r) => r.ti === app.t);
+  app.fk.gstats = i >= 0 ? 'gs' + i : 'gc0';
+  go('gstats', 'back');
+}
+
 export function openStats(from: 'home' | 'streak' = 'home') {
   app.statsFrom = from;
+  app.yearFrom = 'stats';
   app.statsOff = 0; app.calOff = 0; app.yearSel = null; app.yearCard = 0;
   app.daysYear = app.now.getFullYear(); app.daysCat = -1;
   for (let k = 0; k < 240 && !app.rank.rows.length && app.rank.older; k++) app.statsOff--;
@@ -885,9 +927,31 @@ function cycleStatsTab(d: number) {
 
 /** Y: abre o cierra «Tu año jugando» y vuelve a la pestaña de antes. */
 function toggleStatsTab() {
-  if (app.statsTab === 'year') { setStatsTab(app.statsPrev); return; }
+  if (app.statsTab === 'year') { closeYear(); return; }
   if (app.statsTab === 'week' || app.statsTab === 'days' || app.statsTab === 'fin') app.statsPrev = app.statsTab;
+  app.yearFrom = 'stats';
   setStatsTab('year');
+}
+
+/** Cierra «Tu año jugando» (Y o B): vuelve a la pestaña de Mi actividad o al nivel Categoría/Juego desde el que se abrió. */
+function closeYear() {
+  if (app.yearFrom === 'gstats') {
+    app.yearFrom = 'stats';
+    app.statsTab = app.statsPrev;
+    go('gstats', 'back');
+    blip(520);
+    return;
+  }
+  setStatsTab(app.statsPrev);
+}
+/** Y en los niveles Categoría y Juego: abre «Tu año jugando» (Y o B vuelven al nivel). */
+function openGsYear() {
+  app.yearFrom = 'gstats';
+  app.statsTab = 'year';
+  app.yearCard = 0; app.yearSel = null;
+  delete app.fk.stats;
+  go('stats', 'fwd');
+  blip(700);
 }
 
 /** Pestaña de estadísticas con destino fijo (órdenes «stab:…»). */
@@ -901,12 +965,40 @@ export function setStatsTab(t: typeof app.statsTab) {
   blip(700);
 }
 
-/** LB/RB en las estadísticas de categoría: otra métrica de la clasificación. */
-function gsMetric(d: number) {
-  if (app.gsScope !== 'cat') { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
-  const i = GMETRICS.findIndex(([k]) => k === app.gsMetric) + d;
-  if (i < 0 || i >= GMETRICS.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+/** LB/RB: en el nivel Categoría, otro periodo; en el nivel Juego, otra escala de «Cómo lo has jugado». */
+function gsShift(d: number) {
+  if (app.gsScope === 'cat') {
+    const pers = catPerList(app.lib, app.p), i = pers.indexOf(app.gsPer) + d;
+    if (i < 0 || i >= pers.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+    app.gsPer = pers[i];
+    blip(700);
+    return;
+  }
+  const ks = SERIES_KINDS.map(([k]) => k), i = ks.indexOf(app.gsScale) + d;
+  if (i < 0 || i >= ks.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+  app.gsScale = ks[i];
+  blip(700);
+}
+/** LT/RT en el nivel Categoría: otra categoría con partidas (sin dar la vuelta: la clasificación nunca mezcla categorías). */
+function gsCat(d: number) {
+  const ps = app.statsPlats, i = ps.indexOf(app.p) + d;
+  if (app.gsScope !== 'cat' || i < 0 || i >= ps.length || ps.indexOf(app.p) < 0) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+  gsGoCat(ps[i]);
+}
+/** Cambia la categoría del nivel Categoría (LT/RT o clic en su píldora); el periodo se conserva si esa categoría lo tiene. */
+function gsGoCat(pi: number) {
+  if (app.gsScope !== 'cat' || pi === app.p || !app.statsPlats.includes(pi)) return;
+  app.p = pi; app.t = 0; app.goff = 0;
+  if (!catPerList(app.lib, pi).includes(app.gsPer)) app.gsPer = 'all';
+  setFocus(defaultKey('gstats'));
+  blip(700);
+}
+/** View: en el nivel Categoría cambia la métrica de la clasificación; en el nivel Juego alterna Resumen y Periféricos. */
+function gsView() {
+  if (app.gsScope === 'title') { app.gsPage = app.gsPage === 'sum' ? 'io' : 'sum'; setFocus('gt0'); blip(700); return; }
+  const i = (GMETRICS.findIndex(([k]) => k === app.gsMetric) + 1) % GMETRICS.length;
   app.gsMetric = GMETRICS[i][0];
+  app.goff = 0;
   setFocus(defaultKey('gstats'));
   blip(700);
 }
@@ -922,6 +1014,7 @@ function setGsMetric(k: string) {
 function setGsPage(p: string) {
   if (app.gsScope !== 'title' || app.gsPage === p || (p !== 'sum' && p !== 'io')) return;
   app.gsPage = p;
+  setFocus('gt0');
   blip(700);
 }
 /** Clic en la escala de la evolución (días / semanas / años). */
@@ -1008,6 +1101,14 @@ function daysDefault(): number {
 function cycleDaysCat() {
   const cats = [-1, ...[...app.heat.by.keys()].sort((a, b) => a - b)];
   app.daysCat = cats[(cats.indexOf(app.daysCat) + 1) % cats.length] ?? -1;
+  blip(700);
+}
+
+/** View en Terminados: Todas → cada categoría con terminados ese año → Todas. */
+function cycleFinCat() {
+  const cats = [-1, ...finishedYear(app.lib, app.finYear).lanes.map((l) => l.pi).sort((a, b) => a - b)];
+  app.finCat = cats[(cats.indexOf(app.finCat) + 1) % cats.length] ?? -1;
+  setFocus(defaultKey('stats'));
   blip(700);
 }
 
@@ -1134,10 +1235,12 @@ export function back() {
     app.fk.detail = 'dhrs';
     go('detail', 'back');
   } else if (app.view === 'gstats') {
+    if (app.gsScope === 'title' && app.gsFrom === 'cat') { backToCat(); blip(520); return; }
     if (app.gsFrom === 'evo') go('evo', 'back');
-    else go('titles', 'back');
+    else if (app.gsFrom === 'stats') go('stats', 'back');
+    else { app.p = gsP0; go('titles', 'back'); }
   } else if (app.view === 'stats') {
-    if (app.statsTab === 'year') { setStatsTab(app.statsPrev); blip(520); return; }
+    if (app.statsTab === 'year') { closeYear(); blip(520); return; }
     if (app.statsFrom === 'streak') {
       go('streak', 'back');
     } else {
@@ -1164,7 +1267,7 @@ export function page(d: number) {
   if (app.view === 'viewer') { stepViewer(d * 10); return; }
   if (app.view === 'streak' || (app.view === 'stats' && app.statsTab === 'streak')) { streakSwitch(d); return; }
   if (app.view === 'stats' || app.view === 'evo') { statsKind(d); return; }
-  if (app.view === 'gstats') { gsMetric(d); return; }
+  if (app.view === 'gstats') { gsShift(d); return; }
   if (app.view === 'titles') {
     const n = app.tview.length;
     if (!n || !onAllTab()) return;
@@ -1200,6 +1303,7 @@ export function page(d: number) {
 
 /** LT/RT: en la lista de juegos, pestaña anterior/siguiente; en la vista de capturas por días, día anterior/siguiente. */
 export function trigger(d: number) {
+  if (app.view === 'gstats') { gsCat(d); return; }
   if (app.view === 'stats' && app.statsTab === 'rank') { cycleStatsPlat(d); return; }
   if (app.view === 'stats' && app.statsTab === 'pano') { cyclePanoPlat(d); return; }
   if (app.view === 'stats') { cycleStatsTab(d); return; }
@@ -2078,10 +2182,12 @@ export function cmd(c: string) {
   if (collTab() && collCmd(c)) return;
   if (c.startsWith('goal:')) { pickStreak(c.slice(5) as GoalKey); return; }
   if (c.startsWith('hgoal:')) { setHomeGoal(c.slice(6) as GoalKey); return; }
+  if (c.startsWith('fy:')) { app.finYear = Number(c.slice(3)); setFocus(defaultKey('stats')); blip(700); return; }
   if (c.startsWith('stab:')) { setStatsTab(c.slice(5) as typeof app.statsTab); return; }
   // Píldoras de las pantallas (clic): cada una lleva su destino fijo.
   if (c.startsWith('gm:')) { setGsMetric(c.slice(3)); return; }
   if (c.startsWith('gp:')) { setGsPage(c.slice(3)); return; }
+  if (c.startsWith('gcat:')) { gsGoCat(+c.slice(5)); return; }
   if (c.startsWith('ek:')) { setEvoKind(c.slice(3)); return; }
   if (c.startsWith('saga:')) { setSaga(+c.slice(5)); return; }
   if (c.startsWith('yc:')) { setYearCard(+c.slice(3)); return; }
@@ -2102,6 +2208,9 @@ export function cmd(c: string) {
         const r = app.recent[+app.focus.slice(3)];
         const t = r && app.lib.platforms[r.pi]?.titles[r.ti];
         if (t?.launchable) void playTitle(t); else bump(screenEl()?.querySelector('.fx.f'), 0, 0);
+      } else if (app.view === 'gstats') {
+        const t = app.gsScope === 'title' ? app.platform?.titles[app.t] : undefined;
+        if (t?.launchable) void playTitle(t); else bump(screenEl()?.querySelector('.fx.f'), 0, 0);
       } else if (app.view === 'titles') {
         const t = app.platform?.titles[app.t];
         if (app.focus.startsWith('tit') && t?.launchable) void playTitle(t); else bump(screenEl()?.querySelector('.fx.f'), 0, 0);
@@ -2118,6 +2227,8 @@ export function cmd(c: string) {
       else if (app.view === 'titles' && app.titlesTab === 'all') toggleTitlesView();
       else if (app.view === 'stats' && app.statsTab === 'rank') cycleStatsKind();
       else if (app.view === 'stats' && app.statsTab === 'days') cycleDaysCat();
+      else if (app.view === 'stats' && app.statsTab === 'fin') cycleFinCat();
+      else if (app.view === 'gstats') gsView();
       break;
     case 'y':
       if (app.view === 'titles') {
@@ -2137,7 +2248,7 @@ export function cmd(c: string) {
       else if (app.view === 'stats') toggleStatsTab();
       else if (app.view === 'streak') openStreakStats();
       else if (app.view === 'evo') openGameStats('title');
-      else if (app.view === 'gstats' && app.gsScope === 'title') { app.gsPage = app.gsPage === 'sum' ? 'io' : 'sum'; blip(700); }
+      else if (app.view === 'gstats') openGsYear();
       break;
     case 'menu':
       if (app.view === 'shots' || app.view === 'viewer') openShotMenu();

@@ -211,7 +211,7 @@
   {#if cols.length}
     <div class="cols" style="grid-template-columns:repeat({Math.max(3, cols.length)},minmax(0,1fr))">
       {#each cols as c, i}
-        <StatChip k="wk{6 + i}" cls="col" tone={catTone(c.id)} act={c.b.top[0] ? `sr:${c.b.pi}:${c.b.top[0].ti}` : undefined}>
+        <StatChip k="wk{6 + i}" cls="col" tone={catTone(c.id)} act="gc:{c.b.pi}">
           <div class="ch"><CIcon name={catIcon(c.id)} class="" /><span>{c.b.name}</span>
             <div class="tt"><b>{fmtHM(c.b.ms)}</b>{#if c.d !== 0}<span class="delta" class:dn={c.d < 0}><CIcon name={c.d < 0 ? 'down' : 'up'} class="" />{fmtHM(Math.abs(c.d))}</span>{/if}</div>
           </div>
