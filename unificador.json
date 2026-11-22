@@ -2600,7 +2600,7 @@
       "color": 3,
       "created": "2026-11-22T00:52:56+01:00",
       "by": "claude",
-      "next_id": 9,
+      "next_id": 11,
       "phases": [
         {
           "name": "Maqueta",
@@ -2627,7 +2627,7 @@
               "id": "RDE-2",
               "title": "Maqueta del rediseño",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-22T00:53:01+01:00",
@@ -2640,20 +2640,49 @@
                   "by": "claude",
                   "kind": "note",
                   "text": "Maqueta en docs/maquetas/estadisticas-rediseno/index.html (commit 7e2bd62). Pendiente de que la persona la valore."
+                },
+                {
+                  "at": "2026-11-22T01:14:33+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Maqueta de tres niveles en docs/maquetas/estadisticas-rediseno/index.html, revisada en el navegador"
                 }
               ],
               "cat": "interfaz",
-              "updated": "2026-11-22T01:03:21+01:00"
+              "updated": "2026-11-22T01:14:33+01:00",
+              "result": "Maqueta de tres niveles en docs/maquetas/estadisticas-rediseno/index.html, revisada en el navegador"
             },
             {
               "id": "RDE-3",
               "title": "Elegir y ajustar la maqueta",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "decidir"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T01:14:33+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T01:14:33+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Elegida la maqueta; ajustes (colores como Mi lista, mapa Todas en una escala, lunas, textos, animaciones) en docs/planes/estadisticas-rediseno.md"
+                }
+              ],
+              "cat": "decidir",
+              "updated": "2026-11-22T01:14:33+01:00",
+              "result": "Elegida la maqueta; ajustes (colores como Mi lista, mapa Todas en una escala, lunas, textos, animaciones) en docs/planes/estadisticas-rediseno.md"
             }
-          ]
+          ],
+          "review": {
+            "state": "approved",
+            "text": "",
+            "by": "persona",
+            "at": "2026-11-22T01:14:39+01:00",
+            "seen": true
+          }
         },
         {
           "name": "Pantallas",
@@ -2663,9 +2692,17 @@
               "id": "RDE-4",
               "title": "Nivel Mi actividad",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "doing",
+              "notes": [
+                {
+                  "at": "2026-11-22T01:14:39+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-22T01:14:39+01:00"
             },
             {
               "id": "RDE-5",
@@ -2682,6 +2719,24 @@
               "state": "pending",
               "notes": [],
               "cat": "codigo"
+            },
+            {
+              "id": "RDE-9",
+              "title": "Días y rachas: paneles y mapa del año",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz",
+              "by": "claude"
+            },
+            {
+              "id": "RDE-10",
+              "title": "Terminados con todos los años",
+              "desc": "",
+              "state": "pending",
+              "notes": [],
+              "cat": "interfaz",
+              "by": "claude"
             }
           ]
         },
@@ -3778,6 +3833,13 @@
       "by": "claude",
       "at": "2026-11-22T01:09:28+01:00",
       "ref": "CCM/Mando"
+    },
+    {
+      "text": "📊 Rediseño de Estadísticas: Maqueta",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-22T01:14:33+01:00",
+      "ref": "RDE/Maqueta"
     }
   ],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",
