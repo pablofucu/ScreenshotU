@@ -3362,19 +3362,56 @@
               "id": "AE-7",
               "title": "B vuelve a la pestaña desde Tu año",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T05:07:38+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T05:07:38+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Ya funciona: B en Tu año llama a closeYear y vuelve a la pestaña de antes (controller.svelte.ts:1243). Sin cambios de código."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-22T05:07:38+01:00",
+              "result": "Ya funciona: B en Tu año llama a closeYear y vuelve a la pestaña de antes (controller.svelte.ts:1243). Sin cambios de código."
             },
             {
               "id": "AE-8",
               "title": "Comprobar con npm run check y pruebas",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "pruebas"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T05:07:38+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T05:07:39+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "svelte-check: 0 errores, 0 avisos. node --test gamestats y consolestats: 14/14."
+                }
+              ],
+              "cat": "pruebas",
+              "updated": "2026-11-22T05:07:39+01:00",
+              "result": "svelte-check: 0 errores, 0 avisos. node --test gamestats y consolestats: 14/14."
             }
-          ]
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "claude",
+            "at": "2026-11-22T05:07:39+01:00",
+            "seen": true
+          }
         }
       ]
     }
@@ -4155,6 +4192,13 @@
       "by": "claude",
       "at": "2026-11-22T05:07:24+01:00",
       "ref": "AE/Semana y Días"
+    },
+    {
+      "text": "📊 Arreglar Estadísticas: Pulido",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-22T05:07:39+01:00",
+      "ref": "AE/Pulido"
     }
   ],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",
