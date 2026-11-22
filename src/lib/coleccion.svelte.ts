@@ -11,7 +11,7 @@ import { variablesCSS } from './atmos';
 import { openOsk } from './osk.svelte';
 import { bump, closeOverlay, go, openTitle, openTitlesMenu, playTitle, popOverlay, pushOverlay, setFocus, toast } from './controller.svelte';
 import { closeOrConfirm, inkFor } from './ops.svelte';
-import { LIST_VIS, revealShelfPx, SHELF_CW, SHELF_PITCH } from './milista.svelte';
+import { SHELF_CW, SHELF_PITCH } from './milista.svelte';
 import { autoHex, coverColors, gameYear, harmonize, railGradient, suggestGroups, suggestName, titleHex, topHues, yearLayout } from './collections';
 import type { Collection, Library, Title } from './types';
 
@@ -105,6 +105,8 @@ export function shelfVars(sh: { coll: Collection; items: number[] }, acc: Accent
   return Object.entries(variablesCSS(h1, h2)).map(([k, v]) => `${k}:${v}`).join(';');
 }
 
+/** Capturas del juego enfocado que enseña la ficha de «Colecciones». */
+export const COLL_GAME_SHOTS = 3;
 const shotRng = $state({ seed: Math.floor(Math.random() * 1e9) || 1 });
 /** Semilla actual para muestrear capturas aleatorias de la colección. */
 export const collShotSeed = () => shotRng.seed;
@@ -146,15 +148,10 @@ export function setCollFocus(key: string) {
   if (m) app.collAt = { c: +m[1], i: +m[2] };
 }
 
-/** Desplaza lo justo para que la portada enfocada se vea, con un vecino a cada lado si se puede. */
-export function collReveal() {
-  const { c, i } = app.collAt;
-  const sh = app.collShelves[c];
-  const f0 = sh ? (app.collFrom[sh.coll.id] ?? 0) : 0;
-  const r = revealShelfPx(i, sh ? collLayout(sh).xs : [0], f0, c, app.collTop);
-  if (sh && r.from !== f0) app.collFrom = { ...app.collFrom, [sh.coll.id]: r.from };
-  if (r.top !== app.collTop) app.collTop = r.top;
-}
+/** Portadas por fila de la colección a la vista: la pantalla las reparte para que quepan y lo apunta aquí,
+ *  así arriba y abajo saltan de fila en fila. */
+const grid = $state({ perRow: 1 });
+export function setCollPerRow(n: number) { if (n !== grid.perRow) grid.perRow = Math.max(1, n); }
 
 /** Vuelve a empezar al entrar en una categoría. */
 export function resetColl() {
@@ -166,30 +163,31 @@ export function resetColl() {
 
 const flash = () => document.querySelector('#screen .fx.f');
 
+/** Izquierda/derecha recorren las portadas en orden; arriba/abajo saltan de fila (a la última portada si la fila
+ *  de abajo es más corta). En «Nueva colección», arriba vuelve a la última colección. */
 function collMove(dx: number, dy: number) {
   const nsh = app.collShelves.length;
-  let { c, i } = app.collAt;
-  if (dx) {
-    if (c >= nsh) { bump(flash(), dx, 0); return; }
-    i += dx;
-    if (i < 0 || i >= cols(c)) { bump(flash(), dx, 0); return; }
+  const { c, i } = app.collAt;
+  if (c >= nsh) {
+    if (dy < 0 && nsh) { collShift(-1); return; }
+    bump(flash(), dx, dy); return;
   }
-  if (dy) {
-    c += dy;
-    if (c < 0 || c > nsh) { bump(flash(), 0, dy); return; }
-    i = c >= nsh ? 0 : Math.min(i, cols(c) - 1);
-  }
-  setFocus(collKey({ c, i }));
+  const n = cols(c);
+  const pr = Math.max(1, Math.min(grid.perRow, n));
+  let ni = i;
+  if (dx) ni = i + dx;
+  if (dy > 0) ni = Math.floor(i / pr) < Math.floor((n - 1) / pr) ? Math.min(n - 1, i + pr) : -1;
+  if (dy < 0) ni = i - pr;
+  if (ni < 0 || ni >= n) { bump(flash(), dx, dy); return; }
+  setFocus(collKey({ c, i: ni }));
   blip(880);
 }
 
-/** LB/RB: salta varias portadas de la estantería. */
+/** LB/RB: colección anterior o siguiente (después de la última está «Nueva colección»). */
 function collShift(d: number) {
-  const { c, i } = app.collAt;
-  if (c >= app.collShelves.length) { bump(flash(), d, 0); return; }
-  const ni = Math.max(0, Math.min(cols(c) - 1, i + d * (LIST_VIS - 1)));
-  if (ni === i) { bump(flash(), d, 0); return; }
-  setFocus(collKey({ c, i: ni }));
+  const c = app.collAt.c + d;
+  if (c < 0 || c > app.collShelves.length) { bump(flash(), d, 0); return; }
+  setFocus(collKey({ c, i: 0 }));
   blip(700);
 }
 
@@ -223,22 +221,29 @@ export function collCmd(c: string): boolean {
       if (sh) openCollForm(sh.coll.id); else bump(flash(), 0, 0);
       return true;
     case 'view': {
-      const totalShots = sh?.items.reduce((n, ti) => n + (app.platform?.titles[ti]?.shots.length ?? 0), 0) ?? 0;
-      if (totalShots > 5) shuffleCollShots(); else bump(flash(), 0, 0);
+      const ti = sh?.items[at.i];
+      const n = ti !== undefined ? (app.platform?.titles[ti]?.shots.length ?? 0) : 0;
+      if (n > COLL_GAME_SHOTS) shuffleCollShots(); else bump(flash(), 0, 0);
       return true;
     }
   }
   return false;
 }
 
-/** Abre la vista de capturas de toda la colección `k` (o directamente el visor si se pasa `shotPath`). */
-export function openCollShots(k: number, shotPath?: string) {
+/** Abre la vista de capturas de toda la colección `k` (o directamente el visor si se pasa `shotPath`). Con `ti`,
+ *  la vista sale filtrada a ese juego (se puede volver a «Todos» desde la propia vista). */
+export function openCollShots(k: number, shotPath?: string, ti?: number) {
   const sh = app.collShelves[k];
   if (!sh) return;
-  if (!sh.items.some((i) => app.platform!.titles[i].shots.length)) { toast('Esta colección aún no tiene capturas'); return; }
+  const titles = app.platform!.titles;
+  if (ti !== undefined ? !titles[ti]?.shots.length : !sh.items.some((i) => titles[i].shots.length)) {
+    toast(ti !== undefined ? 'Este juego aún no tiene capturas' : 'Esta colección aún no tiene capturas');
+    return;
+  }
   app.collAt = { c: k, i: Math.min(app.collAt.i, cols(k) - 1) };
   app.collOpen = sh.coll.id;
   app.favView = false; app.sagaFilter = -1; app.sortMode = app.config.shotsOrder;
+  if (ti !== undefined) app.sagaFilter = Math.max(-1, app.collTitle?.members?.findIndex((m) => m.id === titles[ti].id) ?? -1);
   if (shotPath) {
     const idx = app.cur.shots.findIndex((s) => s.path === shotPath);
     app.s = idx >= 0 ? idx : 0;
@@ -335,7 +340,7 @@ async function moveColl(d: number) {
   if (!(await saveColls(list))) return;
   if (app.view === 'titles' && app.titlesTab === 'coll') {
     const k = app.collShelves.findIndex((s) => s.coll.id === f.id);
-    if (k >= 0) { app.collAt = { c: k, i: Math.min(app.collAt.i, cols(k) - 1) }; collReveal(); }
+    if (k >= 0) { app.collAt = { c: k, i: Math.min(app.collAt.i, cols(k) - 1) }; }
   }
   blip(1100);
 }

@@ -1,7 +1,7 @@
 // Pruebas de colecciones (muestreo equilibrado de capturas y rango de años). Se ejecutan con: node --test tests/collections.test.ts
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { collYearSpan, pickCollShots } from '../src/lib/collections.ts';
+import { collGrid, collYearSpan, pickCollShots, pickGameShots } from '../src/lib/collections.ts';
 
 const mkShot = (path: string, date: number) => ({
   name: path,
@@ -60,4 +60,30 @@ test('collYearSpan formatea vacío, un año y rango min–max', () => {
   assert.equal(collYearSpan([null, null]), '');
   assert.equal(collYearSpan([2015, null, 2015]), '2015');
   assert.equal(collYearSpan([2020, 2004, null, 2011]), '2004 – 2020');
+});
+
+test('pickGameShots devuelve hasta N capturas distintas del juego y varía con la semilla', () => {
+  const shots = Array.from({ length: 20 }, (_, i) => i);
+  const a = pickGameShots(shots, 3, 1);
+  assert.equal(a.length, 3);
+  assert.equal(new Set(a).size, 3);
+  assert.deepEqual(pickGameShots(shots, 3, 1), a);
+  const seen = new Set<string>();
+  for (let s = 1; s <= 10; s++) seen.add(pickGameShots(shots, 3, s * 7919).join(','));
+  assert.ok(seen.size > 5);
+  assert.deepEqual(pickGameShots([1, 2], 3, 5).sort(), [1, 2]);
+  assert.deepEqual(pickGameShots([], 3, 5), []);
+});
+
+test('collGrid deja pocas portadas en una fila y reparte muchas en varias filas que caben', () => {
+  const few = collGrid(6, 860, 280);
+  assert.equal(few.rows, 1);
+  assert.equal(few.cw, 104);
+  const many = collGrid(24, 860, 280);
+  assert.ok(many.rows > 1);
+  assert.equal(many.rows * many.perRow >= 24, true);
+  const usedW = many.perRow * many.cw + (many.perRow - 1) * 12;
+  assert.ok(usedW <= 860);
+  const usedH = many.rows * (many.cw * 4 / 3 + 46) + (many.rows - 1) * 14;
+  assert.ok(usedH <= 280 + 1);
 });

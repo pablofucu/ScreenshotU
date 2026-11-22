@@ -1,14 +1,14 @@
 <script lang="ts">
-  // Pestaña «Colecciones» de una categoría: lista lateral de colecciones con barra de espectro vivo y panel de
-  // cristal con aurora, 5 capturas aleatorias de todos los juegos, línea del tiempo cromática y ficha inferior.
+  // Pestaña «Colecciones» de una categoría: lista lateral de colecciones y panel de cristal con aurora. Arriba, nombre,
+  // años y progreso; en medio, todas las portadas repartidas en filas que siempre caben (cada fila con su raíl de
+  // colores y el año solo cuando cambia); abajo, la ficha del juego enfocado con capturas suyas elegidas al azar.
   import { app, LIST_COLOR, STATUS_LABEL } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { fmtDur, nCapturas, nGames } from '../lib/format';
   import { openTitle, setFocus } from '../lib/controller.svelte';
   import { blip } from '../lib/sound';
-  import { hash } from '../lib/rng';
-  import { collLayout, collShotSeed, gameVars, openCollShots, shelfAccent, shelfVars, shuffleCollShots } from '../lib/coleccion.svelte';
-  import { collYearSpan, coverColors, gameYear, pickCollShots } from '../lib/collections';
+  import { COLL_GAME_SHOTS, collLayout, collShotSeed, gameVars, openCollShots, setCollPerRow, shelfAccent, shelfVars } from '../lib/coleccion.svelte';
+  import { collGrid, collYearSpan, coverColors, gameYear, pickGameShots } from '../lib/collections';
   import Thumb from '../components/Thumb.svelte';
   import CIcon from '../components/CIcon.svelte';
 
@@ -27,9 +27,7 @@
       const cols = sh.coll.color == null ? coverColors(games, 0.72, 0.16, 6) : [];
       const stops = cols.length ? cols : [acc.v ?? acc.c];
       const barBg = stops.length === 1 ? stops[0] : `linear-gradient(180deg,${stops.join(',')})`;
-      const span = collYearSpan(games.map((t) => gameYear(t)));
-      const hours = Math.round(games.reduce((n, t) => n + (t.playSeconds ?? 0), 0) / 3600);
-      return { acc, barBg, span, hours };
+      return { acc, barBg };
     }),
   );
 
@@ -39,8 +37,6 @@
   const activeLayout = $derived(activeSh ? collLayout(activeSh) : null);
   const activeYears = $derived(activeGames.map((t) => gameYear(t)));
   const activeSpan = $derived(collYearSpan(activeYears));
-  const activeHoursSec = $derived(activeGames.reduce((n, t) => n + (t.playSeconds ?? 0), 0));
-  const activeTotalShots = $derived(activeGames.reduce((n, t) => n + t.shots.length, 0));
   const activeDone = $derived(activeGames.filter((t) => t.status === 'finished').length);
   const hasAnyStatus = $derived(activeGames.some((t) => Boolean(t.status)));
   const auroraCols = $derived.by(() => {
@@ -53,37 +49,46 @@
   const focusedGame = $derived(focusedTi !== undefined ? titles[focusedTi] : undefined);
   const focusedYear = $derived(focusedGame ? gameYear(focusedGame) : null);
 
-  const randomShots = $derived.by(() => {
-    if (!activeSh || !activeLayout) return [];
-    const sources = activeSh.items.map((ti, j) => ({
-      ti,
-      name: titles[ti].name,
-      shots: titles[ti].shots,
-      tint: activeLayout.tints[j] ?? app.pairFill(app.titlePair(app.p, ti)).v,
-    }));
-    return pickCollShots(sources, 5, (hash(activeSh.coll.id) ^ collShotSeed()) >>> 0);
+  // Reparto en filas según el hueco real; el mando lo usa para saltar de fila con arriba y abajo.
+  let gw = $state(0);
+  let gh = $state(0);
+  const G = $derived(collGrid(activeSh?.items.length ?? 0, gw, gh));
+  $effect(() => setCollPerRow(G.perRow));
+  const rows = $derived.by(() => {
+    const items = activeSh?.items ?? [];
+    const out: Array<Array<{ ti: number; j: number }>> = [];
+    for (let s = 0; s < items.length; s += G.perRow) out.push(items.slice(s, s + G.perRow).map((ti, k) => ({ ti, j: s + k })));
+    return out;
   });
+  const tintOf = (j: number, ti: number) => activeLayout?.tints[j] ?? app.pairFill(app.titlePair(app.p, ti)).v;
+  const railOf = (row: Array<{ ti: number; j: number }>) => {
+    const cs = row.map((g) => tintOf(g.j, g.ti));
+    return cs.length > 1 ? `linear-gradient(90deg,${cs.join(',')})` : cs[0];
+  };
 
-  let tlEl = $state<HTMLElement>();
+  // Capturas del juego enfocado: una tanda al azar nueva cada vez que se llega a él (y otra con View).
+  const gameSeed = $derived.by(() => {
+    void focusedTi;
+    void activeIdx;
+    return Math.floor(Math.random() * 1e9) || 1;
+  });
+  const gameShots = $derived(focusedGame ? pickGameShots(focusedGame.shots, COLL_GAME_SHOTS, (gameSeed ^ collShotSeed()) >>> 0) : []);
+  const moreShots = $derived(focusedGame ? Math.max(0, focusedGame.shots.length - gameShots.length) : 0);
+
+  let gamesEl = $state<HTMLElement>();
   let sideEl = $state<HTMLElement>();
 
-  // Mantiene a la vista el juego enfocado en la línea del tiempo y la colección activa en la lista lateral.
+  // Mantiene a la vista el juego enfocado (solo hace falta con muchísimos juegos) y la colección activa en la lista lateral.
   $effect(() => {
     void app.collAt;
     void activeIdx;
     queueMicrotask(() => {
-      const cov = tlEl?.querySelector<HTMLElement>('.tl-it.f');
-      if (cov && tlEl) {
-        const left = cov.offsetLeft - (tlEl.clientWidth - cov.offsetWidth) / 2;
-        tlEl.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
-      }
-      const row = sideEl?.querySelector<HTMLElement>('.sitem.on');
-      row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      gamesEl?.querySelector<HTMLElement>('.gi.f')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      sideEl?.querySelector<HTMLElement>('.sitem.on')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     });
   });
 
   const statusColor = (st?: string) => LIST_COLOR[(st as keyof typeof LIST_COLOR) || 'none']?.c;
-  const gameHoursText = (sec: number) => (sec >= 3600 ? `${Math.round(sec / 3600)} h` : '—');
 </script>
 
 <div class="coll-wrap">
@@ -131,7 +136,7 @@
                 <i class="sitem-bar" style="background:{sb.barBg}"></i>
                 <div class="sitem-t">
                   <b>{sh.coll.name}</b>
-                  <small>{sb.span ? `${sb.span} · ` : ''}{nGames(sh.items.length)}{sb.hours >= 1 ? ` · ${sb.hours} h` : ''}</small>
+                  <small>{nGames(sh.items.length)}</small>
                 </div>
               </button>
             {/each}
@@ -157,170 +162,134 @@
           </div>
 
           <div class="mhead">
-            <div class="mhead-t">
-              <div class="mhead-row">
-                <h1>{activeSh.coll.name}</h1>
-                {#if activeSpan}
-                  <span class="tag soft"><CIcon name="cal" class="ic s" /> {activeSpan}</span>
-                {/if}
-                <span class="tag">
-                  {activeDone > 0 ? `${activeDone} / ${activeSh.items.length} terminados` : nGames(activeSh.items.length)}
-                </span>
-              </div>
-              <div class="mhead-sub">
-                {#if activeHoursSec >= 60}
-                  <span><CIcon name="clock" class="ic s" /> {fmtDur(activeHoursSec)}</span>
-                {/if}
-                <span><CIcon name="cam" class="ic s" /> {nCapturas(activeTotalShots)}</span>
-                {#if activeSh.items.length}
-                  <span>Juego {focusedPos + 1} de {activeSh.items.length}</span>
-                {/if}
-              </div>
-            </div>
-            {#if hasAnyStatus && activeSh.items.length}
-              <div class="st-seg">
-                <div class="st-seg-bar">
-                  {#each activeGames as gm}
-                    {@const st = gm.status ?? 'none'}
-                    <i style={st !== 'none' ? `background:${statusColor(st)}` : ''}></i>
-                  {/each}
-                </div>
-                {#if activeDone > 0}
-                  <small>{Math.round((activeDone / activeSh.items.length) * 100)} % completado</small>
+            <h1>{activeSh.coll.name}</h1>
+            {#if activeSpan}
+              <span class="tag soft"><CIcon name="cal" class="ic s" /> {activeSpan}</span>
+            {/if}
+            {#if activeSh.items.length}
+              <div class="prog">
+                {#if hasAnyStatus}
+                  <span><b>{activeDone}</b> de {activeSh.items.length} terminados</span>
+                  <div class="prog-bar">
+                    {#each activeGames as gm}
+                      {@const st = gm.status ?? 'none'}
+                      <i style={st !== 'none' ? `background:${statusColor(st)}` : ''}></i>
+                    {/each}
+                  </div>
+                {:else}
+                  <span>{nGames(activeSh.items.length)}</span>
                 {/if}
               </div>
             {/if}
           </div>
 
-          <div class="cshots-sec">
-            {#if randomShots.length}
-              <div class="cshots-top">
-                <span>Capturas al azar de la colección</span>
-                <div class="cshots-acts">
-                  {#if activeTotalShots > 5}
-                    <button type="button" class="cshots-btn" onclick={shuffleCollShots}>
-                      {@html ICON.reload} Otras
-                    </button>
-                  {/if}
-                  <button type="button" class="cshots-btn" onclick={() => openCollShots(activeIdx)}>
-                    {@html ICON.camera} Ver todas ({activeTotalShots})
-                  </button>
+          <div
+            class="games"
+            class:scroll={G.cw <= 56}
+            bind:this={gamesEl}
+            bind:clientWidth={gw}
+            bind:clientHeight={gh}
+            style="--cw:{G.cw}px"
+          >
+            {#if !activeSh.items.length}
+              <div
+                class="glass scov addtile g-add fx"
+                class:f={!onNew}
+                data-k="cl{activeIdx}.0"
+                data-act="cgame:{activeIdx}:0"
+              >
+                <div class="face">
+                  <div class="addin"><span>{@html ICON.plus}</span><b>Añadir juegos</b></div>
                 </div>
-              </div>
-              <div class="cshots-row">
-                {#each randomShots as s (s.path)}
-                  <button
-                    type="button"
-                    class="glass cshot"
-                    style={s.tint ? `--sc:${s.tint}` : ''}
-                    onclick={() => openCollShots(activeIdx, s.path)}
-                  >
-                    <div class="face">
-                      <Thumb path={s.path} />
-                      <span class="shot-cap">
-                        <i style={s.tint ? `background:${s.tint}` : ''}></i>
-                        <b>{s.game}</b>
-                      </span>
-                    </div>
-                  </button>
-                {/each}
               </div>
             {:else}
-              <div class="glass-in cshots-empty">
-                <CIcon name="cam" class="ic s" />
-                <span>Aún no hay capturas en esta colección</span>
-              </div>
-            {/if}
-          </div>
-
-          <div class="tl-zone">
-            {#if !activeSh.items.length}
-              <div class="tl-empty-act">
-                <div
-                  class="glass scov addtile tl-add fx"
-                  class:f={!onNew}
-                  data-k="cl{activeIdx}.0"
-                  data-act="cgame:{activeIdx}:0"
-                >
-                  <div class="face">
-                    <div class="addin"><span>{@html ICON.plus}</span><b>Añadir juegos</b></div>
-                  </div>
-                </div>
-              </div>
-            {:else if activeLayout}
-              <div
-                class="tl-scroll"
-                bind:this={tlEl}
-                onwheel={(e) => {
-                  const dy = e.deltaY || e.deltaX;
-                  if (!dy) return;
-                  e.currentTarget.scrollLeft += dy;
-                  e.preventDefault();
-                }}
-              >
-                <div class="tl-track">
-                  <div class="tl-rail" style="background:{activeLayout.rail ?? 'var(--gv)'}"></div>
-                  {#each activeSh.items as ti, j (ti)}
-                    {@const t = titles[ti]}
-                    {@const yr = activeYears[j]}
-                    {@const prevYr = j > 0 ? activeYears[j - 1] : null}
-                    {@const isF = !onNew && app.collAt.i === j}
-                    {#if yr !== null && prevYr !== null && yr - prevYr >= 3}
-                      <span class="tl-gap">+{yr - prevYr} a</span>
-                    {/if}
-                    <div class="tl-it" class:f={isF} style={gameVars(ti)}>
+              {#each rows as row, r (r)}
+                <div class="grow" style="--rail:{railOf(row)}">
+                  {#each row as g (g.ti)}
+                    {@const t = titles[g.ti]}
+                    {@const yr = activeYears[g.j]}
+                    {@const isF = !onNew && focusedPos === g.j}
+                    {@const showYr = yr !== null && (isF || g.j === 0 || activeYears[g.j - 1] !== yr)}
+                    <div class="gi" class:f={isF} class:dim={t.status === 'pending'} style={gameVars(g.ti)}>
                       <div
-                        class="glass scov tl-cov fx"
+                        class="glass scov gcov fx"
                         class:f={isF}
-                        data-k="cl{activeIdx}.{j}"
-                        data-act="cgame:{activeIdx}:{j}"
+                        data-k="cl{activeIdx}.{g.j}"
+                        data-act="cgame:{activeIdx}:{g.j}"
+                        title={t.name}
                       >
                         <div class="face">
-                          {#if coverOf(ti)}
-                            <Thumb path={coverOf(ti)!} />
+                          {#if coverOf(g.ti)}
+                            <Thumb path={coverOf(g.ti)!} />
                           {:else}
                             <div class="noart"><b>{t.name}</b></div>
                           {/if}
-                          <span class="cov-cap">{t.name}</span>
                         </div>
                       </div>
-                      <div class="tl-stem"></div>
-                      <div class="tl-dot"></div>
-                      <div class="tl-meta">
-                        <span class="tl-yr">{yr ?? '–'}</span>
-                        <span class="tl-hr">{gameHoursText(t.playSeconds ?? 0)}</span>
-                      </div>
+                      <span class="gdot"></span>
+                      {#if showYr}<span class="gyr">{yr}</span>{/if}
                     </div>
                   {/each}
                 </div>
-              </div>
+              {/each}
             {/if}
           </div>
 
           {#if focusedGame && focusedTi !== undefined}
             {@const st = focusedGame.status ?? 'none'}
-            <div class="glass-in det-bar" style={gameVars(focusedTi)}>
-              <div class="det-info">
-                <div class="det-top">
-                  <b>{focusedGame.name}</b>
-                  {#if st !== 'none'}
-                    <span class="st-badge">
-                      <i style="background:{statusColor(st)}"></i>
-                      {STATUS_LABEL[st]}
-                    </span>
+            {@const ti = focusedTi}
+            <div class="glass-in det" style={gameVars(ti)}>
+              <div class="det-top">
+                <b>{focusedGame.name}</b>
+                {#if st !== 'none'}
+                  <span class="st-badge">
+                    <i style="background:{statusColor(st)}"></i>
+                    {STATUS_LABEL[st]}
+                  </span>
+                {/if}
+                <span class="det-meta">
+                  {[
+                    focusedYear ?? null,
+                    focusedGame.playSeconds >= 60 ? `${fmtDur(focusedGame.playSeconds)} jugadas` : null,
+                    nCapturas(focusedGame.shots.length),
+                  ].filter(Boolean).join(' · ')}
+                </span>
+                <div class="det-acts">
+                  {#if focusedGame.shots.length}
+                    <button type="button" class="b-sec" onclick={() => openCollShots(activeIdx, undefined, ti)}>
+                      {@html ICON.camera} Capturas
+                    </button>
                   {/if}
-                </div>
-                <div class="det-nums">
-                  <span>Año <strong>{focusedYear ?? '–'}</strong></span>
-                  {#if focusedGame.playSeconds >= 60}
-                    <span>Jugado <strong>{fmtDur(focusedGame.playSeconds)}</strong></span>
-                  {/if}
-                  <span><strong>{nCapturas(focusedGame.shots.length)}</strong></span>
+                  <button type="button" class="b-main" onclick={() => openTitle(ti)}>
+                    {@html ICON.play} Abrir juego
+                  </button>
                 </div>
               </div>
-              <button type="button" class="b-main" onclick={() => openTitle(focusedTi)}>
-                {@html ICON.play} Abrir juego
-              </button>
+              <div class="shots">
+                {#if gameShots.length}
+                  {#each gameShots as s (s.path)}
+                    <button type="button" class="glass shot" onclick={() => openCollShots(activeIdx, s.path, ti)}>
+                      <div class="face"><Thumb path={s.path} /></div>
+                    </button>
+                  {/each}
+                  {#if moreShots > 0}
+                    <button type="button" class="glass shot more" onclick={() => openCollShots(activeIdx, undefined, ti)}>
+                      <div class="face">
+                        <span class="more-in">
+                          <CIcon name="cam" class="ic" />
+                          {moreShots} más
+                          <small>Ver todas</small>
+                        </span>
+                      </div>
+                    </button>
+                  {/if}
+                {:else}
+                  <div class="shots-empty">
+                    <CIcon name="cam" class="ic s" />
+                    <span>Aún no hay capturas de este juego</span>
+                  </div>
+                {/if}
+              </div>
             </div>
           {/if}
         </div>
@@ -372,110 +341,80 @@
   /* Panel derecho principal */
   .main-panel{position:relative;height:100%;min-width:0;--r:var(--r-l);--bw:8px;cursor:default}
   .main-panel>.face{background:var(--panel)}
-  .main-face{display:flex;flex-direction:column;padding:var(--s-4) var(--s-5) var(--s-3);gap:var(--s-3);height:100%}
+  .main-face{display:flex;flex-direction:column;padding:var(--s-4) var(--s-5) var(--s-4);gap:var(--s-3);height:100%}
 
   .aurora{position:absolute;inset:0;pointer-events:none;overflow:hidden;opacity:.34}
   :global(#stage[data-theme=dark]) .aurora{opacity:.28}
   .aurora i{position:absolute;border-radius:50%;width:340px;height:340px;top:-150px;
     background:radial-gradient(circle,var(--ac),transparent 68%)}
 
-  .mhead{position:relative;z-index:2;display:flex;align-items:center;gap:var(--s-4);flex:none}
-  .mhead-t{display:flex;flex-direction:column;gap:var(--s-1);min-width:0;flex:1}
-  .mhead-row{display:flex;align-items:center;gap:var(--s-3);flex-wrap:wrap}
-  .mhead-row h1{margin:0;font:800 var(--t-2xl)/1.15 var(--round);color:var(--ink)}
-  .mhead-sub{display:flex;align-items:center;gap:var(--s-4);font:700 var(--t-s)/1.2 var(--round);color:var(--ink-2)}
-  .mhead-sub span{display:inline-flex;align-items:center;gap:var(--s-1)}
-
-  .tag{display:inline-flex;align-items:center;gap:var(--s-1);height:28px;padding:0 var(--s-3);border-radius:var(--r-pill);
+  /* Cabecera: nombre, años y progreso. Nada más. */
+  .mhead{position:relative;z-index:2;display:flex;align-items:center;gap:var(--s-3);height:44px;flex:none;min-width:0}
+  .mhead h1{margin:0;font:800 var(--t-2xl)/1.15 var(--round);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .tag{display:inline-flex;align-items:center;gap:var(--s-1);height:28px;padding:0 var(--s-3);border-radius:var(--r-pill);flex:none;
     font:700 var(--t-s)/1 var(--round);color:var(--on);background:var(--gf);white-space:nowrap}
   .tag.soft{color:var(--ink-2);background:var(--glass-chip);box-shadow:inset 0 0 0 1px var(--line)}
-
-  .st-seg{display:flex;flex-direction:column;align-items:flex-end;gap:var(--s-1);flex:none}
-  .st-seg-bar{display:flex;gap:3px;width:196px;height:8px;padding:1px;border-radius:var(--r-pill);
+  .prog{margin-left:auto;display:flex;align-items:center;gap:var(--s-3);flex:none;font:700 var(--t-s)/1 var(--round);color:var(--ink-2);white-space:nowrap}
+  .prog b{color:var(--ink);font-weight:800}
+  .prog-bar{display:flex;gap:3px;width:150px;height:8px;padding:1px;border-radius:var(--r-pill);
     background:var(--glass-in);box-shadow:inset 0 0 0 1px var(--line)}
-  .st-seg-bar i{flex:1;border-radius:var(--r-pill);background:var(--line-2)}
-  .st-seg small{font:700 var(--t-s)/1 var(--round);color:var(--ink-2)}
+  .prog-bar i{flex:1;border-radius:var(--r-pill);background:var(--line-2)}
 
-  /* Franja de 5 capturas aleatorias de todos los juegos */
-  .cshots-sec{position:relative;z-index:2;display:flex;flex-direction:column;gap:var(--s-1);flex:none}
-  .cshots-top{display:flex;align-items:center;justify-content:space-between;gap:var(--s-3)}
-  .cshots-top>span{font:800 var(--t-xs)/1 var(--round);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2)}
-  .cshots-acts{display:flex;align-items:center;gap:var(--s-2)}
-  .cshots-btn{display:inline-flex;align-items:center;gap:var(--s-1);height:26px;padding:0 var(--s-3);border:0;
-    border-radius:var(--r-pill);background:var(--glass-chip);box-shadow:inset 0 0 0 1px var(--line);
-    font:700 var(--t-s)/1 var(--round);color:var(--ink-2);cursor:pointer;
-    transition:transform var(--d-2) var(--e-bounce),color var(--d-1) var(--e-soft),background var(--d-1) var(--e-soft)}
-  .cshots-btn:hover{transform:scale(1.04);color:var(--ink);background:var(--panel)}
-  .cshots-btn:active{transform:scale(.97);transition-duration:var(--d-1)}
-  .cshots-btn :global(svg){width:var(--i-s);height:var(--i-s)}
+  /* Juegos: siempre caben. Se reparten en filas y la portada se encoge (con muchísimos, la zona baja en vertical). */
+  .games{position:relative;z-index:2;flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:14px;overflow:hidden}
+  .games.scroll{justify-content:flex-start;overflow-y:auto;scrollbar-width:none;padding-top:var(--s-2)}
+  .games.scroll::-webkit-scrollbar{display:none}
+  .grow{position:relative;display:flex;justify-content:center;gap:12px;padding-bottom:46px;flex:none}
+  .grow::after{content:'';position:absolute;left:0;right:0;bottom:31px;height:6px;border-radius:var(--r-pill);background:var(--rail);opacity:.9;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 4px 12px -3px color-mix(in srgb,var(--v1) 40%,transparent)}
+  .gi{position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer}
+  .gcov{position:relative;width:var(--cw);height:calc(var(--cw) * 4 / 3);--r:var(--r-m);--bw:5px}
+  .gcov .face{border-radius:var(--r-s)}
+  .gcov :global(.noart){padding:var(--s-1)}
+  .gcov :global(.noart b){font-size:var(--t-xs);-webkit-line-clamp:4;line-clamp:4}
+  .gi.dim .gcov .face{filter:saturate(.35) brightness(.92)}
+  .gi.dim .gcov.f .face{filter:none}
+  .gdot{position:absolute;bottom:-21px;width:12px;height:12px;border-radius:50%;background:var(--gv);z-index:3;
+    box-shadow:0 0 0 3px var(--panel);transition:transform var(--d-2) var(--e-bounce),box-shadow var(--d-2) var(--e-soft)}
+  .gi.f .gdot{transform:scale(1.4);box-shadow:0 0 0 3px var(--panel),0 0 0 6px color-mix(in srgb,var(--v1) 42%,transparent)}
+  .gyr{position:absolute;bottom:-44px;font:800 var(--t-xs)/1 var(--round);color:var(--ink-2);padding:3px 7px;border-radius:var(--r-pill);white-space:nowrap}
+  .gi.f .gyr{background:var(--gf);color:var(--on);font-size:var(--t-s)}
 
-  .cshots-row{display:grid;grid-template-columns:repeat(5,1fr);gap:var(--s-2)}
-  .cshot{position:relative;width:100%;height:96px;--r:var(--r-m);--bw:4px;border:0;padding:var(--bw);text-align:left;
-    -webkit-backdrop-filter:none;backdrop-filter:none;cursor:pointer}
-  .cshot .face{border-radius:var(--r-s);background:var(--face)}
-  .cshot:hover{transform:scale(1.04);z-index:4;box-shadow:var(--sh-2)}
-  .cshot:active{transform:scale(.97);transition-duration:var(--d-1)}
-  .shot-cap{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:var(--s-1);padding:var(--s-2) var(--s-2) var(--s-1);
-    background:linear-gradient(180deg,transparent 0%,color-mix(in srgb,var(--scrim) 45%,black) 100%);
-    color:var(--on);font:700 var(--t-xs)/1.15 var(--round)}
-  .shot-cap i{width:7px;height:7px;border-radius:50%;background:var(--sc,var(--v1));flex:none}
-  .shot-cap b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .cshots-empty{display:flex;align-items:center;gap:var(--s-2);height:36px;padding:0 var(--s-3);
-    font:500 var(--t-s)/1 var(--round);color:var(--ink-2)}
+  .g-add{position:relative;align-self:center;width:112px;height:152px;--r:var(--r-m);--bw:5px}
+  .g-add .addin{gap:var(--s-2)}
+  .g-add .addin span{width:40px;height:40px;border-radius:var(--r-s);color:var(--on)}
+  .g-add .addin b{font-size:var(--t-s);padding:0 var(--s-1)}
 
-  /* Línea del tiempo cromática */
-  .tl-zone{position:relative;z-index:2;flex:1;min-height:0;display:flex;flex-direction:column}
-  .tl-empty-act{flex:1;display:grid;place-items:center}
-  .tl-add{position:relative;width:112px;height:152px;--r:var(--r-m);--bw:5px}
-  .tl-add .addin{gap:var(--s-2)}
-  .tl-add .addin span{width:40px;height:40px;border-radius:var(--r-s);color:var(--on)}
-  .tl-add .addin b{font-size:var(--t-s);padding:0 var(--s-1)}
-
-  .tl-scroll{flex:1;min-height:0;overflow-x:auto;overflow-y:hidden;display:flex;align-items:flex-end;scrollbar-width:none}
-  .tl-scroll::-webkit-scrollbar{display:none}
-  .tl-track{position:relative;display:inline-flex;min-width:100%;align-items:flex-end;justify-content:space-between;
-    gap:var(--s-3);padding:12px var(--s-3) 60px}
-  .tl-rail{position:absolute;left:var(--s-5);right:var(--s-5);bottom:46px;height:8px;border-radius:var(--r-pill);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 4px 14px -2px color-mix(in srgb,var(--v1) 48%,transparent)}
-
-  .tl-it{position:relative;display:flex;flex-direction:column;align-items:center;flex:1 0 auto;min-width:86px;cursor:pointer}
-  .tl-cov{position:relative;width:82px;height:106px;--r:var(--r-m);--bw:5px}
-  .tl-cov .face{border-radius:var(--r-s)}
-  .tl-cov :global(.noart){padding:var(--s-1)}
-  .tl-cov :global(.noart b){font-size:var(--t-s);-webkit-line-clamp:4;line-clamp:4}
-  .cov-cap{position:absolute;left:0;right:0;bottom:0;padding:var(--s-1) var(--s-2);
-    background:linear-gradient(180deg,transparent 0%,color-mix(in srgb,var(--scrim) 45%,black) 100%);
-    color:var(--on);font:800 var(--t-xs)/1.15 var(--round);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-  .tl-stem{width:3px;height:10px;border-radius:var(--r-xs);background:var(--gv);opacity:.55;margin-top:var(--s-1);
-    transition:opacity var(--d-2) var(--e-soft)}
-  .tl-it.f .tl-stem{opacity:1}
-  .tl-dot{position:absolute;bottom:-17px;width:14px;height:14px;border-radius:50%;background:var(--gv);
-    box-shadow:0 0 0 3px var(--panel),0 0 12px color-mix(in srgb,var(--v1) 65%,transparent);
-    transition:transform var(--d-2) var(--e-bounce),box-shadow var(--d-2) var(--e-soft)}
-  .tl-it.f .tl-dot{transform:scale(1.36);
-    box-shadow:0 0 0 3px var(--panel),0 0 0 6px color-mix(in srgb,var(--v1) 42%,transparent)}
-  .tl-meta{position:absolute;top:calc(100% + 22px);display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap}
-  .tl-yr{font:800 var(--t-s)/1 var(--round);color:var(--ink);padding:2px var(--s-2);border-radius:var(--r-pill)}
-  .tl-it.f .tl-yr{background:var(--gf);color:var(--on)}
-  .tl-hr{font:700 var(--t-s)/1 var(--round);color:var(--ink-2)}
-  .tl-gap{flex:0 0 auto;align-self:flex-end;margin-bottom:-15px;font:800 var(--t-xs)/1 var(--round);color:var(--ink-2)}
-
-  /* Ficha inferior del juego enfocado */
-  .det-bar{position:relative;z-index:2;flex:none;display:flex;align-items:center;justify-content:space-between;gap:var(--s-4);
-    padding:var(--s-3) var(--s-4);overflow:hidden}
-  .det-bar::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--gv)}
-  .det-info{display:flex;flex-direction:column;gap:var(--s-1);min-width:0;flex:1}
-  .det-top{display:flex;align-items:center;gap:var(--s-3);min-width:0}
-  .det-top b{font:800 var(--t-l)/1.2 var(--round);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .st-badge{display:inline-flex;align-items:center;gap:var(--s-2);height:26px;padding:0 var(--s-3);border-radius:var(--r-pill);
+  /* Ficha del juego enfocado con capturas suyas al azar debajo */
+  .det{position:relative;z-index:2;flex:none;display:flex;flex-direction:column;gap:var(--s-3);padding:var(--s-3) var(--s-4) var(--s-4) calc(var(--s-4) + 5px);overflow:hidden}
+  .det::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--gv)}
+  .det-top{display:flex;align-items:center;gap:var(--s-3);height:40px;min-width:0}
+  .det-top>b{font:800 var(--t-l)/1.2 var(--round);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .st-badge{display:inline-flex;align-items:center;gap:var(--s-2);height:26px;padding:0 var(--s-3);border-radius:var(--r-pill);flex:none;
     background:var(--glass-chip);box-shadow:inset 0 0 0 1px var(--line);font:700 var(--t-s)/1 var(--round);color:var(--ink);white-space:nowrap}
   .st-badge i{width:10px;height:10px;border-radius:50%;flex:none}
-  .det-nums{display:flex;align-items:center;gap:var(--s-4);font:700 var(--t-s)/1.2 var(--round);color:var(--ink-2)}
-  .det-nums strong{color:var(--ink);font-weight:800}
-  .det-bar .b-main{flex:none}
-  .det-bar .b-main :global(svg){width:var(--i-s);height:var(--i-s)}
+  .det-meta{font:700 var(--t-s)/1 var(--round);color:var(--ink-2);white-space:nowrap;flex:none}
+  .det-acts{margin-left:auto;display:flex;align-items:center;gap:var(--s-2);flex:none}
+  .det-acts :global(svg){width:var(--i-s);height:var(--i-s)}
+  .b-sec{display:inline-flex;align-items:center;gap:var(--s-2);height:40px;padding:0 var(--s-4);border:0;border-radius:var(--r-pill);
+    font:700 var(--t-m)/1 var(--round);color:var(--ink);background:var(--glass-chip);box-shadow:inset 0 0 0 1px var(--line);cursor:pointer;
+    transition:transform var(--d-2) var(--e-bounce)}
+  .b-sec:hover{transform:scale(1.04)}
+  .b-sec:active{transform:scale(.97);transition-duration:var(--d-1)}
+  .det-acts .b-main{height:40px}
+
+  .shots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--s-3);min-width:0}
+  .shot{position:relative;width:100%;min-width:0;aspect-ratio:16/9;overflow:hidden;--r:var(--r-m);--bw:4px;border:0;padding:var(--bw);cursor:pointer;
+    -webkit-backdrop-filter:none;backdrop-filter:none}
+  .shot .face{border-radius:var(--r-s);background:var(--face)}
+  .shot:hover{transform:scale(1.04);z-index:4;box-shadow:var(--sh-2)}
+  .shot:active{transform:scale(.97);transition-duration:var(--d-1)}
+  .shot.more .face{display:grid;place-items:center;background:var(--glass-in)}
+  .more-in{display:flex;flex-direction:column;align-items:center;gap:var(--s-1);font:800 var(--t-l)/1 var(--round);color:var(--ink)}
+  .more-in small{font:700 var(--t-s)/1 var(--round);color:var(--ink-2)}
+  .shots-empty{grid-column:1/-1;aspect-ratio:64/9;display:flex;align-items:center;justify-content:center;gap:var(--s-2);
+    border-radius:var(--r-m);background:var(--glass-in);box-shadow:inset 0 0 0 1px var(--line);font:700 var(--t-s)/1 var(--round);color:var(--ink-2)}
 
   :global(.tablet) .coll-wrap{bottom:var(--gut)}
-  :global(.tablet) .cshots-btn{min-height:44px;padding:0 var(--s-4)}
+  :global(.tablet) .b-sec{min-height:44px}
 </style>

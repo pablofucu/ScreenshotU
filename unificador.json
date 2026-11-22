@@ -2727,27 +2727,56 @@
               "id": "CCM-1",
               "title": "Portadas en filas que siempre caben",
               "desc": "",
-              "state": "doing",
+              "state": "done",
               "notes": [
                 {
                   "at": "2026-11-22T01:00:29+01:00",
                   "by": "claude",
                   "kind": "start",
                   "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T01:09:22+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Portadas repartidas en filas con collGrid según el hueco real; con 10 juegos caben en una fila sin desplazarse (probado en el navegador con datos de prueba)"
                 }
               ],
               "cat": "interfaz",
-              "updated": "2026-11-22T01:00:29+01:00"
+              "updated": "2026-11-22T01:09:22+01:00",
+              "result": "Portadas repartidas en filas con collGrid según el hueco real; con 10 juegos caben en una fila sin desplazarse (probado en el navegador con datos de prueba)"
             },
             {
               "id": "CCM-2",
               "title": "Ficha abajo con capturas al azar del juego",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "interfaz"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T01:09:22+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T01:09:22+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Ficha abajo con nombre, estado, año, horas y capturas; 3 capturas al azar del juego enfocado (nueva tanda cada vez que se llega a él) y baldosa N más. Comprobado: al volver al mismo juego salen otras"
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-22T01:09:22+01:00",
+              "result": "Ficha abajo con nombre, estado, año, horas y capturas; 3 capturas al azar del juego enfocado (nueva tanda cada vez que se llega a él) y baldosa N más. Comprobado: al volver al mismo juego salen otras"
             }
-          ]
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "claude",
+            "at": "2026-11-22T01:09:22+01:00",
+            "seen": true
+          }
         },
         {
           "name": "Mando",
@@ -2757,19 +2786,62 @@
               "id": "CCM-3",
               "title": "Arriba y abajo entre filas, LB y RB entre colecciones",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "codigo"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T01:09:27+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T01:09:28+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Arriba/abajo saltan de fila según perRow; LB/RB cambian de colección. Probado con teclado en el navegador (derecha/izquierda y E)"
+                },
+                {
+                  "at": "2026-11-22T01:09:34+01:00",
+                  "by": "claude",
+                  "kind": "note",
+                  "text": "Comprobado en el navegador con ?mock: derecha/izquierda mueven el foco y E (RB) pasa a la siguiente colección"
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-22T01:09:34+01:00",
+              "result": "Arriba/abajo saltan de fila según perRow; LB/RB cambian de colección. Probado con teclado en el navegador (derecha/izquierda y E)"
             },
             {
               "id": "CCM-4",
               "title": "Comprobar y subir",
               "desc": "",
-              "state": "pending",
-              "notes": [],
-              "cat": "pruebas"
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T01:09:28+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T01:09:28+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "svelte-check 0 errores, tests/collections.test.ts 7/7, revisado en el navegador con ?mock"
+                }
+              ],
+              "cat": "pruebas",
+              "updated": "2026-11-22T01:09:28+01:00",
+              "result": "svelte-check 0 errores, tests/collections.test.ts 7/7, revisado en el navegador con ?mock"
             }
-          ]
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "claude",
+            "at": "2026-11-22T01:09:28+01:00",
+            "seen": true
+          }
         }
       ]
     },
@@ -3692,6 +3764,20 @@
       "by": "claude",
       "at": "2026-11-22T00:52:56+01:00",
       "ref": "ODD/Abrirlo desde el cliente"
+    },
+    {
+      "text": "🗂️ Colecciones con menos datos: Pantalla",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-22T01:09:22+01:00",
+      "ref": "CCM/Pantalla"
+    },
+    {
+      "text": "🗂️ Colecciones con menos datos: Mando",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-22T01:09:28+01:00",
+      "ref": "CCM/Mando"
     }
   ],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",

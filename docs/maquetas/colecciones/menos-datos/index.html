@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Colecciones · menos datos</title>
+<style>
+
+:root{
+  --round:'M PLUS Rounded 1c','Nunito','Segoe UI','Yu Gothic UI','Meiryo UI',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;font-family:var(--round);background:#101319;color:#e6e9f0}
+body.page-light{background:#dfe3e9;color:#3a414e}
+
+/* Envoltorio de presentación de la maqueta (fuera del escenario 1280×720) */
+.deck{max-width:1312px;margin:0 auto;padding:16px}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:12px;padding:12px 16px;border-radius:18px;
+  background:rgba(30,34,43,.85);box-shadow:inset 0 0 0 1px rgba(200,210,235,.16);color:#e6e9f0}
+body.page-light .bar{background:rgba(255,255,255,.82);box-shadow:inset 0 0 0 1px rgba(95,110,135,.22);color:#3a414e}
+.bar-t{display:flex;flex-direction:column;gap:2px;margin-right:auto;min-width:220px}
+.bar-t b{font-size:17px;font-weight:800;line-height:1.2}
+.bar-t span{font-size:13px;font-weight:500;opacity:.78;line-height:1.35}
+.seg-ctrl{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:rgba(128,140,165,.16);box-shadow:inset 0 0 0 1px rgba(128,140,165,.22)}
+.seg-ctrl button{appearance:none;border:0;background:transparent;color:inherit;font:700 13px/1 var(--round);
+  height:30px;padding:0 12px;border-radius:999px;cursor:pointer;opacity:.75;transition:background 120ms,opacity 120ms,color 120ms}
+.seg-ctrl button:hover{opacity:1}
+.seg-ctrl button.on{background:#0089be;color:#fff;opacity:1}
+.kb-note{font-size:13px;font-weight:500;opacity:.72;margin-top:12px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.kb-note code{font:700 13px/1 var(--round);padding:2px 8px;border-radius:6px;background:rgba(128,140,165,.20)}
+
+/* Marco escalable: se ve bien a cualquier ancho (móvil incluido) sin romper el lienzo 1280×720 */
+.stage-fit{width:100%;max-width:1280px;margin:0 auto;position:relative;overflow:hidden;border-radius:18px;
+  box-shadow:0 0 0 1px rgba(128,140,165,.28),0 24px 54px -20px rgba(0,0,0,.55)}
+
+/* ==========================================================================
+   TOKENS EXACTOS DE src/tokens.css (claro y «Noche ahumada»)
+   ========================================================================== */
+#stage{
+  position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;outline:none;
+  font-family:var(--round);user-select:none;-webkit-user-select:none;
+
+  /* Tinta y superficies (Claro) */
+  --ink:#3a414e;--ink-2:#5f6776;--ink-3:#757d8c;--line:rgba(95,110,135,.24);--line-2:rgba(150,160,180,.35);
+  --face:#dfe3e9;--face-hi:rgba(247,249,252,.94);--panel:rgba(255,255,255,.75);--scrim:rgba(20,26,36,.45);
+  --glass-top:rgba(255,255,255,.72);--glass-mid:rgba(255,255,255,.30);--glass-bot:rgba(225,234,246,.22);
+  --glass-in:rgba(255,255,255,.55);--glass-chip:rgba(255,255,255,.80);
+  --pill-top:rgba(255,255,255,.80);--pill-bot:rgba(255,255,255,.52);--pill-glow:rgba(255,255,255,.9);
+  --soft-top:rgba(255,255,255,.55);--soft-bot:rgba(214,220,230,.4);--bub-bg:rgba(255,255,255,.72);--bub-line:rgba(255,255,255,.9);--tile-bg:rgba(255,255,255,.62);
+  --hl:rgba(255,255,255,1);--hl-ring:rgba(255,255,255,.55);--hl-bot:rgba(255,255,255,.95);--tint-base:#fff;
+  --btn-n:var(--ink);--btn-n-top:color-mix(in srgb,var(--ink) 78%,var(--tint-base));--btn-n-fg:var(--on);--btn-n-edge:color-mix(in srgb,var(--ink) 70%,black);
+
+  /* Significados reservados (§3.3) */
+  --ok:#3BB54A;--bad:#E8384F;--warn:#F2B807;--ok-f:#27833a;--bad-f:#d92c44;
+
+  /* Arcoíris de la app (§3.4) */
+  --arc-rojo:#E8384F;--arc-naranja:#F27A1A;--arc-amarillo:#F2B807;--arc-verde:#3BB54A;--arc-azul:#00A0D8;--arc-anil:#3F63E0;--arc-violeta:#9A4BD8;
+  --arc:var(--arc-rojo),var(--arc-naranja),var(--arc-amarillo),var(--arc-verde),var(--arc-azul),var(--arc-anil),var(--arc-violeta);
+  --arco:linear-gradient(90deg,var(--arc));
+
+  /* Radios (§5) */
+  --r-xs:6px;--r-s:12px;--r-m:18px;--r-l:28px;--r-pill:999px;
+  /* Tipografía (§4) */
+  --t-xs:11px;--t-s:13px;--t-m:15px;--t-l:17px;--t-xl:20px;--t-2xl:28px;--t-3xl:44px;
+  /* Espaciado (§5) */
+  --s-1:4px;--s-2:8px;--s-3:12px;--s-4:16px;--s-5:24px;--s-6:32px;
+  /* Plantilla (§10) */
+  --band:64px;--gut:24px;--content-end:644px;--stage-h:720px;
+  /* Movimiento (§8) */
+  --d-1:120ms;--d-2:200ms;--d-3:300ms;
+  --e-soft:cubic-bezier(.2,.8,.3,1);
+  --e-bounce:cubic-bezier(.34,1.32,.64,1);
+  /* Desenfoque (§6) */
+  --blur-panel:blur(14px) saturate(1.7);
+  --blur-pill:blur(16px) saturate(1.7);
+  /* Foco y alturas (§6) */
+  --ring:0 0 0 3px var(--f1),0 0 22px 2px color-mix(in srgb,var(--f2) 45%,transparent);
+  --sh-1:0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42);
+  --sh-2:0 0 0 1px color-mix(in srgb,var(--f2) 75%,black),0 0 26px 2px color-mix(in srgb,var(--f1) 45%,transparent),0 22px 34px -16px color-mix(in srgb,var(--f2) 70%,black);
+  --sh-3:0 0 0 1px rgba(95,110,135,.24),0 8px 14px -6px rgba(20,26,36,.22),0 36px 64px -22px rgba(20,26,36,.55);
+  /* Iconos (§9) */
+  --i-s:16px;--i-m:20px;--i-l:28px;
+
+  /* Acento por defecto (categoría Juegos) */
+  --cat-f1:#0079ab;--cat-f2:#2f52c4;--cat-gf:linear-gradient(115deg,#0079ab,#2f52c4);
+  --acc:var(--f1);--accv:var(--v1);--on:#ffffff;
+  --g1:#00A0D8;--g2:#3F63E0;--grad:linear-gradient(115deg,#00A0D8,#3F63E0);
+  --f1:#0079ab;--f2:#2f52c4;--gf:linear-gradient(115deg,#0079ab,#2f52c4);
+  --v1:#00A0D8;--v2:#3F63E0;--gv:linear-gradient(115deg,#00A0D8,#3F63E0);
+  --b1:#00A0D8;--b2:#3F63E0;--b3:#19b8a6;
+  --p1:#00A0D8;--p2:#3F63E0;
+
+  color:var(--ink);background:#eceef2;
+}
+
+/* «Noche ahumada» (oscuro oficial) */
+#stage[data-theme=dark]{
+  color-scheme:dark;color:#e6e9f0;background:#14161c;
+  --ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#8f98a9;--line:rgba(200,210,235,.16);--line-2:rgba(200,210,235,.24);
+  --face:#262a33;--face-hi:rgba(30,33,41,.94);--panel:rgba(30,34,43,.78);--scrim:rgba(0,0,0,.6);
+  --glass-top:rgba(60,66,80,.62);--glass-mid:rgba(36,40,50,.42);--glass-bot:rgba(20,22,28,.38);
+  --glass-in:rgba(255,255,255,.08);--glass-chip:rgba(40,44,56,.82);
+  --pill-top:rgba(52,57,70,.88);--pill-bot:rgba(36,40,50,.82);--pill-glow:rgba(255,255,255,.06);
+  --soft-top:rgba(52,57,70,.62);--soft-bot:rgba(30,34,43,.5);--bub-bg:rgba(40,44,56,.82);--bub-line:rgba(200,210,235,.16);--tile-bg:rgba(40,44,56,.62);
+  --hl:rgba(255,255,255,.10);--hl-ring:rgba(255,255,255,.06);--hl-bot:rgba(255,255,255,.04);--tint-base:#262a33;
+  --btn-n:var(--face);--btn-n-top:color-mix(in srgb,var(--ink) 16%,var(--face));--btn-n-fg:var(--ink);--btn-n-edge:var(--line-2);
+  --ring:0 0 0 3px var(--g1),0 0 26px 4px color-mix(in srgb,var(--g2) 60%,transparent);
+  --sh-1:0 0 0 1px rgba(200,210,235,.14),0 2px 3px rgba(0,0,0,.30),0 18px 30px -16px rgba(0,0,0,.70);
+  --sh-2:0 0 0 1px color-mix(in srgb,var(--g1) 70%,black),0 0 30px 4px color-mix(in srgb,var(--g1) 50%,transparent),0 22px 34px -16px rgba(0,0,0,.8);
+  --sh-3:0 0 0 1px rgba(200,210,235,.16),0 8px 14px -6px rgba(0,0,0,.5),0 36px 64px -22px rgba(0,0,0,.85);
+}
+
+/* Fondo atmosférico + manchas + velo de color del juego enfocado */
+.bg{position:absolute;inset:0;overflow:hidden;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%)}
+#stage[data-theme=dark] .bg{background:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%)}
+.blob{position:absolute;border-radius:50%;opacity:.55;
+  background:radial-gradient(circle,var(--b,var(--b1)),color-mix(in srgb,var(--b,var(--b1)) 45%,transparent) 35%,transparent 70%);
+  transition:background var(--d-3) var(--e-soft);animation:drift 26s ease-in-out infinite alternate}
+#stage[data-theme=dark] .blob{opacity:.38}
+@keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(56px,-28px) scale(1.14)}}
+.ambwash{position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 75% 65% at 10% 108%,color-mix(in srgb,var(--p1) 34%,transparent),transparent 72%),
+    radial-gradient(ellipse 70% 60% at 94% -8%,color-mix(in srgb,var(--p2) 26%,transparent),transparent 72%);
+  transition:opacity var(--d-3) var(--e-soft)}
+
+/* Cristal Wii U (§6) */
+.glass{position:relative;--r:var(--r-l);--bw:10px;border-radius:var(--r);padding:var(--bw);isolation:isolate;
+  background:linear-gradient(180deg,var(--glass-top) 0%,var(--glass-mid) 46%,var(--glass-bot) 100%);
+  -webkit-backdrop-filter:var(--blur-panel);backdrop-filter:var(--blur-panel);
+  box-shadow:
+    inset 0 1.5px 0 var(--hl),
+    inset 0 0 0 1px var(--hl-ring),
+    inset 0 -10px 14px -8px var(--hl-bot),
+    inset 0 -1.5px 0 rgba(110,125,150,.30),
+    var(--sh-1);
+  transition:transform var(--d-2) var(--e-bounce),box-shadow var(--d-2) var(--e-soft),background var(--d-2) var(--e-soft)}
+.glass::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;
+  border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+  background:linear-gradient(180deg,var(--tile-bg) 0%,rgba(255,255,255,.18) 55%,rgba(255,255,255,0) 100%);
+  -webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);
+  mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.75}
+.glass::after{content:'';position:absolute;z-index:3;left:12%;top:3px;width:34%;height:5px;border-radius:var(--r-xs);pointer-events:none;
+  background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.95) 40%,rgba(255,255,255,0));filter:blur(.6px);opacity:.85}
+#stage[data-theme=dark] .glass::after{opacity:.35}
+.glass .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;background:var(--panel)}
+.glass .face::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(20,30,50,.18),inset 0 3px 6px -2px rgba(0,0,0,.22),inset 0 -2px 4px -2px var(--hl-ring)}
+.glass.f{transform:scale(1.06);z-index:4;
+  background:linear-gradient(150deg,color-mix(in srgb,var(--g1) 55%,var(--tint-base)) 0%,var(--f1) 50%,var(--f2) 100%);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,.92),
+    inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),
+    inset 0 -10px 14px -8px color-mix(in srgb,var(--g2) 40%,var(--tint-base)),
+    var(--sh-2)}
+.glass.panel{--r:var(--r-l);--bw:8px}
+.glass.panel::before{height:30%;opacity:.55}
+.glass.cov-g{--r:var(--r-m);--bw:6px;-webkit-backdrop-filter:none;backdrop-filter:none;cursor:pointer}
+.glass.cov-g .face{border-radius:var(--r-s);background:var(--face)}
+.glass.shot-g{--r:var(--r-m);--bw:5px;-webkit-backdrop-filter:none;backdrop-filter:none;cursor:pointer}
+.glass.shot-g .face{border-radius:var(--r-s);background:var(--face)}
+
+.glass-in{border-radius:var(--r-m);background:var(--glass-in);box-shadow:inset 0 1px 0 var(--hl-ring),inset 0 0 0 1px var(--line)}
+.pill{-webkit-backdrop-filter:var(--blur-pill);backdrop-filter:var(--blur-pill);
+  background:linear-gradient(180deg,var(--pill-top),var(--pill-bot));
+  box-shadow:inset 0 1px 0 var(--glass-top),inset 0 -6px 10px -6px var(--pill-glow),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px var(--line),0 10px 20px -12px rgba(40,50,70,.35)}
+
+/* Botones (§7) */
+.b-main{display:inline-flex;align-items:center;gap:var(--s-2);height:40px;padding:0 var(--s-5);border:0;border-radius:var(--r-pill);
+  font:800 var(--t-m)/1 var(--round);color:var(--on);background:var(--gf);cursor:pointer;white-space:nowrap;
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.55),inset 0 -8px 12px -8px rgba(0,0,0,.25),0 0 0 1px color-mix(in srgb,var(--f2) 75%,black),0 12px 20px -12px color-mix(in srgb,var(--f2) 70%,black);
+  transition:transform var(--d-2) var(--e-bounce),box-shadow var(--d-2) var(--e-soft)}
+.b-main:hover,.b-main.f{transform:scale(1.06);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.55),var(--ring)}
+.b-main:active{transform:scale(.97);transition-duration:var(--d-1)}
+
+/* Iconos de trazo (§9) */
+.ic{width:var(--i-m);height:var(--i-m);fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.s{width:var(--i-s);height:var(--i-s)}
+.ic.l{width:var(--i-l);height:var(--i-l)}
+
+/* ==========================================================================
+   PLANTILLA DE PANTALLA (§10): Barra superior (0..76) + Banda inferior (656..720)
+   ========================================================================== */
+.top{position:absolute;left:0;right:0;top:0;height:76px;z-index:6}
+.avatar{position:absolute;left:22px;top:12px;width:54px;height:54px;--r:var(--r-m);--bw:5px}
+.avatar .face{background:var(--cat-gf);display:grid;place-items:center;color:var(--on)}
+.crumb{position:absolute;left:98px;top:22px;height:40px;display:flex;align-items:center;gap:var(--s-2);
+  padding:0 var(--s-4);border-radius:var(--r-pill);font:700 var(--t-xl)/1 var(--round);color:var(--ink-2)}
+.crumb .sep{color:var(--ink-3);font-weight:500}
+.crumb .cur{color:var(--cat-f1);font-weight:800}
+
+/* Pestañas de categoría centradas (como en Titles.svelte) */
+.ttabs{position:absolute;left:50%;top:18px;transform:translateX(-50%);height:44px;padding:var(--s-1);border-radius:var(--r-pill);
+  display:flex;gap:var(--s-1);align-items:center;z-index:7}
+.ttabs span{height:36px;padding:0 var(--s-4);border-radius:var(--r-pill);display:flex;align-items:center;
+  font:800 var(--t-m)/1 var(--round);color:var(--ink-2)}
+.ttabs span.on{background:var(--cat-gf);color:var(--on);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 0 0 1px color-mix(in srgb,var(--cat-f2) 75%,black)}
+
+.clock{position:absolute;right:var(--gut);top:24px;display:flex;gap:var(--s-3);align-items:center;
+  font:700 var(--t-xl)/1 var(--round);color:var(--ink-2)}
+.clock small{font-size:var(--t-m);font-weight:500;color:var(--ink-3)}
+.pad-ic{display:grid;place-items:center}
+
+/* Banda inferior de pistas del mando (§7 & §10) */
+.hints{position:absolute;right:var(--gut);bottom:calc((var(--band) - 38px)/2);display:flex;gap:var(--s-2);z-index:6}
+.hint{display:flex;align-items:center;gap:var(--s-2);height:38px;padding:0 var(--s-3) 0 var(--s-1);border-radius:var(--r-pill);
+  font:700 var(--t-m)/1 var(--round);color:var(--ink-2);cursor:pointer;transition:transform var(--d-1) var(--e-soft)}
+.hint:active{transform:scale(.97)}
+.btn{min-width:28px;height:28px;border-radius:var(--r-s);display:grid;place-items:center;font:800 var(--t-s)/1 var(--round);
+  color:var(--on);--b:var(--ink-2);padding:0 var(--s-1);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--b) 55%,var(--tint-base)) 0%,var(--b) 55%,color-mix(in srgb,var(--b) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.65),0 0 0 1px color-mix(in srgb,var(--b) 70%,black),0 1px 2px rgba(0,0,0,.2)}
+.btn.a{--b:var(--ok-f)}.btn.b{--b:var(--bad-f)}.btn.x{--b:var(--f1)}.btn.y{--b:var(--warn);color:#3a414e}
+.btn.sh{border-radius:var(--r-xs);padding:0 var(--s-2);color:var(--btn-n-fg);
+  background:linear-gradient(180deg,var(--btn-n-top) 0%,var(--btn-n) 55%,color-mix(in srgb,var(--btn-n) 85%,black) 100%);
+  box-shadow:inset 0 1px 0 var(--hl-ring),0 0 0 1px var(--btn-n-edge)}
+.shp{display:flex;gap:var(--s-1)}
+
+/* Área de contenido: estrictamente x:24..1256, y:88..644 */
+.content{position:absolute;left:var(--gut);right:var(--gut);top:88px;bottom:76px;display:flex;flex-direction:column;z-index:2}
+
+/* Distintivo de estado según §3.4 (siempre lleva nombre, nunca informa solo por color) */
+.st-badge{display:inline-flex;align-items:center;gap:var(--s-2);height:28px;padding:0 var(--s-3);border-radius:var(--r-pill);
+  background:var(--glass-chip);box-shadow:inset 0 0 0 1px var(--line);font:700 var(--t-s)/1 var(--round);color:var(--ink);white-space:nowrap}
+.st-badge i{width:10px;height:10px;border-radius:50%;background:var(--st-c);flex:none}
+.st-t{--st-c:var(--arc-violeta)}
+.st-j{--st-c:var(--arc-rojo)}
+.st-m{--st-c:var(--arc-naranja)}
+.st-p{--st-c:var(--arc-verde)}
+.st-a{--st-c:var(--arc-azul)}
+
+/* Tag / contador */
+.tag{display:inline-flex;align-items:center;gap:var(--s-1);height:28px;padding:0 var(--s-3);border-radius:var(--r-pill);
+  font:700 var(--t-s)/1 var(--round);color:var(--on);background:var(--gf);white-space:nowrap}
+.tag.soft{color:var(--ink-2);background:var(--glass-chip);box-shadow:inset 0 0 0 1px var(--line)}
+
+/* Arte de portadas y capturas */
+.art{width:100%;height:100%;display:block}
+.cov-cap{position:absolute;left:0;right:0;bottom:0;padding:var(--s-2);
+  background:linear-gradient(180deg,transparent 0%,rgba(14,18,26,.82) 100%);
+  color:#fff;font:800 var(--t-s)/1.2 var(--round);text-shadow:0 1px 2px rgba(0,0,0,.6);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+
+/* ==========================================================================
+   COLECCIONES · MENOS DATOS
+   ========================================================================== */
+.coll{position:absolute;left:var(--gut);right:var(--gut);top:88px;bottom:76px;display:grid;grid-template-columns:276px 1fr;gap:var(--s-4);z-index:2}
+
+.side{height:100%}
+.side .face{display:flex;flex-direction:column;gap:var(--s-2);padding:var(--s-3)}
+.side-lab{font:800 var(--t-xs)/1 var(--round);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-2);padding:var(--s-1) var(--s-2)}
+.sitem{position:relative;display:flex;align-items:center;gap:var(--s-3);padding:var(--s-2) var(--s-3) var(--s-2) var(--s-4);
+  border-radius:var(--r-m);cursor:pointer;background:var(--glass-in);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden;
+  transition:transform var(--d-2) var(--e-bounce),box-shadow var(--d-2) var(--e-soft),background var(--d-2) var(--e-soft)}
+.sitem:hover{transform:scale(1.02)}
+.sitem.on{background:var(--glass-chip);box-shadow:inset 0 1px 0 var(--hl),var(--sh-2)}
+.sitem i{position:absolute;left:0;top:var(--s-1);bottom:var(--s-1);width:4px;border-radius:var(--r-pill);opacity:.78}
+.sitem b{display:block;font:800 var(--t-m)/1.2 var(--round)}
+.sitem.on b{color:var(--f1)}
+#stage[data-theme=dark] .sitem.on b{color:color-mix(in srgb,var(--v1) 68%,white)}
+.sitem small{display:block;font:700 var(--t-s)/1.2 var(--round);color:var(--ink-2)}
+
+.main{height:100%;min-width:0}
+.main>.face{position:relative;display:flex;flex-direction:column;gap:var(--s-3);padding:var(--s-4) var(--s-5)}
+.aurora{position:absolute;inset:0;pointer-events:none;overflow:hidden;opacity:.30}
+#stage[data-theme=dark] .aurora{opacity:.24}
+.aurora i{position:absolute;border-radius:50%;width:340px;height:340px;top:-160px;background:radial-gradient(circle,var(--ac),transparent 68%)}
+
+/* Cabecera: nombre, años y progreso. Nada más. */
+.mhead{position:relative;z-index:2;display:flex;align-items:center;gap:var(--s-3);height:44px;flex:none}
+.mhead h1{margin:0;font:800 var(--t-2xl)/1.1 var(--round);white-space:nowrap}
+.prog{margin-left:auto;display:flex;align-items:center;gap:var(--s-3);font:700 var(--t-s)/1 var(--round);color:var(--ink-2);white-space:nowrap}
+.prog b{color:var(--ink);font-weight:800}
+.prog-bar{display:flex;gap:3px;width:150px;height:8px;padding:1px;border-radius:var(--r-pill);background:var(--glass-in);box-shadow:inset 0 0 0 1px var(--line)}
+.prog-bar i{flex:1;border-radius:var(--r-pill);background:var(--line-2)}
+
+/* Juegos: siempre caben. Se reparten en filas y la portada se encoge. */
+.games{position:relative;z-index:2;flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:var(--row-gap,12px)}
+.grow{position:relative;display:flex;justify-content:center;gap:var(--gap,12px);padding-bottom:30px}
+.grow::after{content:'';position:absolute;left:0;right:0;bottom:19px;height:6px;border-radius:var(--r-pill);background:var(--rail);opacity:.9;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 4px 12px -3px color-mix(in srgb,var(--v1) 40%,transparent)}
+.gi{position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer}
+.gcov{width:var(--cw);height:calc(var(--cw) * 4 / 3);--r:var(--r-m);--bw:5px}
+.gcov .face{border-radius:var(--r-s);background:var(--face)}
+.gi:not(.f) .gcov:hover{transform:scale(1.04)}
+.gi.dim .gcov .face{filter:saturate(.35) brightness(.92)}
+.gdot{position:absolute;bottom:-25px;width:12px;height:12px;border-radius:50%;background:var(--gv);z-index:3;
+  box-shadow:0 0 0 3px var(--panel-solid,#f4f6f9);transition:transform var(--d-2) var(--e-bounce)}
+#stage[data-theme=dark] .gdot{--panel-solid:#232731}
+.gi.f .gdot{transform:scale(1.4)}
+.gyr{position:absolute;bottom:-46px;font:800 var(--t-xs)/1 var(--round);color:var(--ink-2);padding:3px 7px;border-radius:var(--r-pill);white-space:nowrap}
+.gi.f .gyr{background:var(--gf);color:var(--on);font-size:var(--t-s)}
+.grow{margin-bottom:16px}
+
+/* Ficha del juego enfocado con SUS capturas debajo */
+.det{position:relative;z-index:2;flex:none;display:flex;flex-direction:column;gap:var(--s-3);padding:var(--s-3) var(--s-4) var(--s-4);overflow:hidden}
+.det::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--gv)}
+.det-top{display:flex;align-items:center;gap:var(--s-3);height:36px;min-width:0}
+.det-top>b{font:800 var(--t-l)/1.2 var(--round);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.det-meta{font:700 var(--t-s)/1 var(--round);color:var(--ink-2);white-space:nowrap}
+.det-acts{margin-left:auto;display:flex;gap:var(--s-2);flex:none}
+.b-sec{display:inline-flex;align-items:center;gap:var(--s-2);height:40px;padding:0 var(--s-4);border:0;border-radius:var(--r-pill);
+  font:700 var(--t-m)/1 var(--round);color:var(--ink);background:var(--glass-chip);box-shadow:inset 0 0 0 1px var(--line);cursor:pointer;
+  transition:transform var(--d-2) var(--e-bounce)}
+.b-sec:hover{transform:scale(1.04)}
+.b-sec .btn,.b-main .btn{min-width:22px;height:22px;font-size:var(--t-xs)}
+.shots{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-3)}
+.shot{aspect-ratio:16/9;--r:var(--r-m);--bw:4px}
+.shot .face{border-radius:var(--r-s);background:var(--face)}
+.shot:hover{transform:scale(1.04);z-index:4}
+.shot.more .face{display:grid;place-items:center;background:var(--glass-in)}
+.more-in{display:flex;flex-direction:column;align-items:center;gap:var(--s-1);font:800 var(--t-l)/1 var(--round);color:var(--ink)}
+.more-in small{font:700 var(--t-s)/1 var(--round);color:var(--ink-2)}
+.shots-empty{grid-column:1/-1;height:calc((876px - 32px - 36px) / 4 * 9 / 16);display:flex;align-items:center;justify-content:center;gap:var(--s-2);
+  border-radius:var(--r-m);background:var(--glass-in);box-shadow:inset 0 0 0 1px var(--line);font:700 var(--t-s)/1 var(--round);color:var(--ink-2)}
+
+/* Notas de la maqueta */
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px}
+.note{padding:14px 16px;border-radius:16px;background:rgba(255,255,255,.82);box-shadow:inset 0 0 0 1px rgba(95,110,135,.22);font-size:14px;line-height:1.45}
+body:not(.page-light) .note{background:rgba(30,34,43,.85);box-shadow:inset 0 0 0 1px rgba(200,210,235,.16)}
+.note b{display:block;font-size:15px;margin-bottom:4px}
+</style>
+</head>
+<body class="page-light">
+<div class="deck">
+  <div class="bar">
+    <div class="bar-t">
+      <b>Colecciones · menos datos</b>
+      <span>La misma base, con cada dato una sola vez. Prueba «Final Fantasy» (18 juegos) para ver que sigue cabiendo sin desplazar.</span>
+    </div>
+    <div class="seg-ctrl" role="group" aria-label="Tema">
+      <button type="button" class="on" data-theme-btn="light" onclick="setTheme('light')">Claro</button>
+      <button type="button" data-theme-btn="dark" onclick="setTheme('dark')">Noche ahumada</button>
+    </div>
+  </div>
+
+  <div class="stage-fit" id="fit">
+    <div id="stage" data-theme="light" tabindex="0"></div>
+  </div>
+
+  <div class="kb-note">
+    <span>Mando / Teclado:</span>
+    <code>← →</code> juego anterior / siguiente
+    <code>↑ ↓</code> cambiar de fila
+    <code>Q / E</code> (LB / RB) cambiar colección
+    <code>T</code> cambiar tema
+  </div>
+
+  <div class="notes">
+    <div class="note"><b>Cada dato, una vez</b>Antes las horas salían tres veces (cabecera, debajo de cada portada y en la ficha) y las capturas otras tres. Ahora la cabecera solo dice nombre, años y progreso; horas y capturas viven solo en la ficha del juego enfocado.</div>
+    <div class="note"><b>Las capturas, abajo y del juego</b>La franja de capturas al azar baja y pasa a ser del juego enfocado: cuatro capturas más grandes que cambian al moverte. La cuarta casilla lleva a todas.</div>
+    <div class="note"><b>Siempre caben</b>Sin desplazamiento lateral: los juegos se reparten en una, dos o tres filas y la portada se encoge lo justo. El año solo aparece cuando cambia, y el del juego enfocado se resalta.</div>
+    <div class="note"><b>Portadas limpias</b>Sin título encima (la portada ya lo lleva). El nombre sale en la ficha. Los pendientes se ven algo apagados, así el progreso se lee sin texto.</div>
+  </div>
+</div>
+<script>
+const ST = { t: ['Terminado', 'st-t'], j: ['Jugando', 'st-j'], p: ['Pendiente', 'st-p'] };
+const g = (n, s, y, v1, v2, st, h, sh) => ({ n, s, y, v1, v2, st, h, sh });
+const COLS = [
+  { name: 'Trails', games: [
+    g('Trails in the Sky', 'Sky FC', 2004, '#35A7E8', '#F2C14E', 't', 48, 212),
+    g('Trails in the Sky SC', 'Sky SC', 2006, '#3F63E0', '#F27A1A', 't', 61, 305),
+    g('Trails in the Sky the 3rd', '3rd', 2007, '#9A4BD8', '#3F63E0', 't', 39, 140),
+    g('Trails from Zero', 'Zero', 2010, '#18B8A6', '#2D6FE0', 't', 52, 261),
+    g('Trails to Azure', 'Azure', 2011, '#00A0D8', '#5ED3F3', 'j', 27, 118),
+    g('Trails of Cold Steel', 'CS I', 2013, '#E8384F', '#8F2437', 'p', 0, 0),
+    g('Trails of Cold Steel II', 'CS II', 2014, '#D9468F', '#4A368A', 'p', 0, 0),
+    g('Trails into Reverie', 'Reverie', 2020, '#7B4AE2', '#E8384F', 'p', 0, 0),
+  ]},
+  { name: 'Final Fantasy', games: [
+    g('Final Fantasy', 'I', 1987, '#E8384F', '#3F63E0', 't', 14, 22),
+    g('Final Fantasy II', 'II', 1988, '#9A4BD8', '#E8384F', 't', 18, 31),
+    g('Final Fantasy III', 'III', 1990, '#00A0D8', '#3BB54A', 't', 22, 40),
+    g('Final Fantasy IV', 'IV', 1991, '#3F63E0', '#9A4BD8', 't', 25, 64),
+    g('Final Fantasy V', 'V', 1992, '#F27A1A', '#3F63E0', 't', 31, 58),
+    g('Final Fantasy VI', 'VI', 1994, '#8F2437', '#F2B807', 't', 38, 120),
+    g('Final Fantasy VII', 'VII', 1997, '#2D6FE0', '#3BB54A', 't', 46, 190),
+    g('Final Fantasy VIII', 'VIII', 1999, '#5ED3F3', '#3F63E0', 't', 52, 143),
+    g('Final Fantasy IX', 'IX', 2000, '#F2B807', '#9A4BD8', 't', 49, 171),
+    g('Final Fantasy X', 'X', 2001, '#00A0D8', '#18B8A6', 't', 61, 260),
+    g('Final Fantasy X-2', 'X-2', 2003, '#D9468F', '#F2B807', 'j', 12, 36),
+    g('Final Fantasy XII', 'XII', 2006, '#C9893A', '#3F63E0', 'j', 20, 44),
+    g('Final Fantasy XIII', 'XIII', 2009, '#3BB54A', '#2D6FE0', 'p', 0, 0),
+    g('Final Fantasy XIII-2', 'XIII-2', 2011, '#9A4BD8', '#00A0D8', 'p', 0, 0),
+    g('Lightning Returns', 'LR', 2013, '#E8384F', '#F27A1A', 'p', 0, 0),
+    g('Final Fantasy XV', 'XV', 2016, '#4A368A', '#5ED3F3', 'p', 0, 0),
+    g('Final Fantasy VII Remake', 'VIIR', 2020, '#3BB54A', '#2D6FE0', 'p', 0, 0),
+    g('Final Fantasy XVI', 'XVI', 2023, '#F27A1A', '#8F2437', 'p', 0, 0),
+  ]},
+  { name: 'Kingdom Hearts', games: [
+    g('Kingdom Hearts', 'KH I', 2002, '#2E78E0', '#F2B807', 't', 34, 96),
+    g('Chain of Memories', 'CoM', 2004, '#D63858', '#5B2A5E', 't', 19, 41),
+    g('Kingdom Hearts II', 'KH II', 2005, '#8D54E9', '#F28B30', 't', 46, 184),
+    g('Birth by Sleep', 'BbS', 2010, '#1FA9E0', '#3F63E0', 'j', 14, 52),
+    g('Dream Drop Distance', 'DDD', 2012, '#E85A9B', '#7B4AE2', 'p', 0, 0),
+    g('Kingdom Hearts III', 'KH III', 2019, '#3F63E0', '#E5AE2B', 'p', 0, 0),
+  ]},
+  { name: 'Yakuza', games: [
+    g('Yakuza 0', 'Y0', 2015, '#E8384F', '#F2B807', 't', 74, 420),
+    g('Yakuza Kiwami', 'K1', 2016, '#D6453A', '#422E38', 't', 28, 133),
+    g('Yakuza Kiwami 2', 'K2', 2017, '#3BB54A', '#1C5E44', 'j', 16, 72),
+    g('Like a Dragon', 'LaD', 2020, '#F27A1A', '#3F63E0', 'p', 0, 0),
+  ]},
+];
+
+let ci = 0, gi = 0, perRow = 1;
+const stage = document.getElementById('stage');
+
+const ICON = {
+  pad: '<svg class="ic" viewBox="0 0 24 24"><path d="M6 9h4M8 7v4M15 10h.01M18 8h.01"/><path d="M17.3 5H6.7a4 4 0 0 0-4 3.6L2 15a3 3 0 0 0 5.4 2.1L9 15h6l1.6 2.1A3 3 0 0 0 22 15l-.7-6.4A4 4 0 0 0 17.3 5z"/></svg>',
+  cam: '<svg class="ic s" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  grid: '<svg class="ic s" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>',
+};
+
+function cover(x, id){
+  return `<svg class="art" viewBox="0 0 90 120" preserveAspectRatio="xMidYMid slice">
+    <defs><linearGradient id="cv${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${x.v1}"/><stop offset="1" stop-color="${x.v2}"/></linearGradient></defs>
+    <rect width="90" height="120" fill="url(#cv${id})"/>
+    <circle cx="68" cy="28" r="30" fill="#fff" opacity=".18"/>
+    <path d="M0 90 Q28 68 52 86 T90 78 V120 H0Z" fill="#000" opacity=".2"/>
+    <text x="8" y="110" font-family="M PLUS Rounded 1c,Nunito,Segoe UI,sans-serif" font-size="16" font-weight="800" fill="#fff">${x.s}</text></svg>`;
+}
+function shot(x, k, id){
+  const sx = 30 + (k * 37) % 100, hy = 52 + (k * 13) % 16;
+  return `<svg class="art" viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice">
+    <defs><linearGradient id="sh${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${x.v1}"/><stop offset="1" stop-color="#fff" stop-opacity=".9"/></linearGradient></defs>
+    <rect width="160" height="90" fill="url(#sh${id})"/>
+    <circle cx="${sx}" cy="${20 + k * 5}" r="${9 + k * 2}" fill="#fff" opacity=".6"/>
+    <path d="M0 ${hy} Q${40 + k * 10} ${hy - 22} 80 ${hy - 4} T160 ${hy - 10} V90 H0Z" fill="${x.v2}" opacity=".85"/>
+    <path d="M0 ${hy + 18} Q60 ${hy + 2} 110 ${hy + 16} T160 ${hy + 12} V90 H0Z" fill="#000" opacity=".25"/></svg>`;
+}
+
+function layout(n, W, H){
+  const gap = 12, rowGap = 14, extra = 30 + 16; // raíl + año
+  let best = { cw: 0, r: 1 };
+  for (let r = 1; r <= 4; r++){
+    const pr = Math.ceil(n / r);
+    const byW = (W - (pr - 1) * gap) / pr;
+    const byH = ((H - (r - 1) * rowGap) / r - extra) * 3 / 4;
+    const cw = Math.min(104, byW, byH);
+    if (cw > best.cw + 0.5) best = { cw, r, pr };
+  }
+  return best;
+}
+
+function render(){
+  const C = COLS[ci], G = C.games[gi];
+  const done = C.games.filter(x => x.st === 't').length;
+  const years = C.games.map(x => x.y);
+  const span = `${Math.min(...years)} – ${Math.max(...years)}`;
+  stage.style.setProperty('--v1', G.v1); stage.style.setProperty('--v2', G.v2);
+  stage.style.setProperty('--gv', `linear-gradient(115deg,${G.v1},${G.v2})`);
+  stage.style.setProperty('--b1', G.v1); stage.style.setProperty('--b2', G.v2);
+
+  stage.innerHTML = `
+  <div class="bg"><div class="blob" style="width:620px;height:620px;left:-160px;top:280px;--b:var(--b1)"></div><div class="blob" style="width:560px;height:560px;right:-140px;top:-200px;--b:var(--b2)"></div></div>
+  <div class="top">
+    <div class="glass avatar"><div class="face">${ICON.pad}</div></div>
+    <div class="crumb pill"><span>Juegos</span><span class="sep">›</span><span class="cur">Colecciones</span></div>
+    <div class="clock">18:42 <small>dom 22 nov</small></div>
+  </div>
+  <div class="coll">
+    <div class="glass panel side"><div class="face">
+      <span class="side-lab">Colecciones en Juegos</span>
+      ${COLS.map((c, k) => `<div class="sitem ${k === ci ? 'on' : ''}" data-c="${k}">
+        <i style="background:linear-gradient(180deg,${c.games.slice(0, 4).map(x => x.v1).join(',')})"></i>
+        <div><b>${c.name}</b><small>${c.games.length} juegos</small></div></div>`).join('')}
+    </div></div>
+    <div class="glass panel main"><div class="face">
+      <div class="aurora">${C.games.filter((_, k) => k % Math.ceil(C.games.length / 5) === 0).map((x, k) => `<i style="left:${k * 21 - 4}%;--ac:${x.v1}"></i>`).join('')}</div>
+      <div class="mhead">
+        <h1>${C.name}</h1>
+        <span class="tag soft">${span}</span>
+        <div class="prog"><span><b>${done}</b> de ${C.games.length} terminados</span>
+          <div class="prog-bar">${C.games.map(x => `<i style="${x.st !== 'p' ? `background:var(${x.st === 't' ? '--arc-violeta' : '--arc-rojo'})` : ''}"></i>`).join('')}</div></div>
+      </div>
+      <div class="games" id="games"></div>
+      <div class="glass-in det">
+        <div class="det-top">
+          <b>${G.n}</b>
+          <span class="st-badge ${ST[G.st][1]}"><i></i>${ST[G.st][0]}</span>
+          <span class="det-meta">${G.y}${G.h ? ` · ${G.h} h jugadas` : ''}${G.sh ? ` · ${G.sh} capturas` : ''}</span>
+          <div class="det-acts">
+            <button class="b-sec" type="button"><span class="btn x">X</span> Capturas</button>
+            <button class="b-main" type="button"><span class="btn a">A</span> Abrir juego</button>
+          </div>
+        </div>
+        <div class="shots">${G.sh
+          ? [0, 1, 2].map(k => `<div class="glass shot"><div class="face">${shot(G, k + gi, `${ci}-${gi}-${k}`)}</div></div>`).join('') +
+            `<div class="glass shot more"><div class="face"><div class="more-in">${ICON.grid}<span>${G.sh - 3}</span><small>más</small></div></div></div>`
+          : `<div class="shots-empty">${ICON.cam} Aún no hay capturas de este juego</div>`}</div>
+      </div>
+    </div></div>
+  </div>
+  <div class="hints">
+    <div class="hint pill"><span class="shp"><span class="btn sh">LB</span><span class="btn sh">RB</span></span> Colección</div>
+    <div class="hint pill"><span class="btn x">X</span> Capturas</div>
+    <div class="hint pill"><span class="btn a">A</span> Abrir</div>
+    <div class="hint pill"><span class="btn b">B</span> Volver</div>
+  </div>`;
+
+  const box = document.getElementById('games');
+  const L = layout(C.games.length, box.clientWidth, box.clientHeight);
+  perRow = L.pr;
+  box.style.setProperty('--cw', Math.floor(L.cw) + 'px');
+  let html = '';
+  for (let r = 0; r < L.r; r++){
+    const row = C.games.slice(r * perRow, (r + 1) * perRow);
+    if (!row.length) break;
+    const rail = `linear-gradient(90deg,${row.map(x => x.v1).join(',')})`;
+    html += `<div class="grow" style="--rail:${row.length > 1 ? rail : row[0].v1}">` + row.map((x, j) => {
+      const k = r * perRow + j, prev = k > 0 ? C.games[k - 1].y : null, f = k === gi;
+      const showYr = f || prev !== x.y;
+      return `<div class="gi ${f ? 'f' : ''} ${x.st === 'p' ? 'dim' : ''}" data-g="${k}" style="--gv:linear-gradient(115deg,${x.v1},${x.v2})">
+        <div class="glass gcov ${f ? 'f' : ''}"><div class="face">${cover(x, `${ci}-${k}`)}</div></div>
+        <span class="gdot"></span>${showYr ? `<span class="gyr">${x.y}</span>` : ''}</div>`;
+    }).join('') + '</div>';
+  }
+  box.innerHTML = html;
+}
+
+stage.addEventListener('click', e => {
+  const c = e.target.closest('[data-c]'), gg = e.target.closest('[data-g]');
+  if (c){ ci = +c.dataset.c; gi = 0; render(); }
+  else if (gg){ gi = +gg.dataset.g; render(); }
+});
+document.addEventListener('keydown', e => {
+  const n = COLS[ci].games.length, k = e.key.toLowerCase();
+  if (k === 'arrowright') gi = Math.min(n - 1, gi + 1);
+  else if (k === 'arrowleft') gi = Math.max(0, gi - 1);
+  else if (k === 'arrowdown') gi = Math.min(n - 1, gi + perRow);
+  else if (k === 'arrowup') gi = Math.max(0, gi - perRow);
+  else if (k === 'e' || k === 'pagedown'){ ci = (ci + 1) % COLS.length; gi = 0; }
+  else if (k === 'q' || k === 'pageup'){ ci = (ci + COLS.length - 1) % COLS.length; gi = 0; }
+  else if (k === 't'){ setTheme(stage.dataset.theme === 'light' ? 'dark' : 'light'); return; }
+  else return;
+  e.preventDefault(); render();
+});
+
+function setTheme(t){
+  stage.dataset.theme = t;
+  document.body.classList.toggle('page-light', t === 'light');
+  document.querySelectorAll('[data-theme-btn]').forEach(b => b.classList.toggle('on', b.dataset.themeBtn === t));
+}
+(function initFit(){
+  const fit = document.getElementById('fit');
+  function resize(){
+    const s = Math.min(1, fit.clientWidth / 1280);
+    stage.style.transform = `scale(${s})`;
+    fit.style.height = Math.round(720 * s) + 'px';
+  }
+  new ResizeObserver(resize).observe(fit);
+  resize();
+})();
+render();
+</script>
+</body>
+</html>

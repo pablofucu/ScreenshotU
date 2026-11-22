@@ -32,7 +32,7 @@ import { GOAL_TXT, goalMin, goalMinLeft, goalTrack, goalHistOf, groupOf, localDa
 import { openSearch, searchCmd } from './search.svelte';
 import { listenSaves, openSaves, refreshSavesStatus, savesCmd, updateManifestFromSettings } from './saves.svelte';
 import { libraryCmd, loadLibraryInfo, openLibrary } from './library.svelte';
-import { addCollCmd, collCmd, collFirst, openCollShots, collFormCmd, collKey, collReveal, collTab, collValid, loadCollections, openAddColl, openCollForm, pickerCmd, resetColl, setCollFocus } from './coleccion.svelte';
+import { addCollCmd, collCmd, collFirst, openCollShots, collFormCmd, collKey, collTab, collValid, loadCollections, openAddColl, openCollForm, pickerCmd, resetColl, setCollFocus } from './coleccion.svelte';
 import { makeMoved } from './pointer';
 import { openRelease, releaseCmd } from './release.svelte';
 import { achievementsCmd, cycleCardVariant, openAchievementsModal } from './achievements.svelte';
@@ -184,7 +184,6 @@ export function setFocus(k: string, mouse = false) {
       if (!mouse && listTab()) listReveal();
     } else if (k.startsWith('cl') || k === 'cnew') {
       setCollFocus(k);
-      if (!mouse) collReveal();
     }
   } else if (app.view === 'stats') {
     // La lista se desplaza para que la fila enfocada se vea entera.

@@ -262,3 +262,31 @@ export function collYearSpan(years: Array<number | null>): string {
   if (!Number.isFinite(min)) return '';
   return min === max ? String(min) : `${min} – ${max}`;
 }
+
+/** Hasta `count` capturas al azar de un solo juego; la misma semilla da la misma tanda. */
+export function pickGameShots<T>(shots: readonly T[], count: number, seed: number): T[] {
+  if (count <= 0 || !shots.length) return [];
+  return shuffleWith(shots, rng(seed >>> 0)).slice(0, count);
+}
+
+/** Reparto de las portadas de una colección en filas para que quepan todas en `w`×`h` sin desplazar:
+ *  prueba de 1 a `maxRows` filas y se queda con la que deja la portada (3:4) más grande, hasta `maxW`.
+ *  `extra` es lo que ocupa bajo cada fila el raíl con su año. Por debajo de `minW` la portada no encoge más
+ *  (con muchísimos juegos la zona pasa a desplazarse en vertical). */
+export function collGrid(
+  n: number, w: number, h: number,
+  o: { gap?: number; rowGap?: number; extra?: number; maxW?: number; minW?: number; maxRows?: number } = {},
+): { rows: number; perRow: number; cw: number } {
+  const { gap = 12, rowGap = 14, extra = 46, maxW = 104, minW = 56, maxRows = 5 } = o;
+  if (n <= 0 || w <= 0 || h <= 0) return { rows: 1, perRow: Math.max(1, n), cw: maxW };
+  let best = { rows: 1, perRow: n, cw: 0 };
+  for (let r = 1; r <= Math.min(maxRows, n); r++) {
+    const pr = Math.ceil(n / r);
+    if (Math.ceil(n / pr) < r) continue; // misma forma que con menos filas
+    const byW = (w - (pr - 1) * gap) / pr;
+    const byH = (((h - (r - 1) * rowGap) / r - extra) * 3) / 4;
+    const cw = Math.min(maxW, byW, byH);
+    if (cw > best.cw + 0.5) best = { rows: r, perRow: pr, cw };
+  }
+  return { ...best, cw: Math.floor(Math.max(minW, best.cw)) };
+}

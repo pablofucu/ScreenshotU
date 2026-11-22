@@ -11,6 +11,7 @@
   import Thumb from '../components/Thumb.svelte';
   import Shelf, { type ShelfItem } from '../components/Shelf.svelte';
   import CollTab from './CollTab.svelte';
+  import { COLL_GAME_SHOTS } from '../lib/coleccion.svelte';
   import MiListaDual from './MiListaDual.svelte';
   import { buildBoard, computeMonthPositions, finShelfSub, itemLabel, LIST_VIS, SHELF_STEP, shelfSub } from '../lib/milista.svelte';
   import { inkFor } from '../lib/ops.svelte';
@@ -55,11 +56,11 @@
   const cellStyle = (page: number, j: number) =>
     `left:${G.gx + (j % G.cols) * (G.cw + G.gap)}px;top:${page * PH + G.top + Math.floor(j / G.cols) * (G.ch + G.rg)}px;width:${G.cw}px;height:${G.ch}px;--r:${(16 * G.s).toFixed(1)}px;--bw:${(3 * G.s).toFixed(1)}px;--fr:${(13 * G.s).toFixed(1)}px;--ts:${(0.55 + 0.45 * G.s).toFixed(3)}`;
 
-  // Si la colección enfocada tiene más de 5 capturas, View baraja las 5 aleatorias.
+  // Si el juego enfocado de la colección tiene más capturas de las que enseña su ficha, View saca otras al azar.
   const collHasMoreShots = $derived(
     tab === 'coll' &&
       app.collAt.c < app.collShelves.length &&
-      app.collShelves[app.collAt.c].items.reduce((n, ti) => n + (titles[ti]?.shots.length ?? 0), 0) > 5,
+      (titles[app.collShelves[app.collAt.c].items[app.collAt.i]]?.shots.length ?? 0) > COLL_GAME_SHOTS,
   );
 
   // Velo de color: tiñe el fondo de cuadraditos con los dos tonos del juego enfocado (al recorrer la lista, el fondo va cambiando de matiz).
@@ -300,6 +301,7 @@
     ...(app.collAt.c < app.collShelves.length ? [
       ...(app.platform?.titles[app.collShelves[app.collAt.c]?.items[app.collAt.i]]?.launchable ? [['X', 'Jugar', 'x'] as H] : []),
       ['Y', 'Editar', 'y'] as H,
+      ['LB/RB', 'Colección', 'rb'] as H,
       ...(collHasMoreShots ? [['View', 'Otras capturas', 'view'] as H] : []),
     ] : []),
     ['LT/RT', 'Pestaña', 'rt'],
