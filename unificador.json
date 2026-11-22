@@ -2731,10 +2731,25 @@
               "id": "RDE-9",
               "title": "Días y rachas: paneles y mapa del año",
               "desc": "",
-              "state": "pending",
-              "notes": [],
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-22T01:20:58+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-22T01:28:44+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Pestaña Días y rachas nueva (stats/Dias.svelte): racha de jugar con llama (de siempre, filtrable), racha de meta con anillo y lunas de días libres, mapa del año en una escala neón (o el color de la categoría filtrada) con ola de entrada, y el día enfocado con reparto por categoría y sesiones. LB/RB cambia de año, View filtra. svelte-check limpio, pruebas yearheat y consolestats en verde, probado en el navegador."
+                }
+              ],
               "cat": "interfaz",
-              "by": "claude"
+              "by": "claude",
+              "updated": "2026-11-22T01:28:44+01:00",
+              "result": "Pestaña Días y rachas nueva (stats/Dias.svelte): racha de jugar con llama (de siempre, filtrable), racha de meta con anillo y lunas de días libres, mapa del año en una escala neón (o el color de la categoría filtrada) con ola de entrada, y el día enfocado con reparto por categoría y sesiones. LB/RB cambia de año, View filtra. svelte-check limpio, pruebas yearheat y consolestats en verde, probado en el navegador."
             },
             {
               "id": "RDE-10",

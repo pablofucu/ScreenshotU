@@ -209,10 +209,10 @@ export interface Calendar {
   older: boolean;
 }
 
-/** Minutos por día local de todas las partidas. */
-function dayTotals(lib: Library): Map<number, number> {
+/** Minutos por día local de todas las partidas (o solo de la categoría `pi`). */
+function dayTotals(lib: Library, pi?: number): Map<number, number> {
   const m = new Map<number, number>();
-  for (const g of games(lib)) for (const p of timed(g.t).all) eachDay(p, -Infinity, Infinity, (d, ms) => m.set(d, (m.get(d) ?? 0) + ms));
+  for (const g of games(lib)) if (pi == null || g.pi === pi) for (const p of timed(g.t).all) eachDay(p, -Infinity, Infinity, (d, ms) => m.set(d, (m.get(d) ?? 0) + ms));
   return m;
 }
 
@@ -756,4 +756,40 @@ export function dayHeat(lib: Library, pi: number, year: number): number[] {
     for (const p of timed(g.t).all) eachDay(p, from, to, (d, ms) => { out[Math.round((d - from) / 86400000)] += ms; });
   }
   return out;
+}
+
+/** Mapa del año: ms por día en total y por categoría (índice 0 = 1 de enero). */
+export interface YearHeat { year: number; from: number; total: number[]; by: Map<number, number[]> }
+export function yearHeat(lib: Library, year: number): YearHeat {
+  const from = new Date(year, 0, 1).getTime(), to = new Date(year + 1, 0, 1).getTime();
+  const n = Math.round((to - from) / 86400000);
+  const total = new Array<number>(n).fill(0), by = new Map<number, number[]>();
+  for (const g of games(lib)) {
+    let arr = by.get(g.pi);
+    for (const p of timed(g.t).all) eachDay(p, from, to, (d, ms) => {
+      const i = Math.round((d - from) / 86400000);
+      if (!arr) by.set(g.pi, (arr = new Array<number>(n).fill(0)));
+      total[i] += ms; arr[i] += ms;
+    });
+  }
+  return { year, from, total, by };
+}
+
+/** Racha de jugar: días seguidos con alguna partida (de cualquier categoría, o solo de `pi`).
+ *  La actual cuenta hasta hoy, o hasta ayer si hoy aún no has jugado; la mejor es de siempre. */
+export interface PlayStreak { cur: number; best: { n: number; from: number; to: number }; playedToday: boolean }
+export function playStreak(lib: Library, now = Date.now(), pi?: number): PlayStreak {
+  const tot = dayTotals(lib, pi);
+  const today = dayStart(now);
+  let cur = 0;
+  for (let d = tot.has(today) ? today : addDays(today, -1); tot.has(d); d = addDays(d, -1)) cur++;
+  const best = { n: 0, from: 0, to: 0 };
+  const days = [...tot.keys()].filter((d) => d <= today).sort((a, b) => a - b);
+  let run = 0, prev = NaN;
+  for (const d of days) {
+    run = d === addDays(prev, 1) ? run + 1 : 1;
+    if (run > best.n) { best.n = run; best.to = d; best.from = addDays(d, -(run - 1)); }
+    prev = d;
+  }
+  return { cur, best, playedToday: tot.has(today) };
 }

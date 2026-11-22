@@ -14,6 +14,7 @@
   import StatsWeek from './StatsWeek.svelte';
   import StatsFin from './StatsFin.svelte';
   import StatsPano from './StatsPano.svelte';
+  import Dias from './stats/Dias.svelte';
 
   const KIND_LABEL: Record<string, string> = { month: 'Mes', year: 'Año', all: 'Siempre' };
   const VIEW_LABEL = { week: 'Semana', days: 'Días y rachas', fin: 'Terminados', pano: 'Panorama', streak: 'Rachas', rank: 'Clasificación', year: 'Tu año jugando' };
@@ -148,11 +149,13 @@
       </span>
     {/if}
   {:else}
-    <span class="cat">Todas las categorías</span>
+    {@const ys = app.years.includes(app.now.getFullYear()) ? app.years : [...app.years, app.now.getFullYear()].sort()}
+    {@const yi = ys.indexOf(app.daysYear)}
+    <span class="cat sel" data-hact="view" title="Cambiar de categoría">{app.daysCat >= 0 && pname(app.daysCat) ? pname(app.daysCat) : 'Todas las categorías'}</span>
     <span class="gl">
-      <span class="chev" class:dis={!C.older} data-hact="lb">{@render chev(true)}</span>
-      <span class="lbl cal">{calRange}</span>
-      <span class="chev" class:dis={app.calOff >= 0} data-hact="rb">{@render chev(false)}</span>
+      <span class="chev" class:dis={yi <= 0} data-hact="lb">{@render chev(true)}</span>
+      <span class="lbl">{app.daysYear}</span>
+      <span class="chev" class:dis={yi < 0 || yi >= ys.length - 1} data-hact="rb">{@render chev(false)}</span>
     </span>
   {/if}
   <span class="gl vsw">
@@ -240,61 +243,9 @@
 
   <Hints list={[...(rows.length ? [['A', 'Ver juego', 'a'] as [string, string, string]] : []),['LB/RB', 'Fecha', 'rb'], ['View', 'Periodo', 'view'], ['LT/RT', 'Categoría', 'rt'], ['Y', 'Calendario', 'y'], ['B', 'Volver', 'b']]} />
 {:else if app.statsTab === 'days'}
-  <div class="stsum">
-    <div class="rbox"><div class="k">Días con partida</div><div class="v acc">{C.played} <small>de {C.elapsed}</small></div></div>
-    <div class="rbox"><div class="k">Racha actual</div><div class="v">{C.curStreak} <small>{C.curStreak === 1 ? 'día' : 'días'}</small></div></div>
-    <div class="rbox">
-      <div class="k">Mejor racha</div><div class="v">{C.best.n} <small>{C.best.n === 1 ? 'día' : 'días'}</small></div>
-      {#if C.best.n}<div class="s eq">{fmtRange(C.best.from, C.best.to)}</div>{/if}
-    </div>
-    <div class="rbox">
-      <div class="k">Día favorito</div>
-      {#if C.fav}<div class="v">{WDAYS[C.fav.wd][0].toUpperCase() + WDAYS[C.fav.wd].slice(1)}</div><div class="s eq">{fmtHM(C.fav.avg)} de media</div>
-      {:else}<div class="v">—</div>{/if}
-    </div>
-  </div>
+  <Dias />
 
-  <div class="stpanel stcal">
-    <div class="sth">Tiempo jugado por día
-      <span class="leg">Menos {#each [0, 1, 2, 3, 4] as l}<i class="l{l}"></i>{/each} Más</span>
-    </div>
-    <div class="heat">
-      {#each ['L', '', 'X', '', 'V', '', 'D'] as w, i}<span class="wl" style="top:{CY + i * CELL + 2}px">{w}</span>{/each}
-      {#each monthLabels as m}<span class="ml" style="left:{m.x}px">{m.t}</span>{/each}
-      {#each C.days as d, i (d.start)}
-        <i class="hc l{lvl(d.ms)}" class:fx={!d.future} class:fut={d.future} class:f={app.focus === 'cd' + i} class:today={i === C.today}
-          data-k="cd{i}" data-act="cd" style="left:{CX + Math.floor(i / 7) * CELL}px;top:{CY + (i % 7) * CELL}px"></i>
-      {/each}
-    </div>
-    <div class="months">
-      {#each C.months as m}
-        <div><b>{hours(m.ms)}</b><i style="height:{Math.max(m.ms ? 4 : 0, (m.ms / monthMax) * 64)}px"></i>{m.label}</div>
-      {/each}
-    </div>
-  </div>
-
-  <div class="stpanel stday">
-    {#if selDay}
-      <div class="sth">{fmtLongDay(selDay.start, now)}</div>
-      {#if plays.length}
-        {#each plays.slice(0, SHOW) as p (p.t.id + p.start)}
-          {@const a = app.titleAcc(p.pi, p.ti).c}
-          <div class="ses">
-            <span class="tm">{p.console ? 'Consola' : `${fmtClock(p.start)} – ${fmtClock(p.end)}`}</span>
-            <MiniCover t={p.t} acc={a} small />
-            <span class="nm">{p.t.name}<small>{pname(p.pi)}{p.shots ? ` · ${p.shots} ${p.shots === 1 ? 'captura' : 'capturas'}` : ''}</small></span>
-            <span class="du">{fmtHM(p.ms)}</span>
-          </div>
-        {/each}
-        {#if plays.length > SHOW}<div class="smore">y {plays.length - SHOW} {plays.length - SHOW === 1 ? 'partida' : 'partidas'} más</div>{/if}
-        <div class="dtot"><span>{plays.length} {plays.length === 1 ? 'partida' : 'partidas'} · {new Set(plays.map((p) => p.t.id)).size} {new Set(plays.map((p) => p.t.id)).size === 1 ? 'juego' : 'juegos'}</span><span>{fmtHM(dayTotal)}</span></div>
-      {:else}
-        <div class="snone">Ese día no jugaste.</div>
-      {/if}
-    {/if}
-  </div>
-
-  <Hints list={[['LB/RB', 'Fecha', 'rb'], ...COMMON]} />
+  <Hints list={[['View', 'Categoría', 'view'], ['LB/RB', 'Año', 'rb'], ...COMMON]} />
 {/if}
 
 <style>

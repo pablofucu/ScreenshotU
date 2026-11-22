@@ -17,7 +17,7 @@ import {
 } from './ops.svelte';
 import { shotLayout, type ShotLayout } from './shotlayout';
 import { tgrid, TZOOM_MAX } from './tgrid';
-import { EVO_KINDS, GMETRICS, STATS_KINDS } from './stats';
+import { EVO_KINDS, GMETRICS, STATS_KINDS, addDays } from './stats';
 import { nintendoCycleMin, nintendoImportCmd, nintendoToggleAccount, openNintendoImport } from './nintendo.svelte';
 import { editSgdbKey, openSgdbPicker, openSgdbTitles, sgdbAuto, sgdbCmd, sgdbTitlesCmd, toggleSgdbAuto } from './sgdb.svelte';
 import { AUDIO_COMBO_PRESETS, AUDIO_HOTKEY_PRESETS, COMBO_PRESETS, HOTKEY_PRESETS, MOUSE_PRESETS, OVERLAY_COMBO_PRESETS, OVERLAY_HOTKEY_PRESETS, learnKeydown, learnMouse, onLearnKey, onLearnPad, startLearn } from './learn.svelte';
@@ -138,7 +138,7 @@ function validKey(view: View, key: string | undefined): string | undefined {
       return el.querySelector(`[data-k="${key}"]`) ? key : undefined;
     }
     if (app.statsTab === 'rank' && /^sr\d+$/.test(key)) return n < app.rank.rows.length ? key : undefined;
-    if (app.statsTab === 'days' && /^cd\d+$/.test(key)) return app.cal.days[n] && !app.cal.days[n].future ? key : undefined;
+    if (app.statsTab === 'days' && /^dy\d+$/.test(key)) return n < app.heat.total.length && addDays(app.heat.from, n) <= app.now.getTime() ? key : undefined;
   } else if (view === 'evo') {
     if (/^eb\d+$/.test(key)) return n < app.evo.length ? key : undefined;
   } else if (view === 'gstats') {
@@ -163,8 +163,7 @@ function defaultKey(view: View): string {
     if (app.statsTab === 'fin') return 'fn0';
     if (app.statsTab === 'pano') return 'pn0';
     if (app.statsTab === 'rank') return app.rank.rows.length ? 'sr0' : '';
-    const c = app.cal;
-    return 'cd' + (c.today >= 0 ? c.today : c.days.length - 1);
+    return 'dy' + daysDefault();
   }
   if (view === 'evo') return app.evo.length ? 'eb' + (app.evo.length - 1) : '';
   if (view === 'gstats') return app.gsScope === 'cat' && app.gsCat.rows.length ? 'gs0' : '';
@@ -710,7 +709,7 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
   } else if (a === 'evo') {
     delete app.fk.evo;
     go('evo', 'fwd');
-  } else if (a === 'cd' || a === 'evo-bar') {
+  } else if (a === 'cd' || a === 'dy' || a === 'evo-bar') {
     return;
   }
   blip(1320);
@@ -842,6 +841,7 @@ function openGameStats(scope: 'title' | 'cat') {
 export function openStats(from: 'home' | 'streak' = 'home') {
   app.statsFrom = from;
   app.statsOff = 0; app.calOff = 0; app.yearSel = null; app.yearCard = 0;
+  app.daysYear = app.now.getFullYear(); app.daysCat = -1;
   for (let k = 0; k < 240 && !app.rank.rows.length && app.rank.older; k++) app.statsOff--;
   delete app.fk.stats;
   go('stats', 'fwd');
@@ -987,6 +987,30 @@ function cycleStatsKind() {
   blip(700);
 }
 
+/* Días y rachas: años con partidas (y el actual), último día elegible y día enfocado al entrar. */
+function daysYears(): number[] {
+  const ys = new Set(app.years); ys.add(app.now.getFullYear());
+  return [...ys].sort((a, b) => a - b);
+}
+function daysLast(): number {
+  const h = app.heat, n = h.total.length;
+  const t = Math.round((new Date(app.now).setHours(0, 0, 0, 0) - h.from) / 864e5);
+  return Math.max(0, Math.min(n - 1, t));
+}
+function daysDefault(): number {
+  const h = app.heat, last = daysLast();
+  if (h.year === app.now.getFullYear()) return last;
+  const arr = app.daysCat >= 0 ? h.by.get(app.daysCat) : h.total;
+  for (let i = last; arr && i >= 0; i--) if (arr[i] > 0) return i;
+  return last;
+}
+/** View en Días y rachas: Todas → cada categoría con partidas ese año → Todas. */
+function cycleDaysCat() {
+  const cats = [-1, ...[...app.heat.by.keys()].sort((a, b) => a - b)];
+  app.daysCat = cats[(cats.indexOf(app.daysCat) + 1) % cats.length] ?? -1;
+  blip(700);
+}
+
 /** LB/RB: en la clasificación y el calendario mueven la fecha; en la evolución, la escala. */
 function statsKind(d: number) {
   if (app.view === 'stats' && app.statsTab === 'year') { yearShift(d); return; }
@@ -1020,6 +1044,14 @@ function statsShift(d: number) {
     const i = pers.indexOf(app.panoPer) + d;
     if (i < 0 || i >= pers.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
     app.panoPer = pers[i]; setFocus(defaultKey('stats')); blip(700); return;
+  }
+  if (app.statsTab === 'days') {
+    const ys = daysYears(), i = ys.indexOf(app.daysYear) + d;
+    if (i < 0 || i >= ys.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+    const k = app.focus.startsWith('dy') ? +app.focus.slice(2) : -1;
+    app.daysYear = ys[i];
+    setFocus('dy' + (k >= 0 ? Math.min(k, daysLast()) : daysDefault()));
+    blip(700); return;
   }
   if (app.statsTab === 'rank') {
     const ok = d < 0 ? app.rank.older : app.statsOff < 0;
@@ -2085,6 +2117,7 @@ export function cmd(c: string) {
       else if (app.view === 'viewer') toggleBare();
       else if (app.view === 'titles' && app.titlesTab === 'all') toggleTitlesView();
       else if (app.view === 'stats' && app.statsTab === 'rank') cycleStatsKind();
+      else if (app.view === 'stats' && app.statsTab === 'days') cycleDaysCat();
       break;
     case 'y':
       if (app.view === 'titles') {

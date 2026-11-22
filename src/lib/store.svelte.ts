@@ -6,7 +6,7 @@ import { hexToLch, hexToRgb, hueOf } from './oklch';
 import { gamePair, INK, pair, variablesCSS, vivo } from './atmos';
 import { collItems, collectionTitle } from './collections';
 import { GOAL_COL, GOAL_KEYS, goalMin, type GoalKey } from './readgoals';
-import { calendar, categoryStats, evoBuckets, playedPlatforms, playYears, rankPeriod, titleStats, yearReview, type EvoKind, type GMetric, type PeriodKind } from './stats';
+import { calendar, categoryStats, evoBuckets, playedPlatforms, playYears, rankPeriod, titleStats, yearHeat, yearReview, type EvoKind, type GMetric, type PeriodKind } from './stats';
 
 export type View = 'home' | 'titles' | 'detail' | 'shots' | 'viewer' | 'stats' | 'evo' | 'streak' | 'gstats';
 export type SortMode = SortModeT;
@@ -459,6 +459,9 @@ class Store {
   statsOff = $state(0);
   /** Ventana del calendario: 0 = los últimos 6 meses, -1 = los 6 anteriores… */
   calOff = $state(0);
+  /** Días y rachas: año del mapa y categoría filtrada (-1 = todas). */
+  daysYear = $state(new Date().getFullYear());
+  daysCat = $state(-1);
   evoKind = $state<EvoKind>('week');
   /** Pantalla de racha: anillo elegido (mapa y cifras) y pantalla a la que vuelve B. */
   streakKey = $state<GoalKey>('vn');
@@ -484,6 +487,7 @@ class Store {
   statsPlat = $derived(this.statsPlats.includes(this.statsPlatSel) ? this.statsPlatSel : (this.statsPlats[0] ?? -1));
   rank = $derived(rankPeriod(this.lib, this.statsKind, this.statsOff, this.now.getTime(), this.statsPlat));
   cal = $derived(calendar(this.lib, this.calOff, this.now.getTime()));
+  heat = $derived(yearHeat(this.lib, this.daysYear));
   /** Estadísticas de juego del título abierto y de la categoría abierta. */
   gsTitle = $derived.by(() => { const t = this.lib.platforms[this.p]?.titles[this.t]; return t ? titleStats(t) : null; });
   gsCat = $derived(categoryStats(this.lib, this.p, this.gsMetric));
