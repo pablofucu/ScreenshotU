@@ -4773,29 +4773,7 @@
       ]
     }
   ],
-  "news": [
-    {
-      "text": "🌈 Inicio con siete accesos: Diseño",
-      "kind": "fase",
-      "by": "antigravity",
-      "at": "2026-11-23T22:24:48+01:00",
-      "ref": "ICS/Diseño"
-    },
-    {
-      "text": "🌈 Inicio con siete accesos: Color heredable",
-      "kind": "fase",
-      "by": "antigravity",
-      "at": "2026-11-23T22:28:06+01:00",
-      "ref": "ICS/Color heredable"
-    },
-    {
-      "text": "🌈 Inicio con siete accesos: Inicio y accesos",
-      "kind": "fase",
-      "by": "antigravity",
-      "at": "2026-11-23T22:38:31+01:00",
-      "ref": "ICS/Inicio y accesos"
-    }
-  ],
+  "news": [],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",
   "versions": [
     {
@@ -4955,6 +4933,40 @@
       ],
       "sha": "06c7633c50ece7916cfef993b5c6807641745efb",
       "tag": "v2.6.0"
+    },
+    {
+      "version": "2.7.0",
+      "at": "2026-11-23T22:39:04+01:00",
+      "by": "antigravity",
+      "news": [
+        {
+          "text": "🌈 Inicio con siete accesos: Diseño",
+          "kind": "fase",
+          "by": "antigravity",
+          "at": "2026-11-23T22:24:48+01:00",
+          "ref": "ICS/Diseño"
+        },
+        {
+          "text": "🌈 Inicio con siete accesos: Color heredable",
+          "kind": "fase",
+          "by": "antigravity",
+          "at": "2026-11-23T22:28:06+01:00",
+          "ref": "ICS/Color heredable"
+        },
+        {
+          "text": "🌈 Inicio con siete accesos: Inicio y accesos",
+          "kind": "fase",
+          "by": "antigravity",
+          "at": "2026-11-23T22:38:31+01:00",
+          "ref": "ICS/Inicio y accesos"
+        },
+        {
+          "text": "Nuevo Inicio 4+3 con colores arcoíris fijos heredables, Álbum global y vitrina de Logros",
+          "kind": "nuevo",
+          "by": "antigravity",
+          "at": "2026-11-23T22:39:04+01:00"
+        }
+      ]
     }
   ]
 }
