@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { app, STATUS_LABEL, TITLE_FILTERS, TITLE_ORDER_LABEL, type MenuItem, type TitleFilter } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { canResume, closeOverlay, closePrompt, MAGPIE_LABEL, menuAct, menuLayout } from '../lib/controller.svelte';
@@ -101,6 +102,33 @@
   function hover(e: MouseEvent, i: number) {
     if (moved(e)) { app.menu.row = i; app.menu.confirm = false; }
   }
+
+  let gridEl = $state<HTMLElement>();
+  let mSlide = $state({ x: 0, y: 0, w: 0, h: 0, ready: false });
+  const isDanger = $derived.by(() => {
+    const it = items[app.menu.row];
+    return it === 'remove' || it === 'delshot' || it === 'delsel';
+  });
+  $effect(() => {
+    void app.menu.row;
+    void app.menu.items;
+    let raf = 0;
+    queueMicrotask(() => {
+      const f = gridEl?.querySelector<HTMLElement>('.mrow.f');
+      if (!gridEl || !f) return;
+      const gb = gridEl.getBoundingClientRect();
+      const fb = f.getBoundingClientRect();
+      const sc = gridEl.offsetWidth ? gb.width / gridEl.offsetWidth : 1;
+      const x = (fb.left - gb.left) / sc;
+      const y = (fb.top - gb.top) / sc;
+      const w = f.offsetWidth;
+      const h = f.offsetHeight;
+      const wasReady = untrack(() => mSlide.ready);
+      mSlide = { x, y, w, h, ready: wasReady };
+      if (!wasReady) raf = requestAnimationFrame(() => { mSlide = { x, y, w, h, ready: true }; });
+    });
+    return () => cancelAnimationFrame(raf);
+  });
 </script>
 
 <div class="scrim" role="presentation" onclick={(e) => { if (e.target === e.currentTarget) closeOverlay(); }}>
@@ -108,7 +136,8 @@
     <div class="face">
       <h2>{list ? (app.menu.items[0]?.startsWith('flt:') ? 'Filtrar' : (t ? t.name : 'Lista de juegos')) : shots ? 'Capturas' : 'Opciones'}</h2>
       <p class="msub">{sub}</p>
-      <div class="mgrid" style="grid-template-columns:repeat({cols},minmax(0,1fr))">
+      <div class="mgrid" class:slid={mSlide.w > 0} bind:this={gridEl} style="grid-template-columns:repeat({cols},minmax(0,1fr))">
+      {#if mSlide.w > 0}<span class="mslide" class:ready={mSlide.ready} class:danger={isDanger} style="transform:translate3d({mSlide.x}px,{mSlide.y}px,0);width:{mSlide.w}px;height:{mSlide.h}px" aria-hidden="true"></span>{/if}
       {#each lay as col, ci}
         <div class="mcol">
         {#each col as g, gi}
@@ -136,7 +165,16 @@
   .menupanel.tighter .mrow.addrow{height:48px}
   .menupanel.squeeze .mrow{height:var(--mrh)}
   .menupanel.squeeze .mrow.addrow{height:calc(var(--mrh) + var(--s-2))}
-  .mgrid { display: grid; column-gap: var(--s-4); }
+  .mgrid { position: relative; display: grid; column-gap: var(--s-4); }
+  .mgrid.slid .mrow { position: relative; z-index: 1; }
+  .mgrid.slid .mrow.f, .mgrid.slid .mrow.danger.f { background: transparent; box-shadow: none; }
+  .mslide { position: absolute; left: 0; top: 0; border-radius: var(--r-m); pointer-events: none; z-index: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 60%), var(--gf);
+    box-shadow: inset 0 1.5px 0 rgba(255,255,255,.8), 0 0 0 1px color-mix(in srgb, var(--f2) 75%, black), 0 0 18px -2px color-mix(in srgb, var(--f1) 45%, transparent), 0 6px 12px -8px color-mix(in srgb, var(--f2) 70%, black); }
+  .mslide.danger { background: linear-gradient(180deg, color-mix(in srgb, var(--bad) 35%, var(--tint-base)), var(--bad));
+    box-shadow: inset 0 1.5px 0 rgba(255,255,255,.75), 0 0 0 1px color-mix(in srgb, var(--bad) 75%, black), 0 6px 12px -8px color-mix(in srgb, var(--bad) 70%, black); }
+  .mslide.ready { transition: transform var(--d-2) var(--e-bounce), width var(--d-2) var(--e-soft), height var(--d-2) var(--e-soft), background var(--d-1) var(--e-soft); }
+  @media (prefers-reduced-motion: reduce) { .mslide.ready { transition: none; } }
   .mcol { display: flex; flex-direction: column; gap: var(--s-1); min-width: 0; }
   /* Dos columnas (ficha del juego): primero la izquierda, de arriba abajo. */
   .menupanel.two { left: 210px; width: 860px; }

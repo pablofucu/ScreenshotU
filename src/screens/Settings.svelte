@@ -194,11 +194,14 @@
     <div class="glass st-menu">
       <div class="face">
         <h2>Ajustes</h2>
-        {#each SETTING_SECTIONS as s, k (s.name)}
-          <button type="button" class="st-mrow" class:on={app.setSec === k} class:f={app.setSec === k && setNav.zone === 'menu'} style={vars(s.t)} onclick={() => { setSection(k); setNav.zone = 'menu'; }} onmousemove={() => { if (app.setSec !== k) setSection(k); setNav.zone = 'menu'; }}>
-            <i></i><span>{s.name}</span>
-          </button>
-        {/each}
+        <div class="st-mlist">
+          <span class="st-mslide" class:f={setNav.zone === 'menu'} style="{vars(sec.t)};transform:translateY({app.setSec * 62}px)" aria-hidden="true"></span>
+          {#each SETTING_SECTIONS as s, k (s.name)}
+            <button type="button" class="st-mrow" class:on={app.setSec === k} class:f={app.setSec === k && setNav.zone === 'menu'} style={vars(s.t)} onclick={() => { setSection(k); setNav.zone = 'menu'; }} onmousemove={() => { if (app.setSec !== k) setSection(k); setNav.zone = 'menu'; }}>
+              <i></i><span>{s.name}</span>
+            </button>
+          {/each}
+        </div>
       </div>
     </div>
     <div class="glass st-body">
@@ -208,6 +211,7 @@
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div class="st-rows" style="height:{VIS * RH}px" onwheel={wheel} onpointerdown={rowsDown} onclickcapture={rowsClick}>
         <div class="st-track" style="transform:translateY({-off * RH}px)">
+        <span class="st-rslide" class:on={setNav.zone === 'body'} class:danger={focused?.id === 'quit' || (focused?.id === 'restore' && !!app.restoreReady)} style="transform:translateY({app.setRow * RH}px)" aria-hidden="true"></span>
         {#each rows as r, i (r.id)}
           <button type="button" class="st-row" class:f={app.setRow === i && setNav.zone === 'body'} class:cur={app.setRow === i} class:danger={r.id === 'quit' || (r.id === 'restore' && !!app.restoreReady)} data-set={r.id} onmousemove={(e) => hover(e, i)} onclick={() => { app.setRow = i; setNav.zone = 'body'; settingsAct(r.id, 0); }}>
             <span class="sl">{r.l}</span>
@@ -244,23 +248,29 @@
   .st-body { left: 366px; top: 24px; width: 858px; height: 620px; --r: 36px; cursor: default; }
   .st-menu .face, .st-body .face { background: var(--face-hi); color: var(--ink); display: flex; flex-direction: column; padding: 24px 22px; position: relative; }
   .st-menu h2 { margin: 0 8px 16px; font-size: var(--t-2xl); font-weight: 800; color: var(--ink); }
-  .st-mrow { position: relative; flex: none; display: flex; align-items: center; gap: 14px; height: 56px; margin-bottom: 6px; padding: 0 16px; border: 0; border-radius: var(--r-m); background: transparent; font: inherit; font-size: var(--t-xl); font-weight: 700; color: var(--ink-2); text-align: left; cursor: pointer; transition: background .15s, color .15s; }
+  .st-mlist { position: relative; display: flex; flex-direction: column; }
+  .st-mslide { position: absolute; left: 0; right: 0; top: 0; height: 56px; border-radius: var(--r-m); background: var(--gf); pointer-events: none; z-index: 0; transition: transform var(--d-2) var(--e-bounce), box-shadow var(--d-1) var(--e-soft); }
+  .st-mslide.f { box-shadow: var(--ring); }
+  .st-mrow { position: relative; z-index: 1; flex: none; display: flex; align-items: center; gap: 14px; height: 56px; margin-bottom: 6px; padding: 0 16px; border: 0; border-radius: var(--r-m); background: transparent; font: inherit; font-size: var(--t-xl); font-weight: 700; color: var(--ink-2); text-align: left; cursor: pointer; transition: color .15s; }
   .st-mrow i { flex: none; width: 14px; height: 14px; border-radius: 50%; background: var(--grad); box-shadow: 0 0 0 2px var(--line); }
-  .st-mrow.on { background: var(--gf); color: var(--on); }
+  .st-mrow.on { background: transparent; color: var(--on); }
   .st-mrow.on i { background: var(--on); box-shadow: none; }
-  .st-mrow.f { box-shadow: var(--ring); }
+  .st-mrow.f { box-shadow: none; }
   .st-body h3 { margin: 0 0 10px; font-size: var(--t-2xl); font-weight: 800; color: var(--ink); }
   .st-rows { position: relative; overflow: hidden; touch-action: none; flex: none; box-sizing: content-box; margin: -4px -8px 0; padding: 4px 8px 0; }
-  .st-track { transition: transform .2s cubic-bezier(.25, 1, .4, 1); }
-  .st-row { display: flex; align-items: center; gap: 12px; width: 100%; height: 52px; margin-bottom: 4px; padding: 0 20px; border: 0; border-radius: var(--r-m); background: var(--glass-in); font: inherit; font-size: var(--t-l); font-weight: 700; color: var(--ink); text-align: left; cursor: pointer; transition: background .15s, color .15s; }
+  .st-track { position: relative; transition: transform .2s cubic-bezier(.25, 1, .4, 1); }
+  .st-rslide { position: absolute; left: 0; right: 0; top: 0; height: 52px; border-radius: var(--r-m); background: var(--glass-chip); pointer-events: none; z-index: 0; transition: transform var(--d-2) var(--e-bounce), background var(--d-1) var(--e-soft), box-shadow var(--d-1) var(--e-soft); }
+  .st-rslide.on { background: var(--gf); box-shadow: var(--ring); }
+  .st-rslide.on.danger { background: var(--bad); }
+  .st-row { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; width: 100%; height: 52px; margin-bottom: 4px; padding: 0 20px; border: 0; border-radius: var(--r-m); background: var(--glass-in); font: inherit; font-size: var(--t-l); font-weight: 700; color: var(--ink); text-align: left; cursor: pointer; transition: background .15s, color .15s; }
   .st-row .sl { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .st-row .sv { max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; color: var(--ink-2); }
   .st-row .sarr { flex: none; font-size: var(--t-xl); line-height: 1; padding: 0 4px; opacity: .85; }
   .st-row .sarr.hid { visibility: hidden; }
-  .st-row.cur { background: var(--glass-chip); }
-  .st-row.f { background: var(--gf); color: var(--on); box-shadow: var(--ring); position: relative; z-index: 1; }
+  .st-row.cur { background: transparent; }
+  .st-row.f, .st-row.danger.f { background: transparent; color: var(--on); box-shadow: none; }
   .st-row.f .sv { color: inherit; opacity: .92; }
-  .st-row.danger.f { background: var(--bad); color: var(--on); }
+  @media (prefers-reduced-motion: reduce) { .st-mslide, .st-rslide { transition: none; } }
   .seg { display: flex; padding: 3px; border-radius: var(--r-pill); background: var(--line); }
   .seg span { padding: 5px 16px; border-radius: var(--r-pill); font-size: var(--t-m); font-weight: 700; color: var(--ink-2); }
   .seg span.on { background: var(--gf); color: var(--on); }

@@ -3414,6 +3414,254 @@
           }
         }
       ]
+    },
+    {
+      "key": "NMJ",
+      "name": "Navegación más juicy",
+      "goal": "Hacer la navegación más elástica, sonora, háptica y continua respetando la guía de diseño y el rendimiento de WebView2 y tablet",
+      "icon": "✨",
+      "color": 7,
+      "created": "2026-11-23T14:39:15+01:00",
+      "by": "antigravity",
+      "next_id": 9,
+      "phases": [
+        {
+          "name": "Tacto base",
+          "icon": "",
+          "steps": [
+            {
+              "id": "NMJ-1",
+              "title": "Motor sonoro cristalino con dirección y estéreo",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-23T14:39:20+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-23T14:40:07+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Motor sonoro sintético en src/lib/sound.ts y cálculos puros en src/lib/juice.ts con escala pentatónica, dirección y paneo estéreo."
+                },
+                {
+                  "at": "2026-11-23T14:52:42+01:00",
+                  "by": "antigravity",
+                  "kind": "note",
+                  "text": "Comprobado con npm run check y node --test tests/juice.test.ts (4/4 pass)."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-23T14:52:42+01:00",
+              "result": "Motor sonoro sintético en src/lib/sound.ts y cálculos puros en src/lib/juice.ts con escala pentatónica, dirección y paneo estéreo."
+            },
+            {
+              "id": "NMJ-2",
+              "title": "Háptica ampliada, Hints reactivos y press ágil",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-23T14:40:07+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-23T14:43:50+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Vocabulario háptico ampliado (haptic), barra Hints reactiva al pulso de botones y press/activate más ágiles (60 ms); comprobado con npm run check."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-23T14:43:50+01:00",
+              "result": "Vocabulario háptico ampliado (haptic), barra Hints reactiva al pulso de botones y press/activate más ágiles (60 ms); comprobado con npm run check."
+            },
+            {
+              "id": "NMJ-3",
+              "title": "Pruebas unitarias de cálculo sonoro y paralaje",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-23T14:39:48+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-23T14:40:07+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Pruebas unitarias en tests/juice.test.ts (4/4 en verde)."
+                }
+              ],
+              "cat": "pruebas",
+              "together": true,
+              "updated": "2026-11-23T14:40:07+01:00",
+              "result": "Pruebas unitarias en tests/juice.test.ts (4/4 en verde)."
+            }
+          ],
+          "review": {
+            "state": "approved",
+            "text": "",
+            "by": "persona",
+            "at": "2026-11-23T14:59:27+01:00",
+            "seen": true
+          }
+        },
+        {
+          "name": "Continuidad",
+          "icon": "",
+          "steps": [
+            {
+              "id": "NMJ-4",
+              "title": "Morph inverso en back y cross-slide en Viewer",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-23T14:43:50+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-23T14:45:03+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Morph inverso al volver de ficha a Home/Titles, origen de plataforma en transiciones de pantalla y cross-slide en Viewer.svelte."
+                },
+                {
+                  "at": "2026-11-23T14:52:42+01:00",
+                  "by": "antigravity",
+                  "kind": "note",
+                  "text": "Comprobado con npm run check (0 errores y 0 avisos)."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-23T14:52:42+01:00",
+              "result": "Morph inverso al volver de ficha a Home/Titles, origen de plataforma en transiciones de pantalla y cross-slide en Viewer.svelte."
+            },
+            {
+              "id": "NMJ-5",
+              "title": "Slide direccional en pestañas, cierre suave de modales y estrella animada",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-23T14:45:03+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-23T14:48:36+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Slide direccional en pestañas de Titles/Stats y periodo, cierre suave de modales con out:modalOut en App.svelte, y estrella/chispas/chk animados en Shots/Viewer; comprobado con npm run check (0 errores)."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-23T14:48:36+01:00",
+              "result": "Slide direccional en pestañas de Titles/Stats y periodo, cierre suave de modales con out:modalOut en App.svelte, y estrella/chispas/chk animados en Shots/Viewer; comprobado con npm run check (0 errores)."
+            }
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "antigravity",
+            "at": "2026-11-23T14:48:36+01:00",
+            "seen": true
+          }
+        },
+        {
+          "name": "Profundidad visual",
+          "icon": "",
+          "steps": [
+            {
+              "id": "NMJ-6",
+              "title": "Píldoras deslizantes en pestañas y menús verticales",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-23T14:48:37+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-23T14:50:21+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Píldoras deslizantes con --e-bounce en .ttabs (Titles), .vsw/.gl (Stats), ActionMenu (.mgrid) y Settings (secciones y filas); comprobado con npm run check (0 errores)."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-23T14:50:21+01:00",
+              "result": "Píldoras deslizantes con --e-bounce en .ttabs (Titles), .vsw/.gl (Stats), ActionMenu (.mgrid) y Settings (secciones y filas); comprobado con npm run check (0 errores)."
+            },
+            {
+              "id": "NMJ-7",
+              "title": "Destello especular, paralaje en fondo, carrusel 3D y micro-pops",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-23T14:50:21+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-23T14:52:42+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Destello especular unico en .glass.f::after, paralaje compositor-only en bg.ts/App.svelte, tinte ambiental en Home.svelte, carrusel 3D ligero y micro-pops en TopBar/Titles/minimapa; comprobado con npm run check."
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-23T14:52:42+01:00",
+              "result": "Destello especular unico en .glass.f::after, paralaje compositor-only en bg.ts/App.svelte, tinte ambiental en Home.svelte, carrusel 3D ligero y micro-pops en TopBar/Titles/minimapa; comprobado con npm run check."
+            },
+            {
+              "id": "NMJ-8",
+              "title": "Verificación completa de tipos, pruebas y guía de diseño",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-23T14:52:43+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-23T14:52:43+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Verificacion completa: npm run check (0 errores/0 avisos), todas las pruebas unitarias en verde (tests/*.test.ts incluido tests/juice.test.ts 4/4), tokens y finales de linea conservados."
+                }
+              ],
+              "cat": "pruebas",
+              "updated": "2026-11-23T14:52:43+01:00",
+              "result": "Verificacion completa: npm run check (0 errores/0 avisos), todas las pruebas unitarias en verde (tests/*.test.ts incluido tests/juice.test.ts 4/4), tokens y finales de linea conservados."
+            }
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "antigravity",
+            "at": "2026-11-23T14:52:43+01:00",
+            "seen": true
+          }
+        }
+      ]
     }
   ],
   "asks": [
@@ -4199,6 +4447,27 @@
       "by": "claude",
       "at": "2026-11-22T05:07:39+01:00",
       "ref": "AE/Pulido"
+    },
+    {
+      "text": "✨ Navegación más juicy: Tacto base",
+      "kind": "fase",
+      "by": "antigravity",
+      "at": "2026-11-23T14:43:50+01:00",
+      "ref": "NMJ/Tacto base"
+    },
+    {
+      "text": "✨ Navegación más juicy: Continuidad",
+      "kind": "fase",
+      "by": "antigravity",
+      "at": "2026-11-23T14:48:36+01:00",
+      "ref": "NMJ/Continuidad"
+    },
+    {
+      "text": "✨ Navegación más juicy: Profundidad visual",
+      "kind": "fase",
+      "by": "antigravity",
+      "at": "2026-11-23T14:52:43+01:00",
+      "ref": "NMJ/Profundidad visual"
     }
   ],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",

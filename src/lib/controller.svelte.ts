@@ -3,7 +3,7 @@ import { app, SORT_LABEL, SORT_ORDER, TITLE_FILTERS, TITLE_ORDERS, TITLE_ORDER_L
 import { backend, initBackend, IS_TABLET } from './backend';
 import { installedHere, launchLocal, removeLocal } from './clientgames';
 import { clearServer } from './remote/config';
-import { blip } from './sound';
+import { blip, sfx } from './sound';
 import { confirmTwice } from './confirm';
 import type { BackendEvent, Config, Library, MagpieMode, Shot, Title, TitlesTab } from './types';
 import { fmtDur } from './format';
@@ -200,10 +200,16 @@ export function setFocus(k: string, mouse = false) {
     if (y < app.goff) app.goff = y;
     else if (y + GS_ROW_H > app.goff + GS_VIEW_H) app.goff = y + GS_ROW_H - GS_VIEW_H;
   } else if (app.view === 'shots') {
+    const prevS = app.s;
     const i = +k.slice(4);
     app.s = i;
     if (mouse) return;
     const L = curLayout();
+    if (daysOn() && L.heads.length && prevS !== i) {
+      const h0 = L.heads.findIndex((h) => h.first <= prevS && prevS < h.first + h.n);
+      const h1 = L.heads.findIndex((h) => h.first <= i && i < h.first + h.n);
+      if (h0 !== h1 && h1 >= 0) haptic.step();
+    }
     if (L.y[i] === undefined) return;
     // En la vista por días, la cabecera del día también tiene que verse en su primera fila.
     const head = L.days ? L.heads.find((h) => h.first <= i && i < h.first + h.n) : undefined;
@@ -258,6 +264,34 @@ export function rumbleUi(duration = 20, weak = 0.15, strong = 0.0) {
   } catch {}
 }
 
+/** Posición horizontal normalizada [0, 1] del elemento enfocado respecto al escenario. */
+function focusNormX(el?: Element | null): number {
+  const target = el ?? screenEl()?.querySelector('.fx.f');
+  const stage = document.getElementById('stage');
+  if (!target || !stage) return 0.5;
+  const tb = target.getBoundingClientRect();
+  const sb = stage.getBoundingClientRect();
+  if (!sb.width) return 0.5;
+  return Math.max(0, Math.min(1, ((tb.left + tb.right) / 2 - sb.left) / sb.width));
+}
+
+/** Vocabulario háptico breve para hitos de navegación, sin saturar el movimiento normal. */
+export const haptic = {
+  confirm: () => rumbleUi(22, 0.08, 0.18),
+  play: () => rumbleUi(36, 0.14, 0.28),
+  tab: () => rumbleUi(14, 0.14, 0),
+  step: () => rumbleUi(12, 0.10, 0),
+  bump: () => rumbleUi(22, 0.18, 0),
+  fav: (on: boolean) => {
+    if (on) {
+      rumbleUi(18, 0.18, 0.06);
+      setTimeout(() => rumbleUi(28, 0.24, 0.10), 65);
+    } else {
+      rumbleUi(16, 0.12, 0);
+    }
+  },
+};
+
 export function bump(e: Element | null | undefined, dx: number, dy: number) {
   if (!e) return;
   try {
@@ -268,8 +302,8 @@ export function bump(e: Element | null | undefined, dx: number, dy: number) {
   } catch {
     /* sin animaciones web */
   }
-  blip(220);
-  rumbleUi(22, 0.18, 0.0);
+  sfx.bump(dx);
+  haptic.bump();
 }
 
 export function move(dx: number, dy: number) {
@@ -310,11 +344,11 @@ export function move(dx: number, dy: number) {
     const s = prim + Math.abs(dx ? vy : vx) * 2.4;
     if (s < bs) { bs = s; best = e; }
   }
-  if (best) { setFocus(best.dataset.k!); blip(880); return; }
+  if (best) { setFocus(best.dataset.k!); sfx.move(dx, dy, focusNormX(best)); return; }
   // Cuadrícula de juegos: al final de una fila, izquierda/derecha siguen con el juego anterior/siguiente.
   if (dx && app.view === 'titles' && app.config.titlesView === 'grid' && onAllTab()) {
     const np = viewPos(app.t) + dx;
-    if (np >= 0 && np <= app.tview.length - (IS_TABLET ? 1 : 0)) { setFocus('tit' + atPos(np)); blip(880); return; }
+    if (np >= 0 && np <= app.tview.length - (IS_TABLET ? 1 : 0)) { setFocus('tit' + atPos(np)); sfx.move(dx, dy, focusNormX()); return; }
   }
   bump(cur, dx, dy);
 }
@@ -326,7 +360,7 @@ export const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 function press(e: Element | null | undefined) {
   if (!e || calm()) return;
   try {
-    (e as HTMLElement).animate({ scale: [1, 0.92, 1] }, { duration: 170, easing: 'cubic-bezier(.3,.7,.4,1)' });
+    (e as HTMLElement).animate({ scale: [1, 0.93, 1.02, 1] }, { duration: 130, easing: 'cubic-bezier(.34,1.32,.64,1)' });
   } catch {
     /* sin animaciones web */
   }
@@ -375,9 +409,21 @@ function morph(from: HTMLElement | null | undefined, update: () => void, to: () 
 
 /* ---------- pantallas ---------- */
 let goT = 0;
-export function go(v: View, anim: 'fwd' | 'back' | '' = '') {
+let lastPlatOrigin = '50% 50%';
+function elOrigin(el: Element | null | undefined): string {
+  const stage = document.getElementById('stage');
+  if (!el || !stage) return '50% 50%';
+  const eb = el.getBoundingClientRect();
+  const sb = stage.getBoundingClientRect();
+  if (!sb.width || !sb.height) return '50% 50%';
+  const x = Math.max(0, Math.min(100, (((eb.left + eb.right) / 2 - sb.left) / sb.width) * 100));
+  const y = Math.max(0, Math.min(100, (((eb.top + eb.bottom) / 2 - sb.top) / sb.height) * 100));
+  return `${x.toFixed(1)}% ${y.toFixed(1)}%`;
+}
+export function go(v: View, anim: 'fwd' | 'back' | '' = '', origin = '50% 50%') {
   goT = performance.now();
   app.audioMenu = false;
+  app.transOrigin = origin;
   app.view = v;
   app.anim = anim;
   app.animKey++;
@@ -418,16 +464,24 @@ export function openTitle(i: number, fromView: typeof app.detailFrom = 'titles')
 
 /* Paneles apilados: B vuelve al panel que abrió el actual. */
 export function pushOverlay(o: typeof app.overlay) {
-  if (app.overlay) app.overlayStack.push(app.overlay);
+  const was = app.overlay;
+  if (was) app.overlayStack.push(was);
   app.overlay = o;
+  if (!was) sfx.modal(true);
 }
 export function popOverlay() {
+  const was = app.overlay;
   app.overlay = app.overlayStack.pop() ?? '';
-  if (!app.overlay) flushRefresh();
+  if (!app.overlay) {
+    if (was) sfx.modal(false);
+    flushRefresh();
+  }
 }
 export function closeOverlay() {
+  const was = app.overlay;
   app.overlay = '';
   app.overlayStack = [];
+  if (was) sfx.modal(false);
   flushRefresh();
 }
 /** Hay que reescanear en cuanto se cierren los paneles. */
@@ -498,6 +552,8 @@ export async function playTitle(t: Title) {
     if (here) await launchLocal(t.id); else await backend.launch(t.gameId);
     if (!app.playing) app.playing = { id: t.gameId, since: Date.now() };
     onLaunched(t);
+    sfx.play();
+    haptic.play();
     toast(backend.isTauri ? `Iniciando ${t.name}…` : `Jugar: ${t.name} (simulado en el navegador)`, 2400);
   } catch (e) {
     toast(String(e), 3600);
@@ -631,10 +687,10 @@ function menuCmd(c: string) {
     if (to !== r) { app.menu.row = to; app.menu.confirm = false; blip(880); }
     return;
   }
-  if (c === 'up') { app.menu.row = Math.max(0, app.menu.row - 1); app.menu.confirm = false; blip(880); }
-  else if (c === 'down') { app.menu.row = Math.min(n - 1, app.menu.row + 1); app.menu.confirm = false; blip(880); }
+  if (c === 'up') { app.menu.row = Math.max(0, app.menu.row - 1); app.menu.confirm = false; sfx.move(0, -1, 0.5); }
+  else if (c === 'down') { app.menu.row = Math.min(n - 1, app.menu.row + 1); app.menu.confirm = false; sfx.move(0, 1, 0.5); }
   else if (c === 'a') void menuAct(app.menu.items[app.menu.row]);
-  else if (c === 'b' || c === 'menu') { closeOverlay(); blip(520); }
+  else if (c === 'b' || c === 'menu') closeOverlay();
 }
 
 /** Confirma la tarjeta: se «hunde» y la accion se lanza cuando la pulsacion ya se ha visto. */
@@ -645,14 +701,15 @@ export function activate(act: string | undefined) {
   press(el);
   if (app.selMode || calm()) { runAct(act, el); return; }
   pressing = true;
-  setTimeout(() => { pressing = false; runAct(act, el); }, 110);
+  setTimeout(() => { pressing = false; runAct(act, el); }, 60);
 }
 
 function runAct(act: string, el: HTMLElement | null | undefined) {
   const [a, b, c] = act.split(':');
   if (a === 'plat') {
+    lastPlatOrigin = elOrigin(el);
     app.p = +b; app.hp = +b; app.t = 0; app.fk.titles = 'tit0'; app.titleFilter = 'all'; app.titlesTab = 'list'; resetList(); resetColl();
-    go('titles', 'fwd');
+    go('titles', 'fwd', lastPlatOrigin);
   } else if (a === 'tit') {
     if (+b >= (app.platform?.titles.length ?? 0)) openAdd(app.platform?.id);
     else openTitle(+b);
@@ -669,6 +726,7 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
   } else if (a === 'play') {
     const t = app.platform?.titles[app.t];
     if (t) void playTitle(t);
+    return;
   } else if (a === 'dshot') {
     // La fila de la ficha es siempre «más recientes primero»; el visor sigue el orden de la lista.
     const ds = app.platform?.titles[app.t]?.shots[+b];
@@ -722,7 +780,8 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
   } else if (a === 'cd' || a === 'dy' || a === 'evo-bar') {
     return;
   }
-  blip(1320);
+  sfx.confirm(focusNormX(el));
+  haptic.confirm();
 }
 
 /** «Seguir jugando»: abre la ficha del juego en su plataforma (B vuelve a Inicio). */
@@ -782,8 +841,11 @@ function streakSwitch(d: number) {
   const cur = keys.includes(app.streakKey) ? app.streakKey : keys[0];
   const i = (cur ? keys.indexOf(cur) : -1) + d;
   if (i < 0 || i >= keys.length) { bump(screenEl()?.querySelector('.smap'), d, 0); return; }
+  app.perDir = d >= 0 ? 1 : -1;
+  app.perKey++;
   app.streakKey = keys[i];
-  blip(700);
+  sfx.tab(d);
+  haptic.tab();
 }
 
 /** Datos que el menú sobre el juego no puede sacar por sí mismo: se quedan en el núcleo para toda la partida. Solo
@@ -909,9 +971,12 @@ function yearStep(d: number) {
 function yearShift(d: number) {
   const i = app.years.indexOf(app.yearNow) + d;
   if (i < 0 || i >= app.years.length) { bump(screenEl()?.querySelector('.ycard'), d, 0); return; }
+  app.perDir = d >= 0 ? 1 : -1;
+  app.perKey++;
   app.yearSel = app.years[i];
   app.yearCard = 0; app.yearDir = d > 0 ? 1 : -1;
-  blip(700);
+  sfx.tab(d);
+  haptic.tab();
 }
 
 /** Pestañas de Mi actividad (LT/RT). «Tu año jugando» va aparte, con Y. */
@@ -922,7 +987,7 @@ function cycleStatsTab(d: number) {
   const tabs: readonly string[] = STATS_TABS;
   const i = tabs.indexOf(app.statsTab === 'year' ? app.statsPrev : app.statsTab) + d;
   if (i < 0 || i >= tabs.length) { bump(screenEl()?.querySelector('.sx .vsw .gem'), d, 0); return; }
-  setStatsTab(STATS_TABS[i]);
+  setStatsTab(STATS_TABS[i], d);
 }
 
 /** Y: abre o cierra «Tu año jugando» y vuelve a la pestaña de antes. */
@@ -955,14 +1020,21 @@ function openGsYear() {
 }
 
 /** Pestaña de estadísticas con destino fijo (órdenes «stab:…»). */
-export function setStatsTab(t: typeof app.statsTab) {
+export function setStatsTab(t: typeof app.statsTab, dir?: number) {
   if (app.statsTab === t) return;
+  const tabs: readonly string[] = STATS_TABS;
+  const i0 = tabs.indexOf(app.statsTab === 'year' ? app.statsPrev : app.statsTab);
+  const i1 = tabs.indexOf(t);
+  const d: 1 | -1 = dir !== undefined ? (dir >= 0 ? 1 : -1) : (i1 >= 0 && i0 >= 0 && i1 < i0 ? -1 : 1);
+  app.tabDir = d;
+  app.tabKey++;
   app.statsTab = t;
   if (t === 'year') { app.yearCard = 0; app.yearSel = null; }
   app.goff = 0;
   delete app.fk.stats;
   setFocus(defaultKey('stats'));
-  blip(700);
+  sfx.tab(d);
+  haptic.tab();
 }
 
 /** LB/RB: en el nivel Categoría, otro periodo; en el nivel Juego, otra escala de «Cómo lo has jugado». */
@@ -1042,12 +1114,13 @@ function setYearCard(i: number) {
 /** Clic en «Inicio» de la cabecera: vuelve al menú principal desde cualquier pantalla. */
 function goHome() {
   if (app.view === 'home' || app.overlay || app.osk.open || app.audioMenu) return;
-  if (app.view === 'titles') app.fk.home = 'plat' + app.p;
+  const fromTitles = app.view === 'titles';
+  if (fromTitles) app.fk.home = 'plat' + app.p;
   if (app.view === 'stats') app.fk.home = 'dock2';
   if (app.selMode) exitSel();
   app.favView = false; app.collOpen = null;
-  go('home', 'back');
-  blip(520);
+  go('home', 'back', fromTitles ? lastPlatOrigin : '50% 50%');
+  sfx.back();
 }
 
 /** LT/RT en la clasificación: categoría anterior/siguiente con partidas (la clasificación nunca mezcla categorías). */
@@ -1074,10 +1147,13 @@ function cyclePanoPlat(d = 1) {
 /** X en la clasificación: Mes > Año > Siempre. */
 function cycleStatsKind() {
   const ks = STATS_KINDS;
+  app.perDir = 1;
+  app.perKey++;
   app.statsKind = ks[(ks.indexOf(app.statsKind) + 1) % ks.length];
   app.statsOff = 0; app.goff = 0;
   setFocus(defaultKey('stats'));
-  blip(700);
+  sfx.tab(1);
+  haptic.tab();
 }
 
 /* Días y rachas: años con partidas (y el actual), último día elegible y día enfocado al entrar. */
@@ -1118,10 +1194,13 @@ function statsKind(d: number) {
   if (app.view === 'evo') {
     const i = EVO_KINDS.findIndex(([k]) => k === app.evoKind) + d;
     if (i < 0 || i >= EVO_KINDS.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+    app.perDir = d >= 0 ? 1 : -1;
+    app.perKey++;
     app.evoKind = EVO_KINDS[i][0];
     setFocus(defaultKey('evo'));
   } else { statsShift(d); return; }
-  blip(700);
+  sfx.page(d);
+  haptic.tab();
 }
 /** LT/RT: periodo anterior/siguiente (en el calendario, 26 semanas). */
 function statsShift(d: number) {
@@ -1133,30 +1212,35 @@ function statsShift(d: number) {
     cur.setDate(cur.getDate() - ((cur.getDay() + 6) % 7) + 7 * app.weekOff);
     const ok = d < 0 ? app.firstActivity > 0 && cur.getTime() > app.firstActivity : app.weekOff < 0;
     if (!ok) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
-    app.weekOff += d; setFocus(defaultKey('stats')); blip(700); return;
+    app.perDir = d >= 0 ? 1 : -1; app.perKey++;
+    app.weekOff += d; setFocus(defaultKey('stats')); sfx.page(d); haptic.tab(); return;
   }
   if (app.statsTab === 'fin') {
     const ys = app.finYears, i = ys.indexOf(app.finYear) + d;
     if (i < 0 || i >= ys.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
-    app.finYear = ys[i]; setFocus(defaultKey('stats')); blip(700); return;
+    app.perDir = d >= 0 ? 1 : -1; app.perKey++;
+    app.finYear = ys[i]; setFocus(defaultKey('stats')); sfx.page(d); haptic.tab(); return;
   }
   if (app.statsTab === 'pano') {
     const pers: Array<'all' | number | 'd30'> = ['all', 'd30', ...[...app.years].reverse()];
     const i = pers.indexOf(app.panoPer) + d;
     if (i < 0 || i >= pers.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
-    app.panoPer = pers[i]; setFocus(defaultKey('stats')); blip(700); return;
+    app.perDir = d >= 0 ? 1 : -1; app.perKey++;
+    app.panoPer = pers[i]; setFocus(defaultKey('stats')); sfx.page(d); haptic.tab(); return;
   }
   if (app.statsTab === 'days') {
     const ys = daysYears(), i = ys.indexOf(app.daysYear) + d;
     if (i < 0 || i >= ys.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
     const k = app.focus.startsWith('dy') ? +app.focus.slice(2) : -1;
+    app.perDir = d >= 0 ? 1 : -1; app.perKey++;
     app.daysYear = ys[i];
     setFocus('dy' + (k >= 0 ? Math.min(k, daysLast()) : daysDefault()));
-    blip(700); return;
+    sfx.page(d); haptic.tab(); return;
   }
   if (app.statsTab === 'rank') {
     const ok = d < 0 ? app.rank.older : app.statsOff < 0;
     if (!ok || app.statsKind === 'all') { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+    app.perDir = d >= 0 ? 1 : -1; app.perKey++;
     app.statsOff += d; app.goff = 0;
     setFocus(defaultKey('stats'));
   } else {
@@ -1164,13 +1248,15 @@ function statsShift(d: number) {
     if (!ok) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
     // Se conserva la casilla (mismo día de la semana); si cae en el futuro, la semana anterior.
     const k = app.focus.startsWith('cd') ? +app.focus.slice(2) : 0;
+    app.perDir = d >= 0 ? 1 : -1; app.perKey++;
     app.calOff += d;
     const days = app.cal.days;
     let nk = Math.min(k, days.length - 1);
     while (nk > 0 && days[nk].future) nk -= 7;
     setFocus('cd' + Math.max(0, nk));
   }
-  blip(700);
+  sfx.page(d);
+  haptic.tab();
 }
 
 function collectFavs(): Shot[] {
@@ -1195,12 +1281,12 @@ export function openFavs() {
 }
 
 export function back() {
-  if (app.audioMenu) { app.audioMenu = false; blip(520); return; }
+  if (app.audioMenu) { closeAudioMenu(); return; }
   if (app.osk.open) { oskCmd('b'); return; }
   if (app.overlay) { overlayCmd('b'); return; }
-  if (app.view === 'shots' && app.selMode) { exitSel(); toast('Selección terminada'); blip(520); return; }
+  if (app.view === 'shots' && app.selMode) { exitSel(); toast('Selección terminada'); sfx.back(); return; }
   if (app.view === 'viewer') {
-    if (app.vz.k > 1) { resetZoom(); blip(520); return; }
+    if (app.vz.k > 1) { resetZoom(); sfx.back(); return; }
     const frame = screenEl()?.querySelector<HTMLElement>('.vframe');
     if (app.viewerFrom === 'detail') {
       const di = app.platform?.titles[app.t]?.shots.findIndex((s) => s.path === app.cur.shots[app.s]?.path) ?? app.s;
@@ -1226,21 +1312,26 @@ export function back() {
       go('detail', 'back');
     }
   } else if (app.view === 'detail') {
-    if (app.detailFrom === 'home') { go('home', 'back'); blip(520); return; }
-    if (app.detailFrom === 'stats') { go('stats', 'back'); blip(520); return; }
-    if (app.detailFrom === 'gstats') { go('gstats', 'back'); blip(520); return; }
+    const from = screenEl()?.querySelector<HTMLElement>('.dcover .face');
+    if (app.detailFrom === 'home') {
+      morph(from, () => go('home', from ? '' : 'back'), () => screenEl()?.querySelector<HTMLElement>('.fx.f .face'));
+      sfx.back();
+      return;
+    }
+    if (app.detailFrom === 'stats') { go('stats', 'back'); sfx.back(); return; }
+    if (app.detailFrom === 'gstats') { go('gstats', 'back'); sfx.back(); return; }
     if (app.titlesTab !== 'coll') app.fk.titles = 'tit' + app.t;
-    go('titles', 'back');
+    morph(from, () => go('titles', from ? '' : 'back'), () => screenEl()?.querySelector<HTMLElement>('.fx.f .face, .fx.f .fc'));
   } else if (app.view === 'evo') {
     app.fk.detail = 'dhrs';
     go('detail', 'back');
   } else if (app.view === 'gstats') {
-    if (app.gsScope === 'title' && app.gsFrom === 'cat') { backToCat(); blip(520); return; }
+    if (app.gsScope === 'title' && app.gsFrom === 'cat') { backToCat(); sfx.back(); return; }
     if (app.gsFrom === 'evo') go('evo', 'back');
     else if (app.gsFrom === 'stats') go('stats', 'back');
     else { app.p = gsP0; go('titles', 'back'); }
   } else if (app.view === 'stats') {
-    if (app.statsTab === 'year') { closeYear(); blip(520); return; }
+    if (app.statsTab === 'year') { closeYear(); sfx.back(); return; }
     if (app.statsFrom === 'streak') {
       go('streak', 'back');
     } else {
@@ -1252,12 +1343,12 @@ export function back() {
     go(app.streakFrom, 'back');
   } else if (app.view === 'titles') {
     app.fk.home = 'plat' + app.p;
-    go('home', 'back');
+    go('home', 'back', lastPlatOrigin);
   } else {
     bump(screenEl()?.querySelector('.fx.f'), 0, 0);
     return;
   }
-  blip(520);
+  sfx.back();
 }
 
 export const goBack = back;
@@ -1279,7 +1370,7 @@ export function page(d: number) {
       bump(screenEl()?.querySelector('.fx.f'), d, 0);
       return;
     }
-    setFocus('tit' + atPos(np)); blip(700);
+    setFocus('tit' + atPos(np)); sfx.page(d); haptic.tab();
     return;
   }
   if (app.view === 'shots' && !app.favView && app.collTitle) {
@@ -1290,12 +1381,13 @@ export function page(d: number) {
     app.sagaFilter = f; app.s = 0; app.goff = 0;
     setFocus(app.cur.shots.length ? 'shot0' : '');
     toast(f < 0 ? 'Todos los juegos' : members[f].name);
-    blip(700);
+    sfx.page(d);
+    haptic.tab();
     return;
   }
   if (app.view === 'shots') {
     const n = app.cur.shots.length;
-    if (n) { setFocus('shot' + Math.max(0, Math.min(n - 1, app.s + d * 12))); blip(700); }
+    if (n) { setFocus('shot' + Math.max(0, Math.min(n - 1, app.s + d * 12))); sfx.page(d); haptic.tab(); }
     return;
   }
   move(d, 0);
@@ -1316,7 +1408,8 @@ export function trigger(d: number) {
     const nk = d < 0 && heads[k] && app.s > heads[k].first ? k : k + d;
     if (nk < 0 || nk >= heads.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
     setFocus('shot' + heads[nk].first);
-    blip(700);
+    sfx.page(d);
+    haptic.tab();
     return;
   }
   bump(screenEl()?.querySelector('.fx.f'), d, 0);
@@ -1342,20 +1435,24 @@ export function cycleTitleOrder() {
   if (!p || !onAllTab()) { bump(screenEl()?.querySelector('.fx.f'), 0, 0); return; }
   const next = TITLE_ORDERS[(TITLE_ORDERS.indexOf(app.titleOrder) + 1) % TITLE_ORDERS.length];
   const keep = app.t;
+  app.orderKey++;
   void patchConfig({ titlesOrder: { ...app.config.titlesOrder, [p.id]: next } });
   if (p.titles.length) setFocus('tit' + (app.tview.includes(keep) ? keep : atPos(0)));
   toast('Orden: ' + TITLE_ORDER_LABEL[next]);
-  blip(700);
+  sfx.tab(1);
+  haptic.tab();
 }
 
 /** Filtro de la pestaña «Todos» (Start › Filtrar). Se conserva el juego enfocado si sigue visible. */
 export function setTitleFilter(f: TitleFilter) {
   const keep = app.t;
   app.titleFilter = validFilter(f);
+  app.orderKey++;
   if (app.view === 'titles' && onAllTab()) setFocus('tit' + (app.tview.includes(keep) ? keep : atPos(0)));
   const label = TITLE_FILTERS.find(([k]) => k === app.titleFilter)?.[1] ?? '';
   toast(app.titleFilter === 'all' ? 'Sin filtro' : app.tview.length ? `${label}: ${app.tview.length}` : `${label}: ningún juego`);
-  blip(700);
+  sfx.tab(1);
+  haptic.tab();
 }
 
 /** Start en la lista de juegos: menú contextual del juego enfocado + «Opciones de la lista…». */
@@ -1422,8 +1519,13 @@ function titlesMenuAct(item: MenuItem) {
 }
 
 /** Cambia de pestaña en la lista de juegos (Todos · Mi lista · Colecciones). */
-export function setTitlesTab(tab: TitlesTab) {
+export function setTitlesTab(tab: TitlesTab, dir?: number) {
   if (app.titlesTab === tab) return;
+  const i0 = TITLES_TABS.findIndex(([t]) => t === app.titlesTab);
+  const i1 = TITLES_TABS.findIndex(([t]) => t === tab);
+  const d: 1 | -1 = dir !== undefined ? (dir >= 0 ? 1 : -1) : (i1 >= 0 && i0 >= 0 && i1 < i0 ? -1 : 1);
+  app.tabDir = d;
+  app.tabKey++;
   app.titlesTab = tab;
   if (tab === 'coll') {
     const k = collKey();
@@ -1433,7 +1535,8 @@ export function setTitlesTab(tab: TitlesTab) {
     if (tab === 'list' || tab === 'fin') resetList();
     setFocus(validKey('titles', 'tit' + app.t) ?? defaultKey('titles'));
   }
-  blip(700);
+  sfx.tab(d);
+  haptic.tab();
 }
 
 /** View / LT / RT en la lista de juegos: pasa de pestaña (Todos · Mi lista · Colecciones). */
@@ -1441,7 +1544,7 @@ export function cycleTitlesTab(d = 1) {
   const n = TITLES_TABS.length;
   const i = TITLES_TABS.findIndex(([t]) => t === app.titlesTab);
   const [tab] = TITLES_TABS[(((i + d) % n) + n) % n];
-  setTitlesTab(tab);
+  setTitlesTab(tab, d);
 }
 
 /** Tamaño de las portadas: `d` > 0 = más grandes, < 0 = más pequeñas (5, 6, 7 u 8 por fila); se guarda en la config. */
@@ -1457,6 +1560,7 @@ export function zoomTitles(d: number, fresh = true) {
   blip(700);
 }
 
+let favBurstT: ReturnType<typeof setTimeout> | undefined;
 export function toggleFav() {
   if (app.view !== 'shots' && app.view !== 'viewer') return;
   const shot = app.cur.shots[app.s];
@@ -1465,8 +1569,17 @@ export function toggleFav() {
   if (on) app.favs.add(shot.path); else app.favs.delete(shot.path);
   void backend.setFavorite(shot.path, on);
   toast(on ? 'Añadida a favoritas' : 'Quitada de favoritas');
-  blip(1100);
-  rumbleUi(30, 0.22, 0.0);
+  sfx.fav(on);
+  haptic.fav(on);
+  clearTimeout(favBurstT);
+  if (on) {
+    app.favBurst = { path: shot.path, n: app.favBurst.n + 1 };
+    favBurstT = setTimeout(() => {
+      if (app.favBurst.path === shot.path) app.favBurst = { ...app.favBurst, path: '' };
+    }, 520);
+  } else if (app.favBurst.path === shot.path) {
+    app.favBurst = { ...app.favBurst, path: '' };
+  }
 }
 
 function cycleSort() {
@@ -1502,11 +1615,12 @@ export function stepViewer(d: number) {
   }
   app.vdir = Math.sign(d) || 1;
   app.s = ni;
-  blip(880);
+  sfx.move(Math.sign(d), 0, Math.sign(d) > 0 ? 0.72 : 0.28);
   wake();
 }
 /* Zoom del visor: `app.vz` = aumento y desplazamiento (px del escenario) de la imagen respecto al centro del marco. */
 const ZOOM_MAX = 8;
+let lastZoomBump = 0;
 export function resetZoom() {
   if (app.vz.k !== 1 || app.vz.x || app.vz.y) {
     app.vz = { k: 1, x: 0, y: 0 };
@@ -1529,7 +1643,13 @@ function clampPan() {
 export function zoomView(f: number, px = 0, py = 0) {
   const z = app.vz;
   const k = Math.max(1, Math.min(ZOOM_MAX, z.k * f));
-  if (k === z.k) return;
+  if (k === z.k) {
+    if (z.k >= ZOOM_MAX && f > 1) {
+      const now = performance.now();
+      if (now - lastZoomBump > 320) { lastZoomBump = now; rumbleUi(18, 0.16, 0); }
+    }
+    return;
+  }
   const r = k / z.k;
   z.x = px - (px - z.x) * r;
   z.y = py - (py - z.y) * r;
@@ -1768,12 +1888,12 @@ export async function openAudioMenu() {
   if (!app.audioOutputs.length) { toast('No se encontraron salidas de audio', 2200); return; }
   app.audioRow = Math.max(0, app.audioOutputs.findIndex((o) => o.default));
   app.audioMenu = true;
-  blip(1320);
+  sfx.modal(true);
 }
 export function closeAudioMenu() {
   if (!app.audioMenu) return;
   app.audioMenu = false;
-  blip(520);
+  sfx.modal(false);
 }
 function audioCmd(c: string) {
   const n = app.audioOutputs.length;
@@ -1802,13 +1922,13 @@ export function openSettings() {
   app.setRow = 0;
   app.setSec = 0;
   setNav.zone = 'menu';
-  blip(1320);
+  sfx.modal(true);
 }
 export function closeSettings() {
   dropRestore();
   app.overlay = '';
   flushRefresh();
-  blip(520);
+  sfx.modal(false);
 }
 /** Tiempos de mantener el atajo del menú para forzar el cierre (0 = no se fuerza). */
 const HOLD_CHOICES = [0, 1000, 1500, 2000, 3000];
@@ -2167,11 +2287,14 @@ function weekNewCmd(c: string): boolean {
   return true;
 }
 
+const HINT_KEYS = new Set(['a', 'b', 'x', 'y', 'lb', 'rb', 'lt', 'rt', 'view', 'menu']);
+
 export function cmd(c: string) {
   // Mientras Ajustes espera un botón de captura, el mando y el teclado no navegan.
   if (app.learn) return;
   wake();
   app.inputAt = Date.now();
+  if (HINT_KEYS.has(c)) app.hintPulse = { key: c, n: app.hintPulse.n + 1 };
   if (pairCmd(c)) return;
   if (weekNewCmd(c)) return;
   if (app.audioMenu) { audioCmd(c); return; }
@@ -2182,7 +2305,16 @@ export function cmd(c: string) {
   if (collTab() && collCmd(c)) return;
   if (c.startsWith('goal:')) { pickStreak(c.slice(5) as GoalKey); return; }
   if (c.startsWith('hgoal:')) { setHomeGoal(c.slice(6) as GoalKey); return; }
-  if (c.startsWith('fy:')) { app.finYear = Number(c.slice(3)); setFocus(defaultKey('stats')); blip(700); return; }
+  if (c.startsWith('fy:')) {
+    const ny = Number(c.slice(3));
+    app.perDir = ny >= app.finYear ? 1 : -1;
+    app.perKey++;
+    app.finYear = ny;
+    setFocus(defaultKey('stats'));
+    sfx.page(app.perDir);
+    haptic.tab();
+    return;
+  }
   if (c.startsWith('stab:')) { setStatsTab(c.slice(5) as typeof app.statsTab); return; }
   // Píldoras de las pantallas (clic): cada una lleva su destino fijo.
   if (c.startsWith('gm:')) { setGsMetric(c.slice(3)); return; }

@@ -3,13 +3,13 @@
 import { app, type FormKind, type MenuItem, type MoveTarget } from './store.svelte';
 import { backend, IS_TABLET } from './backend';
 import { addLocal, isClient, matchTitle } from './clientgames';
-import { blip } from './sound';
+import { blip, sfx } from './sound';
 import { confirmTwice } from './confirm';
 import { openOsk } from './osk.svelte';
 import { RAINBOW } from './icons';
 import { accentForHue, hueOf, inkDark } from './oklch';
 import {
-  back, closeOverlay, go, markRefresh, popOverlay, pushOverlay, setFocus, softRefresh, toast, hideToast,
+  back, closeOverlay, go, haptic, markRefresh, popOverlay, pushOverlay, setFocus, softRefresh, toast, hideToast,
 } from './controller.svelte';
 import type { HiddenEntry, NewGame, Shot, Title } from './types';
 
@@ -402,9 +402,21 @@ export function onFilesDropped(paths: string[]) {
 /* ------------------------------------------------------------------ */
 /* Selección y menú de capturas                                         */
 /* ------------------------------------------------------------------ */
+let selBurstT: ReturnType<typeof setTimeout> | undefined;
 export function toggleSel(path: string) {
-  if (app.sel.has(path)) app.sel.delete(path); else app.sel.add(path);
-  blip(app.sel.has(path) ? 1100 : 700);
+  const on = !app.sel.has(path);
+  if (on) app.sel.add(path); else app.sel.delete(path);
+  sfx.tick(0.5, on ? 1.15 : 0.85);
+  haptic.step();
+  clearTimeout(selBurstT);
+  if (on) {
+    app.selBurst = { path, n: app.selBurst.n + 1 };
+    selBurstT = setTimeout(() => {
+      if (app.selBurst.path === path) app.selBurst = { ...app.selBurst, path: '' };
+    }, 350);
+  } else if (app.selBurst.path === path) {
+    app.selBurst = { ...app.selBurst, path: '' };
+  }
 }
 export function exitSel() {
   app.selMode = false;

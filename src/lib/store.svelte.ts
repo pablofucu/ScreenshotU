@@ -372,6 +372,15 @@ class Store {
   sel = new SvelteSet<string>();
   anim = $state<'' | 'fwd' | 'back'>('');
   animKey = $state(0);
+  hintPulse = $state<{ key: string; n: number }>({ key: '', n: 0 });
+  tabDir = $state<1 | -1>(1);
+  tabKey = $state(0);
+  perDir = $state<1 | -1>(1);
+  perKey = $state(0);
+  transOrigin = $state('50% 50%');
+  favBurst = $state<{ path: string; n: number }>({ path: '', n: 0 });
+  selBurst = $state<{ path: string; n: number }>({ path: '', n: 0 });
+  orderKey = $state(0);
 
   p = $state(0); // plataforma
   t = $state(0); // titulo enfocado / abierto

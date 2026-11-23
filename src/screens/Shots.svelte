@@ -128,7 +128,7 @@
     {#each idx as i (shots[i].path)}
       <div class="glass shot fx" class:sm={days} class:f={app.focus === 'shot' + i} class:fav={app.favs.has(shots[i].path)} class:checked={app.sel.has(shots[i].path)} data-k="shot{i}" data-act="shot:{i}" data-i={i}
         style="left:{L.x[i]}px;top:{L.y[i]}px;width:{L.w}px;height:{L.h}px">
-        <div class="face"><Thumb path={shots[i].path} /><span class="star">{@html ICON.starY}</span>{#if members && shots[i].game}<span class="gbadge">{shots[i].game}</span>{/if}{#if app.selMode}<span class="chk">{@html app.sel.has(shots[i].path) ? ICON.check : ''}</span>{/if}</div>
+        <div class="face"><Thumb path={shots[i].path} /><span class="star" class:burst={app.favBurst.path === shots[i].path}>{@html ICON.starY}{#if app.favBurst.path === shots[i].path}<svg class="fsparks" viewBox="0 0 40 40" aria-hidden="true"><line x1="20" y1="2" x2="20" y2="8" /><line x1="35.6" y1="11" x2="30.4" y2="14" /><line x1="35.6" y1="29" x2="30.4" y2="26" /><line x1="20" y1="38" x2="20" y2="32" /><line x1="4.4" y1="29" x2="9.6" y2="26" /><line x1="4.4" y1="11" x2="9.6" y2="14" /></svg>{/if}</span>{#if members && shots[i].game}<span class="gbadge">{shots[i].game}</span>{/if}{#if app.selMode}<span class="chk" class:pop={app.selBurst.path === shots[i].path}>{@html app.sel.has(shots[i].path) ? ICON.check : ''}</span>{/if}</div>
       </div>
     {/each}
   </div>

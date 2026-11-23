@@ -18,6 +18,9 @@
   // La imagen nueva solo reemplaza a la anterior cuando ya esta decodificada (sin parpadeo).
   let shown = $state('');
   let dir = $state(0);
+  let prev = $state<{ url: string; dir: number; k: number } | null>(null);
+  let prevT: ReturnType<typeof setTimeout> | undefined;
+  let slideKey = 0;
   $effect(() => {
     if (!cur) return;
     const url = backend.fullUrl(cur.path);
@@ -26,7 +29,18 @@
     const im = new Image();
     im.src = url;
     (im.decode ? im.decode() : Promise.resolve()).catch(() => {}).then(() => {
-      if (!dead) { dir = d; shown = url; }
+      if (dead) return;
+      const curShown = untrack(() => shown);
+      if (curShown && curShown !== url && d !== 0) {
+        clearTimeout(prevT);
+        prev = { url: curShown, dir: d, k: ++slideKey };
+        prevT = setTimeout(() => { prev = null; }, 230);
+      } else {
+        clearTimeout(prevT);
+        prev = null;
+      }
+      dir = d;
+      shown = url;
     });
     return () => { dead = true; };
   });
@@ -47,6 +61,7 @@
     }
   });
   onDestroy(() => {
+    clearTimeout(prevT);
     while (keep.length) {
       const evicted = keep.pop();
       if (evicted) evicted.src = '';
@@ -76,6 +91,11 @@
   <div class="glass vframe">
     <div class="face">
       <div class="vzoom" style={zoomed ? `transform:translate(${app.vz.x}px,${app.vz.y}px) scale(${app.vz.k})` : ''}>
+        {#if prev && !zoomed}
+          {#key prev.k}
+            <img class="vprev {prev.dir > 0 ? 'out-l' : 'out-r'}" alt="" src={prev.url} draggable="false" />
+          {/key}
+        {/if}
         {#key shown}
           {#if shown}<img class={dir > 0 ? 'in-r' : dir < 0 ? 'in-l' : ''} alt="" src={shown} draggable="false" />{/if}
         {/key}
@@ -88,7 +108,7 @@
     <div class="vinfo pill" class:more={app.vinfoMore}>
       <span class="n">{app.s + 1} / {n}</span><span class="vt">{cur.game ? `${app.cur.name} · ${cur.game}` : app.cur.name}</span>
       <span class="dim">{fmt(cur.date)}</span>{#if app.vinfoMore}<span class="dim">{resText(cur.width, cur.height)}</span>{/if}
-      <span class="vstar" class:on={app.favs.has(cur.path)}>{@html ICON.starY}</span>
+      <span class="vstar" class:on={app.favs.has(cur.path)} class:burst={app.favBurst.path === cur.path}>{@html ICON.starY}{#if app.favBurst.path === cur.path}<svg class="fsparks" viewBox="0 0 40 40" aria-hidden="true"><line x1="20" y1="2" x2="20" y2="8" /><line x1="35.6" y1="11" x2="30.4" y2="14" /><line x1="35.6" y1="29" x2="30.4" y2="26" /><line x1="20" y1="38" x2="20" y2="32" /><line x1="4.4" y1="29" x2="9.6" y2="26" /><line x1="4.4" y1="11" x2="9.6" y2="14" /></svg>{/if}</span>
     </div>
   {/if}
   <div class="vstrip">

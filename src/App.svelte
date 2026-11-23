@@ -1,10 +1,12 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
+  import type { TransitionConfig } from 'svelte/transition';
   import { app } from './lib/store.svelte';
   import { learnKeydown } from './lib/learn.svelte';
-  import { boot, onKeyDown, onScreenClick, onScreenDblClick, onScreenMove, startGamepad, startMouse, hideToast, cmd, intro } from './lib/controller.svelte';
+  import { boot, onKeyDown, onScreenClick, onScreenDblClick, onScreenMove, startGamepad, startMouse, hideToast, cmd, intro, calm } from './lib/controller.svelte';
   import { buildBackground } from './lib/bg';
   import { lerpH, rbGrad, variablesCSS } from './lib/atmos';
+  import { parallaxFor } from './lib/juice';
   import { IS_TABLET } from './lib/backend';
   import { lastSyncLabel, remoteStatus } from './lib/remote/status.svelte';
   const RBY = rbGrad('180deg');
@@ -164,17 +166,56 @@
     if (stage) tagTree(stage);
     return () => { window.removeEventListener('mousemove', show); clearTimeout(t); mo.disconnect(); cancelAnimationFrame(atmosRaf); };
   });
+  function modalOut(_node: Element): TransitionConfig {
+    if (calm()) return { duration: 0 };
+    return { duration: 130, easing: (t) => 1 - (1 - t) ** 2, css: (t) => `opacity:${t};pointer-events:none` };
+  }
+
+  let bgPar = $state({ gx: 0, gy: 0, bx: 0, by: 0 });
+  $effect(() => {
+    void app.focus;
+    void app.goff;
+    void app.p;
+    void app.t;
+    void app.s;
+    void app.view;
+    void app.titlesTab;
+    if (IS_TABLET || calm() || app.view === 'viewer') {
+      bgPar = { gx: 0, gy: 0, bx: 0, by: 0 };
+      return;
+    }
+    const scrollY = app.goff;
+    const raf = requestAnimationFrame(() => {
+      const stage = document.getElementById('stage');
+      const f = document.querySelector<HTMLElement>('#screen .fx.f');
+      let nx = 0.5, ny = 0.5;
+      if (stage && f) {
+        const sb = stage.getBoundingClientRect();
+        const fb = f.getBoundingClientRect();
+        if (sb.width && sb.height) {
+          nx = ((fb.left + fb.right) / 2 - sb.left) / sb.width;
+          ny = ((fb.top + fb.bottom) / 2 - sb.top) / sb.height;
+        }
+      }
+      bgPar = parallaxFor(nx, ny, scrollY);
+    });
+    return () => cancelAnimationFrame(raf);
+  });
 </script>
 
 <svelte:window bind:innerWidth={w} bind:innerHeight={h} onkeydown={onKeyDown} onkeyup={learnKeydown} />
 
 <!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
 <div id="stage" onclick={onStageClick} data-theme={app.config.theme === 'dark' ? 'dark' : 'light'} style="transform:translate({ox}px,{oy}px) scale({sc});{atmosCss};--rby:{RBY};--rbsec:{rbsec};--acc:var(--f1);--accv:var(--v1);--acc-ink:var(--on)">
-  <div class="bg">{@html bg}</div>
+  <div class="bg">
+    {@html bg.blobs}
+    <div class="bg-layer bg-ghosts" style="transform:translate3d({bgPar.gx}px,{bgPar.gy}px,0)">{@html bg.ghosts}</div>
+    <div class="bg-layer bg-bokeh" style="transform:translate3d({bgPar.bx}px,{bgPar.by}px,0)">{@html bg.bokeh}</div>
+  </div>
   {#if app.ready}
     {#key app.animKey}
       <!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
-      <div id="screen" class="screen {app.anim}" use:intro onmousemove={onScreenMove} onclick={onScreenClick} ondblclick={onScreenDblClick}>
+      <div id="screen" class="screen {app.anim}" style="--to:{app.transOrigin}" use:intro onmousemove={onScreenMove} onclick={onScreenClick} ondblclick={onScreenDblClick}>
         {#if app.view === 'home'}<Home />
         {:else if app.view === 'titles'}<Titles />
         {:else if app.view === 'detail'}<Detail />
@@ -186,30 +227,40 @@
         {:else}<Viewer />{/if}
       </div>
     {/key}
-    {#if app.overlay === 'settings'}<Settings />{/if}
-    {#if app.overlay === 'form'}<GameForm />{/if}
-    {#if app.overlay === 'menu'}<ActionMenu />{/if}
-    {#if app.overlay === 'gameset'}<GameSettings />{/if}
-    {#if app.overlay === 'add'}<AddChooser />{/if}
-    {#if app.overlay === 'gdir'}<GameDirWizard />{/if}
-    {#if app.overlay === 'hidden'}<HiddenList />{/if}
-    {#if app.overlay === 'ntimport'}<NintendoImport />{/if}
-    {#if app.overlay === 'moveto'}<MoveTo />{/if}
-    {#if app.overlay === 'accent'}<AccentPicker />{/if}
-    {#if app.overlay === 'collform'}<CollForm />{/if}
-    {#if app.overlay === 'picker'}<GamePicker />{/if}
-    {#if app.overlay === 'addcoll'}<AddColl />{/if}
-    {#if app.overlay === 'sgdbtitles'}<SgdbTitles />{/if}
-    {#if app.overlay === 'sgdb'}<SgdbPicker />{/if}
-    {#if app.overlay === 'phrases'}<Phrases />{/if}
-    {#if app.overlay === 'saves'}<Saves />{/if}
-    {#if app.overlay === 'library'}<Library />{/if}
-    {#if app.overlay === 'status'}<StatusBar />{/if}
-    {#if app.overlay === 'release'}<ReleasePicker />{/if}
-    {#if app.overlay === 'achievements'}<AchievementsModal />{/if}
-    {#if app.overlay === 'search'}<Search />{/if}
-    {#if app.audioMenu}<AudioMenu />{/if}
-    {#if app.osk.open}<Osk />{/if}
+    {#if app.overlay}
+      {#key app.overlay}
+        <div class="ov-host" out:modalOut onoutrostart={(e) => e.currentTarget.classList.add('closing')}>
+          {#if app.overlay === 'settings'}<Settings />
+          {:else if app.overlay === 'form'}<GameForm />
+          {:else if app.overlay === 'menu'}<ActionMenu />
+          {:else if app.overlay === 'gameset'}<GameSettings />
+          {:else if app.overlay === 'add'}<AddChooser />
+          {:else if app.overlay === 'gdir'}<GameDirWizard />
+          {:else if app.overlay === 'hidden'}<HiddenList />
+          {:else if app.overlay === 'ntimport'}<NintendoImport />
+          {:else if app.overlay === 'moveto'}<MoveTo />
+          {:else if app.overlay === 'accent'}<AccentPicker />
+          {:else if app.overlay === 'collform'}<CollForm />
+          {:else if app.overlay === 'picker'}<GamePicker />
+          {:else if app.overlay === 'addcoll'}<AddColl />
+          {:else if app.overlay === 'sgdbtitles'}<SgdbTitles />
+          {:else if app.overlay === 'sgdb'}<SgdbPicker />
+          {:else if app.overlay === 'phrases'}<Phrases />
+          {:else if app.overlay === 'saves'}<Saves />
+          {:else if app.overlay === 'library'}<Library />
+          {:else if app.overlay === 'status'}<StatusBar />
+          {:else if app.overlay === 'release'}<ReleasePicker />
+          {:else if app.overlay === 'achievements'}<AchievementsModal />
+          {:else if app.overlay === 'search'}<Search />{/if}
+        </div>
+      {/key}
+    {/if}
+    {#if app.audioMenu}
+      <div class="ov-host ov-top" out:modalOut onoutrostart={(e) => e.currentTarget.classList.add('closing')}><AudioMenu /></div>
+    {/if}
+    {#if app.osk.open}
+      <div class="ov-host ov-top" out:modalOut onoutrostart={(e) => e.currentTarget.classList.add('closing')}><Osk /></div>
+    {/if}
   {/if}
   {#if error}<div class="note pill" style="left:50%;top:330px">No se pudo iniciar: {error}</div>{/if}
   {#if IS_TABLET}<ResumePill />{/if}

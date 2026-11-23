@@ -2,9 +2,9 @@
 // Usa las funciones del controlador (foco, toast, paneles).
 import { app, lastUse, STATUS_LABEL, STATUS_ORDER, type ListShelf } from './store.svelte';
 import { backend } from './backend';
-import { blip } from './sound';
+import { blip, sfx } from './sound';
 import { openAddColl } from './coleccion.svelte';
-import { bump, closeOverlay, openTitle, patchConfig, playTitle, popOverlay, pushOverlay, setFocus, setTitlesTab, toast } from './controller.svelte';
+import { bump, closeOverlay, haptic, openTitle, patchConfig, playTitle, popOverlay, pushOverlay, setFocus, setTitlesTab, toast } from './controller.svelte';
 import { RAINBOW } from './icons';
 import { fmtShort, nGames } from './format';
 import type { GameStatus, Title } from './types';
@@ -223,7 +223,7 @@ function boardMove(dx: number, dy: number) {
     const n = at.i + dx;
     if (n < 0 || n >= bands[at.b].items.length) { bump(document.querySelector('#screen .fx.f'), dx, dy); return; }
     setFocus('tit' + bands[at.b].items[n].ti);
-    blip(880);
+    sfx.move(dx, 0, 0.5);
     return;
   }
   // Fila visual más cercana en la dirección dy, entre todos los carriles.
@@ -242,8 +242,10 @@ function boardMove(dx: number, dy: number) {
     if (ddy < bdy - 1 || (Math.abs(ddy - bdy) <= 1 && ddx < bdx)) { bdy = ddy; bdx = ddx; best = Number(k); }
   }
   if (best === undefined) { bump(document.querySelector('#screen .fx.f'), dx, dy); return; }
+  const nextBand = boardAt(best, bands);
+  if (nextBand && nextBand.b !== at.b) haptic.step();
   setFocus('tit' + best);
-  blip(880);
+  sfx.move(0, dy, 0.5);
 }
 
 /** Estantería y posición del juego enfocado. */
@@ -332,8 +334,9 @@ function listMove(dx: number, dy: number) {
     bump(document.querySelector('#screen .fx.f'), dx, dy);
     return;
   }
+  if (s !== at.s) haptic.step();
   setFocus('tit' + sh[s].items[i]);
-  blip(880);
+  sfx.move(dx, dy, 0.5);
 }
 
 /** LB/RB en «Mi lista»: salta varias portadas. */
@@ -346,7 +349,8 @@ function listShift(d: number) {
     const ni = Math.max(0, Math.min(items.length - 1, b.i + d * 4));
     if (ni === b.i) { bump(document.querySelector('#screen .fx.f'), d, 0); return; }
     setFocus('tit' + items[ni].ti);
-    blip(700);
+    sfx.page(d);
+    haptic.tab();
     return;
   }
   const at = place();
@@ -356,7 +360,8 @@ function listShift(d: number) {
   const ni = Math.max(0, Math.min(shelf.items.length - 1, at.i + d * (LIST_VIS - 1)));
   if (ni === at.i) { bump(document.querySelector('#screen .fx.f'), d, 0); return; }
   setFocus('tit' + shelf.items[ni]);
-  blip(700);
+  sfx.page(d);
+  haptic.tab();
 }
 
 /** Mando y teclado en «Mi lista». Devuelve true si el botón se ha atendido aquí. */

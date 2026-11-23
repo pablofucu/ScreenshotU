@@ -1,9 +1,11 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { IS_TABLET } from '../lib/backend';
   import { app, coverHue, TITLE_FILTERS, TITLE_ORDER_LABEL, TITLES_TABS, type ListShelf } from '../lib/store.svelte';
   import { ICON } from '../lib/icons';
   import { fmtAgo, fmtDur, fmtShort, nCapturas } from '../lib/format';
-  import { setFocus, titlesGrid, viewPos, setTitlesTab, cycleTitleOrder } from '../lib/controller.svelte';
+  import { calm, setFocus, titlesGrid, viewPos, setTitlesTab, cycleTitleOrder } from '../lib/controller.svelte';
+  import { sfx } from '../lib/sound';
   import { titleHex } from '../lib/collections';
   import { hexToRgb, rgbToLch } from '../lib/oklch';
   import TopBar from '../components/TopBar.svelte';
@@ -123,13 +125,25 @@
     return { pos: Math.round(f * Math.max(1, slots - 1)), y };
   };
   const barJump = (pos: number) => { const i = realAt(pos); if (app.focus !== 'tit' + i) setFocus('tit' + i); };
+  let lastBarFam = -1;
+  const barTick = (pos: number) => {
+    if (app.titleOrder !== 'color') return;
+    const ti = realAt(pos);
+    if (ti >= titles.length) return;
+    const f = famOf(ti);
+    if (f !== lastBarFam) {
+      lastBarFam = f;
+      sfx.tick(0.92, 0.88 + f * 0.045);
+    }
+  };
   const barDown = (e: PointerEvent) => {
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-    const a = barAt(e); hov = a; barJump(a.pos);
+    lastBarFam = -1;
+    const a = barAt(e); hov = a; barJump(a.pos); barTick(a.pos);
   };
   const barMove = (e: PointerEvent) => {
     const a = barAt(e); hov = a;
-    if (e.buttons & 1) barJump(a.pos);
+    if (e.buttons & 1) { barJump(a.pos); barTick(a.pos); }
   };
   const hovTi = $derived(hov ? realAt(hov.pos) : -1);
   // Con el orden «Por color»: familias de la primera y la última portada de la página («Verdes–Azules»); el número de página lo da la TopBar.
@@ -139,6 +153,42 @@
     if (a > b) return '';
     const f1 = FAMS[famOf(vis[a])], f2 = FAMS[famOf(vis[b])];
     return f1 === f2 ? f1 : f1 + '–' + f2;
+  });
+
+  let tabsEl = $state<HTMLElement>();
+  let tabSlide = $state({ x: 0, w: 0, ready: false });
+  $effect(() => {
+    void tab;
+    let raf = 0;
+    queueMicrotask(() => {
+      const on = tabsEl?.querySelector<HTMLElement>('.tflt.on');
+      if (!on) return;
+      const x = on.offsetLeft, w = on.offsetWidth;
+      const wasReady = untrack(() => tabSlide.ready);
+      tabSlide = { x, w, ready: wasReady };
+      if (!wasReady) raf = requestAnimationFrame(() => { tabSlide = { x, w, ready: true }; });
+    });
+    return () => cancelAnimationFrame(raf);
+  });
+
+  let trackEl = $state<HTMLElement>();
+  let seenOrder = untrack(() => app.orderKey);
+  $effect(() => {
+    const ok = app.orderKey;
+    if (ok === seenOrder) return;
+    seenOrder = ok;
+    if (IS_TABLET || calm() || !grid) return;
+    queueMicrotask(() => {
+      const cards = [...(trackEl?.querySelectorAll<HTMLElement>('.tcov') ?? [])].slice(0, 10);
+      cards.forEach((el, k) => {
+        try {
+          el.animate(
+            [{ scale: '0.95', opacity: 0.65 }, { scale: '1', opacity: 1 }],
+            { duration: 200, delay: k * 14, easing: 'cubic-bezier(.34,1.32,.64,1)', fill: 'backwards' },
+          );
+        } catch { /* sin WAAPI */ }
+      });
+    });
   });
 </script>
 
@@ -156,12 +206,15 @@
 <div class="ambwash" style={wash}></div>
 <TopBar crumbs={['Inicio', P?.name ?? '']} />
 
-<div class="ttabs pill" style="--acc:{catFill.c};--f1:{catFill.c};--f2:{catFill.c2};--gf:linear-gradient(115deg,{catFill.c},{catFill.c2})">
+<div class="ttabs pill" class:slid={tabSlide.w > 0} bind:this={tabsEl} style="--acc:{catFill.c};--f1:{catFill.c};--f2:{catFill.c2};--gf:linear-gradient(115deg,{catFill.c},{catFill.c2})">
+  {#if tabSlide.w > 0}<span class="tslide" class:ready={tabSlide.ready} style="transform:translateX({tabSlide.x}px);width:{tabSlide.w}px" aria-hidden="true"></span>{/if}
   {#each TITLES_TABS as [f, label]}
     <button type="button" class="tflt" class:on={tab === f} onclick={() => setTitlesTab(f)}>{label}</button>
   {/each}
 </div>
 
+{#key tab}
+  <div class="tab-stage {app.tabDir >= 0 ? 'tab-r' : 'tab-l'}">
 {#if tab === 'list'}
   <MiListaDual />
 {:else if tab === 'coll'}
@@ -221,12 +274,12 @@
         {/if}
       </div>
       {#if grid && pages > 1}
-        <div class="pagep pill">Pág. {pg + 1}/{pages}<i><b style="left:{(pg / pages) * 100}%;width:{100 / pages}%"></b></i></div>
+        <div class="pagep pill">Pág. {#key pg}<span class="pop-n">{pg + 1}</span>{/key}/{pages}<i><b style="left:{(pg / pages) * 100}%;width:{100 / pages}%"></b></i></div>
       {/if}
     </div>
   </div>
   {#if grid}
-    <div class="ttrack" style="width:1280px;height:{pages * PH}px;transform:translateY({-pg * PH}px)">
+    <div class="ttrack" bind:this={trackEl} style="width:1280px;height:{pages * PH}px;transform:translateY({-pg * PH}px)">
       {#each idx as pos (realAt(pos))}
         {@const i = realAt(pos)}
         {@const j = pos % PS}
@@ -249,15 +302,15 @@
           </div>
         {/if}
         <div class="shit" role="slider" tabindex="-1" aria-label="Saltar a un juego" aria-valuenow={q} aria-valuemin={0} aria-valuemax={slots - 1}
-          onpointerdown={barDown} onpointermove={barMove} onpointerleave={() => (hov = null)}></div>
+          onpointerdown={barDown} onpointermove={barMove} onpointerleave={() => { hov = null; lastBarFam = -1; }}></div>
       </div>
-      {#if pageFam}<div class="pgfam pill">{pageFam}</div>{/if}
+      {#if pageFam}{#key pageFam}<div class="pgfam pill pop-n">{pageFam}</div>{/key}{/if}
     {/if}
   {:else}
     <div class="ctrack" style="transform:translateX({640 - 100 - q * 240}px)">
       {#each idx as pos (realAt(pos))}
         {@const i = realAt(pos)}
-        <div class="glass cover ccover fx" class:addtile={i === titles.length} class:dim={titles[i]?.hidden} class:f={app.focus === 'tit' + i} data-k="tit{i}" data-act="tit:{i}" data-i={i}
+        <div class="glass cover ccover fx" class:addtile={i === titles.length} class:dim={titles[i]?.hidden} class:f={app.focus === 'tit' + i} class:c-l={pos < q} class:c-r={pos > q} class:c-far={Math.abs(pos - q) >= 2} data-k="tit{i}" data-act="tit:{i}" data-i={i}
           style="left:{pos * 240}px{i < titles.length ? ';' + app.pipStyle(app.p, i) : ''}">
           {@render cell(i)}
         </div>
@@ -275,6 +328,8 @@
     {/if}
   {/if}
 {/if}
+  </div>
+{/key}
 
 <!-- Pistas: solo lo principal de cada pestaña; el resto (filtro, tamaño, audio, Ajustes) está en Start. -->
 {#if tab === 'list'}

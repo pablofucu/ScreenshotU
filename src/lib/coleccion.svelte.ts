@@ -3,13 +3,13 @@
 // Usa las funciones del controlador (foco, toast, paneles).
 import { app, accentOf } from './store.svelte';
 import { backend } from './backend';
-import { blip } from './sound';
+import { blip, sfx } from './sound';
 import { confirmTwice } from './confirm';
 import { RAINBOW, type Accent } from './icons';
 import { hueOf, inkDark } from './oklch';
 import { variablesCSS } from './atmos';
 import { openOsk } from './osk.svelte';
-import { bump, closeOverlay, go, openTitle, openTitlesMenu, playTitle, popOverlay, pushOverlay, setFocus, toast } from './controller.svelte';
+import { bump, closeOverlay, go, haptic, openTitle, openTitlesMenu, playTitle, popOverlay, pushOverlay, setFocus, toast } from './controller.svelte';
 import { closeOrConfirm, inkFor } from './ops.svelte';
 import { SHELF_CW, SHELF_PITCH } from './milista.svelte';
 import { autoHex, coverColors, gameYear, harmonize, railGradient, suggestGroups, suggestName, titleHex, topHues, yearLayout } from './collections';
@@ -179,8 +179,9 @@ function collMove(dx: number, dy: number) {
   if (dy > 0) ni = Math.floor(i / pr) < Math.floor((n - 1) / pr) ? Math.min(n - 1, i + pr) : -1;
   if (dy < 0) ni = i - pr;
   if (ni < 0 || ni >= n) { bump(flash(), dx, dy); return; }
+  if (dy !== 0) haptic.step();
   setFocus(collKey({ c, i: ni }));
-  blip(880);
+  sfx.move(dx, dy, 0.5);
 }
 
 /** LB/RB: colección anterior o siguiente (después de la última está «Nueva colección»). */
@@ -188,7 +189,8 @@ function collShift(d: number) {
   const c = app.collAt.c + d;
   if (c < 0 || c > app.collShelves.length) { bump(flash(), d, 0); return; }
   setFocus(collKey({ c, i: 0 }));
-  blip(700);
+  sfx.tab(d);
+  haptic.tab();
 }
 
 /** Mando y teclado en «Colecciones». Devuelve true si el botón se ha atendido aquí. */

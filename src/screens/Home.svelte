@@ -4,6 +4,7 @@
   import { ICON, RAINBOW } from '../lib/icons';
   import TopBar from '../components/TopBar.svelte';
   import { dayKey, fmtAgo, fmtDur, fmtShort, naiveNow, nCapturas, nTitulos } from '../lib/format';
+  import { GOAL_COL, type GoalKey } from '../lib/readgoals';
   import Hints from '../components/Hints.svelte';
   import RecentCard from '../components/RecentCard.svelte';
   import ReadCard from '../components/ReadCard.svelte';
@@ -53,8 +54,32 @@
     }
     return { min, shots };
   });
+
+  const washTarget = $derived.by(() => {
+    const f = app.focus;
+    if (f.startsWith('plat')) {
+      const pi = +f.slice(4);
+      if (plats[pi]) return app.pairStyle(app.secPair(pi));
+    } else if (f.startsWith('rec')) {
+      const r = recent[+f.slice(3)];
+      if (r) return app.pipStyle(r.pi, r.ti);
+    } else if (f.startsWith('dock')) {
+      const d = DOCK[+f.slice(4)];
+      if (d) return `--p1:${RAINBOW[d.c].c};--p2:${RAINBOW[(d.c + 1) % RAINBOW.length].c}`;
+    } else if (f === 'read' || f === 'avatar') {
+      const k = (app.homeGoal && app.goalKeys.includes(app.homeGoal) ? app.homeGoal : app.goalKeys[0]) as GoalKey | undefined;
+      const g = k ? GOAL_COL[k] : undefined;
+      if (g) return `--p1:${g.c};--p2:${g.edge}`;
+    }
+    return '';
+  });
+  let homeWash = $state('');
+  $effect(() => {
+    if (washTarget && !app.overlay) homeWash = washTarget;
+  });
 </script>
 
+<div class="ambwash" style={homeWash}></div>
 <TopBar crumbs={['Inicio']} pad />
 
 {#if !app.config.root}

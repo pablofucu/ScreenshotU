@@ -1,8 +1,27 @@
 <script lang="ts">
   import { IS_TABLET } from '../lib/backend';
   import { ICON } from '../lib/icons';
+  import { app } from '../lib/store.svelte';
 
   let { list }: { list: Array<[string, string, string?]> } = $props();
+
+  let hit = $state('');
+  let hitT: ReturnType<typeof setTimeout> | undefined;
+  $effect(() => {
+    const { key, n } = app.hintPulse;
+    if (!n || !key) return;
+    hit = key;
+    clearTimeout(hitT);
+    hitT = setTimeout(() => { hit = ''; }, 150);
+    return () => clearTimeout(hitT);
+  });
+  const normKey = (s: string) => {
+    const l = s.toLowerCase();
+    return l === 'start' ? 'menu' : l;
+  };
+  const matchesHint = (b: string, act?: string) =>
+    !!hit && (hit === act || b.split('/').some((s) => normKey(s) === hit));
+  const matchesGlyph = (k: string) => !!hit && normKey(k) === hit;
 
   // Hints combinados («LB/RB»): el clic en la mitad izquierda del botón lanza la primera acción,
   // el resto (mitad derecha o texto) la segunda. App.svelte lee data-hact al subir el clic.
@@ -72,8 +91,8 @@
   <div class="hints">
     {#each list as [b, l, act]}
       <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <div class="hint pill" role="button" tabindex="-1" aria-label={l} data-hact={act ?? ''} onclick={(e) => pick(e, b, act)}>
-        {#if b.length > 1 && /^[LR][BT](\/[LR][BT])?$/.test(b)}<span class="shp">{#each b.split('/') as k}<span class="btn sh {k[1] === 'T' ? 'tr' : 'bu'}">{k}</span>{/each}</span>{:else}<span class="btn {b.length > 1 ? 'sh' : b.toLowerCase()}">{b}</span>{/if}{l}
+      <div class="hint pill" class:hit={matchesHint(b, act)} role="button" tabindex="-1" aria-label={l} data-hact={act ?? ''} onclick={(e) => pick(e, b, act)}>
+        {#if b.length > 1 && /^[LR][BT](\/[LR][BT])?$/.test(b)}<span class="shp">{#each b.split('/') as k}<span class="btn sh {k[1] === 'T' ? 'tr' : 'bu'}" class:hit={matchesGlyph(k)}>{k}</span>{/each}</span>{:else}<span class="btn {b.length > 1 ? 'sh' : b.toLowerCase()}" class:hit={matchesGlyph(b)}>{b}</span>{/if}{l}
       </div>
     {/each}
   </div>

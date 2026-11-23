@@ -1,6 +1,7 @@
 <script lang="ts">
   // Estadísticas: clasificación de juegos por periodo (podio con hero y logo + lista con mini portadas)
   // y calendario de los últimos 6 meses con el detalle del día enfocado.
+  import { untrack } from 'svelte';
   import { app } from '../lib/store.svelte';
   import { RANK_VIEW_H, STATS_TABS, rankH, rankY } from '../lib/controller.svelte';
   import { CAL_WEEKS, STATS_KINDS, WDAYS, addDays, dayPlays, fmtClock, fmtHM, fmtLongDay } from '../lib/stats';
@@ -87,9 +88,43 @@
   const dayTotal = $derived(plays.reduce((a, p) => a + p.ms, 0));
   const SHOW = 4;
   // Si las pestañas no caben, la activa se desplaza hasta verse.
+  let vswEl = $state<HTMLElement>();
+  let vswSlide = $state({ x: 0, w: 0, ready: false });
   $effect(() => {
     void app.statsTab;
-    queueMicrotask(() => document.querySelector<HTMLElement>('.sx .vsw .gem')?.scrollIntoView({ block: 'nearest', inline: 'nearest' }));
+    void app.statsPrev;
+    let raf = 0;
+    queueMicrotask(() => {
+      const on = vswEl?.querySelector<HTMLElement>('.o.gem');
+      on?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      if (!on) return;
+      const x = on.offsetLeft, w = on.offsetWidth;
+      const wasReady = untrack(() => vswSlide.ready);
+      vswSlide = { x, w, ready: wasReady };
+      if (!wasReady) raf = requestAnimationFrame(() => { vswSlide = { x, w, ready: true }; });
+    });
+    return () => cancelAnimationFrame(raf);
+  });
+
+  let kindEl = $state<HTMLElement>();
+  let kindSlide = $state({ x: 0, w: 0, ready: false });
+  $effect(() => {
+    void app.statsTab;
+    void app.statsKind;
+    let raf = 0;
+    if (app.statsTab !== 'rank') {
+      kindSlide = { x: 0, w: 0, ready: false };
+      return;
+    }
+    queueMicrotask(() => {
+      const on = kindEl?.querySelector<HTMLElement>('.o.gem');
+      if (!on) return;
+      const x = on.offsetLeft, w = on.offsetWidth;
+      const wasReady = untrack(() => kindSlide.ready);
+      kindSlide = { x, w, ready: wasReady };
+      if (!wasReady) raf = requestAnimationFrame(() => { kindSlide = { x, w, ready: true }; });
+    });
+    return () => cancelAnimationFrame(raf);
   });
 </script>
 
@@ -99,10 +134,13 @@
   {#if app.statsTab === 'rank'}
     <span class="cat sel" data-hact="rt" title="Cambiar de categoría">{app.statsPlat != null && pname(app.statsPlat) ? `${pname(app.statsPlat)} · ${KIND_LABEL[app.statsKind]}` : 'Sin partidas'}</span>
     <span class="dot"></span>
-    <span class="gl" data-hact="view">{#each STATS_KINDS as k}<span class="o" class:gem={app.statsKind === k}>{KIND_LABEL[k]}</span>{/each}</span>
+    <span class="gl" class:slid={kindSlide.w > 0} bind:this={kindEl} data-hact="view">
+      {#if kindSlide.w > 0}<span class="gslide" class:ready={kindSlide.ready} style="transform:translateX({kindSlide.x}px);width:{kindSlide.w}px" aria-hidden="true"></span>{/if}
+      {#each STATS_KINDS as k}<span class="o" class:gem={app.statsKind === k}>{KIND_LABEL[k]}</span>{/each}
+    </span>
     <span class="gl" class:off={all}>
       <span class="chev" class:dis={!canOlder} data-hact="lb">{@render chev(true)}</span>
-      <span class="lbl">{R.range.label}</span>
+      {#key app.perKey}<span class="lbl {app.perDir >= 0 ? 'per-r' : 'per-l'}">{R.range.label}</span>{/key}
       <span class="chev" class:dis={!canNewer} data-hact="rb">{@render chev(false)}</span>
     </span>
   {:else if app.statsTab === 'year'}
@@ -110,14 +148,14 @@
     <span class="cat">Todas las categorías</span>
     <span class="gl">
       <span class="chev" class:dis={yi <= 0} data-hact="lb">{@render chev(true)}</span>
-      <span class="lbl">{app.yearNow}</span>
+      {#key app.perKey}<span class="lbl {app.perDir >= 0 ? 'per-r' : 'per-l'}">{app.yearNow}</span>{/key}
       <span class="chev" class:dis={yi < 0 || yi >= app.years.length - 1} data-hact="rb">{@render chev(false)}</span>
     </span>
   {:else if app.statsTab === 'week'}
     <span class="cat">Todas las categorías</span>
     <span class="gl">
       <span class="chev" class:dis={!weekCanOlder} data-hact="lb">{@render chev(true)}</span>
-      <span class="lbl">{weekLabel}</span>
+      {#key app.perKey}<span class="lbl {app.perDir >= 0 ? 'per-r' : 'per-l'}">{weekLabel}</span>{/key}
       <span class="chev" class:dis={app.weekOff >= 0} data-hact="rb">{@render chev(false)}</span>
     </span>
   {:else if app.statsTab === 'fin'}
@@ -125,7 +163,7 @@
     <span class="cat sel" data-hact="view" title="Cambiar de categoría">{app.finCat >= 0 && pname(app.finCat) ? pname(app.finCat) : 'Todas las categorías'}</span>
     <span class="gl">
       <span class="chev" class:dis={fi <= 0} data-hact="lb">{@render chev(true)}</span>
-      <span class="lbl">{app.finYear}</span>
+      {#key app.perKey}<span class="lbl {app.perDir >= 0 ? 'per-r' : 'per-l'}">{app.finYear}</span>{/key}
       <span class="chev" class:dis={fi < 0 || fi >= app.finYears.length - 1} data-hact="rb">{@render chev(false)}</span>
     </span>
   {:else if app.statsTab === 'pano'}
@@ -133,7 +171,7 @@
     <span class="cat sel" data-hact="rt" title="Cambiar de categoría">{panoPlat >= 0 && pname(panoPlat) ? pname(panoPlat) : 'Sin partidas'}</span>
     <span class="gl">
       <span class="chev" class:dis={pi <= 0} data-hact="lb">{@render chev(true)}</span>
-      <span class="lbl">{PER_LABEL(app.panoPer)}</span>
+      {#key app.perKey}<span class="lbl {app.perDir >= 0 ? 'per-r' : 'per-l'}">{PER_LABEL(app.panoPer)}</span>{/key}
       <span class="chev" class:dis={pi < 0 || pi >= PANO_PERS.length - 1} data-hact="rb">{@render chev(false)}</span>
     </span>
   {:else if app.statsTab === 'streak'}
@@ -144,7 +182,7 @@
     {#if keys.length > 1 && sk}
       <span class="gl">
         <span class="chev" class:dis={si <= 0} data-hact="lb">{@render chev(true)}</span>
-        <span class="lbl">{GOAL_COL[sk].full}</span>
+        {#key app.perKey}<span class="lbl {app.perDir >= 0 ? 'per-r' : 'per-l'}">{GOAL_COL[sk].full}</span>{/key}
         <span class="chev" class:dis={si >= keys.length - 1} data-hact="rb">{@render chev(false)}</span>
       </span>
     {/if}
@@ -154,11 +192,12 @@
     <span class="cat sel" data-hact="view" title="Cambiar de categoría">{app.daysCat >= 0 && pname(app.daysCat) ? pname(app.daysCat) : 'Todas las categorías'}</span>
     <span class="gl">
       <span class="chev" class:dis={yi <= 0} data-hact="lb">{@render chev(true)}</span>
-      <span class="lbl">{app.daysYear}</span>
+      {#key app.perKey}<span class="lbl {app.perDir >= 0 ? 'per-r' : 'per-l'}">{app.daysYear}</span>{/key}
       <span class="chev" class:dis={yi < 0 || yi >= ys.length - 1} data-hact="rb">{@render chev(false)}</span>
     </span>
   {/if}
-  <span class="gl vsw">
+  <span class="gl vsw" class:slid={vswSlide.w > 0} bind:this={vswEl}>
+    {#if vswSlide.w > 0}<span class="gslide" class:ready={vswSlide.ready} style="transform:translateX({vswSlide.x}px);width:{vswSlide.w}px" aria-hidden="true"></span>{/if}
     {#each TABS as v}
       <span class="o" class:gem={app.statsTab === v || (app.statsTab === 'year' && app.statsPrev === v)} data-hact="stab:{v}">{VIEW_LABEL[v]}</span>
     {/each}
@@ -169,21 +208,18 @@
   <svg viewBox="0 0 12 12"><path d={left ? 'M7.5 2 3.5 6l4 4' : 'M4.5 2l4 4-4 4'} /></svg>
 {/snippet}
 
+{#key app.statsTab}
+<div class="tab-stage {app.tabDir >= 0 ? 'tab-r' : 'tab-l'}">
 {#if app.statsTab === 'week'}
   <StatsWeek />
-  <Hints list={[['LB/RB', 'Semana', 'rb'], ...COMMON]} />
 {:else if app.statsTab === 'fin'}
   <StatsFin />
-  <Hints list={[['View', 'Categoría', 'view'], ['LB/RB', 'Año', 'rb'], ...COMMON]} />
 {:else if app.statsTab === 'pano'}
   <StatsPano pi={panoPlat} />
-  <Hints list={[['LB/RB', app.statsTab === 'pano' ? 'Periodo' : 'Año', 'rb'], ...(app.statsTab === 'pano' ? [['LT/RT', 'Categoría', 'rt'] as [string, string, string]] : []), ['B', 'Volver', 'b']]} />
 {:else if app.statsTab === 'streak'}
   <Rachas />
-  <Hints list={[...(app.goalKeys.length > 1 ? [['LB/RB', 'Categoría', 'rb'] as [string, string, string]] : []), ['Y', 'Clasificación', 'y'], ['B', 'Volver', 'b']]} />
 {:else if app.statsTab === 'year'}
   <Year />
-  <Hints list={[['A', 'Siguiente', 'a'], ['LB/RB', 'Año', 'rb'], ['Y', 'Cerrar', 'y'], ['B', 'Volver', 'b']]} />
 {:else if app.statsTab === 'rank'}
   <div class="stsum">
     <div class="rbox">
@@ -240,11 +276,25 @@
       <div class="stmore">Puesto {+app.focus.slice(2) + 1} de {rows.length}</div>
     {/if}
   {/if}
-
-  <Hints list={[...(rows.length ? [['A', 'Ver juego', 'a'] as [string, string, string]] : []),['LB/RB', 'Fecha', 'rb'], ['View', 'Periodo', 'view'], ['LT/RT', 'Categoría', 'rt'], ['Y', 'Calendario', 'y'], ['B', 'Volver', 'b']]} />
 {:else if app.statsTab === 'days'}
   <Dias />
+{/if}
+</div>
+{/key}
 
+{#if app.statsTab === 'week'}
+  <Hints list={[['LB/RB', 'Semana', 'rb'], ...COMMON]} />
+{:else if app.statsTab === 'fin'}
+  <Hints list={[['View', 'Categoría', 'view'], ['LB/RB', 'Año', 'rb'], ...COMMON]} />
+{:else if app.statsTab === 'pano'}
+  <Hints list={[['LB/RB', 'Periodo', 'rb'], ['LT/RT', 'Categoría', 'rt'], ['B', 'Volver', 'b']]} />
+{:else if app.statsTab === 'streak'}
+  <Hints list={[...(app.goalKeys.length > 1 ? [['LB/RB', 'Categoría', 'rb'] as [string, string, string]] : []), ['Y', 'Clasificación', 'y'], ['B', 'Volver', 'b']]} />
+{:else if app.statsTab === 'year'}
+  <Hints list={[['A', 'Siguiente', 'a'], ['LB/RB', 'Año', 'rb'], ['Y', 'Cerrar', 'y'], ['B', 'Volver', 'b']]} />
+{:else if app.statsTab === 'rank'}
+  <Hints list={[...(rows.length ? [['A', 'Ver juego', 'a'] as [string, string, string]] : []),['LB/RB', 'Fecha', 'rb'], ['View', 'Periodo', 'view'], ['LT/RT', 'Categoría', 'rt'], ['Y', 'Calendario', 'y'], ['B', 'Volver', 'b']]} />
+{:else if app.statsTab === 'days'}
   <Hints list={[['View', 'Categoría', 'view'], ['LB/RB', 'Año', 'rb'], ...COMMON]} />
 {/if}
 
