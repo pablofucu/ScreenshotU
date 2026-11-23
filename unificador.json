@@ -4426,50 +4426,7 @@
       ]
     }
   ],
-  "news": [
-    {
-      "text": "📊 Arreglar Estadísticas: Colores y Terminados",
-      "kind": "fase",
-      "by": "claude",
-      "at": "2026-11-22T04:59:46+01:00",
-      "ref": "AE/Colores y Terminados"
-    },
-    {
-      "text": "📊 Arreglar Estadísticas: Semana y Días",
-      "kind": "fase",
-      "by": "claude",
-      "at": "2026-11-22T05:07:24+01:00",
-      "ref": "AE/Semana y Días"
-    },
-    {
-      "text": "📊 Arreglar Estadísticas: Pulido",
-      "kind": "fase",
-      "by": "claude",
-      "at": "2026-11-22T05:07:39+01:00",
-      "ref": "AE/Pulido"
-    },
-    {
-      "text": "✨ Navegación más juicy: Tacto base",
-      "kind": "fase",
-      "by": "antigravity",
-      "at": "2026-11-23T14:43:50+01:00",
-      "ref": "NMJ/Tacto base"
-    },
-    {
-      "text": "✨ Navegación más juicy: Continuidad",
-      "kind": "fase",
-      "by": "antigravity",
-      "at": "2026-11-23T14:48:36+01:00",
-      "ref": "NMJ/Continuidad"
-    },
-    {
-      "text": "✨ Navegación más juicy: Profundidad visual",
-      "kind": "fase",
-      "by": "antigravity",
-      "at": "2026-11-23T14:52:43+01:00",
-      "ref": "NMJ/Profundidad visual"
-    }
-  ],
+  "news": [],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",
   "versions": [
     {
@@ -4578,6 +4535,57 @@
       ],
       "sha": "b1a213f8559cee78e7bdb18dcee22168d0d7ac2b",
       "tag": "v2.5.0"
+    },
+    {
+      "version": "2.6.0",
+      "at": "2026-11-23T14:59:41+01:00",
+      "by": "antigravity",
+      "news": [
+        {
+          "text": "📊 Arreglar Estadísticas: Colores y Terminados",
+          "kind": "fase",
+          "by": "claude",
+          "at": "2026-11-22T04:59:46+01:00",
+          "ref": "AE/Colores y Terminados"
+        },
+        {
+          "text": "📊 Arreglar Estadísticas: Semana y Días",
+          "kind": "fase",
+          "by": "claude",
+          "at": "2026-11-22T05:07:24+01:00",
+          "ref": "AE/Semana y Días"
+        },
+        {
+          "text": "📊 Arreglar Estadísticas: Pulido",
+          "kind": "fase",
+          "by": "claude",
+          "at": "2026-11-22T05:07:39+01:00",
+          "ref": "AE/Pulido"
+        },
+        {
+          "text": "✨ Navegación más juicy: Tacto base",
+          "kind": "fase",
+          "by": "antigravity",
+          "at": "2026-11-23T14:43:50+01:00",
+          "ref": "NMJ/Tacto base"
+        },
+        {
+          "text": "✨ Navegación más juicy: Continuidad",
+          "kind": "fase",
+          "by": "antigravity",
+          "at": "2026-11-23T14:48:36+01:00",
+          "ref": "NMJ/Continuidad"
+        },
+        {
+          "text": "✨ Navegación más juicy: Profundidad visual",
+          "kind": "fase",
+          "by": "antigravity",
+          "at": "2026-11-23T14:52:43+01:00",
+          "ref": "NMJ/Profundidad visual"
+        }
+      ],
+      "sha": "06c7633c50ece7916cfef993b5c6807641745efb",
+      "tag": "v2.6.0"
     }
   ]
 }
