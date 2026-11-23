@@ -2,6 +2,7 @@
   import { app, accv } from '../lib/store.svelte';
   import { IS_TABLET } from '../lib/backend';
   import { ICON, RAINBOW } from '../lib/icons';
+  import { orderedPlatforms, sectionRainbowIdx, type SpaceId } from '../lib/sections';
   import TopBar from '../components/TopBar.svelte';
   import { dayKey, fmtAgo, fmtDur, fmtShort, naiveNow, nCapturas, nTitulos } from '../lib/format';
   import { GOAL_COL, type GoalKey } from '../lib/readgoals';
@@ -12,20 +13,51 @@
 
   const DOCK = [
     { n: 'Buscar', ic: ICON.search, c: 0 },
-    { n: 'Favoritas', ic: ICON.star, c: 1 },
-    { n: 'Estadísticas', ic: ICON.chart, c: 3 },
     { n: 'Añadir juego', ic: ICON.plus, c: 4 },
   ];
 
+  const SPACES: ReadonlyArray<{ id: SpaceId; label: string; ic: string }> = [
+    { id: 'album', label: 'Álbum', ic: ICON.album },
+    { id: 'stats', label: 'Estadísticas', ic: ICON.statsTile },
+    { id: 'logros', label: 'Logros', ic: ICON.logros },
+  ];
+
   const plats = $derived(app.lib.platforms);
-  const shown = $derived(plats.map((p, i) => ({ p, i })));
-  const size = 190;
-  // Con muchas plataformas el paso se encoge para que todas quepan en pantalla.
-  const step = $derived(shown.length > 1 ? Math.min(shown.length > 3 ? 232 : 270, (1280 - 80 - size) / (shown.length - 1)) : 270);
-  const x0 = $derived((1280 - (shown.length - 1) * step - size) / 2);
-  const lw = $derived(Math.min(size + 40, step - 4));
+  const shown = $derived(orderedPlatforms(plats));
+
+  // Jerarquía 4+3 en fila: 4 teselas grandes (170 px) + separador vertical + 3 espacios medianos (132 px),
+  // alineados abajo en y = 264 px y etiquetas alineadas en top: 280 px.
+  const CAT_BASE = 264;
+  const SP_S = 132;
+  const SP_STEP = 148;
+  const SP_TOP = CAT_BASE - SP_S; // 132
+  const SP_W = (SPACES.length - 1) * SP_STEP + SP_S; // 428
+  const DIV_GAP = 36;
+
+  const geo = $derived.by(() => {
+    const n = shown.length;
+    if (n <= 4) {
+      const catS = 170;
+      const catStep = 190;
+      const catW = n > 0 ? (n - 1) * catStep + catS : 0;
+      const totalW = n > 0 ? catW + DIV_GAP + SP_W : SP_W;
+      const x0 = Math.round((1280 - totalW) / 2);
+      const spX0 = n > 0 ? x0 + catW + DIV_GAP : x0;
+      return { catS, catStep, catTop: CAT_BASE - catS, x0, spX0, divX: x0 + catW + DIV_GAP / 2 };
+    }
+    const maxCatW = 1280 - 76 - DIV_GAP - SP_W;
+    const catStep = Math.floor(maxCatW / n);
+    const catS = Math.min(170, Math.max(108, catStep - 14));
+    const catW = (n - 1) * catStep + catS;
+    const totalW = catW + DIV_GAP + SP_W;
+    const x0 = Math.round((1280 - totalW) / 2);
+    return { catS, catStep, catTop: CAT_BASE - catS, x0, spX0: x0 + catW + DIV_GAP, divX: x0 + catW + DIV_GAP / 2 };
+  });
+
   const totalTitles = $derived(plats.reduce((n, p) => n + p.titles.length, 0));
   const count = (p: (typeof plats)[number]) => p.titles.reduce((s, t) => s + t.shots.length, 0);
+  const totalShots = $derived(plats.reduce((s, p) => s + count(p), 0));
+  const totalPlay = $derived(plats.reduce((s, p) => s + p.titles.reduce((a, t) => a + (t.hidden ? 0 : t.playSeconds), 0), 0));
 
   // «Seguir jugando»
   const CW = 350, CGAP = 34, RW = 440;
@@ -55,11 +87,27 @@
     return { min, shots };
   });
 
+  const achSub = $derived.by(() => {
+    const o = app.achOverview;
+    if (!o || o.totalAchievements === 0) return 'Vitrina de logros';
+    if (o.completedGames > 0) return `${o.totalUnlocked.toLocaleString('es-ES')} · ${o.completedGames} al 100 %`;
+    return `${o.totalUnlocked.toLocaleString('es-ES')} de ${o.totalAchievements.toLocaleString('es-ES')}`;
+  });
+
+  function spaceSub(id: SpaceId): string {
+    if (id === 'album') return app.favs.size > 0 ? `${nCapturas(totalShots)} · ${app.favs.size} fav.` : nCapturas(totalShots);
+    if (id === 'stats') return week.min > 0 ? `${fmtDur(week.min * 60)} / sem` : totalPlay > 0 ? fmtDur(totalPlay) : 'Actividad y rachas';
+    return achSub;
+  }
+
   const washTarget = $derived.by(() => {
     const f = app.focus;
     if (f.startsWith('plat')) {
       const pi = +f.slice(4);
       if (plats[pi]) return app.pairStyle(app.secPair(pi));
+    } else if (f.startsWith('space')) {
+      const sp = SPACES[+f.slice(5)];
+      if (sp) return app.pairStyle(app.spacePair(sp.id));
     } else if (f.startsWith('rec')) {
       const r = recent[+f.slice(3)];
       if (r) return app.pipStyle(r.pi, r.ti);
@@ -100,15 +148,49 @@
   {/if}
 {:else}
   {#each shown as { p, i }, k (p.id)}
+    {@const rbIdx = sectionRainbowIdx(p.id)}
     {@const a = app.platAcc(i)}
-    {@const x = x0 + k * step}
-    <div class="glass plat fx" class:f={app.focus === 'plat' + i} data-k="plat{i}" data-act="plat:{i}" style="left:{x}px;top:100px;width:{size}px;height:{size}px;--acc:{a.c};--accv:{accv(a)};--pc:{a.c}">
+    {@const pf = app.pairFill(app.secPair(i))}
+    {@const x = geo.x0 + k * geo.catStep}
+    <div
+      class="glass plat fx"
+      class:gold={rbIdx === 2}
+      class:f={app.focus === 'plat' + i}
+      data-k="plat{i}"
+      data-act="plat:{i}"
+      style="left:{x}px;top:{geo.catTop}px;width:{geo.catS}px;height:{geo.catS}px;--acc:{a.c};--accv:{accv(a)};--pc:{RAINBOW[rbIdx].c};--pg:{pf.g1};--pf:{pf.c};--g1:{pf.g1};--g2:{pf.g2};--f1:{pf.c};--f2:{pf.c2}"
+    >
       <div class="face">{@html ICON[p.icon] ?? ICON.pc}</div>
     </div>
-    <div class="plabel hl" class:on={app.focus === 'plat' + i} style="left:{x + (size - lw) / 2}px;top:{112 + size}px;width:{lw}px;--pc:{a.c}">
+    <div class="plabel" class:on={app.focus === 'plat' + i} style="left:{x - 8}px;top:280px;width:{geo.catS + 16}px;--pc:{RAINBOW[rbIdx].c};--pf:{pf.c}">
       {p.name}<small>{nTitulos(p.titles.length)} · {nCapturas(count(p))}</small>
     </div>
   {/each}
+
+  {#if shown.length > 0}
+    <div class="div-v" style="left:{geo.divX}px;top:{Math.max(108, geo.catTop + 22)}px;height:{Math.max(100, CAT_BASE - Math.max(108, geo.catTop + 22) - 12)}px"></div>
+  {/if}
+  <div class="group-tag" style="left:{geo.spX0}px;top:108px">Espacios</div>
+
+  {#each SPACES as sp, si (sp.id)}
+    {@const rbIdx = sectionRainbowIdx(sp.id)}
+    {@const a = app.spaceAcc(sp.id)}
+    {@const pf = app.pairFill(app.spacePair(sp.id))}
+    {@const x = geo.spX0 + si * SP_STEP}
+    <div
+      class="glass plat space fx"
+      class:f={app.focus === 'space' + si}
+      data-k="space{si}"
+      data-act="space:{sp.id}"
+      style="left:{x}px;top:{SP_TOP}px;width:{SP_S}px;height:{SP_S}px;--acc:{a.c};--accv:{accv(a)};--pc:{RAINBOW[rbIdx].c};--pg:{pf.g1};--pf:{pf.c};--g1:{pf.g1};--g2:{pf.g2};--f1:{pf.c};--f2:{pf.c2}"
+    >
+      <div class="face">{@html sp.ic}</div>
+    </div>
+    <div class="plabel sp-lbl" class:on={app.focus === 'space' + si} style="left:{x - 6}px;top:280px;width:{SP_S + 12}px;--pc:{RAINBOW[rbIdx].c};--pf:{pf.c}">
+      {sp.label}<small>{spaceSub(sp.id)}</small>
+    </div>
+  {/each}
+
   {#if totalTitles === 0 && !app.scanning}
     <div class="note pill" style="left:50%;top:452px">No encontré capturas en esta carpeta. Espero <b>Biblioteca/Plataforma/Juego/imagen.png</b>. Cambia la carpeta en Ajustes.</div>
   {/if}
@@ -137,7 +219,7 @@
 
 <div class="hdock">
   {#each DOCK as d, i}
-    {#if !(IS_TABLET && i === 3)}
+    {#if !(IS_TABLET && i === 1)}
     <div class="dpill pill fx" class:f={app.focus === 'dock' + i} data-k="dock{i}" data-act="dock:{i}" style="--dc:{RAINBOW[d.c].c}">
       <i>{@html d.ic}</i>{d.n}
     </div>
@@ -152,30 +234,4 @@
 <style>
   .hsect small{font-size:var(--t-m);font-weight:600;letter-spacing:0}
   .hsect small :global(b){color:var(--ink);font-weight:800}
-  /* Plataformas: el color del foco entra fundido (colores registrados, que sí se interpolan) y la
-     escala va sin rebote, para que color y tamaño lleguen a la vez. */
-  @property --pt { syntax: '<color>'; inherits: false; initial-value: transparent; }
-  @property --pm { syntax: '<color>'; inherits: false; initial-value: transparent; }
-  @property --pb { syntax: '<color>'; inherits: false; initial-value: transparent; }
-  .plat {
-    --pt: var(--glass-top);
-    --pm: var(--glass-mid);
-    --pb: var(--glass-bot);
-    background: linear-gradient(165deg, var(--pt) 0%, var(--pm) 48%, var(--pb) 100%);
-    transition: transform 0.28s cubic-bezier(.2, .8, .2, 1), box-shadow 0.28s cubic-bezier(.2, .8, .2, 1),
-      --pt 0.28s cubic-bezier(.2, .8, .2, 1), --pm 0.28s cubic-bezier(.2, .8, .2, 1), --pb 0.28s cubic-bezier(.2, .8, .2, 1);
-  }
-  .plat.f {
-    --pt: color-mix(in srgb, var(--g1) 55%, white);
-    --pm: var(--f1);
-    --pb: var(--f2);
-    background: linear-gradient(165deg, var(--pt) 0%, var(--pm) 48%, var(--pb) 100%);
-  }
-  .plabel,
-  .plabel.on {
-    transition: color 0.28s cubic-bezier(.2, .8, .2, 1);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .plat, .plabel, .plabel.on { transition: none; }
-  }
 </style>

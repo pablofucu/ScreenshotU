@@ -12,9 +12,10 @@
   const RBY = rbGrad('180deg');
   // Tramo de arcoíris de la sección actual (subrayado de pestañas); dentro de un juego, su degradado.
   const rbsec = $derived.by(() => {
-    if (app.secK === null) return 'var(--grad)';
-    const d = 1 / (app.lib.platforms.length + 2);
-    const a = Math.max(0, Math.min(app.secK * d - d / 2, 1 - d));
+    if (app.secSlot === null) return 'var(--grad)';
+    const d = 1 / 6;
+    const t = app.secSlot / 6;
+    const a = Math.max(0, Math.min(t - d / 2, 1 - d));
     return rbGrad('90deg', a, a + d);
   });
   import Home from './screens/Home.svelte';
@@ -26,6 +27,7 @@
   import Evo from './screens/Evo.svelte';
   import Streak from './screens/Streak.svelte';
   import GameStats from './screens/GameStats.svelte';
+  import AchievementsHub from './screens/AchievementsHub.svelte';
   import Settings from './screens/Settings.svelte';
   import ActionMenu from './screens/ActionMenu.svelte';
   import GameSettings from './screens/GameSettings.svelte';
@@ -224,6 +226,7 @@
         {:else if app.view === 'evo'}<Evo />
         {:else if app.view === 'gstats'}<GameStats />
         {:else if app.view === 'streak'}<Streak />
+        {:else if app.view === 'achievements'}<AchievementsHub />
         {:else}<Viewer />{/if}
       </div>
     {/key}

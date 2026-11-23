@@ -41,7 +41,7 @@ const hitEl = () => document.querySelector('.srch .srow-g.f') ?? document.queryS
 
 export function openSearchResult(pi: number, ti: number) {
   closeOverlay();
-  app.p = pi; app.hp = pi;
+  app.p = pi; app.hp = pi; app.homeSpace = null;
   openTitle(ti, 'home');
 }
 

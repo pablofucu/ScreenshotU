@@ -395,7 +395,7 @@ export function onFilesDropped(paths: string[]) {
   if (!imgs.length) { toast('Solo se pueden añadir imágenes (png, jpg, jpeg o webp)', 3000); return; }
   const t = curTitle();
   if (t?.members) { toast('Abre un juego (no una colección) para soltar capturas encima', 3000); return; }
-  if (!t || app.favView || !['detail', 'shots', 'viewer'].includes(app.view)) { toast('Abre un juego para soltar capturas encima', 3000); return; }
+  if (!t || app.isAlbum || !['detail', 'shots', 'viewer'].includes(app.view)) { toast('Abre un juego para soltar capturas encima', 3000); return; }
   void importInto(t, imgs);
 }
 
@@ -435,7 +435,7 @@ export function shotMenuItems(): MenuItem[] {
     else { it.push('selall'); if (app.sel.size) it.push('move'); it.push('unselect'); }
   } else it.push('copy', 'move');
   if (!IS_TABLET) it.push('reveal');
-  if (!app.favView && !app.collTitle && !IS_TABLET) it.push('addshots');
+  if (!app.isAlbum && !app.collTitle && !IS_TABLET) it.push('addshots');
   // Borrar (a la Papelera): la captura enfocada o, en el modo selección, las marcadas.
   if (app.selMode) { if (app.sel.size) it.push('delsel'); }
   else if (app.cur.shots[app.s]) it.push('delshot');
@@ -508,7 +508,7 @@ function forgetShots(gone: string[]) {
     })),
   };
   for (const p of gone) { app.favs.delete(p); app.sel.delete(p); }
-  if (app.favView) app.favSnap = app.favSnap.filter((s) => !dead.has(s.path));
+  if (app.isAlbum) app.albumSnap = app.albumSnap.filter((s) => !dead.has(s.path));
   const now = app.cur.shots;
   const i = keep ? now.findIndex((s) => s.path === keep) : -1;
   if (app.view === 'viewer') {
@@ -547,7 +547,7 @@ async function trashShots(paths: string[]) {
 /* ------------------------------------------------------------------ */
 export function openMoveTo(paths: string[]) {
   const cur = curTitle();
-  const exclude = !app.favView && cur ? cur.dir : '';
+  const exclude = !app.isAlbum && cur ? cur.dir : '';
   const targets: MoveTarget[] = [];
   const order = [...app.lib.platforms.keys()].sort((a, b) => (a === app.p ? -1 : b === app.p ? 1 : a - b));
   for (const pi of order) {

@@ -778,6 +778,192 @@ pub fn unlocks_between(c: &Connection, from_s: i64, to_s: i64) -> Result<Vec<Ran
     Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
 }
 
+/// Totales de logros acumulados por `app_id` (desde la BD, sin tocar disco).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppAchievementStats {
+    pub app_id: String,
+    pub total: usize,
+    pub unlocked: usize,
+    pub rare_unlocked: usize,
+    pub last_unlocked_at: Option<i64>,
+}
+
+/// Logro desbloqueado para la vitrina global (`unlocked_at` en segundos epoch).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GlobalUnlock {
+    pub app_id: String,
+    pub api_name: String,
+    pub display_name: String,
+    pub description: String,
+    pub icon: Option<String>,
+    pub unlocked_at: i64,
+    pub pct: Option<f32>,
+}
+
+/// Resumen agregado de todos los logros registrados en SQLite.
+#[derive(Debug, Clone, PartialEq)]
+pub struct GlobalAchievementsRaw {
+    pub apps: Vec<AppAchievementStats>,
+    pub recent: Vec<GlobalUnlock>,
+    pub rarest: Vec<GlobalUnlock>,
+}
+
+/// Agrega totales por `app_id`, últimos desbloqueos y desbloqueos más raros leyendo solo la BD.
+/// Tolera bases sin la tabla `ach_rarity` (deja `rare_unlocked = 0`, `rarest` vacío y `pct = None`).
+pub fn global_overview(
+    c: &Connection,
+    recent_limit: usize,
+    rarest_limit: usize,
+) -> Result<GlobalAchievementsRaw> {
+    let mut totals: HashMap<String, usize> = HashMap::new();
+    {
+        let mut st = c.prepare("SELECT app_id, COUNT(*) FROM achievements GROUP BY app_id")?;
+        let rows = st.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))?;
+        for r in rows {
+            let (app_id, cnt) = r?;
+            totals.insert(app_id, cnt.max(0) as usize);
+        }
+    }
+
+    let mut by_app: HashMap<String, AppAchievementStats> = totals
+        .iter()
+        .map(|(app_id, &total)| {
+            (
+                app_id.clone(),
+                AppAchievementStats {
+                    app_id: app_id.clone(),
+                    total,
+                    unlocked: 0,
+                    rare_unlocked: 0,
+                    last_unlocked_at: None,
+                },
+            )
+        })
+        .collect();
+
+    {
+        const UNLOCK_BASE: &str = "SELECT u.app_id, COUNT(*), MAX(u.unlocked_at), {RARE}
+             FROM achievement_unlocks u
+             {JOIN}
+             GROUP BY u.app_id";
+        let with = UNLOCK_BASE
+            .replace(
+                "{RARE}",
+                "SUM(CASE WHEN r.pct IS NOT NULL AND r.pct < 12.0 THEN 1 ELSE 0 END)",
+            )
+            .replace(
+                "{JOIN}",
+                "LEFT JOIN ach_rarity r ON r.app_id = CAST(u.app_id AS INTEGER) AND lower(r.api_name) = lower(u.api_name)",
+            );
+        let mut st = match c.prepare(&with) {
+            Ok(st) => st,
+            Err(_) => c.prepare(&UNLOCK_BASE.replace("{RARE}", "0").replace("{JOIN}", ""))?,
+        };
+        let rows = st.query_map([], |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, i64>(1)?,
+                r.get::<_, Option<i64>>(2)?,
+                r.get::<_, Option<i64>>(3)?,
+            ))
+        })?;
+        for r in rows {
+            let (app_id, unl, last, rare) = r?;
+            let unlocked = unl.max(0) as usize;
+            let rare_unlocked = rare.unwrap_or(0).max(0) as usize;
+            let entry = by_app.entry(app_id.clone()).or_insert_with(|| AppAchievementStats {
+                app_id,
+                total: unlocked,
+                unlocked: 0,
+                rare_unlocked: 0,
+                last_unlocked_at: None,
+            });
+            entry.unlocked = unlocked;
+            entry.total = entry.total.max(unlocked);
+            entry.rare_unlocked = rare_unlocked;
+            entry.last_unlocked_at = last;
+        }
+    }
+
+    const ITEM_BASE: &str = "SELECT u.app_id, u.api_name, COALESCE(a.display_name, u.api_name),
+                COALESCE(a.description, ''), a.icon, u.unlocked_at, {PCT}
+         FROM achievement_unlocks u
+         LEFT JOIN achievements a ON a.app_id = u.app_id AND a.api_name = u.api_name
+         {JOIN}
+         {WHERE}
+         ORDER BY {ORDER}
+         LIMIT ?1";
+
+    let map_item = |r: &rusqlite::Row<'_>| -> rusqlite::Result<GlobalUnlock> {
+        Ok(GlobalUnlock {
+            app_id: r.get(0)?,
+            api_name: r.get(1)?,
+            display_name: r.get(2)?,
+            description: r.get(3)?,
+            icon: r.get(4)?,
+            unlocked_at: r.get(5)?,
+            pct: r.get::<_, Option<f64>>(6)?.map(|p| p as f32),
+        })
+    };
+
+    let recent = {
+        let q = ITEM_BASE
+            .replace("{PCT}", "r.pct")
+            .replace(
+                "{JOIN}",
+                "LEFT JOIN ach_rarity r ON r.app_id = CAST(u.app_id AS INTEGER) AND lower(r.api_name) = lower(u.api_name)",
+            )
+            .replace("{WHERE}", "")
+            .replace("{ORDER}", "u.unlocked_at DESC, u.rowid DESC");
+        let mut st = match c.prepare(&q) {
+            Ok(st) => st,
+            Err(_) => c.prepare(
+                &ITEM_BASE
+                    .replace("{PCT}", "NULL")
+                    .replace("{JOIN}", "")
+                    .replace("{WHERE}", "")
+                    .replace("{ORDER}", "u.unlocked_at DESC, u.rowid DESC"),
+            )?,
+        };
+        let rows = st.query_map([recent_limit as i64], map_item)?;
+        rows.collect::<rusqlite::Result<Vec<_>>>()?
+    };
+
+    let rarest = {
+        let q = ITEM_BASE
+            .replace("{PCT}", "r.pct")
+            .replace(
+                "{JOIN}",
+                "INNER JOIN ach_rarity r ON r.app_id = CAST(u.app_id AS INTEGER) AND lower(r.api_name) = lower(u.api_name)",
+            )
+            .replace("{WHERE}", "")
+            .replace("{ORDER}", "r.pct ASC, u.unlocked_at DESC");
+        match c.prepare(&q) {
+            Ok(mut st) => {
+                let rows = st.query_map([rarest_limit as i64], map_item)?;
+                rows.collect::<rusqlite::Result<Vec<_>>>()?
+            }
+            Err(_) => Vec::new(),
+        }
+    };
+
+    let mut apps: Vec<AppAchievementStats> = by_app.into_values().filter(|s| s.total > 0).collect();
+    apps.sort_by(|a, b| {
+        b.unlocked
+            .cmp(&a.unlocked)
+            .then_with(|| b.last_unlocked_at.cmp(&a.last_unlocked_at))
+            .then_with(|| a.app_id.cmp(&b.app_id))
+    });
+
+    Ok(GlobalAchievementsRaw {
+        apps,
+        recent,
+        rarest,
+    })
+}
+
 pub fn unlock_record(
     c: &Connection,
     app_id: &str,
@@ -1010,5 +1196,58 @@ mod tests {
         assert_eq!(card_pref_get(&conn, "pc/mygame").unwrap(), 1);
         card_pref_set(&conn, "pc/mygame", 8).unwrap();
         assert_eq!(card_pref_get(&conn, "pc/mygame").unwrap(), 8);
+    }
+
+    #[test]
+    fn global_overview_aggregates_counts_recent_and_rarest() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(SCHEMA).unwrap();
+        let mk = |app_id: &str, api: &str| Achievement {
+            app_id: app_id.into(),
+            api_name: api.into(),
+            display_name: format!("Logro {api}"),
+            description: format!("Desc {api}"),
+            hidden: false,
+            icon: Some(format!("{api}.png")),
+            icon_gray: None,
+            earned: false,
+            unlocked_at: None,
+            source: "gse".into(),
+            stat_current: None,
+            stat_max: None,
+            rarity_tier: 0,
+            rarity_pct: None,
+        };
+        // Juego 10: 2 logros, ambos conseguidos (100%).
+        achievements_save(&conn, "10", &[mk("10", "A"), mk("10", "B")]).unwrap();
+        unlock_record(&conn, "10", "A", 100, "gse", None).unwrap();
+        unlock_record(&conn, "10", "B", 300, "gse", None).unwrap();
+        // Juego 20: 3 logros, 1 conseguido.
+        achievements_save(&conn, "20", &[mk("20", "C"), mk("20", "D"), mk("20", "E")]).unwrap();
+        unlock_record(&conn, "20", "C", 200, "gse", None).unwrap();
+
+        // Sin tabla ach_rarity funciona igual (rare_unlocked = 0, rarest vacío).
+        let raw_no_rarity = global_overview(&conn, 10, 10).unwrap();
+        assert_eq!(raw_no_rarity.apps.len(), 2);
+        assert_eq!(raw_no_rarity.apps[0].app_id, "10");
+        assert_eq!((raw_no_rarity.apps[0].total, raw_no_rarity.apps[0].unlocked, raw_no_rarity.apps[0].rare_unlocked), (2, 2, 0));
+        assert_eq!(raw_no_rarity.apps[1].app_id, "20");
+        assert_eq!((raw_no_rarity.apps[1].total, raw_no_rarity.apps[1].unlocked), (3, 1));
+        assert_eq!(
+            raw_no_rarity.recent.iter().map(|r| r.api_name.as_str()).collect::<Vec<_>>(),
+            ["B", "C", "A"]
+        );
+        assert!(raw_no_rarity.rarest.is_empty());
+
+        // Con tabla ach_rarity cuenta raros (< 12%) y ordena rarest por pct ascendente.
+        conn.execute_batch(RARITY_SCHEMA).unwrap();
+        rarity_store(&conn, 10, &[("A".into(), 4.2), ("B".into(), 65.0)], 1).unwrap();
+        rarity_store(&conn, 20, &[("C".into(), 9.5), ("D".into(), 1.2)], 1).unwrap(); // D no esta desbloqueado
+
+        let raw = global_overview(&conn, 10, 10).unwrap();
+        assert_eq!(raw.apps[0].rare_unlocked, 1); // A = 4.2 < 12
+        assert_eq!(raw.apps[1].rare_unlocked, 1); // C = 9.5 < 12 (D no cuenta porque no se ha conseguido)
+        assert_eq!(raw.rarest.iter().map(|r| r.api_name.as_str()).collect::<Vec<_>>(), ["A", "C", "B"]);
+        assert_eq!(raw.rarest[0].pct, Some(4.2));
     }
 }

@@ -15,8 +15,8 @@ export function toneStyle(k: Tone): string {
     `--f1:${f(HUE[a])};--f2:${f(HUE[b])};--gf:linear-gradient(115deg,${f(HUE[a])},${f(HUE[b])})`;
 }
 
-/** Tono fijo de cada categoría: el mismo color que su racha (Novelas visuales azul, Novelas japonesas rosa,
- * Juegos de PC verde, Switch naranja). Las demás plataformas reparten tonos del arcoíris por su id. */
+/** Tono fijo de cada categoría: el mismo color que su racha y su baldosa de Inicio (Switch rojo, PC naranja,
+ * Novelas visuales amarillo, Novelas japonesas verde). Las demás plataformas reparten tonos del arcoíris por su id. */
 export type Tone = number | GoalKey;
 export function catTone(id: string): Tone {
   if (id in GOAL_COL) return id as GoalKey;

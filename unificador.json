@@ -3662,6 +3662,243 @@
           }
         }
       ]
+    },
+    {
+      "key": "ICS",
+      "name": "Inicio con siete accesos",
+      "goal": "Añadir Álbum, Estadísticas y Logros a Inicio junto a las 4 categorías, con color fijo heredable del arcoíris",
+      "icon": "🌈",
+      "color": 0,
+      "created": "2026-11-23T21:47:35+01:00",
+      "by": "antigravity",
+      "next_id": 9,
+      "phases": [
+        {
+          "name": "Diseño",
+          "icon": "",
+          "steps": [
+            {
+              "id": "ICS-1",
+              "title": "Elegir disposición de Inicio con los 7 accesos y su color fijo",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-23T21:47:41+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-23T22:24:48+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Jerarquía 4+3 en fila con arcoíris exacto de la guía (P-20 op. 1, P-21 op. 1)"
+                }
+              ],
+              "cat": "decidir",
+              "updated": "2026-11-23T22:24:48+01:00",
+              "result": "Jerarquía 4+3 en fila con arcoíris exacto de la guía (P-20 op. 1, P-21 op. 1)"
+            },
+            {
+              "id": "ICS-8",
+              "title": "Elegir nuevos iconos de Switch, Novelas visuales y Novelas japonesas",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-23T22:10:21+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-23T22:24:48+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "El usuario mantiene intactos los iconos actuales de plataformas; solo se añaden los 3 nuevos de espacios"
+                }
+              ],
+              "cat": "decidir",
+              "by": "antigravity",
+              "updated": "2026-11-23T22:24:48+01:00",
+              "result": "El usuario mantiene intactos los iconos actuales de plataformas; solo se añaden los 3 nuevos de espacios"
+            }
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "antigravity",
+            "at": "2026-11-23T22:24:48+01:00",
+            "seen": true
+          }
+        },
+        {
+          "name": "Color heredable",
+          "icon": "",
+          "steps": [
+            {
+              "id": "ICS-2",
+              "title": "Color fijo por categoría y sección en el núcleo y la atmósfera",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-23T22:24:48+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-23T22:28:05+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Creado src/lib/sections.ts con el reparto arcoíris fijo y secSlot/secPair/spaceAcc en store.svelte.ts y App.svelte"
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-23T22:28:05+01:00",
+              "result": "Creado src/lib/sections.ts con el reparto arcoíris fijo y secSlot/secPair/spaceAcc en store.svelte.ts y App.svelte"
+            },
+            {
+              "id": "ICS-3",
+              "title": "Probar herencia de color en Inicio, Rachas y Estadísticas",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-23T22:28:05+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-23T22:28:06+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Unificados GOAL_COL y GOAL_KEYS en readgoals.ts (chiptone.ts y Stats/Racha heredan automáticamente) y verificados 78 tests con tests/sections.test.ts"
+                }
+              ],
+              "cat": "pruebas",
+              "together": true,
+              "updated": "2026-11-23T22:28:06+01:00",
+              "result": "Unificados GOAL_COL y GOAL_KEYS en readgoals.ts (chiptone.ts y Stats/Racha heredan automáticamente) y verificados 78 tests con tests/sections.test.ts"
+            },
+            {
+              "id": "ICS-4",
+              "title": "Unificar colores fijos en Rachas y Estadísticas",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-23T22:28:06+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-23T22:28:06+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Herencia en Store: títulos sin arte propio usan secPair(p), vistas Álbum/Estadísticas/Logros heredan sus ranuras 4/5/6 del arcoíris"
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-23T22:28:06+01:00",
+              "result": "Herencia en Store: títulos sin arte propio usan secPair(p), vistas Álbum/Estadísticas/Logros heredan sus ranuras 4/5/6 del arcoíris"
+            }
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "antigravity",
+            "at": "2026-11-23T22:28:06+01:00",
+            "seen": true
+          }
+        },
+        {
+          "name": "Inicio y accesos",
+          "icon": "",
+          "steps": [
+            {
+              "id": "ICS-5",
+              "title": "Aplicar la disposición elegida en Inicio y limpiar el dock",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-23T22:28:07+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-23T22:38:30+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Inicio 4+3 implementado en Home.svelte y app.css (acabado neón y dock de 2 píldoras); verificado con npm run check, npm run build y mobile build"
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-23T22:38:30+01:00",
+              "result": "Inicio 4+3 implementado en Home.svelte y app.css (acabado neón y dock de 2 píldoras); verificado con npm run check, npm run build y mobile build"
+            },
+            {
+              "id": "ICS-6",
+              "title": "Pantallas de Álbum global y vitrina de Logros",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-23T22:38:31+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-23T22:38:31+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Álbum global con filtros en Shots.svelte y vitrina global de Logros (visor-core + achievements_overview + remote_call + AchievementsHub.svelte); verificado con 342 tests Rust y npm run check"
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-23T22:38:31+01:00",
+              "result": "Álbum global con filtros en Shots.svelte y vitrina global de Logros (visor-core + achievements_overview + remote_call + AchievementsHub.svelte); verificado con 342 tests Rust y npm run check"
+            },
+            {
+              "id": "ICS-7",
+              "title": "Comprobar mando y tablet en claro y oscuro",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-23T22:38:31+01:00",
+                  "by": "antigravity",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-23T22:38:31+01:00",
+                  "by": "antigravity",
+                  "kind": "done",
+                  "text": "Navegación mando/ratón/rueda y tablet 1280x800 actualizadas en controller.svelte.ts y app.css; verificado con 78 tests Node, npm run check y mobile build"
+                }
+              ],
+              "cat": "pruebas",
+              "updated": "2026-11-23T22:38:31+01:00",
+              "result": "Navegación mando/ratón/rueda y tablet 1280x800 actualizadas en controller.svelte.ts y app.css; verificado con 78 tests Node, npm run check y mobile build"
+            }
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "antigravity",
+            "at": "2026-11-23T22:38:31+01:00",
+            "seen": true
+          }
+        }
+      ]
     }
   ],
   "asks": [
@@ -4357,9 +4594,119 @@
       },
       "by": "antigravity",
       "created": "2026-11-21T14:17:41+01:00"
+    },
+    {
+      "id": "P-20",
+      "kind": "proposal",
+      "title": "Inicio: 4 categorías + Álbum, Estadísticas y Logros (color fijo arcoíris)",
+      "text": "Cuatro formas de combinar las 4 categorías originales con Álbum, Estadísticas y Logros usando los 7 colores fijos heredables del arcoíris. Todas tienen tema Claro y Noche ahumada y muestran en vivo la herencia de color al enfocar cada acceso.",
+      "step": "ICS-1",
+      "branch": "ICS",
+      "options": [
+        {
+          "label": "Jerarquía 4+3 en fila",
+          "desc": "4 grandes (170 px) + separador + 3 medianos (132 px) alineados por la base; una fila con el mando y Seguir jugando intacto",
+          "file": ".unificador/propuestas/P-20/1.html"
+        },
+        {
+          "label": "Siete iguales en fila",
+          "desc": "Los 7 al mismo tamaño (150 px) en una fila uniforme con hueco entre biblioteca y utilidades",
+          "file": ".unificador/propuestas/P-20/2.html"
+        },
+        {
+          "label": "Dos niveles (4 grandes + banda)",
+          "desc": "Las 4 categorías a 180 px arriba y 3 tarjetas horizontales con dato vivo debajo",
+          "file": ".unificador/propuestas/P-20/3.html"
+        },
+        {
+          "label": "4 grandes + columna lateral",
+          "desc": "Las 4 categorías grandes (178 px) a la izquierda y 3 tarjetas apiladas a la derecha",
+          "file": ".unificador/propuestas/P-20/4.html"
+        }
+      ],
+      "recommend": 1,
+      "answer": {
+        "option": 1,
+        "text": "Elige Jerarquía 4+3 en fila; pide repartir los 7 tonos en orden arcoíris con acabado neón fiel a la guía viva",
+        "by": "persona",
+        "at": "2026-11-23T21:58:21+01:00",
+        "seen": true
+      },
+      "by": "antigravity",
+      "created": "2026-11-23T21:51:52+01:00"
+    },
+    {
+      "id": "P-21",
+      "kind": "proposal",
+      "title": "Jerarquía 4+3: reparto de colores en orden arcoíris neón",
+      "text": "Tres formas de ordenar los 7 tonos del arcoíris de la guía viva sobre Jerarquía 4+3 con acabado neón en Noche ahumada y herencia real a Rachas y Estadísticas.",
+      "step": "ICS-1",
+      "branch": "ICS",
+      "options": [
+        {
+          "label": "Arcoíris de la guía (Rojo → Violeta)",
+          "desc": "Orden literal de la guía viva: Switch Rojo, PC Naranja, Novelas Amarillo, Japonés Verde | Álbum Azul, Estadísticas Añil, Logros Violeta",
+          "file": ".unificador/propuestas/P-21/1.html"
+        },
+        {
+          "label": "Círculo desde Azul PC",
+          "desc": "Flujo continuo sin saltos manteniendo colores clásicos: PC Azul, Novelas Añil, Japonés Violeta, Switch Rojo | Álbum Naranja, Logros Amarillo, Estadísticas Verde",
+          "file": ".unificador/propuestas/P-21/2.html"
+        },
+        {
+          "label": "Inverso desde Switch Rojo",
+          "desc": "Switch abre 1.º en Rojo y baja por Violeta, Añil y PC Azul | Estadísticas Verde, Logros Amarillo, Álbum Naranja",
+          "file": ".unificador/propuestas/P-21/3.html"
+        }
+      ],
+      "recommend": 1,
+      "answer": {
+        "option": 1,
+        "text": "Arcoíris exacto de la guía (Rojo a Violeta) en orden Switch, PC, Novelas, Japonés | Álbum, Estadísticas, Logros",
+        "by": "persona",
+        "at": "2026-11-23T22:24:47+01:00",
+        "seen": true
+      },
+      "by": "antigravity",
+      "created": "2026-11-23T22:01:00+01:00"
+    },
+    {
+      "id": "P-22",
+      "kind": "proposal",
+      "title": "Nuevos iconos: Switch, Novelas visuales y Novelas japonesas",
+      "text": "Tres sets en estilo sólido Wii U a juego con Juegos PC: dos Joy-Con, escena + diálogo para Novelas visuales y hermana con 「 」 y あ vectorial para Novelas japonesas.",
+      "step": "ICS-8",
+      "branch": "ICS",
+      "options": [
+        {
+          "label": "Clásico Wii U",
+          "desc": "Joy-Con clic (hueco + sólido), marco pantalla como PC con escena y diálogo integrado, y hermana exacta con 「 」 y あ",
+          "file": ".unificador/propuestas/P-22/1.html"
+        },
+        {
+          "label": "Bloques en capas",
+          "desc": "Joy-Con sólidos simétricos (+/−), diálogo en primer plano sobre tarjeta de escena y caja japonesa con 「 」, あ y texto",
+          "file": ".unificador/propuestas/P-22/2.html"
+        },
+        {
+          "label": "Emblema dinámico",
+          "desc": "Joy-Con clic acentuado con destello, escena nocturna con luna y hermana japonesa con 「 」, あ y furigana sutil",
+          "file": ".unificador/propuestas/P-22/3.html"
+        }
+      ],
+      "recommend": 1,
+      "answer": {
+        "option": null,
+        "text": "Descartado: el usuario decide mantener los iconos actuales intactos",
+        "by": "persona",
+        "at": "2026-11-23T22:24:48+01:00",
+        "seen": true
+      },
+      "by": "antigravity",
+      "created": "2026-11-23T22:13:57+01:00"
     }
   ],
-  "next_ask": 20,
+  "next_ask": 23,
   "next_tweak": 8,
   "tweaks": [
     {
@@ -4426,7 +4773,29 @@
       ]
     }
   ],
-  "news": [],
+  "news": [
+    {
+      "text": "🌈 Inicio con siete accesos: Diseño",
+      "kind": "fase",
+      "by": "antigravity",
+      "at": "2026-11-23T22:24:48+01:00",
+      "ref": "ICS/Diseño"
+    },
+    {
+      "text": "🌈 Inicio con siete accesos: Color heredable",
+      "kind": "fase",
+      "by": "antigravity",
+      "at": "2026-11-23T22:28:06+01:00",
+      "ref": "ICS/Color heredable"
+    },
+    {
+      "text": "🌈 Inicio con siete accesos: Inicio y accesos",
+      "kind": "fase",
+      "by": "antigravity",
+      "at": "2026-11-23T22:38:31+01:00",
+      "ref": "ICS/Inicio y accesos"
+    }
+  ],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",
   "versions": [
     {

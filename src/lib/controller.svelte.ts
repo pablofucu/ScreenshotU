@@ -1,6 +1,7 @@
 import { tick } from 'svelte';
 import { app, SORT_LABEL, SORT_ORDER, TITLE_FILTERS, TITLE_ORDERS, TITLE_ORDER_LABEL, TITLES_TABS, validFilter, type MenuItem, type SortMode, type TitleFilter, type View } from './store.svelte';
 import { backend, initBackend, IS_TABLET } from './backend';
+import { SPACE_IDS, orderedPlatforms, firstHomePlat } from './sections';
 import { installedHere, launchLocal, removeLocal } from './clientgames';
 import { clearServer } from './remote/config';
 import { blip, sfx } from './sound';
@@ -49,8 +50,8 @@ export const DETAIL_SHOTS = 5;
 export const RANK_VIEW_H = 384;
 export const rankH = (i: number) => (i < 3 ? 56 : 44);
 export const rankY = (i: number) => (i < 3 ? i * 62 : 186 + (i - 3) * 50);
-/** Entradas del dock de Inicio (Buscar, Favoritas, Estadísticas, Añadir). */
-export const DOCK_N = 4;
+/** Entradas del dock de Inicio (Buscar, Añadir). */
+export const DOCK_N = 2;
 
 const screenEl = () => document.getElementById('screen');
 
@@ -102,8 +103,9 @@ function validKey(view: View, key: string | undefined): string | undefined {
   if (view === 'home') {
     if (key === 'welcome') return app.config.root || IS_TABLET ? undefined : key;
     if (/^plat\d+$/.test(key)) return app.config.root && n < app.lib.platforms.length ? key : undefined;
-    // En la tablet no existe «Añadir juego» (dock3): solo funciona en el PC.
-    if (/^dock\d+$/.test(key)) return n >= 0 && n < DOCK_N && !(IS_TABLET && n === 3) ? key : undefined;
+    if (/^space\d+$/.test(key)) return app.config.root && n >= 0 && n < SPACE_IDS.length ? key : undefined;
+    // En la tablet no existe «Añadir juego» (dock1): solo funciona en el PC.
+    if (/^dock\d+$/.test(key)) return n >= 0 && n < DOCK_N && !(IS_TABLET && n === 1) ? key : undefined;
     if (/^rec\d+$/.test(key)) return app.config.root && n < app.recent.length ? key : undefined;
     if (key === 'read') return app.readCard ? key : undefined;
     if (key === 'avatar') return app.readCard ? key : undefined;
@@ -145,11 +147,17 @@ function validKey(view: View, key: string | undefined): string | undefined {
     if (app.gsScope === 'cat' && /^gs\d+$/.test(key)) return n < app.gsCat.rows.length ? key : undefined;
     if (app.gsScope === 'cat' && /^gc\d+$/.test(key)) return n < GS_CHIPS ? key : undefined;
     if (app.gsScope === 'title' && /^gt\d+$/.test(key)) return n < 8 ? key : undefined;
+  } else if (view === 'achievements') {
+    if (/^ah\d+$/.test(key)) {
+      const el = screenEl();
+      if (!el?.querySelector('[data-k^="ah"]')) return key;
+      return el.querySelector(`[data-k="${key}"]`) ? key : undefined;
+    }
   }
   return undefined;
 }
 function defaultKey(view: View): string {
-  if (view === 'home') return app.config.root ? validKey('home', 'plat' + Math.min(app.hp, Math.max(0, app.lib.platforms.length - 1))) ?? 'plat0' : IS_TABLET ? 'dock1' : 'welcome';
+  if (view === 'home') return app.config.root ? validKey('home', 'plat' + app.resolvedHp) ?? ('plat' + firstHomePlat(app.lib.platforms)) : IS_TABLET ? 'dock0' : 'welcome';
   if (view === 'titles') {
     if (app.titlesTab === 'coll') return collFirst();
     return listTab() ? (listFirst() === undefined ? 'list-empty' : 'tit' + listFirst()) : 'tit' + atPos(0);
@@ -169,6 +177,11 @@ function defaultKey(view: View): string {
   }
   if (view === 'evo') return app.evo.length ? 'eb' + (app.evo.length - 1) : '';
   if (view === 'gstats') return app.gsScope === 'cat' ? (app.gsCat.rows.length ? 'gs0' : 'gc0') : 'gt0';
+  if (view === 'achievements') {
+    const o = app.achOverview;
+    const has = o ? (app.achHubTab === 'games' ? o.games.length > 0 : app.achHubTab === 'recent' ? o.recent.length > 0 : o.rarest.length > 0) : false;
+    return has || screenEl()?.querySelector('[data-k="ah0"]') ? 'ah0' : '';
+  }
   return '';
 }
 
@@ -177,7 +190,10 @@ export function setFocus(k: string, mouse = false) {
   app.focus = k;
   app.fk[app.view] = k;
   if (app.view === 'home') {
-    if (k.startsWith('plat')) app.hp = +k.slice(4);
+    if (k.startsWith('plat')) { app.hp = +k.slice(4); app.homeSpace = null; }
+    else if (k.startsWith('space')) { app.homeSpace = SPACE_IDS[+k.slice(5)] ?? null; }
+  } else if (app.view === 'achievements') {
+    if (!mouse && k.startsWith('ah')) chipReveal(k);
   } else if (app.view === 'titles') {
     if (k.startsWith('tit')) {
       app.t = +k.slice(3);
@@ -455,7 +471,7 @@ export function openTitle(i: number, fromView: typeof app.detailFrom = 'titles')
   const from = screenEl()?.querySelector<HTMLElement>('.fx.f .face, .fx.f .fc');
   morph(from, () => {
     app.detailFrom = fromView;
-    app.t = i; app.s = 0; app.favView = false; app.sortMode = t.sortMode ?? app.config.shotsOrder;
+    app.t = i; app.s = 0; app.albumMode = 'none'; app.sortMode = t.sortMode ?? app.config.shotsOrder;
     delete app.fk.detail;
     go('detail', 'fwd');
   }, () => screenEl()?.querySelector<HTMLElement>('.dcover .face'));
@@ -708,8 +724,20 @@ function runAct(act: string, el: HTMLElement | null | undefined) {
   const [a, b, c] = act.split(':');
   if (a === 'plat') {
     lastPlatOrigin = elOrigin(el);
-    app.p = +b; app.hp = +b; app.t = 0; app.fk.titles = 'tit0'; app.titleFilter = 'all'; app.titlesTab = 'list'; resetList(); resetColl();
+    app.p = +b; app.hp = +b; app.homeSpace = null; app.t = 0; app.fk.titles = 'tit0'; app.titleFilter = 'all'; app.titlesTab = 'list'; resetList(); resetColl();
     go('titles', 'fwd', lastPlatOrigin);
+  } else if (a === 'space') {
+    if (b === 'album') openAlbum('all');
+    else if (b === 'stats') openStats();
+    else if (b === 'logros') openAchievementsHub();
+    else return;
+  } else if (a === 'ahgame') {
+    const pi = +b, ti = +c;
+    const t = app.lib.platforms[pi]?.titles[ti];
+    if (t) {
+      app.p = pi; app.t = ti;
+      openAchievementsModal(t.gameId ?? t.dir, t.name, t.cover ?? t.shots[0]?.path);
+    }
   } else if (a === 'tit') {
     if (+b >= (app.platform?.titles.length ?? 0)) openAdd(app.platform?.id);
     else openTitle(+b);
@@ -795,9 +823,7 @@ function openRecent(i: number) {
 
 function dock(i: number) {
   if (i === 0) openSearch();
-  else if (i === 1) openFavs();
-  else if (i === 2) openStats();
-  else if (i === 3) openAdd();
+  else if (i === 1) openAdd();
 }
 
 /* ---------- racha de lectura ---------- */
@@ -943,6 +969,7 @@ function backToCat() {
 
 export function openStats(from: 'home' | 'streak' = 'home') {
   app.statsFrom = from;
+  if (from === 'home') { app.fk.home = 'space1'; app.homeSpace = 'stats'; }
   app.yearFrom = 'stats';
   app.statsOff = 0; app.calOff = 0; app.yearSel = null; app.yearCard = 0;
   app.daysYear = app.now.getFullYear(); app.daysCat = -1;
@@ -1099,7 +1126,7 @@ function setEvoKind(k: string) {
 /** Clic en un juego de la colección (-1 = todos) para filtrar sus capturas. */
 function setSaga(f: number) {
   const m = app.collTitle?.members?.length ?? 0;
-  if (!app.collTitle || app.favView || app.sagaFilter === f || f < -1 || f >= m) return;
+  if (!app.collTitle || app.isAlbum || app.sagaFilter === f || f < -1 || f >= m) return;
   app.sagaFilter = f; app.s = 0; app.goff = 0;
   setFocus(app.cur.shots.length ? 'shot0' : '');
   blip(700);
@@ -1115,10 +1142,12 @@ function setYearCard(i: number) {
 function goHome() {
   if (app.view === 'home' || app.overlay || app.osk.open || app.audioMenu) return;
   const fromTitles = app.view === 'titles';
-  if (fromTitles) app.fk.home = 'plat' + app.p;
-  if (app.view === 'stats') app.fk.home = 'dock2';
+  if (fromTitles) { app.fk.home = 'plat' + app.p; app.homeSpace = null; }
+  if (app.view === 'shots' && app.isAlbum) { app.fk.home = 'space0'; app.homeSpace = 'album'; }
+  if (app.view === 'stats') { app.fk.home = 'space1'; app.homeSpace = 'stats'; }
+  if (app.view === 'achievements') { app.fk.home = 'space2'; app.homeSpace = 'logros'; }
   if (app.selMode) exitSel();
-  app.favView = false; app.collOpen = null;
+  app.albumMode = 'none'; app.collOpen = null;
   go('home', 'back', fromTitles ? lastPlatOrigin : '50% 50%');
   sfx.back();
 }
@@ -1259,25 +1288,94 @@ function statsShift(d: number) {
   haptic.tab();
 }
 
-function collectFavs(): Shot[] {
+function collectAlbumShots(): Shot[] {
   const all = new Map<string, Shot>();
-  for (const p of app.lib.platforms) for (const t of p.titles) for (const s of t.shots) if (app.favs.has(s.path)) all.set(s.path, s);
+  for (const p of app.lib.platforms) {
+    for (const t of p.titles) {
+      if (t.hidden) continue;
+      for (const s of t.shots) {
+        if (!all.has(s.path)) all.set(s.path, { ...s, game: t.name, gid: t.id, platId: p.id });
+      }
+    }
+  }
   return [...all.values()].sort((a, b) => b.date - a.date);
 }
 
-export function openFavs() {
-  if (app.favs.size === 0) {
-    toast('Aún no hay favoritas: pulsa X sobre una captura');
-    return;
-  }
-  const list = collectFavs();
+function albumFilters(): string[] {
+  const plats = orderedPlatforms(app.lib.platforms)
+    .filter(({ p }) => p.titles.some((t) => !t.hidden && t.shots.length > 0))
+    .map(({ p }) => p.id);
+  return ['all', 'favs', ...plats];
+}
+
+export function openAlbum(mode: 'all' | 'favs' | string = 'all') {
+  const list = collectAlbumShots();
   if (!list.length) {
-    toast('Tus favoritas ya no están en la biblioteca');
+    toast('Aún no hay capturas en la biblioteca');
     return;
   }
-  app.favSnap = list;
-  app.favView = true; app.sortMode = app.config.shotsOrder; app.s = 0; app.fk.shots = 'shot0';
+  app.albumSnap = list;
+  app.collOpen = null;
+  app.albumMode = mode;
+  app.sortMode = app.config.shotsOrder;
+  app.s = 0;
+  app.goff = 0;
+  app.fk.shots = 'shot0';
+  app.fk.home = 'space0';
+  app.homeSpace = 'album';
   go('shots', 'fwd');
+}
+
+function setAlbumFilter(mode: string) {
+  if (!app.isAlbum || app.albumMode === mode) return;
+  app.albumMode = mode;
+  app.s = 0;
+  app.goff = 0;
+  setFocus(app.cur.shots.length ? 'shot0' : '');
+  blip(700);
+}
+
+export function openFavs() {
+  openAlbum('favs');
+}
+
+let achOvSeq = 0;
+export async function refreshAchievementsOverview() {
+  const seq = ++achOvSeq;
+  app.achOverviewLoading = true;
+  try {
+    const res = await backend.achievementsOverview();
+    if (seq !== achOvSeq) return;
+    app.achOverview = res;
+    if (app.view === 'achievements') {
+      const k = validKey('achievements', app.focus) ?? defaultKey('achievements');
+      if (k !== app.focus) setFocus(k);
+    }
+  } catch (e) {
+    console.error('Error al cargar la vitrina global de logros:', e);
+  } finally {
+    if (seq === achOvSeq) app.achOverviewLoading = false;
+  }
+}
+
+export function openAchievementsHub() {
+  app.goff = 0;
+  app.fk.home = 'space2';
+  app.homeSpace = 'logros';
+  delete app.fk.achievements;
+  void refreshAchievementsOverview();
+  go('achievements', 'fwd');
+}
+
+const ACH_HUB_TABS: Array<'games' | 'recent' | 'rarest'> = ['games', 'recent', 'rarest'];
+function setAchHubTab(tab: 'games' | 'recent' | 'rarest') {
+  if (app.view !== 'achievements' || app.achHubTab === tab) return;
+  app.achHubTab = tab;
+  app.goff = 0;
+  delete app.fk.achievements;
+  setFocus(defaultKey('achievements'));
+  sfx.tab(1);
+  haptic.tab();
 }
 
 export function back() {
@@ -1299,9 +1397,10 @@ export function back() {
       morph(frame, () => go('shots', ''), () => screenEl()?.querySelector(`[data-k="${k}"]`));
     }
   } else if (app.view === 'shots') {
-    if (app.favView) {
-      app.favView = false;
-      app.fk.home = 'dock1';
+    if (app.isAlbum) {
+      app.albumMode = 'none';
+      app.fk.home = 'space0';
+      app.homeSpace = 'album';
       go('home', 'back');
     } else if (app.collOpen) {
       // De las capturas de una colección se vuelve a su estantería (el foco de la pestaña se conserva).
@@ -1320,6 +1419,7 @@ export function back() {
     }
     if (app.detailFrom === 'stats') { go('stats', 'back'); sfx.back(); return; }
     if (app.detailFrom === 'gstats') { go('gstats', 'back'); sfx.back(); return; }
+    if (app.detailFrom === 'achievements') { go('achievements', 'back'); sfx.back(); return; }
     if (app.titlesTab !== 'coll') app.fk.titles = 'tit' + app.t;
     morph(from, () => go('titles', from ? '' : 'back'), () => screenEl()?.querySelector<HTMLElement>('.fx.f .face, .fx.f .fc'));
   } else if (app.view === 'evo') {
@@ -1335,14 +1435,20 @@ export function back() {
     if (app.statsFrom === 'streak') {
       go('streak', 'back');
     } else {
-      app.fk.home = 'dock2';
+      app.fk.home = 'space1';
+      app.homeSpace = 'stats';
       go('home', 'back');
     }
+  } else if (app.view === 'achievements') {
+    app.fk.home = 'space2';
+    app.homeSpace = 'logros';
+    go('home', 'back');
   } else if (app.view === 'streak') {
     if (app.streakFrom === 'home') app.fk.home = 'read';
     go(app.streakFrom, 'back');
   } else if (app.view === 'titles') {
     app.fk.home = 'plat' + app.p;
+    app.homeSpace = null;
     go('home', 'back', lastPlatOrigin);
   } else {
     bump(screenEl()?.querySelector('.fx.f'), 0, 0);
@@ -1356,6 +1462,11 @@ export const goBack = back;
 export function page(d: number) {
   if (app.view === 'home') { if (app.focus === 'read') stepReadFace(d); return; }
   if (app.view === 'viewer') { stepViewer(d * 10); return; }
+  if (app.view === 'achievements') {
+    const i = (ACH_HUB_TABS.indexOf(app.achHubTab) + d + ACH_HUB_TABS.length) % ACH_HUB_TABS.length;
+    setAchHubTab(ACH_HUB_TABS[i]);
+    return;
+  }
   if (app.view === 'streak' || (app.view === 'stats' && app.statsTab === 'streak')) { streakSwitch(d); return; }
   if (app.view === 'stats' || app.view === 'evo') { statsKind(d); return; }
   if (app.view === 'gstats') { gsShift(d); return; }
@@ -1373,7 +1484,14 @@ export function page(d: number) {
     setFocus('tit' + atPos(np)); sfx.page(d); haptic.tab();
     return;
   }
-  if (app.view === 'shots' && !app.favView && app.collTitle) {
+  if (app.view === 'shots' && app.isAlbum) {
+    const flts = albumFilters();
+    const i = Math.max(0, flts.indexOf(app.albumMode));
+    setAlbumFilter(flts[(i + d + flts.length) % flts.length] ?? 'all');
+    haptic.tab();
+    return;
+  }
+  if (app.view === 'shots' && !app.isAlbum && app.collTitle) {
     // En una colección LB/RB cambian el filtro por juego (-1 = todos).
     const members = app.collTitle.members ?? [];
     const m = members.length;
@@ -1580,6 +1698,11 @@ export function toggleFav() {
   } else if (app.favBurst.path === shot.path) {
     app.favBurst = { ...app.favBurst, path: '' };
   }
+  if (app.isAlbum && app.albumMode === 'favs' && !on) {
+    const n = app.cur.shots.length;
+    if (app.view === 'shots') setFocus(n ? 'shot' + Math.min(app.s, n - 1) : '');
+    else if (app.view === 'viewer') { if (!n) back(); else app.s = Math.min(app.s, n - 1); }
+  }
 }
 
 function cycleSort() {
@@ -1590,9 +1713,9 @@ function cycleSort() {
   setFocus('shot' + idx);
   toast('Orden: ' + SORT_LABEL[app.sortMode]);
   blip(700);
-  // Se recuerda por juego (no en la vista de favoritas, que mezcla varios).
+  // Se recuerda por juego (no en el Álbum ni en una colección, que mezclan varios).
   const t = app.platform?.titles[app.t];
-  if (!app.favView && !app.collTitle && t && !t.members) {
+  if (!app.isAlbum && !app.collTitle && t && !t.members) {
     patchTitle(app.p, app.t, { sortMode: app.sortMode });
     backend.setSortPref(t.id, app.sortMode).catch((e) => console.error(e));
   }
@@ -2129,12 +2252,14 @@ export async function rescan() {
     app.scanning = false;
   }
   app.fk = {};
-  app.favView = false;
+  app.albumMode = 'none';
+  app.homeSpace = null;
   app.p = 0; app.t = 0; app.s = 0;
   app.view = 'home';
   app.animKey++;
   setFocus(defaultKey('home'));
   void sgdbAuto();
+  void refreshAchievementsOverview();
   flushRefresh();
 }
 
@@ -2176,7 +2301,7 @@ async function refreshOnce() {
   let lib;
   try { lib = await scanLib(); } catch (e) { console.error(e); return; }
   app.lib = lib;
-  if (app.favView) app.favSnap = collectFavs();
+  if (app.isAlbum) app.albumSnap = collectAlbumShots();
   const pi = lib.platforms.findIndex((p) => p.id === pid);
   app.p = pi < 0 ? 0 : pi;
   const titles = lib.platforms[app.p]?.titles ?? [];
@@ -2190,11 +2315,12 @@ async function refreshOnce() {
   else if (app.view === 'shots') setFocus(validKey('shots', 'shot' + app.s) ?? defaultKey('shots'));
   else if (app.view === 'detail') setFocus(validKey('detail', app.focus) ?? defaultKey('detail'));
   else if (app.view === 'home') setFocus(validKey('home', app.focus) ?? defaultKey('home'));
-  else if (app.view === 'stats' || app.view === 'evo') setFocus(validKey(app.view, app.focus) ?? defaultKey(app.view));
+  else if (app.view === 'stats' || app.view === 'evo' || app.view === 'achievements') setFocus(validKey(app.view, app.focus) ?? defaultKey(app.view));
   const covers = lib.platforms.flatMap((p) => p.titles.map((t) => t.cover ?? t.shots[0]?.path)).filter(Boolean) as string[];
   backend.prefetch(covers.slice(0, 300));
   // Juegos nuevos (añadidos o con su primera captura): sus grafismos de SteamGridDB.
   void sgdbAuto();
+  void refreshAchievementsOverview();
 }
 
 function onBackendEvent(e: BackendEvent) {
@@ -2228,6 +2354,8 @@ function onBackendEvent(e: BackendEvent) {
     app.gain = t ? { id: e.id, seconds: e.seconds, secs: t.playSeconds, week: [...t.week], day: new Date().toDateString(), at: Date.now() } : null;
     toast(e.seconds >= 60 ? `Has jugado ${fmtDur(e.seconds)} a ${e.name}` : `${e.name} se ha cerrado`, 3200);
     void softRefresh();
+  } else if (e.type === 'achievement-unlocked') {
+    void refreshAchievementsOverview();
   }
 }
 
@@ -2253,6 +2381,7 @@ export async function boot() {
     app.view = 'home';
     setFocus(defaultKey('home'));
     app.ready = true;
+    void refreshAchievementsOverview();
     fresh = softRefresh().catch(() => {});
   } else {
     await rescan();
@@ -2322,6 +2451,8 @@ export function cmd(c: string) {
   if (c.startsWith('gcat:')) { gsGoCat(+c.slice(5)); return; }
   if (c.startsWith('ek:')) { setEvoKind(c.slice(3)); return; }
   if (c.startsWith('saga:')) { setSaga(+c.slice(5)); return; }
+  if (c.startsWith('album:')) { setAlbumFilter(c.slice(6)); return; }
+  if (c.startsWith('ahtab:')) { setAchHubTab(c.slice(6) as 'games' | 'recent' | 'rarest'); return; }
   if (c.startsWith('yc:')) { setYearCard(+c.slice(3)); return; }
   switch (c) {
     case 'left': move(-1, 0); break;
@@ -2346,6 +2477,15 @@ export function cmd(c: string) {
       } else if (app.view === 'titles') {
         const t = app.platform?.titles[app.t];
         if (app.focus.startsWith('tit') && t?.launchable) void playTitle(t); else bump(screenEl()?.querySelector('.fx.f'), 0, 0);
+      } else if (app.view === 'achievements') {
+        const act = screenEl()?.querySelector<HTMLElement>('.fx.f')?.dataset.act;
+        if (act?.startsWith('ahgame:')) {
+          const [, pi, ti] = act.split(':');
+          app.p = +pi;
+          openTitle(+ti, 'achievements');
+        } else {
+          bump(screenEl()?.querySelector('.fx.f'), 0, 0);
+        }
       }
       else toggleFav();
       break;
@@ -2553,6 +2693,15 @@ function onWheel(e: WheelEvent) {
       // Desplaza la cuadrícula una fila; el foco no se toca (lo recoge el ratón al moverse).
       const L = curLayout();
       app.goff = Math.max(0, Math.min(app.goff + d * L.rowStep, Math.max(0, L.total - GRID_VIEW_H)));
+      break;
+    }
+    case 'achievements': {
+      const vp = screenEl()?.querySelector<HTMLElement>('.cvp');
+      const pane = vp?.querySelector<HTMLElement>('.cpane');
+      if (vp && pane) {
+        const max = Math.max(0, pane.scrollHeight - vp.clientHeight);
+        app.goff = Math.max(0, Math.min(max, app.goff + d * 110));
+      }
       break;
     }
   }

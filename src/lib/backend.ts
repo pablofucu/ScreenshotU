@@ -1,4 +1,4 @@
-import type { Achievement, AchievementSummary, WeekAch, GameDetection, AddReport, AudioOutput, Backend, BackupResult, GameStatsDb, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, StreamAppStatus, MoveReport, TrashReport, RemoteInfo, PairedDevice, PairRequestInfo, PairTicketInfo, ApolloWebInfo, NewGame, Collection, SortMode } from './types';
+import type { Achievement, AchievementSummary, AchievementsOverview, WeekAch, GameDetection, AddReport, AudioOutput, Backend, BackupResult, GameStatsDb, GameStatus, RestorePreview, StartupNotice, BackendEvent, Config, DirScan, HiddenEntry, ImportReport, Library, MagpieMode, MagpieStatus, StreamAppStatus, MoveReport, TrashReport, RemoteInfo, PairedDevice, PairRequestInfo, PairTicketInfo, ApolloWebInfo, NewGame, Collection, SortMode } from './types';
 
 export const IS_TAURI = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 /** La UI de escritorio corre dentro del APK de la tablet (el arranque de `mobile/` lo marca antes de cargarla): habla con el PC por HTTP. */
@@ -233,6 +233,7 @@ async function tauriBackend(): Promise<Backend> {
     getGameAchievements: (gameId, appId) => invoke<Achievement[]>('get_game_achievements', { gameId, appId: appId ?? null }),
     getAchievementsSummary: (gameId, appId) => invoke<AchievementSummary | null>('get_achievements_summary', { gameId, appId: appId ?? null }),
     weekAchievements: (fromMs, toMs) => invoke<WeekAch[]>('week_achievements', { fromMs, toMs }),
+    achievementsOverview: () => invoke<AchievementsOverview>('achievements_overview'),
     setAchievementsCardVariant: (gameId, variant) => invoke('set_achievements_card_variant', { gameId, variant }),
     getAchievementsCardVariant: (gameId) => invoke<number>('get_achievements_card_variant', { gameId }),
     detectGameSteamworks: (gameDir, exePath) => invoke<GameDetection>('detect_game_steamworks', { gameDir, exePath: exePath ?? null }),

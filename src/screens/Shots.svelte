@@ -1,6 +1,7 @@
 <script lang="ts">
   import { app, SORT_LABEL } from '../lib/store.svelte';
-  import { ICON } from '../lib/icons';
+  import { ICON, RAINBOW } from '../lib/icons';
+  import { orderedPlatforms, sectionRainbowIdx } from '../lib/sections';
   import { fmt, fmtDay, fmtDayShort, fmtDur, fmtMonth, fmtShort, naiveNow, resText, nCapturas } from '../lib/format';
   import { GRID_VIEW_H, curLayout, daysOn } from '../lib/controller.svelte';
   import TopBar from '../components/TopBar.svelte';
@@ -56,17 +57,24 @@
   });
   const ratio = $derived(Math.min(1, GRID_VIEW_H / L.total));
   const cur = $derived(shots[app.s]);
-  const crumbs = $derived(app.favView ? ['Inicio', 'Favoritas'] : ['Inicio', app.platform?.name ?? '', T.name]);
+  const albumPlats = $derived(orderedPlatforms(app.lib.platforms).filter(({ p }) => p.titles.some((t) => t.shots.length > 0)));
+  const albumPlat = $derived(app.isAlbum && app.albumMode !== 'all' && app.albumMode !== 'favs' ? app.lib.platforms.find((p) => p.id === app.albumMode) : undefined);
+  const crumbs = $derived(
+    app.isAlbum
+      ? (app.albumMode === 'favs' ? ['Inicio', 'Álbum', 'Favoritas'] : albumPlat ? ['Inicio', 'Álbum', albumPlat.name] : ['Inicio', 'Álbum'])
+      : ['Inicio', app.platform?.name ?? '', T.name]
+  );
   const coverPath = $derived(T.cover ?? shots[0]?.path);
-  const title = $derived(!app.favView ? (app.collTitle ?? app.platform?.titles[app.t]) : undefined);
+  const title = $derived(!app.isAlbum ? (app.collTitle ?? app.platform?.titles[app.t]) : undefined);
   const members = $derived(title?.members);
   const days = $derived(L.days);
   const wantDays = $derived(app.config.shotsView === 'days');
 
-  // Los filtros de una colección con muchos juegos no caben: el activo se mantiene a la vista.
+  // Los filtros de una colección o del Álbum se mantienen centrados al cambiar con el mando.
   let sfEl = $state<HTMLElement>();
   $effect(() => {
     void app.sagaFilter;
+    void app.albumMode;
     const on = sfEl?.querySelector<HTMLElement>('.sf.on');
     if (sfEl && on) sfEl.scrollLeft = on.offsetLeft - sfEl.clientWidth / 2 + on.offsetWidth / 2;
   });
@@ -101,12 +109,20 @@
 <div class="ghead">
   <div class="glass mini">
     <div class="face">
-      {#if T.isFavs}<span class="mstar">{@html ICON.starY}</span>{:else if coverPath}<Thumb path={coverPath} />{/if}
+      {#if T.isFavs}<span class="mstar">{@html ICON.starY}</span>{:else if app.isAlbum}<span class="malbum">{@html ICON.album}</span>{:else if coverPath}<Thumb path={coverPath} />{/if}
     </div>
   </div>
   <h3>{T.name}</h3>
   <span class="tag">{nCapturas(shots.length)}</span>
-  {#if members}
+  {#if app.isAlbum}
+    <div class="sfilter" bind:this={sfEl}>
+      <span class="sf" class:on={app.albumMode === 'all'} data-hact="album:all">Todas</span>
+      <span class="sf" class:on={app.albumMode === 'favs'} data-hact="album:favs">Favoritas</span>
+      {#each albumPlats as { p } (p.id)}
+        <span class="sf" class:on={app.albumMode === p.id} data-hact="album:{p.id}"><i class="sdot" style="background:{RAINBOW[sectionRainbowIdx(p.id)].c}"></i>{p.name}</span>
+      {/each}
+    </div>
+  {:else if members}
     <div class="sfilter" bind:this={sfEl}>
       <span class="sf" class:on={app.sagaFilter < 0} data-hact="saga:-1">Todos</span>
       {#each members as m, k (m.id)}<span class="sf" class:on={app.sagaFilter === k} data-hact="saga:{k}">{m.name}</span>{/each}
@@ -128,10 +144,13 @@
     {#each idx as i (shots[i].path)}
       <div class="glass shot fx" class:sm={days} class:f={app.focus === 'shot' + i} class:fav={app.favs.has(shots[i].path)} class:checked={app.sel.has(shots[i].path)} data-k="shot{i}" data-act="shot:{i}" data-i={i}
         style="left:{L.x[i]}px;top:{L.y[i]}px;width:{L.w}px;height:{L.h}px">
-        <div class="face"><Thumb path={shots[i].path} /><span class="star" class:burst={app.favBurst.path === shots[i].path}>{@html ICON.starY}{#if app.favBurst.path === shots[i].path}<svg class="fsparks" viewBox="0 0 40 40" aria-hidden="true"><line x1="20" y1="2" x2="20" y2="8" /><line x1="35.6" y1="11" x2="30.4" y2="14" /><line x1="35.6" y1="29" x2="30.4" y2="26" /><line x1="20" y1="38" x2="20" y2="32" /><line x1="4.4" y1="29" x2="9.6" y2="26" /><line x1="4.4" y1="11" x2="9.6" y2="14" /></svg>{/if}</span>{#if members && shots[i].game}<span class="gbadge">{shots[i].game}</span>{/if}{#if app.selMode}<span class="chk" class:pop={app.selBurst.path === shots[i].path}>{@html app.sel.has(shots[i].path) ? ICON.check : ''}</span>{/if}</div>
+        <div class="face"><Thumb path={shots[i].path} /><span class="star" class:burst={app.favBurst.path === shots[i].path}>{@html ICON.starY}{#if app.favBurst.path === shots[i].path}<svg class="fsparks" viewBox="0 0 40 40" aria-hidden="true"><line x1="20" y1="2" x2="20" y2="8" /><line x1="35.6" y1="11" x2="30.4" y2="14" /><line x1="35.6" y1="29" x2="30.4" y2="26" /><line x1="20" y1="38" x2="20" y2="32" /><line x1="4.4" y1="29" x2="9.6" y2="26" /><line x1="4.4" y1="11" x2="9.6" y2="14" /></svg>{/if}</span>{#if (members || app.isAlbum) && shots[i].game}<span class="gbadge">{shots[i].game}</span>{/if}{#if app.selMode}<span class="chk" class:pop={app.selBurst.path === shots[i].path}>{@html app.sel.has(shots[i].path) ? ICON.check : ''}</span>{/if}</div>
       </div>
     {/each}
   </div>
+  {#if shots.length === 0}
+    <div class="note pill" style="left:50%;top:190px">{app.albumMode === 'favs' ? 'Aún no hay favoritas: pulsa X sobre una captura.' : 'Aún no hay capturas en esta vista.'}</div>
+  {/if}
 </div>
 {#if days}
   <div class="tline" style="height:{TRACK}px">
@@ -146,7 +165,7 @@
 <Hints list={[
   ['A', app.selMode ? 'Marcar' : 'Ver', 'a'],
   ['B', app.selMode ? 'Salir de la selección' : 'Volver', 'b'],
-  ...(members ? [['LB/RB', 'Juego', 'rb'] as [string, string, string]] : []),
+  ...(members ? [['LB/RB', 'Juego', 'rb'] as [string, string, string]] : app.isAlbum ? [['LB/RB', 'Filtro', 'rb'] as [string, string, string]] : []),
   ...(daysOn() ? [['LT/RT', 'Día', 'rt'] as [string, string, string]] : []),
   ['X', 'Favorita', 'x'],
   ['Y', 'Ordenar', 'y'],

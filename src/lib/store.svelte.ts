@@ -1,14 +1,15 @@
 import { SvelteSet } from 'svelte/reactivity';
 import { untrack } from 'svelte';
 import { RAINBOW, type Accent } from './icons';
-import type { AudioOutput, Config, GameStatsDb, GameStatus, Library, MagpieStatus, Collection, Shot, SortMode as SortModeT, Swatch, Title, TitleOrder, TitlesTab } from './types';
+import type { AchievementsOverview, AudioOutput, Config, GameStatsDb, GameStatus, Library, MagpieStatus, Collection, Shot, SortMode as SortModeT, Swatch, Title, TitleOrder, TitlesTab } from './types';
 import { hexToLch, hexToRgb, hueOf } from './oklch';
 import { gamePair, INK, pair, variablesCSS, vivo } from './atmos';
 import { collItems, collectionTitle } from './collections';
 import { GOAL_COL, GOAL_KEYS, goalMin, type GoalKey } from './readgoals';
+import { firstHomePlat, sectionRainbowIdx, sectionRainbowT, type SpaceId } from './sections';
 import { calendar, categoryStats, evoBuckets, playedPlatforms, playYears, rankPeriod, titleStats, yearHeat, yearReview, type EvoKind, type GMetric, type PeriodKind } from './stats';
 
-export type View = 'home' | 'titles' | 'detail' | 'shots' | 'viewer' | 'stats' | 'evo' | 'streak' | 'gstats';
+export type View = 'home' | 'titles' | 'detail' | 'shots' | 'viewer' | 'stats' | 'evo' | 'streak' | 'gstats' | 'achievements';
 export type SortMode = SortModeT;
 
 export const DEFAULT_CONFIG: Config = {
@@ -385,7 +386,9 @@ class Store {
   p = $state(0); // plataforma
   t = $state(0); // titulo enfocado / abierto
   s = $state(0); // captura enfocada / abierta
-  hp = $state(0); // plataforma enfocada en inicio
+  hp = $state(-1); // plataforma enfocada en inicio (-1 = primera visual)
+  resolvedHp = $derived(this.hp >= 0 && this.hp < this.lib.platforms.length ? this.hp : firstHomePlat(this.lib.platforms));
+  homeSpace = $state<SpaceId | null>(null);
   goff = $state(0); // desplazamiento de la cuadricula de capturas
   /** Partida en curso lanzada desde el visor (la ficha muestra «Jugando» y un cronómetro). */
   /** Se incrementa al recargar los grafismos para releer las imágenes. */
@@ -398,8 +401,14 @@ class Store {
   focus = $state('');
   fk: Record<string, string> = {}; // memoria de foco por pantalla
 
-  favView = $state(false);
-  favSnap = $state.raw<Shot[]>([]);
+  /** Modo de Álbum abierto (`none` = vista normal de juego/colección; `'all'`, `'favs'` o id de categoría). */
+  albumMode = $state<'none' | 'all' | 'favs' | string>('none');
+  albumSnap = $state.raw<Shot[]>([]);
+  isAlbum = $derived(this.albumMode !== 'none');
+  /** Resumen global de logros para la vitrina y el subtítulo de Inicio. */
+  achOverview = $state<AchievementsOverview | null>(null);
+  achOverviewLoading = $state(false);
+  achHubTab = $state<'games' | 'recent' | 'rarest'>('games');
   sortMode = $state<SortMode>('recent');
   idle = $state(false);
   /** Zoom del visor: aumento (1 = ajustado al marco) y desplazamiento de la imagen en píxeles del escenario. */
@@ -483,7 +492,7 @@ class Store {
   homeGoal = $state<GoalKey | ''>('');
   inputAt = $state(0);
   /** Desde dónde se abrió la ficha (B vuelve allí). */
-  detailFrom = $state<'home' | 'titles' | 'stats' | 'gstats'>('titles');
+  detailFrom = $state<'home' | 'titles' | 'stats' | 'gstats' | 'achievements'>('titles');
   /** Estadísticas de juego: de un título (desde Evolución) o de la categoría abierta (desde Start en la lista), métrica elegida y pantalla de origen. */
   gsScope = $state<'title' | 'cat'>('title');
   gsMetric = $state<GMetric>('time');
@@ -635,8 +644,14 @@ class Store {
   });
 
   cur = $derived.by((): CurTitle => {
-    if (this.favView) {
-      return { name: 'Favoritas', cover: null, shots: sortShots(this.favSnap, this.sortMode, untrack(() => this.favs)), isFavs: true };
+    if (this.isAlbum) {
+      const m = this.albumMode;
+      const base = m === 'favs'
+        ? this.albumSnap.filter((s) => this.favs.has(s.path))
+        : m === 'all'
+          ? this.albumSnap
+          : this.albumSnap.filter((s) => s.platId === m);
+      return { name: 'Álbum', cover: null, shots: sortShots(base, this.sortMode, untrack(() => this.favs)), isFavs: m === 'favs' };
     }
     const t = this.collTitle ?? this.lib.platforms[this.p]?.titles[this.t];
     if (!t) return { name: '', cover: null, shots: [], isFavs: false };
@@ -667,14 +682,23 @@ class Store {
     const v = this.pairFill(p);
     return `--p1:${v.v};--p2:${v.v2};--g1:${v.g1};--g2:${v.g2}`;
   }
-  /** Pareja del tramo de arcoíris de la sección k: las plataformas en su orden y, detrás, Mi lista y Estadísticas. */
+  /** Color arcoíris fijo de la categoría `k` (Switch Rojo, PC Naranja, VN Amarillo, JVN Verde). */
   secPair(k: number): { h1: number; h2: number } {
-    return pair(k / (this.lib.platforms.length + 2));
+    const p = this.lib.platforms[k];
+    if (p) return pair(sectionRainbowT(p.id));
+    return pair((((k % 7) + 7) % 7) / (RAINBOW.length - 1));
   }
   platAcc(pi: number): Accent {
     return this.pairAcc(this.secPair(pi));
   }
-  /** Pareja de un juego: vista previa (solo el juego abierto) > color manual > color del arte > arcoíris por nombre. */
+  /** Color arcoíris fijo de un espacio de Inicio (`album`, `stats`, `logros`). */
+  spacePair(id: SpaceId): { h1: number; h2: number } {
+    return pair(sectionRainbowT(id));
+  }
+  spaceAcc(id: SpaceId): Accent {
+    return this.pairAcc(this.spacePair(id));
+  }
+  /** Pareja de un juego: vista previa (solo el juego abierto) > color manual > color del arte > color de su categoría. */
   titlePair(pi: number, ti: number): { h1: number; h2: number } {
     const t = this.lib.platforms[pi]?.titles[ti];
     if (!t) return this.secPair(pi);
@@ -687,16 +711,22 @@ class Store {
   titleAcc(pi: number, ti: number): Accent {
     return this.pairAcc(this.titlePair(pi, ti), 'Del juego');
   }
-  /** Pareja de tonos de la atmósfera actual. */
-  /** Posición de la sección actual en el arcoíris (null dentro de un juego o en Racha). */
-  secK = $derived.by((): number | null => {
-    const N = this.lib.platforms.length;
-    if (this.overlay === 'settings') return N + 2;
-    if (this.favView) return N;
-    if (this.view === 'home') return this.hp;
-    if (this.view === 'titles') return this.p;
+  /** Ranura en el arcoíris (0..6) de la sección actual (null dentro de un juego o en Racha). */
+  secSlot = $derived.by((): number | null => {
+    if (this.overlay === 'settings') return sectionRainbowIdx('album');
+    if ((this.view === 'shots' || this.view === 'viewer') && this.isAlbum) return sectionRainbowIdx('album');
+    if (this.view === 'home') {
+      if (this.homeSpace) return sectionRainbowIdx(this.homeSpace);
+      const pid = this.lib.platforms[this.resolvedHp]?.id;
+      return pid ? sectionRainbowIdx(pid) : 0;
+    }
+    if (this.view === 'titles') {
+      const pid = this.lib.platforms[this.p]?.id;
+      return pid ? sectionRainbowIdx(pid) : 0;
+    }
     if (this.view === 'stats' && this.statsTab === 'streak') return null;
-    if (this.view === 'stats' || this.view === 'evo') return N + 1;
+    if (this.view === 'stats' || this.view === 'evo') return sectionRainbowIdx('stats');
+    if (this.view === 'achievements') return sectionRainbowIdx('logros');
     return null;
   });
 
@@ -712,8 +742,8 @@ class Store {
       }
       if (t) return gamePair(t);
     }
-    // Un tramo igual de arcoíris por sección: las plataformas en su orden y, detrás, Mi lista, Estadísticas y Ajustes.
-    if (this.secK !== null) return this.secPair(this.secK);
+    // Cada sección hereda su ranura fija en el arcoíris (0..6).
+    if (this.secSlot !== null) return pair(this.secSlot / (RAINBOW.length - 1));
     if (this.view === 'streak' || (this.view === 'stats' && this.statsTab === 'streak')) {
       const k = this.goalKeys.includes(this.streakKey) ? this.streakKey : (this.goalKeys[0] ?? this.streakKey);
       const h1 = hueOf(GOAL_COL[k].c);

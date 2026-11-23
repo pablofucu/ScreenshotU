@@ -244,7 +244,7 @@ export function openCollShots(k: number, shotPath?: string, ti?: number) {
   }
   app.collAt = { c: k, i: Math.min(app.collAt.i, cols(k) - 1) };
   app.collOpen = sh.coll.id;
-  app.favView = false; app.sagaFilter = -1; app.sortMode = app.config.shotsOrder;
+  app.albumMode = 'none'; app.sagaFilter = -1; app.sortMode = app.config.shotsOrder;
   if (ti !== undefined) app.sagaFilter = Math.max(-1, app.collTitle?.members?.findIndex((m) => m.id === titles[ti].id) ?? -1);
   if (shotPath) {
     const idx = app.cur.shots.findIndex((s) => s.path === shotPath);

@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Set 3 · Emblema dinámico (expresivo)</title>
+<style>
+:root{--round:'M PLUS Rounded 1c','Nunito','Segoe UI','Yu Gothic UI','Meiryo UI',system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;font-family:var(--round);background:#101319;color:#e6e9f0}
+body.page-light{background:#dfe3e9;color:#3a414e}
+.deck{max-width:1180px;margin:0 auto;padding:18px 16px 36px;display:flex;flex-direction:column;gap:14px}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:14px 18px;border-radius:18px;
+  background:rgba(30,34,43,.86);box-shadow:inset 0 0 0 1px rgba(200,210,235,.16);color:#e6e9f0}
+body.page-light .bar{background:rgba(255,255,255,.86);box-shadow:inset 0 0 0 1px rgba(95,110,135,.22);color:#3a414e}
+.bar-t{display:flex;flex-direction:column;gap:2px;margin-right:auto;min-width:220px}
+.bar-t b{font-size:18px;font-weight:800;line-height:1.2}
+.bar-t span{font-size:13px;font-weight:500;opacity:.78;line-height:1.35}
+.seg{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:rgba(128,140,165,.16);box-shadow:inset 0 0 0 1px rgba(128,140,165,.22)}
+.seg button{appearance:none;border:0;background:transparent;color:inherit;font:700 13px/1 var(--round);height:30px;padding:0 12px;border-radius:999px;cursor:pointer;opacity:.78}
+.seg button:hover{opacity:1}
+.seg button.on{background:#0089be;color:#fff;opacity:1}
+
+#stage{border-radius:24px;padding:22px;background:radial-gradient(120% 90% at 50% 0%,#f8f9fb 0%,#eceef2 55%,#e2e5ea 100%);
+  box-shadow:0 0 0 1px rgba(95,110,135,.22),0 22px 48px -20px rgba(0,0,0,.45)}
+#stage[data-theme=dark]{background:radial-gradient(120% 90% at 50% 0%,#232631 0%,#16181e 60%,#0f1115 100%);
+  box-shadow:0 0 0 1px rgba(200,210,235,.14),0 24px 54px -20px rgba(0,0,0,.75)}
+
+.sec-lbl{font:800 11px/1 var(--round);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin:0 0 12px}
+.hero-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+@media (max-width:760px){.hero-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.hero-card{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:16px 12px;border-radius:20px;
+  background:var(--panel);box-shadow:inset 0 0 0 1px var(--line)}
+.hero-card .plat{width:148px;height:148px}
+.hero-card b{font:800 17px/1.2 var(--round);color:var(--ink)}
+.hero-card small{font:500 13px/1.35 var(--round);color:var(--ink-2)}
+.ref-tag{display:inline-block;margin-left:5px;padding:2px 7px;border-radius:999px;font:800 10px/1 var(--round);text-transform:uppercase;
+  letter-spacing:.04em;background:rgba(128,140,165,.22);color:var(--ink-2);vertical-align:middle}
+
+.sub-row{display:grid;grid-template-columns:auto 1fr;gap:22px;margin-top:20px;align-items:start}
+@media (max-width:900px){.sub-row{grid-template-columns:1fr}}
+.box-card{padding:16px 18px;border-radius:20px;background:var(--panel);box-shadow:inset 0 0 0 1px var(--line)}
+.dist-strip{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.dist-it{display:flex;flex-direction:column;align-items:center;gap:6px}
+.dist-it .plat{width:64px;height:64px;--r:16px;--bw:5px}
+.dist-it span{font:700 12px/1 var(--round);color:var(--ink-2)}
+
+.ctx-strip{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.ctx-it{display:flex;flex-direction:column;align-items:center;gap:6px}
+.ctx-it .plat{width:92px;height:92px;--r:21px;--bw:7px}
+.ctx-it.med .plat{width:72px;height:72px;--r:17px;--bw:6px}
+.ctx-it span{font:700 12px/1 var(--round);color:var(--ink-2);text-align:center}
+.ctx-div{width:1px;height:74px;background:var(--line-2);align-self:center;margin:0 4px}
+
+/* Cristal y teselas Wii U exactas (claro + Noche ahumada neón) */
+#stage{
+  --round:'M PLUS Rounded 1c','Nunito','Segoe UI','Yu Gothic UI','Meiryo UI',system-ui,sans-serif;
+  --ink:#3a414e;--ink-2:#5f6776;--ink-3:#757d8c;--line:rgba(95,110,135,.24);--line-2:rgba(150,160,180,.35);
+  --face:#dfe3e9;--panel:rgba(255,255,255,.75);
+  --glass-top:rgba(255,255,255,.72);--glass-mid:rgba(255,255,255,.30);--glass-bot:rgba(225,234,246,.22);
+  --tile-bg:rgba(255,255,255,.62);--hl:rgba(255,255,255,1);--hl-ring:rgba(255,255,255,.55);--hl-bot:rgba(255,255,255,.95);--tint-base:#fff;
+  --sh-1:0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42);
+  --sh-2:0 0 0 1px color-mix(in srgb,var(--pf) 75%,black),0 0 26px 2px color-mix(in srgb,var(--pf) 45%,transparent),0 22px 34px -16px color-mix(in srgb,var(--pf) 70%,black);
+  --r-xs:6px;--r-s:12px;--r-m:18px;--r-l:28px;
+  font-family:var(--round);color:var(--ink);
+}
+#stage[data-theme=dark]{
+  --ink:#e6e9f0;--ink-2:#b4bccb;--ink-3:#8f98a9;--line:rgba(200,210,235,.16);--line-2:rgba(200,210,235,.24);
+  --face:#262a33;--panel:rgba(30,34,43,.78);
+  --glass-top:rgba(60,66,80,.62);--glass-mid:rgba(36,40,50,.42);--glass-bot:rgba(20,22,28,.38);
+  --tile-bg:rgba(40,44,56,.62);--hl:rgba(255,255,255,.10);--hl-ring:rgba(255,255,255,.06);--hl-bot:rgba(255,255,255,.04);--tint-base:#262a33;
+  --sh-1:0 0 0 1px rgba(200,210,235,.14),0 2px 3px rgba(0,0,0,.30),0 18px 30px -16px rgba(0,0,0,.70);
+  --sh-2:0 0 0 1px color-mix(in srgb,var(--pg) 70%,black),0 0 30px 4px color-mix(in srgb,var(--pc) 55%,transparent),0 22px 34px -16px rgba(0,0,0,.85);
+}
+
+.plat{position:relative;--r:32px;--bw:10px;border-radius:var(--r);padding:var(--bw);box-sizing:border-box;isolation:isolate;
+  background:linear-gradient(180deg,var(--glass-top) 0%,var(--glass-mid) 46%,var(--glass-bot) 100%);
+  box-shadow:inset 0 1.5px 0 var(--hl),inset 0 0 0 1px var(--hl-ring),inset 0 -10px 14px -8px var(--hl-bot),inset 0 -1.5px 0 rgba(110,125,150,.30),var(--sh-1);
+  transition:transform .22s cubic-bezier(.34,1.32,.64,1),box-shadow .22s ease}
+.plat::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;
+  border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
+  background:linear-gradient(180deg,var(--tile-bg) 0%,rgba(255,255,255,.20) 55%,rgba(255,255,255,0) 100%);
+  -webkit-mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);
+  mask-image:radial-gradient(140% 100% at 50% 0%,#000 64%,transparent 65%);opacity:.85}
+#stage[data-theme=dark] .plat::before{opacity:.42}
+.plat::after{content:'';position:absolute;z-index:3;left:12%;top:3px;width:34%;height:5px;border-radius:var(--r-xs);pointer-events:none;
+  background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,1) 40%,rgba(255,255,255,0));filter:blur(.6px);opacity:.9}
+#stage[data-theme=dark] .plat::after{opacity:.42}
+.plat .face{position:relative;z-index:1;width:100%;height:100%;border-radius:calc(var(--r) - var(--bw) + 2px);overflow:hidden;
+  background:radial-gradient(125% 105% at 28% 12%,color-mix(in srgb,var(--pc) 26%,#ffffff) 0%,var(--pc) 62%,color-mix(in srgb,var(--pc) 76%,black) 100%);
+  display:grid;place-items:center}
+.plat.gold .face{background:radial-gradient(125% 105% at 28% 12%,#fff099 0%,#F2B807 62%,#b67900 100%)}
+.plat .face::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(20,30,50,.18),inset 0 3px 6px -2px rgba(0,0,0,.32),inset 0 -2px 4px -2px var(--hl-ring)}
+
+#stage[data-theme=dark] .plat{
+  box-shadow:inset 0 1.5px 0 color-mix(in srgb,var(--pg) 48%,rgba(255,255,255,.22)),
+    inset 0 0 0 1px color-mix(in srgb,var(--pc) 38%,transparent),
+    0 0 22px -6px color-mix(in srgb,var(--pc) 52%,transparent),
+    0 18px 28px -16px rgba(0,0,0,.80);
+}
+#stage[data-theme=dark] .plat .face{
+  background:radial-gradient(120% 100% at 28% 12%,color-mix(in srgb,var(--pc) 62%,#ffffff) 0%,var(--pc) 56%,color-mix(in srgb,var(--pc) 62%,black) 100%);
+}
+#stage[data-theme=dark] .plat.gold .face{
+  background:radial-gradient(120% 100% at 28% 12%,#ffec85 0%,#F2B807 58%,#9e6c00 100%);
+}
+#stage[data-theme=dark] .plat .face::after{
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,white 24%,transparent),inset 0 -3px 8px -2px rgba(0,0,0,.35);
+}
+.plat.f{transform:scale(1.05);
+  background:linear-gradient(150deg,color-mix(in srgb,var(--pg) 58%,white) 0%,var(--pf) 52%,color-mix(in srgb,var(--pf) 78%,black) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.92),inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),var(--sh-2)}
+#stage[data-theme=dark] .plat.f{
+  background:linear-gradient(150deg,color-mix(in srgb,var(--pg) 76%,white) 0%,var(--pc) 52%,color-mix(in srgb,var(--pc) 75%,black) 100%);
+  box-shadow:inset 0 1.5px 0 rgba(255,255,255,.88),inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),
+    0 0 0 1px color-mix(in srgb,var(--pc) 75%,black),0 0 32px 4px color-mix(in srgb,var(--pc) 62%,transparent),0 22px 34px -16px rgba(0,0,0,.85);
+}
+.plat svg{width:64%;height:64%;filter:drop-shadow(0 2px 6px rgba(0,0,0,.28))}
+.plat.gold svg{filter:drop-shadow(0 2px 6px rgba(95,55,0,.45))}
+
+</style>
+</head>
+<body>
+<div class="deck">
+  <div class="bar">
+    <div class="bar-t">
+      <b>Set 3 · Emblema dinámico (expresivo)</b>
+      <span>Más personalidad Wii U: Joy-Con clic con destello, escena nocturna con luna y diálogo, y hermana japonesa con 「 」, あ y furigana.</span>
+    </div>
+    <div class="seg" role="group" aria-label="Paleta">
+      <button type="button" class="on" data-pal="guia" onclick="setPal('guia')">Paleta guía (Rojo→Violeta)</button>
+      <button type="button" data-pal="azul" onclick="setPal('azul')">Desde Azul PC</button>
+    </div>
+    <div class="seg" role="group" aria-label="Tema">
+      <button type="button" data-th="light" onclick="setTheme('light')">Claro</button>
+      <button type="button" class="on" data-th="dark" onclick="setTheme('dark')">Noche ahumada</button>
+    </div>
+  </div>
+  <div id="stage" data-theme="dark"></div>
+</div>
+<script>
+const SET_IDX = 2;
+
+let _gid = 0;
+function nextG(){ return 'gw_' + (++_gid); }
+function gradDef(id){
+  return `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#e9eef5"/></linearGradient></defs>`;
+}
+
+// Trazado vectorial puro de la hiragana あ (sistema 0..100, sin <text>)
+function vectorA(gId, tx, ty, sc, sw){
+  return `<g transform="translate(${tx} ${ty}) scale(${sc})" fill="none" stroke="url(#${gId})" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 22 27 Q 49 25 76 19"/>
+    <path d="M 45 9 C 42 35 41 61 46 86"/>
+    <path d="M 64 38 C 57 59 45 77 31 79 C 19 80 18 64 26 52 C 35 39 59 38 74 47 C 86 55 83 79 58 87"/>
+  </g>`;
+}
+
+function iconPC(){
+  const g = nextG();
+  return `<svg viewBox="0 0 120 120">${gradDef(g)}
+    <path fill="url(#${g})" fill-rule="evenodd" d="M20 18h66a8 8 0 0 1 8 8v42a8 8 0 0 1-8 8H20a8 8 0 0 1-8-8V26a8 8 0 0 1 8-8zm2 9v38h62V27z"/>
+    <path fill="url(#${g})" d="M46 76h14l3 12H43z"/>
+    <rect x="32" y="87" width="42" height="7" rx="3.5" fill="url(#${g})"/>
+    <path fill="url(#${g})" fill-rule="evenodd" d="M100 26h8a5 5 0 0 1 5 5v58a5 5 0 0 1-5 5h-8a5 5 0 0 1-5-5V31a5 5 0 0 1 5-5zm1 10v4h6v-4zm0 9v4h6v-4z"/>
+    <path d="M24 29h28l-28 22z" fill="#fff" opacity=".35"/>
+  </svg>`;
+}
+
+function iconAlbum(){
+  const g = nextG();
+  return `<svg viewBox="0 0 120 120" fill="none" stroke="url(#${g})" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">${gradDef(g)}
+    <rect x="17" y="25" width="76" height="56" rx="10" transform="rotate(-9 55 53)" fill="#fff" fill-opacity=".22"/>
+    <rect x="20" y="34" width="84" height="62" rx="11" fill="#fff" fill-opacity=".14"/>
+    <circle cx="42" cy="54" r="7" fill="#fff" stroke="none"/>
+    <path d="M26 88l21-22 15 15 14-14 22 21" fill="#fff" fill-opacity=".28"/>
+  </svg>`;
+}
+
+function iconStats(){
+  const g = nextG();
+  return `<svg viewBox="0 0 120 120" fill="none" stroke="url(#${g})" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">${gradDef(g)}
+    <rect x="20" y="60" width="20" height="36" rx="6" fill="#fff" fill-opacity=".24"/>
+    <rect x="50" y="42" width="20" height="54" rx="6" fill="#fff" fill-opacity=".42"/>
+    <rect x="80" y="24" width="20" height="72" rx="6" fill="#fff" fill-opacity=".86"/>
+    <path d="M24 44l28-14 24-12" stroke-width="5.5"/>
+    <circle cx="90" cy="14" r="4" fill="#fff" stroke="none"/>
+  </svg>`;
+}
+
+function iconLogros(){
+  const g = nextG();
+  return `<svg viewBox="0 0 120 120" fill="none" stroke="url(#${g})" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">${gradDef(g)}
+    <path d="M34 24h52v26c0 17-11 29-26 29S34 67 34 50z" fill="#fff" fill-opacity=".24"/>
+    <path d="M34 32H19c0 17 7 25 15 26M86 32h15c0 17-7 25-15 26"/>
+    <path d="M60 79v16M40 96h40"/>
+    <path d="M60 36l4.1 8.5 9.4 1.3-6.8 6.5 1.7 9.3L60 57.1l-8.4 4.5 1.7-9.3-6.8-6.5 9.4-1.3z" fill="#fff" stroke="none"/>
+  </svg>`;
+}
+
+const SETS = [
+  {
+    num: 1,
+    file: '1-clasico-wiiu.html',
+    short: '1 · Clásico Wii U ★',
+    title: 'Set 1 · Clásico Wii U (Recomendado)',
+    desc: 'Mismo ADN que PC: Joy-Con clic (hueco + sólido), marco apaisado con escena y diálogo integrado, y hermana exacta con 「 」 y あ vectorial.',
+    notes: {
+      switch: 'Joy-Con clic: izquierdo con marco hueco y stick sólido; derecho macizo +4 px más alto con stick recortado.',
+      vn: 'Mismo marco que PC: escena con horizonte y destello arriba + caja de diálogo con pestaña, líneas y ▼.',
+      jvn: 'Hermana exacta en marco y grosor: corchetes 「 」, あ vectorial limpia y flecha ▼.'
+    },
+    switch(){
+      const g = nextG();
+      return `<svg viewBox="0 0 120 120">${gradDef(g)}
+        <!-- Joy-Con izquierdo: marco hueco + stick sólido arriba -->
+        <path fill="url(#${g})" fill-rule="evenodd" d="M36 18h12a6 6 0 0 1 6 6v72a6 6 0 0 1-6 6H36a18 18 0 0 1-18-18V36a18 18 0 0 1 18-18zm0 8a10 10 0 0 0-10 10v48a10 10 0 0 0 10 10h10V26z"/>
+        <circle cx="36" cy="45" r="8.5" fill="url(#${g})"/>
+        <path d="M26 36a10 10 0 0 1 10-10h10v18L26 60z" fill="#fff" opacity=".24"/>
+        <!-- Joy-Con derecho: sólido y 4 px arriba (gesto clic) con stick recortado -->
+        <path fill="url(#${g})" fill-rule="evenodd" d="M72 14h12a18 18 0 0 1 18 18v48a18 18 0 0 1-18 18H72a6 6 0 0 1-6-6V20a6 6 0 0 1 6-6zm12 42a9 9 0 1 0 0 18 9 9 0 1 0 0-18z"/>
+        <path d="M72 18h18l-20 18V20a2 2 0 0 1 2-2z" fill="#fff" opacity=".25"/>
+      </svg>`;
+    },
+    vn(){
+      const g = nextG();
+      return `<svg viewBox="0 0 120 120">${gradDef(g)}
+        <!-- Escena hueca (con pestaña de nombre sobresaliendo abajo-izq) + caja de diálogo maciza -->
+        <path fill="url(#${g})" fill-rule="evenodd" d="
+          M26 18h68a12 12 0 0 1 12 12v58a12 12 0 0 1-12 12H26a12 12 0 0 1-12-12V30a12 12 0 0 1 12-12z
+          M26 26a4 4 0 0 0-4 4v25a3 3 0 0 1 3-3h26a3 3 0 0 1 3 3v5h41a3 3 0 0 0 3-3V30a4 4 0 0 0-4-4z
+          M27 70a3 3 0 0 0 0 6h60a3 3 0 0 0 0-6z
+          M27 83a3 3 0 0 0 0 6h38a3 3 0 0 0 0-6z
+          M84 82h12l-6 9z"/>
+        <!-- Detalles translúcidos en la escena (reflejo diagonal, horizonte suave y destello 4 puntas) -->
+        <path d="M22 30a4 4 0 0 1 4-4h28L22 50z" fill="#fff" opacity=".28"/>
+        <path d="M22 50q25-8 46-2t30-3v12a3 3 0 0 1-3 3H54v-5a3 3 0 0 0-3-3H25a3 3 0 0 0-3 3z" fill="#fff" opacity=".24"/>
+        <path d="M79 31l2 5.5 5.5 2-5.5 2-2 5.5-2-5.5-5.5-2 5.5-2z" fill="#fff" opacity=".72"/>
+      </svg>`;
+    },
+    jvn(){
+      const g = nextG();
+      return `<svg viewBox="0 0 120 120">${gradDef(g)}
+        <!-- Marco hermano exacto de Novelas visuales (14..106 × 18..100, rx=12) -->
+        <path fill="url(#${g})" fill-rule="evenodd" d="
+          M26 18h68a12 12 0 0 1 12 12v58a12 12 0 0 1-12 12H26a12 12 0 0 1-12-12V30a12 12 0 0 1 12-12z
+          M27 26a5 5 0 0 0-5 5v56a5 5 0 0 0 5 5h66a5 5 0 0 0 5-5V31a5 5 0 0 0-5-5z"/>
+        <path d="M22 31a5 5 0 0 1 5-5h29L22 55z" fill="#fff" opacity=".20"/>
+        <!-- Corchete de apertura 「 arriba-izq -->
+        <path fill="url(#${g})" d="M28 31h16a2.5 2.5 0 0 1 0 5H33v11a2.5 2.5 0 0 1-5 0z"/>
+        <!-- あ vectorial pura centrada con aire limpio -->
+        ${vectorA(g, 33, 33, 0.48, 14.5)}
+        <!-- Corchete de cierre 」 abajo-der + flecha ▼ separada -->
+        <path fill="url(#${g})" d="M77 61a2.5 2.5 0 0 1 5 0v17H67a2.5 2.5 0 0 1 0-5h10z"/>
+        <path fill="url(#${g})" d="M85 81h10l-5 7z" opacity=".92"/>
+      </svg>`;
+    }
+  },
+  {
+    num: 2,
+    file: '2-bloques-capas.html',
+    short: '2 · Bloques en capas',
+    title: 'Set 2 · Bloques en capas (máximo contraste)',
+    desc: 'Volumen sólido y 2 capas: Joy-Con simétricos con signos +/−, gran caja de diálogo delante de escena translúcida, y caja japonesa con 「 」, あ y líneas.',
+    notes: {
+      switch: 'Ambos Joy-Con macizos y simétricos con stick recortado, guion − izquierdo y cruz + derecha.',
+      vn: 'Tarjeta translúcida de escena detrás + gran caja de diálogo maciza en primer plano con pestaña y ▼.',
+      jvn: 'Misma composición en 2 capas: caja japonesa delante con 「 」, あ vectorial a la izquierda y texto a la derecha.'
+    },
+    switch(){
+      const g = nextG();
+      return `<svg viewBox="0 0 120 120">${gradDef(g)}
+        <!-- Joy-Con izquierdo sólido: stick hueco arriba + guion - abajo -->
+        <path fill="url(#${g})" fill-rule="evenodd" d="
+          M36 18h12a6 6 0 0 1 6 6v72a6 6 0 0 1-6 6H36a18 18 0 0 1-18-18V36a18 18 0 0 1 18-18z
+          M36 36a8.5 8.5 0 1 0 0 17 8.5 8.5 0 1 0 0-17z
+          M31 69a2.5 2.5 0 0 0 0 5h10a2.5 2.5 0 0 0 0-5z"/>
+        <!-- Joy-Con derecho sólido: cruz + arriba + stick hueco abajo -->
+        <path fill="url(#${g})" fill-rule="evenodd" d="
+          M72 18h12a18 18 0 0 1 18 18v48a18 18 0 0 1-18 18H72a6 6 0 0 1-6-6V24a6 6 0 0 1 6-6z
+          M82 34h4v5h5v4h-5v5h-4v-5h-5v-4h5z
+          M84 61a8.5 8.5 0 1 0 0 17 8.5 8.5 0 1 0 0-17z"/>
+        <path d="M21 30a15 15 0 0 1 15-10h12L21 44z" fill="#fff" opacity=".24"/>
+      </svg>`;
+    },
+    vn(){
+      const g = nextG();
+      return `<svg viewBox="0 0 120 120">${gradDef(g)}
+        <!-- Capa trasera: tarjeta de escena translúcida -->
+        <rect x="20" y="16" width="80" height="52" rx="10" fill="#fff" opacity=".32"/>
+        <path d="M44 25l2.2 6 6 2.2-6 2.2-2.2 6-2.2-6-6-2.2 6-2.2z" fill="#fff" opacity=".78"/>
+        <circle cx="63" cy="27" r="3" fill="#fff" opacity=".68"/>
+        <!-- Capa delantera: gran caja de diálogo maciza con pestaña y texto -->
+        <path fill="url(#${g})" fill-rule="evenodd" d="
+          M25 45h22a5 5 0 0 1 5 5v4h45a11 11 0 0 1 11 11v26a11 11 0 0 1-11 11H23a11 11 0 0 1-11-11V56a11 11 0 0 1 11-11z
+          M23 68a3 3 0 0 0 0 6h62a3 3 0 0 0 0-6z
+          M23 82a3 3 0 0 0 0 6h40a3 3 0 0 0 0-6z
+          M85 81h12l-6 9z"/>
+      </svg>`;
+    },
+    jvn(){
+      const g = nextG();
+      return `<svg viewBox="0 0 120 120">${gradDef(g)}
+        <!-- Capa trasera hermana: tarjeta de escena translúcida -->
+        <rect x="20" y="16" width="80" height="44" rx="10" fill="#fff" opacity=".30"/>
+        <path d="M29 24h14v4H33v10h-4z" fill="#fff" opacity=".62"/>
+        <!-- Capa delantera: marco caja de diálogo japonesa con 「 」, あ y texto -->
+        <path fill="url(#${g})" fill-rule="evenodd" d="
+          M23 44h74a11 11 0 0 1 11 11v36a11 11 0 0 1-11 11H23a11 11 0 0 1-11-11V55a11 11 0 0 1 11-11z
+          M24 51a5 5 0 0 0-5 5v34a5 5 0 0 0 5 5h72a5 5 0 0 0 5-5V56a5 5 0 0 0-5-5z"/>
+        <path fill="url(#${g})" d="M23 55h10a2 2 0 0 1 0 4h-6v8a2 2 0 0 1-4 0z"/>
+        ${vectorA(g, 30, 56, 0.35, 15.5)}
+        <rect x="67" y="61" width="27" height="5.5" rx="2.7" fill="url(#${g})"/>
+        <rect x="67" y="73" width="19" height="5.5" rx="2.7" fill="url(#${g})"/>
+        <path fill="url(#${g})" d="M92 78a2 2 0 0 1 4 0v12H83a2 2 0 0 1 0-4h9z"/>
+      </svg>`;
+    }
+  },
+  {
+    num: 3,
+    file: '3-emblema-dinamico.html',
+    short: '3 · Emblema dinámico',
+    title: 'Set 3 · Emblema dinámico (expresivo)',
+    desc: 'Más personalidad Wii U: Joy-Con clic pronunciado con destello, escena nocturna con luna y diálogo, y hermana japonesa con 「 」, あ y furigana sutil.',
+    notes: {
+      switch: 'Joy-Con izquierdo en base y derecho elevado +10 px con dos trazos breves de «clic» arriba a la derecha.',
+      vn: 'Marco suave (rx=16), escena nocturna con media luna creciente y estrellas + caja de diálogo inferior.',
+      jvn: 'Marco hermano (rx=16) con corchetes 「 」 en diagonal, あ vectorial y tres puntos sutiles de furigana.'
+    },
+    switch(){
+      const g = nextG();
+      return `<svg viewBox="0 0 120 120">${gradDef(g)}
+        <!-- Joy-Con izquierdo abajo -->
+        <path fill="url(#${g})" fill-rule="evenodd" d="
+          M35 24h13a6 6 0 0 1 6 6v66a6 6 0 0 1-6 6H35a17 17 0 0 1-17-17V41a17 17 0 0 1 17-17z
+          M36 40a8 8 0 1 0 0 16 8 8 0 1 0 0-16z"/>
+        <!-- Joy-Con derecho elevado (+10 px) -->
+        <path fill="url(#${g})" fill-rule="evenodd" d="
+          M72 14h13a17 17 0 0 1 17 17v44a17 17 0 0 1-17 17H72a6 6 0 0 1-6-6V20a6 6 0 0 1 6-6z
+          M84 59a8 8 0 1 0 0 16 8 8 0 1 0 0-16z"/>
+        <!-- Destello «clic» arriba a la derecha -->
+        <path d="M107 15l5-5M109 25h7" stroke="url(#${g})" stroke-width="4.5" stroke-linecap="round"/>
+        <path d="M21 36a14 14 0 0 1 14-10h12L21 50z" fill="#fff" opacity=".24"/>
+      </svg>`;
+    },
+    vn(){
+      const g = nextG();
+      return `<svg viewBox="0 0 120 120">${gradDef(g)}
+        <path fill="url(#${g})" fill-rule="evenodd" d="
+          M30 18h60a16 16 0 0 1 16 16v50a16 16 0 0 1-16 16H30a16 16 0 0 1-16-16V34a16 16 0 0 1 16-16z
+          M30 26a8 8 0 0 0-8 8v21a3 3 0 0 1 3-3h26a3 3 0 0 1 3 3v5h41a3 3 0 0 0 3-3V34a8 8 0 0 0-8-8z
+          M27 70a3 3 0 0 0 0 6h60a3 3 0 0 0 0-6z
+          M27 83a3 3 0 0 0 0 6h38a3 3 0 0 0 0-6z
+          M84 82h12l-6 9z"/>
+        <!-- Escena nocturna: media luna creciente + dos estrellitas -->
+        <path d="M80 30a9 9 0 1 0 8 13 7 7 0 0 1-8-13z" fill="#fff" opacity=".68"/>
+        <circle cx="42" cy="36" r="2.8" fill="#fff" opacity=".62"/>
+        <circle cx="57" cy="43" r="2" fill="#fff" opacity=".46"/>
+      </svg>`;
+    },
+    jvn(){
+      const g = nextG();
+      return `<svg viewBox="0 0 120 120">${gradDef(g)}
+        <path fill="url(#${g})" fill-rule="evenodd" d="
+          M30 18h60a16 16 0 0 1 16 16v50a16 16 0 0 1-16 16H30a16 16 0 0 1-16-16V34a16 16 0 0 1 16-16z
+          M30 26a8 8 0 0 0-8 8v50a8 8 0 0 0 8 8h60a8 8 0 0 0 8-8V34a8 8 0 0 0-8-8z"/>
+        <!-- Furigana sutil arriba -->
+        <circle cx="52" cy="34" r="2.5" fill="#fff" opacity=".68"/>
+        <circle cx="61" cy="34" r="2.5" fill="#fff" opacity=".68"/>
+        <circle cx="70" cy="34" r="2.5" fill="#fff" opacity=".68"/>
+        <!-- Grandes corchetes + あ vectorial -->
+        <path fill="url(#${g})" d="M29 33h16a2.5 2.5 0 0 1 0 5H34v12a2.5 2.5 0 0 1-5 0z"/>
+        ${vectorA(g, 35, 39, 0.48, 14.5)}
+        <path fill="url(#${g})" d="M85 65a2.5 2.5 0 0 1 5 0v19H72a2.5 2.5 0 0 1 0-5h13z"/>
+      </svg>`;
+    }
+  }
+];
+
+
+const PALETTES = {
+  guia: {
+    label: 'Guía (Rojo → Violeta)',
+    switch: { n: 'Juegos Switch', v1: '#E8384F', f1: '#c8223a', g1: 'oklch(0.80 0.12 20)', g2: 'oklch(0.80 0.12 52)' },
+    pc:     { n: 'Juegos PC', v1: '#F27A1A', f1: '#b84d06', g1: 'oklch(0.80 0.12 52)', g2: 'oklch(0.80 0.12 88)' },
+    vn:     { n: 'Novelas visuales', v1: '#F2B807', f1: '#8c6700', g1: 'oklch(0.80 0.12 88)', g2: 'oklch(0.80 0.12 146)' },
+    jvn:    { n: 'Novelas japonesas', v1: '#3BB54A', f1: '#237f32', g1: 'oklch(0.80 0.12 146)', g2: 'oklch(0.80 0.12 232)' },
+    album:  { n: 'Álbum', v1: '#00A0D8', f1: '#0077a8', g1: 'oklch(0.80 0.12 232)', g2: 'oklch(0.80 0.12 268)' },
+    stats:  { n: 'Estadísticas', v1: '#3F63E0', f1: '#3150c4', g1: 'oklch(0.80 0.12 268)', g2: 'oklch(0.80 0.12 308)' },
+    logros: { n: 'Logros', v1: '#9A4BD8', f1: '#7c33b8', g1: 'oklch(0.80 0.12 308)', g2: 'oklch(0.80 0.12 20)' },
+    order: ['switch','pc','vn','jvn','album','stats','logros']
+  },
+  azul: {
+    label: 'Desde Azul PC',
+    pc:     { n: 'Juegos PC', v1: '#00A0D8', f1: '#0077a8', g1: 'oklch(0.80 0.12 232)', g2: 'oklch(0.80 0.12 268)' },
+    vn:     { n: 'Novelas visuales', v1: '#3F63E0', f1: '#3150c4', g1: 'oklch(0.80 0.12 268)', g2: 'oklch(0.80 0.12 308)' },
+    jvn:    { n: 'Novelas japonesas', v1: '#9A4BD8', f1: '#7c33b8', g1: 'oklch(0.80 0.12 308)', g2: 'oklch(0.80 0.12 20)' },
+    switch: { n: 'Juegos Switch', v1: '#E8384F', f1: '#c8223a', g1: 'oklch(0.80 0.12 20)', g2: 'oklch(0.80 0.12 52)' },
+    album:  { n: 'Álbum', v1: '#F27A1A', f1: '#b84d06', g1: 'oklch(0.80 0.12 52)', g2: 'oklch(0.80 0.12 88)' },
+    logros: { n: 'Logros', v1: '#F2B807', f1: '#8c6700', g1: 'oklch(0.80 0.12 88)', g2: 'oklch(0.80 0.12 146)' },
+    stats:  { n: 'Estadísticas', v1: '#3BB54A', f1: '#237f32', g1: 'oklch(0.80 0.12 146)', g2: 'oklch(0.80 0.12 232)' },
+    order: ['pc','vn','jvn','switch','album','logros','stats']
+  }
+};
+
+
+let curTheme = 'dark';
+let curPal = 'guia';
+
+function setTheme(t){
+  curTheme = t;
+  document.body.classList.toggle('page-light', t === 'light');
+  document.getElementById('stage').setAttribute('data-theme', t);
+  document.querySelectorAll('[data-th]').forEach(b => b.classList.toggle('on', b.dataset.th === t));
+}
+function setPal(p){
+  curPal = p;
+  document.querySelectorAll('[data-pal]').forEach(b => b.classList.toggle('on', b.dataset.pal === p));
+  render();
+}
+
+function svgOf(set, id){
+  if (id === 'pc') return iconPC();
+  if (id === 'switch') return set.switch();
+  if (id === 'vn') return set.vn();
+  if (id === 'jvn') return set.jvn();
+  if (id === 'album') return iconAlbum();
+  if (id === 'stats') return iconStats();
+  return iconLogros();
+}
+
+function render(){
+  _gid = 0;
+  const set = SETS[SET_IDX];
+  const pal = PALETTES[curPal];
+  const cats = ['pc','switch','vn','jvn'];
+  const hero = cats.map(id => {
+    const c = pal[id];
+    const gold = c.v1 === '#F2B807' ? 'gold' : '';
+    const note = id === 'pc' ? 'Icono actual de referencia (manteniendo su estilo sólido Wii U).' : set.notes[id];
+    return `<div class="hero-card">
+      <div class="plat ${gold} ${id === 'switch' ? 'f' : ''}" style="--pc:${c.v1};--pg:${c.g1};--pf:${c.f1}">
+        <div class="face">${svgOf(set, id)}</div>
+      </div>
+      <b>${c.n}${id === 'pc' ? '<span class="ref-tag">Ref</span>' : ''}</b>
+      <small>${note}</small>
+    </div>`;
+  }).join('');
+
+  const dist = cats.map(id => {
+    const c = pal[id];
+    const gold = c.v1 === '#F2B807' ? 'gold' : '';
+    return `<div class="dist-it">
+      <div class="plat ${gold}" style="--pc:${c.v1};--pg:${c.g1};--pf:${c.f1}"><div class="face">${svgOf(set, id)}</div></div>
+      <span>${c.n.replace('Juegos ','').replace('Novelas ','Nov. ')}</span>
+    </div>`;
+  }).join('');
+
+  const ctx = pal.order.map((id, i) => {
+    const c = pal[id];
+    const gold = c.v1 === '#F2B807' ? 'gold' : '';
+    const isSpace = i >= 4;
+    return (i === 4 ? '<div class="ctx-div"></div>' : '') +
+      `<div class="ctx-it ${isSpace ? 'med' : ''}">
+        <div class="plat ${gold}" style="--pc:${c.v1};--pg:${c.g1};--pf:${c.f1}"><div class="face">${svgOf(set, id)}</div></div>
+        <span>${c.n.replace('Juegos ','').replace('Novelas ','Nov. ')}</span>
+      </div>`;
+  }).join('');
+
+  document.getElementById('stage').innerHTML = `
+    <div class="sec-lbl">Comparativa directa en cristal Wii U (148 px)</div>
+    <div class="hero-grid">${hero}</div>
+    <div class="sub-row">
+      <div class="box-card">
+        <div class="sec-lbl">Prueba a 3 metros (64 px)</div>
+        <div class="dist-strip">${dist}</div>
+      </div>
+      <div class="box-card">
+        <div class="sec-lbl">En contexto · Fila Jerarquía 4+3</div>
+        <div class="ctx-strip">${ctx}</div>
+      </div>
+    </div>
+  `;
+}
+render();
+</script>
+</body>
+</html>

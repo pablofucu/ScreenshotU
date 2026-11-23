@@ -132,9 +132,10 @@ export interface Shot {
   height: number;
   /** Tamaño en bytes. */
   size?: number;
-  /** Solo en la vista de una colección: juego de origen (nombre e id). */
+  /** En colecciones o en el Álbum global: juego y categoría de origen. */
   game?: string;
   gid?: string;
+  platId?: string;
 }
 /** Saga antigua (la usa la app del móvil); en el escritorio son `Collection`. */
 export interface Saga { id: string; name: string; members: string[]; platform?: string | null; color?: number | null }
@@ -318,6 +319,34 @@ export interface Achievement {
 /** Logro desbloqueado en un rango (resumen semanal). `unlockedAt` en segundos; `pct`, rareza global si se conoce. */
 export interface WeekAch { gameId: string; displayName: string; icon: string | null; unlockedAt: number; pct: number | null }
 
+export interface GameAchOverview {
+  gameId: string;
+  appId: string;
+  total: number;
+  unlocked: number;
+  rareUnlocked: number;
+  lastUnlockedAt: number | null;
+}
+export interface GlobalAchItem {
+  gameId: string;
+  appId: string;
+  apiName: string;
+  displayName: string;
+  description: string;
+  icon: string | null;
+  unlockedAt: number;
+  pct: number | null;
+}
+export interface AchievementsOverview {
+  totalUnlocked: number;
+  totalAchievements: number;
+  completedGames: number;
+  rareUnlocked: number;
+  games: GameAchOverview[];
+  recent: GlobalAchItem[];
+  rarest: GlobalAchItem[];
+}
+
 export interface AchievementSummary {
   appId: string;
   total: number;
@@ -493,6 +522,8 @@ export interface Backend {
   getAchievementsSummary(gameId: string, appId?: string): Promise<AchievementSummary | null>;
   /** Logros desbloqueados entre dos instantes (ms), del más reciente al más antiguo. */
   weekAchievements(fromMs: number, toMs: number): Promise<WeekAch[]>;
+  /** Vitrina global de logros: resumen por juego, recientes y más raros (solo BD). */
+  achievementsOverview(): Promise<AchievementsOverview>;
   setAchievementsCardVariant(gameId: string, variant: number): Promise<void>;
   getAchievementsCardVariant(gameId: string): Promise<number>;
   detectGameSteamworks(gameDir: string, exePath?: string): Promise<GameDetection>;

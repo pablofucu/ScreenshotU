@@ -207,6 +207,154 @@ pub async fn week_achievements(app: AppHandle, from_ms: i64, to_ms: i64) -> Resu
     .map_err(|e| e.to_string())?
 }
 
+/// Resumen de logros de un juego concreto de la biblioteca para la vitrina global.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GameAchOverview {
+    pub game_id: String,
+    pub app_id: String,
+    pub total: usize,
+    pub unlocked: usize,
+    pub rare_unlocked: usize,
+    pub last_unlocked_at: Option<i64>,
+}
+
+/// Logro individual dentro de las listas recientes o más raros de la vitrina global.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GlobalAchItem {
+    pub game_id: String,
+    pub app_id: String,
+    pub api_name: String,
+    pub display_name: String,
+    pub description: String,
+    pub icon: Option<String>,
+    pub unlocked_at: i64,
+    pub pct: Option<f32>,
+}
+
+/// Vitrina global de logros (solo BD, sin leer el disco de cada juego).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AchievementsOverview {
+    pub total_unlocked: usize,
+    pub total_achievements: usize,
+    pub completed_games: usize,
+    pub rare_unlocked: usize,
+    pub games: Vec<GameAchOverview>,
+    pub recent: Vec<GlobalAchItem>,
+    pub rarest: Vec<GlobalAchItem>,
+}
+
+/// Agrega logros de toda la biblioteca desde SQLite (totales por juego, recientes y más raros).
+#[tauri::command]
+pub async fn achievements_overview(app: AppHandle) -> Result<AchievementsOverview, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        let raw = state
+            .db
+            .with(|c| core::global_overview(c, 60, 40))
+            .map_err(|e| e.to_string())?;
+
+        let mut app_to_game: HashMap<String, Option<String>> = HashMap::new();
+        let mut resolve = |app_id: &str| -> Option<String> {
+            app_to_game
+                .entry(app_id.to_string())
+                .or_insert_with(|| game_for_app(&state, app_id))
+                .clone()
+        };
+
+        let mut by_game: HashMap<String, GameAchOverview> = HashMap::new();
+        for a in raw.apps {
+            let Some(game_id) = resolve(&a.app_id) else { continue };
+            let candidate = GameAchOverview {
+                game_id: game_id.clone(),
+                app_id: a.app_id,
+                total: a.total,
+                unlocked: a.unlocked,
+                rare_unlocked: a.rare_unlocked,
+                last_unlocked_at: a.last_unlocked_at,
+            };
+            match by_game.get_mut(&game_id) {
+                Some(prev) => {
+                    if candidate.unlocked > prev.unlocked
+                        || (candidate.unlocked == prev.unlocked && candidate.total > prev.total)
+                    {
+                        *prev = candidate;
+                    }
+                }
+                None => {
+                    by_game.insert(game_id, candidate);
+                }
+            }
+        }
+
+        let mut games: Vec<GameAchOverview> = by_game.into_values().collect();
+        games.sort_by(|a, b| {
+            let pct_a = if a.total > 0 { (a.unlocked * 1000) / a.total } else { 0 };
+            let pct_b = if b.total > 0 { (b.unlocked * 1000) / b.total } else { 0 };
+            b.unlocked
+                .cmp(&a.unlocked)
+                .then_with(|| pct_b.cmp(&pct_a))
+                .then_with(|| b.last_unlocked_at.cmp(&a.last_unlocked_at))
+                .then_with(|| a.game_id.cmp(&b.game_id))
+        });
+
+        let total_unlocked = games.iter().map(|g| g.unlocked).sum();
+        let total_achievements = games.iter().map(|g| g.total).sum();
+        let completed_games = games.iter().filter(|g| g.total > 0 && g.unlocked >= g.total).count();
+        let rare_unlocked = games.iter().map(|g| g.rare_unlocked).sum();
+
+        let mut recent = Vec::new();
+        for u in raw.recent {
+            if recent.len() >= 24 {
+                break;
+            }
+            let Some(game_id) = resolve(&u.app_id) else { continue };
+            recent.push(GlobalAchItem {
+                game_id,
+                app_id: u.app_id,
+                api_name: u.api_name,
+                display_name: u.display_name,
+                description: u.description,
+                icon: inline_icon(u.icon),
+                unlocked_at: u.unlocked_at,
+                pct: u.pct,
+            });
+        }
+
+        let mut rarest = Vec::new();
+        for u in raw.rarest {
+            if rarest.len() >= 18 {
+                break;
+            }
+            let Some(game_id) = resolve(&u.app_id) else { continue };
+            rarest.push(GlobalAchItem {
+                game_id,
+                app_id: u.app_id,
+                api_name: u.api_name,
+                display_name: u.display_name,
+                description: u.description,
+                icon: inline_icon(u.icon),
+                unlocked_at: u.unlocked_at,
+                pct: u.pct,
+            });
+        }
+
+        Ok(AchievementsOverview {
+            total_unlocked,
+            total_achievements,
+            completed_games,
+            rare_unlocked,
+            games,
+            recent,
+            rarest,
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 /// AppIDs cuya rareza se esta descargando ahora mismo (evita hilos duplicados si se abre la ficha varias veces).
 static RARITY_BUSY: std::sync::Mutex<Vec<String>> = std::sync::Mutex::new(Vec::new());
 /// Ultimo fallo de red por AppID (segundos epoch): se reintenta como pronto a la hora, no en cada apertura.

@@ -173,6 +173,7 @@ pub fn dispatch(app: &AppHandle, caller: &visor_core::remote::Caller, cmd: &str,
         "get_game_achievements" => out(block(achievements::get_game_achievements(app.clone(), arg(a, "gameId")?, arg(a, "appId")?))),
         "get_achievements_summary" => out(block(achievements::get_achievements_summary(app.clone(), arg(a, "gameId")?, arg(a, "appId")?))),
         "week_achievements" => out(block(achievements::week_achievements(app.clone(), arg(a, "fromMs")?, arg(a, "toMs")?))),
+        "achievements_overview" => out(block(achievements::achievements_overview(app.clone()))),
         "set_achievements_card_variant" => out(achievements::set_achievements_card_variant(app.clone(), arg(a, "gameId")?, arg(a, "variant")?)),
         "get_achievements_card_variant" => out(achievements::get_achievements_card_variant(app.clone(), arg(a, "gameId")?)),
 

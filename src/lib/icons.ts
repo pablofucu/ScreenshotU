@@ -51,6 +51,10 @@ export const ICON: Record<string, string> = {
   phone:`${ic('<rect x="6.5" y="2" width="11" height="20" rx="2.5"/><path d="M10.5 18.5h3"/>')}`,
   chart:`${ic('<rect x="3.5" y="13" width="4" height="7.5" rx="1"/><rect x="10" y="8" width="4" height="12.5" rx="1"/><rect x="16.5" y="3.5" width="4" height="17" rx="1"/>')}`,
   chevR:`${ic('<path d="M9 4l8 8-8 8"/>')}`,
+  trophy:`${ic('<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8M9 17h6"/>')}`,
+  album:`<svg viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><rect x="17" y="25" width="76" height="56" rx="10" transform="rotate(-9 55 53)" fill="#fff" fill-opacity=".22"/><rect x="20" y="34" width="84" height="62" rx="11" fill="#fff" fill-opacity=".14"/><circle cx="42" cy="54" r="7" fill="#fff" stroke="none"/><path d="M26 88l21-22 15 15 14-14 22 21" fill="#fff" fill-opacity=".28"/></svg>`,
+  statsTile:`<svg viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><rect x="20" y="60" width="20" height="36" rx="6" fill="#fff" fill-opacity=".24"/><rect x="50" y="42" width="20" height="54" rx="6" fill="#fff" fill-opacity=".42"/><rect x="80" y="24" width="20" height="72" rx="6" fill="#fff" fill-opacity=".86"/><path d="M24 44l28-14 24-12" stroke-width="5.5"/><circle cx="90" cy="14" r="4" fill="#fff" stroke="none"/></svg>`,
+  logros:`<svg viewBox="0 0 120 120" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M34 24h52v26c0 17-11 29-26 29S34 67 34 50z" fill="#fff" fill-opacity=".24"/><path d="M34 32H19c0 17 7 25 15 26M86 32h15c0 17-7 25-15 26"/><path d="M60 79v16M40 96h40"/><path d="M60 36l4.1 8.5 9.4 1.3-6.8 6.5 1.7 9.3L60 57.1l-8.4 4.5 1.7-9.3-6.8-6.5 9.4-1.3z" fill="#fff" stroke="none"/></svg>`,
 };
 
 /* Iconos de salida de audio (altavoz, auriculares, monitor) para la barra superior y Ajustes. */

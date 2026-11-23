@@ -1510,6 +1510,7 @@ pub fn run() {
             achievements::get_game_achievements,
             achievements::get_achievements_summary,
             achievements::week_achievements,
+            achievements::achievements_overview,
             achievements::set_achievements_card_variant,
             achievements::get_achievements_card_variant,
             achievements::detect_game_steamworks

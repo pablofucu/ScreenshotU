@@ -3,19 +3,19 @@
 import type { Config, Platform, Title } from './types';
 
 export type GoalKey = 'vn' | 'jvn' | 'pc' | 'switch';
-export const GOAL_KEYS: GoalKey[] = ['vn', 'jvn', 'pc', 'switch'];
+export const GOAL_KEYS: GoalKey[] = ['switch', 'pc', 'vn', 'jvn'];
 export type GoalGroup = 'read' | 'play';
 export const GOAL_GROUPS: Record<GoalGroup, GoalKey[]> = { read: ['vn', 'jvn'], play: ['pc', 'switch'] };
 export const groupOf = (k: GoalKey): GoalGroup => (k === 'pc' || k === 'switch' ? 'play' : 'read');
 const GOAL_CFG = { vn: 'goalVn', jvn: 'goalJvn', pc: 'goalPc', switch: 'goalSwitch' } as const;
 export const goalMin = (cfg: Pick<Config, 'goalVn' | 'goalJvn' | 'goalPc' | 'goalSwitch'>, k: GoalKey) => cfg[GOAL_CFG[k]] ?? 0;
 export const goalCfgKey = (k: GoalKey) => GOAL_CFG[k];
-/** Colores de cada anillo: azul = novelas visuales, rosa = novelas japonesas, verde = juegos de PC, naranja = Switch. */
+/** Colores fijos del arcoíris para cada categoría: Switch Rojo, PC Naranja, Novelas Amarillo, Japonés Verde. */
 export const GOAL_COL: Record<GoalKey, { c: string; soft: string; ink: string; edge: string; name: string; full: string; tab: string }> = {
-  vn: { c: '#00A0D8', soft: '#cfe6f1', ink: '#00739c', edge: '#0073a0', name: 'novelas', full: 'Novelas visuales', tab: 'Novelas' },
-  jvn: { c: '#E5487A', soft: '#f6d3df', ink: '#a82b58', edge: '#b02c5c', name: 'japonés', full: 'Novelas japonesas', tab: 'Japonés' },
-  pc: { c: '#1DB37A', soft: '#cdeedd', ink: '#11804f', edge: '#14875a', name: 'PC', full: 'Juegos de PC', tab: 'PC' },
-  switch: { c: '#F25C2A', soft: '#fbd9cb', ink: '#b33a12', edge: '#c0431a', name: 'Switch', full: 'Switch', tab: 'Switch' },
+  switch: { c: '#E8384F', soft: '#f9d3d9', ink: '#b51d32', edge: '#c8223a', name: 'Switch', full: 'Switch', tab: 'Switch' },
+  pc: { c: '#F27A1A', soft: '#fce0c8', ink: '#a84705', edge: '#b84d06', name: 'PC', full: 'Juegos de PC', tab: 'PC' },
+  vn: { c: '#F2B807', soft: '#fbf0c2', ink: '#8c6700', edge: '#9a7100', name: 'novelas', full: 'Novelas visuales', tab: 'Novelas' },
+  jvn: { c: '#3BB54A', soft: '#cfeeda', ink: '#1f742c', edge: '#237f32', name: 'japonés', full: 'Novelas japonesas', tab: 'Japonés' },
 };
 /** Textos de cada grupo de metas (lectura / juego). */
 export const GOAL_TXT: Record<GoalGroup, { card: string; crumb: string; what: string; when: string; none30: string; titles: string; notice1: string; sub1: string }> = {

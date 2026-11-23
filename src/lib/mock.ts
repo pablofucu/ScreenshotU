@@ -1,7 +1,7 @@
 // Biblioteca simulada para desarrollo en navegador (sin Tauri). El arte procede del mockup aprobado.
 import { hash, rng } from './rng';
 import type {
-  Achievement, AchievementSummary, GameDetection, AccentInfo, AudioOutput, Backend, BackendEvent, Config, GameSource, HiddenEntry, Library, PairedDevice, Platform, Collection, ReleaseDate, Shot, SortMode, Swatch, Title,
+  Achievement, AchievementSummary, AchievementsOverview, GameDetection, AccentInfo, AudioOutput, Backend, BackendEvent, Config, GameSource, HiddenEntry, Library, PairedDevice, Platform, Collection, ReleaseDate, Shot, SortMode, Swatch, Title,
 } from './types';
 import { normalizeHex } from './oklch';
 
@@ -440,6 +440,47 @@ export async function mockBackend(): Promise<Backend> {
         unlockedAt: Math.floor((toMs - ((i + 1) * (toMs - fromMs)) / 6) / 1000),
         pct,
       }));
+    },
+    async achievementsOverview(): Promise<AchievementsOverview> {
+      const candidates = lib.platforms
+        .flatMap((p) => p.titles.map((t) => ({ p, t })))
+        .filter(({ t }) => !t.hidden && t.gameId);
+      const pcts = [3.4, 48, 71, 33, 0.9, 18, 41, 9.8, 27, 55, 22, 66, 84, 91];
+      const earned = MOCK_ACHIEVEMENTS.filter((a) => a.earned);
+      const games = candidates.slice(0, 6).map(({ t }, gi) => {
+        const total = MOCK_ACHIEVEMENTS.length;
+        const unlocked = gi === 1 ? total : Math.max(4, earned.length - gi * 2);
+        return {
+          gameId: t.gameId!,
+          appId: `mock_app_${gi + 1}`,
+          total,
+          unlocked,
+          rareUnlocked: gi === 0 ? 3 : gi === 1 ? 4 : 1,
+          lastUnlockedAt: earned[gi % earned.length]?.unlockedAt ?? Math.floor(Date.now() / 1000 - 3600 * (gi + 1)),
+        };
+      });
+      const items = earned.slice(0, 12).map((a, i) => {
+        const g = games[i % Math.max(1, games.length)];
+        return {
+          gameId: g?.gameId ?? 'mock',
+          appId: g?.appId ?? 'mock_app_1',
+          apiName: a.apiName,
+          displayName: a.displayName,
+          description: a.description,
+          icon: a.icon ?? null,
+          unlockedAt: a.unlockedAt ?? Math.floor(Date.now() / 1000 - 3600 * (i + 1)),
+          pct: pcts[i % pcts.length],
+        };
+      });
+      return {
+        totalUnlocked: games.reduce((s, g) => s + g.unlocked, 0),
+        totalAchievements: games.reduce((s, g) => s + g.total, 0),
+        completedGames: games.filter((g) => g.unlocked >= g.total).length,
+        rareUnlocked: games.reduce((s, g) => s + g.rareUnlocked, 0),
+        games,
+        recent: [...items].sort((a, b) => b.unlockedAt - a.unlockedAt),
+        rarest: [...items].sort((a, b) => (a.pct ?? 100) - (b.pct ?? 100)),
+      };
     },
     async setAchievementsCardVariant(gameId: string, variant: number) { mockCardVariants.set(gameId, variant); },
     async getAchievementsCardVariant(gameId: string) { return mockCardVariants.get(gameId) ?? 1; },
