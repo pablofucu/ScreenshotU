@@ -37,10 +37,11 @@
   /* Plantilla de pantalla (§10): banda inferior de pistas y margen lateral. El contenido acaba en --content-end (656 - 12) */
   --band:64px;--gut:24px;--content-end:644px;--stage-h:720px;
 
-  /* Movimiento: tres duraciones, dos curvas */
+  /* Movimiento: tres duraciones, tres curvas (--e-rail: carriles y deslizamientos que siguen al foco) */
   --d-1:120ms;--d-2:200ms;--d-3:300ms;
   --e-soft:cubic-bezier(.2,.8,.3,1);
   --e-bounce:cubic-bezier(.34,1.32,.64,1);
+  --e-rail:cubic-bezier(.25,1,.4,1);
 
   /* Desenfoque: uno por cristal (el panel interior no desenfoca) */
   --blur-panel:blur(14px) saturate(1.7);

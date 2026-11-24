@@ -393,8 +393,9 @@ export function intro(root: HTMLElement) {
   els.forEach(({ e }, k) => {
     try {
       e.animate(
-        [{ opacity: 0.35, translate: '0 10px', scale: 0.95 }, { opacity: 1, translate: '0 0', scale: 1 }],
-        { duration: 320, delay: 30 + Math.min(k, 8) * 22, easing: 'cubic-bezier(.34,1.4,.64,1)', fill: 'backwards' },
+        // Sin opacidad: la pantalla ya se funde entera; sumar otro fundido dejaba las tarjetas al 17 % al empezar.
+        [{ translate: '0 8px', scale: 0.97 }, { translate: '0 0', scale: 1 }],
+        { duration: 300, delay: 20 + Math.min(k, 8) * 18, easing: 'cubic-bezier(.34,1.32,.64,1)', fill: 'backwards' },
       );
     } catch {
       /* sin animaciones web */
@@ -402,15 +403,17 @@ export function intro(root: HTMLElement) {
   });
 }
 
-/** Transicion compartida: el elemento `from` se transforma en el que devuelve `to` tras `update`. */
-function morph(from: HTMLElement | null | undefined, update: () => void, to: () => HTMLElement | null | undefined) {
+/** Transicion compartida: el elemento `from` se transforma en el que devuelve `to` tras `update`.
+ *  `update` recibe si hay transicion: con ella, la pantalla nueva entra sin animacion propia (anim '') para no
+ *  sumar dos fundidos; sin ella, con la suya de siempre. */
+function morph(from: HTMLElement | null | undefined, update: (vt: boolean) => void, to: () => HTMLElement | null | undefined) {
   const doc = document as Document & { startViewTransition?: (cb: () => Promise<void>) => { finished: Promise<void> } };
-  if (!from || !doc.startViewTransition || calm()) { update(); return; }
+  if (!from || !doc.startViewTransition || calm()) { update(false); return; }
   let dest: HTMLElement | null | undefined;
   from.style.viewTransitionName = 'shot';
   const vt = doc.startViewTransition(async () => {
     from.style.viewTransitionName = '';
-    update();
+    update(true);
     await tick();
     dest = to();
     if (dest) dest.style.viewTransitionName = 'shot';
@@ -436,8 +439,16 @@ function elOrigin(el: Element | null | undefined): string {
   const y = Math.max(0, Math.min(100, (((eb.top + eb.bottom) / 2 - sb.top) / sb.height) * 100));
   return `${x.toFixed(1)}% ${y.toFixed(1)}%`;
 }
+let movingT: ReturnType<typeof setTimeout> | undefined;
 export function go(v: View, anim: 'fwd' | 'back' | '' = '', origin = '50% 50%') {
   goT = performance.now();
+  // Las manchas del fondo se paran mientras dura el cambio de pantalla: menos desenfoques que recalcular.
+  if (anim) {
+    const stage = document.getElementById('stage');
+    stage?.classList.add('moving');
+    clearTimeout(movingT);
+    movingT = setTimeout(() => stage?.classList.remove('moving'), 360);
+  }
   app.audioMenu = false;
   app.transOrigin = origin;
   app.view = v;
@@ -469,11 +480,11 @@ export function openTitle(i: number, fromView: typeof app.detailFrom = 'titles')
   if (!t) return;
   // La portada enfocada «vuela» hasta su sitio en la ficha (sin vuelo con movimiento reducido).
   const from = screenEl()?.querySelector<HTMLElement>('.fx.f .face, .fx.f .fc');
-  morph(from, () => {
+  morph(from, (vt) => {
     app.detailFrom = fromView;
     app.t = i; app.s = 0; app.albumMode = 'none'; app.sortMode = t.sortMode ?? app.config.shotsOrder;
     delete app.fk.detail;
-    go('detail', 'fwd');
+    go('detail', vt ? '' : 'fwd');
   }, () => screenEl()?.querySelector<HTMLElement>('.dcover .face'));
   backend.prefetch(t.shots.slice(0, DETAIL_SHOTS + 1).map((s) => s.path));
 }
@@ -1390,11 +1401,11 @@ export function back() {
       const di = app.platform?.titles[app.t]?.shots.findIndex((s) => s.path === app.cur.shots[app.s]?.path) ?? app.s;
       app.fk.detail = di >= 0 && di < DETAIL_SHOTS ? 'ds' + di : 'dall';
       const k = app.fk.detail;
-      morph(frame, () => go('detail', ''), () => screenEl()?.querySelector(`[data-k="${k}"]`));
+      morph(frame, (vt) => go('detail', vt ? '' : 'back'), () => screenEl()?.querySelector(`[data-k="${k}"]`));
     } else {
       app.fk.shots = 'shot' + app.s;
       const k = app.fk.shots;
-      morph(frame, () => go('shots', ''), () => screenEl()?.querySelector(`[data-k="${k}"]`));
+      morph(frame, (vt) => go('shots', vt ? '' : 'back'), () => screenEl()?.querySelector(`[data-k="${k}"]`));
     }
   } else if (app.view === 'shots') {
     if (app.isAlbum) {
@@ -1413,7 +1424,7 @@ export function back() {
   } else if (app.view === 'detail') {
     const from = screenEl()?.querySelector<HTMLElement>('.dcover .face');
     if (app.detailFrom === 'home') {
-      morph(from, () => go('home', from ? '' : 'back'), () => screenEl()?.querySelector<HTMLElement>('.fx.f .face'));
+      morph(from, (vt) => go('home', vt ? '' : 'back'), () => screenEl()?.querySelector<HTMLElement>('.fx.f .face'));
       sfx.back();
       return;
     }
@@ -1421,7 +1432,7 @@ export function back() {
     if (app.detailFrom === 'gstats') { go('gstats', 'back'); sfx.back(); return; }
     if (app.detailFrom === 'achievements') { go('achievements', 'back'); sfx.back(); return; }
     if (app.titlesTab !== 'coll') app.fk.titles = 'tit' + app.t;
-    morph(from, () => go('titles', from ? '' : 'back'), () => screenEl()?.querySelector<HTMLElement>('.fx.f .face, .fx.f .fc'));
+    morph(from, (vt) => go('titles', vt ? '' : 'back'), () => screenEl()?.querySelector<HTMLElement>('.fx.f .face, .fx.f .fc'));
   } else if (app.view === 'evo') {
     app.fk.detail = 'dhrs';
     go('detail', 'back');
@@ -1800,8 +1811,23 @@ function panView(dx: number, dy: number) {
 }
 /** Botón View en el visor: alterna «solo imagen». */
 export function toggleBare() {
+  const el = screenEl()?.querySelector<HTMLElement>('.vframe');
+  const a = el?.getBoundingClientRect();
   app.vbare = !app.vbare;
   blip(700);
+  if (!el || !a || calm()) return;
+  // FLIP: el marco ya está en su sitio nuevo y se anima con translate/scale desde el viejo (antes, left/top/width/height).
+  void tick().then(() => {
+    const b = el.getBoundingClientRect();
+    const k = (document.getElementById('stage')?.getBoundingClientRect().width ?? 1280) / 1280;
+    if (!b.width || !b.height || !k) return;
+    const from = { translate: `${(a.left - b.left) / k}px ${(a.top - b.top) / k}px`, scale: `${a.width / b.width} ${a.height / b.height}`, transformOrigin: '0 0' };
+    try {
+      el.animate([from, { translate: '0 0', scale: '1 1', transformOrigin: '0 0' }], { duration: 200, easing: 'cubic-bezier(.2,.8,.3,1)' });
+    } catch {
+      /* sin animaciones web */
+    }
+  });
 }
 
 export function jumpViewer(i: number) {

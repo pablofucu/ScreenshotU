@@ -3899,6 +3899,219 @@
           }
         }
       ]
+    },
+    {
+      "key": "ASP",
+      "name": "Animaciones sin parpadeo",
+      "goal": "Cambios de pantalla suaves, sin parpadeo ni animaciones sumadas",
+      "icon": "",
+      "color": 1,
+      "created": "2026-11-24T23:25:44+01:00",
+      "by": "claude",
+      "next_id": 8,
+      "phases": [
+        {
+          "name": "Parpadeo",
+          "icon": "",
+          "steps": [
+            {
+              "id": "ASP-1",
+              "title": "Pantallas y tarjetas sin fundido desde transparente",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-24T23:25:47+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-24T23:30:04+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "La pantalla nueva entra con fundido sobre la vieja (scrFade, sin arrancar a .5) y las tarjetas solo se desplazan/escalan, sin opacidad. Medido: pantalla 0→.47→.82→1, tarjetas a 1."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-24T23:30:04+01:00",
+              "result": "La pantalla nueva entra con fundido sobre la vieja (scrFade, sin arrancar a .5) y las tarjetas solo se desplazan/escalan, sin opacidad. Medido: pantalla 0→.47→.82→1, tarjetas a 1."
+            },
+            {
+              "id": "ASP-2",
+              "title": "Una sola animación al abrir un juego",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-24T23:30:05+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-24T23:30:05+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "morph() avisa si hay view transition; openTitle y las vueltas no apilan la animación de pantalla. Medido: VT con opacidad 1 y sin clase en .screen."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-24T23:30:05+01:00",
+              "result": "morph() avisa si hay view transition; openTitle y las vueltas no apilan la animación de pantalla. Medido: VT con opacidad 1 y sin clase en .screen."
+            }
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "claude",
+            "at": "2026-11-24T23:30:05+01:00",
+            "seen": true
+          }
+        },
+        {
+          "name": "Continuidad",
+          "icon": "",
+          "steps": [
+            {
+              "id": "ASP-3",
+              "title": "Fundido cruzado entre pantallas",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-24T23:30:06+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-24T23:30:06+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "out:screenOut deja la pantalla vieja debajo (clase leaving, sin id) 220 ms mientras entra la nueva. Medido en el navegador."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-24T23:30:06+01:00",
+              "result": "out:screenOut deja la pantalla vieja debajo (clase leaving, sin id) 220 ms mientras entra la nueva. Medido en el navegador."
+            },
+            {
+              "id": "ASP-4",
+              "title": "Color de fondo y pestañas sin saltos",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-24T23:30:06+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-24T23:30:06+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Atmos funde el color de fondo también al cambiar de pantalla (240 ms en saltos); pestañas y raíles sin opacidad en slideR/L; blobs en pausa durante el cambio."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-24T23:30:06+01:00",
+              "result": "Atmos funde el color de fondo también al cambiar de pantalla (240 ms en saltos); pestañas y raíles sin opacidad en slideR/L; blobs en pausa durante el cambio."
+            }
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "claude",
+            "at": "2026-11-24T23:30:06+01:00",
+            "seen": true
+          }
+        },
+        {
+          "name": "Pulido",
+          "icon": "",
+          "steps": [
+            {
+              "id": "ASP-5",
+              "title": "Duraciones y curvas a tokens",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-24T23:30:07+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-24T23:30:07+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Curvas a --e-rail/--e-soft/--e-bounce y duraciones a --d-2/--d-3 en app.css; nuevo token --e-rail."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-24T23:30:07+01:00",
+              "result": "Curvas a --e-rail/--e-soft/--e-bounce y duraciones a --d-2/--d-3 en app.css; nuevo token --e-rail."
+            },
+            {
+              "id": "ASP-6",
+              "title": "Visor y aviso con transform",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-24T23:30:08+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-24T23:30:08+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Visor: cambio marco/sin marco con FLIP (transform) en vez de animar left/top/width/height. Aviso: transición de opacity/transform, no all."
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-24T23:30:08+01:00",
+              "result": "Visor: cambio marco/sin marco con FLIP (transform) en vez de animar left/top/width/height. Aviso: transición de opacity/transform, no all."
+            },
+            {
+              "id": "ASP-7",
+              "title": "Medir transiciones en el navegador",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-24T23:30:08+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-24T23:30:09+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Medido a 1280x720 en vite: fundido cruzado, apertura de juego con VT y FLIP del visor (translate -148px -14px, scale 1.30). svelte-check 0/0, tests/juice.test.ts OK."
+                }
+              ],
+              "cat": "pruebas",
+              "together": true,
+              "updated": "2026-11-24T23:30:09+01:00",
+              "result": "Medido a 1280x720 en vite: fundido cruzado, apertura de juego con VT y FLIP del visor (translate -148px -14px, scale 1.30). svelte-check 0/0, tests/juice.test.ts OK."
+            }
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "claude",
+            "at": "2026-11-24T23:30:09+01:00",
+            "seen": true
+          }
+        }
+      ]
     }
   ],
   "asks": [
@@ -4773,7 +4986,29 @@
       ]
     }
   ],
-  "news": [],
+  "news": [
+    {
+      "text": "Animaciones sin parpadeo: Parpadeo",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-24T23:30:05+01:00",
+      "ref": "ASP/Parpadeo"
+    },
+    {
+      "text": "Animaciones sin parpadeo: Continuidad",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-24T23:30:06+01:00",
+      "ref": "ASP/Continuidad"
+    },
+    {
+      "text": "Animaciones sin parpadeo: Pulido",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-24T23:30:09+01:00",
+      "ref": "ASP/Pulido"
+    }
+  ],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",
   "versions": [
     {

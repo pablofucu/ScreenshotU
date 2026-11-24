@@ -41,7 +41,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
     0 0 0 1px rgba(95,110,135,.24),
     0 2px 3px rgba(40,50,70,.10),
     0 18px 30px -16px rgba(40,50,70,.42);
-  transition:transform .24s cubic-bezier(.34,1.32,.64,1),box-shadow .24s ease,background .24s ease}
+  transition:transform var(--d-2) var(--e-bounce),box-shadow var(--d-2) var(--e-soft),background var(--d-2) var(--e-soft)}
 /* gloss arc over the whole case, content included */
 .glass::before{content:'';position:absolute;z-index:2;left:2px;right:2px;top:2px;height:52%;pointer-events:none;
   border-radius:calc(var(--r) - 2px) calc(var(--r) - 2px) 0 0;
@@ -71,10 +71,15 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .pill{-webkit-backdrop-filter:blur(16px) saturate(1.7);backdrop-filter:blur(16px) saturate(1.7);
   background:linear-gradient(180deg,var(--pill-top),var(--pill-bot));
   box-shadow:inset 0 1px 0 var(--glass-top),inset 0 -6px 10px -6px var(--pill-glow),inset 0 -1px 0 rgba(110,125,150,.22),0 0 0 1px rgba(95,110,135,.22),0 10px 20px -12px rgba(40,50,70,.4)}
-@keyframes enterFwd{from{opacity:.5;transform:scale(.975)}to{opacity:1;transform:none}}
-@keyframes enterBack{from{opacity:.5;transform:scale(1.025)}to{opacity:1;transform:none}}
-.screen.fwd{animation:enterFwd var(--d-3) var(--e-soft);transform-origin:var(--to,50% 50%)}
-.screen.back{animation:enterBack var(--d-3) var(--e-soft);transform-origin:var(--to,50% 50%)}
+/* Cambio de pantalla: la nueva aparece encima de la que se va (que aguanta entera y luego se funde, ver screenOut
+   en App.svelte), así nunca se ve el fondo vacío entre una y otra. Antes entraba de golpe al 50 %: parpadeo. */
+@keyframes scrFade{from{opacity:0}}
+@keyframes enterFwd{from{transform:scale(.985)}}
+@keyframes enterBack{from{transform:scale(1.015)}}
+.screen.fwd{animation:scrFade var(--d-2) var(--e-soft) both,enterFwd var(--d-3) var(--e-soft);transform-origin:var(--to,50% 50%)}
+.screen.back{animation:scrFade var(--d-2) var(--e-soft) both,enterBack var(--d-3) var(--e-soft);transform-origin:var(--to,50% 50%)}
+.screen.leaving{pointer-events:none;z-index:0}
+#stage.moving .blob{animation-play-state:paused}
 
 /* top bar */
 .top{position:absolute;left:0;right:0;top:0;height:76px;z-index:5}
@@ -117,7 +122,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 @property --pb{syntax:'<color>';inherits:false;initial-value:transparent}
 .plat{--r:34px;--bw:11px;--pt:var(--glass-top);--pm:var(--glass-mid);--pb:var(--glass-bot);
   background:linear-gradient(165deg,var(--pt) 0%,var(--pm) 48%,var(--pb) 100%);
-  transition:transform .28s cubic-bezier(.2,.8,.2,1),box-shadow .28s cubic-bezier(.2,.8,.2,1),--pt .28s cubic-bezier(.2,.8,.2,1),--pm .28s cubic-bezier(.2,.8,.2,1),--pb .28s cubic-bezier(.2,.8,.2,1)}
+  transition:transform var(--d-3) var(--e-soft),box-shadow var(--d-3) var(--e-soft),--pt var(--d-3) var(--e-soft),--pm var(--d-3) var(--e-soft),--pb var(--d-3) var(--e-soft)}
 .plat.space{--r:28px;--bw:9px}
 .plat .face{background:radial-gradient(125% 105% at 28% 12%,color-mix(in srgb,var(--pc) 26%,#ffffff) 0%,var(--pc) 62%,color-mix(in srgb,var(--pc) 76%,black) 100%);display:grid;place-items:center}
 .plat.gold .face{background:radial-gradient(125% 105% at 28% 12%,#fff099 0%,#F2B807 62%,#b67900 100%)}
@@ -130,7 +135,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
   box-shadow:inset 0 1.5px 0 rgba(255,255,255,.88),inset 0 0 0 1px color-mix(in srgb,white 45%,transparent),0 0 0 1px color-mix(in srgb,var(--pc) 75%,black),0 0 34px 4px color-mix(in srgb,var(--pc) 65%,transparent),0 22px 34px -16px rgba(0,0,0,.85)}
 .plat svg{width:62%;height:62%;filter:drop-shadow(0 2px 0 rgba(0,0,0,.10)) drop-shadow(0 8px 12px rgba(0,0,0,.22))}
 .plat.gold svg{filter:drop-shadow(0 2px 6px rgba(95,55,0,.45))}
-.plabel{position:absolute;width:186px;text-align:center;font-size:19px;font-weight:800;color:var(--ink-2);line-height:1.15;transition:color .28s cubic-bezier(.2,.8,.2,1)}
+.plabel{position:absolute;width:186px;text-align:center;font-size:19px;font-weight:800;color:var(--ink-2);line-height:1.15;transition:color var(--d-3) var(--e-soft)}
 .plabel.sp-lbl{font-size:17px}
 .plabel small{display:block;font-size:var(--t-s);font-weight:500;color:var(--ink-2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .plabel.on{color:var(--pf)}
@@ -140,7 +145,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .group-tag{position:absolute;font:800 var(--t-xs)/1 var(--round);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);pointer-events:none}
 
 /* titles grid */
-.ttrack{position:absolute;left:0;top:0;height:100%;transition:transform .35s cubic-bezier(.25,1,.4,1)}
+.ttrack{position:absolute;left:0;top:0;height:100%;transition:transform var(--d-3) var(--e-rail)}
 /* Portadas y miniaturas repetidas: sin backdrop-filter. Decenas de desenfoques en vivo (encima del fondo ya difuminado)
    saturan la composición de WebView2 y parpadean al mover el foco o cambiar de pestaña; el cristal se ve casi igual. */
 .glass.cover,.glass.scov,.glass.bsb,.glass.shot,.glass.vthumb,.glass.pkcov,.glass.dshot,.glass.dcover{-webkit-backdrop-filter:none;backdrop-filter:none}
@@ -154,7 +159,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .side.off{opacity:0;pointer-events:none}
 
 /* carousel */
-.ctrack{position:absolute;left:0;top:200px;height:320px;transition:transform .32s cubic-bezier(.25,1,.4,1)}
+.ctrack{position:absolute;left:0;top:200px;height:320px;transition:transform var(--d-3) var(--e-rail)}
 .ccover{width:200px;height:266px;--r:26px;--bw:10px;top:20px}
 .ccover:not(.f){opacity:.78}
 .ccover.c-l{transform:perspective(1000px) rotateY(12deg) scale(.94);opacity:.82}
@@ -174,7 +179,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .ghead .soft{font-size:var(--t-m);font-weight:700;color:var(--ink-2);background:var(--panel);box-shadow:0 0 0 1px var(--line-2);padding:4px 12px;border-radius:var(--r-pill);white-space:nowrap}
 .ghead .date{margin-left:auto;font-size:var(--t-l);color:var(--ink-2);font-weight:600;white-space:nowrap}
 .gview{position:absolute;left:0;right:0;top:172px;height:480px;overflow:hidden;-webkit-mask-image:linear-gradient(transparent 0,#000 18px,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(transparent 0,#000 18px,#000 calc(100% - 22px),transparent)}
-.gtrack{position:absolute;left:0;right:0;top:0;transition:transform .28s cubic-bezier(.25,1,.4,1)}
+.gtrack{position:absolute;left:0;right:0;top:0;transition:transform var(--d-3) var(--e-rail)}
 .shot{width:266px;height:162px;--r:18px;--bw:6px}
 .shot .face{border-radius:var(--r-s)}
 .star{position:absolute;right:8px;top:8px;width:26px;height:26px;display:none}
@@ -194,12 +199,13 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .vbg{position:absolute;inset:-80px;background-size:cover;background-position:center;filter:blur(60px) brightness(.62) saturate(1.3);transition:background-image .4s ease}
 .vw::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(0,0,0,.45))}
 .vframe{position:absolute;left:148px;top:14px;width:984px;height:553px;--r:22px;--bw:7px;cursor:default;transform:none !important;
-  transition:left var(--d-2) var(--e-soft),top var(--d-2) var(--e-soft),width var(--d-2) var(--e-soft),height var(--d-2) var(--e-soft),padding var(--d-2) var(--e-soft),border-radius var(--d-2) var(--e-soft),box-shadow var(--d-2) var(--e-soft)}
+  transition:padding var(--d-2) var(--e-soft),border-radius var(--d-2) var(--e-soft),box-shadow var(--d-2) var(--e-soft)}
+/* El cambio de tamaño del marco (View) se anima con translate/scale desde toggleBare: sin recalcular el diseño en cada fotograma. */
 .vframe .face{border-radius:var(--r-m);background:#000;transition:border-radius var(--d-2) var(--e-soft)}
 .vframe::before,.vthumb::before{display:none}
 .vframe img{position:absolute;inset:0;object-fit:contain}
-.vframe img.in-r{animation:inr .26s cubic-bezier(.25,1,.4,1)}
-.vframe img.in-l{animation:inl .26s cubic-bezier(.25,1,.4,1)}
+.vframe img.in-r{animation:inr .26s var(--e-rail)}
+.vframe img.in-l{animation:inl .26s var(--e-rail)}
 .vframe img.out-l{animation:outl 220ms var(--e-soft) forwards;pointer-events:none}
 .vframe img.out-r{animation:outr 220ms var(--e-soft) forwards;pointer-events:none}
 @keyframes inr{from{transform:translateX(70px);opacity:0}to{transform:none;opacity:1}}
@@ -218,7 +224,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .vstar{width:22px;height:22px;display:none;position:relative}
 .vstrip{position:absolute;left:0;right:0;bottom:0;height:82px;z-index:4;transition:opacity .3s;overflow:hidden;
   background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.04));-webkit-backdrop-filter:blur(18px) saturate(1.4);backdrop-filter:blur(18px) saturate(1.4);box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
-.vtrack{position:absolute;top:0;left:0;height:100%;transition:transform .26s cubic-bezier(.25,1,.4,1)}
+.vtrack{position:absolute;top:0;left:0;height:100%;transition:transform var(--d-3) var(--e-rail)}
 .vthumb{width:104px;height:62px;--r:11px;--bw:4px;top:10px}
 .vthumb:not(.f){opacity:.85}
 .vthumb .face{border-radius:var(--r-xs)}
@@ -235,7 +241,7 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .vw.bare .vframe{left:0;top:0;width:1280px;height:var(--stage-h);--r:0px;--bw:0px;background:#000;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
 .vw.bare .vframe::after,.vw.bare .vframe .face::after{display:none}
 .vw.bare .vframe .face{border-radius:0}
-#toast{position:absolute;left:50%;bottom:74px;transform:translate(-50%,10px);padding:10px 20px;border-radius:var(--r-pill);background:rgba(40,46,58,.78);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 10px 24px -10px rgba(0,0,0,.5);color:var(--on);font-size:var(--t-l);font-weight:700;opacity:0;transition:all .2s;z-index:50;pointer-events:none;white-space:normal;max-width:1000px;text-align:center}
+#toast{position:absolute;left:50%;bottom:74px;transform:translate(-50%,10px);padding:10px 20px;border-radius:var(--r-pill);background:rgba(40,46,58,.78);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 10px 24px -10px rgba(0,0,0,.5);color:var(--on);font-size:var(--t-l);font-weight:700;opacity:0;transition:opacity var(--d-2) var(--e-soft),transform var(--d-2) var(--e-soft);z-index:50;pointer-events:none;white-space:normal;max-width:1000px;text-align:center}
 #toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto;cursor:pointer}
 @media (prefers-reduced-motion: reduce){.glass,.plat,.plabel,.plabel.on,.ttrack,.ctrack,.gtrack,.vtrack,.hint,.btn,.vframe,.vframe .face,.tslide.ready,.gslide.ready,.bg-layer{transition:none}.hint.hit,.btn.hit,.bg-layer,.ccover:not(.f){transform:none}.vframe img,.tab-r,.tab-l,.per-r,.per-l,.ov-host.closing *,.star.burst>svg:first-child,.vstar.burst>svg:first-child,.fsparks,.shot.checked .chk.pop,.glass.f::after,.crumb .cur,.batt.pop,.pop-n{animation:none!important}.blob{animation:none}}
 
@@ -283,8 +289,8 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .tab-stage>*{pointer-events:auto}
 .tab-r{animation:slideR var(--d-2) var(--e-soft) both}
 .tab-l{animation:slideL var(--d-2) var(--e-soft) both}
-@keyframes slideR{from{opacity:.45;transform:translateX(28px)}to{opacity:1;transform:none}}
-@keyframes slideL{from{opacity:.45;transform:translateX(-28px)}to{opacity:1;transform:none}}
+@keyframes slideR{from{transform:translateX(28px)}to{transform:none}}
+@keyframes slideL{from{transform:translateX(-28px)}to{transform:none}}
 .per-r{animation:perR var(--d-1) var(--e-soft) both}
 .per-l{animation:perL var(--d-1) var(--e-soft) both}
 @keyframes perR{from{opacity:.4;transform:translateX(10px)}to{opacity:1;transform:none}}
@@ -324,7 +330,7 @@ button.srow,button.scat{width:100%}
 
 /* ---------- Lanzador: ajustes con desplazamiento, menu de acciones, formulario ---------- */
 .slist{position:relative;overflow:hidden;flex:none}
-.strack{padding:4px 10px 4px 6px;transition:transform .22s cubic-bezier(.25,1,.4,1)}
+.strack{padding:4px 10px 4px 6px;transition:transform var(--d-2) var(--e-rail)}
 .strack .srow{height:48px;margin-bottom:4px;font-size:var(--t-l)}
 .sscroll{position:absolute;right:12px;top:70px;bottom:20px;width:5px;border-radius:3px;background:var(--line)}
 .sscroll i{position:absolute;left:0;right:0;border-radius:3px;background:var(--gv)}
@@ -384,7 +390,7 @@ button.srow,button.scat{width:100%}
 .odo{display:flex;align-items:center;gap:6px;--ch:52px}
 .odo .c{width:42px;height:var(--ch);border-radius:var(--r-s);overflow:hidden;position:relative;background:var(--tint-base);box-shadow:inset 0 2px 4px rgba(0,0,0,.18),0 0 0 1px rgba(110,125,150,.25)}
 .odo .c::after{content:'';position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(0,0,0,.12);pointer-events:none;z-index:1}
-.odo .c b{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center;font-size:38px;font-weight:800;line-height:var(--ch);font-variant-numeric:tabular-nums;color:var(--f1);animation:roll 1.2s cubic-bezier(.2,.8,.3,1) both}
+.odo .c b{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center;font-size:38px;font-weight:800;line-height:var(--ch);font-variant-numeric:tabular-nums;color:var(--f1);animation:roll 1.2s var(--e-soft) both}
 .odo .c b span{display:block;width:100%;height:var(--ch);line-height:var(--ch);text-align:center;background:var(--gf);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
 @keyframes roll{from{transform:translateY(calc(var(--n) * var(--ch)))}to{transform:translateY(0)}}
 .odo .u{font-size:var(--t-xl);font-weight:800;color:var(--ink-2);margin:0 8px 0 2px;align-self:flex-end;padding-bottom:6px}
@@ -509,9 +515,9 @@ i.big.sel{outline:4px solid var(--ink);outline-offset:2px;transform:scale(1.08)}
 img.tin.fade{animation:thumbIn .28s ease-out both}
 @keyframes thumbIn{from{opacity:0}}
 /* transicion compartida miniatura <-> visor */
-::view-transition-group(shot){animation-duration:.38s;animation-timing-function:cubic-bezier(.2,.8,.3,1);z-index:10}
+::view-transition-group(shot){animation-duration:.38s;animation-timing-function:var(--e-soft);z-index:10}
 ::view-transition-old(shot),::view-transition-new(shot){height:100%;object-fit:cover}
-::view-transition-old(root),::view-transition-new(root){animation-duration:.3s}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.18s}
 @media (prefers-reduced-motion: reduce){img.tin.fade{animation:none}
   .rplaying i,.play.on .pi,.caret,.ycard,.screen.fwd,.screen.back,.gainchip{animation:none!important}}
 
@@ -538,7 +544,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .rnone{position:absolute;left:96px;top:412px;font-size:var(--t-l);font-weight:600;color:var(--ink-3)}
 .hdock{position:absolute;left:var(--gut);bottom:calc((var(--band) - 38px) / 2);display:flex;gap:10px;z-index:5}
 .dpill{display:flex;align-items:center;gap:8px;height:38px;padding:0 14px 0 5px;border-radius:var(--r-pill);font-size:var(--t-m);font-weight:700;color:var(--ink-2);cursor:pointer;white-space:nowrap;
-  transition:transform .22s cubic-bezier(.34,1.32,.64,1),background .2s,color .2s,box-shadow .2s}
+  transition:transform .22s var(--e-bounce),background .2s,color .2s,box-shadow .2s}
 .dpill i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(180deg,color-mix(in srgb,var(--dc) 25%,var(--tint-base)),var(--dc) 72%);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 0 0 1px color-mix(in srgb,var(--dc) 70%,black)}
 .dpill i svg{width:58%;height:58%}
 .dpill.f{transform:scale(1.08);background:linear-gradient(180deg,var(--dc),color-mix(in srgb,var(--dc) 78%,black));color:var(--on);text-shadow:0 1px 2px rgba(0,0,0,.45);
@@ -596,8 +602,8 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .tline .ln{position:absolute;right:12px;top:0;bottom:0;width:4px;border-radius:2px;background:rgba(160,168,182,.4)}
 .tline .mo{position:absolute;right:26px;transform:translateY(-50%);font-size:var(--t-s);font-weight:800;color:var(--ink-3);white-space:nowrap}
 .tline .tk{position:absolute;right:10px;width:8px;height:2px;border-radius:1px;background:var(--ink-3)}
-.tline .kn{position:absolute;right:4px;width:20px;height:20px;margin-top:-10px;border-radius:50%;background:var(--accv);box-shadow:0 0 0 4px var(--on),0 4px 10px rgba(0,0,0,.25);transition:top .28s cubic-bezier(.25,1,.4,1)}
-.tline .kl{position:absolute;right:0;transform:translateY(calc(-100% - 14px));font-size:var(--t-s);font-weight:800;color:var(--on);background:var(--gf);padding:2px 9px;border-radius:var(--r-pill);white-space:nowrap;transition:top .28s cubic-bezier(.25,1,.4,1)}
+.tline .kn{position:absolute;right:4px;width:20px;height:20px;margin-top:-10px;border-radius:50%;background:var(--accv);box-shadow:0 0 0 4px var(--on),0 4px 10px rgba(0,0,0,.25);transition:top .28s var(--e-rail)}
+.tline .kl{position:absolute;right:0;transform:translateY(calc(-100% - 14px));font-size:var(--t-s);font-weight:800;color:var(--on);background:var(--gf);padding:2px 9px;border-radius:var(--r-pill);white-space:nowrap;transition:top .28s var(--e-rail)}
 
 /* ---------- Ajustes por secciones ---------- */
 .secpanel{left:130px;top:46px;width:1020px;height:600px}
@@ -613,7 +619,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .sbody .srow{height:52px;font-size:var(--t-l);margin-bottom:4px}
 /* margen negativo + padding: el recorte deja sitio al anillo y la sombra del foco sin mover las filas (content-box: el alto en línea sigue siendo el de las filas) */
 .srows{position:relative;overflow:hidden;flex:none;box-sizing:content-box;margin:-3px -10px 0;padding:3px 10px 0}
-.srtrack{transition:transform .2s cubic-bezier(.25,1,.4,1)}
+.srtrack{transition:transform var(--d-2) var(--e-rail)}
 .sarr.hid{visibility:hidden}
 .sscroll2{position:absolute;right:10px;width:5px;border-radius:3px;background:var(--line)}
 .sscroll2 i{position:absolute;left:0;right:0;border-radius:3px;background:var(--gv);transition:top .2s}
@@ -783,7 +789,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .sgtitle .msub{margin:2px 0 0}
 .sgtabs{display:flex;align-items:center;gap:var(--s-2);padding-top:var(--s-1)}
 .sgview{position:relative;flex:none;overflow:hidden;margin:0 -8px;padding:0 8px}
-.sggrid{display:grid;padding:8px 0;transition:transform .22s cubic-bezier(.25,1,.4,1)}
+.sggrid{display:grid;padding:8px 0;transition:transform .22s var(--e-rail)}
 .sgc{position:relative;border-radius:var(--r-s);overflow:hidden;cursor:pointer;background:linear-gradient(160deg,var(--face),var(--face-hi));box-shadow:0 0 0 1px var(--line);transition:transform .15s,box-shadow .15s}
 .sgc img{width:100%;height:100%;object-fit:cover;display:block}
 .sgc.k-logo{background:repeating-conic-gradient(var(--ink) 0 25%,var(--face) 0 50%) 0 0/22px 22px}
@@ -966,6 +972,9 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 /* Lienzo de la tablet: 1280x800 (16:10); la banda de abajo sigue de 64 hasta quitar las pistas. */
 .tablet #stage{--stage-h:800px;--content-end:736px}
 .tablet .blob{animation:none}
+/* Sin fundido cruzado en la tablet (dos pantallas con cristal a la vez pesan): la nueva entra entera, solo con movimiento. */
+.tablet .screen.fwd{animation:enterFwd var(--d-3) var(--e-soft)}
+.tablet .screen.back{animation:enterBack var(--d-3) var(--e-soft)}
 /* Tablet sin mando: las pistas son botones táctiles de 44 px (Hints.svelte), y la flecha de volver crece. */
 .tablet .hints{bottom:calc((var(--band) - 44px) / 2)}
 .tablet .hints.touch .hint{height:44px;padding:0 20px;border:0;font:inherit;font-size:var(--t-m);font-weight:700;color:var(--ink-2);cursor:pointer;transition:transform .12s}
@@ -1012,7 +1021,7 @@ img.tin.fade{animation:thumbIn .28s ease-out both}
 .tablet .cat-tools .tflt,.tablet .cat-tools .tsearch,.tablet .cat-tools .pagep{height:44px}
 .tablet .sx .chev:not(.dis):active,.tablet .sx .o:active{transform:scale(.97)}
 .tablet .glass,.tablet .pill,.tablet .scrim,.tablet #toast{-webkit-backdrop-filter:none;backdrop-filter:none}
-.tablet .glass{transition:transform .24s cubic-bezier(.34,1.32,.64,1),background .24s ease}
+.tablet .glass{transition:transform .24s var(--e-bounce),background .24s ease}
 .tablet .bg-layer{transition:none;transform:none!important}
 .tablet .glass.f::after{animation:none}
 .tablet .ccover:not(.f){transform:none}

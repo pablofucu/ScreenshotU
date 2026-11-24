@@ -72,8 +72,8 @@
 
   let curAtmos: { h1: number; h2: number } | null = null;
   let atmosRaf = 0;
-  // Al cambiar de pantalla el color salta directo: degradarlo 700 ms repintaba todo el escenario
-  // a la vez que la entrada de la pantalla nueva.
+  // Al cambiar de pantalla el color se degrada en 240 ms (700 ms repintaba todo el escenario durante toda la
+  // entrada de la pantalla nueva; saltar de golpe se veía como un destello).
   let atmosKey = -1;
 
   // Las variables van en el propio atributo style del escenario: con setProperty se perdían cada vez que
@@ -96,7 +96,7 @@
     const jump = key !== atmosKey;
     atmosKey = key;
     // En la tablet el fundido de 700 ms repinta todo el cristal en cada fotograma: se salta.
-    if (reduced || jump || IS_TABLET) {
+    if (reduced || IS_TABLET) {
       curAtmos = { ...target };
       applyAtmos(variablesCSS(curAtmos.h1, curAtmos.h2));
       return;
@@ -104,7 +104,9 @@
     const from = { ...curAtmos };
     if (from.h1 === target.h1 && from.h2 === target.h2) return;
     const t0 = performance.now();
-    const dur = 700;
+    // Con cambio de pantalla, corto y a la par que el fundido entre pantallas (antes saltaba de golpe y se veía
+    // el salto de color a través de la pantalla que entraba); al mover el foco, el fundido lento de siempre.
+    const dur = jump ? 240 : 700;
     const step = (now: number) => {
       const p = Math.min(1, (now - t0) / dur);
       const e = 1 - Math.pow(1 - p, 3);
@@ -168,6 +170,15 @@
     if (stage) tagTree(stage);
     return () => { window.removeEventListener('mousemove', show); clearTimeout(t); mo.disconnect(); cancelAnimationFrame(atmosRaf); };
   });
+  // La pantalla que se va se queda debajo de la nueva: entera los primeros ~90 ms (la nueva ya la cubre al aparecer)
+  // y luego se funde. Pierde el id #screen al instante, para que todo lo que busca la pantalla encuentre la nueva.
+  // Sin animación de pantalla (transición compartida, arranque) o en la tablet se quita sin más.
+  function screenOut(node: Element): TransitionConfig {
+    node.removeAttribute('id');
+    node.classList.add('leaving');
+    if (!app.anim || IS_TABLET || calm()) return { duration: 0 };
+    return { duration: 220, css: (t) => `opacity:${Math.min(1, t / 0.6).toFixed(3)}` };
+  }
   function modalOut(_node: Element): TransitionConfig {
     if (calm()) return { duration: 0 };
     return { duration: 130, easing: (t) => 1 - (1 - t) ** 2, css: (t) => `opacity:${t};pointer-events:none` };
@@ -217,7 +228,7 @@
   {#if app.ready}
     {#key app.animKey}
       <!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
-      <div id="screen" class="screen {app.anim}" style="--to:{app.transOrigin}" use:intro onmousemove={onScreenMove} onclick={onScreenClick} ondblclick={onScreenDblClick}>
+      <div id="screen" class="screen {app.anim}" style="--to:{app.transOrigin}" use:intro out:screenOut onmousemove={onScreenMove} onclick={onScreenClick} ondblclick={onScreenDblClick}>
         {#if app.view === 'home'}<Home />
         {:else if app.view === 'titles'}<Titles />
         {:else if app.view === 'detail'}<Detail />
