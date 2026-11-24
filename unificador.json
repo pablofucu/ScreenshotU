@@ -4986,29 +4986,7 @@
       ]
     }
   ],
-  "news": [
-    {
-      "text": "Animaciones sin parpadeo: Parpadeo",
-      "kind": "fase",
-      "by": "claude",
-      "at": "2026-11-24T23:30:05+01:00",
-      "ref": "ASP/Parpadeo"
-    },
-    {
-      "text": "Animaciones sin parpadeo: Continuidad",
-      "kind": "fase",
-      "by": "claude",
-      "at": "2026-11-24T23:30:06+01:00",
-      "ref": "ASP/Continuidad"
-    },
-    {
-      "text": "Animaciones sin parpadeo: Pulido",
-      "kind": "fase",
-      "by": "claude",
-      "at": "2026-11-24T23:30:09+01:00",
-      "ref": "ASP/Pulido"
-    }
-  ],
+  "news": [],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",
   "versions": [
     {
@@ -5202,6 +5180,36 @@
           "at": "2026-11-23T22:39:04+01:00"
         }
       ]
+    },
+    {
+      "version": "2.8.0",
+      "at": "2026-11-24T23:30:30+01:00",
+      "by": "claude",
+      "news": [
+        {
+          "text": "Animaciones sin parpadeo: Parpadeo",
+          "kind": "fase",
+          "by": "claude",
+          "at": "2026-11-24T23:30:05+01:00",
+          "ref": "ASP/Parpadeo"
+        },
+        {
+          "text": "Animaciones sin parpadeo: Continuidad",
+          "kind": "fase",
+          "by": "claude",
+          "at": "2026-11-24T23:30:06+01:00",
+          "ref": "ASP/Continuidad"
+        },
+        {
+          "text": "Animaciones sin parpadeo: Pulido",
+          "kind": "fase",
+          "by": "claude",
+          "at": "2026-11-24T23:30:09+01:00",
+          "ref": "ASP/Pulido"
+        }
+      ],
+      "sha": "3c9ea828587f6e530ab81cd07f4a728689daaa35",
+      "tag": "v2.8.0"
     }
   ]
 }
