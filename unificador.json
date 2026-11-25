@@ -5122,7 +5122,7 @@
     }
   ],
   "next_ask": 24,
-  "next_tweak": 8,
+  "next_tweak": 9,
   "tweaks": [
     {
       "id": "R-1",
@@ -5186,31 +5186,18 @@
       "commits": [
         "c434b77b4347f415788a60d0c7e221d3d6e6f00e"
       ]
-    }
-  ],
-  "news": [
-    {
-      "text": "📅 Semana y navegación de Estadísticas: Diseño",
-      "kind": "fase",
-      "by": "claude",
-      "at": "2026-11-25T01:27:40+01:00",
-      "ref": "SYN/Diseño"
     },
     {
-      "text": "📅 Semana y navegación de Estadísticas: Navegación",
-      "kind": "fase",
+      "id": "R-8",
+      "title": "Guardada la propuesta P-23 de Semana",
       "by": "claude",
-      "at": "2026-11-25T02:03:19+01:00",
-      "ref": "SYN/Navegación"
-    },
-    {
-      "text": "📅 Semana y navegación de Estadísticas: Semana",
-      "kind": "fase",
-      "by": "claude",
-      "at": "2026-11-25T02:03:21+01:00",
-      "ref": "SYN/Semana"
+      "at": "2026-11-25T02:03:40+01:00",
+      "commits": [
+        "d9fa3427c16b22f79eb949956ab069b287c4f045"
+      ]
     }
   ],
+  "news": [],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",
   "versions": [
     {
@@ -5434,6 +5421,36 @@
       ],
       "sha": "3c9ea828587f6e530ab81cd07f4a728689daaa35",
       "tag": "v2.8.0"
+    },
+    {
+      "version": "2.9.0",
+      "at": "2026-11-25T02:03:45+01:00",
+      "by": "claude",
+      "news": [
+        {
+          "text": "📅 Semana y navegación de Estadísticas: Diseño",
+          "kind": "fase",
+          "by": "claude",
+          "at": "2026-11-25T01:27:40+01:00",
+          "ref": "SYN/Diseño"
+        },
+        {
+          "text": "📅 Semana y navegación de Estadísticas: Navegación",
+          "kind": "fase",
+          "by": "claude",
+          "at": "2026-11-25T02:03:19+01:00",
+          "ref": "SYN/Navegación"
+        },
+        {
+          "text": "📅 Semana y navegación de Estadísticas: Semana",
+          "kind": "fase",
+          "by": "claude",
+          "at": "2026-11-25T02:03:21+01:00",
+          "ref": "SYN/Semana"
+        }
+      ],
+      "sha": "d9fa3427c16b22f79eb949956ab069b287c4f045",
+      "tag": "v2.9.0"
     }
   ]
 }
