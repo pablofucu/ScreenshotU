@@ -67,11 +67,6 @@
   const sc = $derived(Math.max(0.1, Math.floor(Math.min(w / 1280, h / SH) * dpr * 16)) / 16 / dpr);
   const ox = $derived(Math.round(((w - 1280 * sc) / 2) * dpr) / dpr);
   const oy = $derived(Math.round(((h - SH * sc) / 2) * dpr) / dpr);
-  // Pantalla grande (tele 4K): el escenario ocupa más de ~2600 píxeles físicos de ancho. Lo que repinta el
-  // cristal en cada fotograma (parallax del fondo, fundido de color al mover el foco, dos pantallas a la vez)
-  // cuesta 9 veces más que a 1280 y hace parpadear la interfaz: se quita, como en la tablet.
-  const big = $derived(!IS_TABLET && 1280 * sc * dpr > 2600);
-  $effect(() => { document.documentElement.classList.toggle('big', big); });
   const bg = buildBackground();
   let error = $state('');
 
@@ -101,7 +96,7 @@
     const jump = key !== atmosKey;
     atmosKey = key;
     // En la tablet el fundido de 700 ms repinta todo el cristal en cada fotograma: se salta.
-    if (reduced || IS_TABLET || untrack(() => big)) {
+    if (reduced || IS_TABLET) {
       curAtmos = { ...target };
       applyAtmos(variablesCSS(curAtmos.h1, curAtmos.h2));
       return;
@@ -181,7 +176,7 @@
   function screenOut(node: Element): TransitionConfig {
     node.removeAttribute('id');
     node.classList.add('leaving');
-    if (!app.anim || IS_TABLET || big || calm()) return { duration: 0 };
+    if (!app.anim || IS_TABLET || calm()) return { duration: 0 };
     return { duration: 220, css: (t) => `opacity:${Math.min(1, t / 0.6).toFixed(3)}` };
   }
   function modalOut(_node: Element): TransitionConfig {
@@ -198,7 +193,7 @@
     void app.s;
     void app.view;
     void app.titlesTab;
-    if (IS_TABLET || big || calm() || app.view === 'viewer') {
+    if (IS_TABLET || calm() || app.view === 'viewer') {
       bgPar = { gx: 0, gy: 0, bx: 0, by: 0 };
       return;
     }

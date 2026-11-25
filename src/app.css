@@ -80,11 +80,6 @@ body.nocursor,body.nocursor *{cursor:none !important}
 .screen.back{animation:scrFade var(--d-2) var(--e-soft) both,enterBack var(--d-3) var(--e-soft);transform-origin:var(--to,50% 50%)}
 .screen.leaving{pointer-events:none;z-index:0}
 #stage.moving .blob{animation-play-state:paused}
-/* Pantalla grande (4K, clase .big desde App.svelte): sin fundido cruzado ni capas de fondo vivas; la nueva entra solo con movimiento. */
-.big .screen.fwd{animation:enterFwd var(--d-3) var(--e-soft)}
-.big .screen.back{animation:enterBack var(--d-3) var(--e-soft)}
-.big .bg-layer{transition:none;transform:none!important;will-change:auto}
-.big .blob{animation:none}
 
 /* top bar */
 .top{position:absolute;left:0;right:0;top:0;height:76px;z-index:5}
