@@ -5122,7 +5122,7 @@
     }
   ],
   "next_ask": 24,
-  "next_tweak": 9,
+  "next_tweak": 10,
   "tweaks": [
     {
       "id": "R-1",
@@ -5194,6 +5194,15 @@
       "at": "2026-11-25T02:03:40+01:00",
       "commits": [
         "d9fa3427c16b22f79eb949956ab069b287c4f045"
+      ]
+    },
+    {
+      "id": "R-9",
+      "title": "Se quita el modo de pantalla grande: el parpadeo en la tele era por los 30 Hz del cable, no de la app",
+      "by": "claude",
+      "at": "2026-11-25T03:54:57+01:00",
+      "commits": [
+        "898c14100303583273e66cdeba7e0e3e8a43b843"
       ]
     }
   ],
