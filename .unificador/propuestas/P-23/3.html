@@ -1,0 +1,119 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Semana · Reparto y escaparate</title>
+<style>
+:root{--ink:#3a414e;--ink-2:#5f6776;--ink-3:#757d8c;--line:rgba(95,110,135,.24);
+--panel:rgba(255,255,255,.72);--panel-2:rgba(255,255,255,.9);
+--r-xs:6px;--r-s:12px;--r-m:18px;--r-l:28px;--r-pill:999px;
+--t-3xl:44px;--t-2xl:28px;--t-xl:20px;--t-l:17px;--t-m:15px;--t-s:13px;--t-xs:11px;
+--sh-1:0 0 0 1px rgba(95,110,135,.24),0 2px 3px rgba(40,50,70,.10),0 18px 30px -16px rgba(40,50,70,.42);
+--e-bounce:cubic-bezier(.34,1.32,.64,1);
+--v1:#3F63E0;--f1:#2f4bb0;}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#eef1f7;font-family:"Segoe UI Variable","Segoe UI",system-ui,sans-serif;color:var(--ink);overflow-x:hidden}
+.wrap{width:100%;position:relative;overflow:hidden}
+.stage{width:1280px;height:720px;position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden;
+ background:radial-gradient(900px 500px at 12% 8%,#ffe3ec 0,transparent 60%),radial-gradient(800px 520px at 88% 20%,#dfeaff 0,transparent 60%),radial-gradient(900px 600px at 60% 110%,#e5f8e9 0,transparent 60%),#f3f5fa}
+.glass{background:var(--panel);backdrop-filter:blur(18px);border-radius:var(--r-m);box-shadow:var(--sh-1)}
+.top{position:absolute;left:24px;right:24px;top:16px;height:40px;display:flex;align-items:center;gap:12px}
+.crumbs{display:flex;align-items:center;gap:8px;padding:6px 16px;border-radius:var(--r-pill);font-size:var(--t-l);font-weight:700}
+.crumbs b{color:var(--f1)}
+.crumbs .sep{color:var(--ink-3)}
+.clock{margin-left:auto;font-size:var(--t-l);font-weight:700;color:var(--ink-2)}
+.tabs{display:flex;gap:4px;padding:4px;border-radius:var(--r-pill)}
+.tabs span{padding:6px 16px;border-radius:var(--r-pill);font-size:var(--t-m);font-weight:700;color:var(--ink-2)}
+.tabs span.on{background:var(--f1);color:#fff}
+.hints{position:absolute;right:24px;bottom:14px;display:flex;gap:10px}
+.hints span{display:flex;align-items:center;gap:6px;padding:4px 12px 4px 4px;border-radius:var(--r-pill);font-size:var(--t-s);font-weight:700;background:var(--panel-2);box-shadow:var(--sh-1)}
+.hints i{font-style:normal;font-size:var(--t-xs);font-weight:800;color:#fff;background:#3a414e;border-radius:var(--r-pill);padding:3px 7px}
+.hints i.a{background:#3BB54A}.hints i.b{background:#E8384F}.hints i.y{background:#F2B807}
+.note{position:absolute;left:24px;bottom:16px;font-size:var(--t-s);color:var(--ink-3)}
+.cov{display:block;border-radius:var(--r-s);box-shadow:0 6px 14px -6px rgba(20,26,36,.45);overflow:hidden}
+.k{font-size:var(--t-xs);font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.up{color:#1f742c;font-weight:700}.dn{color:#b51d32;font-weight:700}
+@keyframes rise{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.in{animation:rise .42s var(--e-bounce) both}
+@keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+
+.seg{position:absolute;left:24px;right:24px;top:72px;height:64px;padding:8px;display:flex;gap:6px}
+.sg{position:relative;border-radius:var(--r-s);display:flex;flex-direction:column;justify-content:center;padding:0 14px;cursor:pointer;color:#fff;overflow:hidden;transition:transform .25s var(--e-bounce),opacity .2s,flex-grow .4s var(--e-bounce);min-width:120px}
+.sg b{font-size:var(--t-m);white-space:nowrap}
+.sg span{font-size:var(--t-s);font-weight:600;opacity:.9;white-space:nowrap}
+.sg.dim{opacity:.35}
+.sg.on{transform:scaleY(1.08);box-shadow:0 0 0 3px #fff,0 0 0 6px var(--c),0 12px 24px -10px var(--c)}
+.sg.all{background:#fff;color:var(--ink);flex:0 0 130px}
+.sg.all.on{--c:#3F63E0}
+.body{position:absolute;left:24px;right:24px;top:156px;bottom:60px;display:grid;grid-template-columns:420px 1fr;gap:16px}
+.show{position:relative;overflow:hidden;padding:0;display:flex;flex-direction:column}
+.show .art{position:absolute;inset:0}
+.show .art svg{width:100%;height:100%;border-radius:0;box-shadow:none}
+.show .lay{position:relative;margin-top:auto;padding:22px;background:linear-gradient(to top,rgba(20,24,32,.85),rgba(20,24,32,0));color:#fff}
+.show .lay .k{color:rgba(255,255,255,.8)}
+.show .lay h2{font-size:var(--t-2xl);font-weight:800;line-height:1.1;margin:6px 0}
+.show .lay .m{font-size:var(--t-l)}
+.lst{padding:14px 18px;display:flex;flex-direction:column;gap:6px;min-height:0;overflow:hidden}
+.lst h3{font-size:var(--t-l);font-weight:800;display:flex;align-items:baseline;gap:12px}
+.lst h3 span{font-size:var(--t-m);font-weight:500;color:var(--ink-2)}
+.row{display:grid;grid-template-columns:36px 1fr 280px 90px;align-items:center;gap:14px;padding:4px 8px;border-radius:var(--r-s)}
+.row:first-of-type{background:rgba(255,255,255,.7)}
+.row b{font-size:var(--t-m)}
+.row .br{height:12px;border-radius:6px;background:rgba(95,110,135,.15);overflow:hidden}
+.row .br i{display:block;height:100%;border-radius:6px;transform-origin:left;animation:gx .6s var(--e-bounce) both}
+@keyframes gx{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.row .tm{text-align:right;font-weight:800;font-size:var(--t-m)}
+.rib{margin-top:auto;display:grid;grid-template-columns:repeat(7,1fr);gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.rib div{display:flex;flex-direction:column;align-items:center;gap:4px}
+.rib i{width:100%;height:22px;border-radius:8px;display:block}
+.rib span{font-size:var(--t-s);color:var(--ink-3);font-weight:700}
+.rib b{font-size:var(--t-s)}
+</style></head><body><div class="wrap"><div class="stage" id="st"></div></div>
+<script>
+const CATS={
+ switch:{n:'Switch',full:'Switch',c:'#E8384F',ink:'#b51d32',soft:'#f9d3d9',icon:'sw',d:[40,0,95,30,0,120,60],prev:300,top:[['The Legend of Zelda: Tears of the Kingdom',245,150],['Super Mario Odyssey',100,8]],goal:null,fin:[]},
+ pc:{n:'PC',full:'Juegos de PC',c:'#F27A1A',ink:'#a84705',soft:'#fce0c8',icon:'pc',d:[60,45,0,80,30,150,90],prev:420,top:[['Elden Ring',290,40],['Balatro',120,330],['Celeste',45,195]],goal:null,fin:['Celeste']},
+ vn:{n:'Novelas visuales',full:'Novelas visuales',c:'#F2B807',ink:'#8c6700',soft:'#fbf0c2',icon:'vn',d:[30,30,45,0,20,60,40],prev:190,top:[['Steins;Gate',160,210],['Clannad',65,280]],goal:30,fin:[]},
+ jvn:{n:'Novelas japonesas',full:'Novelas japonesas',c:'#3BB54A',ink:'#1f742c',soft:'#cfeeda',icon:'jp',d:[25,30,30,35,0,40,30],prev:210,top:[['Summer Pockets',150,120],['Ataraxia',40,260]],goal:30,fin:[],jp:{chars:'48.200',cph:'9.800',fresh:112}},
+};
+const ORDER=['switch','pc','vn','jvn'];
+const DIAS=['L','M','X','J','V','S','D'],DN=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'],FECHA=[16,17,18,19,20,21,22];
+let cat='all';
+function fmt(m){m=Math.round(m);const h=Math.floor(m/60),r=m%60;return h?(r?`${h} h ${String(r).padStart(2,'0')} min`:`${h} h`):`${r} min`}
+function fmtS(m){m=Math.round(m);const h=Math.floor(m/60),r=m%60;return h?`${h}h${r?String(r).padStart(2,'0'):''}`:`${r}m`}
+function sum(a){return a.reduce((x,y)=>x+y,0)}
+function cover(name,hue,w,h){const id='g'+Math.random().toString(36).slice(2,7);const short=name.length>22?name.slice(0,20)+'…':name;
+ return `<svg class="cov" width="${w}" height="${h}" viewBox="0 0 120 160" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${hue} 70% 62%)"/><stop offset="1" stop-color="hsl(${(hue+50)%360} 60% 36%)"/></linearGradient></defs><rect width="120" height="160" fill="url(#${id})"/><circle cx="88" cy="38" r="16" fill="rgba(255,255,255,.35)"/><path d="M0 120 L34 78 L58 104 L82 70 L120 116 L120 160 L0 160Z" fill="rgba(0,0,0,.22)"/></svg>`}
+const ICON={
+ all:'<svg viewBox="0 0 24 24" width="20" height="20"><rect x="3" y="3" width="8" height="8" rx="2" fill="currentColor"/><rect x="13" y="3" width="8" height="8" rx="2" fill="currentColor" opacity=".6"/><rect x="3" y="13" width="8" height="8" rx="2" fill="currentColor" opacity=".6"/><rect x="13" y="13" width="8" height="8" rx="2" fill="currentColor"/></svg>',
+ sw:'<svg viewBox="0 0 24 24" width="20" height="20"><rect x="3" y="5" width="7" height="14" rx="3" fill="currentColor"/><rect x="14" y="5" width="7" height="14" rx="3" fill="currentColor" opacity=".6"/><circle cx="6.5" cy="9" r="1.4" fill="#fff"/></svg>',
+ pc:'<svg viewBox="0 0 24 24" width="20" height="20"><rect x="2" y="4" width="20" height="13" rx="2" fill="currentColor"/><rect x="8" y="18" width="8" height="2" rx="1" fill="currentColor"/></svg>',
+ vn:'<svg viewBox="0 0 24 24" width="20" height="20"><path d="M4 4h9a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3z" fill="currentColor"/><path d="M16 7h4v13h-4z" fill="currentColor" opacity=".55"/></svg>',
+ jp:'<svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="9" fill="currentColor"/><text x="12" y="16.5" text-anchor="middle" font-size="12" font-weight="800" fill="#fff" font-family="Yu Gothic,Meiryo,sans-serif">あ</text></svg>',
+};
+function agg(k){const ks=k==='all'?ORDER:[k];const days=[0,0,0,0,0,0,0];const per={};let prev=0;const top=[];const fin=[];
+ ks.forEach(c=>{const C=CATS[c];per[c]=C.d;C.d.forEach((v,i)=>days[i]+=v);prev+=C.prev;C.top.forEach(t=>top.push({name:t[0],m:t[1],hue:t[2],c}));C.fin.forEach(f=>fin.push({name:f,c}))});
+ top.sort((a,b)=>b.m-a.m);const total=sum(days);return {ks,days,per,prev,top,fin,total,active:days.filter(v=>v>0).length}}
+function tone(k){return k==='all'?{c:'#3F63E0',ink:'#2f4bb0',soft:'#dbe3fb'}:CATS[k]}
+function setCat(k){if(k===cat)return;cat=k;render();}
+function stepCat(d){const L=['all',...ORDER];const i=L.indexOf(cat)+d;if(i<0||i>=L.length)return;setCat(L[i]);}
+addEventListener('keydown',e=>{if(e.key==='q'||e.key==='Q')stepCat(-1);if(e.key==='e'||e.key==='E')stepCat(1)});
+function fit(){const s=Math.min(1,innerWidth/1280);const st=document.querySelector('.stage');st.style.transform=`scale(${s})`;document.querySelector('.wrap').style.height=(720*s)+'px'}
+addEventListener('resize',fit);
+function chrome(sel){return `
+<div class="top"><div class="crumbs glass"><span>Inicio</span><span class="sep">›</span><span>Estadísticas</span><span class="sep">›</span><b>Mi actividad</b></div>
+<div class="tabs glass" style="margin-left:24px"><span class="on">Semana</span><span>Días y rachas</span><span>Terminados</span></div>
+<div class="clock">Domingo 22 nov · 21:40</div></div>
+${sel}
+<div class="note">Prueba: Q / E (o clic) cambia de categoría, igual que LB / RB con el mando.</div>
+<div class="hints"><span><i>LT</i><i>RT</i>Pestaña</span><span><i>LB</i><i>RB</i>Categoría</span><span><i class="a">A</i>Abrir</span><span><i class="y">Y</i>Tu año</span><span><i class="b">B</i>Volver</span></div>`}
+
+function render(){const T=tone(cat),A=agg(cat),ALL=agg('all');const st=document.getElementById('st');
+ const sel=`<div class="seg glass"><div class="sg all ${cat==='all'?'on':''}" onclick="setCat('all')"><b>Todas</b><span>${fmt(ALL.total)}</span></div>${ORDER.map(k=>{const C=CATS[k],t=sum(C.d);return `<div class="sg ${k===cat?'on':''} ${cat!=='all'&&k!==cat?'dim':''}" style="flex:${t} 1 0;background:${C.c};--c:${C.c}" onclick="setCat('${k}')"><b>${C.full}</b><span>${fmt(t)} · ${Math.round(t/ALL.total*100)} %</span></div>`}).join('')}</div>`;
+ const t0=A.top[0];const d=A.total-A.prev;
+ const show=`<div class="show glass in"><div class="art">${cover(t0.name,t0.hue,420,500)}</div><div class="lay"><div class="k">Juego de la semana · 16–22 nov</div><h2>${t0.name}</h2><div class="m">${fmt(t0.m)} · ${CATS[t0.c].full}</div></div></div>`;
+ const max=A.top[0].m;
+ const rows=A.top.slice(0,5).map((t,i)=>`<div class="row">${cover(t.name,t.hue,36,44)}<b>${t.name}</b><div class="br"><i style="width:${t.m/max*100}%;background:${CATS[t.c].c};animation-delay:${i*50}ms"></i></div><div class="tm">${fmt(t.m)}</div></div>`).join('');
+ const dm=Math.max(...A.days,1);
+ const rib=`<div class="rib">${A.days.map((v,i)=>`<div><i style="background:${v?T.c:'rgba(95,110,135,.12)'};opacity:${v?0.25+0.75*v/dm:1}"></i><span>${DIAS[i]}</span><b>${v?fmtS(v):'—'}</b></div>`).join('')}</div>`;
+ const extra=cat==='jvn'?` · ${CATS.jvn.jp.chars} caracteres a ${CATS.jvn.jp.cph}/h`:(A.fin.length?` · terminado: ${A.fin.map(f=>f.name).join(', ')}`:'');
+ const lst=`<div class="lst glass in" style="animation-delay:80ms"><h3>${fmt(A.total)} <span><span class="${d>=0?'up':'dn'}">${d>=0?'+':'−'}${fmt(Math.abs(d))}</span> que la semana pasada · ${A.active} de 7 días${extra}</span></h3>${rows}${rib}</div>`;
+ st.innerHTML=chrome(sel)+`<div class="body">${show}${lst}</div>`;}
+
+render();fit();</script></body></html>
