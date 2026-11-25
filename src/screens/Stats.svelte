@@ -3,7 +3,7 @@
   // y calendario de los últimos 6 meses con el detalle del día enfocado.
   import { untrack } from 'svelte';
   import { app } from '../lib/store.svelte';
-  import { RANK_VIEW_H, STATS_TABS, rankH, rankY } from '../lib/controller.svelte';
+  import { RANK_VIEW_H, STATS_TABS, rankH, rankY, statsCats } from '../lib/controller.svelte';
   import { CAL_WEEKS, STATS_KINDS, WDAYS, addDays, dayPlays, fmtClock, fmtHM, fmtLongDay } from '../lib/stats';
   import { GOAL_COL } from '../lib/readgoals';
   import TopBar from '../components/TopBar.svelte';
@@ -20,8 +20,11 @@
   const KIND_LABEL: Record<string, string> = { month: 'Mes', year: 'Año', all: 'Siempre' };
   const VIEW_LABEL = { week: 'Semana', days: 'Días y rachas', fin: 'Terminados', pano: 'Panorama', streak: 'Rachas', rank: 'Clasificación', year: 'Tu año jugando' };
   const TABS = STATS_TABS;
-  // Pistas comunes de Mi actividad: LT/RT pestaña, Y «Tu año», B volver.
-  const COMMON: Array<[string, string, string]> = [['LT/RT', 'Pestaña', 'rt'], ['Y', 'Tu año', 'y'], ['B', 'Volver', 'b']];
+  // Pistas de Mi actividad, iguales en las tres pestañas: LT/RT pestaña, LB/RB categoría, cruceta en la tira del periodo, Y «Tu año», B volver.
+  const COMMON: Array<[string, string, string]> = [['LT/RT', 'Pestaña', 'rt'], ['LB/RB', 'Categoría', 'rb'], ['Y', 'Tu año', 'y'], ['B', 'Volver', 'b']];
+  const cats = $derived(statsCats());
+  const ci = $derived(cats.indexOf(app.statsCat));
+  const catName = $derived(app.statsCat >= 0 && app.lib.platforms[app.statsCat]?.name ? app.lib.platforms[app.statsCat].name : 'Todas las categorías');
   const PER_LABEL = (p: 'all' | number | 'd30') => (p === 'all' ? 'Siempre' : p === 'd30' ? 'Últimos 30 días' : String(p));
   const PANO_PERS = $derived(['all', 'd30', ...[...app.years].reverse()] as Array<'all' | number | 'd30'>);
   const panoPlat = $derived(app.statsPlats.includes(app.panoPi) ? app.panoPi : (app.statsPlats[0] ?? -1));
@@ -152,20 +155,11 @@
       <span class="chev" class:dis={yi < 0 || yi >= app.years.length - 1} data-hact="rb">{@render chev(false)}</span>
     </span>
   {:else if app.statsTab === 'week'}
-    <span class="cat">Todas las categorías</span>
-    <span class="gl">
-      <span class="chev" class:dis={!weekCanOlder} data-hact="lb">{@render chev(true)}</span>
-      {#key app.perKey}<span class="lbl {app.perDir >= 0 ? 'per-r' : 'per-l'}">{weekLabel}</span>{/key}
-      <span class="chev" class:dis={app.weekOff >= 0} data-hact="rb">{@render chev(false)}</span>
-    </span>
+    {@render perCtl(weekLabel, weekCanOlder, app.weekOff < 0)}
   {:else if app.statsTab === 'fin'}
     {@const fi = app.finYears.indexOf(app.finYear)}
-    <span class="cat sel" data-hact="view" title="Cambiar de categoría">{app.finCat >= 0 && pname(app.finCat) ? pname(app.finCat) : 'Todas las categorías'}</span>
-    <span class="gl">
-      <span class="chev" class:dis={fi <= 0} data-hact="lb">{@render chev(true)}</span>
-      {#key app.perKey}<span class="lbl {app.perDir >= 0 ? 'per-r' : 'per-l'}">{app.finYear}</span>{/key}
-      <span class="chev" class:dis={fi < 0 || fi >= app.finYears.length - 1} data-hact="rb">{@render chev(false)}</span>
-    </span>
+    {@render catCtl()}
+    {@render perCtl(String(app.finYear), fi > 0, fi >= 0 && fi < app.finYears.length - 1)}
   {:else if app.statsTab === 'pano'}
     {@const pi = PANO_PERS.indexOf(app.panoPer)}
     <span class="cat sel" data-hact="rt" title="Cambiar de categoría">{panoPlat >= 0 && pname(panoPlat) ? pname(panoPlat) : 'Sin partidas'}</span>
@@ -189,12 +183,8 @@
   {:else}
     {@const ys = app.years.includes(app.now.getFullYear()) ? app.years : [...app.years, app.now.getFullYear()].sort()}
     {@const yi = ys.indexOf(app.daysYear)}
-    <span class="cat sel" data-hact="view" title="Cambiar de categoría">{app.daysCat >= 0 && pname(app.daysCat) ? pname(app.daysCat) : 'Todas las categorías'}</span>
-    <span class="gl">
-      <span class="chev" class:dis={yi <= 0} data-hact="lb">{@render chev(true)}</span>
-      {#key app.perKey}<span class="lbl {app.perDir >= 0 ? 'per-r' : 'per-l'}">{app.daysYear}</span>{/key}
-      <span class="chev" class:dis={yi < 0 || yi >= ys.length - 1} data-hact="rb">{@render chev(false)}</span>
-    </span>
+    {@render catCtl()}
+    {@render perCtl(String(app.daysYear), yi > 0, yi >= 0 && yi < ys.length - 1)}
   {/if}
   <span class="gl vsw" class:slid={vswSlide.w > 0} bind:this={vswEl}>
     {#if vswSlide.w > 0}<span class="gslide" class:ready={vswSlide.ready} style="transform:translateX({vswSlide.x}px);width:{vswSlide.w}px" aria-hidden="true"></span>{/if}
@@ -203,6 +193,23 @@
     {/each}
   </span>
 </div>
+
+<!-- Categoría (LB/RB), la misma en las tres pestañas de Mi actividad. -->
+{#snippet catCtl()}
+  <span class="gl catc">
+    <span class="chev" class:dis={ci <= 0} data-hact="lb">{@render chev(true)}</span>
+    {#key app.statsCat}<span class="lbl pop-in">{catName}</span>{/key}
+    <span class="chev" class:dis={ci >= cats.length - 1} data-hact="rb">{@render chev(false)}</span>
+  </span>
+{/snippet}
+<!-- Periodo: se enfoca con la cruceta (arriba) y izquierda/derecha lo cambian. -->
+{#snippet perCtl(label: string, older: boolean, newer: boolean)}
+  <span class="gl per fx" class:f={app.focus === 'per'} data-k="per">
+    <span class="chev" class:dis={!older} data-hact="pshift:-1">{@render chev(true)}</span>
+    {#key app.perKey}<span class="lbl {app.perDir >= 0 ? 'per-r' : 'per-l'}">{label}</span>{/key}
+    <span class="chev" class:dis={!newer} data-hact="pshift:1">{@render chev(false)}</span>
+  </span>
+{/snippet}
 
 {#snippet chev(left: boolean)}
   <svg viewBox="0 0 12 12"><path d={left ? 'M7.5 2 3.5 6l4 4' : 'M4.5 2l4 4-4 4'} /></svg>
@@ -282,10 +289,8 @@
 </div>
 {/key}
 
-{#if app.statsTab === 'week'}
-  <Hints list={[['LB/RB', 'Semana', 'rb'], ...COMMON]} />
-{:else if app.statsTab === 'fin'}
-  <Hints list={[['View', 'Categoría', 'view'], ['LB/RB', 'Año', 'rb'], ...COMMON]} />
+{#if app.statsTab === 'week' || app.statsTab === 'fin' || app.statsTab === 'days'}
+  <Hints list={COMMON} />
 {:else if app.statsTab === 'pano'}
   <Hints list={[['LB/RB', 'Periodo', 'rb'], ['LT/RT', 'Categoría', 'rt'], ['B', 'Volver', 'b']]} />
 {:else if app.statsTab === 'streak'}
@@ -294,13 +299,17 @@
   <Hints list={[['A', 'Siguiente', 'a'], ['LB/RB', 'Año', 'rb'], ['Y', 'Cerrar', 'y'], ['B', 'Volver', 'b']]} />
 {:else if app.statsTab === 'rank'}
   <Hints list={[...(rows.length ? [['A', 'Ver juego', 'a'] as [string, string, string]] : []),['LB/RB', 'Fecha', 'rb'], ['View', 'Periodo', 'view'], ['LT/RT', 'Categoría', 'rt'], ['Y', 'Calendario', 'y'], ['B', 'Volver', 'b']]} />
-{:else if app.statsTab === 'days'}
-  <Hints list={[['View', 'Categoría', 'view'], ['LB/RB', 'Año', 'rb'], ...COMMON]} />
 {/if}
 
 <style>
   /* Las pestañas se compactan y, si aun así no caben, se desplazan (la activa se centra con el efecto de abajo). */
   :global(.sx .vsw) { margin-left: auto; gap: 2px; padding: 4px; cursor: default; min-width: 0; flex-shrink: 1; overflow-x: auto; scrollbar-width: none; }
   :global(.sx .vsw::-webkit-scrollbar) { display: none; }
+  /* Tira del periodo enfocada con la cruceta: anillo del acento y un leve rebote. */
+  :global(.sx .gl.per) { transition: transform .25s var(--e-bounce), box-shadow .2s; }
+  :global(.sx .gl.per.f) { transform: scale(1.05); box-shadow: 0 0 0 3px var(--acc), 0 6px 18px -6px color-mix(in srgb, var(--acc) 60%, transparent); }
+  :global(.sx .gl.catc .lbl) { min-width: 210px; }
+  :global(.sx .pop-in) { animation: popIn .32s var(--e-bounce) both; }
+  @keyframes popIn { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
   :global(.sx .vsw .o) { display: grid; place-items: center; flex-shrink: 0; padding: 0 11px; height: 36px; border-radius: var(--r-pill); cursor: pointer; white-space: nowrap; font-size: var(--t-m); }
 </style>

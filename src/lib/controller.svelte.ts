@@ -27,6 +27,7 @@ import { checkUpdate, updateAct } from './updater.svelte';
 import { CONN_CYCLE, CONN_ROWS, connAct, isConnId, refreshConnections, wizardCmd, type ConnId } from './connections.svelte';
 import { DEVICES_CYCLE, devicesAct, devicesRows, isDevicesId, refreshDevices, type DevicesId } from './devices.svelte';
 import { clientMode } from './ipc';
+import { catRank } from './chiptone';
 import { openPhrases, phrasesCmd } from './phrases.svelte';
 import { gameSetCmd, openGameSettings } from './gameset.svelte';
 import { GOAL_TXT, goalMin, goalMinLeft, goalTrack, goalHistOf, groupOf, localDay, EXTRA_MIN_PLAY, type GoalKey } from './readgoals';
@@ -140,6 +141,7 @@ function validKey(view: View, key: string | undefined): string | undefined {
       return el.querySelector(`[data-k="${key}"]`) ? key : undefined;
     }
     if (app.statsTab === 'rank' && /^sr\d+$/.test(key)) return n < app.rank.rows.length ? key : undefined;
+    if (key === 'per' && (app.statsTab === 'week' || app.statsTab === 'days' || app.statsTab === 'fin')) return key;
     if (app.statsTab === 'days' && /^dy\d+$/.test(key)) return n < app.heat.total.length && addDays(app.heat.from, n) <= app.now.getTime() ? key : undefined;
   } else if (view === 'evo') {
     if (/^eb\d+$/.test(key)) return n < app.evo.length ? key : undefined;
@@ -170,7 +172,7 @@ function defaultKey(view: View): string {
   if (view === 'stats') {
     if (app.statsTab === 'year' || app.statsTab === 'streak') return '';
     if (app.statsTab === 'week') return 'wk0';
-    if (app.statsTab === 'fin') { const l = finishedYear(app.lib, app.finYear, app.finCat).last; return l ? `fn${l.pi}_${l.ti}` : ''; }
+    if (app.statsTab === 'fin') { const l = finishedYear(app.lib, app.finYear, app.statsCat).last; return l ? `fn${l.pi}_${l.ti}` : ''; }
     if (app.statsTab === 'pano') return 'pn0';
     if (app.statsTab === 'rank') return app.rank.rows.length ? 'sr0' : '';
     return 'dy' + daysDefault();
@@ -332,6 +334,8 @@ export function move(dx: number, dy: number) {
     if (dx) yearStep(dx); else bump(screenEl()?.querySelector('.ycard'), 0, dy);
     return;
   }
+  // Tira del periodo (Semana, Días y rachas, Terminados): izquierda/derecha cambian de semana o de año.
+  if (app.view === 'stats' && app.focus === 'per' && dx) { statsShift(dx); return; }
   const root = screenEl();
   if (!root) return;
   const cur = root.querySelector<HTMLElement>('.fx.f');
@@ -983,7 +987,7 @@ export function openStats(from: 'home' | 'streak' = 'home') {
   if (from === 'home') { app.fk.home = 'space1'; app.homeSpace = 'stats'; }
   app.yearFrom = 'stats';
   app.statsOff = 0; app.calOff = 0; app.yearSel = null; app.yearCard = 0;
-  app.daysYear = app.now.getFullYear(); app.daysCat = -1;
+  app.daysYear = app.now.getFullYear(); app.statsCat = -1;
   for (let k = 0; k < 240 && !app.rank.rows.length && app.rank.older; k++) app.statsOff--;
   delete app.fk.stats;
   go('stats', 'fwd');
@@ -1209,28 +1213,35 @@ function daysLast(): number {
 function daysDefault(): number {
   const h = app.heat, last = daysLast();
   if (h.year === app.now.getFullYear()) return last;
-  const arr = app.daysCat >= 0 ? h.by.get(app.daysCat) : h.total;
+  const arr = app.statsCat >= 0 ? h.by.get(app.statsCat) : h.total;
   for (let i = last; arr && i >= 0; i--) if (arr[i] > 0) return i;
   return last;
 }
-/** View en Días y rachas: Todas → cada categoría con partidas ese año → Todas. */
-function cycleDaysCat() {
-  const cats = [-1, ...[...app.heat.by.keys()].sort((a, b) => a - b)];
-  app.daysCat = cats[(cats.indexOf(app.daysCat) + 1) % cats.length] ?? -1;
-  blip(700);
+/** Categorías de Mi actividad en el orden del riel: Todas (-1) y luego las de la biblioteca (Switch, PC, novelas… y el resto). */
+export function statsCats(): number[] {
+  const ps = app.lib.platforms;
+  return [-1, ...ps.map((_, i) => i).sort((a, b) => catRank(ps[a].id) - catRank(ps[b].id) || a - b)];
 }
-
-/** View en Terminados: Todas → cada categoría con terminados ese año → Todas. */
-function cycleFinCat() {
-  const cats = [-1, ...finishedYear(app.lib, app.finYear).lanes.map((l) => l.pi).sort((a, b) => a - b)];
-  app.finCat = cats[(cats.indexOf(app.finCat) + 1) % cats.length] ?? -1;
-  setFocus(defaultKey('stats'));
-  blip(700);
+/** Pone la categoría de Mi actividad (la comparten Semana, Días y rachas y Terminados). */
+function setStatsCat(v: number) {
+  if (v === app.statsCat) return;
+  app.statsCat = v;
+  const k = app.focus;
+  if (k !== 'per' && !(app.statsTab === 'days' && k.startsWith('dy'))) setFocus(defaultKey('stats'));
+}
+/** LB/RB en Semana, Días y rachas y Terminados: categoría anterior/siguiente. */
+function cycleStatsCat(d: number) {
+  const cats = statsCats(), i = cats.indexOf(app.statsCat) + d;
+  if (i < 0 || i >= cats.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
+  setStatsCat(cats[i]);
+  sfx.page(d);
+  haptic.tab();
 }
 
 /** LB/RB: en la clasificación y el calendario mueven la fecha; en la evolución, la escala. */
 function statsKind(d: number) {
   if (app.view === 'stats' && app.statsTab === 'year') { yearShift(d); return; }
+  if (app.view === 'stats' && (app.statsTab === 'week' || app.statsTab === 'days' || app.statsTab === 'fin')) { cycleStatsCat(d); return; }
   if (app.view === 'evo') {
     const i = EVO_KINDS.findIndex(([k]) => k === app.evoKind) + d;
     if (i < 0 || i >= EVO_KINDS.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
@@ -1253,13 +1264,13 @@ function statsShift(d: number) {
     const ok = d < 0 ? app.firstActivity > 0 && cur.getTime() > app.firstActivity : app.weekOff < 0;
     if (!ok) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
     app.perDir = d >= 0 ? 1 : -1; app.perKey++;
-    app.weekOff += d; setFocus(defaultKey('stats')); sfx.page(d); haptic.tab(); return;
+    app.weekOff += d; setFocus(app.focus === 'per' ? 'per' : defaultKey('stats')); sfx.page(d); haptic.tab(); return;
   }
   if (app.statsTab === 'fin') {
     const ys = app.finYears, i = ys.indexOf(app.finYear) + d;
     if (i < 0 || i >= ys.length) { bump(screenEl()?.querySelector('.fx.f'), d, 0); return; }
     app.perDir = d >= 0 ? 1 : -1; app.perKey++;
-    app.finYear = ys[i]; setFocus(defaultKey('stats')); sfx.page(d); haptic.tab(); return;
+    app.finYear = ys[i]; setFocus(app.focus === 'per' ? 'per' : defaultKey('stats')); sfx.page(d); haptic.tab(); return;
   }
   if (app.statsTab === 'pano') {
     const pers: Array<'all' | number | 'd30'> = ['all', 'd30', ...[...app.years].reverse()];
@@ -1274,7 +1285,7 @@ function statsShift(d: number) {
     const k = app.focus.startsWith('dy') ? +app.focus.slice(2) : -1;
     app.perDir = d >= 0 ? 1 : -1; app.perKey++;
     app.daysYear = ys[i];
-    setFocus('dy' + (k >= 0 ? Math.min(k, daysLast()) : daysDefault()));
+    if (app.focus !== 'per') setFocus('dy' + (k >= 0 ? Math.min(k, daysLast()) : daysDefault()));
     sfx.page(d); haptic.tab(); return;
   }
   if (app.statsTab === 'rank') {
@@ -2470,6 +2481,8 @@ export function cmd(c: string) {
     haptic.tab();
     return;
   }
+  if (c.startsWith('pshift:')) { statsShift(+c.slice(7)); return; }
+  if (c.startsWith('cat:')) { setStatsCat(+c.slice(4)); blip(700); return; }
   if (c.startsWith('stab:')) { setStatsTab(c.slice(5) as typeof app.statsTab); return; }
   // Píldoras de las pantallas (clic): cada una lleva su destino fijo.
   if (c.startsWith('gm:')) { setGsMetric(c.slice(3)); return; }
@@ -2524,8 +2537,6 @@ export function cmd(c: string) {
       else if (app.view === 'viewer') toggleBare();
       else if (app.view === 'titles' && app.titlesTab === 'all') toggleTitlesView();
       else if (app.view === 'stats' && app.statsTab === 'rank') cycleStatsKind();
-      else if (app.view === 'stats' && app.statsTab === 'days') cycleDaysCat();
-      else if (app.view === 'stats' && app.statsTab === 'fin') cycleFinCat();
       else if (app.view === 'gstats') gsView();
       break;
     case 'y':

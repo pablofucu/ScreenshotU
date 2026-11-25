@@ -12,7 +12,7 @@
   const MON = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
   const now = $derived(app.now.getTime());
   const H = $derived(app.heat);
-  const cat = $derived(app.daysCat);
+  const cat = $derived(app.statsCat);
   const plat = (pi: number) => app.lib.platforms[pi];
   const days = (n: number) => (n === 1 ? 'día' : 'días');
   const dm = (ms: number) => { const d = new Date(ms); return `${d.getDate()} ${MON[d.getMonth()]}`; };

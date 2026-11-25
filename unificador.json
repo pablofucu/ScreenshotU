@@ -1375,10 +1375,10 @@
             }
           ],
           "review": {
-            "state": "waiting",
+            "state": "approved",
             "text": "",
-            "by": "claude",
-            "at": "2026-11-22T00:52:56+01:00",
+            "by": "persona",
+            "at": "2026-11-25T01:19:32+01:00",
             "seen": true
           }
         }
@@ -2957,10 +2957,10 @@
             }
           ],
           "review": {
-            "state": "waiting",
+            "state": "approved",
             "text": "",
-            "by": "claude",
-            "at": "2026-11-22T01:09:22+01:00",
+            "by": "persona",
+            "at": "2026-11-25T01:19:28+01:00",
             "seen": true
           }
         },
@@ -3022,10 +3022,10 @@
             }
           ],
           "review": {
-            "state": "waiting",
+            "state": "approved",
             "text": "",
-            "by": "claude",
-            "at": "2026-11-22T01:09:28+01:00",
+            "by": "persona",
+            "at": "2026-11-25T01:19:25+01:00",
             "seen": true
           }
         }
@@ -3265,10 +3265,10 @@
             }
           ],
           "review": {
-            "state": "waiting",
+            "state": "approved",
             "text": "",
-            "by": "claude",
-            "at": "2026-11-22T04:59:46+01:00",
+            "by": "persona",
+            "at": "2026-11-25T01:19:14+01:00",
             "seen": true
           }
         },
@@ -3347,10 +3347,10 @@
             }
           ],
           "review": {
-            "state": "waiting",
+            "state": "approved",
             "text": "",
-            "by": "claude",
-            "at": "2026-11-22T05:07:24+01:00",
+            "by": "persona",
+            "at": "2026-11-25T01:19:16+01:00",
             "seen": true
           }
         },
@@ -3406,10 +3406,10 @@
             }
           ],
           "review": {
-            "state": "waiting",
+            "state": "approved",
             "text": "",
-            "by": "claude",
-            "at": "2026-11-22T05:07:39+01:00",
+            "by": "persona",
+            "at": "2026-11-25T01:19:17+01:00",
             "seen": true
           }
         }
@@ -3572,10 +3572,10 @@
             }
           ],
           "review": {
-            "state": "waiting",
+            "state": "approved",
             "text": "",
-            "by": "antigravity",
-            "at": "2026-11-23T14:48:36+01:00",
+            "by": "persona",
+            "at": "2026-11-25T01:19:11+01:00",
             "seen": true
           }
         },
@@ -3654,10 +3654,10 @@
             }
           ],
           "review": {
-            "state": "waiting",
+            "state": "approved",
             "text": "",
-            "by": "antigravity",
-            "at": "2026-11-23T14:52:43+01:00",
+            "by": "persona",
+            "at": "2026-11-25T01:19:12+01:00",
             "seen": true
           }
         }
@@ -3726,10 +3726,10 @@
             }
           ],
           "review": {
-            "state": "waiting",
+            "state": "approved",
             "text": "",
-            "by": "antigravity",
-            "at": "2026-11-23T22:24:48+01:00",
+            "by": "persona",
+            "at": "2026-11-25T01:19:10+01:00",
             "seen": true
           }
         },
@@ -3809,10 +3809,10 @@
             }
           ],
           "review": {
-            "state": "waiting",
+            "state": "approved",
             "text": "",
-            "by": "antigravity",
-            "at": "2026-11-23T22:28:06+01:00",
+            "by": "persona",
+            "at": "2026-11-25T01:19:07+01:00",
             "seen": true
           }
         },
@@ -3891,10 +3891,10 @@
             }
           ],
           "review": {
-            "state": "waiting",
+            "state": "approved",
             "text": "",
-            "by": "antigravity",
-            "at": "2026-11-23T22:38:31+01:00",
+            "by": "persona",
+            "at": "2026-11-25T01:19:05+01:00",
             "seen": true
           }
         }
@@ -3962,10 +3962,10 @@
             }
           ],
           "review": {
-            "state": "waiting",
+            "state": "approved",
             "text": "",
-            "by": "claude",
-            "at": "2026-11-24T23:30:05+01:00",
+            "by": "persona",
+            "at": "2026-11-25T01:19:00+01:00",
             "seen": true
           }
         },
@@ -4021,10 +4021,10 @@
             }
           ],
           "review": {
-            "state": "waiting",
+            "state": "approved",
             "text": "",
-            "by": "claude",
-            "at": "2026-11-24T23:30:06+01:00",
+            "by": "persona",
+            "at": "2026-11-25T01:19:01+01:00",
             "seen": true
           }
         },
@@ -4104,10 +4104,177 @@
             }
           ],
           "review": {
+            "state": "approved",
+            "text": "",
+            "by": "persona",
+            "at": "2026-11-25T01:19:02+01:00",
+            "seen": true
+          }
+        }
+      ]
+    },
+    {
+      "key": "SYN",
+      "name": "Semana y navegación de Estadísticas",
+      "goal": "Semana con recuadros bonitos y útiles y cambiar de categoría sin líos",
+      "icon": "📅",
+      "color": 2,
+      "created": "2026-11-25T01:20:51+01:00",
+      "by": "claude",
+      "next_id": 6,
+      "phases": [
+        {
+          "name": "Diseño",
+          "icon": "",
+          "steps": [
+            {
+              "id": "SYN-1",
+              "title": "Elegir propuesta de Semana y navegación",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-25T01:20:55+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-25T01:27:40+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Elegida la propuesta 1 (Riel lateral) con ajustes; maqueta en docs/maquetas/estadisticas-semana/a.html"
+                }
+              ],
+              "cat": "decidir",
+              "updated": "2026-11-25T01:27:40+01:00",
+              "result": "Elegida la propuesta 1 (Riel lateral) con ajustes; maqueta en docs/maquetas/estadisticas-semana/a.html"
+            }
+          ],
+          "review": {
+            "state": "approved",
+            "text": "",
+            "by": "persona",
+            "at": "2026-11-25T01:27:48+01:00",
+            "seen": true
+          }
+        },
+        {
+          "name": "Navegación",
+          "icon": "",
+          "steps": [
+            {
+              "id": "SYN-2",
+              "title": "Cambio de categoría único en todas las pestañas",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-25T01:52:30+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-25T02:03:12+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "statsCat único (store) y LB/RB en Semana, Días y Terminados; tira del periodo con cruceta. svelte-check 0 errores; probado en la vista previa"
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-25T02:03:12+01:00",
+              "result": "statsCat único (store) y LB/RB en Semana, Días y Terminados; tira del periodo con cruceta. svelte-check 0 errores; probado en la vista previa"
+            },
+            {
+              "id": "SYN-3",
+              "title": "Botones y pistas coherentes",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-25T02:03:19+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-25T02:03:19+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Mismas pistas en las tres pestañas (LT/RT, LB/RB, Y, B); píldora de categoría y tira del periodo con flechas clicables"
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-25T02:03:19+01:00",
+              "result": "Mismas pistas en las tres pestañas (LT/RT, LB/RB, Y, B); píldora de categoría y tira del periodo con flechas clicables"
+            }
+          ],
+          "review": {
             "state": "waiting",
             "text": "",
             "by": "claude",
-            "at": "2026-11-24T23:30:09+01:00",
+            "at": "2026-11-25T02:03:19+01:00",
+            "seen": true
+          }
+        },
+        {
+          "name": "Semana",
+          "icon": "",
+          "steps": [
+            {
+              "id": "SYN-4",
+              "title": "Semana nueva según la propuesta",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-25T02:03:20+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-25T02:03:20+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "Semana nueva: riel lateral, resumen con una sola llama de racha, barras apiladas sobrias con línea de meta, top 3, metas en cuadritos por intensidad (0 a 2 h) con marca en días cumplidos. Probado en la vista previa"
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-25T02:03:20+01:00",
+              "result": "Semana nueva: riel lateral, resumen con una sola llama de racha, barras apiladas sobrias con línea de meta, top 3, metas en cuadritos por intensidad (0 a 2 h) con marca en días cumplidos. Probado en la vista previa"
+            },
+            {
+              "id": "SYN-5",
+              "title": "Comprobar con npm run check y pruebas",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-25T02:03:21+01:00",
+                  "by": "claude",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-25T02:03:21+01:00",
+                  "by": "claude",
+                  "kind": "done",
+                  "text": "weekreview 10/10, readgoals 20/20, gamestats 9/9; svelte-check 0 errores"
+                }
+              ],
+              "cat": "pruebas",
+              "together": true,
+              "updated": "2026-11-25T02:03:21+01:00",
+              "result": "weekreview 10/10, readgoals 20/20, gamestats 9/9; svelte-check 0 errores"
+            }
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "claude",
+            "at": "2026-11-25T02:03:21+01:00",
             "seen": true
           }
         }
@@ -4917,9 +5084,44 @@
       },
       "by": "antigravity",
       "created": "2026-11-23T22:13:57+01:00"
+    },
+    {
+      "id": "P-23",
+      "kind": "proposal",
+      "title": "Semana nueva y un solo cambio de categoría",
+      "text": "",
+      "step": "SYN-1",
+      "branch": "SYN",
+      "options": [
+        {
+          "label": "Riel lateral",
+          "desc": "categorías en columna a la izquierda con sus horas; Semana con gráfico de barras apiladas, lo más jugado y metas",
+          "file": ".unificador/propuestas/P-23/1.html"
+        },
+        {
+          "label": "Diario de siete días",
+          "desc": "pastillas de color arriba; Semana como siete tarjetas, una por día, con la carátula de lo que más jugaste, el tiempo y la meta",
+          "file": ".unificador/propuestas/P-23/2.html"
+        },
+        {
+          "label": "Reparto y escaparate",
+          "desc": "barra de reparto por categoría arriba; juego de la semana en grande y lista de juegos con barras",
+          "file": ".unificador/propuestas/P-23/3.html"
+        }
+      ],
+      "recommend": 2,
+      "answer": {
+        "option": 1,
+        "text": "",
+        "by": "persona",
+        "at": "2026-11-25T01:27:45+01:00",
+        "seen": true
+      },
+      "by": "claude",
+      "created": "2026-11-25T01:24:36+01:00"
     }
   ],
-  "next_ask": 23,
+  "next_ask": 24,
   "next_tweak": 8,
   "tweaks": [
     {
@@ -4986,7 +5188,29 @@
       ]
     }
   ],
-  "news": [],
+  "news": [
+    {
+      "text": "📅 Semana y navegación de Estadísticas: Diseño",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-25T01:27:40+01:00",
+      "ref": "SYN/Diseño"
+    },
+    {
+      "text": "📅 Semana y navegación de Estadísticas: Navegación",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-25T02:03:19+01:00",
+      "ref": "SYN/Navegación"
+    },
+    {
+      "text": "📅 Semana y navegación de Estadísticas: Semana",
+      "kind": "fase",
+      "by": "claude",
+      "at": "2026-11-25T02:03:21+01:00",
+      "ref": "SYN/Semana"
+    }
+  ],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",
   "versions": [
     {

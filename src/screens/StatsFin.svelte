@@ -13,14 +13,14 @@
   const MON = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
   const LBL = 132, GAP = 6, BODY = 320;
 
-  const F = $derived(finishedYear(app.lib, app.finYear, app.finCat));
+  const F = $derived(finishedYear(app.lib, app.finYear, app.statsCat));
   const plat = (pi: number) => app.lib.platforms[pi];
   const act = (r: FinRef) => `sr:${r.pi}:${r.ti}`;
   const dm = (ms: number) => { const d = new Date(ms); return `${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}`; };
 
   /* Tira de años: los que tienen terminados y el actual aunque tenga 0. */
   const nowY = $derived(app.now.getFullYear()), nowM = $derived(app.now.getMonth());
-  const byYearList = $derived(finishedByYear(app.lib, app.finCat));
+  const byYearList = $derived(finishedByYear(app.lib, app.statsCat));
   const byYear = $derived(new Map(byYearList.map((e) => [e.year, e])));
   const years = $derived([...new Set([...app.finYears, nowY])].sort((a, b) => a - b));
   const ordered = (m: Map<number, number>) => [...m].sort((a, b) => catRank(plat(a[0]).id) - catRank(plat(b[0]).id));

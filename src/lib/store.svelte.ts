@@ -450,8 +450,8 @@ class Store {
   weekOff = $state(0);
   /** Terminados: año elegido. */
   finYear = $state(new Date().getFullYear());
-  /** Terminados: categoría filtrada (-1 = todas). */
-  finCat = $state(-1);
+  /** Mi actividad (Semana, Días y rachas, Terminados): categoría elegida con LB/RB (-1 = todas, si no, índice de la plataforma). */
+  statsCat = $state(-1);
   /** Panorama: categoría (-1 = la primera con datos) y periodo. */
   panoPi = $state(-1);
   panoPer = $state<'all' | number | 'd30'>('all');
@@ -479,9 +479,8 @@ class Store {
   statsOff = $state(0);
   /** Ventana del calendario: 0 = los últimos 6 meses, -1 = los 6 anteriores… */
   calOff = $state(0);
-  /** Días y rachas: año del mapa y categoría filtrada (-1 = todas). */
+  /** Días y rachas: año del mapa (la categoría es `statsCat`). */
   daysYear = $state(new Date().getFullYear());
-  daysCat = $state(-1);
   evoKind = $state<EvoKind>('week');
   /** Pantalla de racha: anillo elegido (mapa y cifras) y pantalla a la que vuelve B. */
   streakKey = $state<GoalKey>('vn');
