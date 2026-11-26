@@ -118,7 +118,7 @@ export interface PickerState { q: string; ids: string[]; filter: 'all' | 'sel'; 
 /** «Añadir a una colección»: juego (índice en la categoría) y fila elegida. */
 export interface AddCollState { ti: number; row: number }
 /** Pestañas de «Ajustes del juego». */
-export type GameTab = 'asp' | 'jug' | 'dat' | 'bib';
+export type GameTab = 'fic' | 'jug' | 'dat' | 'ges';
 export interface GameSetState {
   /** Índice del juego en la categoría (app.t). */
   title: number;
@@ -345,7 +345,7 @@ class Store {
   /** Pila de paneles anteriores: B vuelve al que abrió el actual. */
   overlayStack = $state<Overlay[]>([]);
   menu = $state<MenuState>({ kind: 'detail', title: 0, row: 0, items: [], confirm: false });
-  gameSet = $state<GameSetState>({ title: 0, tab: 'asp', inRows: false, row: 0, list: '', lrow: 0, confirm: false });
+  gameSet = $state<GameSetState>({ title: 0, tab: 'fic', inRows: true, row: 0, list: '', lrow: 0, confirm: false });
   form = $state<FormState>({ kind: 'exe', exe: '', rom: '', name: '', args: '', platform: 'pc', nameTouched: false, hero: '', logo: '', cover: '' });
   formRow = $state(0);
   addRow = $state(0);

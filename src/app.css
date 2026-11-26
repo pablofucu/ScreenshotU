@@ -280,11 +280,13 @@ body.nocursor,body.nocursor *{cursor:none !important}
 @keyframes scrimIn{from{opacity:0}}
 @keyframes modalIn{from{opacity:0;transform:scale(.94)}}
 @keyframes modalOut{to{opacity:0;transform:scale(.955)}}
+@keyframes gsSheetOut{to{opacity:0;transform:translateX(var(--s-5))}}
 .ov-host{position:absolute;inset:0;z-index:20;pointer-events:none}
 .ov-host>*{pointer-events:auto}
 .ov-host.ov-top{z-index:40}
 .ov-host.closing,.ov-host.closing *{pointer-events:none !important}
 .ov-host.closing .modal,.ov-host.closing .st-menu,.ov-host.closing .st-body,.ov-host.closing .audmenu{animation:modalOut var(--d-1) var(--e-soft) forwards}
+.ov-host.closing .gs-sheet{animation:gsSheetOut var(--d-1) var(--e-soft) forwards}
 .tab-stage{position:absolute;inset:0;z-index:1;pointer-events:none}
 .tab-stage>*{pointer-events:auto}
 .tab-r{animation:slideR var(--d-2) var(--e-soft) both}

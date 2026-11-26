@@ -4279,6 +4279,143 @@
           }
         }
       ]
+    },
+    {
+      "key": "RDA",
+      "name": "Rediseño de Ajustes del juego",
+      "goal": "Sustituir el menú actual de Ajustes del juego por un diseño fiel a la guía Wii U, sin huecos vacíos ni iconos rotos",
+      "icon": "🎨",
+      "color": 3,
+      "created": "2026-11-26T23:29:30+01:00",
+      "by": "ia",
+      "next_id": 5,
+      "phases": [
+        {
+          "name": "Propuestas",
+          "icon": "",
+          "steps": [
+            {
+              "id": "RDA-1",
+              "title": "Elegir diseño para Ajustes del juego",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-26T23:29:33+01:00",
+                  "by": "ia",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-26T23:37:07+01:00",
+                  "by": "persona",
+                  "kind": "change",
+                  "text": "También creo que se consideras que hubiera que hacer un cambio en categorias iconos o administración o lo que sea te doy total libertad"
+                },
+                {
+                  "at": "2026-11-26T23:40:05+01:00",
+                  "by": "ia",
+                  "kind": "done",
+                  "text": "Elegida propuesta 2 (Hoja lateral) con reorganización de pestañas internas (Ficha, Jugar, Datos, Gestión) e iconos 24x24"
+                }
+              ],
+              "cat": "decidir",
+              "updated": "2026-11-26T23:40:05+01:00",
+              "result": "Elegida propuesta 2 (Hoja lateral) con reorganización de pestañas internas (Ficha, Jugar, Datos, Gestión) e iconos 24x24"
+            }
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "ia",
+            "at": "2026-11-26T23:40:05+01:00",
+            "seen": true
+          }
+        },
+        {
+          "name": "Implementación",
+          "icon": "",
+          "steps": [
+            {
+              "id": "RDA-2",
+              "title": "Rehacer GameSettings.svelte y estilos con el diseño elegido",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-26T23:40:05+01:00",
+                  "by": "ia",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-26T23:41:20+01:00",
+                  "by": "ia",
+                  "kind": "done",
+                  "text": "Rehecho GameSettings.svelte como hoja lateral con tokens, cabecera con MiniCover y estado, pestañas segmentadas y riel de foco"
+                }
+              ],
+              "cat": "interfaz",
+              "updated": "2026-11-26T23:41:20+01:00",
+              "result": "Rehecho GameSettings.svelte como hoja lateral con tokens, cabecera con MiniCover y estado, pestañas segmentadas y riel de foco"
+            },
+            {
+              "id": "RDA-3",
+              "title": "Conectar navegación LB/RB, controles rápidos y arreglar iconos",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-26T23:41:20+01:00",
+                  "by": "ia",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-26T23:41:20+01:00",
+                  "by": "ia",
+                  "kind": "done",
+                  "text": "Reorganizadas pestañas (Ficha, Jugar, Datos, Gestión), navegación directa LB/RB y Magpie con flechas, nuevos iconos 24x24 y limpieza UTF-8 en gameset.svelte.ts"
+                }
+              ],
+              "cat": "codigo",
+              "updated": "2026-11-26T23:41:20+01:00",
+              "result": "Reorganizadas pestañas (Ficha, Jugar, Datos, Gestión), navegación directa LB/RB y Magpie con flechas, nuevos iconos 24x24 y limpieza UTF-8 en gameset.svelte.ts"
+            },
+            {
+              "id": "RDA-4",
+              "title": "Verificar con npm run check y revisar en claro y oscuro",
+              "desc": "",
+              "state": "done",
+              "notes": [
+                {
+                  "at": "2026-11-26T23:41:20+01:00",
+                  "by": "ia",
+                  "kind": "start",
+                  "text": "Empezado."
+                },
+                {
+                  "at": "2026-11-26T23:41:21+01:00",
+                  "by": "ia",
+                  "kind": "done",
+                  "text": "Verificado npm run check (0 errores), node --test (78/78) y auditoría de tokens en GameSettings.svelte"
+                }
+              ],
+              "cat": "pruebas",
+              "together": true,
+              "updated": "2026-11-26T23:41:21+01:00",
+              "result": "Verificado npm run check (0 errores), node --test (78/78) y auditoría de tokens en GameSettings.svelte"
+            }
+          ],
+          "review": {
+            "state": "waiting",
+            "text": "",
+            "by": "ia",
+            "at": "2026-11-26T23:41:21+01:00",
+            "seen": true
+          }
+        }
+      ]
     }
   ],
   "asks": [
@@ -5119,9 +5256,44 @@
       },
       "by": "claude",
       "created": "2026-11-25T01:24:36+01:00"
+    },
+    {
+      "id": "P-24",
+      "kind": "proposal",
+      "title": "Ajustes del juego: tres propuestas de diseño",
+      "text": "",
+      "step": "RDA-1",
+      "branch": "RDA",
+      "options": [
+        {
+          "label": "Panel compacto",
+          "desc": "Un solo modal con cabecera del juego, pestañas con LB/RB y filas limpias sin vacíos",
+          "file": ".unificador/propuestas/P-24/1.html"
+        },
+        {
+          "label": "Hoja lateral",
+          "desc": "Panel derecho sobre la ficha viva del juego, con controles rápidos inline",
+          "file": ".unificador/propuestas/P-24/2.html"
+        },
+        {
+          "label": "Tarjeta y rejilla",
+          "desc": "Tarjeta visual del juego a la izquierda y rejilla 2×N de teselas a la derecha",
+          "file": ".unificador/propuestas/P-24/3.html"
+        }
+      ],
+      "recommend": 1,
+      "answer": {
+        "option": 2,
+        "text": "",
+        "by": "persona",
+        "at": "2026-11-26T23:35:42+01:00",
+        "seen": true
+      },
+      "by": "ia",
+      "created": "2026-11-26T23:32:11+01:00"
     }
   ],
-  "next_ask": 24,
+  "next_ask": 25,
   "next_tweak": 10,
   "tweaks": [
     {
@@ -5206,7 +5378,22 @@
       ]
     }
   ],
-  "news": [],
+  "news": [
+    {
+      "text": "🎨 Rediseño de Ajustes del juego: Propuestas",
+      "kind": "fase",
+      "by": "ia",
+      "at": "2026-11-26T23:40:05+01:00",
+      "ref": "RDA/Propuestas"
+    },
+    {
+      "text": "🎨 Rediseño de Ajustes del juego: Implementación",
+      "kind": "fase",
+      "by": "ia",
+      "at": "2026-11-26T23:41:21+01:00",
+      "ref": "RDA/Implementación"
+    }
+  ],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",
   "versions": [
     {
