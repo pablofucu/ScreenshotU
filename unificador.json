@@ -5378,22 +5378,7 @@
       ]
     }
   ],
-  "news": [
-    {
-      "text": "🎨 Rediseño de Ajustes del juego: Propuestas",
-      "kind": "fase",
-      "by": "ia",
-      "at": "2026-11-26T23:40:05+01:00",
-      "ref": "RDA/Propuestas"
-    },
-    {
-      "text": "🎨 Rediseño de Ajustes del juego: Implementación",
-      "kind": "fase",
-      "by": "ia",
-      "at": "2026-11-26T23:41:21+01:00",
-      "ref": "RDA/Implementación"
-    }
-  ],
+  "news": [],
   "git_since": "ca5b9b4aa05eaf3f4fe523aa25bf7d888a3d843c",
   "versions": [
     {
@@ -5647,6 +5632,29 @@
       ],
       "sha": "d9fa3427c16b22f79eb949956ab069b287c4f045",
       "tag": "v2.9.0"
+    },
+    {
+      "version": "2.10.0",
+      "at": "2026-11-27T00:23:46+01:00",
+      "by": "ia",
+      "news": [
+        {
+          "text": "🎨 Rediseño de Ajustes del juego: Propuestas",
+          "kind": "fase",
+          "by": "ia",
+          "at": "2026-11-26T23:40:05+01:00",
+          "ref": "RDA/Propuestas"
+        },
+        {
+          "text": "🎨 Rediseño de Ajustes del juego: Implementación",
+          "kind": "fase",
+          "by": "ia",
+          "at": "2026-11-26T23:41:21+01:00",
+          "ref": "RDA/Implementación"
+        }
+      ],
+      "sha": "3f68547198f3275e90504e8a20dae99e1a48f909",
+      "tag": "v2.10.0"
     }
   ]
 }
